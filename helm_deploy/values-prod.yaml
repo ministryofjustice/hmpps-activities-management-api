@@ -13,7 +13,7 @@ generic-service:
     CASE_NOTES_API_URL: https://offender-case-notes.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
-    FEATURE_EVENTS_SNS_ENABLED: false
+    FEATURE_EVENTS_SNS_ENABLED: true
 
   postgresDatabaseRestore:
     enabled: true

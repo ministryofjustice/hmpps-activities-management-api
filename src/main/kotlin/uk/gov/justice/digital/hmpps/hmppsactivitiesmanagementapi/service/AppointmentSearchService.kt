@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
@@ -97,7 +98,8 @@ class AppointmentSearchService(
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
     logAppointmentSearchMetric(principal, prisonCode, request, results.size, startTime)
-    return results.toResults(attendeeMap, referenceCodeMap, locationMap)
+
+    return results.filter { it.appointmentType == AppointmentType.GROUP || attendeeMap.containsKey(it.appointmentId) }.toResults(attendeeMap, referenceCodeMap, locationMap)
   }
 
   private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentSearchRequest, results: Int, startTimeInMs: Long) {

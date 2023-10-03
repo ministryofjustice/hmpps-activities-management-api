@@ -38,7 +38,7 @@ class OffenderReceivedEventHandler(
   }
 
   override fun handle(event: OffenderReceivedEvent): Outcome {
-    log.info("Handling offender received event $event")
+    log.debug("Handling offender received event {}", event)
 
     if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
       prisonApiClient.getPrisonerDetails(prisonerNumber = event.prisonerNumber()).block()?.let { prisoner ->
@@ -59,14 +59,14 @@ class OffenderReceivedEventHandler(
             }
           }
         } else {
-          log.info("Prisoner is not active in prison ${event.prisonCode()}")
+          log.info("Prisoner ${event.prisonerNumber()} is not active in prison ${event.prisonCode()}")
         }
 
         return Outcome.success()
       }
     }
 
-    log.info("Ignoring received event for ${event.prisonCode()} - not rolled out.")
+    log.debug("Ignoring received event for ${event.prisonCode()} - not rolled out.")
 
     return Outcome.success()
   }

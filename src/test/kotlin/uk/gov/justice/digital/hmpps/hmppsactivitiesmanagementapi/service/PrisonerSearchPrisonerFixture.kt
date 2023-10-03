@@ -36,6 +36,7 @@ object PrisonerSearchPrisonerFixture {
     ),
     lastMovementType: MovementType? = null,
     releaseDate: LocalDate? = null,
+    confirmedReleaseDate: LocalDate? = null,
     alerts: List<PrisonerAlert> = emptyList(),
   ) =
     Prisoner(
@@ -61,6 +62,7 @@ object PrisonerSearchPrisonerFixture {
       currentIncentive = currentIncentive,
       lastMovementTypeCode = lastMovementType?.nomisShortCode,
       releaseDate = releaseDate,
+      confirmedReleaseDate = confirmedReleaseDate,
       alerts = alerts,
     )
 

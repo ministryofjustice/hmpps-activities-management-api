@@ -40,7 +40,7 @@ class OutboundEventsPublisher(
           .message(mapper.writeValueAsString(event))
           .messageAttributes(metaData(event))
           .build(),
-      ).also { log.info("Published $event") }
+      ).also { log.debug("Published {}", event) }
 
       return
     }

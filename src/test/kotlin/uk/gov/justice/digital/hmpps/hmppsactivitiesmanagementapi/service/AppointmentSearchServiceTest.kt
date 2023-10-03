@@ -19,9 +19,11 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchRepository
@@ -404,6 +406,28 @@ class AppointmentSearchServiceTest {
       assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
       assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
     }
+  }
+
+  @Test
+  fun `search results exclude individual appointments with no attendees`() {
+    val prisonCode = "TPR"
+    val request = AppointmentSearchRequest(startDate = LocalDate.now())
+    val individualAppointmentOneAttendee = appointmentSearchEntity(1, 1, AppointmentType.INDIVIDUAL, prisonCode, 1)
+    val individualAppointmentNoAttendee = appointmentSearchEntity(2, 2, AppointmentType.INDIVIDUAL, prisonCode, 2).apply { attendees = emptyList() }
+    val groupAppointmentOneAttendee = appointmentSearchEntity(3, 3, AppointmentType.GROUP, prisonCode, 3)
+    val groupAppointmentNoAttendee = appointmentSearchEntity(4, 4, AppointmentType.GROUP, prisonCode, 4).apply { attendees = emptyList() }
+    val results = listOf(individualAppointmentOneAttendee, individualAppointmentNoAttendee, groupAppointmentOneAttendee, groupAppointmentNoAttendee)
+
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(results)
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })).thenReturn(results.flatMap { it.attendees })
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
+    whenever(locationService.getLocationsForAppointmentsMap(prisonCode))
+      .thenReturn(mapOf(123L to appointmentLocation(123L, prisonCode)))
+
+    val searchResults = service.searchAppointments(prisonCode, request, principal)
+    searchResults.map { it.appointmentId }.isEqualTo(listOf(individualAppointmentOneAttendee, groupAppointmentOneAttendee, groupAppointmentNoAttendee).map { it.appointmentId })
+    searchResults.filterNot { it.attendees.isEmpty() }.map { it.appointmentId }.isEqualTo(listOf(individualAppointmentOneAttendee, groupAppointmentOneAttendee).map { it.appointmentId })
   }
 
   @Test

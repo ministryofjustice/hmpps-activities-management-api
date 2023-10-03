@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -7,7 +8,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
@@ -17,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
@@ -28,6 +33,7 @@ class ScheduledInstanceService(
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
   private val outboundEventsService: OutboundEventsService,
   private val transactionHandler: TransactionHandler,
+  private val telemetryClient: TelemetryClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -93,12 +99,22 @@ class ScheduledInstanceService(
       val scheduledInstance = repository.findById(instanceId)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $instanceId not found") }
 
+      val waitingAttendances = scheduledInstance.attendances.filter { it.status() == AttendanceStatus.WAITING }
+
       val cancelledAttendances = scheduledInstance.cancelSessionAndAttendances(
         reason = scheduleInstanceCancelRequest.reason,
         by = scheduleInstanceCancelRequest.username,
         cancelComment = scheduleInstanceCancelRequest.comment,
         cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
       )
+
+      // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event
+      waitingAttendances.forEach { attendance ->
+        if (attendance.status() == AttendanceStatus.COMPLETED) {
+          val propertiesMap = attendance.toTelemetryPropertiesMap()
+          telemetryClient.trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, propertiesMap)
+        }
+      }
 
       repository.saveAndFlush(scheduledInstance) to cancelledAttendances
     }

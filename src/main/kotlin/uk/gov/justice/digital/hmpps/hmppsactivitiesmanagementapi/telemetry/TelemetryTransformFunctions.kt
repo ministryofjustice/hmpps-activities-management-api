@@ -1,7 +1,50 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+
+fun Allocation.createAllocationTelemetryPropertiesMap(maybeWaitingList: WaitingList?): MutableMap<String, String> {
+  val propertiesMap = mutableMapOf(
+    USER_PROPERTY_KEY to allocatedBy,
+    PRISON_CODE_PROPERTY_KEY to activitySchedule.activity.prisonCode,
+    PRISONER_NUMBER_PROPERTY_KEY to prisonerNumber,
+    ACTIVITY_ID_PROPERTY_KEY to activitySchedule.activityScheduleId.toString(),
+    ALLOCATION_START_DATE_PROPERTY_KEY to startDate.toString(),
+  )
+  maybeWaitingList?.let {
+    propertiesMap[ALLOCATION_REQUEST_DATE_PROPERTY_KEY] = it.applicationDate.toString()
+  }
+  return propertiesMap
+}
+
+fun Allocation.createAllocationTelemetryMetricsMap(maybeWaitingList: WaitingList?): MutableMap<String, Double> {
+  val metricsMap = mutableMapOf<String, Double>()
+  maybeWaitingList?.let {
+    metricsMap[WAIT_BEFORE_ALLOCATION_METRIC_KEY] =
+      ChronoUnit.DAYS.between(it.applicationDate, allocatedTime.toLocalDate()).toDouble()
+  }
+  return metricsMap
+}
+
+fun Attendance.toTelemetryPropertiesMap(): MutableMap<String, String> {
+  val endTime = LocalDateTime.of(scheduledInstance.sessionDate, scheduledInstance.endTime)
+  val attendedBeforeSessionEnded = recordedTime?.isBefore(endTime) ?: false
+  return mutableMapOf(
+    USER_PROPERTY_KEY to (recordedBy ?: ""),
+    PRISON_CODE_PROPERTY_KEY to scheduledInstance.activitySchedule.activity.prisonCode,
+    PRISONER_NUMBER_PROPERTY_KEY to prisonerNumber,
+    ACTIVITY_ID_PROPERTY_KEY to scheduledInstance.activitySchedule.activityScheduleId.toString(),
+    SCHEDULED_INSTANCE_ID_PROPERTY_KEY to scheduledInstance.scheduledInstanceId.toString(),
+    ACTIVITY_SUMMARY_PROPERTY_KEY to scheduledInstance.activitySchedule.activity.summary,
+    ATTENDANCE_REASON_PROPERTY_KEY to attendanceReason?.code.toString(),
+    ATTENDED_BEFORE_SESSION_ENDED_PROPERTY_KEY to attendedBeforeSessionEnded.toString(),
+  )
+}
 
 fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   user: String,

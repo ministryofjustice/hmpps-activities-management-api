@@ -38,7 +38,8 @@ insert into rollout_prison (rollout_prison_id, code, description, activities_to_
                             activities_rollout_date, appointments_to_be_rolled_out,
                             appointments_rollout_date)
 values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', false, null),
-       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23');
+       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23'),
+       (3, 'RSI', 'HMP Risley',  true, '2023-09-29', true, '2023-09-29');
 
 --
 -- Attendance reason codes
