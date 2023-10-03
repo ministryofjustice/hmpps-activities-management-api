@@ -21,6 +21,8 @@ fun Prisoner.isTemporarilyReleased() =
 fun Prisoner.isPermanentlyReleased() =
   isInactiveOut() && confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
 
+fun Prisoner.isAtDifferentLocationTo(prisonCode: String) = prisonCode != prisonId
+
 enum class MovementType(val nomisShortCode: String) {
   RELEASE("REL"),
   TEMPORARY_ABSENCE("TAP"),

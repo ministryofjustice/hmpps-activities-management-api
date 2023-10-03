@@ -7,7 +7,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.movementDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -149,24 +151,28 @@ class ManageAllocationsService(
   private fun deallocateIfExpired(allocations: Collection<Allocation>, regime: PrisonRegime) {
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
     val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers).block() ?: emptyList()
-    val prisonersOutOfPrison = prisoners.filter { it.isOutOfPrison() }
-    val latestPrisonersOutOfPrisonMovements =
-      prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonersOutOfPrison.map { it.prisonerNumber }.toSet())
 
-    latestPrisonersOutOfPrisonMovements
-      .withExpiredMovesFor(regime)
-      .andExpiredMove(allocations)
+    if (prisoners.isEmpty()) {
+      log.error("No matches for prisoner numbers $prisoners found via prisoner search for prison ${regime.prisonCode}")
+      return
+    }
+
+    val prisonersNotInExpectedPrison =
+      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(regime.prisonCode) }
+
+    getCandidateExpiredMoves(regime, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+      .withFilteredExpiredMovesMatching(allocations)
       .declineExpiredAllocationsFromWaitingListFor(regime.prisonCode)
       .groupBy { it.activitySchedule }
       .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
   }
 
-  private fun List<Movement>.withExpiredMovesFor(regime: PrisonRegime) =
-    groupBy { it.offenderNo }
-      .mapValues { it -> it.value.maxBy { it.movementDateTime() } }
+  fun getCandidateExpiredMoves(regime: PrisonRegime, prisonerNumbers: Set<String>) =
+    prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonerNumbers)
+      .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { regime.hasExpired { it.value.movementDate } }
 
-  private fun Map<String, Movement>.andExpiredMove(allocations: Collection<Allocation>) =
+  private fun Map<String, Movement>.withFilteredExpiredMovesMatching(allocations: Collection<Allocation>) =
     flatMap { entry -> allocations.filter { entry.key == it.prisonerNumber } }
 
   private fun List<Allocation>.declineExpiredAllocationsFromWaitingListFor(prisonCode: String) =
@@ -177,7 +183,7 @@ class ManageAllocationsService(
         "Released",
         ServiceName.SERVICE_NAME.value,
       )
-    }.also { log.info("here 4") }
+    }
 
   private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason? = null) {
     this.keys.forEach { schedule ->
@@ -190,20 +196,13 @@ class ManageAllocationsService(
               activityScheduleRepository.saveAndFlush(schedule)
               log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
               deallocations
-            }.map(Allocation::allocationId)
+            }?.map(Allocation::allocationId) ?: emptyList()
           }.let(::sendAllocationsAmendedEvents)
         },
         failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}.",
       )
     }
   }
-
-  private fun <T, R> Collection<T>.ifNotEmpty(block: (Collection<T>) -> Collection<R>) =
-    if (this.isNotEmpty()) {
-      block(this)
-    } else {
-      emptySet()
-    }
 
   private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) =
     allocationIds.forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it) }
