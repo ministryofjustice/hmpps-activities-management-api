@@ -40,7 +40,7 @@ prison:
 
 prisoner-search:
   api:
-    url: https://prisoner-offender-search-dev.prison.service.justice.gov.uk
+    url: https://prisoner-search-dev.prison.service.justice.gov.uk
     timeout: 10s
 
 case-notes:

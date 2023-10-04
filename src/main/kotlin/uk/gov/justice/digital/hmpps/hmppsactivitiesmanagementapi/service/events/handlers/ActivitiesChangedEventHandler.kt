@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isTemporarilyReleased
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -114,7 +115,12 @@ class ActivitiesChangedEventHandler(
       when {
         prisoner.isTemporarilyReleased() -> DeallocationReason.TEMPORARILY_RELEASED
         prisoner.isPermanentlyReleased() -> DeallocationReason.RELEASED
-        else -> throw IllegalStateException("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
+        else -> {
+          val message =
+            "Prisoner prison code '${prisoner.prisonId}', status '${prisoner.status}', last movement type code '${prisoner.lastMovementType()}', confirmed release date '${prisoner.confirmedReleaseDate}'"
+          log.warn("Unable to determine reason for prisoner ${event.prisonerNumber()}. $message")
+          throw IllegalStateException("Unable to determine release reason for prisoner '${event.prisonerNumber()}' for event '$event'")
+        }
       }
     }
 }
