@@ -111,6 +111,7 @@ jacoco {
 val integrationTest = task<Test>("integrationTest") {
   description = "Integration tests"
   group = "verification"
+  shouldRunAfter("test")
   // required for jjwt 0.12 - see https://github.com/jwtk/jjwt/issues/849
   jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED")
 }
