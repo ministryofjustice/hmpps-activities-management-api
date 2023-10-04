@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
+import java.lang.IllegalStateException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -283,5 +285,22 @@ class ActivitiesChangedEventHandlerTest {
     handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
 
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+  }
+
+  @Test
+  fun `released prisoner is not deallocated on 'END' when cannot determine release reason`() {
+    mock<Prisoner> {
+      on { status } doReturn "INACTIVE OUT"
+      on { confirmedReleaseDate } doReturn TimeSource.today()
+      on { lastMovementTypeCode } doReturn "XXX"
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
+    }
+
+    assertThatThrownBy {
+      handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool false }
+    }.isInstanceOf(IllegalStateException::class.java)
+
+    verify(prisonerAllocationHandler, never()).deallocate(any(), any(), any())
   }
 }
