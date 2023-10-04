@@ -284,4 +284,19 @@ class ActivitiesChangedEventHandlerTest {
 
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
+
+  @Test
+  fun `released prisoner is not deallocated on 'END' when cannot determine release reason`() {
+    mock<Prisoner> {
+      on { status } doReturn "INACTIVE OUT"
+      on { confirmedReleaseDate } doReturn TimeSource.today()
+      on { lastMovementTypeCode } doReturn "XXX"
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
+    }
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool false }
+
+    verify(prisonerAllocationHandler, never()).deallocate(any(), any(), any())
+  }
 }

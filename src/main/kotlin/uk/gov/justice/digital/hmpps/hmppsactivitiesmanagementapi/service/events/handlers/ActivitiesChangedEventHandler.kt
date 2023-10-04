@@ -114,7 +114,10 @@ class ActivitiesChangedEventHandler(
       when {
         prisoner.isTemporarilyReleased() -> DeallocationReason.TEMPORARILY_RELEASED
         prisoner.isPermanentlyReleased() -> DeallocationReason.RELEASED
-        else -> throw IllegalStateException("Unable to determine release reason for prisoner ${event.prisonerNumber()}")
+        else -> {
+          log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}, prisoner status ${prisoner.status}, at prison ${prisoner.prisonId} for event $event")
+          null
+        }
       }
     }
 }
