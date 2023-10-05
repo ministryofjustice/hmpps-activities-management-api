@@ -43,20 +43,17 @@ class OffenderReceivedEventHandler(
     if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
       prisonApiClient.getPrisonerDetails(prisonerNumber = event.prisonerNumber()).block()?.let { prisoner ->
         if (prisoner.isActiveInPrison(event.prisonCode())) {
-          allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber()).let { allocations ->
-            if (allocations.isNotEmpty()) {
-              transactionHandler.newSpringTransaction {
-                allocations
-                  .resetSuspendedAllocations(event)
-                  .resetFutureSuspendedAttendances(event)
-              }.let { updatedAttendances ->
-                updatedAttendances.forEach {
-                  outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
-                }.also { log.info("Sending attendance amended events.") }
-              }
-            } else {
-              log.info("No allocations for prisoner ${event.prisonerNumber()} in prison ${event.prisonCode()}")
-            }
+          transactionHandler.newSpringTransaction {
+            allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+              .resetSuspendedAllocations(event)
+              .resetFutureSuspendedAttendances(event)
+          }.let { (activeAllocations, activeAttendances) ->
+            activeAllocations.forEach {
+              outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+            }.also { log.info("Sending allocation amended events.") }
+            activeAttendances.forEach {
+              outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
+            }.also { log.info("Sending attendance amended events.") }
           }
         } else {
           log.info("Prisoner ${event.prisonerNumber()} is not active in prison ${event.prisonCode()}")
@@ -81,11 +78,11 @@ class OffenderReceivedEventHandler(
         log.info("Reset ${this.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
       }
 
-  private fun List<Allocation>.resetFutureSuspendedAttendances(event: OffenderReceivedEvent): List<Attendance> {
+  private fun List<Allocation>.resetFutureSuspendedAttendances(event: OffenderReceivedEvent): Pair<List<Allocation>, List<Attendance>> {
     val now = LocalDateTime.now()
     val cancelledReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
 
-    return flatMap { allocation ->
+    return this to flatMap { allocation ->
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         prisonCode = event.prisonCode(),
         sessionDate = LocalDate.now(),
@@ -104,7 +101,8 @@ class OffenderReceivedEventHandler(
           } else {
             attendance.unsuspend().also { log.info("Unsuspended attendance ${attendance.attendanceId}") }
           }
-        }.also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
+        }
+        .also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }
 }

@@ -67,8 +67,11 @@ class ActivitiesChangedEventHandler(
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
-        }.let { updatedAttendances ->
-          updatedAttendances.forEach {
+        }.let { (suspendedAllocations, suspendedAttendances) ->
+          suspendedAllocations.forEach {
+            outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+          }.also { log.info("Sending allocation amended events.") }
+          suspendedAttendances.forEach {
             outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
           }.also { log.info("Sending attendance amended events.") }
         }
@@ -89,10 +92,10 @@ class ActivitiesChangedEventHandler(
   private fun List<Allocation>.suspendPrisonersFutureAttendances(
     dateTime: LocalDateTime,
     event: ActivitiesChangedEvent,
-  ): List<Attendance> {
+  ): Pair<List<Allocation>, List<Attendance>> {
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
-    return flatMap { allocation ->
+    return this to flatMap { allocation ->
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         event.prisonCode(),
         dateTime.toLocalDate(),
