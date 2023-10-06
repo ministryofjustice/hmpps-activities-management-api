@@ -15,8 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -31,7 +29,6 @@ class AttendancesService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val caseNotesApiClient: CaseNotesApiClient,
   private val transactionHandler: TransactionHandler,
-  private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
 ) {
 
@@ -74,10 +71,6 @@ class AttendancesService(
         }
       }.map { it.attendanceId }
     }
-
-    markedAttendanceIds.forEach { id ->
-      outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, id)
-    }.also { log.info("Sending attendance amended events.") }
 
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }

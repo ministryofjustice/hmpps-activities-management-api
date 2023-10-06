@@ -3,13 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -30,9 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,10 +42,9 @@ class OffenderReceivedEventHandlerTest {
     on { agencyId } doReturn moorlandPrisonCode
   }
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient, attendanceRepository, attendanceReasonRepository, TransactionHandler(), outboundEventsService)
+    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient, attendanceRepository, attendanceReasonRepository)
 
   @BeforeEach
   fun beforeTests() {
@@ -181,7 +174,6 @@ class OffenderReceivedEventHandlerTest {
     assertThat(historicAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isTrue
     assertThat(todaysFutureAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isFalse
     assertThat(tomorrowsFutureAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isFalse
-    verify(outboundEventsService, times(2)).send(eq(OutboundEvent.PRISONER_ATTENDANCE_AMENDED), any())
   }
 
   @Test

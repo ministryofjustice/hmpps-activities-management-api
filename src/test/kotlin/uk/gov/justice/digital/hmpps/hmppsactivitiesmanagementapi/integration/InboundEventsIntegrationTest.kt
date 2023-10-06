@@ -2,15 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.KArgumentCaptor
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.never
-import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
@@ -21,6 +18,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -32,10 +31,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AdditionalInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
@@ -52,12 +55,16 @@ import java.time.temporal.ChronoUnit
   properties = [
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
+    "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
+    "feature.event.appointments.appointment-instance.deleted=true",
   ],
 )
 class InboundEventsIntegrationTest : IntegrationTestBase() {
-
   @MockBean
-  private lateinit var outboundEventsService: OutboundEventsService
+  private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -85,11 +92,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var service: InboundEventsService
 
-  @BeforeEach
-  fun initMocks() {
-    reset(outboundEventsService)
-  }
-
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `release with unknown reason does not affect allocations but is treated as an interesting event`() {
@@ -112,7 +114,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThatAllocationsAreActiveFor("A11111A")
 
     assertThat(eventReviewRepository.count()).isEqualTo(1L)
-    verifyNoInteractions(outboundEventsService)
+    verifyNoInteractions(eventsPublisher)
   }
 
   @Test
@@ -149,8 +151,27 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 3
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(4))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(6))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
 
     verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
 
@@ -159,6 +180,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     hmppsAuditEventCaptor.thirdValue.what isEqualTo "PRISONER_DEALLOCATED"
     hmppsAuditEventCaptor.lastValue.what isEqualTo "PRISONER_DEALLOCATED"
   }
+
+  private fun KArgumentCaptor<OutboundHMPPSDomainEvent>.matching(predicate: AdditionalInformation) =
+    allValues.single { it.additionalInformation == predicate }
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
@@ -213,8 +237,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 3
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(4)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
   }
 
   @Test
@@ -252,8 +291,27 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.DIED)
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 4L)
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 3
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(4))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(6))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
   }
 
   @Test
@@ -278,8 +336,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 2
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
   }
@@ -334,11 +407,37 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(211)).isTrue()
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 300L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 302L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 322L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 324L)
-    verifyNoMoreInteractions(outboundEventsService)
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 4
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(300)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(302)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.thirdValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(322)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.lastValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(324)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
   }
 
   @Test
@@ -391,11 +490,37 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(211)).isTrue()
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 300L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 302L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 322L)
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, 324L)
-    verifyNoMoreInteractions(outboundEventsService)
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 4
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(300)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(302)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.thirdValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(322)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
+
+    with(eventCaptor.lastValue) {
+      additionalInformation isEqualTo AppointmentInstanceInformation(324)
+      eventType isEqualTo "appointments.appointment-instance.deleted"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "An appointment instance has been deleted in the activities management service"
+    }
   }
 
   @Test
@@ -447,7 +572,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(211)).isTrue()
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
-    verifyNoInteractions(outboundEventsService)
+    verifyNoInteractions(eventsPublisher)
   }
 
   @Test
@@ -496,12 +621,37 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    // Four events should be raised two for allocation amendments and two for an attendance amendment
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 4
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.thirdValue) {
+      additionalInformation isEqualTo PrisonerAttendanceInformation(3)
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner attendance has been amended in the activities management service"
+    }
+
+    with(eventCaptor.lastValue) {
+      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner attendance has been amended in the activities management service"
+    }
   }
 
   @Test
@@ -528,11 +678,11 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     // Eight events should be raised four for allocation amendments and four for an attendance amendment
-    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
-    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
+//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+//    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
 
     // This attendance record is never modified
     attendanceRepository.findById(1L).orElseThrow().also {
@@ -601,11 +751,33 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 4
+
+    with(eventCaptor.matching(PrisonerAttendanceInformation(3))) {
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner attendance has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAttendanceInformation(2))) {
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner attendance has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(2))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
   }
 
   @Test
@@ -633,8 +805,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    eventCaptor.allValues hasSize 2
+
+    with(eventCaptor.firstValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(eventCaptor.secondValue) {
+      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
   }

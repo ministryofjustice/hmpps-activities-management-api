@@ -153,10 +153,10 @@ class ManageAllocationsService(
           getOrDefault(schedule, emptyList()).map { allocation ->
             reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNow()
           }
-            .let {
-              if (it.isNotEmpty()) {
-                activityScheduleRepository.saveAndFlush(schedule)
-                log.info("Deallocated ${it.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
+            .let { deallocations ->
+              if (deallocations.isNotEmpty()) {
+                activityScheduleRepository.saveAndFlush(schedule).also { allocationRepository.saveAllAndFlush(deallocations) }
+                log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
               }
             }
         },

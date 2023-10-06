@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -52,6 +53,7 @@ class ActivityScheduleService(
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
   private val telemetryClient: TelemetryClient,
+  private val allocationRepository: AllocationRepository,
 ) {
 
   companion object {
@@ -176,6 +178,7 @@ class ActivityScheduleService(
         }
         .singleOrNull()?.allocated(allocation)
 
+      allocationRepository.saveAndFlush(allocation)
       repository.saveAndFlush(schedule)
       auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
       logAllocationEvent(allocation, maybeWaitingList)
@@ -198,6 +201,7 @@ class ActivityScheduleService(
     repository.findOrThrowNotFound(scheduleId).run {
       request.prisonerNumbers!!.distinct().forEach {
         deallocatePrisonerOn(it, request.endDate!!, request.reasonCode.toDeallocationReason(), deallocatedBy)
+          .also(allocationRepository::saveAndFlush)
         log.info("Planned deallocation of prisoner $it from activity schedule id ${this.activityScheduleId}")
         logDeallocationEvent(it)
       }

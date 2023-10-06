@@ -54,7 +54,7 @@ class PrisonerAllocationHandler(
     prisonCode: String,
     prisonerNumber: String,
   ) =
-    onEach { it.deallocateNowWithReason(reason) }
+    onEach { allocationRepository.saveAndFlush(it.deallocateNowWithReason(reason)) }
       .also {
         log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
       }

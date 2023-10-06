@@ -14,10 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -29,8 +26,6 @@ class OffenderReceivedEventHandler(
   private val prisonApiClient: PrisonApiApplicationClient,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
-  private val transactionHandler: TransactionHandler,
-  private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<OffenderReceivedEvent> {
 
   companion object {
@@ -43,21 +38,16 @@ class OffenderReceivedEventHandler(
     if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
       prisonApiClient.getPrisonerDetails(prisonerNumber = event.prisonerNumber()).block()?.let { prisoner ->
         if (prisoner.isActiveInPrison(event.prisonCode())) {
-          allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber()).let { allocations ->
-            if (allocations.isNotEmpty()) {
-              transactionHandler.newSpringTransaction {
+          allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
+            .let { allocations ->
+              if (allocations.isNotEmpty()) {
                 allocations
                   .resetSuspendedAllocations(event)
                   .resetFutureSuspendedAttendances(event)
-              }.let { updatedAttendances ->
-                updatedAttendances.forEach {
-                  outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
-                }.also { log.info("Sending attendance amended events.") }
+              } else {
+                log.info("No allocations for prisoner ${event.prisonerNumber()} in prison ${event.prisonCode()}")
               }
-            } else {
-              log.info("No allocations for prisoner ${event.prisonerNumber()} in prison ${event.prisonCode()}")
             }
-          }
         } else {
           log.info("Prisoner ${event.prisonerNumber()} is not active in prison ${event.prisonCode()}")
         }
@@ -76,7 +66,7 @@ class OffenderReceivedEventHandler(
 
   private fun List<Allocation>.resetSuspendedAllocations(event: OffenderReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
-      .onEach { it.reactivateAutoSuspensions() }
+      .onEach { allocationRepository.saveAndFlush(it.reactivateAutoSuspensions()) }
       .also {
         log.info("Reset ${this.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
       }
@@ -104,7 +94,10 @@ class OffenderReceivedEventHandler(
           } else {
             attendance.unsuspend().also { log.info("Unsuspended attendance ${attendance.attendanceId}") }
           }
-        }.also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
+
+          attendanceRepository.saveAndFlush(attendance)
+        }
+        .also { log.info("Reset ${it.size} suspended attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }
 }

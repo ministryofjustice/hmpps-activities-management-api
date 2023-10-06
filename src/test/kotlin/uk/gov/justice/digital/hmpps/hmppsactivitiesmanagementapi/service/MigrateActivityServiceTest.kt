@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -51,6 +52,7 @@ class MigrateActivityServiceTest {
   private val activityTierRepository: ActivityTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val allocationRepository: AllocationRepository = mock()
   private val featureSwitches: FeatureSwitches = mock()
 
   private val listOfCategories = listOf(
@@ -85,6 +87,7 @@ class MigrateActivityServiceTest {
     activityTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
+    allocationRepository,
     featureSwitches,
   )
 

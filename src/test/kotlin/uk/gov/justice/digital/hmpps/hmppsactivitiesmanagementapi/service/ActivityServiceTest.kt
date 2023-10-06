@@ -974,6 +974,8 @@ class ActivityServiceTest {
       ),
     ).thenReturn(activity)
 
+    whenever(activityRepository.saveAndFlush(activity)) doReturn activity
+
     assertThat(activity.endDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
     activity.schedules().forEach { activitySchedule ->
       assertThat(
@@ -1013,6 +1015,8 @@ class ActivityServiceTest {
       ),
     ).thenReturn(activity)
 
+    whenever(activityRepository.saveAndFlush(activity)) doReturn activity
+
     service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
@@ -1041,6 +1045,8 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activity)
+
+    whenever(activityRepository.saveAndFlush(activity)) doReturn activity
 
     val newEndDate = activity.endDate!!.plusDays(4)
 
@@ -1077,6 +1083,8 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activity)
+
+    whenever(activityRepository.saveAndFlush(activity)) doReturn activity
 
     service().updateActivity(
       moorlandPrisonCode,
@@ -1137,6 +1145,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
@@ -1181,6 +1191,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val tomorrow = LocalDate.now().plusDays(1)
@@ -1245,6 +1257,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val tomorrow = LocalDate.now().plusDays(1)
@@ -1323,6 +1337,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val schedule =
@@ -1363,6 +1379,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val schedule =
@@ -1413,6 +1431,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val schedule = activity.addSchedule(
@@ -1477,6 +1497,8 @@ class ActivityServiceTest {
           LocalDate.now(),
         ),
       ) doReturn (it)
+
+      whenever(activityRepository.saveAndFlush(it)) doReturn it
     }
 
     val schedule = activity.addSchedule(
@@ -1551,6 +1573,8 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(activity)
+
+    whenever(activityRepository.saveAndFlush(activity)) doReturn activity
 
     service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true), "TEST")
 

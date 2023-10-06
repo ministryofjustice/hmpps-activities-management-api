@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Deallocat
 
 @Entity
 @Table(name = "allocation")
-@EntityListeners(AllocationEntityListener::class, AuditableEntityListener::class)
+@EntityListeners(DomainEntityListener::class, AuditableEntityListener::class)
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +48,7 @@ data class Allocation(
 
   var allocatedBy: String,
 
-) {
+) : DomainEventEntity<Allocation>() {
 
   var endDate: LocalDate? = null
     set(value) {

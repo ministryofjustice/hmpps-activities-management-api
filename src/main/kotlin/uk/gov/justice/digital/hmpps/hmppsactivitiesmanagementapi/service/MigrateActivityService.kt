@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -49,6 +50,7 @@ class MigrateActivityService(
   private val activityTierRepository: ActivityTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val allocationRepository: AllocationRepository,
   private val feature: FeatureSwitches,
 ) {
   companion object {
@@ -98,7 +100,9 @@ class MigrateActivityService(
     }
 
     // Save the activity, schedule, slots and pay rates and obtain the IDs
-    val (activityId, splitRegimeActivityId) = activityRepository.saveAllAndFlush(activityList).let {
+    val (activityId, splitRegimeActivityId) = activityRepository.saveAllAndFlush(activityList).also {
+      it.flatMap(Activity::schedules).let { schedules -> activityScheduleRepository.saveAllAndFlush(schedules) }
+    }.let {
       it.first().activityId to it.getOrNull(1)?.activityId
     }
 
@@ -450,7 +454,7 @@ class MigrateActivityService(
       log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
     }
 
-    val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)
+    val savedSchedule = activityScheduleRepository.saveAndFlush(schedule).also { allocationRepository.saveAllAndFlush(it.allocations()) }
 
     val allocation = savedSchedule.allocations(excludeEnded = true)
       .find { it.prisonerNumber == request.prisonerNumber }

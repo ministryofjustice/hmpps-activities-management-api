@@ -20,8 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDateTime
 
 @Component
@@ -34,7 +32,6 @@ class ActivitiesChangedEventHandler(
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
   private val transactionHandler: TransactionHandler,
-  private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -82,10 +79,6 @@ class ActivitiesChangedEventHandler(
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
-        }.let { updatedAttendances ->
-          updatedAttendances.forEach {
-            outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
-          }.also { log.info("Sending attendance amended events.") }
         }
       }
 
@@ -98,7 +91,7 @@ class ActivitiesChangedEventHandler(
 
   private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
     filter { it.status(PrisonerStatus.ACTIVE) }
-      .onEach { it.autoSuspend(suspendedAt, "Temporary absence") }
+      .onEach { allocationRepository.saveAndFlush(it.autoSuspend(suspendedAt, "Temporary absence")) }
       .also { log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
   private fun List<Allocation>.suspendPrisonersFutureAttendances(
@@ -120,7 +113,7 @@ class ActivitiesChangedEventHandler(
               (attendance.scheduledInstance.sessionDate > dateTime.toLocalDate())
             )
         }
-        .onEach { attendance -> attendance.completeWithoutPayment(reason) }
+        .onEach { attendance -> attendanceRepository.saveAndFlush(attendance.completeWithoutPayment(reason)) }
         .also { log.info("Suspended ${it.size} attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
     }
   }

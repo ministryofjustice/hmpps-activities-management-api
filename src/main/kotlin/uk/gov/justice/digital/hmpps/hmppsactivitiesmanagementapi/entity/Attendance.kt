@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "attendance")
-@EntityListeners(AttendanceEntityListener::class)
+@EntityListeners(DomainEntityListener::class)
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,7 +60,7 @@ data class Attendance(
   var incentiveLevelWarningIssued: Boolean? = null,
 
   var otherAbsenceReason: String? = null,
-) {
+) : DomainEventEntity<Attendance>() {
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()

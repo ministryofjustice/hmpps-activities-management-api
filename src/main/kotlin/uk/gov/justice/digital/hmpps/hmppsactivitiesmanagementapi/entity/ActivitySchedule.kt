@@ -32,7 +32,7 @@ const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
 
 @Entity
 @Table(name = "activity_schedule")
-@EntityListeners(ActivityScheduleEntityListener::class)
+@EntityListeners(DomainEntityListener::class)
 @FilterDef(
   name = SESSION_DATE_FILTER,
   parameters = [
@@ -79,7 +79,7 @@ data class ActivitySchedule(
   var instancesLastUpdatedTime: LocalDateTime? = null,
 
   var scheduleWeeks: Int,
-) {
+) : DomainEventEntity<ActivitySchedule>() {
 
   init {
     require(capacity > 0) { "The schedule capacity must be greater than zero." }
@@ -282,9 +282,9 @@ data class ActivitySchedule(
     allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
-  fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String) {
+  fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String): Allocation {
     if (isActiveOn(date)) {
-      allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
+      return allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
         ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
     } else {
       throw IllegalStateException("Schedule $activityScheduleId is not active on the planned deallocated date $date.")

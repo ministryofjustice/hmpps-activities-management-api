@@ -195,7 +195,7 @@ class ActivityService(
         schedule.addSlots(request.slots!!)
         schedule.addInstances()
 
-        return transform(activityRepository.saveAndFlush(activity))
+        return transform(activityRepository.saveAndFlush(activity).also { activityScheduleRepository.saveAndFlush(schedule) })
       }
     }
   }
@@ -319,7 +319,7 @@ class ActivityService(
       it.markAsUpdated(now, updatedBy)
     }
 
-    activityRepository.saveAndFlush(activity)
+    activityRepository.saveAndFlush(activity).also { activityScheduleRepository.saveAllAndFlush(it.schedules()) }
 
     val propertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to prisonCode,

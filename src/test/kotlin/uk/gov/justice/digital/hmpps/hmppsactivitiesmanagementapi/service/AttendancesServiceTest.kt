@@ -31,8 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDate
@@ -47,7 +45,6 @@ class AttendancesServiceTest {
   private val allAttendanceRepository: AllAttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val service =
@@ -58,7 +55,6 @@ class AttendancesServiceTest {
       attendanceReasonRepository,
       caseNotesApiClient,
       TransactionHandler(),
-      outboundEventsService,
       telemetryClient,
     )
   private val activity = activityEntity()
@@ -78,7 +74,6 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     verify(telemetryClient).trackEvent(
       TelemetryEvent.RECORD_ATTENDANCE.value,
       attendance.toTelemetryPropertiesMap(),
@@ -100,7 +95,6 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -120,7 +114,6 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -139,7 +132,6 @@ class AttendancesServiceTest {
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
@@ -173,7 +165,6 @@ class AttendancesServiceTest {
     )
 
     verify(attendanceRepository).saveAndFlush(attendance)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     with(attendance.attendanceReason!!) {
       assertThat(code).isEqualTo(AttendanceReasonEnum.OTHER)
@@ -234,7 +225,6 @@ class AttendancesServiceTest {
       .hasMessage("Attendance record for prisoner 'D4444DD' can no longer be modified")
 
     verify(attendanceRepository, never()).saveAllAndFlush(any<List<Attendance>>())
-    verify(outboundEventsService, never()).send(any(), any())
   }
 
   @Test
