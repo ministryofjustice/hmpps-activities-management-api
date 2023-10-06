@@ -25,10 +25,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
@@ -37,6 +39,7 @@ import java.security.Principal
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentController(
   private val appointmentService: AppointmentService,
+  private val appointmentAttendanceService: AppointmentAttendanceService,
   private val appointmentSearchService: AppointmentSearchService,
 ) {
   @GetMapping(value = ["/{appointmentId}"])
@@ -195,6 +198,76 @@ class AppointmentController(
     request: AppointmentUpdateRequest,
     principal: Principal,
   ): AppointmentSeries = appointmentService.updateAppointment(appointmentId, request, principal)
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PutMapping(value = ["/{appointmentId}/attendance"])
+  @Operation(
+    summary = "Mark the attendance for an appointment",
+    description =
+    """
+    Mark or update the attendance records for the attendees of an appointment. This sets the current attendance record
+    for each supplied prison number, replacing any existing record. This supports both the initial recording of attendance
+    and changing that attendance record. There are no restrictions on when attendance can be recorded. It can be done
+    for past and future appointments.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "Attendance for the appointment was recorded.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentSeries::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The appointment for this id was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun markAttendance(
+    @PathVariable("appointmentId") appointmentId: Long,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The update request with the new appointment details and how to apply the update",
+      required = true,
+    )
+    request: AppointmentAttendanceRequest,
+    principal: Principal,
+  ): Appointment = appointmentAttendanceService.markAttendance(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentId}/cancel"])

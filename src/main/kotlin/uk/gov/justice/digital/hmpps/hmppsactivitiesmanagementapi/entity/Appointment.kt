@@ -109,6 +109,30 @@ data class Appointment(
 
   fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
 
+  fun markPrisonersAttended(prisonerNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
+    require(!isCancelled()) {
+      "Cannot mark attendance for a cancelled appointment"
+    }
+
+    findAttendees(prisonerNumbers).forEach {
+      it.attended = true
+      it.attendanceRecordedTime = attendanceRecordedTime
+      it.attendanceRecordedBy = attendanceRecordedBy
+    }
+  }
+
+  fun markPrisonersNonAttended(prisonerNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
+    require(!isCancelled()) {
+      "Cannot mark non-attendance for a cancelled appointment"
+    }
+
+    findAttendees(prisonerNumbers).forEach {
+      it.attended = false
+      it.attendanceRecordedTime = attendanceRecordedTime
+      it.attendanceRecordedBy = attendanceRecordedBy
+    }
+  }
+
   fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
 
   fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)

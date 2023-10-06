@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
@@ -35,10 +36,14 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   private lateinit var appointmentService: AppointmentService
 
   @MockBean
+  private lateinit var appointmentAttendanceService: AppointmentAttendanceService
+
+  @MockBean
   private lateinit var appointmentSearchService: AppointmentSearchService
 
   override fun controller() = AppointmentController(
     appointmentService,
+    appointmentAttendanceService,
     appointmentSearchService,
   )
 

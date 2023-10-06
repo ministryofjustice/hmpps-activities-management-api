@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import java.time.LocalDateTime
@@ -46,6 +47,38 @@ fun Attendance.toTelemetryPropertiesMap(): MutableMap<String, String> {
   )
 }
 
+fun AppointmentAttendanceRequest.toTelemetryPropertiesMap(
+  user: String,
+  prisonCode: String,
+  appointmentId: Long,
+) =
+  mutableMapOf(
+    USER_PROPERTY_KEY to user,
+    PRISON_CODE_PROPERTY_KEY to prisonCode,
+    APPOINTMENT_ID_PROPERTY_KEY to appointmentId.toString(),
+  )
+
+fun AppointmentAttendanceRequest.toTelemetryMetricsMap() =
+  mutableMapOf(
+    PRISONERS_ATTENDED_COUNT_METRIC_KEY to this.attendedPrisonNumbers.size.toDouble(),
+    PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY to this.nonAttendedPrisonNumbers.size.toDouble(),
+    EVENT_TIME_MS_METRIC_KEY to 0.0,
+  )
+
+fun AppointmentCancelRequest.toTelemetryPropertiesMap(
+  user: String,
+  prisonCode: String,
+  appointmentSeriesId: Long,
+  appointmentId: Long,
+) =
+  mutableMapOf(
+    USER_PROPERTY_KEY to user,
+    PRISON_CODE_PROPERTY_KEY to prisonCode,
+    APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeriesId.toString(),
+    APPOINTMENT_ID_PROPERTY_KEY to appointmentId.toString(),
+    APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
+  )
+
 fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   user: String,
   prisonCode: String,
@@ -73,18 +106,4 @@ fun AppointmentUpdateRequest.toTelemetryMetricsMap(appointmentCount: Int, appoin
     PRISONERS_REMOVED_COUNT_METRIC_KEY to (this.removePrisonerNumbers?.size?.toDouble() ?: 0.0),
     PRISONERS_ADDED_COUNT_METRIC_KEY to (this.addPrisonerNumbers?.size?.toDouble() ?: 0.0),
     EVENT_TIME_MS_METRIC_KEY to 0.0,
-  )
-
-fun AppointmentCancelRequest.toTelemetryPropertiesMap(
-  user: String,
-  prisonCode: String,
-  appointmentSeriesId: Long,
-  appointmentId: Long,
-) =
-  mutableMapOf(
-    USER_PROPERTY_KEY to user,
-    PRISON_CODE_PROPERTY_KEY to prisonCode,
-    APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeriesId.toString(),
-    APPOINTMENT_ID_PROPERTY_KEY to appointmentId.toString(),
-    APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
   )
