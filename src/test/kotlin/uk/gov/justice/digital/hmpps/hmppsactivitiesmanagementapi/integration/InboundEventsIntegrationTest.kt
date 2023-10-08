@@ -64,7 +64,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+  private val domainEventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -151,23 +151,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(3)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 3
+    domainEventCaptor.allValues hasSize 3
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(4))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(4))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(6))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(6))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
@@ -237,19 +237,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(3)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 3
+    domainEventCaptor.allValues hasSize 3
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(4)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(4))) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      occurredAt isCloseTo TimeSource.now()
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(6))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
@@ -291,23 +295,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A", DeallocationReason.DIED)
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(3)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 3
+    domainEventCaptor.allValues hasSize 3
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(4))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(4))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(6))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(6))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
@@ -336,19 +340,17 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(2)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 2
+    domainEventCaptor.allValues hasSize 2
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(2))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
@@ -407,33 +409,29 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(211)).isTrue()
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(4)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 4
+    domainEventCaptor.allValues hasSize 4
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(300)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(300))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(302)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(302))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.thirdValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(322)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(322))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.lastValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(324)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(324))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
@@ -490,33 +488,29 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(211)).isTrue()
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(4)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 4
+    domainEventCaptor.allValues hasSize 4
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(300)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(300))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(302)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(302))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.thirdValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(322)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(322))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
     }
 
-    with(eventCaptor.lastValue) {
-      additionalInformation isEqualTo AppointmentInstanceInformation(324)
+    with(domainEventCaptor.matching(AppointmentInstanceInformation(324))) {
       eventType isEqualTo "appointments.appointment-instance.deleted"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "An appointment instance has been deleted in the activities management service"
@@ -621,33 +615,29 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(4)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 4
+    domainEventCaptor.allValues hasSize 4
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(2))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.thirdValue) {
-      additionalInformation isEqualTo PrisonerAttendanceInformation(3)
+    with(domainEventCaptor.matching(PrisonerAttendanceInformation(2))) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner attendance has been amended in the activities management service"
     }
 
-    with(eventCaptor.lastValue) {
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
+    with(domainEventCaptor.matching(PrisonerAttendanceInformation(3))) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner attendance has been amended in the activities management service"
@@ -676,13 +666,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
         prisonerNumber = "A11111A",
       ),
     )
-
-    // Eight events should be raised four for allocation amendments and four for an attendance amendment
-//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-//    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
-//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
-//    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 3L)
 
     // This attendance record is never modified
     attendanceRepository.findById(1L).orElseThrow().also {
@@ -751,29 +734,29 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
     }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(4)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 4
+    domainEventCaptor.allValues hasSize 4
 
-    with(eventCaptor.matching(PrisonerAttendanceInformation(3))) {
+    with(domainEventCaptor.matching(PrisonerAttendanceInformation(2))) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner attendance has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAttendanceInformation(2))) {
+    with(domainEventCaptor.matching(PrisonerAttendanceInformation(3))) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner attendance has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(2))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.matching(PrisonerAllocatedInformation(1))) {
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(2))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
@@ -805,19 +788,17 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
     assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(2)).send(domainEventCaptor.capture())
 
-    eventCaptor.allValues hasSize 2
+    domainEventCaptor.allValues hasSize 2
 
-    with(eventCaptor.firstValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(1))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"
     }
 
-    with(eventCaptor.secondValue) {
-      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+    with(domainEventCaptor.matching(PrisonerAllocatedInformation(2))) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       occurredAt isCloseTo TimeSource.now()
       description isEqualTo "A prisoner allocation has been amended in the activities management service"

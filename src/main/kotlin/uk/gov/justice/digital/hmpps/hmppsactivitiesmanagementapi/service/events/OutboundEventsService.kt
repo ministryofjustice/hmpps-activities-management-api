@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DomainEntityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DomainEntityUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.ACTIVITY_SCHEDULE_UPDATED
@@ -49,6 +50,7 @@ class OutboundEventsService(
       is ActivitySchedule -> send(ACTIVITY_SCHEDULE_UPDATED, (event.source as ActivitySchedule).activityScheduleId)
       is Allocation -> send(PRISONER_ALLOCATION_AMENDED, (event.source as Allocation).allocationId)
       is Attendance -> send(PRISONER_ATTENDANCE_AMENDED, (event.source as Attendance).attendanceId)
+      is ScheduledInstance -> send(ACTIVITY_SCHEDULED_INSTANCE_AMENDED, (event.source as ScheduledInstance).scheduledInstanceId)
       else -> log.info("Unhandled update event $event")
     }
   }
@@ -60,7 +62,9 @@ class OutboundEventsService(
       when (outboundEvent) {
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         ACTIVITY_SCHEDULE_UPDATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
+
         ACTIVITY_SCHEDULED_INSTANCE_AMENDED -> publisher.send(outboundEvent.event(ScheduledInstanceInformation(identifier)))
+
         PRISONER_ALLOCATED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ALLOCATION_AMENDED -> publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         PRISONER_ATTENDANCE_CREATED -> publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))

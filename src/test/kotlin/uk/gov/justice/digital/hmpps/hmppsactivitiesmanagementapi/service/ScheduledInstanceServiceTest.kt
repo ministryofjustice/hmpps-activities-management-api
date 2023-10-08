@@ -11,7 +11,6 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -28,10 +27,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -46,14 +44,13 @@ class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
+  private val attendanceRepository: AttendanceRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val service = ScheduledInstanceService(
     repository,
     attendanceReasonRepository,
     attendanceSummaryRepository,
-    outboundEventsService,
-    TransactionHandler(),
+    attendanceRepository,
     telemetryClient,
   )
 
@@ -137,8 +134,6 @@ class ScheduledInstanceServiceTest {
 
       assertThat(instance.cancelled).isFalse
       verify(repository).saveAndFlush(instance)
-      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
     }
 
     @Test
@@ -210,9 +205,6 @@ class ScheduledInstanceServiceTest {
       }
 
       verify(telemetryClient).trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, instance.attendances.first().toTelemetryPropertiesMap())
-      verify(outboundEventsService)
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
     }
 
     @Test
@@ -231,9 +223,6 @@ class ScheduledInstanceServiceTest {
           ScheduleInstanceCancelRequest("Staff unavailable", "USER1", "Resume tomorrow"),
         )
       }
-
-      verify(outboundEventsService, times(0))
-        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
     }
 
     @Test
