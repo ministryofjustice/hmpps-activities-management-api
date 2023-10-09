@@ -62,6 +62,7 @@ fun AppointmentAttendanceRequest.toTelemetryMetricsMap() =
   mutableMapOf(
     PRISONERS_ATTENDED_COUNT_METRIC_KEY to this.attendedPrisonNumbers.size.toDouble(),
     PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY to this.nonAttendedPrisonNumbers.size.toDouble(),
+    PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY to 0.0,
     EVENT_TIME_MS_METRIC_KEY to 0.0,
   )
 
