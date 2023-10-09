@@ -20,19 +20,12 @@ class AppointmentTransactionalEventListener(
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   fun handleAppointmentAttendanceMarkedEvent(event: AppointmentAttendanceMarkedEvent) {
-    listOf(
-      if (event.attendedPrisonNumbers.isEmpty()) "" else "attendance for '${event.attendedPrisonNumbers.joinToString("', '")}'",
-      if (event.nonAttendedPrisonNumbers.isEmpty()) "" else "non attendance for '${event.attendedPrisonNumbers.joinToString("', '")}'",
-    )
-
     log.info(
-      """
-      User with username '${event.attendanceRecordedBy}' 
-      marked attendance for prison numbers '${event.attendedPrisonNumbers.joinToString("', '")}' 
-      and non-attendance for prison numbers '${event.nonAttendedPrisonNumbers.joinToString("', '")}' 
-      on attendee records for appointment with id '${event.appointmentId}'. 
-      This changed the attendance for prison numbers '${event.attendanceChangedPrisonNumbers.joinToString("', '")}'.
-      """.trimIndent(),
+      "User with username '${event.attendanceRecordedBy}' " +
+        "marked attendance for prison numbers \"'${event.attendedPrisonNumbers.joinToString("', '")}'\" " +
+        "and non-attendance for prison numbers \"'${event.nonAttendedPrisonNumbers.joinToString("', '")}'\" " +
+        "on attendee records for appointment with id '${event.appointmentId}'. " +
+        "This changed the attendance for prison numbers \"'${event.attendanceChangedPrisonNumbers.joinToString("', '")}'\".",
     )
 
     val telemetryPropertiesMap = event.toTelemetryPropertiesMap()

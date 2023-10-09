@@ -236,6 +236,8 @@ data class Appointment(
       },
     )
 
+  internal fun publishedDomainEvents() = this.domainEvents()
+
   private fun failIfIndividualAppointmentAlreadyAllocated() {
     if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && attendees().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
