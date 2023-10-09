@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Where
+import org.springframework.data.domain.AbstractAggregateRoot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -84,7 +85,7 @@ data class Appointment(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
-) {
+) : AbstractAggregateRoot<Appointment>() {
   var cancelledTime: LocalDateTime? = null
 
   @OneToOne(fetch = FetchType.EAGER)
@@ -109,28 +110,37 @@ data class Appointment(
 
   fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
 
-  fun markPrisonersAttended(prisonerNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
+  fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {
       "Cannot mark attendance for a cancelled appointment"
     }
 
-    findAttendees(prisonerNumbers).forEach {
+    val event = AppointmentAttendanceMarkedEvent(
+      appointmentId = appointmentId,
+      prisonCode = prisonCode,
+      attendanceRecordedTime = attendanceRecordedTime,
+      attendanceRecordedBy = attendanceRecordedBy,
+    )
+
+    findAttendees(attendedPrisonNumbers).forEach {
+      event.attendedPrisonNumbers.add(it.prisonerNumber)
+      if (it.attended != null) event.attendanceChangedPrisonNumbers.add(it.prisonerNumber)
+
       it.attended = true
       it.attendanceRecordedTime = attendanceRecordedTime
       it.attendanceRecordedBy = attendanceRecordedBy
     }
-  }
 
-  fun markPrisonersNonAttended(prisonerNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
-    require(!isCancelled()) {
-      "Cannot mark non-attendance for a cancelled appointment"
-    }
+    findAttendees(nonAttendedPrisonNumbers).forEach {
+      event.nonAttendedPrisonNumbers.add(it.prisonerNumber)
+      if (it.attended != null) event.attendanceChangedPrisonNumbers.add(it.prisonerNumber)
 
-    findAttendees(prisonerNumbers).forEach {
       it.attended = false
       it.attendanceRecordedTime = attendanceRecordedTime
       it.attendanceRecordedBy = attendanceRecordedBy
     }
+
+    registerEvent(event)
   }
 
   fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
@@ -243,3 +253,19 @@ fun List<Appointment>.toDetails(
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
 ) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }
+
+data class AppointmentAttendanceMarkedEvent(
+  val appointmentId: Long,
+
+  val prisonCode: String,
+
+  val attendedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val nonAttendedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val attendanceChangedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val attendanceRecordedTime: LocalDateTime,
+
+  val attendanceRecordedBy: String,
+)

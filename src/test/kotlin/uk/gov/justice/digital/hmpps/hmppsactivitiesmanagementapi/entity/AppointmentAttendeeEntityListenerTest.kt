@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -30,12 +31,11 @@ class AppointmentAttendeeEntityListenerTest(@Autowired private val listener: App
   }
 
   @Test
-  fun `appointment instance updated event raised on update`() {
+  fun `appointment instance updated event not raised on update`() {
     val entity = appointmentSeriesEntity().appointments().first().attendees().first()
     listener.onUpdate(entity)
 
-    verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, entity.appointmentAttendeeId)
-    verifyNoMoreInteractions(outboundEventsService)
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
