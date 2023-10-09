@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -18,11 +19,13 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
@@ -34,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -198,6 +202,70 @@ class AppointmentController(
     request: AppointmentUpdateRequest,
     principal: Principal,
   ): AppointmentSeries = appointmentService.updateAppointment(appointmentId, request, principal)
+
+  @GetMapping(
+    value = ["{prisonCode}/attendance-summaries"],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary =
+    """
+    Get a list of appointments scheduled to take place on the specified date along with the summary of their attendance.
+    """,
+    description =
+    """
+    Returns appointments scheduled to take place on the specified date along with the summary of their attendance.
+    Will contain summary information about the appointments taking place on the date as well as counts of attendees,
+    counts of those marked attended and non attended and the count of attendees with no attendance marked.
+    This endpoint supports management level views of appointment attendance and statistics.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled appointments found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentAttendanceSummary::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentAttendanceSummaries(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-digit prison code (required)")
+    prisonCode: String,
+
+    @RequestParam(value = "date", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Date of appointments (required). Format YYYY-MM-DD")
+    date: LocalDate,
+  ) = appointmentAttendanceService.getAppointmentAttendanceSummaries(prisonCode, date)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentId}/attendance"])
