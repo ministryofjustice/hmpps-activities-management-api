@@ -236,6 +236,10 @@ data class Appointment(
       },
     )
 
+  /**
+   * Function exists for testing purposes. The AbstractAggregateRoot.domainEvents() function is protected so this
+   * function supports testing the correct domain events have been registered
+   */
   internal fun publishedDomainEvents() = this.domainEvents()
 
   private fun failIfIndividualAppointmentAlreadyAllocated() {
