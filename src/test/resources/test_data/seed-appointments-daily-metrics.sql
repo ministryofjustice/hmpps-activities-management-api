@@ -110,9 +110,9 @@ VALUES  (5, 'INDIVIDUAL', 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:00'
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted)
 VALUES  (7, 5, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '09:15', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (8, 6, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '09:15', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'CANCEL.USER', false),
-        (9, 7, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '09:15', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (10, 8, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '09:15', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true);
+        (8, 6, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:15', '09:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'CANCEL.USER', false),
+        (9, 7, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:30', '09:45', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (10, 8, 1, 'PVI', 'CHAP', 4, 123, false, now()::date - 1, '09:45', '10:00', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true);
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (13, 7, 'A1234BC', 123),

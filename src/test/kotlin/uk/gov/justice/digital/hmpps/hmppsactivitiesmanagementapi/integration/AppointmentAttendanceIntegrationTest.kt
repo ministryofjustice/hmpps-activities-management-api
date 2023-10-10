@@ -14,13 +14,17 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY
@@ -29,7 +33,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
@@ -47,12 +53,252 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var auditService: AuditService
 
-  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
-
   @MockBean
   private lateinit var telemetryClient: TelemetryClient
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
+
+  @Test
+  fun `get appointment attendance summary authorisation required`() {
+    webTestClient.get()
+      .uri("/appointments/RSI/2023-10-09")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-summaries.sql",
+  )
+  @Test
+  fun `get appointment attendance summary success`() {
+    val prisonCode = risleyPrisonCode
+    val date = LocalDate.now()
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
+        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      prisonCode,
+      listOf(
+        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
+        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
+        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+      ),
+    )
+
+    val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
+
+    // Repeating group appointment, appointment id 2
+    assertThat(summaries.single { it.id == 2L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        2,
+        prisonCode,
+        "Education",
+        AppointmentLocationSummary(123, prisonCode, "Education 1"),
+        date,
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        false,
+        6,
+        3,
+        2,
+        1,
+      ),
+    )
+
+    // Single appointments, ids 9-11
+    // No attendance marked
+    assertThat(summaries.single { it.id == 9L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        9,
+        prisonCode,
+        "Jehovah's Witness One to One (Chaplaincy)",
+        AppointmentLocationSummary(456, prisonCode, "Chapel"),
+        date,
+        LocalTime.of(13, 45),
+        LocalTime.of(14, 15),
+        false,
+        1,
+        0,
+        0,
+        1,
+      ),
+    )
+    // Attended
+    assertThat(summaries.single { it.id == 10L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        10,
+        prisonCode,
+        "Jehovah's Witness One to One (Chaplaincy)",
+        AppointmentLocationSummary(456, prisonCode, "Chapel"),
+        date,
+        LocalTime.of(14, 15),
+        LocalTime.of(14, 45),
+        false,
+        1,
+        1,
+        0,
+        0,
+      ),
+    )
+    // Non-attended
+    assertThat(summaries.single { it.id == 11L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        11,
+        prisonCode,
+        "Jehovah's Witness One to One (Chaplaincy)",
+        AppointmentLocationSummary(456, prisonCode, "Chapel"),
+        date,
+        LocalTime.of(14, 45),
+        LocalTime.of(15, 15),
+        false,
+        1,
+        0,
+        1,
+        0,
+      ),
+    )
+
+    // Appointment set, returned as single appointments with ids 12-14
+    assertThat(summaries.single { it.id == 12L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        12,
+        prisonCode,
+        "Medical - Doctor",
+        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+        date,
+        LocalTime.of(9, 0),
+        LocalTime.of(9, 15),
+        false,
+        1,
+        0,
+        0,
+        1,
+      ),
+    )
+    // Attended
+    assertThat(summaries.single { it.id == 13L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        13,
+        prisonCode,
+        "Medical - Doctor",
+        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+        date,
+        LocalTime.of(9, 15),
+        LocalTime.of(9, 30),
+        false,
+        1,
+        1,
+        0,
+        0,
+      ),
+    )
+    // Non-attended
+    assertThat(summaries.single { it.id == 14L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        14,
+        prisonCode,
+        "Medical - Doctor",
+        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+        date,
+        LocalTime.of(9, 30),
+        LocalTime.of(9, 45),
+        false,
+        1,
+        0,
+        1,
+        0,
+      ),
+    )
+
+    verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-summaries.sql",
+  )
+  @Test
+  fun `get appointment attendance summary for cancelled, deleted and removed statuses success`() {
+    val prisonCode = risleyPrisonCode
+    val date = LocalDate.now().minusDays(1)
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
+        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      prisonCode,
+      listOf(
+        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
+        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
+        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+      ),
+    )
+
+    val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
+
+    // Repeating group appointment, appointment id 1
+    assertThat(summaries.single { it.id == 1L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        1,
+        prisonCode,
+        "Education",
+        AppointmentLocationSummary(123, prisonCode, "Education 1"),
+        date,
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        true,
+        3,
+        0,
+        0,
+        3,
+      ),
+    )
+    // Repeating group appointment, appointment id 3 all attendees removed or deleted
+    assertThat(summaries.singleOrNull { it.id == 3L }).isNull()
+
+    // Single appointments, ids 4-8
+    // Cancelled appointment
+    assertThat(summaries.single { it.id == 4L }).isEqualTo(
+      AppointmentAttendanceSummary(
+        4,
+        prisonCode,
+        "Jehovah's Witness One to One (Chaplaincy)",
+        AppointmentLocationSummary(456, prisonCode, "Chapel"),
+        date,
+        LocalTime.of(13, 45),
+        LocalTime.of(14, 15),
+        true,
+        1,
+        0,
+        0,
+        1,
+      ),
+    )
+    // Deleted appointment
+    assertThat(summaries.singleOrNull { it.id == 5L }).isNull()
+    // No attendees
+    assertThat(summaries.singleOrNull { it.id == 6L }).isNull()
+    // No attendance marked and was removed
+    assertThat(summaries.singleOrNull { it.id == 7L }).isNull()
+    // No attendance marked and was deleted
+    assertThat(summaries.singleOrNull { it.id == 8L }).isNull()
+
+    verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
+  }
 
   @Test
   fun `mark appointment attendance authorisation required`() {
@@ -63,18 +309,8 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isUnauthorized
   }
 
-  @Test
-  fun `update appointment by unknown id returns 404 not found`() {
-    webTestClient.patch()
-      .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .bodyValue(AppointmentAttendanceRequest())
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
   @Sql(
-    "classpath:test_data/seed-appointment-attendance-id-1.sql",
+    "classpath:test_data/seed-appointment-attendance.sql",
   )
   @Test
   fun `mark attendance for past appointment`() {
@@ -131,7 +367,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-attendance-id-1.sql",
+    "classpath:test_data/seed-appointment-attendance.sql",
   )
   @Test
   fun `mark attendance for future appointment`() {
@@ -188,7 +424,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-attendance-id-1.sql",
+    "classpath:test_data/seed-appointment-attendance.sql",
   )
   @Test
   fun `change attendance for appointment`() {
@@ -255,6 +491,19 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
 
     verifyNoInteractions(auditService)
   }
+
+  private fun WebTestClient.getAppointmentAttendanceSummaries(
+    prisonCode: String,
+    date: LocalDate,
+  ) =
+    get()
+      .uri("/appointments/$prisonCode/attendance-summaries?date=$date")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(AppointmentAttendanceSummary::class.java)
+      .returnResult().responseBody
 
   private fun WebTestClient.getAppointmentById(id: Long) =
     get()

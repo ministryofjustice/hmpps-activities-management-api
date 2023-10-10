@@ -34,6 +34,7 @@ internal fun activityModel(activity: Activity) = transform(activity)
 
 const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"
+const val risleyPrisonCode = "RSI"
 
 val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
 val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
