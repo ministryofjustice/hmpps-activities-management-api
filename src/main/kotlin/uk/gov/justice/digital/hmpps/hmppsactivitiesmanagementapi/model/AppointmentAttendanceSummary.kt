@@ -2,9 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -55,8 +53,8 @@ data class AppointmentAttendanceSummary(
   val attendedCount: Long,
 
   @Schema(description = "The number of attendees recorded as having not attended this appointment", example = "1")
-  val nonAttendedCount: Long? = null,
+  val nonAttendedCount: Long,
 
   @Schema(description = "The number of attendees whose attendance has not yet been recorded", example = "3")
-  val notRecordedCount: Long? = null,
+  val notRecordedCount: Long,
 )
