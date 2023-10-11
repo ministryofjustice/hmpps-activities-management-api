@@ -199,18 +199,22 @@ class ActivityScheduleService(
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
     log.info("Attempting to deallocate prisoners $request")
 
-    repository.findOrThrowNotFound(scheduleId).run {
-      transactionHandler.newSpringTransaction {
+    transactionHandler.newSpringTransaction {
+      repository.findOrThrowNotFound(scheduleId).run {
         request.prisonerNumbers!!.distinct().map { prisonerNumber ->
-          deallocatePrisonerOn(prisonerNumber, request.endDate!!, request.reasonCode.toDeallocationReason(), deallocatedBy)
-        }.also {
-          repository.saveAndFlush(this)
-        }
-      }.onEach { deallocation ->
-        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, deallocation.allocationId)
-        log.info("Planned deallocation of prisoner ${deallocation.prisonerNumber} from activity schedule id ${this.activityScheduleId}")
-        logDeallocationEvent(deallocation.prisonerNumber)
+          deallocatePrisonerOn(
+            prisonerNumber,
+            request.endDate!!,
+            request.reasonCode.toDeallocationReason(),
+            deallocatedBy,
+          ).also {
+            log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}")
+          }
+        }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
       }
+    }.onEach { (allocationId, prisonerNumber) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+      logDeallocationEvent(prisonerNumber)
     }
   }
 
