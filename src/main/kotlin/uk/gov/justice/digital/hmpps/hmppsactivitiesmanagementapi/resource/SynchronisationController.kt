@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllocationReconciliationResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSync
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SynchronisationService
 
@@ -82,7 +83,7 @@ class SynchronisationController(private val synchronisationService: Synchronisat
         responseCode = "200",
         description = "Reconciliation information retrieved",
         content = [
-          Content(mediaType = "application/json", schema = Schema(implementation = AttendanceSync::class)),
+          Content(mediaType = "application/json", schema = Schema(implementation = AllocationReconciliationResponse::class)),
         ],
       ),
       ApiResponse(
@@ -112,13 +113,3 @@ class SynchronisationController(private val synchronisationService: Synchronisat
     @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
   ): AllocationReconciliationResponse = synchronisationService.findActiveAllocationsSummary(prisonId)
 }
-
-data class AllocationReconciliationResponse(
-  val prisonCode: String,
-  val bookings: List<BookingCount>,
-)
-
-data class BookingCount(
-  val bookingId: Long,
-  val count: Long,
-)
