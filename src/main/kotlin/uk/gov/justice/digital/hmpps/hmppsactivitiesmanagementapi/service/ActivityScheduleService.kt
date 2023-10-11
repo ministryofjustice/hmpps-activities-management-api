@@ -28,6 +28,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.createAllocationTelemetryMetricsMap
@@ -52,6 +54,8 @@ class ActivityScheduleService(
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
   private val telemetryClient: TelemetryClient,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
 
   companion object {
@@ -195,13 +199,22 @@ class ActivityScheduleService(
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
     log.info("Attempting to deallocate prisoners $request")
 
-    repository.findOrThrowNotFound(scheduleId).run {
-      request.prisonerNumbers!!.distinct().forEach {
-        deallocatePrisonerOn(it, request.endDate!!, request.reasonCode.toDeallocationReason(), deallocatedBy)
-        log.info("Planned deallocation of prisoner $it from activity schedule id ${this.activityScheduleId}")
-        logDeallocationEvent(it)
+    transactionHandler.newSpringTransaction {
+      repository.findOrThrowNotFound(scheduleId).run {
+        request.prisonerNumbers!!.distinct().map { prisonerNumber ->
+          deallocatePrisonerOn(
+            prisonerNumber,
+            request.endDate!!,
+            request.reasonCode.toDeallocationReason(),
+            deallocatedBy,
+          ).also {
+            log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}")
+          }
+        }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
       }
-      repository.saveAndFlush(this)
+    }.onEach { (allocationId, prisonerNumber) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+      logDeallocationEvent(prisonerNumber)
     }
   }
 

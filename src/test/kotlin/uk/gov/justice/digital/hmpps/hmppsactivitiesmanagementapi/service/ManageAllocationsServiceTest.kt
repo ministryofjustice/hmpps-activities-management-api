@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -43,6 +44,7 @@ class ManageAllocationsServiceTest {
   private val prisonRegimeRepository: PrisonRegimeRepository = mock()
   private val searchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val waitingListService: WaitingListService = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val service =
     ManageAllocationsService(
@@ -53,6 +55,8 @@ class ManageAllocationsServiceTest {
       prisonRegimeRepository,
       searchApiClient,
       waitingListService,
+      TransactionHandler(),
+      outboundEventsService,
     )
   private val yesterday = LocalDate.now().minusDays(1)
   private val today = yesterday.plusDays(1)
@@ -379,8 +383,7 @@ class ManageAllocationsServiceTest {
     verify(pendingAllocationTomorrow, never()).activate()
     verify(activeAllocation, never()).activate()
 
-    verify(allocationRepository).saveAndFlush(pendingAllocationYesterday)
-    verify(allocationRepository).saveAndFlush(pendingAllocationToday)
+    verify(allocationRepository).saveAllAndFlush(listOf(pendingAllocationYesterday, pendingAllocationToday))
     verifyNoMoreInteractions(allocationRepository)
 
     allocations.forEach { verify(it).startDate }

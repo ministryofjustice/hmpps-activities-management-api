@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOut
@@ -20,10 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 
 @Service
-@Transactional
 class ManageAllocationsService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val activityRepository: ActivityRepository,
@@ -32,6 +32,8 @@ class ManageAllocationsService(
   private val prisonRegimeRepository: PrisonRegimeRepository,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
   private val waitingListService: WaitingListService,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
 
   companion object {
@@ -66,10 +68,19 @@ class ManageAllocationsService(
       forEachRolledOutPrison()
         .forEach { prison ->
           activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
-            activity.schedules().flatMap { it.allocations().filter { allocation -> allocation.startDate <= today } }.activatePending()
+            transactionHandler.newSpringTransaction {
+              val activated = activity.schedules()
+                .allocationsDueToStartOnOrBefore(today)
+                .activatePending()
+
+              allocationRepository.saveAllAndFlush(activated)
+            }.sendAllocationsAmendedEvents()
           }
         }
     }
+
+  private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
+    flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
 
   private fun allocationsDueToEnd(): Map<ActivitySchedule, List<Allocation>> =
     LocalDate.now().let { today ->
@@ -77,7 +88,11 @@ class ManageAllocationsService(
         .flatMap { prison ->
           activityRepository.getAllForPrisonAndDate(prison.code, today).flatMap { activity ->
             if (activity.ends(today)) {
-              waitingListService.declinePendingOrApprovedApplications(activity.activityId, "Activity ended", ServiceName.SERVICE_NAME.value)
+              waitingListService.declinePendingOrApprovedApplications(
+                activity.activityId,
+                "Activity ended",
+                ServiceName.SERVICE_NAME.value,
+              )
               activity.schedules().flatMap { it.allocations().filterNot(Allocation::isEnded) }
             } else {
               activity.schedules().flatMap { it.allocations().ending(today) }
@@ -90,12 +105,7 @@ class ManageAllocationsService(
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }
 
   private fun List<Allocation>.activatePending() =
-    filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }
-      .onEach {
-        it.activate()
-
-        allocationRepository.saveAndFlush(it)
-      }.also { log.info("Activated ${it.size} pending allocation(s).") }
+    filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }.onEach(Allocation::activate)
 
   private fun List<Allocation>.ending(date: LocalDate) =
     filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.ends(date) }
@@ -116,7 +126,14 @@ class ManageAllocationsService(
               ?.filter { it.hasExpired(regime) }
               ?.map { it.prisonerNumber }
               ?.toSet()
-              ?.onEach { waitingListService.declinePendingOrApprovedApplications(prison.code, it, "Released", ServiceName.SERVICE_NAME.value) }
+              ?.onEach {
+                waitingListService.declinePendingOrApprovedApplications(
+                  prison.code,
+                  it,
+                  "Released",
+                  ServiceName.SERVICE_NAME.value,
+                )
+              }
               ?: emptySet()
           }
 
@@ -126,13 +143,6 @@ class ManageAllocationsService(
           emptyList()
         }
       }.groupBy { it.activitySchedule }
-
-  private fun <T, R> List<T>.ifNotEmpty(block: (List<T>) -> Set<R>) =
-    if (this.isNotEmpty()) {
-      block(this)
-    } else {
-      emptySet()
-    }
 
   private fun Prisoner.hasExpired(prisonRegime: PrisonRegime) =
     if (isOut()) {
@@ -150,20 +160,31 @@ class ManageAllocationsService(
     this.keys.forEach { schedule ->
       continueToRunOnFailure(
         block = {
-          getOrDefault(schedule, emptyList()).map { allocation ->
-            reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNow()
-          }
-            .let {
-              if (it.isNotEmpty()) {
-                activityScheduleRepository.saveAndFlush(schedule)
-                log.info("Deallocated ${it.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
-              }
+          transactionHandler.newSpringTransaction {
+            getOrDefault(schedule, emptyList()).onEach { allocation ->
+              reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNow()
+            }.ifNotEmpty { deallocations ->
+              activityScheduleRepository.saveAndFlush(schedule)
+              log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
+              deallocations
             }
+          }.sendAllocationsAmendedEvents()
         },
         failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}.",
       )
     }
   }
+
+  private fun <T, R> Collection<T>.ifNotEmpty(block: (Collection<T>) -> Collection<R>) =
+    if (this.isNotEmpty()) {
+      block(this)
+    } else {
+      emptySet()
+    }
+
+  private fun Collection<Allocation>.sendAllocationsAmendedEvents() =
+    forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId) }
+      .also { log.info("Sending allocation amended events.") }
 
   private fun continueToRunOnFailure(block: () -> Unit, failure: String = "") {
     runCatching {
