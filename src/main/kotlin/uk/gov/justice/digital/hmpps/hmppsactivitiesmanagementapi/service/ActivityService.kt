@@ -9,15 +9,18 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
@@ -54,6 +57,7 @@ class ActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
   private val telemetryClient: TelemetryClient,
@@ -559,10 +563,13 @@ class ActivityService(
     activity: Activity,
   ) {
     request.pay?.let { pay ->
-      activity.removePay()
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
         .associateBy { it.prisonPayBandId }
         .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
+
+      replacePayBandAllocationBeforePayRemoval(prisonCode, pay, activity, prisonPayBands)
+
+      activity.removePay()
       pay.forEach {
         activity.addPay(
           incentiveNomisCode = it.incentiveNomisCode!!,
@@ -573,6 +580,35 @@ class ActivityService(
           pieceRate = it.pieceRate,
           pieceRateItems = it.pieceRateItems,
         )
+      }
+    }
+  }
+
+  private fun replacePayBandAllocationBeforePayRemoval(
+    prisonCode: String,
+    newPay: List<ActivityPayCreateRequest>,
+    activity: Activity,
+    prisonPayBands: Map<Long, PrisonPayBand>,
+  ) {
+    val oldPay = activity.activityPay()
+    val deltaPayBand = newPay.find {
+      oldPay.none { p -> p.incentiveNomisCode == it.incentiveNomisCode && p.payBand.prisonPayBandId == it.payBandId }
+    }
+
+    deltaPayBand?.let {
+      activity.schedules().forEach { schedule ->
+        val activeAllocations = schedule.allocations(excludeEnded = true)
+        val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(activeAllocations.map { it.prisonerNumber }).block()!!
+
+        activeAllocations.forEach { allocation ->
+          val prisoner = prisoners.find { it.prisonerNumber == allocation.prisonerNumber }!!
+          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand.prisonPayBandId }) {
+            allocation.apply {
+              this.payBand = prisonPayBands[it.payBandId]
+                ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'")
+            }
+          }
+        }
       }
     }
   }
