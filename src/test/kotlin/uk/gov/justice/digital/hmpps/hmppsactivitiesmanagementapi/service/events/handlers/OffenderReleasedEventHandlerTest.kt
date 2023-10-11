@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
@@ -14,9 +17,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.SentenceCalcDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -35,16 +40,23 @@ class OffenderReleasedEventHandlerTest {
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
+  private val allocationRepository: AllocationRepository = mock()
 
   private val handler = OffenderReleasedEventHandler(
     rolloutPrisonRepository,
     appointmentAttendeeService,
     prisonApiClient,
     prisonerAllocationHandler,
+    allocationRepository,
   )
 
   private val prisoner: InmateDetail = mock {
     on { status } doReturn "INACTIVE OUT"
+  }
+
+  @BeforeEach
+  fun beforeEach() {
+    whenever(allocationRepository.existAtPrisonForPrisoner(any(), any(), eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()))) doReturn true
   }
 
   @Test
@@ -142,5 +154,15 @@ class OffenderReleasedEventHandlerTest {
 
     assertThat(outcome.isSuccess()).isTrue()
     verify(appointmentAttendeeService).cancelFutureOffenderAppointments(moorlandPrisonCode, "12345")
+  }
+
+  @Test
+  fun `no interactions when released prisoner has no allocations of interest`() {
+    whenever(allocationRepository.existAtPrisonForPrisoner(any(), any(), eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()))) doReturn false
+
+    handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
+
+    verifyNoInteractions(prisonApiClient)
+    verifyNoInteractions(prisonerAllocationHandler)
   }
 }

@@ -47,11 +47,19 @@ class ActivitiesChangedEventHandler(
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {
         Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event)
-        Action.END -> getDeallocationReasonFor(event)?.let { reason ->
-          allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
+        Action.END -> {
+          if (prisonerHasAllocationsOfInterestFor(event)) {
+            getDeallocationReasonFor(event)?.let { reason ->
+              allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
 
-          Outcome.success()
-        } ?: Outcome.failed { "Unable to determine release reason for prisoner ${event.prisonerNumber()}" }
+              Outcome.success()
+            } ?: Outcome.failed { "Unable to determine release reason for prisoner ${event.prisonerNumber()}" }
+          } else {
+            log.info("No allocations of interest for prisoner ${event.prisonerNumber()}")
+
+            Outcome.success()
+          }
+        }
 
         else -> Outcome.failed().also { log.warn("Unable to process $event, unknown action") }
       }
@@ -59,6 +67,13 @@ class ActivitiesChangedEventHandler(
 
     return Outcome.success()
   }
+
+  private fun prisonerHasAllocationsOfInterestFor(event: ActivitiesChangedEvent) =
+    allocationRepository.existAtPrisonForPrisoner(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+    )
 
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
     runCatching {
