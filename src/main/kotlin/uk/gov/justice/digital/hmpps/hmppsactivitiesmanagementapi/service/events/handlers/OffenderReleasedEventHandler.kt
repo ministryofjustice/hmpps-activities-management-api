@@ -9,6 +9,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedOnDeath
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -20,6 +22,7 @@ class OffenderReleasedEventHandler(
   private val appointmentAttendeeService: AppointmentAttendeeService,
   private val prisonApiClient: PrisonApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
+  private val allocationRepository: AllocationRepository,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
@@ -40,8 +43,12 @@ class OffenderReleasedEventHandler(
           log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
           cancelFutureOffenderAppointments(event)
 
-          getDetailsForReleasedPrisoner(event)?.getDeallocationReasonForReleasedPrisoner(event)?.let { reason ->
-            allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
+          if (prisonerHasAllocationsOfInterestFor(event)) {
+            getDetailsForReleasedPrisoner(event)?.getDeallocationReasonForReleasedPrisoner(event)?.let { reason ->
+              allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
+            }
+          } else {
+            log.info("No allocations of interest for prisoner ${event.prisonerNumber()}")
           }
 
           Outcome.success()
@@ -58,6 +65,13 @@ class OffenderReleasedEventHandler(
 
     return Outcome.success()
   }
+
+  private fun prisonerHasAllocationsOfInterestFor(event: OffenderReleasedEvent) =
+    allocationRepository.existAtPrisonForPrisoner(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+    )
 
   private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
     appointmentAttendeeService.cancelFutureOffenderAppointments(

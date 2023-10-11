@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
@@ -71,6 +72,11 @@ class ActivitiesChangedEventHandlerTest {
     TransactionHandler(),
     outboundEventsService,
   )
+
+  @BeforeEach
+  fun beforeEach() {
+    whenever(allocationRepository.existAtPrisonForPrisoner(any(), any(), eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()))) doReturn true
+  }
 
   @Test
   fun `event is ignored for an inactive prison`() {
@@ -302,5 +308,15 @@ class ActivitiesChangedEventHandlerTest {
     }.isInstanceOf(IllegalStateException::class.java)
 
     verify(prisonerAllocationHandler, never()).deallocate(any(), any(), any())
+  }
+
+  @Test
+  fun `no interactions when released prisoner has no allocations of interest`() {
+    whenever(allocationRepository.existAtPrisonForPrisoner(any(), any(), eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()))) doReturn false
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool true }
+
+    verifyNoInteractions(prisonerSearchApiClient)
+    verifyNoInteractions(prisonerAllocationHandler)
   }
 }
