@@ -70,4 +70,55 @@ class SynchronisationController(private val synchronisationService: Synchronisat
   ) =
     synchronisationService.findAttendanceSync(attendanceId)
       ?: throw EntityNotFoundException("Attendance sync not found: $attendanceId")
+
+  @PreAuthorize("hasRole('NOMIS_ACTIVITIES')")
+  @GetMapping("/reconciliation/allocations/{prisonId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves allocation details for the sync reconciliation",
+    description = "Retrieves booking numbers and counts for allocations currently active in each prison",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Reconciliation information retrieved",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = AttendanceSync::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "There was an error with the request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getAllocationReconciliation(
+    @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
+  ): AllocationReconciliationResponse = synchronisationService.findActiveAllocationsSummary(prisonId)
 }
+
+data class AllocationReconciliationResponse(
+  val prisonCode: String,
+  val bookings: List<BookingCount>,
+)
+
+data class BookingCount(
+  val bookingId: Long,
+  val count: Long,
+)
