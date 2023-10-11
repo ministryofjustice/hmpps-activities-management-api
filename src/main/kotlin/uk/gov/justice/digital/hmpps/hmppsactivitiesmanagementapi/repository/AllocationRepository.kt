@@ -34,7 +34,11 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       "  AND a.prisonerStatus IN (:prisonerStatus) " +
       "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
-  fun findByPrisonCodePrisonerNumberPrisonerStatus(prisonCode: String, prisonerNumber: String, vararg prisonerStatus: PrisonerStatus): List<Allocation>
+  fun findByPrisonCodePrisonerNumberPrisonerStatus(
+    prisonCode: String,
+    prisonerNumber: String,
+    vararg prisonerStatus: PrisonerStatus,
+  ): List<Allocation>
 
   @Query(
     value =
@@ -64,4 +68,17 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       """,
   )
   fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonCode: String, prisonerStatus: PrisonerStatus): List<BookingCount>
+
+  @Query(
+    "select case when count(a) > 0 then true else false end " +
+      "from Allocation a " +
+      "where a.activitySchedule.activity.prisonCode = :prisonCode " +
+      "and a.prisonerNumber = :prisonerNumber " +
+      "and a.prisonerStatus IN (:prisonerStatus)",
+  )
+  fun existAtPrisonForPrisoner(
+    prisonCode: String,
+    prisonerNumber: String,
+    prisonerStatus: Collection<PrisonerStatus>,
+  ): Boolean
 }
