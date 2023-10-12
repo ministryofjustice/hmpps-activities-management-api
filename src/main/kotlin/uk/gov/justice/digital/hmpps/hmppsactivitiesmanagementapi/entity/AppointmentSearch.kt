@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
@@ -18,6 +19,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Entity
+@Immutable
 @Table(name = "v_appointment_search")
 data class AppointmentSearch(
   val appointmentSeriesId: Long,

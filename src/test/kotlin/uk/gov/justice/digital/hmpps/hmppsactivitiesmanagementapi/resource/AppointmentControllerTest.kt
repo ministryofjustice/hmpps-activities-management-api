@@ -17,10 +17,12 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -175,6 +177,67 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
+  fun `200 response when appointment attendance summaries found`() {
+    val date = LocalDate.now()
+    val mockPrincipal: Principal = mock()
+
+    val summaries = listOf(appointmentAttendanceSummaryModel())
+
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenReturn(summaries)
+
+    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(summaries))
+  }
+
+  @Test
+  fun `400 response when no date supplied for get appointment attendance summaries`() {
+    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `400 response when invalid date supplied for get appointment attendance summaries`() {
+    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries?date=invalid")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `500 response when service throws exception for get appointment attendance summaries`() {
+    val date = LocalDate.now()
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+      .andExpect { status { isInternalServerError() } }
+      .andReturn().response
+
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+  }
+
+  @Test
   fun `404 not found response when marking appointment attendance using invalid id`() {
     val request = AppointmentAttendanceRequest()
     val mockPrincipal: Principal = mock()
@@ -259,6 +322,13 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         request,
       )
     }
+
+  private fun MockMvc.getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate?, principal: Principal) =
+    get("/appointments/$prisonCode/attendance-summaries?date=$date") {
+      this.principal = principal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+    }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
   private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) =
     put("/appointments/{appointmentId}/attendance", id) {

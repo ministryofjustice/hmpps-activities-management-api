@@ -1,12 +1,19 @@
+-- =====================================================================================
+-- Repeating group appointment with three appointments each with three attendees.
+-- Appointment with id 1 starting yesterday has has no attendance marked.
+-- Appointment with id 2 starting today has two attendees with attendance and non-attendance marked.
+-- Appointment with id 3 starting tomorrow has has no attendance marked.
+-- =====================================================================================
+
 INSERT INTO appointment_series_schedule (appointment_series_schedule_id, frequency, number_of_appointments)
 VALUES (1, 'DAILY', 3);
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (1, 'GROUP', 'RSI', 'EDUC', 4, 123, false, now()::date - 2, '09:00', '10:30', 1, now()::timestamp, 'TEST.USER');
+VALUES (1, 'GROUP', 'RSI', 'EDUC', 4, 123, false, now()::date - 1, '09:00', '10:30', 1, (now()::date - 2)::timestamp, 'TEST.USER');
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (1, 1, 1, 'RSI', 'EDUC', 4, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER'),
-        (2, 1, 2, 'RSI', 'EDUC', 4, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER'),
+        (2, 1, 2, 'RSI', 'EDUC', 4, 123, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER'),
         (3, 1, 3, 'RSI', 'EDUC', 4, 123, false, now()::date + 1, '09:00', '10:30', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
