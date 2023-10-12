@@ -1,0 +1,12 @@
+{
+  "pay": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 2,
+      "rate": 150,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    }
+  ]
+}

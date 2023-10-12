@@ -854,6 +854,35 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update pay band where someone is allocated to it`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
+    val activityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
+    val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(Mono.just(listOf(prisoner)))
+
+    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(1)
+      assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
+    }
+  }
+
+  @Test
   fun `updateActivity - update start date fails if new date not in future`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(1))
 
