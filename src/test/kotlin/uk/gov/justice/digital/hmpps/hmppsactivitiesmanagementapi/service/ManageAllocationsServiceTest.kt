@@ -392,18 +392,16 @@ class ManageAllocationsServiceTest {
       prisonerNumber = "1",
       startDate = TimeSource.yesterday(),
       prisonerStatus = PrisonerStatus.PENDING,
-    ).also {
-      whenever(searchApiClient.findByPrisonerNumber(it.prisonerNumber)) doReturn prisoner(it, Prisoner.InOutStatus.IN)
-    }
+    )
 
     val pendingAllocationToday: Allocation = allocation().copy(
       allocationId = 2,
       prisonerNumber = "2",
       startDate = TimeSource.today(),
       prisonerStatus = PrisonerStatus.PENDING,
-    ).also {
-      whenever(searchApiClient.findByPrisonerNumber(it.prisonerNumber)) doReturn prisoner(it, Prisoner.InOutStatus.IN)
-    }
+    )
+
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn Mono.just(listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.IN), prisoner(pendingAllocationToday, Prisoner.InOutStatus.IN)))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -436,18 +434,16 @@ class ManageAllocationsServiceTest {
       prisonerNumber = "1",
       startDate = TimeSource.yesterday(),
       prisonerStatus = PrisonerStatus.PENDING,
-    ).also {
-      whenever(searchApiClient.findByPrisonerNumber(it.prisonerNumber)) doReturn prisoner(it, Prisoner.InOutStatus.OUT)
-    }
+    )
 
     val pendingAllocationToday: Allocation = allocation().copy(
       allocationId = 2,
       prisonerNumber = "2",
       startDate = TimeSource.today(),
       prisonerStatus = PrisonerStatus.PENDING,
-    ).also {
-      whenever(searchApiClient.findByPrisonerNumber(it.prisonerNumber)) doReturn prisoner(it, Prisoner.InOutStatus.OUT)
-    }
+    )
+
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn Mono.just(listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.OUT), prisoner(pendingAllocationToday, Prisoner.InOutStatus.OUT)))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(

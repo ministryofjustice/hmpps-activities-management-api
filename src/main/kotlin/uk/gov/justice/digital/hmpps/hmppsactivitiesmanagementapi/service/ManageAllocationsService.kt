@@ -72,13 +72,15 @@ class ManageAllocationsService(
       forEachRolledOutPrison()
         .forEach { prison ->
           transactionHandler.newSpringTransaction {
-            allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-              prison.code,
-              PrisonerStatus.PENDING,
-              today,
-            )
-              .onEach { allocation ->
-                prisonerSearch.findByPrisonerNumber(allocation.prisonerNumber)?.let { prisoner ->
+            pendingAllocationsStartingOnOrBefore(today, prison.code).let { allocations ->
+              val prisoners =
+                prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct()).block()
+                  ?: emptyList()
+
+              allocations.map { allocation -> allocation to prisoners.firstOrNull { it.prisonerNumber == allocation.prisonerNumber } }
+            }
+              .onEach { (allocation, prisoner) ->
+                prisoner?.let {
                   if (prisoner.isOutOfPrison()) {
                     allocation.autoSuspend(LocalDateTime.now(), "Temporarily released or transferred")
                   } else {
@@ -88,7 +90,9 @@ class ManageAllocationsService(
                   allocationRepository.saveAndFlush(allocation)
                 }
                   ?: log.error("Unable to process pending allocation ${allocation.allocationId}, prisoner ${allocation.prisonerNumber} not found.")
-              }.also {
+              }
+              .map { (allocation, _) -> allocation }
+              .also {
                 log.info("Activated ${it.filter { a -> a.status(PrisonerStatus.ACTIVE) }.size} pending allocation(s) at prison ${prison.code}.")
                 log.info("Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.code}.")
               }.map(Allocation::allocationId)
@@ -96,6 +100,13 @@ class ManageAllocationsService(
         }
     }
   }
+
+  private fun pendingAllocationsStartingOnOrBefore(date: LocalDate, prisonCode: String) =
+    allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
+      prisonCode,
+      PrisonerStatus.PENDING,
+      date,
+    )
 
   private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
     flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }

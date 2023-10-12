@@ -147,12 +147,12 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
   fun `pending allocations on or before today are activated when prisoners are in prison`() {
-    listOf("PAST", "TODAY", "FUTURE").forEach { prisonerNumber ->
+    listOf("PAST", "TODAY", "FUTURE").map { prisonerNumber ->
       PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = prisonerNumber,
         inOutStatus = Prisoner.InOutStatus.IN,
-      ).also { prisonerSearchApiMockServer.stubSearchByPrisonerNumber(it) }
-    }
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
@@ -177,12 +177,12 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
   fun `pending allocations on or before today are suspended when prisoners are out of prison`() {
-    listOf("PAST", "TODAY", "FUTURE").forEach { prisonerNumber ->
+    listOf("PAST", "TODAY").map { prisonerNumber ->
       PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = prisonerNumber,
         inOutStatus = Prisoner.InOutStatus.OUT,
-      ).also { prisonerSearchApiMockServer.stubSearchByPrisonerNumber(it) }
-    }
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
