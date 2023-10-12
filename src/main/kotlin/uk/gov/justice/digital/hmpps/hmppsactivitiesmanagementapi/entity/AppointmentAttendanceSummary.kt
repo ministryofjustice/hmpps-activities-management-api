@@ -19,11 +19,11 @@ data class AppointmentAttendanceSummary(
 
   val prisonCode: String,
 
-  var categoryCode: String,
+  val categoryCode: String,
 
-  var customName: String?,
+  val customName: String?,
 
-  var internalLocationId: Long?,
+  val internalLocationId: Long?,
 
   val inCell: Boolean,
 
@@ -31,11 +31,11 @@ data class AppointmentAttendanceSummary(
 
   val offWing: Boolean,
 
-  var startDate: LocalDate,
+  val startDate: LocalDate,
 
-  var startTime: LocalTime,
+  val startTime: LocalTime,
 
-  var endTime: LocalTime?,
+  val endTime: LocalTime?,
 
   val isCancelled: Boolean,
 

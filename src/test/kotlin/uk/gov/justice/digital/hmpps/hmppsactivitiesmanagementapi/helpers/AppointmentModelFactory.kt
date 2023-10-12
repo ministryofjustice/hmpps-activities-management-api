@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -352,4 +353,19 @@ fun appointmentSetDetails(
   UserSummary(1, "CREATE.USER", "CREATE", "USER"),
   null,
   null,
+)
+
+fun appointmentAttendanceSummaryModel() = AppointmentAttendanceSummary(
+  1,
+  risleyPrisonCode,
+  "Friday Prayers (Chaplaincy)",
+  AppointmentLocationSummary(123, risleyPrisonCode, "Chapel"),
+  LocalDate.now().plusDays(1),
+  LocalTime.of(12, 0),
+  LocalTime.of(13, 0),
+  false,
+  6,
+  3,
+  2,
+  1,
 )
