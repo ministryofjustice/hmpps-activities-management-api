@@ -53,15 +53,12 @@ class AppointmentAttendeeEntityListener {
   @PostUpdate
   fun onUpdate(entity: AppointmentAttendee) {
     runCatching {
-      outboundEventsService.send(
-        when {
-          entity.isRemoved() -> OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
-          entity.isDeleted -> OutboundEvent.APPOINTMENT_INSTANCE_DELETED
-
-          else -> { OutboundEvent.APPOINTMENT_INSTANCE_UPDATED }
-        },
-        entity.appointmentAttendeeId,
-      )
+      if (entity.isRemoved()) {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, entity.appointmentAttendeeId)
+      }
+      if (entity.isDeleted) {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentAttendeeId)
+      }
     }.onFailure {
       log.error(
         "Failed to send appointment instance updated event for appointment instance id ${entity.appointmentAttendeeId}",
