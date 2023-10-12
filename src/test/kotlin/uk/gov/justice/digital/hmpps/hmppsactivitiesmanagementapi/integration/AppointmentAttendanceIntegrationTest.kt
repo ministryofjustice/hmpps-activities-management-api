@@ -93,8 +93,8 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
 
     val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
 
-    // Repeating group appointment, appointment id 2
-    assertThat(summaries.single { it.id == 2L }).isEqualTo(
+    assertThat(summaries).containsExactly(
+      // Repeating group appointment, appointment id 2
       AppointmentAttendanceSummary(
         2,
         prisonCode,
@@ -109,11 +109,8 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         2,
         1,
       ),
-    )
-
-    // Single appointments, ids 9-11
-    // No attendance marked
-    assertThat(summaries.single { it.id == 9L }).isEqualTo(
+      // Single appointments, ids 9-11
+      // No attendance marked
       AppointmentAttendanceSummary(
         9,
         prisonCode,
@@ -128,9 +125,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
       ),
-    )
-    // Attended
-    assertThat(summaries.single { it.id == 10L }).isEqualTo(
+      // Attended
       AppointmentAttendanceSummary(
         10,
         prisonCode,
@@ -145,9 +140,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
       ),
-    )
-    // Non-attended
-    assertThat(summaries.single { it.id == 11L }).isEqualTo(
+      // Non-attended
       AppointmentAttendanceSummary(
         11,
         prisonCode,
@@ -162,10 +155,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
       ),
-    )
-
-    // Appointment set, returned as single appointments with ids 12-14
-    assertThat(summaries.single { it.id == 12L }).isEqualTo(
+      // Appointment set, returned as single appointments with ids 12-14
       AppointmentAttendanceSummary(
         12,
         prisonCode,
@@ -180,9 +170,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
       ),
-    )
-    // Attended
-    assertThat(summaries.single { it.id == 13L }).isEqualTo(
+      // Attended
       AppointmentAttendanceSummary(
         13,
         prisonCode,
@@ -197,9 +185,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
       ),
-    )
-    // Non-attended
-    assertThat(summaries.single { it.id == 14L }).isEqualTo(
+      // Non-attended
       AppointmentAttendanceSummary(
         14,
         prisonCode,
@@ -248,8 +234,8 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
 
     val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
 
-    // Repeating group appointment, appointment id 1
-    assertThat(summaries.single { it.id == 1L }).isEqualTo(
+    assertThat(summaries).containsExactly(
+      // Repeating group appointment, appointment id 1
       AppointmentAttendanceSummary(
         1,
         prisonCode,
@@ -264,13 +250,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         3,
       ),
-    )
-    // Repeating group appointment, appointment id 3 all attendees removed or deleted
-    assertThat(summaries.singleOrNull { it.id == 3L }).isNull()
-
-    // Single appointments, ids 4-8
-    // Cancelled appointment
-    assertThat(summaries.single { it.id == 4L }).isEqualTo(
+      // Single appointments, id 4, cancelled appointment
       AppointmentAttendanceSummary(
         4,
         prisonCode,
@@ -286,6 +266,10 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
       ),
     )
+
+    // Repeating group appointment, appointment id 3 all attendees removed or deleted
+    assertThat(summaries.singleOrNull { it.id == 3L }).isNull()
+    // Single appointments, ids 5-8
     // Deleted appointment
     assertThat(summaries.singleOrNull { it.id == 5L }).isNull()
     // No attendees

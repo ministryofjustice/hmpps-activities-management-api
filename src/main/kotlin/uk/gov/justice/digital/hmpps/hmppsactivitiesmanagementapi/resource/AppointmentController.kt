@@ -255,6 +255,7 @@ class AppointmentController(
       ),
     ],
   )
+  @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentAttendanceSummaries(
     @PathVariable("prisonCode")
@@ -330,7 +331,7 @@ class AppointmentController(
     @Valid
     @RequestBody
     @Parameter(
-      description = "The update request with the new appointment details and how to apply the update",
+      description = "The lists of prison numbers to mark as attended and non-attended",
       required = true,
     )
     request: AppointmentAttendanceRequest,
