@@ -7,6 +7,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -61,6 +68,61 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
+    "classpath:test_data/seed-appointment-attendance.sql",
+  )
+  @Test
+  fun `get group appointment with marked attendance details`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      risleyPrisonCode,
+      listOf(
+        appointmentLocation(123, risleyPrisonCode, userDescription = "Education 1"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetUserDetailsList(
+      listOf("TEST.USER", "PREV.ATTENDANCE.RECORDED.BY"),
+      listOf(
+        userDetail(1, "TEST.USER", "TEST", "USER"),
+        userDetail(2, "PREV.ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"),
+      ),
+    )
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A1234BC", "B2345CD", "C3456DE"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", firstName = "A", lastName = "A", bookingId = 1, prisonId = risleyPrisonCode),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", firstName = "B", lastName = "B", bookingId = 2, prisonId = risleyPrisonCode),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", firstName = "C", lastName = "C", bookingId = 3, prisonId = risleyPrisonCode),
+      ),
+    )
+
+    val appointmentDetails = webTestClient.getAppointmentDetailsById(2)!!
+    val attendeesMap = appointmentDetails.attendees.associateBy { it.id }
+
+    val userSummary = UserSummary(2, "PREV.ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER")
+    with(attendeesMap[4]!!) {
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+    }
+    with(attendeesMap[5]!!) {
+      attended!! isBool true
+      attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
+      attendanceRecordedBy isEqualTo userSummary
+    }
+    with(attendeesMap[6]!!) {
+      attended!! isBool false
+      attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
+      attendanceRecordedBy isEqualTo userSummary
+    }
+  }
+
+  @Sql(
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
@@ -88,6 +150,8 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
           AppointmentAttendeeSummary(
             3,
             PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            null,
+            null,
             null,
           ),
         ),
@@ -142,6 +206,8 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
           AppointmentAttendeeSummary(
             6,
             PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            null,
+            null,
             null,
           ),
         ),

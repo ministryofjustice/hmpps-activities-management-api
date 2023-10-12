@@ -157,6 +157,8 @@ data class Appointment(
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
 
+  fun attendeeUsernames() = attendees().flatMap { it.usernames() }.distinct()
+
   fun toModel() = AppointmentModel(
     id = appointmentId,
     sequenceNumber = sequenceNumber,
@@ -204,7 +206,7 @@ data class Appointment(
       sequenceNumber,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      attendees().map { it.toSummary(prisonerMap) },
+      attendees().map { it.toSummary(prisonerMap, userMap) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       customName,
       if (inCell) {

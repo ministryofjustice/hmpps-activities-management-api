@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Where
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
@@ -78,13 +79,20 @@ data class AppointmentAttendee(
     removedBy = removedBy,
   )
 
-  fun toSummary(prisonerMap: Map<String, Prisoner>) = AppointmentAttendeeSummary(
+  fun toSummary(prisonerMap: Map<String, Prisoner>, userMap: Map<String, UserDetail>) = AppointmentAttendeeSummary(
     id = appointmentAttendeeId,
     prisoner = prisonerMap[prisonerNumber].toSummary(prisonerNumber, bookingId),
     attended = attended,
+    attendanceRecordedTime = attendanceRecordedTime,
+    attendanceRecordedBy = if (attendanceRecordedBy == null) {
+      null
+    } else {
+      userMap[attendanceRecordedBy].toSummary(attendanceRecordedBy!!)
+    },
   )
 }
 
 fun List<AppointmentAttendee>.toModel() = map { it.toModel() }
 
-fun List<AppointmentAttendee>.toSummary(prisonerMap: Map<String, Prisoner>) = map { it.toSummary(prisonerMap) }
+fun List<AppointmentAttendee>.toSummary(prisonerMap: Map<String, Prisoner>, userMap: Map<String, UserDetail>) =
+  map { it.toSummary(prisonerMap, userMap) }
