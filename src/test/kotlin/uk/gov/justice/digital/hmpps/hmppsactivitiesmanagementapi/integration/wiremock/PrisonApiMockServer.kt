@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
@@ -358,6 +359,19 @@ class PrisonApiMockServer : WireMockServer(8999) {
                 (usernames.indices).map { userDetail(it + 1L, usernames[it], "TEST${it + 1}", "USER${it + 1}") },
               ),
             )
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetUserDetailsList(usernames: List<String>, users: List<UserDetail>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/users/list"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(usernames)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(users))
             .withStatus(200),
         ),
     )

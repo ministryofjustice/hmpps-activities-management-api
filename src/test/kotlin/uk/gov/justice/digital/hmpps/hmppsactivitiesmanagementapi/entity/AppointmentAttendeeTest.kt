@@ -7,6 +7,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeRemovedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -45,5 +50,58 @@ class AppointmentAttendeeTest {
     assertThat(entity.removedBy).isEqualTo("TEST.USER")
     assertThat(entity.isRemoved()).isTrue()
     assertThat(entity.isDeleted).isFalse()
+  }
+
+  @Test
+  fun `entity to summary mapping`() {
+    val entity = appointmentSeriesEntity().appointments().first().attendees().first()
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    assertThat(entity.toSummary(prisonerMap, emptyMap())).isEqualTo(
+      AppointmentAttendeeSummary(
+        entity.appointmentAttendeeId,
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        null,
+        null,
+        null,
+      ),
+    )
+  }
+
+  @Test
+  fun `entity to summary attendance mapping`() {
+    val entity = appointmentSeriesEntity().appointments().first().attendees().first().apply {
+      attended = true
+      attendanceRecordedTime = LocalDateTime.now()
+      attendanceRecordedBy = "ATTENDANCE.RECORDED.BY"
+    }
+    val prisonerMap = mapOf(
+      "A1234BC" to PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A1234BC",
+        bookingId = 456,
+        firstName = "TEST",
+        lastName = "PRISONER",
+        prisonId = "TPR",
+        cellLocation = "1-2-3",
+      ),
+    )
+    val userMap = mapOf(entity.attendanceRecordedBy!! to userDetail(1, "ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"))
+    assertThat(entity.toSummary(prisonerMap, userMap)).isEqualTo(
+      AppointmentAttendeeSummary(
+        entity.appointmentAttendeeId,
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        true,
+        entity.attendanceRecordedTime,
+        UserSummary(1, "ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"),
+      ),
+    )
   }
 }

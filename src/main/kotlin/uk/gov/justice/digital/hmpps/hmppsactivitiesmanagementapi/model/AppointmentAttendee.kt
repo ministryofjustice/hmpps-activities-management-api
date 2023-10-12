@@ -66,8 +66,8 @@ data class AppointmentAttendee(
   @Schema(
     description =
     """
-    The date and time the attendance record the specific appointment in an appointment series or set was marked.
-    A null value means that the prisoner's attendance has not been recorded yet. 
+    The latest date and time attendance was recorded. Note that attendance records can be updated and this is the most
+    recent date and time it was recorded. A null value means that the prisoner's attendance has not been recorded yet. 
     """,
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -76,9 +76,9 @@ data class AppointmentAttendee(
   @Schema(
     description =
     """
-    The username of the user authenticated via HMPPS auth that marked the attendance record the specific appointment in
-    an appointment series or set.
-    A null value means that the prisoner's attendance has not been recorded yet. 
+    The username of the user authenticated via HMPPS auth that last recorded attendance. Note that attendance records
+    can be updated and this is the most recent user that marked attendance. A null value means that the prisoner's
+    attendance has not been recorded yet. 
     """,
     example = "AAA01U",
   )

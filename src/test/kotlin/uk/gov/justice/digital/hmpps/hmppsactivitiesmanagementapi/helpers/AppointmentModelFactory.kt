@@ -261,7 +261,7 @@ fun appointmentDetails(
   sequenceNumber,
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
-  prisoners.map { AppointmentAttendeeSummary(appointmentAttendeeId, it, null) },
+  prisoners.map { AppointmentAttendeeSummary(appointmentAttendeeId, it, null, null, null) },
   category,
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
