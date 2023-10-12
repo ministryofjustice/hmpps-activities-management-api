@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeSearch
@@ -295,6 +296,26 @@ internal fun appointmentAttendeeDeletedReason() =
     PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
     "Prisoner status: Released",
     true,
+  )
+
+internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false) =
+  AppointmentAttendanceSummary(
+    1,
+    risleyPrisonCode,
+    "CHAP",
+    "Friday Prayers",
+    123,
+    inCell,
+    false,
+    true,
+    LocalDate.now().plusDays(1),
+    LocalTime.of(12, 0),
+    LocalTime.of(13, 0),
+    false,
+    6,
+    3,
+    2,
+    1,
   )
 
 private fun appointmentAttendeeSearchEntity(appointmentSearch: AppointmentSearch, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =

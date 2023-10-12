@@ -15,21 +15,30 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 class AppointmentAttendanceServiceTest {
+  private val appointmentAttendanceSummaryRepository: AppointmentAttendanceSummaryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
+  private val locationService: LocationService = mock()
 
-  private val service = AppointmentAttendanceService(appointmentRepository)
+  private val service = AppointmentAttendanceService(appointmentAttendanceSummaryRepository, appointmentRepository, referenceCodeService, locationService)
 
   private val principal: Principal = mock()
   private val username = "ATTENDANCE.RECORDED.BY"
@@ -43,6 +52,36 @@ class AppointmentAttendanceServiceTest {
   @AfterEach
   fun tearDown() {
     clearCaseloadIdFromRequestHeader()
+  }
+
+  @Nested
+  @DisplayName("get appointment attendance summaries")
+  inner class GetAppointmentAttendanceSummaries {
+    @Test
+    fun `throws caseload access exception if caseload id header does not match`() {
+      addCaseloadIdToRequestHeader("WRONG")
+
+      assertThatThrownBy { service.getAppointmentAttendanceSummaries(moorlandPrisonCode, LocalDate.now()) }
+        .isInstanceOf(CaseloadAccessException::class.java)
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+    }
+
+    @Test
+    fun `returns appointment attendance summaries`() {
+      val date = LocalDate.now()
+
+      val entity = appointmentAttendanceSummaryEntity()
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(moorlandPrisonCode, date)).thenReturn(listOf(entity))
+      val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"))
+      val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, entity.prisonCode, userDescription = "Chapel"))
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
+      whenever(locationService.getLocationsForAppointmentsMap(moorlandPrisonCode)).thenReturn(locationMap)
+
+      val summaries = service.getAppointmentAttendanceSummaries(moorlandPrisonCode, date)
+
+      assertThat(summaries).isEqualTo(listOf(appointmentAttendanceSummaryModel()))
+    }
   }
 
   @Nested
