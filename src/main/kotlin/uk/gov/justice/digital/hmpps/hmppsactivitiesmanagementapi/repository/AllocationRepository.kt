@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.BookingCount
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 
 @Repository
 interface AllocationRepository : JpaRepository<Allocation, Long> {
@@ -34,7 +34,11 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       "  AND a.prisonerStatus IN (:prisonerStatus) " +
       "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
   )
-  fun findByPrisonCodePrisonerNumberPrisonerStatus(prisonCode: String, prisonerNumber: String, vararg prisonerStatus: PrisonerStatus): List<Allocation>
+  fun findByPrisonCodePrisonerNumberPrisonerStatus(
+    prisonCode: String,
+    prisonerNumber: String,
+    vararg prisonerStatus: PrisonerStatus,
+  ): List<Allocation>
 
   @Query(
     value =
@@ -54,7 +58,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
 
   @Query(
     value = """
-      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.BookingCount(a.bookingId, count(a)) from Allocation a 
+      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount(a.bookingId, count(a)) from Allocation a 
       join ActivitySchedule as2 on a.activitySchedule.activityScheduleId = as2.activityScheduleId 
       join Activity a2 on as2.activity.activityId = a2.activityId 
       where a2.prisonCode = :prisonCode 
@@ -64,4 +68,17 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       """,
   )
   fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonCode: String, prisonerStatus: PrisonerStatus): List<BookingCount>
+
+  @Query(
+    "select case when count(a) > 0 then true else false end " +
+      "from Allocation a " +
+      "where a.activitySchedule.activity.prisonCode = :prisonCode " +
+      "and a.prisonerNumber = :prisonerNumber " +
+      "and a.prisonerStatus IN (:prisonerStatus)",
+  )
+  fun existAtPrisonForPrisoner(
+    prisonCode: String,
+    prisonerNumber: String,
+    prisonerStatus: Collection<PrisonerStatus>,
+  ): Boolean
 }

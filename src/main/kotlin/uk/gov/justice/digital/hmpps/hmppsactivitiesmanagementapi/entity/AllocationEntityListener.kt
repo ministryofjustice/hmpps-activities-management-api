@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.PostPersist
-import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,15 +24,6 @@ class AllocationEntityListener {
       OutboundEvent.PRISONER_ALLOCATED,
       allocation.allocationId,
       "Failed to send prisoner allocated event for allocation ${allocation.allocationId}",
-    )
-  }
-
-  @PostUpdate
-  fun onUpdate(allocation: Allocation) {
-    send(
-      OutboundEvent.PRISONER_ALLOCATION_AMENDED,
-      allocation.allocationId,
-      "Failed to send prisoner allocation amended event for allocation ${allocation.allocationId}",
     )
   }
 

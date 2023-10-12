@@ -47,11 +47,19 @@ class ActivitiesChangedEventHandler(
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {
         Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event)
-        Action.END -> getDeallocationReasonFor(event)?.let { reason ->
-          allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
+        Action.END -> {
+          if (prisonerHasAllocationsOfInterestFor(event)) {
+            getDeallocationReasonFor(event)?.let { reason ->
+              allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
 
-          Outcome.success()
-        } ?: Outcome.failed { "Unable to determine release reason for prisoner ${event.prisonerNumber()}" }
+              Outcome.success()
+            } ?: Outcome.failed { "Unable to determine release reason for prisoner ${event.prisonerNumber()}" }
+          } else {
+            log.info("No allocations of interest for prisoner ${event.prisonerNumber()}")
+
+            Outcome.success()
+          }
+        }
 
         else -> Outcome.failed().also { log.warn("Unable to process $event, unknown action") }
       }
@@ -60,6 +68,13 @@ class ActivitiesChangedEventHandler(
     return Outcome.success()
   }
 
+  private fun prisonerHasAllocationsOfInterestFor(event: ActivitiesChangedEvent) =
+    allocationRepository.existAtPrisonForPrisoner(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+    )
+
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
     runCatching {
       LocalDateTime.now().let { now ->
@@ -67,8 +82,11 @@ class ActivitiesChangedEventHandler(
           allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
             .suspendPrisonersAllocations(now, event)
             .suspendPrisonersFutureAttendances(now, event)
-        }.let { updatedAttendances ->
-          updatedAttendances.forEach {
+        }.let { (suspendedAllocations, suspendedAttendances) ->
+          suspendedAllocations.forEach {
+            outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+          }.also { log.info("Sending allocation amended events.") }
+          suspendedAttendances.forEach {
             outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
           }.also { log.info("Sending attendance amended events.") }
         }
@@ -89,10 +107,10 @@ class ActivitiesChangedEventHandler(
   private fun List<Allocation>.suspendPrisonersFutureAttendances(
     dateTime: LocalDateTime,
     event: ActivitiesChangedEvent,
-  ): List<Attendance> {
+  ): Pair<List<Allocation>, List<Attendance>> {
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
-    return flatMap { allocation ->
+    return this to flatMap { allocation ->
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
         event.prisonCode(),
         dateTime.toLocalDate(),
