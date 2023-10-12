@@ -26,12 +26,4 @@ class AllocationEntityListenerTest(@Autowired private val listener: AllocationEn
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, allocation.allocationId)
     verifyNoMoreInteractions(outboundEventsService)
   }
-
-  @Test
-  fun `prisoner allocation amended event raised on update`() {
-    listener.onUpdate(allocation)
-
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId)
-    verifyNoMoreInteractions(outboundEventsService)
-  }
 }

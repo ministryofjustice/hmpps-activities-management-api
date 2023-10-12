@@ -18,7 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -28,7 +30,14 @@ class PrisonerAllocationHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val waitingListService: WaitingListService = mock()
-  private val handler = PrisonerAllocationHandler(allocationRepository, attendanceRepository, waitingListService)
+  private val outboundEventsService: OutboundEventsService = mock()
+  private val handler = PrisonerAllocationHandler(
+    allocationRepository,
+    attendanceRepository,
+    waitingListService,
+    TransactionHandler(),
+    outboundEventsService,
+  )
 
   @Test
   fun `un-ended allocations are ended on release from remand`() {
@@ -43,7 +52,8 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime).isNull()
     }
 
-    val pendingAllocation = allocation(startDate = TimeSource.tomorrow()).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+    val pendingAllocation =
+      allocation(startDate = TimeSource.tomorrow()).also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(

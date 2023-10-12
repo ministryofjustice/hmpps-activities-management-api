@@ -2,7 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -28,10 +31,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -54,6 +62,11 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAllocations(withDeallocate = true)
 
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
+
     with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
       size isEqualTo 3
       onEach { it isDeallocatedWithReason ENDED }
@@ -74,6 +87,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     webTestClient.manageAllocations(withDeallocate = true)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
@@ -109,6 +125,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAllocations(withDeallocate = true)
 
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verifyNoMoreInteractions(outboundEventsService)
+
     allocationRepository.findAll().prisoner("A11111A") isDeallocatedWithReason EXPIRED
     waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
   }
@@ -124,6 +143,10 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     webTestClient.manageAllocations(withActivate = true)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
 
     with(allocationRepository.findAll()) {
       prisoner("PAST") isStatus ACTIVE
