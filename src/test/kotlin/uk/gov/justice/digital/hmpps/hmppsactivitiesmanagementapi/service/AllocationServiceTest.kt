@@ -10,6 +10,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -25,6 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
@@ -34,7 +37,8 @@ class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val scheduleRepository: ActivityScheduleRepository = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository)
+  private val outboundEventsService: OutboundEventsService = mock()
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -111,6 +115,7 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
     assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
   @Test
@@ -129,6 +134,7 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
     assertThat(allocationCaptor.firstValue.endDate).isEqualTo(TimeSource.tomorrow())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
   @Test
@@ -148,6 +154,7 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
     assertThat(allocationCaptor.firstValue.endDate).isEqualTo(TimeSource.tomorrow())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
   @Test
@@ -168,6 +175,7 @@ class AllocationServiceTest {
 
     assertThat(allocationCaptor.firstValue.payBand).isEqualTo(mediumPayBand)
     assertThat(allocation.payBand).isEqualTo(mediumPayBand)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
   @Test
@@ -185,6 +193,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prison Pay Band 99 not found")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -203,6 +213,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Start date cannot be updated once allocation has started")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -220,6 +232,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date cannot be before the activity start date or after the activity end date.")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -238,6 +252,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date cannot be before the activity start date or after the activity end date.")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -256,6 +272,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation end date cannot be after activity end date")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -273,6 +291,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Ended allocations cannot be updated")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -284,6 +304,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Allocation 1 not found.")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -299,6 +321,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date must be in the future")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -314,6 +338,8 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date cannot be after allocation end date")
+
+    verifyNoInteractions(outboundEventsService)
   }
 
   @Test
@@ -332,6 +358,7 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
     assertThat(allocationCaptor.firstValue.plannedDeallocation?.plannedReason?.name).isEqualTo("HEALTH")
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
   @Test
@@ -350,5 +377,7 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Invalid deallocation reason specified 'ALPHA'")
+
+    verifyNoInteractions(outboundEventsService)
   }
 }
