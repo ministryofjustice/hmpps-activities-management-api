@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -32,6 +33,7 @@ class ManageAttendancesService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val outboundEventsService: OutboundEventsService,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val transactionHandler: TransactionHandler,
 ) {
 
   companion object {
@@ -45,54 +47,79 @@ class ManageAttendancesService(
     }
   }
 
-  private fun createAttendanceRecordsForToday() {
+  @Transactional(propagation = Propagation.REQUIRED)
+  fun createAttendanceRecordsForToday() {
     LocalDate.now().let { today ->
-      log.info("Creating attendance records for date: $today")
+      log.info("Creating attendance records for: $today")
 
       scheduledInstanceRepository.findAllBySessionDate(today)
         .andAttendanceRequired()
         .forEach { instance ->
+          val attendancesForInstance = mutableListOf<Attendance>()
+
+          // Get the details of prisoners due to attend the session
           val allocations = instance.getInFlightAllocations()
-          val allocatedPrisoners = allocations.map { it.prisonerNumber }
-          val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumbers(allocatedPrisoners)
+          val prisonerNumbers = allocations.map { it.prisonerNumber }
+          val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
             .block()!!
             .associateBy { it.prisonerNumber }
 
+          // Create these attendances - it will not duplicate if one already exists, so safe to re-run
           allocations.forEach { allocation ->
-            createAttendanceRecordIfNoPreExistingRecord(instance, allocation, prisonerDetails[allocation.prisonerNumber])
+            createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
+              ?.let { attendancesForInstance.add(it) }
+          }
+
+          if (attendancesForInstance.isNotEmpty()) {
+            // Save the new attendances in a transaction
+            runCatching {
+              transactionHandler.newSpringTransaction {
+                attendanceRepository.saveAllAndFlush(attendancesForInstance)
+              }.onEach { saved ->
+                // Send a sync event for each attendance row comitted
+                outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
+              }
+            }
           }
         }
     }
   }
 
-  private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
-
-  private fun ScheduledInstance.getInFlightAllocations() =
-    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
-
-  private fun createAttendanceRecordIfNoPreExistingRecord(
+  /**
+   * This function creates the appropriate type of attendance based on the prisoner allocation
+   * and session status. If there is already an attendance for this person at this session
+   * the function returns a null, otherwise it returns the Attendance entity to create.
+   */
+  private fun createAttendance(
     instance: ScheduledInstance,
     allocation: Allocation,
     prisonerDetails: Prisoner?,
-  ) {
+  ): Attendance? {
     if (!attendanceAlreadyExistsFor(instance, allocation)) {
-      val attendance = when {
-        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> suspendedAttendance(
-          instance,
-          allocation,
-        )
-        instance.cancelled -> cancelledAttendance(instance, allocation)
-        else -> Attendance(
-          scheduledInstance = instance,
-          prisonerNumber = allocation.prisonerNumber,
-        )
+      when {
+        // Suspended prisoners produce pre-marked and unpaid suspended attendances
+        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> {
+          suspendedAttendance(instance, allocation)
+        }
+
+        // Cancelled instances produce pre-marked cancelled and paid attendances
+        instance.cancelled -> {
+          cancelledAttendance(instance, allocation)
+        }
+
+        // By default, create an unmarked, waiting attendance
+        else -> {
+          waitingAttendance(instance, allocation)
+        }
       }.apply {
+        // Calculate what we think the pay rate should be at the prisoner's current incentive level
         val incentiveLevelCode = prisonerDetails?.currentIncentive?.level?.code
         payAmount = incentiveLevelCode ?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
+      }.also { attendance ->
+        return attendance
       }
-
-      attendanceRepository.saveAndFlush(attendance)
     }
+    return null
   }
 
   private fun suspendedAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
@@ -115,9 +142,23 @@ class ManageAttendancesService(
     recordedBy = ServiceName.SERVICE_NAME.value,
   )
 
+  private fun waitingAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
+    scheduledInstance = instance,
+    prisonerNumber = allocation.prisonerNumber,
+  )
+
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
     attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
 
+  private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
+
+  private fun ScheduledInstance.getInFlightAllocations() =
+    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
+
+  /**
+   * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
+   * which expires attendances at the end of the day and sets the internal movement status to 'EXP'.
+   */
   private fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
     log.info("Expiring WAITING attendances from yesterday.")
 

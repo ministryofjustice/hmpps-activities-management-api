@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageA
  */
 @Component
 class ManageAttendanceRecordsJob(
-  private val attendancesService: ManageAttendancesService,
+  private val manageAttendancesService: ManageAttendancesService,
   private val jobRunner: SafeJobRunner,
 ) {
   @Async("asyncExecutor")
@@ -22,14 +22,14 @@ class ManageAttendanceRecordsJob(
     jobRunner.runJob(
       JobDefinition(
         JobType.ATTENDANCE_CREATE,
-      ) { attendancesService.attendances(AttendanceOperation.CREATE) },
+      ) { manageAttendancesService.attendances(AttendanceOperation.CREATE) },
     )
 
     if (withExpiry) {
       jobRunner.runJob(
         JobDefinition(
           JobType.ATTENDANCE_EXPIRE,
-        ) { attendancesService.attendances(AttendanceOperation.EXPIRE) },
+        ) { manageAttendancesService.attendances(AttendanceOperation.EXPIRE) },
       )
     }
   }
