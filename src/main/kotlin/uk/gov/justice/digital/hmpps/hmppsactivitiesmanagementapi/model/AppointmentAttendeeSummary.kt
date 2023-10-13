@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDateTime
 
 @Schema(
   description =
@@ -34,4 +36,24 @@ data class AppointmentAttendeeSummary(
     """,
   )
   var attended: Boolean?,
+
+  @Schema(
+    description =
+    """
+    The latest date and time attendance was recorded. Note that attendance records can be updated and this is the most
+    recent date and time it was recorded. A null value means that the prisoner's attendance has not been recorded yet. 
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val attendanceRecordedTime: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The summary of the user that last recorded attendance. Note that attendance records can be updated and this is the
+    most recent user that marked attendance. A null value means that the prisoner's attendance has not been recorded yet.
+    """,
+    example = "AAA01U",
+  )
+  val attendanceRecordedBy: UserSummary?,
 )

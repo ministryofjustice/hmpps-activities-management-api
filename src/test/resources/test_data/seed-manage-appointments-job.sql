@@ -50,8 +50,8 @@ VALUES  (10, 'INDIVIDUAL', 'RSI', 'AC1', 4, 123, false, now()::date, '09:00', '0
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (10, 10, 1, 'RSI', 'AC1', 4, 123, false, now()::date, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (11, 11, 1, 'RSI', 'AC1', 4, 123, false, now()::date, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (12, 12, 1, 'RSI', 'AC1', 4, 123, false, now()::date, '09:00', '09:15', now()::timestamp, 'TEST.USER');
+        (11, 11, 1, 'RSI', 'AC1', 4, 123, false, now()::date, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
+        (12, 12, 1, 'RSI', 'AC1', 4, 123, false, now()::date, '09:30', '09:45', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (16, 10, 'A1234BC', 123),

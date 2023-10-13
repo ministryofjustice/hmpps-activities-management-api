@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
@@ -42,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
@@ -52,8 +54,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -65,6 +69,7 @@ import java.time.temporal.ChronoUnit
   properties = [
     "feature.event.activities.activity-schedule.created=true",
     "feature.event.activities.activity-schedule.amended=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
   ],
@@ -901,6 +906,57 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
       assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
       assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity pay - is successful`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
+      ),
+    )
+
+    val newPay = ActivityUpdateRequest(
+      pay = listOf(
+        ActivityPayCreateRequest(
+          incentiveNomisCode = "BAS",
+          incentiveLevel = "Basic",
+          payBandId = 3,
+          rate = 100,
+        ),
+      ),
+    )
+
+    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newPay).schedules.first()) {
+      assertThat(allocations).hasSize(3)
+      assertThat(allocations[0].prisonPayBand.id).isEqualTo(3)
+      assertThat(allocations[1].prisonPayBand.id).isEqualTo(3)
+      assertThat(allocations[2].prisonPayBand.id).isEqualTo(2)
+    }
+
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+    with(eventCaptor.secondValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
+    }
+    with(eventCaptor.thirdValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(2))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
     }
   }
 

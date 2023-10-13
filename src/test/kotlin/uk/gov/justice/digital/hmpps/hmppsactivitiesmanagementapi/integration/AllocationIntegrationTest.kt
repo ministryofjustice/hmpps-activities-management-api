@@ -23,7 +23,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -32,6 +34,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -39,9 +44,18 @@ import java.time.LocalDateTime
   properties = [
     "feature.audit.service.local.enabled=true",
     "feature.audit.service.hmpps.enabled=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
   ],
 )
 class AllocationIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var eventsPublisher: OutboundEventsPublisher
+
+  private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
@@ -176,6 +190,49 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     webTestClient.waitingListApplication(moorlandPrisonCode, request, pentonvillePrisonCode).expectStatus().isForbidden
   }
+
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  @Test
+  fun `update allocation end date`() {
+    allocationRepository.findById(1).get().also { it.endDate isEqualTo null }
+
+    webTestClient.updateAllocation(
+      pentonvillePrisonCode,
+      1,
+      AllocationUpdateRequest(
+        endDate = TimeSource.tomorrow(),
+        reasonCode = "OTHER",
+      ),
+    )
+
+    allocationRepository.findById(1).get().also { it.endDate isEqualTo TimeSource.tomorrow() }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      occurredAt isCloseTo TimeSource.now()
+    }
+  }
+
+  private fun WebTestClient.updateAllocation(
+    prisonCode: String,
+    allocationId: Long,
+    application: AllocationUpdateRequest,
+    caseloadId: String? = CASELOAD_ID,
+  ) =
+    patch()
+      .uri("/allocations/$prisonCode/allocationId/$allocationId")
+      .bodyValue(application)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, caseloadId)
+      .exchange()
+      .expectStatus().isAccepted
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Allocation::class.java)
+      .returnResult().responseBody!!
 
   private fun WebTestClient.waitingListApplication(
     prisonCode: String,

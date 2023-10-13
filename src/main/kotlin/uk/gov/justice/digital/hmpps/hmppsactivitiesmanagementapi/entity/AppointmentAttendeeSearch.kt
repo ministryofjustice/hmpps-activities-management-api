@@ -8,10 +8,12 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 
 @Entity
+@Immutable
 @Table(name = "appointment_attendee")
 @Where(clause = "NOT is_deleted")
 data class AppointmentAttendeeSearch(
