@@ -53,6 +53,8 @@ class ManageScheduledInstancesServiceTest {
     bankHolidayService = mock(),
     daysInAdvance = 7L,
     telemetryClient = telemetryClient,
+    transactionHandler = TransactionHandler(),
+    outboundEventsService = mock(),
   )
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest)

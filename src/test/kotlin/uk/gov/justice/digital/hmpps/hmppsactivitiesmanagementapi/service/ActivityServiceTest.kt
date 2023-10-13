@@ -58,6 +58,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -82,6 +84,7 @@ class ActivityServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val bankHolidayService: BankHolidayService = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val educationLevel = ReferenceCode(
@@ -131,8 +134,10 @@ class ActivityServiceTest {
     prisonerSearchApiClient,
     prisonRegimeService,
     bankHolidayService,
-    daysInAdvance = daysInAdvance,
-    telemetryClient = telemetryClient,
+    telemetryClient,
+    TransactionHandler(),
+    outboundEventsService,
+    daysInAdvance,
   )
 
   private val location = Location(
@@ -880,6 +885,8 @@ class ActivityServiceTest {
       assertThat(activityPay()).hasSize(1)
       assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
   @Test
