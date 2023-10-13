@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
@@ -13,6 +15,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
@@ -24,8 +28,13 @@ class AllocationsService(
   private val allocationRepository: AllocationRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val scheduleRepository: ActivityScheduleRepository,
-
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
     allocationRepository
       .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
@@ -41,22 +50,26 @@ class AllocationsService(
   }
 
   @Transactional
-  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
-    val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
-      ?: throw EntityNotFoundException("Allocation $allocationId not found.")
+  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String) =
+    transactionHandler.newSpringTransaction {
+      val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
+        ?: throw EntityNotFoundException("Allocation $allocationId not found.")
 
-    require(allocation.status(PrisonerStatus.ENDED).not()) { "Ended allocations cannot be updated" }
+      require(allocation.status(PrisonerStatus.ENDED).not()) { "Ended allocations cannot be updated" }
 
-    applyStartDateUpdate(request, allocation)
-    applyEndDateUpdate(request, allocation, updatedBy)
-    applyRemoveEndDateUpdate(request, allocation)
-    applyPayBandUpdate(request, allocation)
-    applyReasonCode(request, allocation, updatedBy)
+      applyStartDateUpdate(request, allocation)
+      applyEndDateUpdate(request, allocation, updatedBy)
+      applyRemoveEndDateUpdate(request, allocation)
+      applyPayBandUpdate(request, allocation)
+      applyReasonCode(request, allocation, updatedBy)
 
-    allocationRepository.saveAndFlush(allocation)
+      allocationRepository.saveAndFlush(allocation)
 
-    return allocation.toModel()
-  }
+      allocation.toModel()
+    }.also {
+      log.info("Sending allocation amended event for allocation ${it.id}")
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.id)
+    }
 
   private fun applyReasonCode(
     request: AllocationUpdateRequest,
