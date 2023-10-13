@@ -5,7 +5,7 @@ insert into activity(activity_id, prison_code, activity_category_id, activity_ti
 values (1, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1', '2022-10-10', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER');
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
-values (1, 1, 'BAS', 'Basic', 1, 125, 150, 1);
+values (0, 1, 'BAS', 'Basic', 1, 125, 150, 1);
 
 insert into activity_minimum_education_level(activity_minimum_education_level_id, activity_id, education_level_code, education_level_description, study_area_code, study_area_description)
 values (1, 1, '1', 'Reading Measure 1.0', 'ENGLA', 'English Language');
