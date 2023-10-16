@@ -284,7 +284,7 @@ data class ActivitySchedule(
 
   fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String): Allocation {
     if (isActiveOn(date)) {
-      return allocations.firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
+      return allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by)
         ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
     } else {
       throw IllegalStateException("Schedule $activityScheduleId is not active on the planned deallocated date $date.")
