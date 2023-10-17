@@ -18,6 +18,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -72,7 +73,17 @@ class InternalLocationServiceTest {
     description = "EDUC-ED1-ED1",
     userDescription = "Education 1",
   )
+  private val education1LocationSummary = LocationSummary(
+    locationId = 2L,
+    description = "EDUC-ED1-ED1",
+    userDescription = "Education 1",
+  )
   private val education2Location = internalLocation(
+    locationId = 3L,
+    description = "EDUC-ED2-ED2",
+    userDescription = "Education 2",
+  )
+  private val education2LocationSummary = LocationSummary(
     locationId = 3L,
     description = "EDUC-ED2-ED2",
     userDescription = "Education 2",
@@ -86,6 +97,16 @@ class InternalLocationServiceTest {
     locationId = 4L,
     description = "NO-USR-DESC",
     userDescription = null,
+  )
+  private val socialVisitsLocation = internalLocation(
+    locationId = 5L,
+    description = "SOCIAL VISITS",
+    userDescription = "Social Visits",
+  )
+  private val socialVisitsLocationSummary = LocationSummary(
+    locationId = 5L,
+    description = "SOCIAL VISITS",
+    userDescription = "Social Visits",
   )
 
   private val education1Appointment = appointmentSearchEntity(
@@ -145,6 +166,22 @@ class InternalLocationServiceTest {
     inCell = true,
   )
 
+  private val education1Visit = PrisonApiPrisonerScheduleFixture.visitInstance(
+    eventId = 8,
+    locationId = education1Location.locationId,
+    date = LocalDate.now(),
+  )
+  private val education2Visit = PrisonApiPrisonerScheduleFixture.visitInstance(
+    eventId = 9,
+    locationId = education2Location.locationId,
+    date = LocalDate.now(),
+  )
+  private val noLocationVisit = PrisonApiPrisonerScheduleFixture.visitInstance(
+    eventId = 9,
+    locationId = null,
+    date = LocalDate.now(),
+  )
+
   @BeforeEach
   fun setUp() {
     prisonApiClient.stub {
@@ -152,7 +189,7 @@ class InternalLocationServiceTest {
         runBlocking {
           getEventLocationsAsync(prisonCode)
         }
-      } doReturn listOf(education1Location, education2Location, noUserDescriptionLocation)
+      } doReturn listOf(education1Location, education2Location, noUserDescriptionLocation, socialVisitsLocation)
 
       on {
         runBlocking {
@@ -257,6 +294,8 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(education2Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
+      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
+        .thenReturn(listOf(education1LocationSummary, education2LocationSummary, socialVisitsLocationSummary))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -274,6 +313,12 @@ class InternalLocationServiceTest {
           prisonCode,
           education2Location.description,
           education2Location.userDescription!!,
+        ),
+        InternalLocationEventsSummary(
+          socialVisitsLocationSummary.locationId,
+          prisonCode,
+          socialVisitsLocationSummary.description,
+          socialVisitsLocationSummary.userDescription!!,
         ),
       )
 
@@ -294,6 +339,7 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(inactiveEducation1Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noUserDescriptionLocationAppointment))
+      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.PM)).thenReturn(listOf(socialVisitsLocationSummary))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -311,6 +357,12 @@ class InternalLocationServiceTest {
           prisonCode,
           inactiveEducation1Location.description,
           inactiveEducation1Location.userDescription!!,
+        ),
+        InternalLocationEventsSummary(
+          socialVisitsLocationSummary.locationId,
+          prisonCode,
+          socialVisitsLocationSummary.description,
+          socialVisitsLocationSummary.userDescription!!,
         ),
       )
 
@@ -331,6 +383,7 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(noLocationActivity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noLocationAppointment))
+      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -373,6 +426,14 @@ class InternalLocationServiceTest {
           LocalTime.of(23, 59),
         ),
       ).thenReturn(listOf(education1AppointmentInstance))
+      whenever(
+        prisonApiClient.getScheduledVisitsForLocationAsync(
+          prisonCode,
+          education1Location.locationId,
+          date,
+          null,
+        ),
+      ).thenReturn(listOf(education1Visit))
 
       val result = service.getInternalLocationEvents(
         prisonCode,
@@ -389,14 +450,10 @@ class InternalLocationServiceTest {
           code isEqualTo education1Location.description
           description isEqualTo education1Location.userDescription
           with(events) {
-            size isEqualTo 2
-            with(this.single { it.scheduledInstanceId == education1Activity.scheduledInstanceId }) {
-              eventType isEqualTo "ACTIVITY"
-            }
-            with(this.single { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }) {
-              appointmentAttendeeId isEqualTo education1AppointmentInstance.appointmentInstanceId
-              eventType isEqualTo "APPOINTMENT"
-            }
+            size isEqualTo 3
+            this.single { it.scheduledInstanceId == education1Activity.scheduledInstanceId }.eventType isEqualTo "ACTIVITY"
+            this.single { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }.eventType isEqualTo "APPOINTMENT"
+            this.single { it.eventId == education1Visit.eventId }.eventType isEqualTo "VISIT"
           }
         }
       }
@@ -424,6 +481,14 @@ class InternalLocationServiceTest {
           timeSlotPm.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(education2AppointmentInstance))
+      whenever(
+        prisonApiClient.getScheduledVisitsForLocationAsync(
+          prisonCode,
+          education2Location.locationId,
+          date,
+          TimeSlot.PM,
+        ),
+      ).thenReturn(listOf(education2Visit))
 
       val result = service.getInternalLocationEvents(
         prisonCode,
@@ -440,14 +505,10 @@ class InternalLocationServiceTest {
           code isEqualTo education2Location.description
           description isEqualTo education2Location.userDescription
           with(events) {
-            size isEqualTo 2
-            with(this.single { it.scheduledInstanceId == education2Activity.scheduledInstanceId }) {
-              eventType isEqualTo "ACTIVITY"
-            }
-            with(this.single { it.appointmentAttendeeId == education2AppointmentInstance.appointmentAttendeeId }) {
-              appointmentAttendeeId isEqualTo education2AppointmentInstance.appointmentInstanceId
-              eventType isEqualTo "APPOINTMENT"
-            }
+            size isEqualTo 3
+            this.single { it.scheduledInstanceId == education2Activity.scheduledInstanceId }.eventType isEqualTo "ACTIVITY"
+            this.single { it.appointmentAttendeeId == education2AppointmentInstance.appointmentAttendeeId }.eventType isEqualTo "APPOINTMENT"
+            this.single { it.eventId == education2Visit.eventId }.eventType isEqualTo "VISIT"
           }
         }
       }
@@ -455,7 +516,7 @@ class InternalLocationServiceTest {
 
     @Test
     fun `exclude events with no internal location ids`() = runBlocking {
-      val internalLocationIds = setOf(education2Location.locationId)
+      val internalLocationIds = setOf(education1Location.locationId)
 
       whenever(
         prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
@@ -475,6 +536,14 @@ class InternalLocationServiceTest {
           timeSlotEd.second.minusMinutes(1),
         ),
       ).thenReturn(listOf(noLocationAppointmentInstance))
+      whenever(
+        prisonApiClient.getScheduledVisitsForLocationAsync(
+          prisonCode,
+          education1Location.locationId,
+          date,
+          TimeSlot.ED,
+        ),
+      ).thenReturn(listOf(noLocationVisit))
 
       val result = service.getInternalLocationEvents(
         prisonCode,
