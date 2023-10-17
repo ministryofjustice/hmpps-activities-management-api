@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSearch
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
@@ -154,6 +156,15 @@ class InternalLocationService(
         timeRange.end,
       )
 
+      val visits = internalLocationIds.flatMap {
+        prisonApiClient.getScheduledVisitsForLocationAsync(
+          prisonCode,
+          it,
+          date,
+          timeSlot,
+        )
+      }
+
       val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(
         prisonCode,
         eventPriorities,
@@ -165,6 +176,11 @@ class InternalLocationService(
           referenceCodesForAppointmentsMap,
           internalLocationsMap,
           appointments,
+        ),
+      ).union(
+        visits.multiplePrisonerVisitsToScheduledEvents(
+          prisonCode,
+          eventPriorities.getOrDefault(EventType.VISIT),
         ),
       ).filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
 
