@@ -3,11 +3,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.movementDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOut
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -22,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Service
 class ManageAllocationsService(
@@ -34,6 +37,7 @@ class ManageAllocationsService(
   private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val prisonApi: PrisonApiApplicationClient,
 ) {
 
   companion object {
@@ -43,41 +47,66 @@ class ManageAllocationsService(
   fun allocations(operation: AllocationOperation) {
     when (operation) {
       AllocationOperation.STARTING_TODAY -> {
-        log.info("Activating allocations on or before today.")
-        activatePendingAllocationsOnOrBeforeToday()
+        log.info("Processing allocations starting on or before today.")
+        processAllocationsDueToStartOnOrBeforeToday()
       }
 
-      AllocationOperation.DEALLOCATE_ENDING -> {
+      AllocationOperation.ENDING_TODAY -> {
         log.info("Ending allocations due to end today.")
         allocationsDueToEnd().deallocate()
       }
 
-      AllocationOperation.DEALLOCATE_EXPIRING -> {
+      AllocationOperation.EXPIRING_TODAY -> {
         log.info("Expiring allocations due to expire today.")
-        allocationsDueToExpire().deallocate(DeallocationReason.EXPIRED)
+        deallocateAllocationsDueToExpire()
       }
     }
   }
 
-  /**
-   * We consider pending allocations before today in the event we need to (re)run due to something out of a control e.g.
-   * a job fails to run due to a cloud platform issue.
+  /*
+   * We consider pending allocations before today in the event we need to (re)run due to something out of our control
+   * e.g. a job fails to run due to a cloud platform issue.
    */
-  private fun activatePendingAllocationsOnOrBeforeToday() =
+  private fun processAllocationsDueToStartOnOrBeforeToday() {
     LocalDate.now().let { today ->
       forEachRolledOutPrison()
         .forEach { prison ->
-          activityRepository.getAllForPrisonAndDate(prison.code, today).forEach { activity ->
-            transactionHandler.newSpringTransaction {
-              val activated = activity.schedules()
-                .allocationsDueToStartOnOrBefore(today)
-                .activatePending()
+          transactionHandler.newSpringTransaction {
+            pendingAllocationsStartingOnOrBefore(today, prison.code).let { allocations ->
+              val prisoners =
+                prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct()).block()
+                  ?: emptyList()
 
-              allocationRepository.saveAllAndFlush(activated)
-            }.sendAllocationsAmendedEvents()
-          }
+              allocations.map { allocation -> allocation to prisoners.firstOrNull { it.prisonerNumber == allocation.prisonerNumber } }
+            }
+              .onEach { (allocation, prisoner) ->
+                prisoner?.let {
+                  if (prisoner.isOutOfPrison()) {
+                    allocation.autoSuspend(LocalDateTime.now(), "Temporarily released or transferred")
+                  } else {
+                    allocation.activate()
+                  }
+
+                  allocationRepository.saveAndFlush(allocation)
+                }
+                  ?: log.error("Unable to process pending allocation ${allocation.allocationId}, prisoner ${allocation.prisonerNumber} not found.")
+              }
+              .map { (allocation, _) -> allocation }
+              .also {
+                log.info("Activated ${it.filter { a -> a.status(PrisonerStatus.ACTIVE) }.size} pending allocation(s) at prison ${prison.code}.")
+                log.info("Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.code}.")
+              }.map(Allocation::allocationId)
+          }.let(::sendAllocationsAmendedEvents)
         }
     }
+  }
+
+  private fun pendingAllocationsStartingOnOrBefore(date: LocalDate, prisonCode: String) =
+    allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
+      prisonCode,
+      PrisonerStatus.PENDING,
+      date,
+    )
 
   private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
     flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
@@ -102,58 +131,69 @@ class ManageAllocationsService(
     }
 
   private fun forEachRolledOutPrison() =
-    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }
-
-  private fun List<Allocation>.activatePending() =
-    filter { allocation -> allocation.prisonerStatus == PrisonerStatus.PENDING }.onEach(Allocation::activate)
+    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.filterNotNull()
 
   private fun List<Allocation>.ending(date: LocalDate) =
     filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.ends(date) }
 
-  private fun allocationsDueToExpire(): Map<ActivitySchedule, List<Allocation>> =
+  private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
-      .flatMap { prison ->
+      .forEach { prison ->
         val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
 
         if (regime != null) {
-          val candidateExpiredAllocations =
-            allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED)
-              .filter(regime::hasExpired)
-
-          val expiredPrisoners = candidateExpiredAllocations.ifNotEmpty {
-            prisonerSearch.findByPrisonerNumbers(candidateExpiredAllocations.map { it.prisonerNumber }.distinct())
-              .block()
-              ?.filter { it.hasExpired(regime) }
-              ?.map { it.prisonerNumber }
-              ?.toSet()
-              ?.onEach {
-                waitingListService.declinePendingOrApprovedApplications(
-                  prison.code,
-                  it,
-                  "Released",
-                  ServiceName.SERVICE_NAME.value,
-                )
-              }
-              ?: emptySet()
+          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
+            deallocateIfExpired(it, regime)
           }
-
-          candidateExpiredAllocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
+          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+            deallocateIfExpired(it, regime)
+          }
         } else {
           log.warn("Rolled out prison ${prison.code} is missing a prison regime.")
-          emptyList()
         }
-      }.groupBy { it.activitySchedule }
-
-  private fun Prisoner.hasExpired(prisonRegime: PrisonRegime) =
-    if (isOut()) {
-      when (lastMovementType()) {
-        MovementType.RELEASE -> prisonRegime.hasExpired { this.releaseDate }
-        MovementType.TEMPORARY_ABSENCE -> true
-        MovementType.TRANSFER -> true
-        else -> false
       }
-    } else {
-      false
+  }
+
+  /*
+   * The prison regime tells us how many days an allocation can stay before it expires. Given the max days from
+   * the regime and the date of the last known movement out or prison for the prisoner any allocations should be
+   * expired/deallocated.
+   */
+  private fun deallocateIfExpired(allocations: Collection<Allocation>, regime: PrisonRegime) {
+    val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
+    val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers).block() ?: emptyList()
+
+    if (prisoners.isEmpty()) {
+      log.error("No matches for prisoner numbers $prisoners found via prisoner search for prison ${regime.prisonCode}")
+      return
+    }
+
+    val prisonersNotInExpectedPrison =
+      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(regime.prisonCode) }
+
+    getCandidateExpiredMoves(regime, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+      .withFilteredExpiredMovesMatching(allocations)
+      .declineExpiredAllocationsFromWaitingListFor(regime.prisonCode)
+      .groupBy { it.activitySchedule }
+      .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
+  }
+
+  fun getCandidateExpiredMoves(regime: PrisonRegime, prisonerNumbers: Set<String>) =
+    prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonerNumbers)
+      .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
+      .filter { regime.hasExpired { it.value.movementDate } }
+
+  private fun Map<String, Movement>.withFilteredExpiredMovesMatching(allocations: Collection<Allocation>) =
+    flatMap { entry -> allocations.filter { entry.key == it.prisonerNumber } }
+
+  private fun List<Allocation>.declineExpiredAllocationsFromWaitingListFor(prisonCode: String) =
+    onEach {
+      waitingListService.declinePendingOrApprovedApplications(
+        prisonCode,
+        it.prisonerNumber,
+        "Released",
+        ServiceName.SERVICE_NAME.value,
+      )
     }
 
   private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason? = null) {
@@ -167,23 +207,16 @@ class ManageAllocationsService(
               activityScheduleRepository.saveAndFlush(schedule)
               log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
               deallocations
-            }
-          }.sendAllocationsAmendedEvents()
+            }?.map(Allocation::allocationId) ?: emptyList()
+          }.let(::sendAllocationsAmendedEvents)
         },
         failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}.",
       )
     }
   }
 
-  private fun <T, R> Collection<T>.ifNotEmpty(block: (Collection<T>) -> Collection<R>) =
-    if (this.isNotEmpty()) {
-      block(this)
-    } else {
-      emptySet()
-    }
-
-  private fun Collection<Allocation>.sendAllocationsAmendedEvents() =
-    forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId) }
+  private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) =
+    allocationIds.forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it) }
       .also { log.info("Sending allocation amended events.") }
 
   private fun continueToRunOnFailure(block: () -> Unit, failure: String = "") {
@@ -195,7 +228,7 @@ class ManageAllocationsService(
 }
 
 enum class AllocationOperation {
+  ENDING_TODAY,
+  EXPIRING_TODAY,
   STARTING_TODAY,
-  DEALLOCATE_ENDING,
-  DEALLOCATE_EXPIRING,
 }

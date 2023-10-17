@@ -1,12 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -21,7 +24,7 @@ import java.time.LocalDate
 
 class PrisonApiMockServer : WireMockServer(8999) {
 
-  private val mapper = ObjectMapper()
+  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   fun stubGetScheduledAppointments(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
@@ -167,7 +170,12 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null, jsonFileSuffix: String = "") {
+  fun stubGetPrisonerDetails(
+    prisonerNumber: String,
+    fullInfo: Boolean = true,
+    extraInfo: Boolean? = null,
+    jsonFileSuffix: String = "",
+  ) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
         .willReturn(
@@ -486,6 +494,19 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(locations))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubPrisonerMovements(prisonerNumbers: List<String>, movements: List<Movement>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/movements/offenders"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(movements))
             .withStatus(200),
         ),
     )

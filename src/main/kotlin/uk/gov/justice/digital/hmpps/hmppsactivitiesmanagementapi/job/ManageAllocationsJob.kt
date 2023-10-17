@@ -25,13 +25,13 @@ class ManageAllocationsJob(
     if (withDeallocate) {
       jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
-          service.allocations(AllocationOperation.DEALLOCATE_ENDING)
+          service.allocations(AllocationOperation.ENDING_TODAY)
         },
       )
 
       jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
-          service.allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+          service.allocations(AllocationOperation.EXPIRING_TODAY)
         },
       )
     }

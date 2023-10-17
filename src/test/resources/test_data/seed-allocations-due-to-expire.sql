@@ -25,5 +25,8 @@ values (2, 2, 'English AM', 1, 'L1', 'Location 1', 10, current_date - 1, null);
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (1, 1, 'A11111A', 10001, 1, current_date - 10, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, current_timestamp - 5, 'Activities Management Service', 'Temporarily released from prison', 'AUTO_SUSPENDED');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (2, 2, 'A11111A', 10001, 1, current_date + 1, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'PENDING');
+
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (1, 'PVI', 'A11111A', 10001, '2023-06-23', 2, 2, 'Fred Bloggs', 'PENDING', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);

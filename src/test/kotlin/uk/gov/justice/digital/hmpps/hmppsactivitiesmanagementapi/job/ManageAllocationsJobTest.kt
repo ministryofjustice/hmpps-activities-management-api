@@ -33,8 +33,8 @@ class ManageAllocationsJobTest {
   fun `deallocate allocation operation triggered`() {
     job.execute(withDeallocate = true)
 
-    verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_ENDING)
-    verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+    verify(deallocationService).allocations(AllocationOperation.ENDING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
@@ -46,8 +46,8 @@ class ManageAllocationsJobTest {
     job.execute(withActivate = true, withDeallocate = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
-    verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_ENDING)
-    verify(deallocationService).allocations(AllocationOperation.DEALLOCATE_EXPIRING)
+    verify(deallocationService).allocations(AllocationOperation.ENDING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verify(safeJobRunner, times(3)).runJob(jobDefinitionCaptor.capture())
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ALLOCATE)

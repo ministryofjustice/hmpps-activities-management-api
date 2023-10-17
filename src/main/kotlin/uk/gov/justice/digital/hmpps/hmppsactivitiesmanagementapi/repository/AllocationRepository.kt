@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
+import java.time.LocalDate
 
 @Repository
 interface AllocationRepository : JpaRepository<Allocation, Long> {
@@ -67,7 +68,10 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       order by a.bookingId
       """,
   )
-  fun findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonCode: String, prisonerStatus: PrisonerStatus): List<BookingCount>
+  fun findBookingAllocationCountsByPrisonAndPrisonerStatus(
+    prisonCode: String,
+    prisonerStatus: PrisonerStatus,
+  ): List<BookingCount>
 
   @Query(
     "select case when count(a) > 0 then true else false end " +
@@ -81,4 +85,17 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
     prisonerNumber: String,
     prisonerStatus: Collection<PrisonerStatus>,
   ): Boolean
+
+  @Query(
+    value =
+    "FROM Allocation a " +
+      "WHERE a.prisonerStatus = :prisonerStatus " +
+      "  AND a.startDate <=  :startDate " +
+      "  AND a.activitySchedule.activity.prisonCode = :prisonCode",
+  )
+  fun findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
+    prisonCode: String,
+    prisonerStatus: PrisonerStatus,
+    startDate: LocalDate,
+  ): List<Allocation>
 }
