@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -22,6 +23,8 @@ class LocationIntegrationTest : IntegrationTestBase() {
   private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MCI-ACT-LOC1", userDescription = "Activity Location 1")
   private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MCI-ACT-LOC2", userDescription = "Activity Location 2")
   private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MCI-APP-LOC1", userDescription = "Appointment Location 1")
+  private val socialVisitsLocation = internalLocation(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
+  private val socialVisitsLocationSummary = LocationSummary(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
 
   @Test
   fun `locations by group name - defined in properties - selects relevant locations only`() {
@@ -204,10 +207,11 @@ class LocationIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-3.sql")
   @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
-  fun `get location events summaries for date with activities and appointments - 200 success`() {
+  fun `get location events summaries for date with activities, appointments and visits - 200 success`() {
     val date = LocalDate.of(2022, 10, 1)
 
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+    prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, listOf(socialVisitsLocationSummary))
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
 
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date) isEqualTo listOf(
       InternalLocationEventsSummary(
@@ -228,6 +232,12 @@ class LocationIntegrationTest : IntegrationTestBase() {
         appointmentLocation1.description,
         appointmentLocation1.userDescription!!,
       ),
+      InternalLocationEventsSummary(
+        socialVisitsLocation.locationId,
+        prisonCode,
+        socialVisitsLocation.description,
+        socialVisitsLocation.userDescription!!,
+      ),
     )
   }
 
@@ -238,7 +248,8 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val date = LocalDate.of(2022, 10, 1)
     val timeSlot = TimeSlot.PM
 
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+    prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, timeSlot, emptyList())
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
 
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date, timeSlot) isEqualTo listOf(
       InternalLocationEventsSummary(

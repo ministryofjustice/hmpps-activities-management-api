@@ -315,10 +315,10 @@ class InternalLocationServiceTest {
           education2Location.userDescription!!,
         ),
         InternalLocationEventsSummary(
-          socialVisitsLocationSummary.locationId,
+          socialVisitsLocation.locationId,
           prisonCode,
-          socialVisitsLocationSummary.description,
-          socialVisitsLocationSummary.userDescription!!,
+          socialVisitsLocation.description,
+          socialVisitsLocation.userDescription!!,
         ),
       )
 
@@ -359,10 +359,10 @@ class InternalLocationServiceTest {
           inactiveEducation1Location.userDescription!!,
         ),
         InternalLocationEventsSummary(
-          socialVisitsLocationSummary.locationId,
+          socialVisitsLocation.locationId,
           prisonCode,
-          socialVisitsLocationSummary.description,
-          socialVisitsLocationSummary.userDescription!!,
+          socialVisitsLocation.description,
+          socialVisitsLocation.userDescription!!,
         ),
       )
 
