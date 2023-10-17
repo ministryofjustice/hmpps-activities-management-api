@@ -844,6 +844,28 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `prisoner is deallocated from schedule when they already have an ended allocation previously`() {
+    val schedule = activitySchedule(activity = activityEntity())
+    val originalAllocation = schedule.allocations().first().also { it.deallocateNow() }
+    val newAllocation = schedule.allocatePrisoner(originalAllocation.prisonerNumber.toPrisonerNumber(), originalAllocation.payBand, originalAllocation.bookingId, allocatedBy = "test")
+
+    assertThat(newAllocation.plannedDeallocation).isNull()
+
+    schedule.deallocatePrisonerOn(
+      newAllocation.prisonerNumber,
+      TimeSource.tomorrow(),
+      DeallocationReason.RELEASED,
+      "by test",
+    )
+
+    with(newAllocation.plannedDeallocation!!) {
+      assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      assertThat(plannedBy).isEqualTo("by test")
+      assertThat(plannedReason).isEqualTo(DeallocationReason.RELEASED)
+    }
+  }
+
+  @Test
   fun `prisoner is not deallocated from inactive schedule`() {
     val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
 

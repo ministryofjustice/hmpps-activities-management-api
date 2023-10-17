@@ -23,6 +23,7 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -57,6 +58,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -78,8 +81,10 @@ class ActivityServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val bankHolidayService: BankHolidayService = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
 
   private val educationLevel = ReferenceCode(
@@ -126,10 +131,13 @@ class ActivityServiceTest {
     activityScheduleRepository,
     prisonPayBandRepository,
     prisonApiClient,
+    prisonerSearchApiClient,
     prisonRegimeService,
     bankHolidayService,
-    daysInAdvance = daysInAdvance,
-    telemetryClient = telemetryClient,
+    telemetryClient,
+    TransactionHandler(),
+    outboundEventsService,
+    daysInAdvance,
   )
 
   private val location = Location(
@@ -848,6 +856,37 @@ class ActivityServiceTest {
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
     }
+  }
+
+  @Test
+  fun `updateActivity - update pay band where someone is allocated to it`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
+    val activityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
+    val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(Mono.just(listOf(prisoner)))
+
+    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(1)
+      assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
   @Test
