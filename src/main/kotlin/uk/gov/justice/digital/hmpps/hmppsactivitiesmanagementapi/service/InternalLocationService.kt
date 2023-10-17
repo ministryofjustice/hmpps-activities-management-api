@@ -112,7 +112,7 @@ class InternalLocationService(
    *
    * This is different to the per prison time slot configuration used by this service where the prison's regime specifies
    * the timeslot. This difference means that locations returned by this function may appear to have no events scheduled
-   * or in some cases. the location with events in this service's timeslots appear in other timeslots.
+   * or in some cases, the location with events in this service's timeslots appear in other timeslots.
    *
    * Once the Visit Someone in Prison service is rolled out to more of the prison estate and/or is capable of being called
    * for prisons not yet using the service, this function should be switched to use it. This function should retrieve all
