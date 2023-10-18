@@ -53,30 +53,36 @@ class ManageAttendancesService(
       log.info("Creating attendance records for: $today")
 
       scheduledInstanceRepository.findAllBySessionDate(today)
-        .andAttendanceRequired()
+        .filter { it.attendanceRequired() }
         .forEach { instance ->
           val attendancesForInstance = mutableListOf<Attendance>()
 
-          // Get the details of prisoners due to attend the session
-          val allocations = instance.getInFlightAllocations()
+          // Get the allocations which are active
+          val allocations = instance.activitySchedule
+            .allocations()
+            .filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
+
+          // Get the details of the prisoners due to attend the session
           val prisonerNumbers = allocations.map { it.prisonerNumber }
           val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
             .block()!!
             .associateBy { it.prisonerNumber }
 
-          // Create these attendances - it will not duplicate if one already exists, so safe to re-run
+          // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
           allocations.forEach { allocation ->
             createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
               ?.let { attendancesForInstance.add(it) }
           }
 
           if (attendancesForInstance.isNotEmpty()) {
-            // Save the new attendances in a transaction
             runCatching {
+              // Save the attendances for this session within a new sub-transaction
               transactionHandler.newSpringTransaction {
+                log.info("Committing ${attendancesForInstance.size} attendances for ${instance.activitySchedule.description}")
                 attendanceRepository.saveAllAndFlush(attendancesForInstance)
               }.onEach { saved ->
-                // Send a sync event for each attendance row comitted
+                // Send a sync event for each committed attendance row
+                log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
                 outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
               }
             }
@@ -149,11 +155,6 @@ class ManageAttendancesService(
 
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
     attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
-
-  private fun List<ScheduledInstance>.andAttendanceRequired() = filter { it.attendanceRequired() }
-
-  private fun ScheduledInstance.getInFlightAllocations() =
-    activitySchedule.allocations().filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
 
   /**
    * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
