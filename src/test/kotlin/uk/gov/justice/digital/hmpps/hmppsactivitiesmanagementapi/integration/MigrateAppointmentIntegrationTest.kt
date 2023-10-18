@@ -230,7 +230,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     // All appointments in the seed data should have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {
-      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+      webTestClient.expectGetAppointmentByIdNotFound(it)
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
