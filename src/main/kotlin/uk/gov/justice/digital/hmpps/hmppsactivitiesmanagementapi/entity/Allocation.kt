@@ -206,9 +206,12 @@ data class Allocation(
       prisonerStatus = PrisonerStatus.ACTIVE
     }
 
+  /**
+   * Only active and pending allocations can be auto-suspended.
+   */
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {
-      failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
+      failWithMessageIfAllocationsIsNot("You can only auto-suspend active and pending allocations", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
 
       prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
       suspendedTime = dateTime

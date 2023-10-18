@@ -480,7 +480,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED))
-      assertThat(it.suspendedReason).isEqualTo("Temporary absence")
+      assertThat(it.suspendedReason).isEqualTo("Temporarily released or transferred")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
       assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
     }
