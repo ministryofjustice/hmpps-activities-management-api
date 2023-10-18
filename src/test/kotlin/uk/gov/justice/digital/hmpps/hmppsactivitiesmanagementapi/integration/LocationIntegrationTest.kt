@@ -20,9 +20,9 @@ import java.time.LocalDate
 class LocationIntegrationTest : IntegrationTestBase() {
   private val prisonCode = "MDI"
 
-  private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MCI-ACT-LOC1", userDescription = "Activity Location 1")
-  private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MCI-ACT-LOC2", userDescription = "Activity Location 2")
-  private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MCI-APP-LOC1", userDescription = "Appointment Location 1")
+  private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
+  private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
+  private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
   private val socialVisitsLocation = internalLocation(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
   private val socialVisitsLocationSummary = LocationSummary(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
 
