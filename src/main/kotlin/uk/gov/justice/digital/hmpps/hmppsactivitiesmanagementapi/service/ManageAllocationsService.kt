@@ -139,13 +139,17 @@ class ManageAllocationsService(
   private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
       .forEach { prison ->
+        log.info("Checking for expired allocations at ${prison.code}.")
+
         val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
 
         if (regime != null) {
           allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
+            log.info("Checking for expired pending allocations at ${prison.code}.")
             deallocateIfExpired(it, regime)
           }
           allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+            log.info("Checking for expired auto-suspended allocations at ${prison.code}.")
             deallocateIfExpired(it, regime)
           }
         } else {
@@ -160,25 +164,36 @@ class ManageAllocationsService(
    * expired/deallocated.
    */
   private fun deallocateIfExpired(allocations: Collection<Allocation>, regime: PrisonRegime) {
+    log.info("Candidate allocations for expiration: ${allocations.map { it.allocationId }}")
+
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
     val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers).block() ?: emptyList()
 
     if (prisoners.isEmpty()) {
-      log.error("No matches for prisoner numbers $prisoners found via prisoner search for prison ${regime.prisonCode}")
+      log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${regime.prisonCode}")
       return
     }
 
     val prisonersNotInExpectedPrison =
       prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(regime.prisonCode) }
 
-    getCandidateExpiredMoves(regime, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
-      .withFilteredExpiredMovesMatching(allocations)
+    log.info("Prisoners not in expected prison: ${prisonersNotInExpectedPrison.map { it.prisonerNumber }}")
+
+    val expiredMoves = getExpiredMoves(regime, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+
+    log.info("Expired moves: $expiredMoves")
+
+    val expiredAllocations = expiredMoves.withFilteredExpiredMovesMatching(allocations)
+
+    log.info("Expired allocations: ${expiredAllocations.map { it.allocationId }}")
+
+    expiredAllocations
       .declineExpiredAllocationsFromWaitingListFor(regime.prisonCode)
       .groupBy { it.activitySchedule }
       .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
   }
 
-  fun getCandidateExpiredMoves(regime: PrisonRegime, prisonerNumbers: Set<String>) =
+  fun getExpiredMoves(regime: PrisonRegime, prisonerNumbers: Set<String>) =
     prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonerNumbers)
       .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { regime.hasExpired { it.value.movementDate } }
