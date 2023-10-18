@@ -13,6 +13,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -591,5 +592,12 @@ class PrisonApiClientTest {
   @Test
   fun `getLatestMovementForPrisoners - empty when no prisoners supplied`() {
     prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, emptySet()) containsExactly emptyList()
+  }
+
+  @Test
+  fun `verify overridden return type for getMovementsForPrisonersFromPrison`() {
+    val function = PrisonApiClient::class.declaredFunctions.first { it.name == "getMovementsForPrisonersFromPrison" }
+
+    assertThat(function.returnType).isEqualTo(typeOf<List<Movement>>())
   }
 }
