@@ -31,7 +31,7 @@ class AppointmentCancelDomainService(
     appointmentId: Long,
     appointmentIdsToCancel: Set<Long>,
     request: AppointmentCancelRequest,
-    cancelled: LocalDateTime,
+    cancelledTime: LocalDateTime,
     cancelledBy: String,
     cancelAppointmentsCount: Int,
     cancelInstancesCount: Int,
@@ -39,7 +39,7 @@ class AppointmentCancelDomainService(
   ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToCancel.contains(it.appointmentId) }
-    return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelled, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
+    return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelledTime, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
   }
 
   fun cancelAppointments(
@@ -47,7 +47,7 @@ class AppointmentCancelDomainService(
     appointmentId: Long,
     appointmentsToCancel: Set<Appointment>,
     request: AppointmentCancelRequest,
-    cancelled: LocalDateTime,
+    cancelledTime: LocalDateTime,
     cancelledBy: String,
     cancelAppointmentsCount: Int,
     cancelInstancesCount: Int,
@@ -58,10 +58,7 @@ class AppointmentCancelDomainService(
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
     appointmentsToCancel.forEach {
-      it.cancelledTime = cancelled
-      it.cancellationReason = cancellationReason
-      it.cancelledBy = cancelledBy
-      it.isDeleted = cancellationReason.isDelete
+      it.cancel(cancelledTime, cancellationReason, cancelledBy)
     }
 
     val cancelledAppointment = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
