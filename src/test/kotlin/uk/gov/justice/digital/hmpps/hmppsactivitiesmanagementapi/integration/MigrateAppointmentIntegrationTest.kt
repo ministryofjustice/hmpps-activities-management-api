@@ -221,6 +221,30 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     )
   }
 
+  @Sql(
+    "classpath:test_data/seed-migrated-deleted-appointments-removed-attendees.sql",
+  )
+  @Test
+  fun `delete migrated appointments that have been subsequently cancelled, deleted or had their attendees removed - success`() {
+    webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
+
+    // All appointments in the seed data should have been deleted
+    setOf(10L, 11L, 12L, 13L).forEach {
+      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    // Deleted sync events should only be published for appointment instances not previously deleted
+    assertThat(
+      eventCaptor.allValues.map { it.eventType }.distinct().single(),
+    ).isEqualTo("appointments.appointment-instance.deleted")
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceInformation(20),
+      AppointmentInstanceInformation(22),
+    )
+  }
+
   private fun WebTestClient.migrateAppointment(
     request: AppointmentMigrateRequest,
   ) =
