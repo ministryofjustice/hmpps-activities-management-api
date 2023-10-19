@@ -13,6 +13,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.typeOf
@@ -297,6 +299,20 @@ class PrisonApiClientTest {
     val visits = prisonApiClient.getScheduledVisitsForPrisonerNumbersAsync(prisonCode, prisonerNumbers, date, null)
     assertThat(visits).hasSize(0)
     prisonApiMockServer.verifyNoClientRequests()
+  }
+
+  @Test
+  fun `getScheduledVisitsForLocationAsync - success`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val locationId = 1L
+    val date = LocalDate.of(2022, 10, 10)
+    val visits = listOf(PrisonApiPrisonerScheduleFixture.visitInstance(eventId = 1, locationId = locationId, date = date))
+
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, locationId, date, null, visits)
+
+    runBlocking {
+      prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, locationId, date, null) isEqualTo visits
+    }
   }
 
   @Test
@@ -573,6 +589,24 @@ class PrisonApiClientTest {
     prisonApiMockServer.stubGetEventLocations(prisonCode, eventLocations)
     runBlocking {
       prisonApiClient.getEventLocationsAsync(prisonCode) isEqualTo eventLocations
+    }
+  }
+
+  @Test
+  fun `verify overridden return type for get event locations booked`() {
+    val function = PrisonApiClient::class.declaredFunctions.first { it.name == "getEventLocationsBookedAsync" }
+
+    assertThat(function.returnType).isEqualTo(typeOf<List<LocationSummary>>())
+  }
+
+  @Test
+  fun `getEventLocationsBookedAsync - success`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val locations = listOf(LocationSummary(locationId = 1L, description = "MDI-LOC1", userDescription = "Location 1"))
+    prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, locations)
+    runBlocking {
+      prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null) isEqualTo locations
     }
   }
 
