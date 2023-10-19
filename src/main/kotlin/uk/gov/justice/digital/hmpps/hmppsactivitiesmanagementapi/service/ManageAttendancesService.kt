@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -55,8 +56,6 @@ class ManageAttendancesService(
       scheduledInstanceRepository.findAllBySessionDate(today)
         .filter { it.attendanceRequired() }
         .forEach { instance ->
-          val attendancesForInstance = mutableListOf<Attendance>()
-
           // Get the allocations which are active
           val allocations = instance.activitySchedule
             .allocations()
@@ -69,12 +68,11 @@ class ManageAttendancesService(
             .associateBy { it.prisonerNumber }
 
           // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
-          allocations.forEach { allocation ->
+          val attendancesForInstance = allocations.mapNotNull { allocation ->
             createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
-              ?.let { attendancesForInstance.add(it) }
           }
 
-          if (attendancesForInstance.isNotEmpty()) {
+          attendancesForInstance.ifNotEmpty {
             runCatching {
               // Save the attendances for this session within a new sub-transaction
               transactionHandler.newSpringTransaction {
