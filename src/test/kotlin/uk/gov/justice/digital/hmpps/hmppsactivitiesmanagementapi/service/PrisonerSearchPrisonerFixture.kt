@@ -38,6 +38,7 @@ object PrisonerSearchPrisonerFixture {
     releaseDate: LocalDate? = null,
     confirmedReleaseDate: LocalDate? = null,
     alerts: List<PrisonerAlert> = emptyList(),
+    legalStatus: Prisoner.LegalStatus? = null,
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -64,6 +65,7 @@ object PrisonerSearchPrisonerFixture {
       releaseDate = releaseDate,
       confirmedReleaseDate = confirmedReleaseDate,
       alerts = alerts,
+      legalStatus = legalStatus,
     )
 
   fun pagedResult(prisonerNumber: String = "G4793VF") = PagedPrisoner(content = listOf(instance(prisonerNumber)))
