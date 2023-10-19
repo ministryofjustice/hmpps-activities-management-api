@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import java.time.LocalDate
 
 class PrisonerExtTest {
@@ -59,6 +60,12 @@ class PrisonerExtTest {
   }
 
   @Test
+  fun `is restricted patient`() {
+    permanentlyReleasedFromMoorland.copy(restrictedPatient = true).isRestrictedPatient() isBool true
+    permanentlyReleasedFromMoorland.copy(restrictedPatient = false).isRestrictedPatient() isBool false
+  }
+
+  @Test
   fun `is active in prisoner`() {
     val activeInPrisoner = Prisoner(
       prisonerNumber = "1",
@@ -73,5 +80,23 @@ class PrisonerExtTest {
 
     activeInPrisoner.status isEqualTo "ACTIVE IN"
     activeInPrisoner.isActiveIn() isBool true
+  }
+
+  @Test
+  fun `is at different location`() {
+    val activeInPrisoner = Prisoner(
+      prisonerNumber = "1",
+      firstName = "Freddie",
+      lastName = "Bloggs",
+      dateOfBirth = LocalDate.EPOCH,
+      gender = "Female",
+      status = "ACTIVE IN",
+      prisonId = moorlandPrisonCode,
+      confirmedReleaseDate = null,
+    )
+
+    activeInPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
+    activeInPrisoner.copy(prisonId = null).isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
+    activeInPrisoner.isAtDifferentLocationTo(moorlandPrisonCode) isBool false
   }
 }

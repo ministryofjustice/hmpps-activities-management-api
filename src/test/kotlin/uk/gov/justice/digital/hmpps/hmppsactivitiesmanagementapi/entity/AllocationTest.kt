@@ -102,13 +102,27 @@ class AllocationTest {
   }
 
   @Test
+  fun `check can auto-suspend a pending allocation`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow()).also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.PENDING) }
+
+    allocation.autoSuspend(today.atStartOfDay(), "auto-suspension reason")
+
+    with(allocation) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED)
+      assertThat(suspendedBy).isEqualTo("Activities Management Service")
+      assertThat(suspendedTime).isEqualTo(today.atStartOfDay())
+      assertThat(suspendedReason).isEqualTo("auto-suspension reason")
+    }
+  }
+
+  @Test
   fun `check cannot auto-suspend an ended allocation`() {
     val allocation = allocation().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only suspend active allocations")
+      .hasMessage("You can only auto-suspend active and pending allocations")
   }
 
   @Test
@@ -119,7 +133,7 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only suspend active allocations")
+      .hasMessage("You can only auto-suspend active and pending allocations")
   }
 
   @Test
@@ -261,7 +275,7 @@ class AllocationTest {
   }
 
   @Test
-  fun `allocotion must be pending to activate`() {
+  fun `allocation must be pending to activate`() {
     val allocation = allocation().copy(prisonerStatus = PrisonerStatus.PENDING)
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.PENDING) }
 

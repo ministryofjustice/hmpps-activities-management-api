@@ -25,6 +25,10 @@ internal infix fun <T> Collection<T>.hasSize(size: Int) {
   assertThat(this).hasSize(size)
 }
 
+internal inline infix fun <reified T> Collection<T>.containsExactly(value: Collection<T>) {
+  assertThat(this).containsExactly(*value.toTypedArray())
+}
+
 internal infix fun String.startsWith(prefix: String) {
   assertThat(this).startsWith(prefix)
 }
