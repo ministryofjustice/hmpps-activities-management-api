@@ -26,7 +26,7 @@ class MigrateAppointmentService(
   }
 
   fun deleteMigratedAppointments(prisonCode: String, startDate: LocalDate, categoryCode: String? = null) {
-    log.warn("Soft deleting migrated appointments for '$prisonCode' that started on or after $startDate" + (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
+    log.warn("Soft deleting migrated appointments for '$prisonCode' that started on or after $startDate{}", (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
 
     val cancelledTime = LocalDateTime.now()
     val cancelledBy = "DELETE_MIGRATED_APPOINTMENT_SERVICE"
@@ -64,7 +64,7 @@ class MigrateAppointmentService(
             log.info("Soft deleted migrated appointment(s) with id(s) '${appointments.map { appointment -> appointment.appointmentId }.joinToString("', '")}' from series with id '${appointmentSeries.appointmentSeriesId}'")
           }
       }
-      log.warn("Soft deleted $count migrated appointments for '$prisonCode' that started on or after $startDate" + (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
+      log.warn("Soft deleted $count migrated appointments for '$prisonCode' that started on or after $startDate{}", (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
     }
   }
 }
