@@ -60,6 +60,12 @@ class PrisonerExtTest {
   }
 
   @Test
+  fun `is restricted patient`() {
+    permanentlyReleasedFromMoorland.copy(restrictedPatient = true).isRestrictedPatient() isBool true
+    permanentlyReleasedFromMoorland.copy(restrictedPatient = false).isRestrictedPatient() isBool false
+  }
+
+  @Test
   fun `is active in prisoner`() {
     val activeInPrisoner = Prisoner(
       prisonerNumber = "1",

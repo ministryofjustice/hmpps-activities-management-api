@@ -62,10 +62,9 @@ data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) 
   fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.OFFENDER_RELEASED.eventType
-  fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "RELEASED_TO_HOSPITAL", "SENT_TO_COURT")
-    .any { it == additionalInformation.reason }
+  fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
 
-  fun isPermanent() = "RELEASED" == additionalInformation.reason
+  fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -141,7 +140,7 @@ data class ActivitiesChangedEvent(
 ) : InboundEvent {
   fun prisonCode() = additionalInformation.prisonId
 
-  fun action() = Action.values().firstOrNull { it.name == additionalInformation.action }
+  fun action() = Action.entries.firstOrNull { it.name == additionalInformation.action }
 
   override fun prisonerNumber(): String =
     personReference.identifiers.first { it.type == "NOMS" }.value
@@ -174,4 +173,9 @@ data class AlertsUpdatedEvent(
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
 }
 
-data class AlertsUpdatedInformation(val nomsNumber: String, val bookingId: Long, val alertsAdded: Set<String>, val alertsRemoved: Set<String>)
+data class AlertsUpdatedInformation(
+  val nomsNumber: String,
+  val bookingId: Long,
+  val alertsAdded: Set<String>,
+  val alertsRemoved: Set<String>,
+)
