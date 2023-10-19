@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetails
@@ -167,6 +168,24 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonCode)
       }
       .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+  }
+
+  suspend fun getScheduledVisitsForLocationAsync(
+    prisonCode: String,
+    locationId: Long,
+    date: LocalDate,
+    timeSlot: TimeSlot?,
+  ): List<PrisonerSchedule> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/locations/{locationId}/usage/VISIT")
+          .queryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode, locationId)
+      }
       .retrieve()
       .awaitBody()
   }
@@ -387,6 +406,19 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/agencies/{prisonCode}/eventLocations")
+          .build(prisonCode)
+      }
+      .retrieve()
+      .awaitBody()
+  }
+
+  suspend fun getEventLocationsBookedAsync(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): List<LocationSummary> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/agencies/{prisonCode}/eventLocationsBooked")
+          .queryParam("bookedOnDay", date)
+          .maybeQueryParam("timeSlot", timeSlot)
           .build(prisonCode)
       }
       .retrieve()
