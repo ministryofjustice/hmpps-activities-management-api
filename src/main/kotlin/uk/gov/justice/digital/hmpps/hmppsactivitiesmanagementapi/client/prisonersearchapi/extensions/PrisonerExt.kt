@@ -11,6 +11,8 @@ fun Prisoner.lastMovementType(): MovementType? =
 
 fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 
+fun Prisoner.isRestrictedPatient(): Boolean = restrictedPatient == true
+
 fun Prisoner.isActiveOut(): Boolean = status == "ACTIVE OUT"
 
 fun Prisoner.isActiveIn(): Boolean = status == "ACTIVE IN"
