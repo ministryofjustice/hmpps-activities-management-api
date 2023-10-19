@@ -39,7 +39,19 @@ class AppointmentCancelDomainService(
   ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToCancel.contains(it.appointmentId) }
-    return cancelAppointments(appointmentSeries, appointmentId, appointmentsToCancel.toSet(), request, cancelledTime, cancelledBy, cancelAppointmentsCount, cancelInstancesCount, startTimeInMs, true, false)
+    return cancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      appointmentsToCancel.toSet(),
+      request,
+      cancelledTime,
+      cancelledBy,
+      cancelAppointmentsCount,
+      cancelInstancesCount,
+      startTimeInMs,
+      trackEvent = true,
+      auditEvent = false,
+    )
   }
 
   fun cancelAppointments(
@@ -57,11 +69,11 @@ class AppointmentCancelDomainService(
   ): AppointmentSeriesModel {
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
+    // TODO: Once all cancellation and deletion logic (prisoner released, released to hospital, OCUCANTR etc.) routes
+    // through this domain service, wrap in transaction and publish sync events
     appointmentsToCancel.forEach {
       it.cancel(cancelledTime, cancellationReason, cancelledBy)
     }
-
-    val cancelledAppointment = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
 
     if (trackEvent) {
       val customEventName = if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value
@@ -75,10 +87,10 @@ class AppointmentCancelDomainService(
     }
 
     if (auditEvent) {
-      writeAuditEvent(appointmentId, request, appointmentSeries, cancellationReason.isDelete)
+      writeAuditEvent(appointmentId, request, appointmentSeries, cancelledTime, cancelledBy, cancellationReason.isDelete)
     }
 
-    return cancelledAppointment.toModel()
+    return appointmentSeries.toModel()
   }
 
   fun getCancelInstancesCount(
@@ -89,18 +101,22 @@ class AppointmentCancelDomainService(
     appointmentId: Long,
     request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
+    cancelledTime: LocalDateTime,
+    cancelledBy: String,
     isDelete: Boolean,
   ) {
     if (isDelete) {
-      writeAppointmentDeletedAuditEvent(appointmentId, request, appointmentSeries)
+      writeAppointmentDeletedAuditEvent(appointmentId, request, appointmentSeries, cancelledTime, cancelledBy)
     } else {
-      writeAppointmentCancelledAuditEvent(appointmentId, request, appointmentSeries)
+      writeAppointmentCancelledAuditEvent(appointmentId, request, appointmentSeries, cancelledTime, cancelledBy)
     }
   }
   private fun writeAppointmentCancelledAuditEvent(
     appointmentId: Long,
     request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
+    cancelledTime: LocalDateTime,
+    cancelledBy: String,
   ) {
     auditService.logEvent(
       AppointmentCancelledEvent(
@@ -108,7 +124,8 @@ class AppointmentCancelDomainService(
         appointmentId = appointmentId,
         prisonCode = appointmentSeries.prisonCode,
         applyTo = request.applyTo,
-        createdAt = LocalDateTime.now(),
+        createdAt = cancelledTime,
+        createdBy = cancelledBy,
       ),
     )
   }
@@ -117,6 +134,8 @@ class AppointmentCancelDomainService(
     appointmentId: Long,
     request: AppointmentCancelRequest,
     appointmentSeries: AppointmentSeries,
+    cancelledTime: LocalDateTime,
+    cancelledBy: String,
   ) {
     auditService.logEvent(
       AppointmentDeletedEvent(
@@ -124,7 +143,8 @@ class AppointmentCancelDomainService(
         appointmentId = appointmentId,
         prisonCode = appointmentSeries.prisonCode,
         applyTo = request.applyTo,
-        createdAt = LocalDateTime.now(),
+        createdAt = cancelledTime,
+        createdBy = cancelledBy,
       ),
     )
   }

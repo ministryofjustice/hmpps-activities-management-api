@@ -4,11 +4,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import java.time.LocalDateTime
 
 class AppointmentCancelledEvent(
-  private val appointmentSeriesId: Long,
-  private val appointmentId: Long,
-  private val prisonCode: String,
-  private val applyTo: ApplyTo?,
+  val appointmentSeriesId: Long,
+  val appointmentId: Long,
+  val prisonCode: String,
+  val applyTo: ApplyTo?,
   createdAt: LocalDateTime,
+  createdBy: String,
 
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
@@ -16,6 +17,7 @@ class AppointmentCancelledEvent(
   details = "An appointment with id '$appointmentId' from series id '$appointmentSeriesId' " +
     "at prison $prisonCode was cancelled",
   createdAt = createdAt,
+  createdBy = createdBy,
 ),
   HmppsAuditable {
 

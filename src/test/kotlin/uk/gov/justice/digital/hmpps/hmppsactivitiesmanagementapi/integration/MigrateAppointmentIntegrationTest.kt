@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
@@ -18,8 +19,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -36,11 +39,16 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
-
   @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
-
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @MockBean
+  private lateinit var telemetryClient: TelemetryClient
+
+  @MockBean
+  private lateinit var auditService: AuditService
+  private val auditableEventCaptor = argumentCaptor<AppointmentDeletedEvent>()
 
   @Test
   fun `migrate appointment forbidden`() {
@@ -84,6 +92,8 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     verifyAppointmentInstance(response)
 
     verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
   }
 
   @Test
@@ -111,6 +121,8 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
   }
 
   private fun verifyAppointmentInstance(response: AppointmentInstance) {
@@ -188,6 +200,11 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(25),
       AppointmentInstanceInformation(27),
     )
+
+    verifyNoInteractions(telemetryClient)
+
+    verify(auditService, times(2)).logEvent(auditableEventCaptor.capture())
+    assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15, 17)
   }
 
   @Sql(
@@ -219,6 +236,11 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
       AppointmentInstanceInformation(25),
     )
+
+    verifyNoInteractions(telemetryClient)
+
+    verify(auditService, times(1)).logEvent(auditableEventCaptor.capture())
+    assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15)
   }
 
   @Sql(
@@ -243,6 +265,11 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(20),
       AppointmentInstanceInformation(22),
     )
+
+    verifyNoInteractions(telemetryClient)
+
+    verify(auditService, times(3)).logEvent(auditableEventCaptor.capture())
+    assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(10, 12, 13)
   }
 
   private fun WebTestClient.migrateAppointment(

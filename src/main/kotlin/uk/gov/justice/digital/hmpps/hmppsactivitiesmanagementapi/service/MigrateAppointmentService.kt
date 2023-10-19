@@ -4,11 +4,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -17,8 +19,7 @@ import java.time.LocalDateTime
 class MigrateAppointmentService(
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification,
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
-  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
-  private val transactionHandler: TransactionHandler,
+  private val appointmentCancelDomainService: AppointmentCancelDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -27,9 +28,8 @@ class MigrateAppointmentService(
   fun deleteMigratedAppointments(prisonCode: String, startDate: LocalDate, categoryCode: String? = null) {
     log.warn("Soft deleting migrated appointments for '$prisonCode' that started on or after $startDate" + (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
 
-    val now = LocalDateTime.now()
-    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID)
-    val user = "DELETE_MIGRATED_APPOINTMENT_SERVICE"
+    val cancelledTime = LocalDateTime.now()
+    val cancelledBy = "DELETE_MIGRATED_APPOINTMENT_SERVICE"
 
     var spec = appointmentSeriesSpecification.prisonCodeEquals(prisonCode)
       .and(appointmentSeriesSpecification.startDateGreaterThanOrEquals(startDate))
@@ -40,15 +40,31 @@ class MigrateAppointmentService(
     }
 
     appointmentSeriesRepository.findAll(spec).let {
+      var count = 0
       it.forEach { appointmentSeries ->
-        transactionHandler.newSpringTransaction {
-          appointmentSeries.appointments().forEach { appointment ->
-            appointment.cancel(now, cancellationReason, user)
-            log.info("Soft deleted migrated appointment with id '${appointment.appointmentId}'")
+        val startTimeInMs = System.currentTimeMillis()
+        appointmentSeries.appointments().filter { appointment -> appointment.startDate >= startDate }
+          .ifNotEmpty { appointments ->
+            appointmentCancelDomainService.cancelAppointments(
+              appointmentSeries,
+              appointments.first().appointmentId,
+              appointments.toSet(),
+              AppointmentCancelRequest(DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID, THIS_AND_ALL_FUTURE_APPOINTMENTS),
+              cancelledTime,
+              cancelledBy,
+              appointments.size,
+              appointments.flatMap { appointment -> appointment.attendees() }.size,
+              startTimeInMs,
+              trackEvent = false,
+              auditEvent = true,
+            )
+
+            count += appointments.size
+
+            log.info("Soft deleted migrated appointment(s) with id(s) '${appointments.map { appointment -> appointment.appointmentId }.joinToString("', '")}' from series with id '${appointmentSeries.appointmentSeriesId}'")
           }
-        }
       }
-      log.warn("Soft deleted ${it.size} migrated appointments for '$prisonCode' that started on or after $startDate" + (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
+      log.warn("Soft deleted $count migrated appointments for '$prisonCode' that started on or after $startDate" + (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
     }
   }
 }
