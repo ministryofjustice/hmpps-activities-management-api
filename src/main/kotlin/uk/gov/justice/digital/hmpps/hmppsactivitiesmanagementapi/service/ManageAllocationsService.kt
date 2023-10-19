@@ -4,8 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.movementDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Movement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
@@ -176,9 +175,6 @@ class ManageAllocationsService(
 
     val prisonersNotInExpectedPrison =
       prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(regime.prisonCode) }
-
-    log.info("Prisoners not in expected prison ${regime.prisonCode}: ${prisonersNotInExpectedPrison.map { it.prisonerNumber }}")
-
     val expiredMoves = getExpiredMoves(regime, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
     val expiredAllocations = expiredMoves.withFilteredExpiredMovesMatching(allocations)
 
@@ -192,11 +188,8 @@ class ManageAllocationsService(
 
   fun getExpiredMoves(regime: PrisonRegime, prisonerNumbers: Set<String>) =
     prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonerNumbers)
-      .also { movements -> log.info("Movements for prison ${regime.prisonCode}: $movements") }
       .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
-      .also { latestPrisonerMovements -> log.info("Latest prisoner movements for prison ${regime.prisonCode}: $latestPrisonerMovements") }
       .filter { regime.hasExpired { it.value.movementDate } }
-      .also { expiredPrisonerMoves -> log.info("Expired prisoner moves for prison ${regime.prisonCode}: $expiredPrisonerMoves") }
 
   private fun Map<String, Movement>.withFilteredExpiredMovesMatching(allocations: Collection<Allocation>) =
     flatMap { entry -> allocations.filter { entry.key == it.prisonerNumber } }
