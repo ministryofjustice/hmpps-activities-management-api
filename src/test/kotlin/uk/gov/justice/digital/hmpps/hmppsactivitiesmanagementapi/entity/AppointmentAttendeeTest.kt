@@ -3,10 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeDeletedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendeeRemovedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.tempRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
@@ -31,10 +31,10 @@ class AppointmentAttendeeTest {
   @Test
   fun `removal with soft delete reason`() {
     val entity = appointmentSeriesEntity().appointments().first().attendees().first().apply {
-      remove(removalReason = appointmentAttendeeDeletedReason(), removedBy = "TEST.USER")
+      remove(removalReason = prisonerReleasedAppointmentAttendeeRemovalReason(), removedBy = "TEST.USER")
     }
     assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
-    assertThat(entity.removalReason).isEqualTo(appointmentAttendeeDeletedReason())
+    assertThat(entity.removalReason).isEqualTo(prisonerReleasedAppointmentAttendeeRemovalReason())
     assertThat(entity.removedBy).isEqualTo("TEST.USER")
     assertThat(entity.isRemoved()).isFalse()
     assertThat(entity.isDeleted).isTrue()
@@ -43,10 +43,10 @@ class AppointmentAttendeeTest {
   @Test
   fun `removal with non soft delete reason`() {
     val entity = appointmentSeriesEntity().appointments().first().attendees().first().apply {
-      remove(removalReason = appointmentAttendeeRemovedReason(), removedBy = "TEST.USER")
+      remove(removalReason = tempRemovalByUserAppointmentAttendeeRemovalReason(), removedBy = "TEST.USER")
     }
     assertThat(entity.removedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
-    assertThat(entity.removalReason).isEqualTo(appointmentAttendeeRemovedReason())
+    assertThat(entity.removalReason).isEqualTo(tempRemovalByUserAppointmentAttendeeRemovalReason())
     assertThat(entity.removedBy).isEqualTo("TEST.USER")
     assertThat(entity.isRemoved()).isTrue()
     assertThat(entity.isDeleted).isFalse()

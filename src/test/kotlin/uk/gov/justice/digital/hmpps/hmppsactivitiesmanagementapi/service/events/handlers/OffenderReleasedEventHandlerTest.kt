@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -118,32 +119,47 @@ class OffenderReleasedEventHandlerTest {
   }
 
   @Test
-  fun `future appointments are ended on permanent release of restricted patient`() {
+  fun `permanent release of restricted patient removes them from future appointments`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn releasedToHospitalPrisoner
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
-    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(moorlandPrisonCode, "123456")
+    verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
+      moorlandPrisonCode,
+      "123456",
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
+    )
   }
 
   @Test
-  fun `future appointments are ended on permanent release of inactive out prisoner`() {
+  fun `permanent release of inactive out prisoner removes them from future appointments`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn inActiveOutPrisoner
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
-    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(moorlandPrisonCode, "123456")
+    verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
+      moorlandPrisonCode,
+      "123456",
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
+    )
   }
 
   @Test
-  fun `future appointments are ended on permanent release of active in pentonville prisoner`() {
+  fun `permanent release of active in prisoner removes them from future appointments`() {
     activeInPrisoner.stub { on { prisonId } doReturn pentonvillePrisonCode }
 
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn activeInPrisoner
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
-    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(moorlandPrisonCode, "123456")
+    verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
+      moorlandPrisonCode,
+      "123456",
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
+    )
   }
 
   @Test

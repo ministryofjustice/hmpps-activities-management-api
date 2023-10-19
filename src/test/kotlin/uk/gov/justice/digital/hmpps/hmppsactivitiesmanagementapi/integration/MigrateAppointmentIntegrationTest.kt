@@ -8,6 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
@@ -205,6 +206,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(auditService, times(2)).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15, 17)
+    verifyNoMoreInteractions(auditService)
   }
 
   @Sql(
@@ -241,6 +243,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(auditService, times(1)).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15)
+    verifyNoMoreInteractions(auditService)
   }
 
   @Sql(
@@ -270,6 +273,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(auditService, times(3)).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(10, 12, 13)
+    verifyNoMoreInteractions(auditService)
   }
 
   private fun WebTestClient.migrateAppointment(

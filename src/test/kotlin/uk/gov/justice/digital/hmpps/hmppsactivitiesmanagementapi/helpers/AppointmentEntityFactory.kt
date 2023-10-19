@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
@@ -291,14 +292,21 @@ internal fun deleteMigratedAppointmentReason() =
     true,
   )
 
-internal fun appointmentAttendeeRemovedReason() =
+internal fun tempRemovalByUserAppointmentAttendeeRemovalReason() =
   AppointmentAttendeeRemovalReason(
     TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
     "Temporary removal by user",
     false,
   )
 
-internal fun appointmentAttendeeDeletedReason() =
+internal fun cancelOnTransferAppointmentAttendeeRemovalReason() =
+  AppointmentAttendeeRemovalReason(
+    CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+    "Cancel on transfer - NOMIS OCUCANTR form",
+    true,
+  )
+
+internal fun prisonerReleasedAppointmentAttendeeRemovalReason() =
   AppointmentAttendeeRemovalReason(
     PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
     "Prisoner status: Released",

@@ -2,130 +2,95 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentAttendeeServiceTest {
-
-  private val prisonApiClient = mock<PrisonApiApplicationClient>()
+  private val appointmentAttendeeRemovalReasonRepository = mock<AppointmentAttendeeRemovalReasonRepository>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val auditService = mock<AuditService>()
 
   private val appointmentAttendeeService = AppointmentAttendeeService(
-    prisonApiClient,
+    appointmentAttendeeRemovalReasonRepository,
     appointmentInstanceRepository,
     appointmentAttendeeRepository,
+    TransactionHandler(),
     auditService,
   )
 
   @Test
-  fun `cancels all future appointments`() {
+  fun `removes prisoner from future appointments`() {
     val appointmentAttendeeId = 42L
     val prisonCode = "PVI"
     val prisonerNumber = "ABC123"
-    val inmateDetail = mock<InmateDetail>()
     val appointmentInstance = mock<AppointmentInstance>()
-    val appointmentSeries = mock<AppointmentSeries>()
-    val appointment = mock<Appointment>()
     val appointmentAttendee = mock<AppointmentAttendee>()
 
     whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
     whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
     whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
 
-    whenever(
-      prisonApiClient.getPrisonerDetails(
-        prisonerNumber = prisonerNumber,
-        fullInfo = true,
-        extraInfo = true,
-      ),
-    ).thenReturn(Mono.just(inmateDetail))
+    whenever(appointmentAttendeeRemovalReasonRepository.findById(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID))
+      .thenReturn(Optional.of(prisonerReleasedAppointmentAttendeeRemovalReason()))
 
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf(appointmentInstance))
 
     whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
-    whenever(appointmentAttendee.appointment).thenReturn(appointment)
-    whenever(appointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
-    whenever(appointment.appointmentSeries).thenReturn(appointmentSeries)
-    whenever(appointmentSeries.isIndividualAppointment()).thenReturn(false)
 
-    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    appointmentAttendeeService.removePrisonerFromFutureAppointments(
+      prisonCode,
+      prisonerNumber,
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
+    )
 
-    verify(appointment).removeAttendee(appointmentAttendee)
+    verify(appointmentAttendee).remove(
+      any(),
+      eq(prisonerReleasedAppointmentAttendeeRemovalReason()),
+      eq("OFFENDER_RELEASED_EVENT"),
+    )
+
+    verify(auditService).logEvent(any<AppointmentCancelledOnTransferEvent>())
   }
 
   @Test
-  fun `cancels all future appointments and deletes orphaned individual appointment `() {
-    val appointmentAttendeeId = 42L
+  fun `does not remove anything if there are no future appointments`() {
     val prisonCode = "PVI"
     val prisonerNumber = "ABC123"
-    val inmateDetail = mock<InmateDetail>()
-    val appointmentInstance = mock<AppointmentInstance>()
-    val appointmentSeries = mock<AppointmentSeries>()
-    val appointment = mock<Appointment>()
-    val appointmentAttendee = mock<AppointmentAttendee>()
 
-    whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
-    whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
-    whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
-
-    whenever(
-      prisonApiClient.getPrisonerDetails(
-        prisonerNumber = prisonerNumber,
-        fullInfo = true,
-        extraInfo = true,
-      ),
-    ).thenReturn(Mono.just(inmateDetail))
-
-    whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
-      .thenReturn(listOf(appointmentInstance))
-
-    whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
-    whenever(appointmentAttendee.appointment).thenReturn(appointment)
-    whenever(appointmentAttendee.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
-    whenever(appointment.appointmentSeries).thenReturn(appointmentSeries)
-    whenever(appointmentSeries.isIndividualAppointment()).thenReturn(true)
-
-    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
-
-    verify(appointmentSeries).removeAppointment(appointment)
-  }
-
-  @Test
-  fun `does not cancel anything if there are no future appointments`() {
-    val prisonCode = "PVI"
-    val prisonerNumber = "ABC123"
-    val inmateDetail = mock<InmateDetail>()
-
-    whenever(
-      prisonApiClient.getPrisonerDetails(
-        prisonerNumber = prisonerNumber,
-        fullInfo = true,
-        extraInfo = true,
-      ),
-    ).thenReturn(Mono.just(inmateDetail))
+    whenever(appointmentAttendeeRemovalReasonRepository.findById(CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID))
+      .thenReturn(Optional.of(cancelOnTransferAppointmentAttendeeRemovalReason()))
 
     whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
       .thenReturn(listOf())
 
-    appointmentAttendeeService.cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    appointmentAttendeeService.removePrisonerFromFutureAppointments(
+      prisonCode,
+      prisonerNumber,
+      CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "APPOINTMENTS_CHANGED_EVENT",
+    )
 
     verifyNoInteractions(appointmentAttendeeRepository)
+    verifyNoInteractions(auditService)
   }
 }
