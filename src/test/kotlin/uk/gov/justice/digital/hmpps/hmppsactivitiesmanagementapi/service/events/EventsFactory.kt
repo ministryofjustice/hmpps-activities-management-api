@@ -16,10 +16,11 @@ fun offenderTemporaryReleasedEvent(
 fun offenderReleasedEvent(
   prisonCode: String = pentonvillePrisonCode,
   prisonerNumber: String = "XXXXXX",
+  reason: String = "RELEASED",
 ) = OffenderReleasedEvent(
   ReleaseInformation(
     prisonerNumber,
-    "RELEASED",
+    reason,
     prisonCode,
   ),
 )
