@@ -270,6 +270,13 @@ internal fun appointmentHostPrisonStaff() =
     "Prison staff",
   )
 
+internal fun appointmentCreatedInErrorReason() =
+  AppointmentCancellationReason(
+    1,
+    "Created in error",
+    true,
+  )
+
 internal fun appointmentCancelledReason() =
   AppointmentCancellationReason(
     2,
@@ -277,10 +284,10 @@ internal fun appointmentCancelledReason() =
     false,
   )
 
-internal fun appointmentDeletedReason() =
+internal fun deleteMigratedAppointmentReason() =
   AppointmentCancellationReason(
-    1,
-    "Created in error",
+    3,
+    "Delete migrated appointment",
     true,
   )
 

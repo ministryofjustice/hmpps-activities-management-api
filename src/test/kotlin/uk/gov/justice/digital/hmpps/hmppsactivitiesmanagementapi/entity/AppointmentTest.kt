@@ -11,11 +11,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
@@ -118,6 +120,36 @@ class AppointmentTest {
       isDeleted = true
     }
     entity.isScheduled() isEqualTo false
+  }
+
+  @Test
+  fun `cancel appointment with non delete reason`() {
+    val cancelledTime = LocalDateTime.now()
+    val cancellationReason = appointmentCancelledReason()
+    val cancelledBy = "CANCELLED_BY_USER"
+    val entity = appointmentSeriesEntity().appointments().first()
+
+    entity.cancel(cancelledTime, cancellationReason, cancelledBy)
+
+    entity.cancelledTime isEqualTo cancelledTime
+    entity.cancellationReason isEqualTo cancellationReason
+    entity.cancelledBy isEqualTo cancelledBy
+    entity.isDeleted isBool false
+  }
+
+  @Test
+  fun `cancel appointment with delete reason`() {
+    val cancelledTime = LocalDateTime.now()
+    val cancellationReason = appointmentCreatedInErrorReason()
+    val cancelledBy = "DELETED_BY_USER"
+    val entity = appointmentSeriesEntity().appointments().first()
+
+    entity.cancel(cancelledTime, cancellationReason, cancelledBy)
+
+    entity.cancelledTime isEqualTo cancelledTime
+    entity.cancellationReason isEqualTo cancellationReason
+    entity.cancelledBy isEqualTo cancelledBy
+    entity.isDeleted isBool true
   }
 
   @Test

@@ -16,7 +16,7 @@ class AppointmentDeletedEventTest : AuditableEventTestBase() {
   @Test
   fun `returns correct string representation`() {
     val event = createEvent()
-    val expectedToString = "An appointment with id '2' from series id '1' at prison PBI was deleted. Event created on 2023-03-22 at 09:00:03 by Bob."
+    val expectedToString = "An appointment with id '2' from series id '1' at prison PBI was deleted. Event created on 2023-03-22 at 09:00:03 by DELETED_BY_USER."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }
 
@@ -24,7 +24,7 @@ class AppointmentDeletedEventTest : AuditableEventTestBase() {
   fun `returns the correct json representation`() {
     val event = createEvent()
     val expectedJson =
-      """{"appointmentSeriesId":1,"appointmentId":2,"prisonCode":"PBI","applyTo":"ALL_FUTURE_APPOINTMENTS","createdTime":"2023-03-22T09:00:03","createdBy":"Bob"}"""
+      """{"appointmentSeriesId":1,"appointmentId":2,"prisonCode":"PBI","applyTo":"ALL_FUTURE_APPOINTMENTS","createdTime":"2023-03-22T09:00:03","createdBy":"DELETED_BY_USER"}"""
     assertThat(event.toJson()).isEqualTo(expectedJson)
   }
 
@@ -36,6 +36,7 @@ class AppointmentDeletedEventTest : AuditableEventTestBase() {
       prisonCode = "PBI",
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
       createdAt = createdAt,
+      createdBy = "DELETED_BY_USER",
     )
   }
 }
