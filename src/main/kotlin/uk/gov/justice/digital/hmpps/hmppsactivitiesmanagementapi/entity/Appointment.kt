@@ -96,6 +96,13 @@ data class Appointment(
 
   var isDeleted: Boolean = false
 
+  fun cancel(cancelledTime: LocalDateTime = LocalDateTime.now(), cancellationReason: AppointmentCancellationReason, cancelledBy: String) {
+    this.cancelledTime = cancelledTime
+    this.cancellationReason = cancellationReason
+    this.cancelledBy = cancelledBy
+    this.isDeleted = cancellationReason.isDelete
+  }
+
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
 
