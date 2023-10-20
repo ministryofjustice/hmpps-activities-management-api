@@ -65,12 +65,12 @@ class PrisonerAllocationHandlerTest {
       ),
     ) doReturn previouslyActiveAllocations.plus(pendingAllocation)
 
-    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
       assertThat(it.deallocatedBy).isEqualTo("Activities Management Service")
-      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.RELEASED)
+      assertThat(it.deallocatedReason).isEqualTo(DeallocationReason.TEMPORARILY_RELEASED)
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
@@ -78,7 +78,7 @@ class PrisonerAllocationHandlerTest {
     verify(waitingListService).declinePendingOrApprovedApplications(
       moorlandPrisonCode,
       "123456",
-      "Released",
+      "Temporarily released or transferred",
       "Activities Management Service",
     )
   }
@@ -117,7 +117,7 @@ class PrisonerAllocationHandlerTest {
     verify(waitingListService).declinePendingOrApprovedApplications(
       moorlandPrisonCode,
       "123456",
-      "Released",
+      "Released from prison",
       "Activities Management Service",
     )
   }
@@ -146,7 +146,7 @@ class PrisonerAllocationHandlerTest {
     verify(waitingListService).declinePendingOrApprovedApplications(
       moorlandPrisonCode,
       "123456",
-      "Released",
+      "Released from prison",
       "Activities Management Service",
     )
   }
