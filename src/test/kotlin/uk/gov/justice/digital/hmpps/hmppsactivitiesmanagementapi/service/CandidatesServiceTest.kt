@@ -47,7 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerNonAssociationDetail
 import java.time.LocalDate
-import java.util.*
+import java.util.Optional
 
 class CandidatesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
