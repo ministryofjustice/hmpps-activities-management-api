@@ -4,14 +4,17 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isTemporarilyReleased
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.OTHER
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -47,19 +50,14 @@ class ActivitiesChangedEventHandler(
 
     if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
       return when (event.action()) {
-        Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event)
+        Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event).let { Outcome.success() }
         Action.END -> {
           if (prisonerHasAllocationsOfInterestFor(event)) {
-            getDeallocationReasonFor(event)?.let { reason ->
-              allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
-
-              Outcome.success()
-            } ?: Outcome.failed { "Unable to determine release reason for prisoner ${event.prisonerNumber()}" }
+            allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), getDeallocationReasonFor(event))
           } else {
             log.info("No allocations of interest for prisoner ${event.prisonerNumber()}")
-
-            Outcome.success()
           }
+          Outcome.success()
         }
 
         else -> Outcome.failed().also { log.warn("Unable to process $event, unknown action") }
@@ -77,33 +75,25 @@ class ActivitiesChangedEventHandler(
     )
 
   private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
-    runCatching {
-      LocalDateTime.now().let { now ->
-        transactionHandler.newSpringTransaction {
-          allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-            event.prisonCode(),
-            event.prisonerNumber(),
-            PrisonerStatus.ACTIVE,
-            PrisonerStatus.PENDING,
-          )
-            .excludingFuturePendingAllocations()
-            .suspendPrisonersAllocations(now, event)
-            .suspendPrisonersFutureAttendances(now, event)
-        }.let { (suspendedAllocations, suspendedAttendances) ->
-          suspendedAllocations.forEach {
-            outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
-          }.also { log.info("Sending allocation amended events.") }
-          suspendedAttendances.forEach {
-            outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
-          }.also { log.info("Sending attendance amended events.") }
-        }
+    LocalDateTime.now().let { now ->
+      transactionHandler.newSpringTransaction {
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          event.prisonCode(),
+          event.prisonerNumber(),
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+        )
+          .excludingFuturePendingAllocations()
+          .suspendPrisonersAllocations(now, event)
+          .suspendPrisonersFutureAttendances(now, event)
+      }.let { (suspendedAllocations, suspendedAttendances) ->
+        suspendedAllocations.forEach {
+          outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+        }.also { log.info("Sending allocation amended events.") }
+        suspendedAttendances.forEach {
+          outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
+        }.also { log.info("Sending attendance amended events.") }
       }
-
-      Outcome.success()
-    }.getOrElse {
-      log.error("An error occurred whilst trying to suspend prisoner ${event.prisonerNumber()}", it)
-
-      Outcome.failed { "An error occurred whilst trying to suspend prisoner ${event.prisonerNumber()}" }
     }
 
   private fun List<Allocation>.excludingFuturePendingAllocations() =
@@ -138,16 +128,25 @@ class ActivitiesChangedEventHandler(
   }
 
   private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) =
-    prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())?.let { prisoner ->
-      when {
-        prisoner.isTemporarilyReleased() -> DeallocationReason.TEMPORARILY_RELEASED
-        prisoner.isPermanentlyReleased() -> DeallocationReason.RELEASED
-        else -> {
-          val message =
-            "Prisoner prison code '${prisoner.prisonId}', status '${prisoner.status}', last movement type code '${prisoner.lastMovementType()}', confirmed release date '${prisoner.confirmedReleaseDate}'"
-          log.warn("Unable to determine reason for prisoner ${event.prisonerNumber()}. $message")
-          throw IllegalStateException("Unable to determine release reason for prisoner '${event.prisonerNumber()}' for event '$event'")
+    prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
+      .throwNullPointerIfNotFound { "Prisoner search lookup failed for prisoner ${event.prisonerNumber()}" }
+      .let { prisoner ->
+        when {
+          prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+          prisoner.isAtDifferentLocationTo(event.prisonCode()) -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+          // The user has explicitly chosen END, so we know they want to end but cannot easily determine a reason. If we don't it causes issues for the prisons.
+          else -> OTHER.also {
+            log.info("Prisoner prison code '${prisoner.prisonId}', prisoner '${prisoner.prisonerNumber}', status '${prisoner.status}', last movement type code '${prisoner.lastMovementType()}'")
+            log.info("Defaulting to OTHER for deallocation reason for prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}")
+          }
         }
       }
+
+  private fun Prisoner?.throwNullPointerIfNotFound(message: () -> String): Prisoner {
+    if (this == null) {
+      throw NullPointerException(message())
     }
+
+    return this
+  }
 }
