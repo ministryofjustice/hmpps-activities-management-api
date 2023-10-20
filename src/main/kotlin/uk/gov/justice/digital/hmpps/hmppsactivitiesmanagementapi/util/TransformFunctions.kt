@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -389,28 +389,20 @@ fun EntityPrisonPayBand.toModelPrisonPayBand() =
     prisonCode = this.prisonCode,
   )
 
-fun transformOffenderNonAssociationDetail(offenderNonAssociationDetail: OffenderNonAssociationDetail) =
+fun transformPrisonerNonAssociationDetail(nonAssociationDetail: PrisonerNonAssociation) =
   NonAssociationDetails(
-    reasonCode = offenderNonAssociationDetail.reasonCode,
-    reasonDescription = offenderNonAssociationDetail.reasonDescription,
-    typeCode = offenderNonAssociationDetail.typeCode,
-    typeDescription = offenderNonAssociationDetail.typeDescription,
-    effectiveDate = LocalDateTime.parse(offenderNonAssociationDetail.effectiveDate),
-    expiryDate = offenderNonAssociationDetail.expiryDate?.let { LocalDateTime.parse(offenderNonAssociationDetail.expiryDate) },
-    offenderNonAssociation = with(offenderNonAssociationDetail.offenderNonAssociation) {
-      OffenderNonAssociation(
-        offenderNo = this.offenderNo,
+    reasonCode = nonAssociationDetail.reason.toString(),
+    reasonDescription = nonAssociationDetail.reasonDescription,
+    otherPrisonerDetails = with(nonAssociationDetail.otherPrisonerDetails) {
+      OtherPrisonerDetails(
+        prisonerNumber = this.prisonerNumber,
         firstName = this.firstName,
         lastName = this.lastName,
-        reasonCode = this.reasonCode,
-        reasonDescription = this.reasonDescription,
-        agencyDescription = this.agencyDescription,
-        assignedLivingUnitDescription = this.assignedLivingUnitDescription,
-        assignedLivingUnitId = this.assignedLivingUnitId,
+        cellLocation = this.cellLocation,
       )
     },
-    authorisedBy = offenderNonAssociationDetail.authorisedBy,
-    comments = offenderNonAssociationDetail.comments,
+    whenCreated = LocalDateTime.parse(nonAssociationDetail.whenCreated),
+    comments = nonAssociationDetail.comment,
   )
 
 fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(

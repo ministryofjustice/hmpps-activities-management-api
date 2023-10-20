@@ -31,6 +31,7 @@ class WebClientConfiguration(
   @Value("\${prisoner-search.api.url}") private val prisonerSearchApiUrl: String,
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
+  @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
   private val webClientBuilder: WebClient.Builder,
 ) {
 
@@ -163,6 +164,13 @@ class WebClientConfiguration(
   @Bean
   fun caseNotesApiWebClient(): WebClient {
     return webClientBuilder.baseUrl(caseNotesApiUrl)
+      .filter(addAuthHeaderFilterFunction())
+      .build()
+  }
+
+  @Bean
+  fun nonAssociationsApiWebClient(): WebClient {
+    return webClientBuilder.baseUrl(nonAssociationsApiUrl)
       .filter(addAuthHeaderFilterFunction())
       .build()
   }

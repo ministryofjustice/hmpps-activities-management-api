@@ -2,9 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveOut
@@ -31,15 +32,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerNonAssociationDetail
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Service
 @Transactional(readOnly = true)
 class CandidatesService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val nonAssociationsApiClient: NonAssociationsApiClient,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationRepository: AllocationRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -51,7 +52,7 @@ class CandidatesService(
       ?: throw IllegalArgumentException("Prisoner number '$prisonerNumber' not found")
 
     val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))
-    val prisonerNonAssociations = prisonApiClient.getOffenderNonAssociations(prisonerNumber)
+    val prisonerNonAssociations = nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)
     val prisonerNumbers = schedule.allocations(true).map { it.prisonerNumber }
 
     val candidateAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(
@@ -234,23 +235,13 @@ class CandidatesService(
 
   private fun nonAssociationSuitability(
     allocatedPrisoners: List<String>,
-    nonAssociations: List<OffenderNonAssociationDetail>?,
+    nonAssociations: List<PrisonerNonAssociation>,
   ): NonAssociationSuitability {
-    val allocationNonAssociations = nonAssociations
-      ?.filter {
-        it.effectiveDate.isEmpty() || LocalDateTime.parse(it.effectiveDate).isBefore(LocalDateTime.now())
-      }
-      ?.filter {
-        it.expiryDate.isNullOrEmpty() || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
-      }
-      ?.filter { allocatedPrisoners.contains(it.offenderNonAssociation.offenderNo) }
-      ?: emptyList()
+    val allocationNonAssociations = nonAssociations.filter { allocatedPrisoners.contains(it.otherPrisonerDetails.prisonerNumber) }
 
     return NonAssociationSuitability(
       allocationNonAssociations.isEmpty(),
-      allocationNonAssociations.map {
-        transformOffenderNonAssociationDetail(it)
-      },
+      allocationNonAssociations.map { transformPrisonerNonAssociationDetail(it) },
     )
   }
 

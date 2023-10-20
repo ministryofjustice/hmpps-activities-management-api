@@ -14,29 +14,13 @@ data class NonAssociationDetails(
   @get:JsonProperty("reasonDescription", required = true)
   val reasonDescription: String,
 
-  @Schema(example = "WING", required = true, description = "The non-association type code")
-  @get:JsonProperty("typeCode", required = true)
-  val typeCode: String,
+  @Schema(required = true, description = "")
+  @get:JsonProperty("otherPrisonerDetails", required = true)
+  val otherPrisonerDetails: OtherPrisonerDetails,
 
-  @Schema(example = "Do Not Locate on Same Wing", required = true, description = "The non-association type description")
-  @get:JsonProperty("typeDescription", required = true)
-  val typeDescription: String,
-
-  @Schema(example = "2021-07-05T10:35:17", required = true, description = "Date and time the mom-association is effective from. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.")
-  @get:JsonProperty("effectiveDate", required = true)
-  val effectiveDate: LocalDateTime,
-
-  @Schema(example = "2021-07-05T10:35:17", description = "Date and time the mom-association expires. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.")
-  @get:JsonProperty("expiryDate")
-  val expiryDate: LocalDateTime? = null,
-
-  @Schema(example = "null", required = true, description = "")
-  @get:JsonProperty("offenderNonAssociation", required = true)
-  val offenderNonAssociation: OffenderNonAssociation,
-
-  @Schema(example = "null", description = "The person who authorised the non-association (free text).")
-  @get:JsonProperty("authorisedBy")
-  val authorisedBy: String? = null,
+  @Schema(example = "2021-07-05T10:35:17", required = true, description = "Date and time the non-association is effective from. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.")
+  @get:JsonProperty("whenCreated", required = true)
+  val whenCreated: LocalDateTime,
 
   @Schema(example = "null", description = "Additional free text comments related to the non-association.")
   @get:JsonProperty("comments")

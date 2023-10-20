@@ -63,39 +63,44 @@ java {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel")
     kotlinOptions {
       jvmTarget = "18"
     }
   }
   withType<KtLintCheckTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
   }
   withType<KtLintFormatTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
   }
 }
+
+val configValues = mapOf(
+  "dateLibrary" to "java8-localdatetime",
+  "serializationLibrary" to "jackson",
+  "useBeanValidation" to "false",
+  "enumPropertyNaming" to "UPPERCASE"
+)
 
 tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/prison-api.json")
   outputDir.set("$buildDir/generated")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
-  configOptions.set(
-    mapOf(
-      "dateLibrary" to "java8-localdatetime",
-      "serializationLibrary" to "jackson",
-      "useBeanValidation" to "false",
-      "enumPropertyNaming" to "UPPERCASE"
-    )
-  )
-  globalProperties.set(
-    mapOf(
-      "models" to ""
-    )
-  )
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("buildNonAssociationsApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+  generatorName.set("kotlin")
+  inputSpec.set("openapi-specs/non-associations-api.json")
+  outputDir.set("$buildDir/generated")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
 }
 
 kotlin {
