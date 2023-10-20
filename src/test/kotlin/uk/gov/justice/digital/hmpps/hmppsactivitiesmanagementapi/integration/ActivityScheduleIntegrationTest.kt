@@ -15,11 +15,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -29,7 +31,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -413,6 +418,53 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
+  fun `should be able to fetch suitability of a candidate for an activity`() {
+    prisonApiMockServer.stubGetEducationLevels()
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1143DZ")
+    nonAssociationsApiMockServer.stubGetNonAssociations("A1143DZ")
+
+    val response = webTestClient.getCandidateSuitability(1, "A1143DZ")
+      .expectStatus().isOk
+      .expectBody(typeReference<AllocationSuitability>())
+      .returnResult().responseBody!!
+
+    with(response) {
+      assertThat(workplaceRiskAssessment!!.suitable).isTrue
+      assertThat(workplaceRiskAssessment!!.riskLevel).isEqualTo("none")
+
+      assertThat(incentiveLevel!!.suitable).isTrue
+      assertThat(incentiveLevel!!.incentiveLevel).isEqualTo("Basic")
+
+      assertThat(education!!.suitable).isFalse
+      assertThat(education!!.education).isEmpty()
+
+      assertThat(releaseDate!!.suitable).isTrue
+      assertThat(releaseDate!!.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
+
+      assertThat(nonAssociation!!.suitable).isFalse
+      assertThat(nonAssociation!!.nonAssociations).isEqualTo(
+        listOf(
+          NonAssociationDetails(
+            reasonCode = PrisonerNonAssociation.Reason.LEGAL_REQUEST.toString(),
+            reasonDescription = "Police or legal request",
+            otherPrisonerDetails = OtherPrisonerDetails(
+              prisonerNumber = "A11111A",
+              firstName = "YZRIRATIF",
+              lastName = "AMBENTINO",
+              cellLocation = "A-3-08S",
+            ),
+            whenCreated = LocalDateTime.parse("2023-10-03T14:08:07"),
+            comments = "",
+          ),
+        ),
+      )
+    }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
   fun `should be able to fetch a paged list of candidates for an activity`() {
     prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
     prisonApiMockServer.stubGetEducationLevels()
@@ -513,6 +565,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
   }
 
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
+  fun `get all waiting lists for Maths`() {
+    webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+  }
+
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
     post()
       .uri("/schedules/$scheduleId/allocations")
@@ -529,6 +589,19 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
 
+  private fun WebTestClient.getCandidateSuitability(
+    scheduleId: Long,
+    prisonerNumber: String,
+    caseLoadId: String = "PVI",
+  ) =
+    get()
+      .uri("/schedules/$scheduleId/suitability?prisonerNumber=$prisonerNumber")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+
   private fun WebTestClient.getCandidates(
     scheduleId: Long,
     pageNum: Long = 0,
@@ -543,21 +616,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
-  @Sql(
-    "classpath:test_data/seed-activity-id-21.sql",
-  )
-  @Test
-  fun `get all waiting lists for Maths`() {
-    webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
-  }
-
   private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = moorlandPrisonCode) =
     get()
-      .uri { builder ->
-        builder
-          .path("/schedules/$scheduleId/waiting-list-applications")
-          .build(scheduleId)
-      }
+      .uri("/schedules/$scheduleId/waiting-list-applications")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, caseLoadId)

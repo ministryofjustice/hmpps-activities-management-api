@@ -95,7 +95,7 @@ tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.t
 }
 
 tasks.register("buildNonAssociationsApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
-  generatorName.set("kotlin")
+  generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/non-associations-api.json")
   outputDir.set("$buildDir/generated")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")

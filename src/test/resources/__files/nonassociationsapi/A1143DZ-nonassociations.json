@@ -1,0 +1,41 @@
+{
+  "prisonerNumber": "A1143DZ",
+  "firstName": "MICHAEL",
+  "lastName": "WILLIS",
+  "prisonId": "PVI",
+  "prisonName": "Pentonville (HMP)",
+  "cellLocation": "RECP",
+  "openCount": 1,
+  "closedCount": 0,
+  "nonAssociations": [
+    {
+      "id": 83413,
+      "role": "PERPETRATOR",
+      "roleDescription": "Perpetrator",
+      "reason": "LEGAL_REQUEST",
+      "reasonDescription": "Police or legal request",
+      "restrictionType": "LANDING",
+      "restrictionTypeDescription": "Cell and landing",
+      "comment": "",
+      "authorisedBy": "",
+      "whenCreated": "2023-10-03T14:08:07",
+      "whenUpdated": "2023-10-03T14:08:07",
+      "updatedBy": "MWILLIS_GEN",
+      "isClosed": false,
+      "closedBy": null,
+      "closedReason": null,
+      "closedAt": null,
+      "otherPrisonerDetails": {
+        "prisonerNumber": "A11111A",
+        "role": "PERPETRATOR",
+        "roleDescription": "Perpetrator",
+        "firstName": "YZRIRATIF",
+        "lastName": "AMBENTINO",
+        "prisonId": "PVI",
+        "prisonName": "Pentonville (HMP)",
+        "cellLocation": "A-3-08S"
+      },
+      "isOpen": true
+    }
+  ]
+}
