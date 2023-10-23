@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRIS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import java.time.LocalDateTime
 
 @Component
 @Transactional
@@ -80,6 +81,7 @@ class OffenderReleasedEventHandler(
       event.prisonCode(),
       event.prisonerNumber(),
       PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      LocalDateTime.now(),
       "OFFENDER_RELEASED_EVENT",
     )
 

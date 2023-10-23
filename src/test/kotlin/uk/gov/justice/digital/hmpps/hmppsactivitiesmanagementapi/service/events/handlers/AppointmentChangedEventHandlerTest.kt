@@ -2,12 +2,15 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
+import java.time.LocalDateTime
 
 class AppointmentChangedEventHandlerTest {
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
@@ -27,10 +30,11 @@ class AppointmentChangedEventHandlerTest {
     appointmentChangedEventHandler.handle(event)
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
-      prisonCode,
-      prisonerNumber,
-      CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-      "APPOINTMENTS_CHANGED_EVENT",
+      eq(prisonCode),
+      eq(prisonerNumber),
+      eq(CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+      any<LocalDateTime>(),
+      eq("APPOINTMENTS_CHANGED_EVENT"),
     )
   }
 

@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 class OffenderReleasedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
@@ -125,10 +126,11 @@ class OffenderReleasedEventHandlerTest {
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
-      moorlandPrisonCode,
-      "123456",
-      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-      "OFFENDER_RELEASED_EVENT",
+      eq(moorlandPrisonCode),
+      eq("123456"),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+      any<LocalDateTime>(),
+      eq("OFFENDER_RELEASED_EVENT"),
     )
   }
 
@@ -139,10 +141,11 @@ class OffenderReleasedEventHandlerTest {
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
-      moorlandPrisonCode,
-      "123456",
-      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-      "OFFENDER_RELEASED_EVENT",
+      eq(moorlandPrisonCode),
+      eq("123456"),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+      any<LocalDateTime>(),
+      eq("OFFENDER_RELEASED_EVENT"),
     )
   }
 
@@ -155,10 +158,11 @@ class OffenderReleasedEventHandlerTest {
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
-      moorlandPrisonCode,
-      "123456",
-      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-      "OFFENDER_RELEASED_EVENT",
+      eq(moorlandPrisonCode),
+      eq("123456"),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+      any<LocalDateTime>(),
+      eq("OFFENDER_RELEASED_EVENT"),
     )
   }
 

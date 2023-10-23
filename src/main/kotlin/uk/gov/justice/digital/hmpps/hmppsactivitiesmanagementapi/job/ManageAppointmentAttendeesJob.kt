@@ -5,14 +5,14 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import java.time.LocalDate
 
 @Component
 class ManageAppointmentAttendeesJob(
   private val jobRunner: SafeJobRunner,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val service: ManageAppointmentService,
+  private val service: AppointmentAttendeeService,
 ) {
   @Async("asyncExecutor")
   fun execute(daysBeforeNow: Long, daysAfterNow: Long) {

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
+import java.time.LocalDateTime
 
 @Component
 class AppointmentChangedEventHandler(
@@ -16,6 +17,7 @@ class AppointmentChangedEventHandler(
         event.prisonCode(),
         event.prisonerNumber(),
         CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+        LocalDateTime.now(),
         "APPOINTMENTS_CHANGED_EVENT",
       )
     }
