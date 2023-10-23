@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
@@ -452,7 +453,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
-  fun `two allocations and two future attendance are unsuspended on receipt of offender received event for prisoner`() {
+  fun `two allocations and two future attendance are unsuspended on receipt of offender received event`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
 
     assertThatAllocationsAreActiveFor("A11111A")
@@ -502,7 +503,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-received-event-cancel-suspensions.sql")
-  fun `two suspended allocations are unsuspended and two future attendance are cancelled on receipt of offender received event for prisoner`() {
+  fun `two suspended allocations are unsuspended and two future attendance are cancelled for offender received event`() {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
@@ -558,8 +559,53 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
-  fun `allocations are ended and future attendances are removed on receipt of activities changed event for prisoner`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A22222A")
+  fun `allocations are ended and future attendances are removed for activities changed event set to END on release`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A22222A",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        status = "INACTIVE OUT",
+      ),
+    )
+
+    assertThatAllocationsAreActiveFor("A22222A")
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(
+      1L,
+      2L,
+      3L,
+    )
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A22222A")
+
+    service.process(
+      activitiesChangedEvent(
+        prisonId = pentonvillePrisonCode,
+        prisonerNumber = "A22222A",
+        action = Action.END,
+      ),
+    )
+
+    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.RELEASED)
+    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
+
+    verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
+  fun `allocations are ended and future attendances are removed for activities changed event set to END on temporary release`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A22222A",
+        inOutStatus = Prisoner.InOutStatus.IN,
+        status = "ACTIVE IN",
+        prisonId = moorlandPrisonCode,
+      ),
+    )
 
     assertThatAllocationsAreActiveFor("A22222A")
 

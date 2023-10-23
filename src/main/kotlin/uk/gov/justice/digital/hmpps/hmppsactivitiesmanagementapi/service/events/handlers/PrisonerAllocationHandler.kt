@@ -30,15 +30,19 @@ class PrisonerAllocationHandler(
 
   @Transactional
   internal fun deallocate(prisonCode: String, prisonerNumber: String, reason: DeallocationReason) {
-    declinePrisonersWaitingListApplications(prisonCode, prisonerNumber)
+    declinePrisonersWaitingListApplications(prisonCode, prisonerNumber, reason)
     deallocatePrisonerAndRemoveFutureAttendances(reason, prisonCode, prisonerNumber)
   }
 
-  private fun declinePrisonersWaitingListApplications(prisonCode: String, prisonerNumber: String) {
+  private fun declinePrisonersWaitingListApplications(
+    prisonCode: String,
+    prisonerNumber: String,
+    reason: DeallocationReason,
+  ) {
     waitingListService.declinePendingOrApprovedApplications(
       prisonCode,
       prisonerNumber,
-      "Released",
+      reason.description,
       ServiceName.SERVICE_NAME.value,
     )
   }
@@ -88,6 +92,7 @@ class PrisonerAllocationHandler(
         (attendance.scheduledInstance.sessionDate == now.toLocalDate() && attendance.scheduledInstance.startTime > now.toLocalTime()) ||
           (attendance.scheduledInstance.sessionDate > now.toLocalDate())
       }.onEach { futureAttendance ->
+        log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
         futureAttendance.scheduledInstance.remove(futureAttendance)
       }
     }
