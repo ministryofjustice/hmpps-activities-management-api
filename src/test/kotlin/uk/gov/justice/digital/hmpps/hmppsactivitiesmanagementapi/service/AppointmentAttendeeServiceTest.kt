@@ -17,9 +17,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
@@ -141,6 +142,25 @@ class AppointmentAttendeeServiceTest {
       prisonerNumber = "A1234BC",
       inOutStatus = Prisoner.InOutStatus.IN,
       status = "ACTIVE IN",
+      prisonId = moorlandPrisonCode,
+      lastMovementType = null,
+      confirmedReleaseDate = LocalDate.now().plusDays(2),
+    )
+
+    private val activeInDifferentPrison = PrisonerSearchPrisonerFixture.instance(
+      prisonerNumber = "A1234BC",
+      inOutStatus = Prisoner.InOutStatus.IN,
+      status = "ACTIVE IN",
+      prisonId = pentonvillePrisonCode,
+      lastMovementType = null,
+      confirmedReleaseDate = LocalDate.now().plusDays(2),
+    )
+
+    private val activeOutPrisoner = PrisonerSearchPrisonerFixture.instance(
+      prisonerNumber = "A1234BC",
+      inOutStatus = Prisoner.InOutStatus.OUT,
+      status = "ACTIVE OUT",
+      prisonId = moorlandPrisonCode,
       lastMovementType = null,
       confirmedReleaseDate = LocalDate.now().plusDays(2),
     )
@@ -149,9 +169,13 @@ class AppointmentAttendeeServiceTest {
       prisonerNumber = "A1234BC",
       inOutStatus = Prisoner.InOutStatus.OUT,
       status = "INACTIVE OUT",
+      prisonId = moorlandPrisonCode,
       lastMovementType = MovementType.RELEASE,
       confirmedReleaseDate = LocalDate.now(),
     )
+
+    private val expiredMovement = movement(prisonerNumber = "A1234BC", fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.yesterday())
+    private val nonExpiredMovement = movement(prisonerNumber = "A1234BC", fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.today())
 
     @BeforeEach
     fun setup() {
@@ -166,27 +190,27 @@ class AppointmentAttendeeServiceTest {
     }
 
     @Test
-    fun `date range cannot be more than 60 days`() {
+    fun `days after now cannot be more than 60 days`() {
       assertThatThrownBy {
-        service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(61)))
+        service.manageAppointmentAttendees(moorlandPrisonCode, 61)
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Supplied date range must be at least one day and less than 61 days")
+        .hasMessage("Supplied days after now must be at least one day and less than 61 days")
     }
 
     @Test
-    fun `date range cannot be negative`() {
+    fun `days after now cannot be negative`() {
       assertThatThrownBy {
-        service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now().minusDays(1)))
+        service.manageAppointmentAttendees(moorlandPrisonCode, -1)
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Supplied date range must be at least one day and less than 61 days")
+        .hasMessage("Supplied days after now must be at least one day and less than 61 days")
     }
 
     @Test
     fun `prison regime must exist`() {
       assertThatThrownBy {
-        service.manageAppointmentAttendees(pentonvillePrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now()))
+        service.manageAppointmentAttendees(pentonvillePrisonCode, 0)
       }
         .isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Rolled out prison $pentonvillePrisonCode is missing a prison regime.")
@@ -204,7 +228,7 @@ class AppointmentAttendeeServiceTest {
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
       whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
 
-      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now()))
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
       assertThat(appointment.attendees()).isNotEmpty()
 
@@ -215,6 +239,9 @@ class AppointmentAttendeeServiceTest {
         isRemoved() isBool false
         isDeleted isBool false
       }
+
+      verifyNoInteractions(appointmentInstanceRepository)
+      verifyNoInteractions(appointmentAttendeeRepository)
     }
 
     @Test
@@ -229,7 +256,7 @@ class AppointmentAttendeeServiceTest {
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
       whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
 
-      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
       assertThat(appointment.attendees()).isNotEmpty()
 
@@ -240,6 +267,9 @@ class AppointmentAttendeeServiceTest {
         isRemoved() isBool false
         isDeleted isBool false
       }
+
+      verifyNoInteractions(appointmentInstanceRepository)
+      verifyNoInteractions(appointmentAttendeeRepository)
     }
 
     @Test
@@ -254,7 +284,7 @@ class AppointmentAttendeeServiceTest {
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
       whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
 
-      service.manageAppointmentAttendees(moorlandPrisonCode, LocalDateRange(LocalDate.now(), LocalDate.now()))
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
       assertThat(appointment.attendees()).isEmpty()
 
