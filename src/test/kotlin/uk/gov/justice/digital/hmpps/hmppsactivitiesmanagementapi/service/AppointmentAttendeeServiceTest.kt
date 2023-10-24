@@ -148,7 +148,7 @@ class AppointmentAttendeeServiceTest {
       status = "ACTIVE IN",
       prisonId = moorlandPrisonCode,
       lastMovementType = null,
-      confirmedReleaseDate = LocalDate.now().plusDays(2),
+      confirmedReleaseDate = null,
     )
 
     private val activeInDifferentPrison = PrisonerSearchPrisonerFixture.instance(
@@ -157,7 +157,7 @@ class AppointmentAttendeeServiceTest {
       status = "ACTIVE IN",
       prisonId = pentonvillePrisonCode,
       lastMovementType = null,
-      confirmedReleaseDate = LocalDate.now().plusDays(2),
+      confirmedReleaseDate = null,
     )
 
     private val activeOutPrisoner = PrisonerSearchPrisonerFixture.instance(
@@ -166,7 +166,7 @@ class AppointmentAttendeeServiceTest {
       status = "ACTIVE OUT",
       prisonId = moorlandPrisonCode,
       lastMovementType = null,
-      confirmedReleaseDate = LocalDate.now().plusDays(2),
+      confirmedReleaseDate = null,
     )
 
     private val prisonerReleasedToday = PrisonerSearchPrisonerFixture.instance(
@@ -220,11 +220,12 @@ class AppointmentAttendeeServiceTest {
 
     @Test
     fun `prison regime must exist`() {
-      assertThatThrownBy {
-        service.manageAppointmentAttendees(pentonvillePrisonCode, 0)
-      }
-        .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Rolled out prison $pentonvillePrisonCode is missing a prison regime.")
+      service.manageAppointmentAttendees(pentonvillePrisonCode, 0)
+
+      verifyNoInteractions(appointmentRepository)
+      verifyNoInteractions(prisonerSearch)
+      verifyNoInteractions(prisonApi)
+      verify(service, never()).removePrisonerFromFutureAppointments(any(), any(), any(), any(), any())
     }
 
     @Test

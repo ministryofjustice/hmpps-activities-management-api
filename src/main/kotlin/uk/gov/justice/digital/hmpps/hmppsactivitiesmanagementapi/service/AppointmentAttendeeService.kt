@@ -75,29 +75,29 @@ class AppointmentAttendeeService(
     }
 
     val regime = prisonRegimeRepository.findByPrisonCode(prisonCode)
-    require(regime != null) {
-      "Rolled out prison $prisonCode is missing a prison regime."
-    }
+    if (regime == null) {
+      log.warn("Rolled out prison $prisonCode is missing a prison regime.")
+    } else {
+      val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow)).block()!!
+      log.info("Found ${prisoners.size} prisoners for future appointments in prison code '$prisonCode' taking place within '$daysAfterNow' day(s)")
 
-    val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow)).block()!!
-    log.info("Found ${prisoners.size} prisoners for future appointments in prison code '$prisonCode' taking place within '$daysAfterNow' day(s)")
+      val permanentlyReleasedPrisoners = prisoners.permanentlyReleased()
+      log.info("Found ${permanentlyReleasedPrisoners.size} prisoners permanently released from prison code '$prisonCode'")
 
-    val permanentlyReleasedPrisoners = prisoners.permanentlyReleased()
-    log.info("Found ${permanentlyReleasedPrisoners.size} prisoners permanently released from prison code '$prisonCode'")
+      permanentlyReleasedPrisoners.forEach {
+        removePrisonerFromFutureAppointments(prisonCode, it.prisonerNumber, removedTime, PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
+        log.info("Removed prisoner '${it.prisonerNumber}' from future appointments as they have been released")
+      }
 
-    permanentlyReleasedPrisoners.forEach {
-      removePrisonerFromFutureAppointments(prisonCode, it.prisonerNumber, removedTime, PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
-      log.info("Removed prisoner '${it.prisonerNumber}' from future appointments as they have been released")
-    }
+      val prisonersNotInExpectedPrison = prisoners.notInExpectedPrison(prisonCode)
+      log.info("Found ${prisonersNotInExpectedPrison.size} prisoners not in prison code '$prisonCode'")
+      val expiredMoves = prisonersNotInExpectedPrison.getExpiredMoves(regime)
+      log.info("Found ${expiredMoves.size} prisoners that left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
 
-    val prisonersNotInExpectedPrison = prisoners.notInExpectedPrison(prisonCode)
-    log.info("Found ${prisonersNotInExpectedPrison.size} prisoners not in prison code '$prisonCode'")
-    val expiredMoves = prisonersNotInExpectedPrison.getExpiredMoves(regime)
-    log.info("Found ${expiredMoves.size} prisoners that left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
-
-    expiredMoves.forEach {
-      removePrisonerFromFutureAppointments(prisonCode, it.key, removedTime, PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
-      log.info("Removed prisoner '${it.key}' from future appointments as they left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
+      expiredMoves.forEach {
+        removePrisonerFromFutureAppointments(prisonCode, it.key, removedTime, PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
+        log.info("Removed prisoner '${it.key}' from future appointments as they left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
+      }
     }
   }
 
