@@ -50,6 +50,16 @@ class PrisonerSearchApiMockServer : WireMockServer(8111) {
     )
   }
 
+  fun stubBadRequestSearchByPrisonerNumbers(prisonerNumbers: List<String>, prisoners: List<Prisoner>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/prisoner-search/prisoner-numbers"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(PrisonerNumbers(prisonerNumbers = prisonerNumbers)), true, true))
+        .willReturn(
+          WireMock.badRequest(),
+        ),
+    )
+  }
+
   fun stubSearchByPrisonerNumberNotFound(prisonerNumber: String) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/prisoner-search/prisoner-numbers"))

@@ -33,4 +33,7 @@ truncate table appointment_series restart identity;
 truncate table appointment_set_appointment_series restart identity;
 truncate table appointment_set restart identity;
 
+--Common
+truncate table job restart identity;
+
 SET REFERENTIAL_INTEGRITY TRUE;
