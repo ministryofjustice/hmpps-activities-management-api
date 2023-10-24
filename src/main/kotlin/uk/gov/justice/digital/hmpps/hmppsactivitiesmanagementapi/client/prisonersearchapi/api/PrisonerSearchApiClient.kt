@@ -19,9 +19,9 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())
 
-  fun findByPrisonerNumbers(prisonerNumbers: List<String>): List<Prisoner> {
+  fun findByPrisonerNumbers(prisonerNumbers: List<String>, batchSize: Int = 1000): List<Prisoner> {
     if (prisonerNumbers.isEmpty()) return emptyList()
-    return prisonerNumbers.chunked(1000).flatMap {
+    return prisonerNumbers.chunked(batchSize).flatMap {
       prisonerSearchApiWebClient.post()
         .uri("/prisoner-search/prisoner-numbers")
         .bodyValue(PrisonerNumbers(it))
