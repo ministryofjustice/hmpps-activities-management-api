@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
+import java.time.LocalDateTime
 
 @Component
 class AppointmentChangedEventHandler(
@@ -11,7 +13,13 @@ class AppointmentChangedEventHandler(
 
   override fun handle(event: AppointmentsChangedEvent): Outcome {
     if (event.cancelAppointments()) {
-      appointmentAttendeeService.cancelFutureOffenderAppointments(event.prisonCode(), event.prisonerNumber())
+      appointmentAttendeeService.removePrisonerFromFutureAppointments(
+        event.prisonCode(),
+        event.prisonerNumber(),
+        LocalDateTime.now(),
+        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+        "APPOINTMENTS_CHANGED_EVENT",
+      )
     }
     return Outcome.success()
   }

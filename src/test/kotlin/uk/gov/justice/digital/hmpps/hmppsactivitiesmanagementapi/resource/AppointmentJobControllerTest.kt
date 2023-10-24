@@ -20,12 +20,12 @@ class AppointmentJobControllerTest : ControllerTestBase<AppointmentJobController
 
   @Test
   fun `202 response when manage appointment attendees job started`() {
-    val response = mockMvc.post("/job/appointments/manage-attendees?daysBeforeNow=1&daysAfterNow=2") {
+    val response = mockMvc.post("/job/appointments/manage-attendees?daysAfterNow=1") {
       contentType = MediaType.APPLICATION_JSON
     }.andExpect { status { isAccepted() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage appointment attendees job started")
 
-    verify(manageAppointmentAttendeesJob).execute(1, 2)
+    verify(manageAppointmentAttendeesJob).execute(1)
   }
 }

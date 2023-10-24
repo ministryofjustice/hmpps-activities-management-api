@@ -2,20 +2,23 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
+import java.time.LocalDateTime
 
 class AppointmentChangedEventHandlerTest {
-
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
 
   private val appointmentChangedEventHandler = AppointmentChangedEventHandler(appointmentAttendeeService)
 
   @Test
-  fun `cancels future appointments if cancelAppointments flag is set`() {
+  fun `remove prisoner from future appointments if cancelAppointments flag is set`() {
     val event: AppointmentsChangedEvent = mock()
     val prisonCode = "PVI"
     val prisonerNumber = "12345"
@@ -26,11 +29,17 @@ class AppointmentChangedEventHandlerTest {
 
     appointmentChangedEventHandler.handle(event)
 
-    verify(appointmentAttendeeService).cancelFutureOffenderAppointments(prisonCode, prisonerNumber)
+    verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
+      eq(prisonCode),
+      eq(prisonerNumber),
+      any<LocalDateTime>(),
+      eq(CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+      eq("APPOINTMENTS_CHANGED_EVENT"),
+    )
   }
 
   @Test
-  fun `does not cancel future appointments if cancelAppointments flag is not set`() {
+  fun `does not remove prisoner from future appointments if cancelAppointments flag is not set`() {
     val event: AppointmentsChangedEvent = mock()
     val prisonCode = "PVI"
     val prisonerNumber = "12345"

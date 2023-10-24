@@ -12,9 +12,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import java.time.LocalDateTime
 
 @Component
 @Transactional
@@ -75,9 +77,12 @@ class OffenderReleasedEventHandler(
     )
 
   private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
-    appointmentAttendeeService.cancelFutureOffenderAppointments(
+    appointmentAttendeeService.removePrisonerFromFutureAppointments(
       event.prisonCode(),
       event.prisonerNumber(),
+      LocalDateTime.now(),
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
     )
 
   private fun getDetailsForReleasedPrisoner(event: OffenderReleasedEvent) =

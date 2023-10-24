@@ -25,7 +25,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -78,6 +80,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var appointmentRepository: AppointmentRepository
+
+  @Autowired
+  private lateinit var appointmentAttendeeRepository: AppointmentAttendeeRepository
 
   @Autowired
   private lateinit var appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository
@@ -271,20 +276,30 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(2)
     assertThat(allocationsMap[212]).hasSize(1)
 
-    assertThat(appointmentRepository.existsById(200)).isFalse()
-    assertThat(appointmentRepository.existsById(202)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(300)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(302)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(322)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(324)).isFalse()
 
-    assertThat(appointmentRepository.existsById(201)).isTrue()
-    assertThat(appointmentRepository.existsById(203)).isTrue()
-    assertThat(appointmentRepository.existsById(210)).isTrue()
-    assertThat(appointmentRepository.existsById(211)).isTrue()
-    assertThat(appointmentRepository.existsById(212)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(301)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(303)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(320)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(321)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(323)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(325)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(326)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(327)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(328)).isTrue()
 
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 300L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 302L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 322L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 324L)
     verifyNoMoreInteractions(outboundEventsService)
+
+    verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
+    hmppsAuditEventCaptor.allValues.map { it.what }.distinct().single() isEqualTo AuditEventType.APPOINTMENT_CANCELLED_ON_TRANSFER.toString()
+    verifyNoMoreInteractions(hmppsAuditApiClient)
   }
 
   @Test
@@ -328,20 +343,30 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(2)
     assertThat(allocationsMap[212]).hasSize(1)
 
-    assertThat(appointmentRepository.existsById(200)).isFalse()
-    assertThat(appointmentRepository.existsById(202)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(300)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(302)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(322)).isFalse()
+    assertThat(appointmentAttendeeRepository.existsById(324)).isFalse()
 
-    assertThat(appointmentRepository.existsById(201)).isTrue()
-    assertThat(appointmentRepository.existsById(203)).isTrue()
-    assertThat(appointmentRepository.existsById(210)).isTrue()
-    assertThat(appointmentRepository.existsById(211)).isTrue()
-    assertThat(appointmentRepository.existsById(212)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(301)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(303)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(320)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(321)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(323)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(325)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(326)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(327)).isTrue()
+    assertThat(appointmentAttendeeRepository.existsById(328)).isTrue()
 
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 300L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 302L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 322L)
     verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 324L)
     verifyNoMoreInteractions(outboundEventsService)
+
+    verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
+    hmppsAuditEventCaptor.allValues.map { it.what }.distinct().single() isEqualTo AuditEventType.APPOINTMENT_CANCELLED_ON_TRANSFER.toString()
+    verifyNoMoreInteractions(hmppsAuditApiClient)
   }
 
   @Test
@@ -394,6 +419,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentRepository.existsById(212)).isTrue()
 
     verifyNoInteractions(outboundEventsService)
+    verifyNoInteractions(hmppsAuditApiClient)
   }
 
   @Test
