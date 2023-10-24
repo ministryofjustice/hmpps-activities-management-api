@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
@@ -11,7 +10,6 @@ import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
-@Transactional
 class SafeJobRunner(private val jobRepository: JobRepository, private val transactionHandler: TransactionHandler) {
 
   companion object {
