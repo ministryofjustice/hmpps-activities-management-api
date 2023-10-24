@@ -11,13 +11,12 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 
 @ExtendWith(MockitoExtension::class)
 class CreateScheduledInstancesJobTest {
   private val service: ManageScheduledInstancesService = mock()
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, TransactionHandler()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = CreateScheduledInstancesJob(service, safeJobRunner)
 

@@ -5,19 +5,18 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
-class SafeJobRunner(private val jobRepository: JobRepository, private val transactionHandler: TransactionHandler) {
+class SafeJobRunner(private val jobRepository: JobRepository) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
   fun runJob(jobDefinition: JobDefinition) {
-    runSafe(jobDefinition).onFailure { throw RuntimeException("Failure occurred running job ${jobDefinition.jobType}") }
+    runSafe(jobDefinition)
   }
 
   /**
@@ -27,26 +26,20 @@ class SafeJobRunner(private val jobRepository: JobRepository, private val transa
    */
   fun runDependentJobs(vararg jobDefinitions: JobDefinition) {
     val success = AtomicBoolean(true)
-    var failedJob: JobDefinition? = null
 
     jobDefinitions.forEach { job ->
       if (success.get()) {
         runSafe(job)
           .onFailure {
             success.set(false)
-            failedJob = job
+
+            log.warn("Failure occurred running job ${job.jobType}")
           }
       } else {
         log.warn("Ignoring job ${job.jobType} due to failure in a dependent job.")
 
-        transactionHandler.newSpringTransaction {
-          jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now()))
-        }
+        jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now()))
       }
-    }
-
-    if (!success.get()) {
-      throw RuntimeException("Failure occurred running job ${failedJob!!.jobType}")
     }
   }
 
@@ -60,9 +53,7 @@ class SafeJobRunner(private val jobRepository: JobRepository, private val transa
       .onFailure {
         log.error("Failed to run ${jobDefinition.jobType} job", it)
 
-        transactionHandler.newSpringTransaction {
-          jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt))
-        }
+        jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt))
       }
   }
 }
