@@ -107,9 +107,6 @@ class ManageAllocationsService(
       date,
     )
 
-  private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
-    flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
-
   private fun allocationsDueToEnd(): Map<ActivitySchedule, List<Allocation>> =
     LocalDate.now().let { today ->
       forEachRolledOutPrison()

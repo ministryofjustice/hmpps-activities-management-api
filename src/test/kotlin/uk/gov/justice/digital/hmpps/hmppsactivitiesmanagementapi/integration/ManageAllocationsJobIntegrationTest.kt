@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -32,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -50,6 +53,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
 
+  @Autowired
+  private lateinit var jobRepository: JobRepository
+
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending today`() {
@@ -63,7 +69,15 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
     }
 
+    jobRepository.findAll() hasSize 0
+
     webTestClient.manageAllocations(withDeallocate = true)
+
+    with(jobRepository.findAll()) {
+      this hasSize 2
+      single { it.jobType == JobType.DEALLOCATE_EXPIRING }.also { it.successful isBool true }
+      single { it.jobType == JobType.DEALLOCATE_ENDING }.also { it.successful isBool true }
+    }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
@@ -131,7 +145,15 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
     }
 
+    jobRepository.findAll() hasSize 0
+
     webTestClient.manageAllocations(withDeallocate = true)
+
+    with(jobRepository.findAll()) {
+      this hasSize 2
+      single { it.jobType == JobType.DEALLOCATE_EXPIRING }.also { it.successful isBool true }
+      single { it.jobType == JobType.DEALLOCATE_ENDING }.also { it.successful isBool true }
+    }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
@@ -193,9 +215,42 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAllocations(withActivate = true)
 
+    with(jobRepository.findAll().single()) {
+      jobType isEqualTo JobType.ALLOCATE
+      successful isBool true
+    }
+
     with(allocationRepository.findAll()) {
       prisoner("PAST") isStatus AUTO_SUSPENDED
       prisoner("TODAY") isStatus AUTO_SUSPENDED
+      prisoner("FUTURE") isStatus PENDING
+    }
+  }
+
+  @Sql("classpath:test_data/seed-allocations-pending.sql")
+  @Test
+  fun `allocation job failure is recorded when an error occurs during execution`() {
+    listOf("PAST", "TODAY", "FUTURE").map { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        inOutStatus = Prisoner.InOutStatus.IN,
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubBadRequestSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
+
+    jobRepository.findAll() hasSize 0
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    with(jobRepository.findAll().single()) {
+      jobType isEqualTo JobType.ALLOCATE
+      successful isBool false
+    }
+
+    verifyNoInteractions(outboundEventsService)
+
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus PENDING
+      prisoner("TODAY") isStatus PENDING
       prisoner("FUTURE") isStatus PENDING
     }
   }
