@@ -32,8 +32,8 @@ class AppointmentChangedEventHandlerTest {
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(prisonCode),
       eq(prisonerNumber),
-      eq(CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       any<LocalDateTime>(),
+      eq(CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       eq("APPOINTMENTS_CHANGED_EVENT"),
     )
   }

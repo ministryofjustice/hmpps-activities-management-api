@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -8,7 +7,10 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -20,16 +22,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerPermanentTransferAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
@@ -37,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
@@ -55,16 +55,18 @@ class AppointmentAttendeeServiceTest {
   private val prisonApi = mock<PrisonApiApplicationClient>()
   private val auditService = mock<AuditService>()
 
-  private val service = AppointmentAttendeeService(
-    appointmentRepository,
-    appointmentAttendeeRepository,
-    appointmentInstanceRepository,
-    appointmentAttendeeRemovalReasonRepository,
-    prisonRegimeRepository,
-    prisonerSearch,
-    prisonApi,
-    TransactionHandler(),
-    auditService,
+  private val service = spy(
+    AppointmentAttendeeService(
+      appointmentRepository,
+      appointmentAttendeeRepository,
+      appointmentInstanceRepository,
+      appointmentAttendeeRemovalReasonRepository,
+      prisonRegimeRepository,
+      prisonerSearch,
+      prisonApi,
+      TransactionHandler(),
+      auditService,
+    ),
   )
 
   @Nested
@@ -95,8 +97,8 @@ class AppointmentAttendeeServiceTest {
       service.removePrisonerFromFutureAppointments(
         prisonCode,
         prisonerNumber,
-        PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         removedTime,
+        PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         removedBy,
       )
 
@@ -125,8 +127,8 @@ class AppointmentAttendeeServiceTest {
       service.removePrisonerFromFutureAppointments(
         prisonCode,
         prisonerNumber,
-        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         removedTime,
+        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         removedBy,
       )
 
@@ -138,8 +140,10 @@ class AppointmentAttendeeServiceTest {
   @Nested
   @DisplayName("Manage appointment attendees")
   inner class ManageAppointmentAttendees {
+    private val prisonNumber = "A1234BC"
+
     private val activeInPrisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A1234BC",
+      prisonerNumber = prisonNumber,
       inOutStatus = Prisoner.InOutStatus.IN,
       status = "ACTIVE IN",
       prisonId = moorlandPrisonCode,
@@ -148,7 +152,7 @@ class AppointmentAttendeeServiceTest {
     )
 
     private val activeInDifferentPrison = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A1234BC",
+      prisonerNumber = prisonNumber,
       inOutStatus = Prisoner.InOutStatus.IN,
       status = "ACTIVE IN",
       prisonId = pentonvillePrisonCode,
@@ -157,7 +161,7 @@ class AppointmentAttendeeServiceTest {
     )
 
     private val activeOutPrisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A1234BC",
+      prisonerNumber = prisonNumber,
       inOutStatus = Prisoner.InOutStatus.OUT,
       status = "ACTIVE OUT",
       prisonId = moorlandPrisonCode,
@@ -166,26 +170,33 @@ class AppointmentAttendeeServiceTest {
     )
 
     private val prisonerReleasedToday = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = "A1234BC",
+      prisonerNumber = prisonNumber,
       inOutStatus = Prisoner.InOutStatus.OUT,
       status = "INACTIVE OUT",
-      prisonId = moorlandPrisonCode,
+      prisonId = null,
       lastMovementType = MovementType.RELEASE,
       confirmedReleaseDate = LocalDate.now(),
     )
 
-    private val expiredMovement = movement(prisonerNumber = "A1234BC", fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.yesterday())
-    private val nonExpiredMovement = movement(prisonerNumber = "A1234BC", fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.today())
+    private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.yesterday())
+    private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.today())
 
     @BeforeEach
     fun setup() {
-      whenever(prisonRegimeRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonRegime())
+      whenever(prisonRegimeRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonRegime(prisonCode = moorlandPrisonCode))
       whenever(
         appointmentAttendeeRemovalReasonRepository.findById(
           PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         ),
       ).thenReturn(
         Optional.of(prisonerReleasedAppointmentAttendeeRemovalReason()),
+      )
+      whenever(
+        appointmentAttendeeRemovalReasonRepository.findById(
+          PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+        ),
+      ).thenReturn(
+        Optional.of(prisonerPermanentTransferAppointmentAttendeeRemovalReason()),
       )
     }
 
@@ -217,84 +228,134 @@ class AppointmentAttendeeServiceTest {
     }
 
     @Test
-    fun `do not remove attendee records for prisoners that have not been released`() {
+    fun `does not remove future appointments for prisoners that have not been released`() {
       val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
       val appointment = appointmentSeries.appointments().first()
-      val appointmentAttendee = appointment.attendees().first()
-      val appointmentInstance = appointmentInstanceEntity()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
       whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInPrisoner)))
-      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
-      whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
-      assertThat(appointment.attendees()).isNotEmpty()
-
-      with(appointmentAttendee) {
-        removedTime isEqualTo null
-        removalReason isEqualTo null
-        removedBy isEqualTo null
-        isRemoved() isBool false
-        isDeleted isBool false
-      }
-
-      verifyNoInteractions(appointmentInstanceRepository)
-      verifyNoInteractions(appointmentAttendeeRepository)
+      verify(service, never()).removePrisonerFromFutureAppointments(any(), any(), any(), any(), any())
     }
 
     @Test
-    fun `do not remove attendee records for appointments with start dates prior to prisoner confirmed release date`() {
-      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now().minusDays(1))
-      val appointment = appointmentSeries.appointments().first()
-      val appointmentAttendee = appointment.attendees().first()
-      val appointmentInstance = appointmentInstanceEntity()
-
-      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now().minusDays(1))).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
-      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
-      whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
-
-      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
-
-      assertThat(appointment.attendees()).isNotEmpty()
-
-      with(appointmentAttendee) {
-        removedTime isEqualTo null
-        removalReason isEqualTo null
-        removedBy isEqualTo null
-        isRemoved() isBool false
-        isDeleted isBool false
-      }
-
-      verifyNoInteractions(appointmentInstanceRepository)
-      verifyNoInteractions(appointmentAttendeeRepository)
-    }
-
-    @Test
-    fun `remove attendee records for appointments with start dates on or after prisoner confirmed release date`() {
+    fun `remove future appointments for released prisoners`() {
       val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
       val appointment = appointmentSeries.appointments().first()
-      val appointmentAttendee = appointment.attendees().first()
-      val appointmentInstance = appointmentInstanceEntity()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
       whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
-      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(moorlandPrisonCode, activeInPrisoner.prisonerNumber)).thenReturn(listOf(appointmentInstance))
-      whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
-      assertThat(appointment.attendees()).isEmpty()
+      verify(service).removePrisonerFromFutureAppointments(
+        eq(moorlandPrisonCode),
+        eq(prisonerReleasedToday.prisonerNumber),
+        any<LocalDateTime>(),
+        eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+        eq("MANAGE_APPOINTMENT_SERVICE"),
+      )
+    }
 
-      with(appointmentAttendee) {
-        removedTime isCloseTo LocalDateTime.now()
-        removalReason isEqualTo prisonerReleasedAppointmentAttendeeRemovalReason()
-        removedBy isEqualTo "MANAGE_APPOINTMENT_SERVICE"
-        isRemoved() isBool false
-        isDeleted isBool true
-      }
+    @Test
+    fun `does not remove future appointments for prisoners that transferred to a different prison an unknown amount of time ago`() {
+      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(emptyList())
+
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
+
+      verify(service, never()).removePrisonerFromFutureAppointments(any(), any(), any(), any(), any())
+    }
+
+    @Test
+    fun `does not remove future appointments for prisoners that transferred to a different prison less than expired days ago`() {
+      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(nonExpiredMovement))
+
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
+
+      verify(service, never()).removePrisonerFromFutureAppointments(any(), any(), any(), any(), any())
+    }
+
+    @Test
+    fun `remove future appointments for prisoners that transferred to a different prison more than expired days ago`() {
+      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(expiredMovement))
+
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
+
+      verify(service).removePrisonerFromFutureAppointments(
+        eq(moorlandPrisonCode),
+        eq(prisonerReleasedToday.prisonerNumber),
+        any<LocalDateTime>(),
+        eq(PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+        eq("MANAGE_APPOINTMENT_SERVICE"),
+      )
+    }
+
+    @Test
+    fun `remove future appointments for prisoners that have been active out from the prison more than expired days ago`() {
+      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeOutPrisoner)))
+      whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeOutPrisoner.prisonerNumber))).thenReturn(listOf(expiredMovement))
+
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
+
+      verify(service).removePrisonerFromFutureAppointments(
+        eq(moorlandPrisonCode),
+        eq(prisonerReleasedToday.prisonerNumber),
+        any<LocalDateTime>(),
+        eq(PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+        eq("MANAGE_APPOINTMENT_SERVICE"),
+      )
+    }
+
+    @Test
+    fun `do not remove future appointments using permanent transfer reason for released prisoners `() {
+      val appointmentSeries = appointmentSeriesEntity(startDate = LocalDate.now())
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
+      // Add an expired movement prior to prisoner being released
+      whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(expiredMovement))
+
+      service.manageAppointmentAttendees(moorlandPrisonCode, 0)
+
+      // Verify the released prisoner is removed from all future appointments using released removal reason
+      verify(service).removePrisonerFromFutureAppointments(
+        eq(moorlandPrisonCode),
+        eq(prisonerReleasedToday.prisonerNumber),
+        any<LocalDateTime>(),
+        eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+        eq("MANAGE_APPOINTMENT_SERVICE"),
+      )
+
+      // Verify the released prisoner is not also removed from all future appointments using permanent transfer removal reason
+      verify(service, never()).removePrisonerFromFutureAppointments(
+        eq(moorlandPrisonCode),
+        eq(prisonerReleasedToday.prisonerNumber),
+        any<LocalDateTime>(),
+        eq(PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
+        eq("MANAGE_APPOINTMENT_SERVICE"),
+      )
     }
   }
 }

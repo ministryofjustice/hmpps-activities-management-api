@@ -80,8 +80,8 @@ class OffenderReleasedEventHandler(
     appointmentAttendeeService.removePrisonerFromFutureAppointments(
       event.prisonCode(),
       event.prisonerNumber(),
-      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
       LocalDateTime.now(),
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
       "OFFENDER_RELEASED_EVENT",
     )
 

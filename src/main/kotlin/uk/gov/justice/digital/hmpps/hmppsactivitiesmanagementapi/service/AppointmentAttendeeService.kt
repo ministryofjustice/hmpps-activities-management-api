@@ -40,7 +40,7 @@ class AppointmentAttendeeService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun removePrisonerFromFutureAppointments(prisonCode: String, prisonerNumber: String, removalReasonId: Long, removedTime: LocalDateTime, removedBy: String) {
+  fun removePrisonerFromFutureAppointments(prisonCode: String, prisonerNumber: String, removedTime: LocalDateTime, removalReasonId: Long, removedBy: String) {
     val removalReason = appointmentAttendeeRemovalReasonRepository.findOrThrowNotFound(removalReasonId)
     appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber)
       .forEach {
@@ -52,6 +52,7 @@ class AppointmentAttendeeService(
 
             log.info("Removed appointment attendee with id '${it.appointmentAttendeeId}' for prisoner '$prisonerNumber' from appointment with id '${it.appointmentId}'")
 
+            // TODO: Rename to more generic PrisonerRemovedFromFutureAppointments and pass in reason
             auditService.logEvent(
               AppointmentCancelledOnTransferEvent(
                 appointmentSeriesId = it.appointmentSeriesId,
@@ -85,7 +86,7 @@ class AppointmentAttendeeService(
     log.info("Found ${permanentlyReleasedPrisoners.size} prisoners permanently released from prison code '$prisonCode'")
 
     permanentlyReleasedPrisoners.forEach {
-      removePrisonerFromFutureAppointments(prisonCode, it.prisonerNumber, PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedTime, removedBy)
+      removePrisonerFromFutureAppointments(prisonCode, it.prisonerNumber, removedTime, PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
       log.info("Removed prisoner '${it.prisonerNumber}' from future appointments as they have been released")
     }
 
@@ -95,7 +96,7 @@ class AppointmentAttendeeService(
     log.info("Found ${expiredMoves.size} prisoners that left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
 
     expiredMoves.forEach {
-      removePrisonerFromFutureAppointments(prisonCode, it.key, PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedTime, removedBy)
+      removePrisonerFromFutureAppointments(prisonCode, it.key, removedTime, PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID, removedBy)
       log.info("Removed prisoner '${it.key}' from future appointments as they left prison code '$prisonCode' more than ${regime.maxDaysToExpiry} day(s) ago")
     }
   }

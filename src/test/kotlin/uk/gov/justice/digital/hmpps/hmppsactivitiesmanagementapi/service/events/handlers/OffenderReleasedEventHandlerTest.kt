@@ -128,8 +128,8 @@ class OffenderReleasedEventHandlerTest {
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(moorlandPrisonCode),
       eq("123456"),
-      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       any<LocalDateTime>(),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       eq("OFFENDER_RELEASED_EVENT"),
     )
   }
@@ -143,8 +143,8 @@ class OffenderReleasedEventHandlerTest {
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(moorlandPrisonCode),
       eq("123456"),
-      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       any<LocalDateTime>(),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       eq("OFFENDER_RELEASED_EVENT"),
     )
   }
@@ -160,14 +160,14 @@ class OffenderReleasedEventHandlerTest {
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(moorlandPrisonCode),
       eq("123456"),
-      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       any<LocalDateTime>(),
+      eq(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID),
       eq("OFFENDER_RELEASED_EVENT"),
     )
   }
 
   @Test
-  fun `throws nullpointer exception when cannot find prisoners details`() {
+  fun `throws null pointer exception when cannot find prisoners details`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn null
 
     assertThatThrownBy {

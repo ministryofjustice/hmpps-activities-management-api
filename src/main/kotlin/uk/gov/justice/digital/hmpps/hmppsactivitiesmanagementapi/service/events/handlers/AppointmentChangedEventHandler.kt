@@ -16,8 +16,8 @@ class AppointmentChangedEventHandler(
       appointmentAttendeeService.removePrisonerFromFutureAppointments(
         event.prisonCode(),
         event.prisonerNumber(),
-        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         LocalDateTime.now(),
+        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         "APPOINTMENTS_CHANGED_EVENT",
       )
     }
