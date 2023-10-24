@@ -10,6 +10,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -45,7 +46,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerNonAssociationDetail
 import java.time.LocalDate
 import java.util.Optional
 
@@ -468,7 +468,7 @@ class CandidatesServiceTest {
       assertThat(suitability.nonAssociation).isEqualTo(
         NonAssociationSuitability(
           suitable = false,
-          nonAssociations = listOf(transformPrisonerNonAssociationDetail(offenderNonAssociation)),
+          nonAssociations = listOf(offenderNonAssociation.toModel()),
         ),
       )
     }

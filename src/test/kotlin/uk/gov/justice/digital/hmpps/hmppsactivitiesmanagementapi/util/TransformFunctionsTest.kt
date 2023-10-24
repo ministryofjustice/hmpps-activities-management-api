@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -363,7 +364,7 @@ class TransformFunctionsTest {
       ),
     )
 
-    assertThat(transformPrisonerNonAssociationDetail(nonAssociationDetail)).isEqualTo(
+    assertThat(nonAssociationDetail.toModel()).isEqualTo(
       NonAssociationDetails(
         reasonCode = "BULLYING",
         reasonDescription = "Bullying",
