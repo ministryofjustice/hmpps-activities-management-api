@@ -14,7 +14,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
@@ -234,7 +233,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInPrisoner)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(activeInPrisoner))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
@@ -247,7 +246,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(prisonerReleasedToday))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
 
@@ -266,7 +265,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(activeInDifferentPrison))
       whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(emptyList())
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
@@ -280,7 +279,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(activeInDifferentPrison))
       whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(nonExpiredMovement))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
@@ -294,7 +293,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeInDifferentPrison)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(activeInDifferentPrison))
       whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(expiredMovement))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
@@ -314,7 +313,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(activeOutPrisoner)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(activeOutPrisoner))
       whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeOutPrisoner.prisonerNumber))).thenReturn(listOf(expiredMovement))
 
       service.manageAppointmentAttendees(moorlandPrisonCode, 0)
@@ -334,7 +333,7 @@ class AppointmentAttendeeServiceTest {
       val appointment = appointmentSeries.appointments().first()
 
       whenever(appointmentRepository.findAllByPrisonCodeAndStartDate(moorlandPrisonCode, LocalDate.now())).thenReturn(appointmentSeries.appointments())
-      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(Mono.just(listOf(prisonerReleasedToday)))
+      whenever(prisonerSearch.findByPrisonerNumbers(appointment.prisonerNumbers())).thenReturn(listOf(prisonerReleasedToday))
       // Add an expired movement prior to prisoner being released
       whenever(prisonApi.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf(activeInDifferentPrison.prisonerNumber))).thenReturn(listOf(expiredMovement))
 

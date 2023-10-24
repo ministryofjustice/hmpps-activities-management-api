@@ -72,9 +72,7 @@ class ManageAllocationsService(
         .forEach { prison ->
           transactionHandler.newSpringTransaction {
             pendingAllocationsStartingOnOrBefore(today, prison.code).let { allocations ->
-              val prisoners =
-                prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct()).block()
-                  ?: emptyList()
+              val prisoners = prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct())
 
               allocations.map { allocation -> allocation to prisoners.firstOrNull { it.prisonerNumber == allocation.prisonerNumber } }
             }
@@ -166,7 +164,7 @@ class ManageAllocationsService(
     log.info("Candidate allocations for expiration for prison ${regime.prisonCode}: ${allocations.map { it.allocationId }}")
 
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
-    val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers).block() ?: emptyList()
+    val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers)
 
     if (prisoners.isEmpty()) {
       log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${regime.prisonCode}")

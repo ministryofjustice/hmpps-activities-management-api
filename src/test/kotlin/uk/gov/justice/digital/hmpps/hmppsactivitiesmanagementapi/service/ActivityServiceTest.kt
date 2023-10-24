@@ -875,7 +875,7 @@ class ActivityServiceTest {
 
     val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
     val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(Mono.just(listOf(prisoner)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(listOf(prisoner))
 
     service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 

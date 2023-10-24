@@ -418,8 +418,8 @@ class MigrateActivityService(
       logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Already allocated to ${request.activityId} ${activity.summary}")
     }
 
-    val prisonerResults = prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber)).block()
-    if (prisonerResults.isNullOrEmpty()) {
+    val prisonerResults = prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber))
+    if (prisonerResults.isEmpty()) {
       logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not found in prisoner search.")
     }
 

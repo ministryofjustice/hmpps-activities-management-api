@@ -99,7 +99,7 @@ class AppointmentService(
       require(appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
         "Cannot add prisoners to an individual appointment"
       }
-      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers).block()!!
+      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers)
         .filter { prisoner -> prisoner.prisonId == appointmentSeries.prisonCode }
         .associateBy { prisoner -> prisoner.prisonerNumber }
         .also {

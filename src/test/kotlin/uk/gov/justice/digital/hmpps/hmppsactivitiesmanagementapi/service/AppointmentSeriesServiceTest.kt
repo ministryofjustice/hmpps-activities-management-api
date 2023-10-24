@@ -20,7 +20,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
@@ -243,7 +242,7 @@ class AppointmentSeriesServiceTest {
     addCaseloadIdToRequestHeader("DIFFERENT")
     val request = appointmentSeriesCreateRequest()
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any(), any())).thenReturn(emptyList())
 
     assertThatThrownBy {
       service.buildValidAppointmentSeriesEntity(
@@ -273,7 +272,7 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest()
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any(), any())).thenReturn(emptyList())
     assertThatThrownBy {
       service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
@@ -338,7 +337,7 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(emptyList())
 
     assertThatThrownBy {
       service.buildValidAppointmentSeriesEntity(
@@ -392,7 +391,7 @@ class AppointmentSeriesServiceTest {
   fun`buildValidAppointmentSeriesEntity converts a blank custom name to null`() {
     val request = appointmentSeriesCreateRequest(customName = "    ")
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(emptyList())
 
     val appointment = service.buildValidAppointmentSeriesEntity(
       appointmentType = request.appointmentType,
@@ -425,7 +424,7 @@ class AppointmentSeriesServiceTest {
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
-      .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), prisonId = "DIFFERENT"))))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), prisonId = "DIFFERENT")))
 
     assertThatThrownBy {
       service.createAppointmentSeries(request, principal)
@@ -449,15 +448,13 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          request.prisonerNumbers.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it,
-              bookingId = 1,
-              prisonId = request.prisonCode!!,
-            )
-          },
-        ),
+        request.prisonerNumbers.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it,
+            bookingId = 1,
+            prisonId = request.prisonCode!!,
+          )
+        },
       )
 
     assertThatThrownBy {
@@ -478,10 +475,8 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
-          ),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
         ),
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
@@ -575,11 +570,9 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!),
-          ),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!),
         ),
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
@@ -621,10 +614,8 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
-          ),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
         ),
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
@@ -648,15 +639,13 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          prisonerNumberToBookingIdMap.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it.key,
-              bookingId = it.value,
-              prisonId = request.prisonCode!!,
-            )
-          },
-        ),
+        prisonerNumberToBookingIdMap.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it.key,
+            bookingId = it.value,
+            prisonId = request.prisonCode!!,
+          )
+        },
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
@@ -681,15 +670,13 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          prisonerNumberToBookingIdMap.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it.key,
-              bookingId = it.value,
-              prisonId = request.prisonCode!!,
-            )
-          },
-        ),
+        prisonerNumberToBookingIdMap.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it.key,
+            bookingId = it.value,
+            prisonId = request.prisonCode!!,
+          )
+        },
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
@@ -714,15 +701,13 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          prisonerNumberToBookingIdMap.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it.key,
-              bookingId = it.value,
-              prisonId = request.prisonCode!!,
-            )
-          },
-        ),
+        prisonerNumberToBookingIdMap.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it.key,
+            bookingId = it.value,
+            prisonId = request.prisonCode!!,
+          )
+        },
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
@@ -747,15 +732,13 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
-        Mono.just(
-          prisonerNumberToBookingIdMap.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it.key,
-              bookingId = it.value,
-              prisonId = request.prisonCode!!,
-            )
-          },
-        ),
+        prisonerNumberToBookingIdMap.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it.key,
+            bookingId = it.value,
+            prisonId = request.prisonCode!!,
+          )
+        },
       )
     whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
@@ -786,11 +769,9 @@ class AppointmentSeriesServiceTest {
       )
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
       .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = request.prisonCode),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
-          ),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = request.prisonCode),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
         ),
       )
 
@@ -885,11 +866,9 @@ class AppointmentSeriesServiceTest {
       )
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
       .thenReturn(
-        Mono.just(
-          listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = "DIFFERENT"),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
-          ),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = "DIFFERENT"),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
         ),
       )
 
