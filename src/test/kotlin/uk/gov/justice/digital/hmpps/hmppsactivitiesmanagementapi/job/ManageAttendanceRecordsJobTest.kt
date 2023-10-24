@@ -12,11 +12,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 
 class ManageAttendanceRecordsJobTest {
   private val attendancesService: ManageAttendancesService = mock()
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository, TransactionHandler()))
   private val job = ManageAttendanceRecordsJob(attendancesService, safeJobRunner)
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 

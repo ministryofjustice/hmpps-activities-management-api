@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -10,13 +11,14 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 class SafeJobRunnerTest {
 
   private val jobRepository: JobRepository = mock()
-  private val runner = SafeJobRunner(jobRepository)
+  private val runner = SafeJobRunner(jobRepository, TransactionHandler())
   private val jobEntityCaptor = argumentCaptor<Job>()
 
   @Test
@@ -56,7 +58,10 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs job with error`() {
-    runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
+    assertThatThrownBy {
+      runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
+    }.isInstanceOf(RuntimeException::class.java)
+      .hasMessage("Failure occurred running job ${JobType.ATTENDANCE_CREATE}")
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
@@ -69,10 +74,13 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs dependent jobs with error on first job`() {
-    runner.runDependentJobs(
-      JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
-      JobDefinition(JobType.DEALLOCATE_ENDING) {},
-    )
+    assertThatThrownBy {
+      runner.runDependentJobs(
+        JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
+        JobDefinition(JobType.DEALLOCATE_ENDING) {},
+      )
+    }.isInstanceOf(RuntimeException::class.java)
+      .hasMessage("Failure occurred running job ${JobType.ATTENDANCE_CREATE}")
 
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
@@ -91,10 +99,13 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs dependent jobs with error on second job`() {
-    runner.runDependentJobs(
-      JobDefinition(JobType.ATTENDANCE_CREATE) { },
-      JobDefinition(JobType.DEALLOCATE_ENDING) { throw RuntimeException("first job failed") },
-    )
+    assertThatThrownBy {
+      runner.runDependentJobs(
+        JobDefinition(JobType.ATTENDANCE_CREATE) { },
+        JobDefinition(JobType.DEALLOCATE_ENDING) { throw RuntimeException("first job failed") },
+      )
+    }.isInstanceOf(RuntimeException::class.java)
+      .hasMessage("Failure occurred running job ${JobType.DEALLOCATE_ENDING}")
 
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 

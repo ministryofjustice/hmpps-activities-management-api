@@ -16,11 +16,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import java.time.LocalDateTime
 
 class UpdateAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository, TransactionHandler()))
   private val service: AppointmentUpdateDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = UpdateAppointmentsJob(safeJobRunner, service)
