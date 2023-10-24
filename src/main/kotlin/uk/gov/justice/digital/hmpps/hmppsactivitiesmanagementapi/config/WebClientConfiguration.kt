@@ -144,6 +144,18 @@ class WebClientConfiguration(
       .build()
   }
 
+  private fun getNonAssociationsApiOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+    rootUri: String,
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId("non-associations-api")
+    return builder.baseUrl(rootUri)
+      .apply(oauth2Client.oauth2Configuration())
+      .build()
+  }
+
   @Bean
   fun authorizedClientManagerAppScope(
     clientRegistrationRepository: ClientRegistrationRepository?,
@@ -169,10 +181,11 @@ class WebClientConfiguration(
   }
 
   @Bean
-  fun nonAssociationsApiWebClient(): WebClient {
-    return webClientBuilder.baseUrl(nonAssociationsApiUrl)
-      .filter(addAuthHeaderFilterFunction())
-      .build()
+  fun nonAssociationsApiWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+  ): WebClient {
+    return getNonAssociationsApiOAuthWebClient(authorizedClientManager, builder, nonAssociationsApiUrl)
   }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context
