@@ -351,7 +351,7 @@ class AppointmentSeriesService(
   }
 
   private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
-    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers).block()!!
+    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
       .filter { prisoner -> prisoner.prisonId == prisonCode }
       .associate { it.prisonerNumber to it.bookingId }
 

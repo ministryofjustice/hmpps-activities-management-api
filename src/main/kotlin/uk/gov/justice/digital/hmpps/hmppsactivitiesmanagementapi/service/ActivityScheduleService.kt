@@ -120,7 +120,7 @@ class ActivityScheduleService(
       .apply {
         if (includePrisonerSummary) {
           val prisoners =
-            prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber }).block()!!
+            prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber })
 
           map {
             val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }!!

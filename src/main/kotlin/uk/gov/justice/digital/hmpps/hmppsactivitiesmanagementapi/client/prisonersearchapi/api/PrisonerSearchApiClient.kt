@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriBuilder
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -20,17 +19,22 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())
 
-  fun findByPrisonerNumbers(prisonerNumbers: List<String>): Mono<List<Prisoner>> {
-    if (prisonerNumbers.isEmpty()) return Mono.just(emptyList())
-    return prisonerSearchApiWebClient.post()
-      .uri("/prisoner-search/prisoner-numbers")
-      .bodyValue(PrisonerNumbers(prisonerNumbers))
-      .retrieve()
-      .bodyToMono(typeReference<List<Prisoner>>())
+  fun findByPrisonerNumbers(prisonerNumbers: List<String>, batchSize: Int = 1000): List<Prisoner> {
+    require(batchSize in 1..1000) {
+      "Batch size must be between 1 and 1000"
+    }
+    if (prisonerNumbers.isEmpty()) return emptyList()
+    return prisonerNumbers.chunked(batchSize).flatMap {
+      prisonerSearchApiWebClient.post()
+        .uri("/prisoner-search/prisoner-numbers")
+        .bodyValue(PrisonerNumbers(it))
+        .retrieve()
+        .bodyToMono(typeReference<List<Prisoner>>()).block() ?: emptyList()
+    }
   }
 
   fun findByPrisonerNumbersMap(prisonerNumbers: List<String>): Map<String, Prisoner> =
-    findByPrisonerNumbers(prisonerNumbers).block()!!.associateBy { it.prisonerNumber }
+    findByPrisonerNumbers(prisonerNumbers).associateBy { it.prisonerNumber }
 
   suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> {
     if (prisonerNumbers.isEmpty()) return emptyList()

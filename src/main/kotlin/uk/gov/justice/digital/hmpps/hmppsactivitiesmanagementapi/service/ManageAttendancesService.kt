@@ -63,9 +63,7 @@ class ManageAttendancesService(
 
           // Get the details of the prisoners due to attend the session
           val prisonerNumbers = allocations.map { it.prisonerNumber }
-          val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
-            .block()!!
-            .associateBy { it.prisonerNumber }
+          val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
 
           // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
           val attendancesForInstance = allocations.mapNotNull { allocation ->

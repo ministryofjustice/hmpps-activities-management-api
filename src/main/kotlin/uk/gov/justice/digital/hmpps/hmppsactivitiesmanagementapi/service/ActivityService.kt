@@ -610,7 +610,7 @@ class ActivityService(
     deltaPayBand?.let {
       activity.schedules().forEach { schedule ->
         val activeAllocations = schedule.allocations(excludeEnded = true)
-        val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(activeAllocations.map { it.prisonerNumber }).block()!!
+        val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(activeAllocations.map { it.prisonerNumber })
 
         activeAllocations.forEach { allocation ->
           val prisoner = prisoners.single { it.prisonerNumber == allocation.prisonerNumber }

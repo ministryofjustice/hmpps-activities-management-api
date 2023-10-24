@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
@@ -108,7 +107,7 @@ class AppointmentServiceUpdateTest {
     val appointment = expectGroupAppointment()
     val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("NOT_FOUND"))
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(emptyList()))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(emptyList())
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
@@ -120,7 +119,7 @@ class AppointmentServiceUpdateTest {
     val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
-      .thenReturn(Mono.just(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT"))))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT")))
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
@@ -144,15 +143,13 @@ class AppointmentServiceUpdateTest {
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
       .thenReturn(
-        Mono.just(
-          request.addPrisonerNumbers!!.map {
-            PrisonerSearchPrisonerFixture.instance(
-              prisonerNumber = it,
-              bookingId = 1,
-              prisonId = appointment.prisonCode,
-            )
-          },
-        ),
+        request.addPrisonerNumbers!!.map {
+          PrisonerSearchPrisonerFixture.instance(
+            prisonerNumber = it,
+            bookingId = 1,
+            prisonId = appointment.prisonCode,
+          )
+        },
       )
 
     whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()))

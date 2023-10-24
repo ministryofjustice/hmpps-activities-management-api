@@ -22,4 +22,4 @@ spec:
               args:
                 - /bin/sh
                 - -c
-                - curl --fail --retry 2 -X POST "http://hmpps-activities-management-api/job/appointments/manage-attendees?daysBeforeNow=0&daysAfterNow=14"
+                - curl --fail --retry 2 -X POST "http://hmpps-activities-management-api/job/appointments/manage-attendees?daysAfterNow=14"
