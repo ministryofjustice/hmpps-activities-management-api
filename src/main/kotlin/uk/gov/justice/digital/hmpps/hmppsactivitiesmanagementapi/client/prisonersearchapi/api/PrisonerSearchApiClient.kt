@@ -20,6 +20,9 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
     .bodyToMono(typeReference<PagedPrisoner>())
 
   fun findByPrisonerNumbers(prisonerNumbers: List<String>, batchSize: Int = 1000): List<Prisoner> {
+    require(batchSize in 1..1000) {
+      "Batch size must be between 1 and 1000"
+    }
     if (prisonerNumbers.isEmpty()) return emptyList()
     return prisonerNumbers.chunked(batchSize).flatMap {
       prisonerSearchApiWebClient.post()

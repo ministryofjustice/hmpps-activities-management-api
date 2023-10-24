@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisone
 
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -82,6 +83,24 @@ class PrisonerSearchApiClientTest {
     assertThat(prisoners).hasSize(5)
     assertThat(prisoners.map { it.prisonerNumber }).isEqualTo(prisonerNumbers)
     assertThat(prisoners.map { it.bookingId }).isEqualTo(listOf("1", "2", "3", "4", "5"))
+  }
+
+  @Test
+  fun `findByPrisonerNumbers batch size must be greater than zero`() {
+    assertThatThrownBy {
+      prisonerSearchApiClient.findByPrisonerNumbers(emptyList(), 0)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Batch size must be between 1 and 1000")
+  }
+
+  @Test
+  fun `findByPrisonerNumbers batch size must be less than 1001`() {
+    assertThatThrownBy {
+      prisonerSearchApiClient.findByPrisonerNumbers(emptyList(), 1001)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Batch size must be between 1 and 1000")
   }
 
   @Test
