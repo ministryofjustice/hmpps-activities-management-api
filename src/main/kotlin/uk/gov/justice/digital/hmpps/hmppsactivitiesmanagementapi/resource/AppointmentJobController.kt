@@ -36,7 +36,7 @@ class AppointmentJobController(
   @ResponseStatus(HttpStatus.ACCEPTED)
   fun triggerManageAllocationsJob(
     @RequestParam(value = "daysAfterNow", required = true)
-    @Parameter(description = "The number of days into the future to manage appointments. The attendees for future appointments starting on those days this will be managed.")
+    @Parameter(description = "The number of days into the future to manage appointments up to a maximum of 60. The attendees for future appointments starting on those days this will be managed.")
     daysAfterNow: Long,
   ): String {
     manageAppointmentAttendeesJob.execute(daysAfterNow)
