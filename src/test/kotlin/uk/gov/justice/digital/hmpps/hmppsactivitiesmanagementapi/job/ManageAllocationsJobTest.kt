@@ -11,12 +11,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 
 class ManageAllocationsJobTest {
   private val deallocationService: ManageAllocationsService = mock()
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, TransactionHandler()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val job = ManageAllocationsJob(deallocationService, safeJobRunner)
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 
