@@ -18,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
@@ -50,12 +51,14 @@ abstract class IntegrationTestBase {
     @JvmField
     internal val prisonApiMockServer = PrisonApiMockServer()
     internal val prisonerSearchApiMockServer = PrisonerSearchApiMockServer()
+    internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
 
     @BeforeAll
     @JvmStatic
     fun startMocks() {
       prisonApiMockServer.start()
       prisonerSearchApiMockServer.start()
+      nonAssociationsApiMockServer.start()
     }
 
     @AfterAll
@@ -63,12 +66,14 @@ abstract class IntegrationTestBase {
     fun stopMocks() {
       prisonApiMockServer.stop()
       prisonerSearchApiMockServer.stop()
+      nonAssociationsApiMockServer.stop()
     }
 
     @AfterEach
     fun afterEach() {
       prisonApiMockServer.resetAll()
       prisonerSearchApiMockServer.resetAll()
+      nonAssociationsApiMockServer.resetAll()
     }
   }
 

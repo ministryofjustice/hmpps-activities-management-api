@@ -14,8 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -23,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
@@ -380,25 +377,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           (!excludeInFlightCertifications || it.endDate?.isBefore(LocalDate.now()) == true)
       }
       .distinctBy { it.educationLevel + it.studyArea + it.bookingId }
-  }
-
-  fun getOffenderNonAssociations(
-    prisonerNumber: String,
-    excludeExpired: Boolean = true,
-  ): List<OffenderNonAssociationDetail>? {
-    val nonAssociationDetails = prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/offenders/{offenderNo}/non-association-details")
-          .build(prisonerNumber)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<OffenderNonAssociationDetails>())
-      .block()
-
-    return nonAssociationDetails?.nonAssociations?.filter {
-      !excludeExpired || it.expiryDate == null || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
-    }
   }
 
   suspend fun getEventLocationsAsync(prisonCode: String): List<Location> {

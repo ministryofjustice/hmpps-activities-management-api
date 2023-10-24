@@ -15,7 +15,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -573,13 +572,6 @@ class PrisonApiClientTest {
 
     assertThat(adjudications).hasSize(0)
     prisonApiMockServer.verifyNoClientRequests()
-  }
-
-  @Test
-  fun `verify overridden return type for non-associations`() {
-    val function = PrisonApiClient::class.declaredFunctions.first { it.name == "getOffenderNonAssociations" }
-
-    assertThat(function.returnType).isEqualTo(typeOf<List<OffenderNonAssociationDetail>?>())
   }
 
   @Test

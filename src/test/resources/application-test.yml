@@ -65,3 +65,7 @@ bank-holiday:
 case-notes:
   api:
     url: http://localhost:8444
+
+non-associations:
+  api:
+    url: http://localhost:8555

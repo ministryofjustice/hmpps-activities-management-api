@@ -9,17 +9,18 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -45,14 +46,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformOffenderNonAssociationDetail
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.*
+import java.util.Optional
 
 class CandidatesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val nonAssociationsApiClient: NonAssociationsApiClient = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -60,6 +60,7 @@ class CandidatesServiceTest {
   private val service = CandidatesService(
     prisonApiClient,
     prisonerSearchApiClient,
+    nonAssociationsApiClient,
     activityScheduleRepository,
     allocationRepository,
     waitingListRepository,
@@ -77,13 +78,11 @@ class CandidatesServiceTest {
       val schedule = activity.schedules().first()
 
       whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(candidate.prisonerNumber))).thenReturn(
-        listOf(candidate),
-      )
+      whenever(prisonerSearchApiClient.findByPrisonerNumber(candidate.prisonerNumber)).thenReturn(candidate)
       whenever(prisonApiClient.getEducationLevels(listOf(candidate.prisonerNumber))).thenReturn(
         listOf(candidateEducation),
       )
-      whenever(prisonApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(emptyList())
+      whenever(nonAssociationsApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(emptyList())
 
       whenever(
         allocationRepository.findByPrisonCodeAndPrisonerNumber(
@@ -381,23 +380,31 @@ class CandidatesServiceTest {
 
       candidateSuitabilitySetup(activity, candidate)
 
-      whenever(prisonApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
+      whenever(nonAssociationsApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
         listOf(
-          OffenderNonAssociationDetail(
-            reasonCode = "VIC",
-            reasonDescription = "Victim",
-            typeCode = "WING",
-            typeDescription = "Do Not Locate on Same Wing",
-            effectiveDate = LocalDateTime.now().toIsoDateTime(),
-            offenderNonAssociation = OffenderNonAssociation(
-              offenderNo = "A1234ZY",
+          PrisonerNonAssociation(
+            id = 1,
+            role = PrisonerNonAssociation.Role.VICTIM,
+            roleDescription = "Victim",
+            reason = PrisonerNonAssociation.Reason.BULLYING,
+            reasonDescription = "Bullying",
+            restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
+            restrictionTypeDescription = "Landing",
+            comment = "Bullying",
+            authorisedBy = "ADMIN",
+            whenCreated = "2022-04-02",
+            whenUpdated = "2022-04-02",
+            updatedBy = "ADMIN",
+            isClosed = false,
+            isOpen = true,
+            otherPrisonerDetails = OtherPrisonerDetails(
+              prisonerNumber = "A1234ZY",
+              role = OtherPrisonerDetails.Role.PERPETRATOR,
+              roleDescription = "Perpetrator",
               firstName = "Joseph",
               lastName = "Bloggs",
-              reasonCode = "PER",
-              reasonDescription = "Perpetrator",
-              agencyDescription = "Pentonville (PVI)",
-              assignedLivingUnitDescription = "PVI-1-2-4",
-              assignedLivingUnitId = 1234,
+              prisonId = "MDI",
+              prisonName = "HMP Moorland",
             ),
           ),
         ),
@@ -423,25 +430,33 @@ class CandidatesServiceTest {
 
       candidateSuitabilitySetup(activity, candidate)
 
-      val offenderNonAssociation = OffenderNonAssociationDetail(
-        reasonCode = "VIC",
-        reasonDescription = "Victim",
-        typeCode = "WING",
-        typeDescription = "Do Not Locate on Same Wing",
-        effectiveDate = LocalDateTime.now().toIsoDateTime(),
-        offenderNonAssociation = OffenderNonAssociation(
-          offenderNo = "A1234AA",
+      val offenderNonAssociation = PrisonerNonAssociation(
+        id = 1,
+        role = PrisonerNonAssociation.Role.VICTIM,
+        roleDescription = "Victim",
+        reason = PrisonerNonAssociation.Reason.BULLYING,
+        reasonDescription = "Bullying",
+        restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
+        restrictionTypeDescription = "Landing",
+        comment = "Bullying",
+        authorisedBy = "ADMIN",
+        whenCreated = "2022-04-02T00:00:00",
+        whenUpdated = "2022-04-02T00:00:00",
+        updatedBy = "ADMIN",
+        isClosed = false,
+        isOpen = true,
+        otherPrisonerDetails = OtherPrisonerDetails(
+          prisonerNumber = "A1234AA",
+          role = OtherPrisonerDetails.Role.PERPETRATOR,
+          roleDescription = "Perpetrator",
           firstName = "Joseph",
           lastName = "Bloggs",
-          reasonCode = "PER",
-          reasonDescription = "Perpetrator",
-          agencyDescription = "Pentonville (PVI)",
-          assignedLivingUnitDescription = "PVI-1-2-4",
-          assignedLivingUnitId = 1234,
+          prisonId = "MDI",
+          prisonName = "HMP Moorland",
         ),
       )
 
-      whenever(prisonApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
+      whenever(nonAssociationsApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
         listOf(offenderNonAssociation),
       )
 
@@ -453,7 +468,7 @@ class CandidatesServiceTest {
       assertThat(suitability.nonAssociation).isEqualTo(
         NonAssociationSuitability(
           suitable = false,
-          nonAssociations = listOf(transformOffenderNonAssociationDetail(offenderNonAssociation)),
+          nonAssociations = listOf(offenderNonAssociation.toModel()),
         ),
       )
     }
