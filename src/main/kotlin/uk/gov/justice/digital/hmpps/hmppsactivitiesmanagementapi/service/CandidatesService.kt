@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
@@ -32,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerNonAssociationDetail
 import java.time.LocalDate
 
 @Service
@@ -241,7 +241,7 @@ class CandidatesService(
 
     return NonAssociationSuitability(
       allocationNonAssociations.isEmpty(),
-      allocationNonAssociations.map { transformPrisonerNonAssociationDetail(it) },
+      allocationNonAssociations.map { it.toModel() },
     )
   }
 
