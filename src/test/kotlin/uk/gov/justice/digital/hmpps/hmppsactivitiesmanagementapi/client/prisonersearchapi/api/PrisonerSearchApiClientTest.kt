@@ -42,7 +42,7 @@ class PrisonerSearchApiClientTest {
     val prisonerNumber = "G4793VF"
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()!!
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))
 
     assertThat(prisoners).hasSize(1)
     assertThat(prisoners.first().prisonerNumber).isEqualTo(prisonerNumber)
@@ -50,9 +50,20 @@ class PrisonerSearchApiClientTest {
 
   @Test
   fun `findByPrisonerNumbers no numbers - success`() {
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(emptyList()).block()!!
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(emptyList())
 
     assertThat(prisoners).hasSize(0)
+  }
+
+  @Test
+  fun `findByPrisonerNumbers batch requests - success`() {
+    val prisonerNumber = "G4793VF"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
+    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))
+
+    assertThat(prisoners).hasSize(1)
+    assertThat(prisoners.first().prisonerNumber).isEqualTo(prisonerNumber)
   }
 
   @Test

@@ -47,7 +47,7 @@ class CandidatesService(
   fun candidateSuitability(scheduleId: Long, prisonerNumber: String): AllocationSuitability {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
 
-    val candidateDetails = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).block()?.first()
+    val candidateDetails = prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber)).firstOrNull()
       ?: throw IllegalArgumentException("Prisoner number '$prisonerNumber' not found")
 
     val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))

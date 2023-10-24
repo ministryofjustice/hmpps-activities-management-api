@@ -78,7 +78,7 @@ class AppointmentAttendeeService(
     if (regime == null) {
       log.warn("Rolled out prison $prisonCode is missing a prison regime.")
     } else {
-      val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow)).block()!!
+      val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow))
       log.info("Found ${prisoners.size} prisoners for future appointments in prison code '$prisonCode' taking place within '$daysAfterNow' day(s)")
 
       val permanentlyReleasedPrisoners = prisoners.permanentlyReleased()

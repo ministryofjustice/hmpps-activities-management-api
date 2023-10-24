@@ -15,7 +15,6 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -785,7 +784,7 @@ class MigrateActivityServiceTest {
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(activityRepository.findByActivityIdAndPrisonCode(1L, "MDI")).thenReturn(activityEntity())
       whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(activityEntity().schedules().first())
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(listOf(prisonerDetail)))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(listOf(prisonerDetail))
     }
 
     @Test
@@ -933,7 +932,7 @@ class MigrateActivityServiceTest {
     fun `A prisoner who is inactive at the prison will fail to be allocated`() {
       val request = buildAllocationMigrateRequest()
 
-      whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(Mono.just(listOf(inactivePrisonerDetail)))
+      whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(listOf(inactivePrisonerDetail))
 
       val exception = assertThrows<ValidationException> {
         service.migrateAllocation(request)

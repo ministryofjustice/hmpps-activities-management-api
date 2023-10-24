@@ -78,7 +78,7 @@ class CandidatesServiceTest {
 
       whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(candidate.prisonerNumber))).thenReturn(
-        Mono.just(listOf(candidate)),
+        listOf(candidate),
       )
       whenever(prisonApiClient.getEducationLevels(listOf(candidate.prisonerNumber))).thenReturn(
         listOf(candidateEducation),

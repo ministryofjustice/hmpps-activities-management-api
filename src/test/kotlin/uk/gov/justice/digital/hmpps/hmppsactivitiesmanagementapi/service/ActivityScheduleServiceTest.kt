@@ -138,7 +138,7 @@ class ActivityScheduleServiceTest {
     }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(Mono.just(listOf(prisoner)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(listOf(prisoner))
 
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {

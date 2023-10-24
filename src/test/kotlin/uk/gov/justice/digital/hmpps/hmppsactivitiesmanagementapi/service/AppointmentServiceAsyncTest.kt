@@ -15,7 +15,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
@@ -364,7 +363,7 @@ class AppointmentServiceAsyncTest {
         prisonId = appointmentSeries.prisonCode,
       )
     }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(prisoners))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(prisoners)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -416,7 +415,7 @@ class AppointmentServiceAsyncTest {
         prisonId = appointmentSeries.prisonCode,
       )
     }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(Mono.just(prisoners))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(prisoners)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 

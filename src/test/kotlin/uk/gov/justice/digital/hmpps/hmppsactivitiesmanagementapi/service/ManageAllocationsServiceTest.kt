@@ -10,7 +10,6 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -65,7 +64,7 @@ class ManageAllocationsServiceTest {
 
   @BeforeEach
   fun setup() {
-    whenever(searchApiClient.findByPrisonerNumbers(any())) doReturn Mono.just(emptyList())
+    whenever(searchApiClient.findByPrisonerNumbers(any())) doReturn emptyList()
   }
 
   @Test
@@ -218,7 +217,7 @@ class ManageAllocationsServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
@@ -254,7 +253,7 @@ class ManageAllocationsServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn Mono.just(listOf(prisonerInAtOtherPrison))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.code, movementDate = TimeSource.yesterday()))
@@ -290,7 +289,7 @@ class ManageAllocationsServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
     // Multiple moves to demonstrate takes the latest move for an offender
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
@@ -327,7 +326,7 @@ class ManageAllocationsServiceTest {
         PrisonerStatus.AUTO_SUSPENDED,
       ),
     ) doReturn listOf(allocation)
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn Mono.just(listOf(prisoner))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
@@ -365,7 +364,7 @@ class ManageAllocationsServiceTest {
     ).doReturn(
       listOf(allocation),
     )
-    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(Mono.just(listOf(prisoner)))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))).doReturn(listOf(prisoner))
     whenever(
       prisonApi.getMovementsForPrisonersFromPrison(
         prisonWithRegime.code,
@@ -401,7 +400,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn Mono.just(listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.IN), prisoner(pendingAllocationToday, Prisoner.InOutStatus.IN)))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.IN), prisoner(pendingAllocationToday, Prisoner.InOutStatus.IN))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -443,7 +442,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn Mono.just(listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.OUT), prisoner(pendingAllocationToday, Prisoner.InOutStatus.OUT)))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.OUT), prisoner(pendingAllocationToday, Prisoner.InOutStatus.OUT))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
