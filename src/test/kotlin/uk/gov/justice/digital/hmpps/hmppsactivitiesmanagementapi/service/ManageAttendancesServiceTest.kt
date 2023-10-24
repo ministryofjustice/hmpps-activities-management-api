@@ -102,9 +102,12 @@ class ManageAttendancesServiceTest {
       )
 
     val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees)).thenReturn(
-      attendees.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) },
-    )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
+      .thenReturn(
+        attendees.map {
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+        }.associateBy { it.prisonerNumber },
+      )
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -269,11 +272,11 @@ class ManageAttendancesServiceTest {
       .thenReturn(attendanceReasons()["CANCELLED"])
 
     val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
       .thenReturn(
         attendees.map {
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        },
+        }.associateBy { it.prisonerNumber },
       )
 
     whenever(attendanceRepository.saveAllAndFlush(anyList()))

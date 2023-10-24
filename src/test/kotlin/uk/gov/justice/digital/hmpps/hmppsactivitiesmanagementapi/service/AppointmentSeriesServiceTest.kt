@@ -242,7 +242,7 @@ class AppointmentSeriesServiceTest {
     addCaseloadIdToRequestHeader("DIFFERENT")
     val request = appointmentSeriesCreateRequest()
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(emptyList())
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any(), any())).thenReturn(emptyList())
 
     assertThatThrownBy {
       service.buildValidAppointmentSeriesEntity(
@@ -272,7 +272,7 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest()
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(emptyMap())
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any())).thenReturn(emptyList())
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(any(), any())).thenReturn(emptyList())
     assertThatThrownBy {
       service.buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,

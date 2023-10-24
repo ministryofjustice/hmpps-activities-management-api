@@ -64,7 +64,7 @@ class ManageAllocationsServiceTest {
 
   @BeforeEach
   fun setup() {
-    whenever(searchApiClient.findByPrisonerNumbers(any())) doReturn emptyList()
+    whenever(searchApiClient.findByPrisonerNumbers(any(), any())) doReturn emptyList()
   }
 
   @Test
