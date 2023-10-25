@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -37,12 +38,13 @@ import java.util.Optional
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentUpdateDomainServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
+  private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
-  private val service = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService))
+  private val service = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService))
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)

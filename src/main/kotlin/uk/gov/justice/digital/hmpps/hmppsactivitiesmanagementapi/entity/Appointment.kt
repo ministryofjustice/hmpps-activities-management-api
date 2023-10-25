@@ -112,6 +112,7 @@ data class Appointment(
 
   fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
+  // TODO: Remove following refactor of create appointment flows
   fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
@@ -137,10 +138,8 @@ data class Appointment(
     }
   }
 
-  fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
-
   fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
-    attendees().filter { it.prisonerNumber == prisonerNumber }.forEach {
+    findAttendee(prisonerNumber).forEach {
       it.remove(removedTime, removalReason, removedBy)
     }
   }

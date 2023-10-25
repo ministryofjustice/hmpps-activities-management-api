@@ -119,7 +119,7 @@ class AppointmentService(
     // Determine if this is an update request that will affect more than one appointment and a very large number of appointment instances. If it is, only update the first appointment
     val updateFirstAppointmentOnly = updateAppointmentsCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
-    val updatedAppointment = appointmentUpdateDomainService.updateAppointments(
+    val updatedAppointmentSeries = appointmentUpdateDomainService.updateAppointments(
       appointmentSeries,
       appointmentId,
       if (updateFirstAppointmentOnly) setOf(appointment) else appointmentsToUpdate.toSet(),
@@ -150,7 +150,7 @@ class AppointmentService(
       )
     }
 
-    return updatedAppointment
+    return updatedAppointmentSeries
   }
 
   fun cancelAppointment(appointmentId: Long, request: AppointmentCancelRequest, principal: Principal): AppointmentSeriesModel {
@@ -167,7 +167,7 @@ class AppointmentService(
     // Determine if this is a cancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only cancel the first appointment
     val cancelFirstAppointmentOnly = cancelAppointmentsCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
 
-    val cancelledAppointment = appointmentCancelDomainService.cancelAppointments(
+    val cancelledAppointmentSeries = appointmentCancelDomainService.cancelAppointments(
       appointmentSeries,
       appointmentId,
       if (cancelFirstAppointmentOnly) setOf(appointment) else appointmentsToCancel.toSet(),
@@ -196,6 +196,6 @@ class AppointmentService(
       )
     }
 
-    return cancelledAppointment
+    return cancelledAppointmentSeries
   }
 }
