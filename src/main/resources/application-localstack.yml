@@ -38,7 +38,7 @@ prison:
 
 prisoner-search:
   api:
-    url: https://prisoner-search-dev.prison.service.justice.gov.uk
+    url: http://localhost:8092
     timeout: 10s
 
 case-notes:

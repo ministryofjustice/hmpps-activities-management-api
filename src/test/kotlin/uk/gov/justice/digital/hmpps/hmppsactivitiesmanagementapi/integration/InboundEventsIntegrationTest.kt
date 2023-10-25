@@ -182,11 +182,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `prisoner alerts updated`() {
-    prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A11111A",
-      fullInfo = false,
-      extraInfo = null,
-      jsonFileSuffix = "",
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = pentonvillePrisonCode,
+        prisonerNumber = "A11111A",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        status = "INACTIVE OUT",
+      ),
     )
 
     service.process(alertsUpdatedEvent(prisonerNumber = "A11111A"))
@@ -195,7 +197,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThat(interestingEvent.eventType).isEqualTo("prison-offender-search.prisoner.alerts-updated")
     assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-    assertThat(interestingEvent.eventData).isEqualTo("Alerts updated for  HARRISON, TIM (A11111A)")
+    assertThat(interestingEvent.eventData).isEqualTo("Alerts updated for Harrison, Tim (A11111A)")
   }
 
   @Test
@@ -373,6 +375,15 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `no appointments are cancelled when appointments changed event received with action set to NO`() {
     val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = moorlandPrisonCode,
+        prisonerNumber = "A1234BC",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        status = "INACTIVE OUT",
+      ),
+    )
+
     prisonApiMockServer.stubGetPrisonerDetails(
       prisonerNumber = "A1234BC",
       fullInfo = true,
