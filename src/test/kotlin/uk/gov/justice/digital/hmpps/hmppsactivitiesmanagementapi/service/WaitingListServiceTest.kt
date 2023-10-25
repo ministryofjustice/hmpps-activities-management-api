@@ -9,11 +9,17 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -30,9 +36,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_RESULTS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -41,7 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 @ExtendWith(FakeCaseLoad::class)
 class WaitingListServiceTest {
@@ -51,6 +59,7 @@ class WaitingListServiceTest {
   private val scheduleRepository: ActivityScheduleRepository =
     mock { on { findBy(schedule.activityScheduleId, DEFAULT_CASELOAD_PENTONVILLE) } doReturn schedule }
   private val waitingListRepository: WaitingListRepository = mock {}
+  private val waitingListSearchSpecification: WaitingListSearchSpecification = spy()
   private val activityRepository: ActivityRepository = mock {}
   private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -59,6 +68,7 @@ class WaitingListServiceTest {
   private val service = WaitingListService(
     scheduleRepository,
     waitingListRepository,
+    waitingListSearchSpecification,
     activityRepository,
     prisonApiClient,
     telemetryClient,
@@ -795,7 +805,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun`only status changes update "statusUpdatedTime"`() {
+  fun `only status changes update 'statusUpdatedTime'`() {
     val waitingList = waitingList(
       prisonCode = pentonvillePrisonCode,
       initialStatus = WaitingListStatus.PENDING,
@@ -1089,5 +1099,52 @@ class WaitingListServiceTest {
       prisonerNumber isEqualTo "B"
       createdAt isCloseTo TimeSource.now()
     }
+  }
+
+  @Test
+  fun `Searching waiting list applications fail if user does not have case load access`() {
+    assertThatThrownBy {
+      service.searchWaitingLists("WRONG_CASELOAD", mock(), 0, 50)
+    }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `Returns waiting list applications`() {
+    val request = WaitingListSearchRequest()
+    val waitingListApplication = waitingList()
+    val pagedResult = PageImpl(listOf(waitingListApplication))
+
+    val pageable: Pageable = PageRequest.of(0, 50, Sort.by("applicationDate"))
+    whenever(waitingListRepository.findAll(any(), eq(pageable))).thenReturn(pagedResult)
+
+    val result = service.searchWaitingLists(DEFAULT_CASELOAD_PENTONVILLE, request, 0, 50)
+
+    result isEqualTo pagedResult.map { it.toModel() }
+  }
+
+  @Test
+  fun `Filters waiting list applications`() {
+    val request = WaitingListSearchRequest(
+      applicationDateFrom = LocalDate.parse("2023-01-01"),
+      applicationDateTo = LocalDate.parse("2023-01-31"),
+      activityId = 2,
+      prisonerNumbers = listOf("ABC1234"),
+      status = listOf(WaitingListStatus.APPROVED),
+    )
+    val waitingListApplication = waitingList()
+    val pagedResult = PageImpl(listOf(waitingListApplication))
+
+    val pageable: Pageable = PageRequest.of(0, 50, Sort.by("applicationDate"))
+    whenever(waitingListRepository.findAll(any(), eq(pageable))).thenReturn(pagedResult)
+
+    val result = service.searchWaitingLists(DEFAULT_CASELOAD_PENTONVILLE, request, 0, 50)
+
+    verify(waitingListSearchSpecification).prisonCodeEquals(DEFAULT_CASELOAD_PENTONVILLE)
+    verify(waitingListSearchSpecification).applicationDateFrom(LocalDate.parse("2023-01-01"))
+    verify(waitingListSearchSpecification).applicationDateTo(LocalDate.parse("2023-01-31"))
+    verify(waitingListSearchSpecification).prisonerNumberIn(listOf("ABC1234"))
+    verify(waitingListSearchSpecification).statusIn(listOf(WaitingListStatus.APPROVED))
+
+    result isEqualTo pagedResult.map { it.toModel() }
   }
 }
