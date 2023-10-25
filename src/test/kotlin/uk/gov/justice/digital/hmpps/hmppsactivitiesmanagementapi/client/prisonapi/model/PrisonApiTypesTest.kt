@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import kotlin.reflect.full.declaredMembers
@@ -37,6 +38,13 @@ class PrisonApiTypesTest {
   @Test
   fun `domain field on generated Reference Code DTO type should be nullable`() {
     val field = ReferenceCode::class.declaredMembers.first { it.name == "domain" }
+
+    assertThat(field.returnType.isMarkedNullable).isTrue
+  }
+
+  @Test
+  fun `fromAgency field on overridden Movement DTO type should be nullable`() {
+    val field = Movement::class.declaredMembers.first { it.name == "fromAgency" }
 
     assertThat(field.returnType.isMarkedNullable).isTrue
   }
