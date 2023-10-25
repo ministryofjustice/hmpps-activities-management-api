@@ -108,6 +108,8 @@ data class Appointment(
 
   fun attendees() = attendees.filterNot { it.isDeleted }.toList()
 
+  fun findAttendee(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
+
   fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
   fun addAttendee(attendee: AppointmentAttendee) {
@@ -115,7 +117,33 @@ data class Appointment(
     attendees.add(attendee)
   }
 
+  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?) {
+    // Soft delete any existing removed attendee records for the prisoner
+    findAttendee(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+    // Add attendee if no non-soft deleted attendee records for the prisoner exist
+    findAttendee(prisonerNumber).let {
+      if (it.isEmpty()) {
+        failIfIndividualAppointmentAlreadyAllocated()
+        attendees.add(
+          AppointmentAttendee(
+            appointment = this,
+            prisonerNumber = prisonerNumber,
+            bookingId = bookingId,
+            addedTime = addedTime,
+            addedBy = addedBy,
+          ),
+        )
+      }
+    }
+  }
+
   fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
+
+  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
+    attendees().filter { it.prisonerNumber == prisonerNumber }.forEach {
+      it.remove(removedTime, removalReason, removedBy)
+    }
+  }
 
   fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {

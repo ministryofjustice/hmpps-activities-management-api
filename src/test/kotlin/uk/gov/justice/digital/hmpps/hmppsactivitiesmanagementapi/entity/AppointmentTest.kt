@@ -19,6 +19,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.tempRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
@@ -717,6 +719,157 @@ class AppointmentTest {
       isDeleted = false
     }
     assertThat(entity.isCancelled()).isTrue
+  }
+
+  @Test
+  fun `addAttendee creates new attendee entity`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = emptyMap()).appointments().first()
+    assertThat(entity.attendees()).isEmpty()
+    val addedTime = LocalDateTime.now()
+    entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")
+    with(entity.attendees().single()) {
+      appointment isEqualTo entity
+      prisonerNumber isEqualTo "A1234BC"
+      bookingId isEqualTo 123
+      addedTime isEqualTo addedTime
+      addedBy isEqualTo "ADDED_BY_USER"
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+      removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+  }
+
+  @Test
+  fun `addAttendee does not create duplicate attendee entity`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
+    val attendee = entity.attendees().single()
+    val addedTime = LocalDateTime.now()
+    entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")
+    entity.attendees().single() isEqualTo attendee
+  }
+
+  @Test
+  fun `addAttendee creates new attendee entity when soft deleted attendee exists`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first().apply {
+      removeAttendee("A1234BC", removalReason = permanentRemovalByUserAppointmentAttendeeRemovalReason(), removedBy = "REMOVED_BY_USER")
+    }
+    assertThat(entity.attendees()).isEmpty()
+    val addedTime = LocalDateTime.now()
+    entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")
+    with(entity.attendees().single()) {
+      appointment isEqualTo entity
+      prisonerNumber isEqualTo "A1234BC"
+      bookingId isEqualTo 123
+      addedTime isEqualTo addedTime
+      addedBy isEqualTo "ADDED_BY_USER"
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+      removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+  }
+
+  @Test
+  fun `addAttendee soft deletes any existing attendee records for prisoner and creates new attendee entity`() {
+    val removedTime = LocalDateTime.now()
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first().apply {
+      removeAttendee("A1234BC", removedTime, tempRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
+    }
+    val removedAttendee = entity.attendees().single()
+    with(removedAttendee) {
+      this.removedTime isEqualTo removedTime
+      removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
+      removedBy isEqualTo "REMOVED_BY_USER"
+      isRemoved() isEqualTo true
+      isDeleted isEqualTo false
+    }
+    val addedTime = LocalDateTime.now()
+    entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")
+    with(entity.attendees().single()) {
+      appointment isEqualTo entity
+      prisonerNumber isEqualTo "A1234BC"
+      bookingId isEqualTo 123
+      this.addedTime isEqualTo addedTime
+      addedBy isEqualTo "ADDED_BY_USER"
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+      this.removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+    with(removedAttendee) {
+      this.removedTime isEqualTo removedTime
+      removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
+      removedBy isEqualTo "REMOVED_BY_USER"
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo true
+    }
+  }
+
+  @Test
+  fun `addAttendee throws exception when adding prisoner to individual appointment`() {
+    val entity = appointmentSeriesEntity(appointmentType = AppointmentType.INDIVIDUAL, prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
+    assertThrows<IllegalArgumentException>(
+      "Cannot allocate multiple prisoners to an individual appointment",
+    ) {
+      entity.addAttendee("B2345CD", 456, LocalDateTime.now(), "ADDED_BY_USER")
+    }
+  }
+
+  @Test
+  fun `removeAttendee with soft delete reason`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
+    val removedAttendee = entity.attendees().single()
+    with(removedAttendee) {
+      this.removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+    val removedTime = LocalDateTime.now()
+    entity.removeAttendee("A1234BC", removedTime, permanentRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
+    assertThat(entity.attendees()).isEmpty()
+    with(removedAttendee) {
+      this.removedTime isEqualTo removedTime
+      removalReason isEqualTo permanentRemovalByUserAppointmentAttendeeRemovalReason()
+      removedBy isEqualTo "REMOVED_BY_USER"
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo true
+    }
+  }
+
+  @Test
+  fun `removeAttendee with non soft delete reason`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
+    with(entity.attendees().single()) {
+      this.removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+    val removedTime = LocalDateTime.now()
+    entity.removeAttendee("A1234BC", removedTime, tempRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
+    with(entity.attendees().single()) {
+      this.removedTime isEqualTo removedTime
+      removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
+      removedBy isEqualTo "REMOVED_BY_USER"
+      isRemoved() isEqualTo true
+      isDeleted isEqualTo false
+    }
   }
 
   @Nested
