@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: create-scheduled-instances
 spec:
-  schedule: "0 3 * * *" # 3am every day
+  schedule: "{{ .Values.cron.createScheduledInstances }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200
