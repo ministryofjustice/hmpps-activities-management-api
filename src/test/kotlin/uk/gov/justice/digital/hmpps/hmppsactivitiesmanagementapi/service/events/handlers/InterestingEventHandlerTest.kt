@@ -207,7 +207,8 @@ class InterestingEventHandlerTest {
 
   @Test
   fun `stores an activities changed event with action END`() {
-    mockPrisoner(prisonerNum = "ABC1234")
+    // Note prison code is different to that of the event because they have been release to Moorland
+    mockPrisoner(prisonerNum = "ABC1234", prisonCode = moorlandPrisonCode)
     val inboundEvent =
       activitiesChangedEvent(prisonId = pentonvillePrisonCode, prisonerNumber = "ABC1234", action = Action.END)
 

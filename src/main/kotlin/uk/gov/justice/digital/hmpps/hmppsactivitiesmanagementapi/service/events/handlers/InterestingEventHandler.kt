@@ -77,7 +77,8 @@ class InterestingEventHandler(
             eventTime = LocalDateTime.now(),
             eventType = releaseEvent.eventType(),
             eventData = releaseEvent.getEventMessage(prisoner),
-            prisonCode = prisoner.prisonId,
+            // Release events use the prison code from the release event. The prisoner prison code could be different because they are released!
+            prisonCode = releaseEvent.prisonCode(),
             prisonerNumber = releaseEvent.prisonerNumber(),
             bookingId = prisoner.bookingId?.toInt(),
           ),

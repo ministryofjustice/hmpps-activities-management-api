@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 /**
- * Overriding `toAgency` field. It can be null despite being non-nullable in the API specification.
+ * Overriding `fromAgency' and 'toAgency` fields. Both can be null despite being non-nullable in the API specification.
  */
 data class Movement(
   @get:JsonProperty("offenderNo", required = true) val offenderNo: String,
