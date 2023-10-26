@@ -40,47 +40,67 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound released event is processed by release event handler`() {
-    val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
-    service.process(inboundEvent)
-    verify(releasedEventHandler).handle(inboundEvent)
+    val offenderReleasedEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
+    service.process(offenderReleasedEvent)
+    verify(releasedEventHandler).handle(offenderReleasedEvent)
+  }
+
+  @Test
+  fun `inbound released event is handled as an interesting event`() {
+    val offenderReleasedEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
+    service.process(offenderReleasedEvent)
+    verify(interestingEventHandler).handle(offenderReleasedEvent)
+  }
+
+  @Test
+  fun `inbound activities changed event is processed by release event handler`() {
+    val activitiesChangedEvent = activitiesChangedEvent(prisonId = moorlandPrisonCode, prisonerNumber = "123456", action = Action.END)
+    service.process(activitiesChangedEvent)
+    verify(activitiesChangedEventHandler).handle(activitiesChangedEvent)
+  }
+
+  @Test
+  fun `inbound activities changed event is handled as an interesting event`() {
+    val activitiesChangedEvent = activitiesChangedEvent(prisonId = moorlandPrisonCode, prisonerNumber = "123456", action = Action.END)
+    service.process(activitiesChangedEvent)
+    verify(interestingEventHandler).handle(activitiesChangedEvent)
   }
 
   @Test
   fun `inbound received event is processed by received event handler`() {
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
-    service.process(inboundEvent)
-    verify(receivedEventHandler).handle(inboundEvent)
-  }
-
-  @Test
-  fun `inbound released event failure is handled as an interesting event`() {
-    whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.failed())
-    val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
-    service.process(inboundEvent)
-    verify(releasedEventHandler).handle(inboundEvent)
-    verify(interestingEventHandler).handle(inboundEvent)
+    val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    service.process(offenderReceivedEvent)
+    verify(receivedEventHandler).handle(offenderReceivedEvent)
   }
 
   @Test
   fun `inbound received event failure is handled as an interesting event`() {
-    whenever(receivedEventHandler.handle(any())).thenReturn(Outcome.failed())
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
-    service.process(inboundEvent)
-    verify(receivedEventHandler).handle(inboundEvent)
-    verify(interestingEventHandler).handle(inboundEvent)
+    val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456").also {
+      whenever(receivedEventHandler.handle(it)).thenReturn(Outcome.failed())
+    }
+    service.process(offenderReceivedEvent)
+    verify(receivedEventHandler).handle(offenderReceivedEvent)
+    verify(interestingEventHandler).handle(offenderReceivedEvent)
   }
 
   @Test
   fun `inbound interesting event is processed by interesting event handler`() {
-    val inboundEvent = cellMoveEvent("123456")
-    service.process(inboundEvent)
-    verify(interestingEventHandler).handle(inboundEvent)
+    val cellMoveEvent = cellMoveEvent("123456")
+    service.process(cellMoveEvent)
+    verify(interestingEventHandler).handle(cellMoveEvent)
   }
 
   @Test
   fun `inbound appointments changed event is processed by appointments changed event handler`() {
-    val inboundEvent = appointmentsChangedEvent("123456")
-    service.process(inboundEvent)
-    verify(appointmentsChangedEventHandler).handle(inboundEvent)
+    val appointmentsChangedEvent = appointmentsChangedEvent("123456")
+    service.process(appointmentsChangedEvent)
+    verify(appointmentsChangedEventHandler).handle(appointmentsChangedEvent)
+  }
+
+  @Test
+  fun `inbound appointments changed event is processed by  interesting event handler`() {
+    val appointmentsChangedEvent = appointmentsChangedEvent("123456")
+    service.process(appointmentsChangedEvent)
+    verify(interestingEventHandler).handle(appointmentsChangedEvent)
   }
 }

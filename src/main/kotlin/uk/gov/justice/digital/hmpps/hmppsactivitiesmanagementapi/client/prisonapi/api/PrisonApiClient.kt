@@ -29,6 +29,7 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
+  @Deprecated("Use prisoner search API client in place of this if it has what is needed.")
   fun getPrisonerDetails(
     prisonerNumber: String,
     fullInfo: Boolean = true,
