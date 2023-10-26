@@ -76,6 +76,7 @@ data class AppointmentAttendee(
     attendanceRecordedTime = attendanceRecordedTime,
     attendanceRecordedBy = attendanceRecordedBy,
     removedTime = removedTime,
+    removalReasonId = removalReason?.appointmentAttendeeRemovalReasonId,
     removedBy = removedBy,
   )
 

@@ -18,13 +18,16 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -53,11 +56,15 @@ class AppointmentUpdateDomainServiceTest {
   private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "").toSet()
   private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "").toSet()
   private val updatedBy = "TEST.USER"
+  private val permanentRemovalByUserAppointmentAttendeeRemovalReason = permanentRemovalByUserAppointmentAttendeeRemovalReason()
 
   @BeforeEach
   fun setUp() {
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
     whenever(appointmentSeriesRepository.saveAndFlush(any())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
+    whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
+      Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
+    )
   }
 
   @Nested
@@ -355,6 +362,192 @@ class AppointmentUpdateDomainServiceTest {
       response.extraInformation isEqualTo "Appointment series level comment"
       response.appointments.filter { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
       response.appointments.filterNot { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+    }
+
+    @Test
+    fun `adds prisoners to appointment`() {
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      // C3456DE is already allocated
+      val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"))
+      val updated = LocalDateTime.now()
+      val response = service.updateAppointments(
+        appointmentSeries,
+        appointment.appointmentId,
+        appointmentsToUpdate,
+        request,
+        mapOf(
+          "C3456DE" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 3),
+          "D4567EF" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 4),
+          "E5678FG" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E5678FG", bookingId = 5),
+        ),
+        updated,
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        // No attendee record should be duplicated
+        this hasSize appointmentsToUpdate.size * 5
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE", "D4567EF", "E5678FG")
+        filter { listOf("A1234BC", "B2345CD", "C3456DE").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo null }
+          .onEach { it.addedBy isEqualTo null }
+        filter { listOf("D4567EF", "E5678FG").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo updated }
+          .onEach { it.addedBy isEqualTo updatedBy }
+      }
+      with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.addedTime isEqualTo null }
+        onEach { it.addedBy isEqualTo null }
+      }
+
+      with(response.appointments.filter { ids.contains(it.id) }.flatMap { it.attendees }) {
+        // No attendee record should be duplicated
+        this hasSize appointmentsToUpdate.size * 5
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE", "D4567EF", "E5678FG")
+        filter { listOf("A1234BC", "B2345CD", "C3456DE").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo null }
+          .onEach { it.addedBy isEqualTo null }
+        filter { listOf("D4567EF", "E5678FG").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo updated }
+          .onEach { it.addedBy isEqualTo updatedBy }
+      }
+      with(response.appointments.filterNot { ids.contains(it.id) }.flatMap { it.attendees }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.addedTime isEqualTo null }
+        onEach { it.addedBy isEqualTo null }
+      }
+    }
+
+    @Test
+    fun `removes prisoners from appointment`() {
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      // D4567EF is not an attendee
+      val request = AppointmentUpdateRequest(removePrisonerNumbers = listOf("B2345CD", "C3456DE", "D4567EF"))
+      val attendeesExpectedToBeRemoved = appointmentsToUpdate.flatMap { it.attendees() }.filter { listOf("B2345CD", "C3456DE").contains(it.prisonerNumber) }
+      val updated = LocalDateTime.now()
+      val response = service.updateAppointments(
+        appointmentSeries,
+        appointment.appointmentId,
+        appointmentsToUpdate,
+        request,
+        emptyMap(),
+        updated,
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      attendeesExpectedToBeRemoved
+        .onEach { it.removedTime isEqualTo updated }
+        .onEach { it.removalReason isEqualTo permanentRemovalByUserAppointmentAttendeeRemovalReason }
+        .onEach { it.removedBy isEqualTo updatedBy }
+
+      with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC")
+        onEach { it.removedTime isEqualTo null }
+        onEach { it.removalReason isEqualTo null }
+        onEach { it.removedBy isEqualTo null }
+      }
+      with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.removedTime isEqualTo null }
+        onEach { it.removalReason isEqualTo null }
+        onEach { it.removedBy isEqualTo null }
+      }
+
+      with(response.appointments.filter { ids.contains(it.id) }.flatMap { it.attendees }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC")
+        onEach { it.removedTime isEqualTo null }
+        onEach { it.removalReasonId isEqualTo null }
+        onEach { it.removedBy isEqualTo null }
+      }
+      with(response.appointments.filterNot { ids.contains(it.id) }.flatMap { it.attendees }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.removedTime isEqualTo null }
+        onEach { it.removalReasonId isEqualTo null }
+        onEach { it.removedBy isEqualTo null }
+      }
+    }
+
+    @Test
+    fun `adds and removes prisoners on appointment`() {
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(
+        // C3456DE is being both removed and added. This will result in a soft deleted attendee record and a new attendee record for that prisoner with only the latter returned by the API
+        removePrisonerNumbers = listOf("B2345CD", "C3456DE", "D4567EF"),
+        addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"),
+      )
+      val attendeesExpectedToBeRemoved = appointmentsToUpdate.flatMap { it.attendees() }.filter { listOf("B2345CD", "C3456DE").contains(it.prisonerNumber) }
+      val updated = LocalDateTime.now()
+      val response = service.updateAppointments(
+        appointmentSeries,
+        appointment.appointmentId,
+        appointmentsToUpdate,
+        request,
+        mapOf(
+          "C3456DE" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 3),
+          "D4567EF" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 4),
+          "E5678FG" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E5678FG", bookingId = 5),
+        ),
+        updated,
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      attendeesExpectedToBeRemoved
+        .onEach { it.removedTime isEqualTo updated }
+        .onEach { it.removalReason isEqualTo permanentRemovalByUserAppointmentAttendeeRemovalReason }
+        .onEach { it.removedBy isEqualTo updatedBy }
+
+      with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        // No attendee record should be duplicated
+        this hasSize appointmentsToUpdate.size * 4
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "C3456DE", "D4567EF", "E5678FG")
+        filter { listOf("A1234BC").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo null }
+          .onEach { it.addedBy isEqualTo null }
+        filter { listOf("C3456DE", "D4567EF", "E5678FG").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo updated }
+          .onEach { it.addedBy isEqualTo updatedBy }
+      }
+      with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.flatMap { it.attendees() }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.addedTime isEqualTo null }
+        onEach { it.addedBy isEqualTo null }
+      }
+
+      with(response.appointments.filter { ids.contains(it.id) }.flatMap { it.attendees }) {
+        // No attendee record should be duplicated
+        this hasSize appointmentsToUpdate.size * 4
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "C3456DE", "D4567EF", "E5678FG")
+        filter { listOf("A1234BC").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo null }
+          .onEach { it.addedBy isEqualTo null }
+        filter { listOf("C3456DE", "D4567EF", "E5678FG").contains(it.prisonerNumber) }
+          .onEach { it.addedTime isEqualTo updated }
+          .onEach { it.addedBy isEqualTo updatedBy }
+      }
+      with(response.appointments.filterNot { ids.contains(it.id) }.flatMap { it.attendees }) {
+        map { it.prisonerNumber }.distinct() isEqualTo listOf("A1234BC", "B2345CD", "C3456DE")
+        onEach { it.addedTime isEqualTo null }
+        onEach { it.addedBy isEqualTo null }
+      }
     }
 
     @Test
