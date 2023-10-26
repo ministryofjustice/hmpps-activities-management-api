@@ -25,14 +25,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.DeleteMigra
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
-import java.security.Principal
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateAppointmentService
 import java.time.LocalDate
 
 @RestController
 @RequestMapping("/migrate-appointment", produces = [MediaType.APPLICATION_JSON_VALUE])
 class MigrateAppointmentController(
-  private val appointmentSeriesService: AppointmentSeriesService,
+  private val migrateAppointmentService: MigrateAppointmentService,
   private val deleteMigratedAppointmentsJob: DeleteMigratedAppointmentsJob,
 ) {
   @ResponseStatus(HttpStatus.CREATED)
@@ -80,7 +79,6 @@ class MigrateAppointmentController(
   )
   @PreAuthorize("hasRole('NOMIS_APPOINTMENTS')")
   fun migrateAppointment(
-    principal: Principal,
     @Valid
     @RequestBody
     @Parameter(
@@ -88,7 +86,7 @@ class MigrateAppointmentController(
       required = true,
     )
     request: AppointmentMigrateRequest,
-  ): AppointmentInstance = appointmentSeriesService.migrateAppointment(request, principal)
+  ): AppointmentInstance = migrateAppointmentService.migrateAppointment(request)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @DeleteMapping(value = ["/{prisonCode}"])

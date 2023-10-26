@@ -5,22 +5,21 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -30,9 +29,10 @@ class MigrateAppointmentService(
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification,
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentTierRepository: AppointmentTierRepository,
-  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
+  private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
+  private val transactionHandler: TransactionHandler,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -41,58 +41,40 @@ class MigrateAppointmentService(
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance {
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
 
-    val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
-      AppointmentSeries(
-        appointmentType = AppointmentType.INDIVIDUAL,
-        prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode!!,
-        customName = request.comment?.trim()?.take(40),
-        appointmentTier = appointmentTier,
-        internalLocationId = request.internalLocationId,
-        startDate = request.startDate!!,
-        startTime = request.startTime!!,
-        endTime = request.endTime,
-        extraInformation = request.comment?.trim()?.takeIf { it.length > 40 },
-        createdTime = request.created!!,
-        createdBy = request.createdBy!!,
-        updatedTime = request.updated,
-        updatedBy = request.updatedBy,
-        isMigrated = true,
-      )
-    )
+    val appointmentSeries =
+      transactionHandler.newSpringTransaction {
+        appointmentSeriesRepository.saveAndFlush(
+          AppointmentSeries(
+            appointmentType = AppointmentType.INDIVIDUAL,
+            prisonCode = request.prisonCode!!,
+            categoryCode = request.categoryCode!!,
+            customName = request.comment?.trim()?.take(40),
+            appointmentTier = appointmentTier,
+            internalLocationId = request.internalLocationId,
+            startDate = request.startDate!!,
+            startTime = request.startTime!!,
+            endTime = request.endTime,
+            extraInformation = request.comment?.trim()?.takeIf { it.length > 40 },
+            createdTime = request.created!!,
+            createdBy = request.createdBy!!,
+            updatedTime = request.updated,
+            updatedBy = request.updatedBy,
+            isMigrated = true,
+          ),
+        )
+      }
 
-    val =  appointmentCreateDomainService.createAppointments(
+    val appointmentSeriesModel = appointmentCreateDomainService.createAppointments(
       appointmentSeries,
       mapOf(request.prisonerNumber!! to request.bookingId!!),
-      isCancelled = request.isCancelled ?: false
+      isCancelled = request.isCancelled ?: false,
     )
 
-    val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())
-    val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
-      buildValidAppointmentSeriesEntity(
-        appointmentType = AppointmentType.INDIVIDUAL,
-        prisonCode = request.prisonCode!!,
-        prisonerNumbers = listOf(request.prisonerNumber),
-        prisonerBookings = prisonerBookings,
-        categoryCode = request.categoryCode!!,
-        customName = request.comment?.trim()?.take(40),
-        appointmentTier = appointmentTier,
-        internalLocationId = request.internalLocationId,
-        inCell = false,
-        startDate = request.startDate,
-        startTime = request.startTime,
-        endTime = request.endTime,
-        extraInformation = request.comment?.trim()?.takeIf { it.length > 40 },
-        createdTime = request.created!!,
-        createdBy = request.createdBy!!,
-        updatedTime = request.updated,
-        updatedBy = request.updatedBy,
-        isCancelled = request.isCancelled ?: false,
-        isMigrated = true,
-      ),
-    )
-    val appointmentInstance = appointmentInstanceRepository.findOrThrowNotFound(appointmentSeries.appointments().first().attendees().first().appointmentAttendeeId)
-    return appointmentInstance.toModel()
+    // The appointment attendee id is used for the appointment instance id as there is a one-to-one relationship between an
+    // appointment attendee and appointment instances. The one way sync process is at the appointment instance level
+    val appointmentInstanceId = appointmentSeriesModel.appointments.single().attendees.single().id
+
+    return appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
   }
 
   fun deleteMigratedAppointments(prisonCode: String, startDate: LocalDate, categoryCode: String? = null) {

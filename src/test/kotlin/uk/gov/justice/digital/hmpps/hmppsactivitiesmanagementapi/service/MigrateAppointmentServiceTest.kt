@@ -13,24 +13,34 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.jpa.domain.Specification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
 import java.time.LocalDate
 
 class MigrateAppointmentServiceTest {
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification = spy()
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
+  private val appointmentTierRepository: AppointmentTierRepository = mock()
+  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
+  private val appointmentCreateDomainService: AppointmentCreateDomainService = mock()
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
 
   private val service = MigrateAppointmentService(
     appointmentSeriesSpecification,
     appointmentSeriesRepository,
+    appointmentTierRepository,
+    appointmentInstanceRepository,
+    appointmentCreateDomainService,
     appointmentCancelDomainService,
+    TransactionHandler(),
   )
 
   @Nested
