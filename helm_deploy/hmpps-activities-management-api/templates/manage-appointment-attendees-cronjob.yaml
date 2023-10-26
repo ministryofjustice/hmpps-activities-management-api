@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: manage-appointment-attendees
 spec:
-  schedule: "30 2 * * *" # 02:30am every day
+  schedule:  "{{ .Values.cron.appointmentAttendees }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200

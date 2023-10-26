@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: deallocate-allocations
 spec:
-  schedule: "0 22 * * *" # 10pm every day
+  schedule:  "{{ .Values.cron.allocationsDeallocate }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200
