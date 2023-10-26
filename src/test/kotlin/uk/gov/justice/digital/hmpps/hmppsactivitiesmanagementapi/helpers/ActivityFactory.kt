@@ -34,6 +34,7 @@ internal fun activityModel(activity: Activity) = transform(activity)
 
 const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"
+const val risleyPrisonCode = "RSI"
 
 val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
 val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
@@ -262,9 +263,11 @@ fun rolloutPrison() = RolloutPrison(
   LocalDate.of(2022, 12, 23),
 )
 
-fun prisonRegime() = PrisonRegime(
+fun prisonRegime(
+  prisonCode: String = pentonvillePrisonCode,
+) = PrisonRegime(
   1,
-  pentonvillePrisonCode,
+  prisonCode,
   LocalTime.of(9, 0),
   LocalTime.of(12, 0),
   LocalTime.of(13, 0),

@@ -1,0 +1,16 @@
+{
+  "request" : {
+    "urlPathPattern" : "/prisoner/.*",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName" : "prisoner-search-api/prisoners/{{request.pathSegments.[1]}}.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

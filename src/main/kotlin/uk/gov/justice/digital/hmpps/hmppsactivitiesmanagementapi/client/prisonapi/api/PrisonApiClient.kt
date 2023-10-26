@@ -12,15 +12,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
@@ -29,7 +29,12 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
-  fun getPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null): Mono<InmateDetail> {
+  @Deprecated("Use prisoner search API client in place of this if it has what is needed.")
+  fun getPrisonerDetails(
+    prisonerNumber: String,
+    fullInfo: Boolean = true,
+    extraInfo: Boolean? = null,
+  ): Mono<InmateDetail> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
@@ -161,6 +166,24 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonCode)
       }
       .bodyValue(prisonerNumbers)
+      .retrieve()
+      .awaitBody()
+  }
+
+  suspend fun getScheduledVisitsForLocationAsync(
+    prisonCode: String,
+    locationId: Long,
+    date: LocalDate,
+    timeSlot: TimeSlot?,
+  ): List<PrisonerSchedule> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/schedules/{prisonCode}/locations/{locationId}/usage/VISIT")
+          .queryParam("date", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode, locationId)
+      }
       .retrieve()
       .awaitBody()
   }
@@ -357,25 +380,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .distinctBy { it.educationLevel + it.studyArea + it.bookingId }
   }
 
-  fun getOffenderNonAssociations(
-    prisonerNumber: String,
-    excludeExpired: Boolean = true,
-  ): List<OffenderNonAssociationDetail>? {
-    val nonAssociationDetails = prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/offenders/{offenderNo}/non-association-details")
-          .build(prisonerNumber)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<OffenderNonAssociationDetails>())
-      .block()
-
-    return nonAssociationDetails?.nonAssociations?.filter {
-      !excludeExpired || it.expiryDate == null || LocalDateTime.parse(it.expiryDate).isAfter(LocalDateTime.now())
-    }
-  }
-
   suspend fun getEventLocationsAsync(prisonCode: String): List<Location> {
     return prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
@@ -386,4 +390,28 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
   }
+
+  suspend fun getEventLocationsBookedAsync(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): List<LocationSummary> {
+    return prisonApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/api/agencies/{prisonCode}/eventLocationsBooked")
+          .queryParam("bookedOnDay", date)
+          .maybeQueryParam("timeSlot", timeSlot)
+          .build(prisonCode)
+      }
+      .retrieve()
+      .awaitBody()
+  }
+
+  fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) =
+    prisonerNumbers.ifNotEmpty {
+      prisonApiWebClient
+        .post()
+        .uri("/api/movements/offenders")
+        .bodyValue(prisonerNumbers)
+        .retrieve()
+        .bodyToMono(typeReference<List<Movement>>())
+        .block()
+    }?.filter { it.fromAgency == prisonCode } ?: emptyList()
 }

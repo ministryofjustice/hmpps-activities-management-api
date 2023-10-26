@@ -4,8 +4,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociationDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -36,7 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OffenderNonAssociation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -44,7 +45,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.OffenderNonAssociation as PrisonApiOffenderNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -337,48 +337,44 @@ class TransformFunctionsTest {
   }
 
   @Test
-  fun `transformation of OffenderNonAssociationDetail to NonAssociationDetails`() {
-    val nonAssociationDetail = OffenderNonAssociationDetail(
-      reasonCode = "VIC",
-      reasonDescription = "Victim",
-      typeCode = "WING",
-      typeDescription = "Do Not Locate on Same Wing",
-      effectiveDate = "2021-07-05T10:35:17",
-      expiryDate = "2024-07-05T10:35:17",
-      offenderNonAssociation = PrisonApiOffenderNonAssociation(
-        offenderNo = "G0135GA",
+  fun `transformation of PrisonerNonAssociation to NonAssociationDetails`() {
+    val nonAssociationDetail = PrisonerNonAssociation(
+      id = 1,
+      role = PrisonerNonAssociation.Role.VICTIM,
+      roleDescription = "Victim",
+      reason = PrisonerNonAssociation.Reason.BULLYING,
+      reasonDescription = "Bullying",
+      restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
+      restrictionTypeDescription = "Landing",
+      comment = "Bullying",
+      authorisedBy = "ADMIN",
+      whenCreated = "2022-04-02T00:00:00",
+      whenUpdated = "2022-04-02T00:00:00",
+      updatedBy = "ADMIN",
+      isClosed = false,
+      isOpen = true,
+      otherPrisonerDetails = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails(
+        prisonerNumber = "A1234AA",
+        role = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails.Role.PERPETRATOR,
+        roleDescription = "Perpetrator",
         firstName = "Joseph",
         lastName = "Bloggs",
-        reasonCode = "PER",
-        reasonDescription = "Perpetrator",
-        agencyDescription = "Pentonville",
-        assignedLivingUnitDescription = "PVI-1-2-4",
-        assignedLivingUnitId = 123,
+        prisonId = "MDI",
+        prisonName = "HMP Moorland",
       ),
-      authorisedBy = "Test user",
-      comments = "A comment",
     )
 
-    assertThat(transformOffenderNonAssociationDetail(nonAssociationDetail)).isEqualTo(
+    assertThat(nonAssociationDetail.toModel()).isEqualTo(
       NonAssociationDetails(
-        reasonCode = "VIC",
-        reasonDescription = "Victim",
-        typeCode = "WING",
-        typeDescription = "Do Not Locate on Same Wing",
-        effectiveDate = LocalDateTime.parse("2021-07-05T10:35:17"),
-        expiryDate = LocalDateTime.parse("2024-07-05T10:35:17"),
-        offenderNonAssociation = OffenderNonAssociation(
-          offenderNo = "G0135GA",
+        reasonCode = "BULLYING",
+        reasonDescription = "Bullying",
+        otherPrisonerDetails = OtherPrisonerDetails(
+          prisonerNumber = "A1234AA",
           firstName = "Joseph",
           lastName = "Bloggs",
-          reasonCode = "PER",
-          reasonDescription = "Perpetrator",
-          agencyDescription = "Pentonville",
-          assignedLivingUnitDescription = "PVI-1-2-4",
-          assignedLivingUnitId = 123,
         ),
-        authorisedBy = "Test user",
-        comments = "A comment",
+        whenCreated = LocalDateTime.parse(nonAssociationDetail.whenCreated),
+        comments = nonAssociationDetail.comment,
       ),
     )
   }

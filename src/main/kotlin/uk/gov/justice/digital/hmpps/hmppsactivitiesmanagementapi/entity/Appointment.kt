@@ -13,6 +13,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Where
+import org.springframework.data.domain.AbstractAggregateRoot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -84,7 +85,7 @@ data class Appointment(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
-) {
+) : AbstractAggregateRoot<Appointment>() {
   var cancelledTime: LocalDateTime? = null
 
   @OneToOne(fetch = FetchType.EAGER)
@@ -94,6 +95,13 @@ data class Appointment(
   var cancelledBy: String? = null
 
   var isDeleted: Boolean = false
+
+  fun cancel(cancelledTime: LocalDateTime = LocalDateTime.now(), cancellationReason: AppointmentCancellationReason, cancelledBy: String) {
+    this.cancelledTime = cancelledTime
+    this.cancellationReason = cancellationReason
+    this.cancelledBy = cancelledBy
+    this.isDeleted = cancellationReason.isDelete
+  }
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
@@ -109,6 +117,39 @@ data class Appointment(
 
   fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
 
+  fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
+    require(!isCancelled()) {
+      "Cannot mark attendance for a cancelled appointment"
+    }
+
+    val event = AppointmentAttendanceMarkedEvent(
+      appointmentId = appointmentId,
+      prisonCode = prisonCode,
+      attendanceRecordedTime = attendanceRecordedTime,
+      attendanceRecordedBy = attendanceRecordedBy,
+    )
+
+    findAttendees(attendedPrisonNumbers).forEach {
+      event.attendedPrisonNumbers.add(it.prisonerNumber)
+      if (it.attended != null) event.attendanceChangedPrisonNumbers.add(it.prisonerNumber)
+
+      it.attended = true
+      it.attendanceRecordedTime = attendanceRecordedTime
+      it.attendanceRecordedBy = attendanceRecordedBy
+    }
+
+    findAttendees(nonAttendedPrisonNumbers).forEach {
+      event.nonAttendedPrisonNumbers.add(it.prisonerNumber)
+      if (it.attended != null) event.attendanceChangedPrisonNumbers.add(it.prisonerNumber)
+
+      it.attended = false
+      it.attendanceRecordedTime = attendanceRecordedTime
+      it.attendanceRecordedBy = attendanceRecordedBy
+    }
+
+    registerEvent(event)
+  }
+
   fun prisonerNumbers() = attendees().map { attendee -> attendee.prisonerNumber }.distinct()
 
   fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
@@ -122,6 +163,8 @@ data class Appointment(
   fun isExpired() = startDateTime() < LocalDateTime.now()
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
+
+  fun attendeeUsernames() = attendees().flatMap { it.usernames() }.distinct()
 
   fun toModel() = AppointmentModel(
     id = appointmentId,
@@ -170,7 +213,7 @@ data class Appointment(
       sequenceNumber,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      attendees().map { it.toSummary(prisonerMap) },
+      attendees().map { it.toSummary(prisonerMap, userMap) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       customName,
       if (inCell) {
@@ -202,6 +245,12 @@ data class Appointment(
       },
     )
 
+  /**
+   * Function exists for testing purposes. The AbstractAggregateRoot.domainEvents() function is protected so this
+   * function supports testing the correct domain events have been registered
+   */
+  internal fun publishedDomainEvents() = this.domainEvents()
+
   private fun failIfIndividualAppointmentAlreadyAllocated() {
     if (appointmentSeries.appointmentType == AppointmentType.INDIVIDUAL && attendees().isNotEmpty()) {
       throw IllegalArgumentException("Cannot allocate multiple prisoners to an individual appointment")
@@ -219,3 +268,19 @@ fun List<Appointment>.toDetails(
   locationMap: Map<Long, Location>,
   userMap: Map<String, UserDetail>,
 ) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }
+
+data class AppointmentAttendanceMarkedEvent(
+  val appointmentId: Long,
+
+  val prisonCode: String,
+
+  val attendedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val nonAttendedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val attendanceChangedPrisonNumbers: MutableList<String> = mutableListOf(),
+
+  val attendanceRecordedTime: LocalDateTime,
+
+  val attendanceRecordedBy: String,
+)

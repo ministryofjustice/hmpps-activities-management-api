@@ -1,41 +1,38 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 
 class OffenderReleasedEventTest {
   @Test
   fun `release event is temporary`() {
-    assertThat(releaseEvent("TEMPORARY_ABSENCE_RELEASE").isTemporary()).isTrue
-    assertThat(releaseEvent("RELEASED_TO_HOSPITAL").isTemporary()).isTrue
-    assertThat(releaseEvent("SENT_TO_COURT").isTemporary()).isTrue
+    releaseEvent("TEMPORARY_ABSENCE_RELEASE").isTemporary() isBool true
+    releaseEvent("SENT_TO_COURT").isTemporary() isBool true
   }
 
   @Test
   fun `temporary release event is not permanent`() {
-    assertThat(releaseEvent("TEMPORARY_ABSENCE_RELEASE").isPermanent()).isFalse
-    assertThat(releaseEvent("RELEASED_TO_HOSPITAL").isPermanent()).isFalse
-    assertThat(releaseEvent("SENT_TO_COURT").isPermanent()).isFalse
+    releaseEvent("TEMPORARY_ABSENCE_RELEASE").isPermanent() isBool false
+    releaseEvent("SENT_TO_COURT").isPermanent() isBool false
   }
 
   @Test
   fun `release event is permanent`() {
-    assertThat(releaseEvent("RELEASED").isPermanent()).isTrue
-
-    assertThat(releaseEvent("RELEASED").isTemporary()).isFalse
+    releaseEvent("RELEASED").isPermanent() isBool true
+    releaseEvent("RELEASED_TO_HOSPITAL").isPermanent() isBool true
   }
 
   @Test
   fun `permanent release event is not temporary`() {
-    assertThat(releaseEvent("RELEASED").isTemporary()).isFalse
-    assertThat(releaseEvent("TRANSFERRED").isTemporary()).isFalse
+    releaseEvent("RELEASED").isTemporary() isBool false
+    releaseEvent("RELEASED_TO_HOSPITAL").isTemporary() isBool false
   }
 
   @Test
   fun `release event is not temporary or permanent`() {
-    assertThat(releaseEvent("UNKNOWN").isTemporary()).isFalse
-    assertThat(releaseEvent("UNKNOWN").isPermanent()).isFalse
+    releaseEvent("UNKNOWN").isTemporary() isBool false
+    releaseEvent("UNKNOWN").isPermanent() isBool false
   }
 
   private fun releaseEvent(reason: String) =

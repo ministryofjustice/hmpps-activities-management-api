@@ -9,8 +9,9 @@ generic-service:
     JAVA_OPTS: "-Xmx1024m"
     HMPPS_AUTH_URL: https://sign-in.hmpps.service.justice.gov.uk/auth
     PRISON_API_URL: https://api.prison.service.justice.gov.uk
-    PRISONER_SEARCH_API_URL: https://prisoner-offender-search.prison.service.justice.gov.uk
+    PRISONER_SEARCH_API_URL: https://prisoner-search.prison.service.justice.gov.uk
     CASE_NOTES_API_URL: https://offender-case-notes.service.justice.gov.uk
+    NON_ASSOCIATIONS_API_URL: https://non-associations-api.hmpps.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true

@@ -1,18 +1,23 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
@@ -115,6 +120,36 @@ class AppointmentTest {
       isDeleted = true
     }
     entity.isScheduled() isEqualTo false
+  }
+
+  @Test
+  fun `cancel appointment with non delete reason`() {
+    val cancelledTime = LocalDateTime.now()
+    val cancellationReason = appointmentCancelledReason()
+    val cancelledBy = "CANCELLED_BY_USER"
+    val entity = appointmentSeriesEntity().appointments().first()
+
+    entity.cancel(cancelledTime, cancellationReason, cancelledBy)
+
+    entity.cancelledTime isEqualTo cancelledTime
+    entity.cancellationReason isEqualTo cancellationReason
+    entity.cancelledBy isEqualTo cancelledBy
+    entity.isDeleted isBool false
+  }
+
+  @Test
+  fun `cancel appointment with delete reason`() {
+    val cancelledTime = LocalDateTime.now()
+    val cancellationReason = appointmentCreatedInErrorReason()
+    val cancelledBy = "DELETED_BY_USER"
+    val entity = appointmentSeriesEntity().appointments().first()
+
+    entity.cancel(cancelledTime, cancellationReason, cancelledBy)
+
+    entity.cancelledTime isEqualTo cancelledTime
+    entity.cancellationReason isEqualTo cancellationReason
+    entity.cancelledBy isEqualTo cancelledBy
+    entity.isDeleted isBool true
   }
 
   @Test
@@ -682,5 +717,214 @@ class AppointmentTest {
       isDeleted = false
     }
     assertThat(entity.isCancelled()).isTrue
+  }
+
+  @Nested
+  @DisplayName("mark prisoner attendance")
+  inner class MarkPrisonerAttendance {
+    @Test
+    fun `cannot mark attendance for a cancelled appointment`() {
+      val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+        .apply {
+          cancelledTime = LocalDateTime.now().minusDays(1)
+          cancellationReason = appointmentCancelledReason()
+          cancelledBy = "CANCEL.USER"
+        }
+      val now = LocalDateTime.now()
+      val username = "ATTENDANCE.RECORDED.BY"
+
+      assertThrows<IllegalArgumentException>(
+        "Cannot mark attendance for a cancelled appointment",
+      ) {
+        entity.markPrisonerAttendance(
+          attendedPrisonNumbers = listOf("B2345CD"),
+          nonAttendedPrisonNumbers = emptyList(),
+          attendanceRecordedTime = now,
+          attendanceRecordedBy = username,
+        )
+      }
+
+      assertThat(entity.publishedDomainEvents()).isEmpty()
+    }
+
+    @Test
+    fun `record attendance`() {
+      val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+      val now = LocalDateTime.now()
+      val username = "ATTENDANCE.RECORDED.BY"
+
+      entity.markPrisonerAttendance(
+        attendedPrisonNumbers = listOf("B2345CD"),
+        nonAttendedPrisonNumbers = emptyList(),
+        attendanceRecordedTime = now,
+        attendanceRecordedBy = username,
+      )
+
+      with(entity.attendees().single { it.prisonerNumber == "A1234BC" }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+      with(entity.attendees().single { it.prisonerNumber == "B2345CD" }) {
+        assertThat(attended).isTrue()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+      with(entity.attendees().single { it.prisonerNumber == "C3456DE" }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+
+      assertThat(entity.publishedDomainEvents().single()).isEqualTo(
+        AppointmentAttendanceMarkedEvent(
+          appointmentId = entity.appointmentId,
+          prisonCode = entity.prisonCode,
+          attendedPrisonNumbers = mutableListOf("B2345CD"),
+          nonAttendedPrisonNumbers = mutableListOf(),
+          attendanceChangedPrisonNumbers = mutableListOf(),
+          attendanceRecordedTime = now,
+          attendanceRecordedBy = username,
+        ),
+      )
+    }
+
+    @Test
+    fun `record non-attendance`() {
+      val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+      val now = LocalDateTime.now()
+      val username = "ATTENDANCE.RECORDED.BY"
+
+      entity.markPrisonerAttendance(
+        attendedPrisonNumbers = emptyList(),
+        nonAttendedPrisonNumbers = listOf("C3456DE"),
+        attendanceRecordedTime = now,
+        attendanceRecordedBy = username,
+      )
+
+      with(entity.attendees().single { it.prisonerNumber == "A1234BC" }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+      with(entity.attendees().single { it.prisonerNumber == "B2345CD" }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+      with(entity.attendees().single { it.prisonerNumber == "C3456DE" }) {
+        assertThat(attended).isFalse()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+
+      assertThat(entity.publishedDomainEvents().single()).isEqualTo(
+        AppointmentAttendanceMarkedEvent(
+          appointmentId = entity.appointmentId,
+          prisonCode = entity.prisonCode,
+          attendedPrisonNumbers = mutableListOf(),
+          nonAttendedPrisonNumbers = mutableListOf("C3456DE"),
+          attendanceChangedPrisonNumbers = mutableListOf(),
+          attendanceRecordedTime = now,
+          attendanceRecordedBy = username,
+        ),
+      )
+    }
+
+    @Test
+    fun `change attendance`() {
+      val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+        .apply {
+          with(attendees().single { it.prisonerNumber == "B2345CD" }) {
+            attended = true
+            attendanceRecordedTime = LocalDateTime.now().minusDays(1)
+            attendanceRecordedBy = "PREV.ATTENDANCE.RECORDED.BY"
+          }
+          with(attendees().single { it.prisonerNumber == "C3456DE" }) {
+            attended = false
+            attendanceRecordedTime = LocalDateTime.now().minusDays(1)
+            attendanceRecordedBy = "PREV.ATTENDANCE.RECORDED.BY"
+          }
+        }
+      val now = LocalDateTime.now()
+      val username = "ATTENDANCE.RECORDED.BY"
+
+      entity.markPrisonerAttendance(
+        attendedPrisonNumbers = listOf("A1234BC", "C3456DE"),
+        nonAttendedPrisonNumbers = listOf("B2345CD"),
+        attendanceRecordedTime = now,
+        attendanceRecordedBy = username,
+      )
+
+      with(entity.attendees().single { it.prisonerNumber == "A1234BC" }) {
+        assertThat(attended).isTrue()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+      with(entity.attendees().single { it.prisonerNumber == "B2345CD" }) {
+        assertThat(attended).isFalse()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+      with(entity.attendees().single { it.prisonerNumber == "C3456DE" }) {
+        assertThat(attended).isTrue()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+
+      assertThat(entity.publishedDomainEvents().single()).isEqualTo(
+        AppointmentAttendanceMarkedEvent(
+          appointmentId = entity.appointmentId,
+          prisonCode = entity.prisonCode,
+          attendedPrisonNumbers = mutableListOf("A1234BC", "C3456DE"),
+          nonAttendedPrisonNumbers = mutableListOf("B2345CD"),
+          attendanceChangedPrisonNumbers = mutableListOf("C3456DE", "B2345CD"),
+          attendanceRecordedTime = now,
+          attendanceRecordedBy = username,
+        ),
+      )
+    }
+
+    @Test
+    fun `record attendance applies only to found prisoners`() {
+      val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123, "B2345CD" to 456, "C3456DE" to 789)).appointments().first()
+      val now = LocalDateTime.now()
+      val username = "ATTENDANCE.RECORDED.BY"
+
+      entity.markPrisonerAttendance(
+        attendedPrisonNumbers = listOf("B2345CD", "D4567EF"),
+        nonAttendedPrisonNumbers = listOf("C3456DE", "E5678FG"),
+        attendanceRecordedTime = now,
+        attendanceRecordedBy = username,
+      )
+
+      with(entity.attendees().single { it.prisonerNumber == "A1234BC" }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+      with(entity.attendees().single { it.prisonerNumber == "B2345CD" }) {
+        assertThat(attended).isTrue()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+      with(entity.attendees().single { it.prisonerNumber == "C3456DE" }) {
+        assertThat(attended).isFalse()
+        assertThat(attendanceRecordedTime).isEqualTo(now)
+        assertThat(attendanceRecordedBy).isEqualTo(username)
+      }
+
+      assertThat(entity.publishedDomainEvents().single()).isEqualTo(
+        AppointmentAttendanceMarkedEvent(
+          appointmentId = entity.appointmentId,
+          prisonCode = entity.prisonCode,
+          attendedPrisonNumbers = mutableListOf("B2345CD"),
+          nonAttendedPrisonNumbers = mutableListOf("C3456DE"),
+          attendanceChangedPrisonNumbers = mutableListOf(),
+          attendanceRecordedTime = now,
+          attendanceRecordedBy = username,
+        ),
+      )
+    }
   }
 }

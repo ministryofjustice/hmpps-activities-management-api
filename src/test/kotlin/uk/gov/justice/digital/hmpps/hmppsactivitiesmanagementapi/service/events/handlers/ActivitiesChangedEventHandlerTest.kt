@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -27,8 +27,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -39,9 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 
 class ActivitiesChangedEventHandlerTest {
   private val rolloutPrison: RolloutPrison = mock {
@@ -70,6 +70,17 @@ class ActivitiesChangedEventHandlerTest {
     outboundEventsService,
   )
 
+  @BeforeEach
+  fun beforeEach() {
+    whenever(
+      allocationRepository.existAtPrisonForPrisoner(
+        any(),
+        any(),
+        eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()),
+      ),
+    ) doReturn true
+  }
+
   @Test
   fun `event is ignored for an inactive prison`() {
     rolloutPrison.stub { on { isActivitiesRolledOut() } doReturn false }
@@ -91,37 +102,58 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `allocations are auto-suspended on suspend action`() {
+  fun `active allocations and pending allocations starting on or before today are auto-suspended on suspend action`() {
     val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    ).onEach {
-      assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
-      assertThat(it.suspendedBy).isNull()
-      assertThat(it.suspendedReason).isNull()
-      assertThat(it.suspendedTime).isNull()
-    }
+      allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(allocationId = 2, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(
+        allocationId = 3,
+        prisonerNumber = "123456",
+        prisonerStatus = PrisonerStatus.PENDING,
+        startDate = TimeSource.today(),
+      ),
+      allocation().copy(
+        allocationId = 4,
+        prisonerNumber = "123456",
+        prisonerStatus = PrisonerStatus.PENDING,
+        startDate = TimeSource.tomorrow(),
+      ),
+    )
 
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456"))
-      .doReturn(allocations)
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+        moorlandPrisonCode,
+        "123456",
+        PrisonerStatus.ACTIVE,
+        PrisonerStatus.PENDING,
+      ),
+    ) doReturn allocations
 
     val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
 
-    assertThat(outcome.isSuccess()).isTrue
+    outcome.isSuccess() isBool true
 
-    allocations.forEach {
-      assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-      assertThat(it.suspendedBy).isEqualTo("Activities Management Service")
-      assertThat(it.suspendedReason).isEqualTo("Temporary absence")
-      assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+    allocations.subList(0, 2).forEach {
+      it.prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED
+      it.suspendedBy isEqualTo "Activities Management Service"
+      it.suspendedReason isEqualTo "Temporarily released or transferred"
+      it.suspendedTime isCloseTo TimeSource.now()
     }
+
+    allocations.last().prisonerStatus isEqualTo PrisonerStatus.PENDING
   }
 
   @Test
   fun `only future attendances are suspended on suspend action`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(
+        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+          moorlandPrisonCode,
+          "123456",
+          PrisonerStatus.ACTIVE,
+          PrisonerStatus.PENDING,
+        ),
+      ) doReturn it
     }
 
     val suspendedAttendanceReason = mock<AttendanceReason>().also {
@@ -173,61 +205,15 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `only active allocations are auto-suspended on suspend action`() {
-    val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456")
-        .also { it.deallocateNowWithReason(DeallocationReason.ENDED) },
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
-    )
-
-    whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")).doReturn(allocations)
-
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
-
-    assertThat(outcome.isSuccess()).isTrue
-    assertThat(allocations[0].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-    assertThat(allocations[1].status(PrisonerStatus.ENDED)).isTrue
-    assertThat(allocations[2].status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
-  }
-
-  @Test
-  fun `allocations are not auto-suspended if a runtime error occurs`() {
-    whenever(
-      allocationRepository.findByPrisonCodeAndPrisonerNumber(
-        moorlandPrisonCode,
-        "123456",
-      ),
-    ) doThrow RuntimeException("Error")
-
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
-
-    outcome.isSuccess() isBool false
-    outcome.message isEqualTo "An error occurred whilst trying to suspend prisoner 123456"
-  }
-
-  @Test
-  fun `temporarily released prisoner is deallocated on 'END'`() {
-    mock<Prisoner> {
-      on { status } doReturn "ACTIVE OUT"
-      on { prisonId } doReturn moorlandPrisonCode
-    }.also { prisoner ->
-      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
-    }
-
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool true }
-
-    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
-  }
-
-  @Test
   fun `allocations are not deallocated on 'END' when prisoner not found`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
 
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+    assertThatThrownBy {
+      handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+    }.isInstanceOf(NullPointerException::class.java)
+      .hasMessage("Prisoner search lookup failed for prisoner 123456")
 
-    outcome.isSuccess() isBool false
-    outcome.message isEqualTo "Unable to determine release reason for prisoner 123456"
+    verifyNoInteractions(prisonerAllocationHandler)
   }
 
   @Test
@@ -271,11 +257,9 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   @Test
-  fun `released prisoner is deallocated on 'END'`() {
+  fun `released (inactive out) prisoner is deallocated on 'END' with reason 'RELEASED'`() {
     mock<Prisoner> {
       on { status } doReturn "INACTIVE OUT"
-      on { confirmedReleaseDate } doReturn TimeSource.today()
-      on { lastMovementTypeCode } doReturn "REL"
     }.also { permanentlyReleasedPrisoner ->
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
     }
@@ -283,5 +267,49 @@ class ActivitiesChangedEventHandlerTest {
     handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
 
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+  }
+
+  @Test
+  fun `released (at other prison) prisoner is deallocated on 'END' with reason 'TEMPORARILY RELEASED'`() {
+    mock<Prisoner> {
+      on { status } doReturn "ACTIVE IN"
+      on { prisonId } doReturn pentonvillePrisonCode
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
+    }
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
+  }
+
+  @Test
+  fun `released (but still at same prison) prisoner is deallocated on 'END' with reason 'OTHER`() {
+    mock<Prisoner> {
+      on { status } doReturn "ACTIVE IN"
+      on { prisonId } doReturn moorlandPrisonCode
+    }.also { permanentlyReleasedPrisoner ->
+      whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
+    }
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+
+    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.OTHER)
+  }
+
+  @Test
+  fun `no interactions when released prisoner has no allocations of interest`() {
+    whenever(
+      allocationRepository.existAtPrisonForPrisoner(
+        any(),
+        any(),
+        eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()),
+      ),
+    ) doReturn false
+
+    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool true }
+
+    verifyNoInteractions(prisonerSearchApiClient)
+    verifyNoInteractions(prisonerAllocationHandler)
   }
 }

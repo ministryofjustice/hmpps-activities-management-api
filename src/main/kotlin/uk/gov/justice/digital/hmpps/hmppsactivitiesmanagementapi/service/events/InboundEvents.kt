@@ -54,18 +54,21 @@ interface InboundEvent {
   fun eventType(): String
 }
 
+interface InboundReleaseEvent : InboundEvent {
+  fun prisonCode(): String
+}
+
 interface EventOfInterest
 
 // ------------ Offender released from prison events ------------------------------------------
 
-data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundEvent {
-  fun prisonCode() = additionalInformation.prisonId
+data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundReleaseEvent {
+  override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.OFFENDER_RELEASED.eventType
-  fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "RELEASED_TO_HOSPITAL", "SENT_TO_COURT")
-    .any { it == additionalInformation.reason }
+  fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
 
-  fun isPermanent() = "RELEASED" == additionalInformation.reason
+  fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -124,13 +127,13 @@ data class NonAssociationInformation(val nomsNumber: String, val bookingId: Long
 data class AppointmentsChangedEvent(
   val personReference: PersonReference,
   val additionalInformation: AppointmentsChangedInformation,
-) : InboundEvent {
+) : InboundReleaseEvent {
   override fun prisonerNumber(): String =
     personReference.identifiers.first { it.type == "NOMS" }.value
 
   override fun eventType() = InboundEventType.APPOINTMENTS_CHANGED.eventType
 
-  fun prisonCode() = additionalInformation.prisonId
+  override fun prisonCode() = additionalInformation.prisonId
 
   fun cancelAppointments() = additionalInformation.action == "YES"
 }
@@ -138,10 +141,10 @@ data class AppointmentsChangedEvent(
 data class ActivitiesChangedEvent(
   val personReference: PersonReference,
   val additionalInformation: ActivitiesChangedInformation,
-) : InboundEvent {
-  fun prisonCode() = additionalInformation.prisonId
+) : InboundReleaseEvent {
+  override fun prisonCode() = additionalInformation.prisonId
 
-  fun action() = Action.values().firstOrNull { it.name == additionalInformation.action }
+  fun action() = Action.entries.firstOrNull { it.name == additionalInformation.action }
 
   override fun prisonerNumber(): String =
     personReference.identifiers.first { it.type == "NOMS" }.value
@@ -174,4 +177,9 @@ data class AlertsUpdatedEvent(
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
 }
 
-data class AlertsUpdatedInformation(val nomsNumber: String, val bookingId: Long, val alertsAdded: Set<String>, val alertsRemoved: Set<String>)
+data class AlertsUpdatedInformation(
+  val nomsNumber: String,
+  val bookingId: Long,
+  val alertsAdded: Set<String>,
+  val alertsRemoved: Set<String>,
+)

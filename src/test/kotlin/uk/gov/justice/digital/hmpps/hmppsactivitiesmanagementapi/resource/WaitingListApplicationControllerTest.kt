@@ -8,14 +8,17 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.data.domain.PageImpl
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.security.Principal
@@ -58,6 +61,32 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(waitingListApplication))
 
     verify(waitingListService).updateWaitingList(waitingListApplication.id, WaitingListApplicationUpdateRequest(), user.name)
+  }
+
+  @Test
+  fun `200 response when searching waiting list application`() {
+    val request = WaitingListSearchRequest()
+    val waitingListApplication = waitingList().toModel()
+    val pagedResult = PageImpl(listOf(waitingListApplication))
+
+    whenever(
+      waitingListService.searchWaitingLists(
+        "MDI",
+        request,
+        0,
+        50,
+      ),
+    ).thenReturn(pagedResult)
+
+    val response = mockMvc.post("/waiting-list-applications/MDI/search") {
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(pagedResult))
   }
 
   @Nested

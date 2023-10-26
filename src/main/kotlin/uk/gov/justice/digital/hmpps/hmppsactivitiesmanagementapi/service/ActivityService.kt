@@ -9,15 +9,18 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
@@ -29,6 +32,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -54,9 +59,12 @@ class ActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonRegimeService: PrisonRegimeService,
   private val bankHolidayService: BankHolidayService,
   private val telemetryClient: TelemetryClient,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -285,50 +293,56 @@ class ActivityService(
   ): ModelActivity {
     checkCaseloadAccess(prisonCode)
 
-    val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
-      ?: throw EntityNotFoundException("Activity $activityId not found.")
+    transactionHandler.newSpringTransaction {
+      val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
+        ?: throw EntityNotFoundException("Activity $activityId not found.")
+      require(activity.state(ActivityState.ARCHIVED).not()) {
+        "Activity cannot be updated because it is now archived."
+      }
 
-    require(activity.state(ActivityState.ARCHIVED).not()) {
-      "Activity cannot be updated because it is now archived."
+      applyCategoryUpdate(request, activity)
+      applyTierUpdate(request, activity)
+      applySummaryUpdate(prisonCode, request, activity)
+      applyStartDateUpdate(request, activity)
+      applyEndDateUpdate(request, activity)
+      applyMinimumIncentiveNomisCodeUpdate(request, activity)
+      applyMinimumIncentiveLevelUpdate(request, activity)
+      applyRunsOnBankHolidayUpdate(request, activity)
+      applyCapacityUpdate(request, activity)
+      applyRiskLevelUpdate(request, activity)
+      applyLocationUpdate(request, activity)
+      applyAttendanceRequiredUpdate(request, activity)
+      applyMinimumEducationLevelUpdate(request, activity)
+      val updatedAllocationIds = applyPayUpdate(prisonCode, request, activity)
+      applyScheduleWeeksUpdate(request, activity)
+      applySlotsUpdate(request, activity)
+
+      val now = LocalDateTime.now()
+
+      activity.updatedTime = now
+      activity.updatedBy = updatedBy
+
+      activity.schedules().forEach {
+        it.updateInstances()
+        it.markAsUpdated(now, updatedBy)
+      }
+
+      activityRepository.saveAndFlush(activity)
+      updatedAllocationIds to transform(activity)
+    }.let { (updatedAllocationIds, activity) ->
+      updatedAllocationIds.forEach {
+        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
+      }
+
+      val propertiesMap = mapOf(
+        PRISON_CODE_PROPERTY_KEY to prisonCode,
+        ACTIVITY_NAME_PROPERTY_KEY to request.summary,
+      )
+
+      telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
+
+      return activity
     }
-
-    applyCategoryUpdate(request, activity)
-    applyTierUpdate(request, activity)
-    applySummaryUpdate(prisonCode, request, activity)
-    applyStartDateUpdate(request, activity)
-    applyEndDateUpdate(request, activity)
-    applyMinimumIncentiveNomisCodeUpdate(request, activity)
-    applyMinimumIncentiveLevelUpdate(request, activity)
-    applyRunsOnBankHolidayUpdate(request, activity)
-    applyCapacityUpdate(request, activity)
-    applyRiskLevelUpdate(request, activity)
-    applyLocationUpdate(request, activity)
-    applyAttendanceRequiredUpdate(request, activity)
-    applyMinimumEducationLevelUpdate(request, activity)
-    applyPayUpdate(prisonCode, request, activity)
-    applyScheduleWeeksUpdate(request, activity)
-    applySlotsUpdate(request, activity)
-
-    val now = LocalDateTime.now()
-
-    activity.updatedTime = now
-    activity.updatedBy = updatedBy
-
-    activity.schedules().forEach {
-      it.updateInstances()
-      it.markAsUpdated(now, updatedBy)
-    }
-
-    activityRepository.saveAndFlush(activity)
-
-    val propertiesMap = mapOf(
-      PRISON_CODE_PROPERTY_KEY to prisonCode,
-      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
-
-    return transform(activity)
   }
 
   private fun ActivitySchedule.markAsUpdated(
@@ -557,24 +571,61 @@ class ActivityService(
     prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
-  ) {
+  ): List<Long> {
     request.pay?.let { pay ->
-      activity.removePay()
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
         .associateBy { it.prisonPayBandId }
         .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
-      pay.forEach {
-        activity.addPay(
-          incentiveNomisCode = it.incentiveNomisCode!!,
-          incentiveLevel = it.incentiveLevel!!,
-          payBand = prisonPayBands[it.payBandId]
-            ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
-          rate = it.rate,
-          pieceRate = it.pieceRate,
-          pieceRateItems = it.pieceRateItems,
-        )
+
+      return replacePayBandAllocationBeforePayRemoval(prisonCode, pay, activity, prisonPayBands).also {
+        activity.removePay()
+        pay.forEach {
+          activity.addPay(
+            incentiveNomisCode = it.incentiveNomisCode!!,
+            incentiveLevel = it.incentiveLevel!!,
+            payBand = prisonPayBands[it.payBandId]
+              ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
+            rate = it.rate,
+            pieceRate = it.pieceRate,
+            pieceRateItems = it.pieceRateItems,
+          )
+        }
       }
     }
+    return emptyList()
+  }
+
+  private fun replacePayBandAllocationBeforePayRemoval(
+    prisonCode: String,
+    newPay: List<ActivityPayCreateRequest>,
+    activity: Activity,
+    prisonPayBands: Map<Long, PrisonPayBand>,
+  ): List<Long> {
+    val updatedAllocationIds = mutableListOf<Long>()
+    val oldPay = activity.activityPay()
+    val deltaPayBand = newPay.find {
+      oldPay.none { p -> p.incentiveNomisCode == it.incentiveNomisCode && p.payBand.prisonPayBandId == it.payBandId }
+    }
+
+    deltaPayBand?.let {
+      activity.schedules().forEach { schedule ->
+        val activeAllocations = schedule.allocations(excludeEnded = true)
+        val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(activeAllocations.map { it.prisonerNumber })
+
+        activeAllocations.forEach { allocation ->
+          val prisoner = prisoners.single { it.prisonerNumber == allocation.prisonerNumber }
+          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand.prisonPayBandId }) {
+            allocation.apply {
+              this.payBand = prisonPayBands[it.payBandId]
+                ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'")
+            }
+            updatedAllocationIds.add(allocation.allocationId)
+          }
+        }
+      }
+    }
+
+    return updatedAllocationIds
   }
 
   private fun applyScheduleWeeksUpdate(

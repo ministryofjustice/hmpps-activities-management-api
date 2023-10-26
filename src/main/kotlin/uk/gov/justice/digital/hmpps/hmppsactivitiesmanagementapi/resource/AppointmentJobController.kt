@@ -25,7 +25,7 @@ class AppointmentJobController(
   @Operation(
     summary = "Starts a job to manage appointment attendees",
     description = """
-      Job will retrieve all appointments within the date range defined by the supplied days before now and days after now parameters.
+      Job will retrieve all future appointments starting within the number of days defined by the days after now parameter.
       It will retrieve the attendees for these appointments and retrieve the associated prisoner records. The status, location and
       any other pertinent information for these prisoners will be used to determine whether the attendee records should be removed.
       
@@ -35,14 +35,11 @@ class AppointmentJobController(
   @ResponseBody
   @ResponseStatus(HttpStatus.ACCEPTED)
   fun triggerManageAllocationsJob(
-    @RequestParam(value = "daysBeforeNow", required = true)
-    @Parameter(description = "The number of days prior to today to start the date range. The attendees for appointments starting after this will be managed.")
-    daysBeforeNow: Long,
     @RequestParam(value = "daysAfterNow", required = true)
-    @Parameter(description = "The number of days after today to end the date range. The attendees for appointments starting before this will be managed.")
+    @Parameter(description = "The number of days into the future to manage appointments up to a maximum of 60. The attendees for future appointments starting on those days this will be managed.")
     daysAfterNow: Long,
   ): String {
-    manageAppointmentAttendeesJob.execute(daysBeforeNow, daysAfterNow)
+    manageAppointmentAttendeesJob.execute(daysAfterNow)
 
     return "Manage appointment attendees job started"
   }

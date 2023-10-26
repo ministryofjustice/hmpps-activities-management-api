@@ -38,12 +38,17 @@ prison:
 
 prisoner-search:
   api:
-    url: https://prisoner-search-dev.prison.service.justice.gov.uk
+    url: http://localhost:8092
     timeout: 10s
 
 case-notes:
   api:
     url: https://dev.offender-case-notes.service.justice.gov.uk
+    timeout: 10s
+
+non-associations:
+  api:
+    url: https://non-associations-api-dev.hmpps.service.justice.gov.uk
     timeout: 10s
 
 jobs:

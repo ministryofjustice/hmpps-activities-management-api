@@ -4,6 +4,10 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerDeclinedFromWaitingListEvent
@@ -13,11 +17,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListSearchSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -32,6 +39,7 @@ import java.time.LocalDateTime
 class WaitingListService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val waitingListRepository: WaitingListRepository,
+  private val waitingListSearchSpecification: WaitingListSearchSpecification,
   private val activityRepository: ActivityRepository,
   private val prisonApiClient: PrisonApiClient,
   private val telemetryClient: TelemetryClient,
@@ -79,6 +87,28 @@ class WaitingListService(
     )
       .also { log.info("Added ${request.status} waiting list application for prisoner ${request.prisonerNumber} to activity ${schedule.description}") }
       .also { logPrisonerAddedMetric(request.prisonerNumber) }
+  }
+
+  fun searchWaitingLists(
+    prisonCode: String,
+    request: WaitingListSearchRequest,
+    pageNumber: Int,
+    pageSize: Int,
+  ): Page<WaitingListApplication> {
+    checkCaseloadAccess(prisonCode)
+
+    var spec = waitingListSearchSpecification.prisonCodeEquals(prisonCode)
+    request.applicationDateFrom?.let { spec = spec.and(waitingListSearchSpecification.applicationDateFrom(it)) }
+    request.applicationDateTo?.let { spec = spec.and(waitingListSearchSpecification.applicationDateTo(it)) }
+
+    request.status?.let { spec = spec.and(waitingListSearchSpecification.statusIn(it)) }
+
+    request.prisonerNumbers?.let { spec = spec.and(waitingListSearchSpecification.prisonerNumberIn(it)) }
+
+    request.activityId?.let { spec = spec.and(waitingListSearchSpecification.activityIdEqual(it)) }
+
+    val pageable: Pageable = PageRequest.of(pageNumber, pageSize, Sort.by("applicationDate"))
+    return waitingListRepository.findAll(spec, pageable).map { it.toModel() }
   }
 
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {

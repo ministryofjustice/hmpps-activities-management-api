@@ -2,7 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -11,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.EXPIRED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -22,16 +25,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
+
+  @MockBean
+  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -54,6 +65,11 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAllocations(withDeallocate = true)
 
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
+
     with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
       size isEqualTo 3
       onEach { it isDeallocatedWithReason ENDED }
@@ -74,6 +90,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     webTestClient.manageAllocations(withDeallocate = true)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
 
     with(allocationRepository.findAll()) {
       size isEqualTo 3
@@ -101,21 +120,70 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     }
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
+    prisonApiMockServer.stubPrisonerMovements(
+      listOf("A11111A"),
+      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = TimeSource.daysInPast(10))),
+    )
 
     with(allocationRepository.findAll()) {
-      size isEqualTo 1
-      prisoner("A11111A") isStatus AUTO_SUSPENDED
+      this hasSize 2
+      prisonerAllocation(AUTO_SUSPENDED).prisonerNumber isEqualTo "A11111A"
+      prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
     }
 
     webTestClient.manageAllocations(withDeallocate = true)
 
-    allocationRepository.findAll().prisoner("A11111A") isDeallocatedWithReason EXPIRED
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
+
+    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
+
     waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
   @Test
-  fun `pending allocations on or before today are activated`() {
+  fun `pending allocations on or before today are activated when prisoners are in prison`() {
+    listOf("PAST", "TODAY", "FUTURE").map { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        inOutStatus = Prisoner.InOutStatus.IN,
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("PAST") isStatus PENDING
+      prisoner("TODAY") isStatus PENDING
+      prisoner("FUTURE") isStatus PENDING
+    }
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus ACTIVE
+      prisoner("TODAY") isStatus ACTIVE
+      prisoner("FUTURE") isStatus PENDING
+    }
+  }
+
+  @Sql("classpath:test_data/seed-allocations-pending.sql")
+  @Test
+  fun `pending allocations on or before today are suspended when prisoners are out of prison`() {
+    listOf("PAST", "TODAY").map { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        inOutStatus = Prisoner.InOutStatus.OUT,
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
+
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       prisoner("PAST") isStatus PENDING
@@ -126,8 +194,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.manageAllocations(withActivate = true)
 
     with(allocationRepository.findAll()) {
-      prisoner("PAST") isStatus ACTIVE
-      prisoner("TODAY") isStatus ACTIVE
+      prisoner("PAST") isStatus AUTO_SUSPENDED
+      prisoner("TODAY") isStatus AUTO_SUSPENDED
       prisoner("FUTURE") isStatus PENDING
     }
   }
@@ -148,6 +216,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   }
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
+
+  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) =
+    single { it.prisonerStatus == prisonerStatus }
 
   private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 

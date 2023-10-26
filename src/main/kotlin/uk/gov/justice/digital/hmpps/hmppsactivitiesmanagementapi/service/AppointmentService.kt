@@ -55,7 +55,9 @@ class AppointmentService(
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 
-    val userMap = prisonApiClient.getUserDetailsList(appointment.usernames()).associateBy { it.username }
+    val userMap = prisonApiClient.getUserDetailsList(
+      appointment.usernames().union(appointment.attendeeUsernames()).toList(),
+    ).associateBy { it.username }
 
     return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
   }
@@ -97,7 +99,7 @@ class AppointmentService(
       require(appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
         "Cannot add prisoners to an individual appointment"
       }
-      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers).block()!!
+      prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers)
         .filter { prisoner -> prisoner.prisonId == appointmentSeries.prisonCode }
         .associateBy { prisoner -> prisoner.prisonerNumber }
         .also {

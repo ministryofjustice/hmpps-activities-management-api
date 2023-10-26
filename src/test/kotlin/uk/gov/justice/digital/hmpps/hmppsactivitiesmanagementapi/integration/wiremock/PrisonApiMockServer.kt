@@ -1,13 +1,19 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
@@ -20,7 +26,7 @@ import java.time.LocalDate
 
 class PrisonApiMockServer : WireMockServer(8999) {
 
-  private val mapper = ObjectMapper()
+  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   fun stubGetScheduledAppointments(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
@@ -166,7 +172,24 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(prisonerNumber: String, fullInfo: Boolean = true, extraInfo: Boolean? = null, jsonFileSuffix: String = "") {
+  fun stubScheduledVisitsForLocation(prisonCode: String, locationId: Long, date: LocalDate, timeSlot: TimeSlot?, visits: List<PrisonerSchedule>) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/schedules/$prisonCode/locations/$locationId/usage/VISIT?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(visits))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetPrisonerDetails(
+    prisonerNumber: String,
+    fullInfo: Boolean = true,
+    extraInfo: Boolean? = null,
+    jsonFileSuffix: String = "",
+  ) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
         .willReturn(
@@ -363,6 +386,19 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
+  fun stubGetUserDetailsList(usernames: List<String>, users: List<UserDetail>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/users/list"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(usernames)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(users))
+            .withStatus(200),
+        ),
+    )
+  }
+
   fun stubGetExternalTransfersOnDate(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date"))
@@ -472,6 +508,31 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(locations))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetEventLocationsBooked(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?, locations: List<LocationSummary>) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/eventLocationsBooked?bookedOnDay=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(locations))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubPrisonerMovements(prisonerNumbers: List<String>, movements: List<Movement>) {
+    stubFor(
+      WireMock.post(WireMock.urlEqualTo("/api/movements/offenders"))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(movements))
             .withStatus(200),
         ),
     )

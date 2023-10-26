@@ -27,13 +27,11 @@ class InboundEventsService(
     log.debug("Processing inbound event {}", event.eventType())
 
     when (event) {
-      is ActivitiesChangedEvent -> activitiesChangedEventHandler.handle(event)
-        .onFailure { interestingEventHandler.handle(event) }
-
-      is OffenderReceivedEvent -> receivedEventHandler.handle(event).onFailure { interestingEventHandler.handle(event) }
-      is OffenderReleasedEvent -> releasedEventHandler.handle(event).onFailure { interestingEventHandler.handle(event) }
+      is ActivitiesChangedEvent -> activitiesChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
+      is AppointmentsChangedEvent -> appointmentsChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
+      is OffenderReceivedEvent -> receivedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
+      is OffenderReleasedEvent -> releasedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
       is EventOfInterest -> interestingEventHandler.handle(event)
-      is AppointmentsChangedEvent -> appointmentsChangedEventHandler.handle(event)
       else -> log.warn("Unsupported event ${event.javaClass.name}")
     }
   }

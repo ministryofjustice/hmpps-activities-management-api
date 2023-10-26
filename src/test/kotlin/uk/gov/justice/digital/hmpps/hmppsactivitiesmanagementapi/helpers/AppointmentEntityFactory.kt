@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeSearch
@@ -14,8 +15,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISON_STAFF_APPOINTMENT_HOST_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
@@ -269,6 +272,13 @@ internal fun appointmentHostPrisonStaff() =
     "Prison staff",
   )
 
+internal fun appointmentCreatedInErrorReason() =
+  AppointmentCancellationReason(
+    1,
+    "Created in error",
+    true,
+  )
+
 internal fun appointmentCancelledReason() =
   AppointmentCancellationReason(
     2,
@@ -276,25 +286,59 @@ internal fun appointmentCancelledReason() =
     false,
   )
 
-internal fun appointmentDeletedReason() =
+internal fun deleteMigratedAppointmentReason() =
   AppointmentCancellationReason(
-    1,
-    "Created in error",
+    3,
+    "Delete migrated appointment",
     true,
   )
 
-internal fun appointmentAttendeeRemovedReason() =
+internal fun tempRemovalByUserAppointmentAttendeeRemovalReason() =
   AppointmentAttendeeRemovalReason(
     TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
     "Temporary removal by user",
     false,
   )
 
-internal fun appointmentAttendeeDeletedReason() =
+internal fun cancelOnTransferAppointmentAttendeeRemovalReason() =
+  AppointmentAttendeeRemovalReason(
+    CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+    "Cancel on transfer - NOMIS OCUCANTR form",
+    true,
+  )
+
+internal fun prisonerReleasedAppointmentAttendeeRemovalReason() =
   AppointmentAttendeeRemovalReason(
     PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
     "Prisoner status: Released",
     true,
+  )
+
+internal fun prisonerPermanentTransferAppointmentAttendeeRemovalReason() =
+  AppointmentAttendeeRemovalReason(
+    PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+    "Prisoner status: Permanent transfer",
+    true,
+  )
+
+internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false) =
+  AppointmentAttendanceSummary(
+    1,
+    risleyPrisonCode,
+    "CHAP",
+    "Friday Prayers",
+    123,
+    inCell,
+    false,
+    true,
+    LocalDate.now().plusDays(1),
+    LocalTime.of(12, 0),
+    LocalTime.of(13, 0),
+    false,
+    6,
+    3,
+    2,
+    1,
   )
 
 private fun appointmentAttendeeSearchEntity(appointmentSearch: AppointmentSearch, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =

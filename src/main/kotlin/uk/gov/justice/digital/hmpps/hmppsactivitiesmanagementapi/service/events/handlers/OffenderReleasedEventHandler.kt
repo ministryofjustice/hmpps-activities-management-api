@@ -3,23 +3,29 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromCustodialSentence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedFromRemand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isReleasedOnDeath
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isInactiveOut
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isRestrictedPatient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import java.time.LocalDateTime
 
 @Component
 @Transactional
 class OffenderReleasedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val appointmentAttendeeService: AppointmentAttendeeService,
-  private val prisonApiClient: PrisonApiApplicationClient,
+  private val prisonSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
+  private val allocationRepository: AllocationRepository,
 ) : EventHandler<OffenderReleasedEvent> {
 
   companion object {
@@ -40,8 +46,12 @@ class OffenderReleasedEventHandler(
           log.info("Cancelling all future appointments for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}")
           cancelFutureOffenderAppointments(event)
 
-          getDetailsForReleasedPrisoner(event)?.getDeallocationReasonForReleasedPrisoner(event)?.let { reason ->
-            allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), reason)
+          if (releasedPrisonerHasAllocationsOfInterestFor(event)) {
+            val releasedPrisoner = getDetailsForReleasedPrisoner(event)
+            val deallocationReason = getDeallocationReasonForReleasedPrisoner(releasedPrisoner, event)
+            allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), deallocationReason)
+          } else {
+            log.info("No allocations of interest for prisoner ${event.prisonerNumber()}")
           }
 
           Outcome.success()
@@ -59,24 +69,31 @@ class OffenderReleasedEventHandler(
     return Outcome.success()
   }
 
-  private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
-    appointmentAttendeeService.cancelFutureOffenderAppointments(
+  private fun releasedPrisonerHasAllocationsOfInterestFor(event: OffenderReleasedEvent) =
+    allocationRepository.existAtPrisonForPrisoner(
       event.prisonCode(),
       event.prisonerNumber(),
+      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+    )
+
+  private fun cancelFutureOffenderAppointments(event: OffenderReleasedEvent) =
+    appointmentAttendeeService.removePrisonerFromFutureAppointments(
+      event.prisonCode(),
+      event.prisonerNumber(),
+      LocalDateTime.now(),
+      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+      "OFFENDER_RELEASED_EVENT",
     )
 
   private fun getDetailsForReleasedPrisoner(event: OffenderReleasedEvent) =
-    prisonApiClient.getPrisonerDetails(
-      prisonerNumber = event.prisonerNumber(),
-      fullInfo = true,
-      extraInfo = true,
-    ).block()
+    prisonSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
+      ?: throw NullPointerException("Prisoner search lookup failed for prisoner ${event.prisonerNumber()}")
 
-  private fun InmateDetail.getDeallocationReasonForReleasedPrisoner(event: OffenderReleasedEvent) =
+  private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: OffenderReleasedEvent) =
     when {
-      isReleasedOnDeath() -> DeallocationReason.DIED
-      isReleasedFromRemand() -> DeallocationReason.RELEASED
-      isReleasedFromCustodialSentence() -> DeallocationReason.RELEASED
-      else -> log.warn("Unable to determine release reason for prisoner ${event.prisonerNumber()}").let { null }
+      prisoner.isRestrictedPatient() -> RELEASED.also { log.info("Released restricted patient ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+      prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+      prisoner.isAtDifferentLocationTo(event.prisonCode()) -> RELEASED.also { log.info("Released prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()} now at ${prisoner.prisonId}") }
+      else -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
     }
 }

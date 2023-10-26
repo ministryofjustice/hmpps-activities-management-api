@@ -10,6 +10,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -41,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ALLOCATION_START_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
@@ -66,6 +69,7 @@ class ActivityScheduleServiceTest {
   private val auditService: AuditService = mock()
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val telemetryClient: TelemetryClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val service =
     ActivityScheduleService(
       repository,
@@ -75,6 +79,8 @@ class ActivityScheduleServiceTest {
       waitingListRepository,
       auditService,
       telemetryClient,
+      TransactionHandler(),
+      outboundEventsService,
     )
 
   private val caseLoad = pentonvillePrisonCode
@@ -132,7 +138,7 @@ class ActivityScheduleServiceTest {
     }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(Mono.just(listOf(prisoner)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(listOf(prisoner))
 
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {
@@ -195,7 +201,9 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `can deallocate a prisoner from activity schedule`() {
-    val schedule = mock<ActivitySchedule>()
+    val schedule = mock<ActivitySchedule>().stub {
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation().copy(prisonerNumber = "1")
+    }
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
 
@@ -224,7 +232,10 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `can deallocate multiple prisoners from activity schedule`() {
-    val schedule = mock<ActivitySchedule>()
+    val schedule = mock<ActivitySchedule>().stub {
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
+      on { deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
+    }
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
 

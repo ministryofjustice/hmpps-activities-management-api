@@ -16,12 +16,17 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
@@ -35,10 +40,14 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   private lateinit var appointmentService: AppointmentService
 
   @MockBean
+  private lateinit var appointmentAttendanceService: AppointmentAttendanceService
+
+  @MockBean
   private lateinit var appointmentSearchService: AppointmentSearchService
 
   override fun controller() = AppointmentController(
     appointmentService,
+    appointmentAttendanceService,
     appointmentSearchService,
   )
 
@@ -168,6 +177,101 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
+  fun `200 response when appointment attendance summaries found`() {
+    val date = LocalDate.now()
+    val mockPrincipal: Principal = mock()
+
+    val summaries = listOf(appointmentAttendanceSummaryModel())
+
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenReturn(summaries)
+
+    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(summaries))
+  }
+
+  @Test
+  fun `400 response when no date supplied for get appointment attendance summaries`() {
+    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `400 response when invalid date supplied for get appointment attendance summaries`() {
+    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries?date=invalid")
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `500 response when service throws exception for get appointment attendance summaries`() {
+    val date = LocalDate.now()
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+      .andExpect { status { isInternalServerError() } }
+      .andReturn().response
+
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+  }
+
+  @Test
+  fun `404 not found response when marking appointment attendance using invalid id`() {
+    val request = AppointmentAttendanceRequest()
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentAttendanceService.markAttendance(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+
+    val response = mockMvc.markAttendance(-1, request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
+  }
+
+  @Test
+  fun `202 accepted response when marking appointment attendance with valid json`() {
+    val request = AppointmentAttendanceRequest()
+    val expectedResponse = appointmentSeriesEntity().appointments().first().toModel()
+
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentAttendanceService.markAttendance(1, request, mockPrincipal)).thenReturn(expectedResponse)
+
+    val response = mockMvc.markAttendance(1, request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isAccepted() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+  }
+
+  @Test
   fun `400 bad request response when search appointments with invalid json`() {
     val request = AppointmentSearchRequest()
     val mockPrincipal: Principal = mock()
@@ -212,6 +316,22 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
     patch("/appointments/{appointmentId}", id) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
+      )
+    }
+
+  private fun MockMvc.getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate?, principal: Principal) =
+    get("/appointments/$prisonCode/attendance-summaries?date=$date") {
+      this.principal = principal
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+    }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) =
+    put("/appointments/{appointmentId}/attendance", id) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(

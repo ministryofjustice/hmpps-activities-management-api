@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
@@ -22,7 +21,6 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "attendance")
-@EntityListeners(AttendanceEntityListener::class)
 data class Attendance(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

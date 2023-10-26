@@ -45,6 +45,15 @@ services:
       - $PWD/wiremock-docker:/home/wiremock
     command: --verbose --global-response-templating --port=8081
 
+  prisoner-search-api:
+    image: rodolpheche/wiremock:latest
+    container_name: prisoner-search-api
+    ports:
+      - "8092:8081"
+    volumes:
+      - $PWD/wiremock-docker:/home/wiremock
+    command: --verbose --global-response-templating --port=8081
+
   oauth-server:
     image: rodolpheche/wiremock:latest
     container_name: oauth-server

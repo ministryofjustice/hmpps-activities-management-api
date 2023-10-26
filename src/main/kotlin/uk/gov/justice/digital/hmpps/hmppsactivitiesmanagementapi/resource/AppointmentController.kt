@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -18,25 +19,31 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
 import java.security.Principal
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/appointments", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentController(
   private val appointmentService: AppointmentService,
+  private val appointmentAttendanceService: AppointmentAttendanceService,
   private val appointmentSearchService: AppointmentSearchService,
 ) {
   @GetMapping(value = ["/{appointmentId}"])
@@ -195,6 +202,141 @@ class AppointmentController(
     request: AppointmentUpdateRequest,
     principal: Principal,
   ): AppointmentSeries = appointmentService.updateAppointment(appointmentId, request, principal)
+
+  @GetMapping(
+    value = ["{prisonCode}/attendance-summaries"],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary =
+    """
+    Get a list of appointments scheduled to take place on the specified date along with the summary of their attendance.
+    """,
+    description =
+    """
+    Returns appointments scheduled to take place on the specified date along with the summary of their attendance.
+    Will contain summary information about the appointments taking place on the date as well as counts of attendees,
+    counts of those marked attended and non attended and the count of attendees with no attendance marked.
+    This endpoint supports management level views of appointment attendance and statistics.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled appointments found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentAttendanceSummary::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentAttendanceSummaries(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-digit prison code (required)")
+    prisonCode: String,
+
+    @RequestParam(value = "date", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Date of appointments (required). Format YYYY-MM-DD")
+    date: LocalDate,
+  ) = appointmentAttendanceService.getAppointmentAttendanceSummaries(prisonCode, date)
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PutMapping(value = ["/{appointmentId}/attendance"])
+  @Operation(
+    summary = "Mark the attendance for an appointment",
+    description =
+    """
+    Mark or update the attendance records for the attendees of an appointment. This sets the current attendance record
+    for each supplied prison number, replacing any existing record. This supports both the initial recording of attendance
+    and changing that attendance record. There are no restrictions on when attendance can be recorded. It can be done
+    for past and future appointments.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "Attendance for the appointment was recorded.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentSeries::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The appointment for this id was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun markAttendance(
+    @PathVariable("appointmentId") appointmentId: Long,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The lists of prison numbers to mark as attended and non-attended",
+      required = true,
+    )
+    request: AppointmentAttendanceRequest,
+    principal: Principal,
+  ): Appointment = appointmentAttendanceService.markAttendance(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentId}/cancel"])

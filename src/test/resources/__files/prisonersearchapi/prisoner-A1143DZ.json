@@ -1,0 +1,37 @@
+{
+  "prisonerNumber": "A1143DZ",
+  "bookingId": "1204818",
+  "bookNumber": "41821A",
+  "firstName": "MICHAEL",
+  "lastName": "WILLIS",
+  "dateOfBirth": "1985-05-02",
+  "gender": "Male",
+  "ethnicity": "White: Eng./Welsh/Scot./N.Irish/British",
+  "youthOffender": false,
+  "releaseDate": "2045-04-12",
+  "status": "ACTIVE IN",
+  "lastMovementTypeCode": "ADM",
+  "lastMovementReasonCode": "INT",
+  "inOutStatus": "IN",
+  "prisonId": "PVI",
+  "prisonName": "Pentonville (HMP)",
+  "cellLocation": "RECP",
+  "aliases": [],
+  "alerts": [],
+  "legalStatus": "SENTENCED",
+  "imprisonmentStatus": "SENT03",
+  "imprisonmentStatusDescription": "Adult Imprisonment Without Option CJA03",
+  "recall": false,
+  "indeterminateSentence": false,
+  "receptionDate": "2023-02-08",
+  "locationDescription": "Pentonville (HMP)",
+  "restrictedPatient": false,
+  "currentIncentive": {
+    "level": {
+      "code": "BAS",
+      "description": "Basic"
+    },
+    "dateTime": "2023-06-09T14:46:22",
+    "nextReviewDate": "2023-05-08"
+  }
+}
