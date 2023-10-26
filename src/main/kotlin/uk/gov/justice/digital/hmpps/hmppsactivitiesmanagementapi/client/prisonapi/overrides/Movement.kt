@@ -12,7 +12,7 @@ data class Movement(
 
   @get:JsonProperty("createDateTime", required = true) val createDateTime: String,
 
-  @get:JsonProperty("fromAgency", required = true) val fromAgency: String,
+  @get:JsonProperty("fromAgency") val fromAgency: String? = null,
 
   @get:JsonProperty("fromAgencyDescription", required = true) val fromAgencyDescription: String,
 
