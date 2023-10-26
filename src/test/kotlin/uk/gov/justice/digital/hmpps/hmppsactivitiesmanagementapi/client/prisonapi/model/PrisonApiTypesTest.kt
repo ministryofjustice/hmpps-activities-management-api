@@ -48,4 +48,11 @@ class PrisonApiTypesTest {
 
     assertThat(field.returnType.isMarkedNullable).isTrue
   }
+
+  @Test
+  fun `toAgency field on overridden Movement DTO type should be nullable`() {
+    val field = Movement::class.declaredMembers.first { it.name == "toAgency" }
+
+    assertThat(field.returnType.isMarkedNullable).isTrue
+  }
 }
