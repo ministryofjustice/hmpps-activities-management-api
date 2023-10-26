@@ -97,16 +97,16 @@ class InterestingEventHandler(
     val prisonerDetails = "${prisoner.lastName}, ${prisoner.firstName} (${prisoner.prisonerNumber})"
 
     return when (this) {
-      is ActivitiesChangedEvent -> "Activities changed '${action()?.name}' for $prisonerDetails"
+      is ActivitiesChangedEvent -> "Activities changed '${action()?.name}' from prison ${this.prisonCode()}, for $prisonerDetails"
       is AlertsUpdatedEvent -> "Alerts updated for $prisonerDetails"
-      is AppointmentsChangedEvent -> "Appointments changed '${additionalInformation.action}' for $prisonerDetails"
+      is AppointmentsChangedEvent -> "Appointments changed '${additionalInformation.action}' from prison ${this.prisonCode()}, for $prisonerDetails"
       is CellMoveEvent -> "Cell move for $prisonerDetails"
       is NonAssociationsChangedEvent -> "Non-associations for $prisonerDetails"
       is IncentivesInsertedEvent -> "Incentive review created for $prisonerDetails"
       is IncentivesUpdatedEvent -> "Incentive review updated for $prisonerDetails"
       is IncentivesDeletedEvent -> "Incentive review deleted for $prisonerDetails"
       is OffenderReceivedEvent -> "Prisoner received into prison ${prisoner.prisonId}, $prisonerDetails"
-      is OffenderReleasedEvent -> "Prisoner released from prison ${prisoner.prisonId}, $prisonerDetails"
+      is OffenderReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
       else -> "Unknown event for $prisonerDetails"
     }
   }

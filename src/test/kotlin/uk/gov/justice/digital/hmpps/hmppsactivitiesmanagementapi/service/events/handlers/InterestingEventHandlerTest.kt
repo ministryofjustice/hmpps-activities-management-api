@@ -161,7 +161,8 @@ class InterestingEventHandlerTest {
 
   @Test
   fun `stores an offender released event`() {
-    mockPrisoner(prisonCode = moorlandPrisonCode)
+    // Note prison code is different to that of the event because they have been release to Pentonville
+    mockPrisoner(prisonCode = pentonvillePrisonCode)
     whenever(rolloutPrisonRepository.findByCode(moorlandPrisonCode)) doReturn rolloutPrison()
     val inboundEvent = offenderReleasedEvent(moorlandPrisonCode, "123456")
 
@@ -220,7 +221,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed 'END' for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Activities changed 'END' from prison PVI, for Bobson, Bob (ABC1234)"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo pentonvillePrisonCode
@@ -242,7 +243,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed 'SUSPEND' for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Activities changed 'SUSPEND' from prison PVI, for Bobson, Bob (ABC1234)"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo pentonvillePrisonCode
@@ -264,7 +265,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Appointments changed 'YES' for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Appointments changed 'YES' from prison PVI, for Bobson, Bob (ABC1234)"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.APPOINTMENTS_CHANGED.eventType
       prisonCode isEqualTo pentonvillePrisonCode
