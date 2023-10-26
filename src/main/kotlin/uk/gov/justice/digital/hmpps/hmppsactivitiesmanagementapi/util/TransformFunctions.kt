@@ -325,6 +325,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
         attendance.caseNoteId,
       )?.text
     },
+    otherAbsenceReason = attendance.otherAbsenceReason,
     attendanceHistory = attendance.history()
       .sortedWith(compareBy { attendance.recordedTime })
       .reversed()
