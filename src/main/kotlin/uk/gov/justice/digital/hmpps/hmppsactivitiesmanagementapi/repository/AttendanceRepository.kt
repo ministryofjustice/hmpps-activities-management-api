@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 import java.time.LocalDate
 
 interface AttendanceRepository : JpaRepository<Attendance, Long> {
@@ -40,4 +41,23 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     """,
   )
   fun findAttendancesForActivityOnDate(activityId: Long, sessionDate: LocalDate): List<Attendance>
+
+  @Query(
+    value = """
+      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount(al.bookingId, count(att)) from Attendance att 
+      join ScheduledInstance si on att.scheduledInstance = si
+      join ActivitySchedule asch on si.activitySchedule = asch
+      join Allocation al on al.activitySchedule = asch and att.prisonerNumber = al.prisonerNumber and al.startDate <= : date and (al.endDate is null or al.endDate >= :date)
+      join Activity act on asch.activity = act
+      where si.sessionDate = :date
+      and act.prisonCode = :prisonCode
+      and att.issuePayment = true
+      group by al.bookingId
+      order by al.bookingId
+    """,
+  )
+  fun findBookingPaidAttendanceCountsByPrisonAndDate(
+    prisonCode: String,
+    date: LocalDate,
+  ): List<BookingCount>
 }
