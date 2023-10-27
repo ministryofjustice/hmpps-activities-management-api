@@ -10,19 +10,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
@@ -69,7 +66,6 @@ class AppointmentSeriesService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentTierRepository: AppointmentTierRepository,
   private val appointmentHostRepository: AppointmentHostRepository,
-  private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val appointmentSetRepository: AppointmentSetRepository,
   private val referenceCodeService: ReferenceCodeService,
@@ -190,37 +186,6 @@ class AppointmentSeriesService(
     }
   }
 
-  // TODO: Create migrate appointment service and move this function
-  fun migrateAppointment(request: AppointmentMigrateRequest, principal: Principal): AppointmentInstance {
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-    val prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString())
-    val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
-      buildValidAppointmentSeriesEntity(
-        appointmentType = AppointmentType.INDIVIDUAL,
-        prisonCode = request.prisonCode!!,
-        prisonerNumbers = listOf(request.prisonerNumber),
-        prisonerBookings = prisonerBookings,
-        categoryCode = request.categoryCode!!,
-        customName = request.comment?.trim()?.take(40),
-        appointmentTier = appointmentTier,
-        internalLocationId = request.internalLocationId,
-        inCell = false,
-        startDate = request.startDate,
-        startTime = request.startTime,
-        endTime = request.endTime,
-        extraInformation = request.comment?.trim()?.takeIf { it.length > 40 },
-        createdTime = request.created!!,
-        createdBy = request.createdBy!!,
-        updatedTime = request.updated,
-        updatedBy = request.updatedBy,
-        isCancelled = request.isCancelled ?: false,
-        isMigrated = true,
-      ),
-    )
-    val appointmentInstance = appointmentInstanceRepository.findOrThrowNotFound(appointmentSeries.appointments().first().attendees().first().appointmentAttendeeId)
-    return appointmentInstance.toModel()
-  }
-
   private fun failIfCategoryNotFound(categoryCode: String) {
     referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]
       ?: throw IllegalArgumentException("Appointment Category with code $categoryCode not found or is not active")
@@ -268,17 +233,14 @@ class AppointmentSeriesService(
     updatedTime: LocalDateTime? = null,
     updatedBy: String? = null,
     isCancelled: Boolean = false,
-    isMigrated: Boolean = false,
     createFirstAppointmentOnly: Boolean = false,
   ): AppointmentSeriesEntity {
     failIfMaximumAppointmentInstancesExceeded(prisonerNumbers, repeat)
 
-    if (!isMigrated) {
-      checkCaseloadAccess(prisonCode)
-      failIfCategoryNotFound(categoryCode)
-      failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-      failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
-    }
+    checkCaseloadAccess(prisonCode)
+    failIfCategoryNotFound(categoryCode)
+    failIfLocationNotFound(inCell, prisonCode, internalLocationId)
+    failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
 
     return AppointmentSeriesEntity(
       appointmentType = appointmentType!!,
@@ -296,7 +258,6 @@ class AppointmentSeriesService(
       createdBy = createdBy,
       updatedTime = updatedTime,
       updatedBy = updatedBy,
-      isMigrated = isMigrated,
     ).apply {
       this.schedule = repeat?.let {
         AppointmentSeriesScheduleEntity(
@@ -429,6 +390,7 @@ class AppointmentSeriesService(
       ),
     )
   }
+
   private fun writeAppointmentSetCreatedAuditRecord(request: AppointmentSetCreateRequest, appointment: AppointmentSet) {
     auditService.logEvent(
       AppointmentSetCreatedEvent(

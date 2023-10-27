@@ -27,11 +27,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
@@ -49,7 +46,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
@@ -96,7 +92,6 @@ class AppointmentSeriesServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
-  private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -124,7 +119,6 @@ class AppointmentSeriesServiceTest {
     appointmentSeriesRepository,
     appointmentTierRepository,
     appointmentHostRepository,
-    appointmentInstanceRepository,
     appointmentCancellationReasonRepository,
     appointmentSetRepository,
     referenceCodeService,
@@ -364,40 +358,25 @@ class AppointmentSeriesServiceTest {
   }
 
   @Test
-  fun`buildValidAppointmentSeriesEntity does not perform any validation if the appointment is a migration`() {
-    val request = appointmentMigrateRequest()
-
-    service.buildValidAppointmentSeriesEntity(
-      appointmentType = AppointmentType.INDIVIDUAL,
-      prisonCode = request.prisonCode!!,
-      prisonerNumbers = listOf(request.prisonerNumber!!),
-      prisonerBookings = mapOf(request.prisonerNumber!! to request.bookingId.toString()),
-      categoryCode = request.categoryCode!!,
-      appointmentTier = appointmentTierNotSpecified(),
-      internalLocationId = request.internalLocationId,
-      startDate = request.startDate,
-      startTime = request.startTime,
-      endTime = request.endTime,
-      extraInformation = request.comment!!,
-      createdBy = "MIGRATION.USER",
-      isMigrated = true,
-    )
-
-    verify(times(0)) { referenceCodeService.getScheduleReasonsMap(any()) }
-    verify(times(0)) { locationService.getLocationsForAppointmentsMap(any()) }
-  }
-
-  @Test
   fun`buildValidAppointmentSeriesEntity converts a blank custom name to null`() {
     val request = appointmentSeriesCreateRequest(customName = "    ")
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers)).thenReturn(emptyList())
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+        ),
+      )
 
     val appointment = service.buildValidAppointmentSeriesEntity(
       appointmentType = request.appointmentType,
       prisonCode = request.prisonCode!!,
       prisonerNumbers = request.prisonerNumbers,
-      prisonerBookings = emptyMap(),
+      prisonerBookings = mapOf(request.prisonerNumbers.first() to "1"),
       categoryCode = request.categoryCode!!,
       customName = request.customName,
       appointmentTier = appointmentTierNotSpecified(),
@@ -409,7 +388,6 @@ class AppointmentSeriesServiceTest {
       repeat = request.schedule,
       extraInformation = request.extraInformation,
       createdBy = principal.name,
-      isMigrated = true,
     )
 
     assertThat(appointment.customName).isNull()
@@ -890,276 +868,5 @@ class AppointmentSeriesServiceTest {
       .hasMessage("One or more appointments must be supplied.")
 
     verify(appointmentSeriesRepository, never()).saveAndFlush(any())
-  }
-
-  @Test
-  fun `migrateAppointment success`() {
-    val request = appointmentMigrateRequest()
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(prisonCode).isEqualTo(request.prisonCode)
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(customName).isEqualTo(request.comment)
-      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(startTime).isEqualTo(request.startTime)
-      assertThat(endTime).isEqualTo(request.endTime)
-      assertThat(extraInformation).isNull()
-      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(createdBy).isEqualTo(request.createdBy)
-      assertThat(updatedTime).isNull()
-      assertThat(updatedBy).isNull()
-      assertThat(isMigrated).isTrue
-      with(appointments()) {
-        assertThat(size).isEqualTo(1)
-        with(appointments().first()) {
-          assertThat(prisonCode).isEqualTo(request.prisonCode)
-          assertThat(categoryCode).isEqualTo(request.categoryCode)
-          assertThat(customName).isEqualTo(request.comment)
-          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-          assertThat(startDate).isEqualTo(request.startDate)
-          assertThat(startTime).isEqualTo(request.startTime)
-          assertThat(endTime).isEqualTo(request.endTime)
-          assertThat(extraInformation).isNull()
-          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-          assertThat(createdBy).isEqualTo(request.createdBy)
-          assertThat(updatedTime).isNull()
-          assertThat(updatedBy).isNull()
-          assertThat(isDeleted).isFalse
-          with(attendees()) {
-            assertThat(size).isEqualTo(1)
-            with(first()) {
-              assertThat(prisonerNumber).isEqualTo(request.prisonerNumber)
-              assertThat(bookingId).isEqualTo(request.bookingId)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with null comment success`() {
-    val request = appointmentMigrateRequest(comment = null)
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isNull()
-      assertThat(extraInformation).isNull()
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with empty comment success`() {
-    val request = appointmentMigrateRequest(comment = "")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isNull()
-      assertThat(extraInformation).isNull()
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with whitespace only comment success`() {
-    val request = appointmentMigrateRequest(comment = "    ")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isNull()
-      assertThat(extraInformation).isNull()
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with comment whitespace start and end success`() {
-    val request = appointmentMigrateRequest(comment = "   First 40 characters will become the appointments custom name but the full comment will go to extra information.  ")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isEqualTo("First 40 characters will become the appo")
-      assertThat(extraInformation).isEqualTo(request.comment!!.trim())
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with comment under 40 characters success`() {
-    val request = appointmentMigrateRequest(comment = "Appointments custom name")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isEqualTo(request.comment)
-      assertThat(extraInformation).isNull()
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with 40 character comment success`() {
-    val request = appointmentMigrateRequest(comment = "Appointment custom name as it's 40 chars")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isEqualTo(request.comment)
-      assertThat(extraInformation).isNull()
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with comment over 40 characters success`() {
-    val request = appointmentMigrateRequest(comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.")
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(customName).isEqualTo("First 40 characters will become the appo")
-      assertThat(extraInformation).isEqualTo(request.comment)
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with specified created and createdBy success`() {
-    val request = appointmentMigrateRequest(
-      createdTime = LocalDateTime.of(2022, 10, 23, 10, 30),
-      createdBy = "DPS.USER",
-    )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(createdTime).isEqualTo(request.created)
-      assertThat(createdBy).isEqualTo(request.createdBy)
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with specified updated and updatedBy success`() {
-    val request = appointmentMigrateRequest(
-      updatedTime = LocalDateTime.of(2022, 10, 23, 10, 30),
-      updatedBy = "DPS.USER",
-    )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      assertThat(updatedTime).isEqualTo(request.updated)
-      assertThat(updatedBy).isEqualTo(request.updatedBy)
-      with(appointments().first()) {
-        assertThat(updatedTime).isEqualTo(request.updated)
-        assertThat(updatedBy).isEqualTo(request.updatedBy)
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment isCancelled defaults to false`() {
-    val request = appointmentMigrateRequest(isCancelled = null)
-
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      with(appointments().first()) {
-        assertThat(cancelledTime).isNull()
-        assertThat(cancellationReason).isNull()
-        assertThat(cancelledBy).isNull()
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with isCancelled = true success`() {
-    val request = appointmentMigrateRequest(isCancelled = true)
-    val cancellationReason = appointmentCancelledReason()
-    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      with(appointments().first()) {
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-        assertThat(cancellationReason).isEqualTo(cancellationReason)
-        assertThat(cancelledBy).isEqualTo(request.createdBy)
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with isCancelled = true will use updated and updated by if specified`() {
-    val request = appointmentMigrateRequest(
-      isCancelled = true,
-      updatedTime = LocalDateTime.of(2022, 10, 23, 10, 30),
-      updatedBy = "DPS.USER",
-    )
-    val cancellationReason = appointmentCancelledReason()
-    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      with(appointments().first()) {
-        assertThat(cancelledTime).isEqualTo(request.updated)
-        assertThat(cancellationReason).isEqualTo(cancellationReason)
-        assertThat(cancelledBy).isEqualTo(request.updatedBy)
-      }
-    }
-  }
-
-  @Test
-  fun `migrateAppointment with isCancelled = true will use created and created by if specified and updated and updated by are null`() {
-    val request = appointmentMigrateRequest(
-      isCancelled = true,
-      createdTime = LocalDateTime.of(2022, 10, 23, 10, 30),
-      createdBy = "DPS.USER",
-      updatedTime = null,
-      updatedBy = null,
-    )
-    val cancellationReason = appointmentCancelledReason()
-    whenever(appointmentCancellationReasonRepository.findById(2)).thenReturn(Optional.of(cancellationReason))
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
-    whenever(appointmentInstanceRepository.findById(1)).thenReturn(Optional.of(appointmentInstanceEntity()))
-
-    service.migrateAppointment(request, principal)
-
-    with(appointmentSeriesEntityCaptor.value) {
-      with(appointments().first()) {
-        assertThat(cancelledTime).isEqualTo(request.created)
-        assertThat(cancellationReason).isEqualTo(cancellationReason)
-        assertThat(cancelledBy).isEqualTo(request.createdBy)
-      }
-    }
   }
 }

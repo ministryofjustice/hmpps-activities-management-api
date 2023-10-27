@@ -226,7 +226,7 @@ class AppointmentCreateDomainServiceTest {
             appointment = this,
             prisonerNumber = "A1234BC",
             bookingId = 1,
-          )
+          ),
         )
       }
     }
@@ -240,14 +240,14 @@ class AppointmentCreateDomainServiceTest {
         appointment = appointmentSeries.appointments().single(),
         prisonerNumber = "B2345CD",
         bookingId = 2,
-      )
+      ),
     )
     verify(appointmentAttendeeRepository).saveAndFlush(
       AppointmentAttendee(
         appointment = appointmentSeries.appointments().single(),
         prisonerNumber = "C3456DE",
         bookingId = 3,
-      )
+      ),
     )
     verifyNoMoreInteractions(appointmentAttendeeRepository)
   }

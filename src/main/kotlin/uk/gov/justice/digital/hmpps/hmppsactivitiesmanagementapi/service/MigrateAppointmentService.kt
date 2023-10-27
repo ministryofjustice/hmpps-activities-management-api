@@ -48,7 +48,7 @@ class MigrateAppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
             categoryCode = request.categoryCode!!,
-            customName = request.comment?.trim()?.take(40),
+            customName = request.comment?.trim()?.takeUnless(String::isBlank)?.take(40),
             appointmentTier = appointmentTier,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,
