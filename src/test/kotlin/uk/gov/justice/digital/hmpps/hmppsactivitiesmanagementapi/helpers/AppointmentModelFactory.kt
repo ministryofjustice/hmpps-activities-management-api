@@ -53,7 +53,7 @@ fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTim
   )
 
 fun appointmentAttendeeModel() =
-  AppointmentAttendee(1, "A1234BC", 456, null, null, null, null, null, null, null)
+  AppointmentAttendee(1, "A1234BC", 456, null, null, null, null, null, null, null, null)
 
 fun appointmentAttendeeSearchResultModel() =
   AppointmentAttendeeSearchResult(1, "A1234BC", 456)

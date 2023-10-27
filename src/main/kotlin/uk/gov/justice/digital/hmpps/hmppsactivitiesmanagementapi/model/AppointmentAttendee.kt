@@ -97,6 +97,16 @@ data class AppointmentAttendee(
   @Schema(
     description =
     """
+    The id of the reason why this attendee was removed from the appointment.
+    Will be null if this attendee has not been removed from the appointment
+    """,
+    example = "12345",
+  )
+  val removalReasonId: Long?,
+
+  @Schema(
+    description =
+    """
     The username of the user authenticated via HMPPS auth that removed this attendee from the appointment.
     Will be null if this attendee has not been removed from the appointment
     """,

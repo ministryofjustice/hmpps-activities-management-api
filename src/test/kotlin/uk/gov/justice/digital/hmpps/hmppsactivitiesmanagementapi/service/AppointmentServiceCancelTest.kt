@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -57,6 +58,7 @@ import java.util.Optional
 class AppointmentServiceCancelTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
@@ -79,7 +81,7 @@ class AppointmentServiceCancelTest {
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
-    AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService),
+    AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService),
     AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
     updateAppointmentsJob,
     cancelAppointmentsJob,

@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -47,10 +49,11 @@ import java.util.Optional
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceAsyncTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
+  private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, telemetryClient, auditService))
+  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService))
   private val appointmentCancelDomainService = spy(AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
 
   private val appointmentRepository: AppointmentRepository = mock()
@@ -80,6 +83,7 @@ class AppointmentServiceAsyncTest {
 
   private val principal: Principal = mock()
 
+  private val permanentRemovalByUserAppointmentAttendeeRemovalReason = permanentRemovalByUserAppointmentAttendeeRemovalReason()
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentCreatedInErrorReason()
 
@@ -89,6 +93,9 @@ class AppointmentServiceAsyncTest {
     whenever(locationService.getLocationsForAppointmentsMap("TPR"))
       .thenReturn(mapOf(456L to appointmentLocation(456, "TPR")))
     whenever(principal.name).thenReturn("TEST.USER")
+    whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
+      Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
+    )
     whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
       Optional.of(appointmentCancelledReason),
     )
