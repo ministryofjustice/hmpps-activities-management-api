@@ -23,12 +23,18 @@ class AppointmentCreateDomainService(
   /**
    * Uses the appointment series as a blueprint to create all the appointments in the series and their attendees.
    * Will only create appointments and attendees not already created making it safe to use for the partial async create process.
+   *
+   * @param isCancelled specifies whether the appointments should be created in a cancelled state. Can only set to true for migrated appointments
    */
   fun createAppointments(
     appointmentSeries: AppointmentSeries,
     prisonNumberBookingIdMap: Map<String, Long>,
-    isCancelled: Boolean,
+    isCancelled: Boolean = false,
   ): AppointmentSeriesModel {
+    require(!isCancelled || appointmentSeries.isMigrated) {
+      "Only migrated appointments can be created in a cancelled state"
+    }
+
     val cancelledTime = if (isCancelled) appointmentSeries.updatedTime ?: appointmentSeries.createdTime else null
     val cancellationReason = if (isCancelled) appointmentCancellationReasonRepository.findOrThrowNotFound(CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID) else null
     val cancelledBy = if (isCancelled) appointmentSeries.updatedBy ?: appointmentSeries.createdBy else null

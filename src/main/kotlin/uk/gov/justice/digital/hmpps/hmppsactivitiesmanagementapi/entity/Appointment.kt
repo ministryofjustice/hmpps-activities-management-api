@@ -112,7 +112,7 @@ data class Appointment(
 
   fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
-  // TODO: Remove following refactor of create appointment flows
+  // Should only be used when creating appointments initially. Adding new attendees after creation should use the function below
   fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
