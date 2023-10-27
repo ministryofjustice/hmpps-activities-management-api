@@ -85,10 +85,12 @@ val configValues = mapOf(
   "enumPropertyNaming" to "UPPERCASE"
 )
 
+val buildDirectory: Directory = layout.buildDirectory.get()
+
 tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/prison-api.json")
-  outputDir.set("$buildDir/generated")
+  outputDir.set("$buildDir/generated/prisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
@@ -97,18 +99,21 @@ tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.t
 tasks.register("buildNonAssociationsApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/non-associations-api.json")
-  outputDir.set("$buildDir/generated")
+  outputDir.set("$buildDir/generated/nonassociations")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
 }
 
+val generatedProjectDirs = listOf("prisonapi", "nonassociations")
+
 kotlin {
-  sourceSets["main"].apply {
-    kotlin.srcDir("$buildDir/generated/src/main/kotlin")
+  generatedProjectDirs.forEach { generatedProject ->
+    sourceSets["main"].apply {
+      kotlin.srcDir("$buildDirectory/generated/$generatedProject/src/main/kotlin")
+    }
   }
 }
-
 jacoco {
   toolVersion = "0.8.8"
 }
@@ -144,8 +149,10 @@ tasks.named<JacocoReport>("jacocoTestReport") {
 
 configure<KtlintExtension> {
   filter {
-    exclude {
-      it.file.path.contains("build/generated/src/main/")
+    generatedProjectDirs.forEach { generatedProject ->
+      exclude { element ->
+        element.file.path.contains("build/generated/$generatedProject/src/main/")
+      }
     }
     exclude {
       it.file.path.contains("prisonersearchapi/model/")
