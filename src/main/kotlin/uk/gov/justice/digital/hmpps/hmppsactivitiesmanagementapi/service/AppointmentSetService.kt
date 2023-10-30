@@ -70,11 +70,15 @@ class AppointmentSetService(
 
     checkCaseloadAccess(request.prisonCode!!)
 
-    val category = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[request.categoryCode]
+    val categoryDescription = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[request.categoryCode]?.description
       ?: throw IllegalArgumentException("Appointment Category with code '${request.categoryCode}' not found or is not active")
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(request.prisonCode)[request.internalLocationId]
-      ?: throw IllegalArgumentException("Appointment location with id '${request.internalLocationId}' not found in prison '${request.prisonCode}'")
+    val locationDescription = if (request.inCell) {
+      "In cell"
+    } else {
+      locationService.getLocationsForAppointmentsMap(request.prisonCode)[request.internalLocationId]?.let { it.userDescription ?: it.description }
+        ?: throw IllegalArgumentException("Appointment location with id '${request.internalLocationId}' not found in prison '${request.prisonCode}'")
+    }
 
     val prisonNumberBookingIdMap = createNumberBookingIdMap(request)
     request.appointments.map { it.prisonerNumber }.filterNot(prisonNumberBookingIdMap::containsKey).let {
@@ -91,7 +95,7 @@ class AppointmentSetService(
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
-      it.trackCreatedEvent(startTimeInMs, category.description, locationMap.userDescription ?: locationMap.description)
+      it.trackCreatedEvent(startTimeInMs, categoryDescription, locationDescription)
       it.auditCreatedEvent()
     }.toModel()
   }
@@ -105,9 +109,9 @@ class AppointmentSetService(
     AppointmentSet(
       prisonCode = this.prisonCode!!,
       categoryCode = this.categoryCode!!,
-      customName = this.customName,
+      customName = this.customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = appointmentTier,
-      internalLocationId = this.internalLocationId,
+      internalLocationId = if (this.inCell) null else this.internalLocationId,
       inCell = this.inCell,
       startDate = this.startDate!!,
       createdBy = createdBy,
@@ -130,7 +134,7 @@ class AppointmentSetService(
         startDate = this.startDate,
         startTime = appointment.startTime!!,
         endTime = appointment.endTime,
-        extraInformation = appointment.extraInformation,
+        extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
         createdTime = this.createdTime,
         createdBy = this.createdBy,
       ).apply {
@@ -172,6 +176,7 @@ class AppointmentSetService(
         startDate = this.startDate,
         prisonerNumbers = this.prisonerNumbers(),
         createdAt = this.createdTime,
+        createdBy = this.createdBy,
       ),
     )
   }

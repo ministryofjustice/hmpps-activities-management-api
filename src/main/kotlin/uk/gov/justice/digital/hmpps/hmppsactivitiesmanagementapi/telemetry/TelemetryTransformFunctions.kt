@@ -79,8 +79,8 @@ fun AppointmentSet.toTelemetryPropertiesMap(
     INTERNAL_LOCATION_ID_PROPERTY_KEY to (this.internalLocationId?.toString() ?: ""),
     INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to internalLocationDescription,
     START_DATE_PROPERTY_KEY to this.startDate.toString(),
-    EARLIEST_START_TIME_PROPERTY_KEY to this.appointments().minOf { it.startTime }.toString(),
-    LATEST_END_TIME_PROPERTY_KEY to this.appointments().mapNotNull { it.endTime }.maxOf { it }.toString(),
+    EARLIEST_START_TIME_PROPERTY_KEY to this.appointments().takeUnless { it.isEmpty() }?.minOf { it.startTime }.toString(),
+    LATEST_END_TIME_PROPERTY_KEY to this.appointments().mapNotNull { it.endTime }.takeUnless { it.isEmpty() }?.maxOf { it }.toString(),
   )
 
 fun AppointmentSet.toTelemetryMetricsMap(
