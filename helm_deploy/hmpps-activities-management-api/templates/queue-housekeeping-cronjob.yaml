@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hmpps-activities-management-api-queue-housekeeping
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      # Tidy up all jobs after 4 days
+      ttlSecondsAfterFinished: 345600
+      template:
+        spec:
+          containers:
+            - name: housekeeping
+              image: ghcr.io/ministryofjustice/hmpps-devops-tools
+              args:
+                - /bin/sh
+                - -c
+                - curl --retry 2 -XPUT http://hmpps-activities-management-api/queue-admin/retry-all-dlqs
+          restartPolicy: Never

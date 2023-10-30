@@ -24,6 +24,10 @@ generic-service:
           deny all;
           return 401;
         }
+        location /queue-admin/retry-all-dlqs {
+          deny all;
+          return 401;
+        }
 
   # Used to access resources like SQS queues and SNS topics
   serviceAccountName: hmpps-activities-management-api
@@ -112,3 +116,10 @@ generic-service:
 
 generic-prometheus-alerts:
   targetApplication: hmpps-activities-management-api
+
+cron:
+  allocationsDeallocate: "0 22 * * *"
+  allocationsActivate: "0 2 * * *"
+  appointmentAttendees: "30 2 * * *"
+  createScheduledInstances: "0 3 * * *"
+  attendanceRecords: "0 4 * * *"

@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: manage-attendance-records
 spec:
-  schedule: "0 4 * * *" # 4am every day
+  schedule:  "{{ .Values.cron.attendanceRecords }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200

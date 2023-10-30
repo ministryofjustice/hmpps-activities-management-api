@@ -3,7 +3,7 @@ kind: CronJob
 metadata:
   name: activate-allocations
 spec:
-  schedule: "0 2 * * *" # 2am every day
+  schedule:  "{{ .Values.cron.allocationsActivate }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200

@@ -108,14 +108,41 @@ data class Appointment(
 
   fun attendees() = attendees.filterNot { it.isDeleted }.toList()
 
-  fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
+  fun findAttendee(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
 
+  fun findAttendees(prisonerNumbers: Collection<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
+
+  // Should only be used when creating appointments initially. Adding new attendees after creation should use the function below
   fun addAttendee(attendee: AppointmentAttendee) {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
   }
 
-  fun removeAttendee(attendee: AppointmentAttendee) = attendees.remove(attendee)
+  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?) {
+    // Soft delete any existing removed attendee records for the prisoner
+    findAttendee(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+    // Add attendee if no non-soft deleted attendee records for the prisoner exist
+    findAttendee(prisonerNumber).let {
+      if (it.isEmpty()) {
+        failIfIndividualAppointmentAlreadyAllocated()
+        attendees.add(
+          AppointmentAttendee(
+            appointment = this,
+            prisonerNumber = prisonerNumber,
+            bookingId = bookingId,
+            addedTime = addedTime,
+            addedBy = addedBy,
+          ),
+        )
+      }
+    }
+  }
+
+  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
+    findAttendee(prisonerNumber).forEach {
+      it.remove(removedTime, removalReason, removedBy)
+    }
+  }
 
   fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {
