@@ -68,10 +68,12 @@ class AppointmentSetService(
   fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSetModel {
     val startTimeInMs = System.currentTimeMillis()
 
+    checkCaseloadAccess(request.prisonCode!!)
+
     val category = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[request.categoryCode]
       ?: throw IllegalArgumentException("Appointment Category with code '${request.categoryCode}' not found or is not active")
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(request.prisonCode!!)[request.internalLocationId]
+    val locationMap = locationService.getLocationsForAppointmentsMap(request.prisonCode)[request.internalLocationId]
       ?: throw IllegalArgumentException("Appointment location with id '${request.internalLocationId}' not found in prison '${request.prisonCode}'")
 
     val prisonNumberBookingIdMap = createNumberBookingIdMap(request)

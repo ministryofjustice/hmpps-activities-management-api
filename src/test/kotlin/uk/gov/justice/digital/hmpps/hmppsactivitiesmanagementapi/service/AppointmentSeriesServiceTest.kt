@@ -31,7 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -43,30 +42,24 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
@@ -80,9 +73,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecuri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentFrequencyModel
@@ -93,7 +84,6 @@ class AppointmentSeriesServiceTest {
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
-  private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -120,7 +110,6 @@ class AppointmentSeriesServiceTest {
     appointmentTierRepository,
     appointmentHostRepository,
     appointmentCancellationReasonRepository,
-    appointmentSetRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -728,145 +717,5 @@ class AppointmentSeriesServiceTest {
     }
 
     verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap())
-  }
-
-  @Test
-  fun `create appointment set success`() {
-    val request = appointmentSetCreateRequest()
-
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
-    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(
-        mapOf(
-          request.internalLocationId!! to appointmentLocation(
-            request.internalLocationId!!,
-            request.prisonCode!!,
-          ),
-        ),
-      )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
-      .thenReturn(
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = request.prisonCode),
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
-        ),
-      )
-
-    whenever(appointmentSetRepository.saveAndFlush(appointmentSetEntityCaptor.capture())).thenReturn(
-      AppointmentSet(
-        appointmentSetId = 1,
-        prisonCode = request.prisonCode!!,
-        categoryCode = request.categoryCode!!,
-        customName = request.customName,
-        appointmentTier = appointmentTierNotSpecified(),
-        internalLocationId = request.internalLocationId,
-        inCell = request.inCell,
-        startDate = request.startDate!!,
-        createdBy = "TEST.USER",
-      ).apply {
-        this.addAppointmentSeries(appointmentSeriesEntity(appointmentSeriesId = 1, appointmentSet = this))
-        this.addAppointmentSeries(appointmentSeriesEntity(appointmentSeriesId = 2, appointmentSet = this))
-      },
-    )
-
-    service.createAppointmentSet(request, principal)
-
-    verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value),
-      telemetryPropertyMap.capture(),
-      telemetryMetricsMap.capture(),
-    )
-
-    with(appointmentSetEntityCaptor.value) {
-      assertThat(prisonCode).isEqualTo(request.prisonCode)
-      assertThat(categoryCode).isEqualTo(request.categoryCode)
-      assertThat(customName).isEqualTo(request.customName)
-      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(inCell).isEqualTo(request.inCell)
-      assertThat(startDate).isEqualTo(request.startDate)
-      assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
-      assertThat(appointmentSeries()).hasSize(2)
-      assertThat(appointmentSeries()[0].appointments()[0].attendees()[0].prisonerNumber).isEqualTo("A1234BC")
-      assertThat(appointmentSeries()[1].appointments()[0].attendees()[0].prisonerNumber).isEqualTo("A1234BD")
-
-      appointmentSeries().forEach {
-        assertThat(it.categoryCode).isEqualTo("TEST")
-        assertThat(it.prisonCode).isEqualTo("TPR")
-        assertThat(it.internalLocationId).isEqualTo(123)
-        assertThat(it.inCell).isFalse
-        assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
-        assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
-        assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
-        assertThat(it.extraInformation).isEqualTo("Test comment")
-        assertThat(it.customName).isEqualTo("Appointment description")
-      }
-    }
-
-    with(telemetryPropertyMap) {
-      assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-      assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
-      assertThat(value[APPOINTMENT_SET_ID_PROPERTY_KEY]).isEqualTo("1")
-      assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
-      assertThat(value[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
-      assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
-      assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
-      assertThat(value[EARLIEST_START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
-      assertThat(value[LATEST_END_TIME_PROPERTY_KEY]).isEqualTo("10:30")
-    }
-
-    with(telemetryMetricsMap) {
-      assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
-      assertThat(value[EXTRA_INFORMATION_COUNT_METRIC_KEY]).isEqualTo(4.0)
-      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
-    }
-
-    verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
-  }
-
-  @Test
-  fun `create appointment set throws illegal argument exception when prisoner is not a resident of requested prison code`() {
-    val request = appointmentSetCreateRequest()
-
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
-    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(
-        mapOf(
-          request.internalLocationId!! to appointmentLocation(
-            request.internalLocationId!!,
-            request.prisonCode!!,
-          ),
-        ),
-      )
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! }))
-      .thenReturn(
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[0].prisonerNumber!!, bookingId = 1, prisonId = "DIFFERENT"),
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.appointments[1].prisonerNumber!!, bookingId = 2, prisonId = request.prisonCode),
-        ),
-      )
-
-    assertThatThrownBy {
-      service.createAppointmentSet(request, principal)
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner(s) with prisoner number(s) '${request.appointments[0].prisonerNumber}' not found, were inactive or are residents of a different prison.")
-
-    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
-  }
-
-  @Test
-  fun `create appointment set fails if no appointments provided`() {
-    val request = appointmentSetCreateRequest().copy(appointments = emptyList())
-
-    assertThatThrownBy {
-      service.createAppointmentSet(request, principal)
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("One or more appointments must be supplied.")
-
-    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
   }
 }
