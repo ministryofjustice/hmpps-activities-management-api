@@ -71,22 +71,10 @@ class AppointmentSetService(
 
     checkCaseloadAccess(request.prisonCode!!)
 
-    val categoryDescription = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[request.categoryCode]?.description
-      ?: throw IllegalArgumentException("Appointment Category with code '${request.categoryCode}' not found or is not active")
-
-    val locationDescription = if (request.inCell) {
-      "In cell"
-    } else {
-      locationService.getLocationsForAppointmentsMap(request.prisonCode)[request.internalLocationId]?.let { it.userDescription ?: it.description }
-        ?: throw IllegalArgumentException("Appointment location with id '${request.internalLocationId}' not found in prison '${request.prisonCode}'")
-    }
-
-    val prisonNumberBookingIdMap = createNumberBookingIdMap(request)
-    request.appointments.map { it.prisonerNumber }.filterNot(prisonNumberBookingIdMap::containsKey).let {
-      require(it.isEmpty()) {
-        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
-      }
-    }
+    val categoryDescription = request.categoryDescription()
+    val locationDescription = request.locationDescription()
+    val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
+    request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
 
@@ -101,50 +89,71 @@ class AppointmentSetService(
     }.toModel()
   }
 
-  private fun createNumberBookingIdMap(request: AppointmentSetCreateRequest) =
-    prisonerSearchApiClient.findByPrisonerNumbers(request.appointments.map { it.prisonerNumber!! })
-      .filter { prisoner -> prisoner.prisonId == request.prisonCode }
+  private fun AppointmentSetCreateRequest.categoryDescription() =
+    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+      ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
+
+  private fun AppointmentSetCreateRequest.locationDescription(): String {
+    return if (inCell) {
+      "In cell"
+    } else {
+      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
+        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+    }
+  }
+
+  private fun AppointmentSetCreateRequest.createNumberBookingIdMap() =
+    prisonerSearchApiClient.findByPrisonerNumbers(appointments.map { it.prisonerNumber!! })
+      .filter { prisoner -> prisoner.prisonId == prisonCode }
       .associate { it.prisonerNumber to it.bookingId!!.toLong() }
+
+  private fun AppointmentSetCreateRequest.failIfMissingPrisoners(prisonNumberBookingIdMap: Map<String, Long>) {
+    appointments.map { it.prisonerNumber }.filterNot(prisonNumberBookingIdMap::containsKey).let {
+      require(it.isEmpty()) {
+        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+      }
+    }
+  }
 
   private fun AppointmentSetCreateRequest.toAppointmentSet(prisonNumberBookingIdMap: Map<String, Long>, appointmentTier: AppointmentTier, createdBy: String) =
     AppointmentSet(
-      prisonCode = this.prisonCode!!,
-      categoryCode = this.categoryCode!!,
-      customName = this.customName?.trim()?.takeUnless(String::isBlank),
+      prisonCode = prisonCode!!,
+      categoryCode = categoryCode!!,
+      customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = appointmentTier,
-      internalLocationId = if (this.inCell) null else this.internalLocationId,
-      inCell = this.inCell,
-      startDate = this.startDate!!,
+      internalLocationId = if (inCell) null else internalLocationId,
+      inCell = inCell,
+      startDate = startDate!!,
       createdBy = createdBy,
     ).also { appointmentSet ->
-      this.appointments.forEach { appointment ->
+      appointments.forEach { appointment ->
         appointmentSet.addAppointment(appointment, prisonNumberBookingIdMap)
       }
     }
 
   private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) =
-    this.addAppointmentSeries(
+    addAppointmentSeries(
       AppointmentSeries(
         appointmentType = AppointmentType.INDIVIDUAL,
-        prisonCode = this.prisonCode,
-        categoryCode = this.categoryCode,
-        customName = this.customName,
+        prisonCode = prisonCode,
+        categoryCode = categoryCode,
+        customName = customName,
         appointmentTier = appointmentTier,
-        internalLocationId = this.internalLocationId,
-        inCell = this.inCell,
-        startDate = this.startDate,
+        internalLocationId = internalLocationId,
+        inCell = inCell,
+        startDate = startDate,
         startTime = appointment.startTime!!,
         endTime = appointment.endTime,
         extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
-        createdTime = this.createdTime,
-        createdBy = this.createdBy,
+        createdTime = createdTime,
+        createdBy = createdBy,
       ).apply {
-        this.addAppointment(
-          this.createAppointment(
+        addAppointment(
+          createAppointment(
             1,
-            this.startDate,
+            startDate,
           ).apply {
-            this.addAttendee(
+            addAttendee(
               AppointmentAttendee(
                 appointment = this,
                 prisonerNumber = appointment.prisonerNumber!!,
@@ -163,8 +172,8 @@ class AppointmentSetService(
     internalLocationDescription: String,
     createdBy: String,
   ) {
-    val propertiesMap = this.toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
-    val metricsMap = this.toTelemetryMetricsMap()
+    val propertiesMap = toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
+    val metricsMap = toTelemetryMetricsMap()
     metricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
   }
@@ -172,15 +181,15 @@ class AppointmentSetService(
   private fun AppointmentSet.auditCreatedEvent() {
     auditService.logEvent(
       AppointmentSetCreatedEvent(
-        appointmentSetId = this.appointmentSetId,
-        prisonCode = this.prisonCode,
-        categoryCode = this.categoryCode,
-        hasCustomName = this.customName != null,
-        internalLocationId = this.internalLocationId,
-        startDate = this.startDate,
-        prisonerNumbers = this.prisonerNumbers(),
-        createdAt = this.createdTime,
-        createdBy = this.createdBy,
+        appointmentSetId = appointmentSetId,
+        prisonCode = prisonCode,
+        categoryCode = categoryCode,
+        hasCustomName = customName != null,
+        internalLocationId = internalLocationId,
+        startDate = startDate,
+        prisonerNumbers = prisonerNumbers(),
+        createdAt = createdTime,
+        createdBy = createdBy,
       ),
     )
   }
