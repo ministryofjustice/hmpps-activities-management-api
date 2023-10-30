@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
@@ -55,6 +56,7 @@ class ActivityService(
   private val activitySummaryRepository: ActivitySummaryRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val activityTierRepository: ActivityTierRepository,
+  private val activityOrganiserRepository: ActivityOrganiserRepository,
   private val eligibilityRuleRepository: EligibilityRuleRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -134,6 +136,7 @@ class ActivityService(
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
+    val organiser = request.organiserId?.let { activityOrganiserRepository.findOrThrowIllegalArgument(it) }
     val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
       .associateBy { it.prisonPayBandId }
@@ -152,6 +155,7 @@ class ActivityService(
       prisonCode = request.prisonCode,
       activityCategory = category,
       activityTier = tier,
+      organiser = organiser,
       attendanceRequired = request.attendanceRequired,
       summary = request.summary,
       description = request.description,
@@ -302,6 +306,7 @@ class ActivityService(
 
       applyCategoryUpdate(request, activity)
       applyTierUpdate(request, activity)
+      applyOrganiserUpdate(request, activity)
       applySummaryUpdate(prisonCode, request, activity)
       applyStartDateUpdate(request, activity)
       applyEndDateUpdate(request, activity)
@@ -368,6 +373,18 @@ class ActivityService(
   ) {
     request.tierId?.apply {
       activity.activityTier = activityTierRepository.findOrThrowIllegalArgument(this)
+      if (activity.activityTier?.code !== "TIER_2") {
+        activity.organiser = null
+      }
+    }
+  }
+
+  private fun applyOrganiserUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.organiserId?.apply {
+      activity.organiser = activityOrganiserRepository.findOrThrowIllegalArgument(this)
     }
   }
 

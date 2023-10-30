@@ -5,6 +5,7 @@
   "description": "A basic IT course",
   "categoryId": 1,
   "tierId": 1,
+  "organiserId": 1,
   "eligibilityRuleIds": [1],
   "minimumIncentiveNomisCode": "BAS",
   "minimumIncentiveLevel": "Basic",

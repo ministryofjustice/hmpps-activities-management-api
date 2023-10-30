@@ -72,6 +72,9 @@ data class ActivityCreateRequest(
   @Schema(description = "The tier id for this activity, as defined by the Future Prison Regime team", example = "1")
   val tierId: Long?,
 
+  @Schema(description = "The organiser id for the organiser of this activity", example = "2")
+  val organiserId: Long?,
+
   @Schema(description = "A list of eligibility rules ids which apply to this activity.", example = "[1, 2, 3]")
   val eligibilityRuleIds: List<Long> = emptyList(),
 

@@ -20,9 +20,19 @@ values (1, 'SAA_EDUCATION', 'Education', 'Such as classes in English, maths, con
 -- Tiers
 --
 insert into activity_tier(activity_tier_id, code, description)
-values (1, 'T1', 'Tier 1'),
-       (2, 'T2', 'Tier 2'),
-       (3, 'T3', 'Tier 3');
+values (1, 'TIER_1', 'Tier 1'),
+       (2, 'TIER_2', 'Tier 2'),
+       (3, 'FOUNDATION', 'Routine activities also called "Foundation"');
+
+--
+-- Organisers
+--
+insert into activity_organiser (activity_organiser_id, code, description)
+values (1, 'PRISON_STAFF', 'Prison staff'),
+    (2, 'PRISONER', 'A prisoner or group of prisoners'),
+    (3, 'EXTERNAL_PROVIDER', 'An external provider'),
+    (4, 'OTHER', 'Someone else');
+
 
 --
 -- Eligibility rules

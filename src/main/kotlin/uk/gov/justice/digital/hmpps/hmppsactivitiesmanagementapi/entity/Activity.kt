@@ -41,6 +41,10 @@ data class Activity(
   @JoinColumn(name = "activity_tier_id")
   var activityTier: ActivityTier?,
 
+  @OneToOne
+  @JoinColumn(name = "activity_organiser_id")
+  var organiser: ActivityOrganiser? = null,
+
   var attendanceRequired: Boolean = true,
 
   var inCell: Boolean = false,

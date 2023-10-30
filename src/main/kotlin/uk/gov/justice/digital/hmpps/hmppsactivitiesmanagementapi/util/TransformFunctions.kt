@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic as EntityActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory as EntityActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityOrganiser as EntityActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
@@ -58,6 +60,7 @@ fun transform(activity: EntityActivity) =
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
     tier = activity.activityTier?.toModelActivityTier(),
+    organiser = activity.organiser?.toModelActivityOrganiser(),
     eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
     schedules = activity.schedules().toModelSchedules(),
     pay = activity.activityPay().toModelActivityPayList(),
@@ -179,6 +182,13 @@ fun EntityActivityCategory.toModelActivityCategory() =
 private fun EntityActivityTier.toModelActivityTier() =
   ModelActivityTier(
     id = this.activityTierId,
+    code = this.code,
+    description = this.description,
+  )
+
+private fun EntityActivityOrganiser.toModelActivityOrganiser() =
+  ActivityOrganiser(
+    id = this.activityOrganiserId,
     code = this.code,
     description = this.description,
   )

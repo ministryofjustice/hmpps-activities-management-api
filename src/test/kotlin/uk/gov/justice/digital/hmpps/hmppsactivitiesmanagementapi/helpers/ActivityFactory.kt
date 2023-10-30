@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -47,6 +48,7 @@ val activeAllocation = activityEntity().schedules().first().allocations().first(
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
   tier: ActivityTier = activityTier(),
+  organiser: ActivityOrganiser = activityOrganiser(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   activityId: Long = 1L,
   prisonCode: String = "MDI",
@@ -67,6 +69,7 @@ internal fun activityEntity(
     prisonCode = prisonCode,
     activityCategory = category,
     activityTier = tier,
+    organiser = organiser,
     summary = summary,
     description = description,
     riskLevel = riskLevel,
@@ -160,7 +163,9 @@ internal fun attendanceReasons() = mapOf(
 
 internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!
 
-internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
+internal fun activityTier() = ActivityTier(activityTierId = 1, code = "TIER_1", description = "Tier 1")
+
+internal fun activityOrganiser() = ActivityOrganiser(activityOrganiserId = 1, code = "PRISON_STAFF", description = "Prison staff")
 
 internal fun activitySchedule(
   activity: Activity,
@@ -341,6 +346,7 @@ internal fun activityCreateRequest(
     description = "Test activity",
     categoryId = activityCategory().activityCategoryId,
     tierId = activityTier().activityTierId,
+    organiserId = activityOrganiser().activityOrganiserId,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
     pay = emptyList(),
     riskLevel = "high",

@@ -44,6 +44,7 @@ class ManageScheduledInstancesServiceTest {
     activitySummaryRepository = mock(),
     activityCategoryRepository = mock(),
     activityTierRepository = mock(),
+    activityOrganiserRepository = mock(),
     eligibilityRuleRepository = mock(),
     activityScheduleRepository = activityScheduleRepository,
     prisonPayBandRepository = mock(),

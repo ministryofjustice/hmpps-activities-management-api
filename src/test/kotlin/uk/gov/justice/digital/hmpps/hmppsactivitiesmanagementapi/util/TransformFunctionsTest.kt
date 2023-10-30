@@ -47,6 +47,7 @@ import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityOrganiser as ModelActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
@@ -79,7 +80,8 @@ class TransformFunctionsTest {
           description = "category description",
         ),
       )
-      assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
+      assertThat(tier).isEqualTo(ModelActivityTier(1, "TIER_1", "Tier 1"))
+      assertThat(organiser).isEqualTo(ModelActivityOrganiser(id = 1, code = "PRISON_STAFF", description = "Prison staff"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
           0,

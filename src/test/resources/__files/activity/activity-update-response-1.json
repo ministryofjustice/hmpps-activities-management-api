@@ -16,6 +16,11 @@
     "code": "Tier1",
     "description": "Work, education and maintenance"
   },
+  "organiser": {
+    "id": 4,
+    "code": "OTHER",
+    "description": "Someone else"
+  },
   "eligibilityRules": [
     {
       "id": 2,

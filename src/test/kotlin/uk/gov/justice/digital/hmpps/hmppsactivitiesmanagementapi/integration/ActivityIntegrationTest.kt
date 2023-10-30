@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
@@ -119,6 +120,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
       assertThat(tier!!.id).isEqualTo(1)
+      assertThat(organiser!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
       assertThat(createdBy).isEqualTo("test-client")
@@ -568,7 +570,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
       assertThat(category).isEqualTo(educationCategory)
-      assertThat(tier).isEqualTo(ActivityTier(1, "T1", "Tier 1"))
+      assertThat(tier).isEqualTo(ActivityTier(1, "TIER_1", "Tier 1"))
       assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
@@ -681,7 +683,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(educationCategory)
-      assertThat(tier).isEqualTo(ActivityTier(2, "T2", "Tier 2"))
+      assertThat(tier).isEqualTo(ActivityTier(2, "TIER_2", "Tier 2"))
       assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
@@ -1208,5 +1210,22 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     updatedActivity.schedules.flatMap { it.instances } hasSize 2
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity - Add organiser`() {
+    // Add organiser
+    var updatedActivity = webTestClient.updateActivity(
+      "PVI",
+      1,
+      ActivityUpdateRequest(organiserId = 1),
+    )
+    updatedActivity.organiser isEqualTo ActivityOrganiser(
+      id = 1,
+      code = "PRISON_STAFF",
+      description = "Prison staff",
+    )
+    updatedActivity.category.id isEqualTo 1
   }
 }

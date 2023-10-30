@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityTier
@@ -52,6 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
@@ -77,6 +79,7 @@ class ActivityServiceTest {
   private val activitySummaryRepository: ActivitySummaryRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val activityTierRepository: ActivityTierRepository = mock()
+  private val activityOrganiserRepository: ActivityOrganiserRepository = mock()
   private val eligibilityRuleRepository: EligibilityRuleRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
@@ -127,6 +130,7 @@ class ActivityServiceTest {
     activitySummaryRepository,
     activityCategoryRepository,
     activityTierRepository,
+    activityOrganiserRepository,
     eligibilityRuleRepository,
     activityScheduleRepository,
     prisonPayBandRepository,
@@ -178,6 +182,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
     whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
       Optional.of(
         eligibilityRuleOver21,
@@ -201,6 +206,7 @@ class ActivityServiceTest {
       assertThat(activityMinimumEducationLevel()).hasSize(1)
       assertThat(activityCategory).isEqualTo(activityCategory())
       assertThat(activityTier).isEqualTo(activityTier())
+      assertThat(organiser).isEqualTo(activityOrganiser())
     }
   }
 
@@ -273,6 +279,7 @@ class ActivityServiceTest {
   fun `createActivity - duplicate`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
@@ -315,6 +322,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(eligibilityRuleRepository.findById(activityCreateRequest.eligibilityRuleIds.first())).thenReturn(Optional.empty())
 
     assertThatThrownBy {
@@ -451,6 +459,7 @@ class ActivityServiceTest {
   fun `createActivity - education level description does not match NOMIS`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleOver21))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel.copy(description = "Reading Measure 1.0")))
@@ -469,6 +478,7 @@ class ActivityServiceTest {
   fun `createActivity - education level is not active in NOMIS`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonApiClient.getEducationLevel(inactiveEducationLevel.code)).thenReturn(Mono.just(inactiveEducationLevel))
@@ -484,6 +494,7 @@ class ActivityServiceTest {
   fun `createActivity - study area description does not match NOMIS`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonApiClient.getEducationLevel(any())).thenReturn(Mono.just(educationLevel))
@@ -503,6 +514,7 @@ class ActivityServiceTest {
   fun `createActivity - study area is not active in NOMIS`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(activityTierRepository.findById(any())).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(any())).thenReturn(Optional.of(activityOrganiser()))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonApiClient.getEducationLevel(any())).thenReturn(Mono.just(educationLevel))
@@ -652,7 +664,7 @@ class ActivityServiceTest {
       }
       with(activityTier!!) {
         assertThat(activityTierId).isEqualTo(1)
-        assertThat(code).isEqualTo("T1")
+        assertThat(code).isEqualTo("TIER_1")
         assertThat(description).isEqualTo("Tier 1")
       }
     }
@@ -743,6 +755,7 @@ class ActivityServiceTest {
     val afterActivityCategory = activityCategory2()
     whenever(activityCategoryRepository.findById(2)).thenReturn(Optional.of(afterActivityCategory))
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
 
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
@@ -1617,6 +1630,57 @@ class ActivityServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
+  }
+
+  @Test
+  fun `updateActivity - add organiser`() {
+    val activity = activityEntity()
+
+    val organiser = activityOrganiser()
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(organiser))
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(organiserId = 1), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      this.organiser!!.activityOrganiserId isEqualTo 1
+      this.organiser!!.code isEqualTo "PRISON_STAFF"
+      this.organiser!!.description isEqualTo "Prison staff"
+    }
+  }
+
+  @Test
+  fun `updateActivity - remove organiser if not tier 2`() {
+    val activity = activityEntity()
+
+    assertThat(activity.organiser).isNotNull
+
+    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(tierId = 1), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(this.organiser).isNull()
+    }
   }
 
   @Test

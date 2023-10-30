@@ -19,6 +19,9 @@ data class ActivityUpdateRequest(
   @Schema(description = "The tier id for this activity, as defined by the Future Prison Regime team", example = "1")
   val tierId: Long? = null,
 
+  @Schema(description = "The organiser id for this activity", example = "1")
+  val organiserId: Long? = null,
+
   @field:Size(max = 50, message = "Summary should not exceed {max} characters")
   @Schema(
     description = "A brief summary description of this activity for use in forms and lists",
