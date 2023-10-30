@@ -95,16 +95,16 @@ class AppointmentSeriesService(
 
     val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
 
-    val prisonerBookings = createPrisonerMap(request.prisonerNumbers, request.prisonCode)
+    val prisonNumberBookingIdMap = createNumberBookingIdMap(request.prisonerNumbers, request.prisonCode)
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
-    val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonerBookings.size > maxSyncAppointmentInstanceActions } ?: false
+    val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonNumberBookingIdMap.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointmentSeries = appointmentSeriesRepository.saveAndFlush(
       buildValidAppointmentSeriesEntity(
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = prisonerBookings,
+        prisonNumberBookingIdMap = prisonNumberBookingIdMap,
         inCell = request.inCell,
         categoryCode = request.categoryCode!!,
         customName = request.customName,
@@ -122,7 +122,7 @@ class AppointmentSeriesService(
 
     if (createFirstAppointmentOnly) {
       // The remaining appointments will be created asynchronously by this job
-      createAppointmentsJob.execute(appointmentSeries.appointmentSeriesId, prisonerBookings)
+      createAppointmentsJob.execute(appointmentSeries.appointmentSeriesId, prisonNumberBookingIdMap)
     }
 
     return appointmentSeries.toModel().also {
@@ -143,8 +143,8 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonerBookings: Map<String, String?>) {
-    prisonerNumbers.filterNot(prisonerBookings::containsKey).let {
+  private fun failIfMissingPrisoners(prisonerNumbers: List<String>, prisonNumberBookingIdMap: Map<String, Long>) {
+    prisonerNumbers.filterNot(prisonNumberBookingIdMap::containsKey).let {
       require(it.isEmpty()) {
         "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
       }
@@ -162,7 +162,7 @@ class AppointmentSeriesService(
     appointmentType: AppointmentType? = null,
     prisonCode: String,
     prisonerNumbers: List<String>,
-    prisonerBookings: Map<String, String?>,
+    prisonNumberBookingIdMap: Map<String, Long>,
     categoryCode: String,
     customName: String? = null,
     appointmentTier: AppointmentTier,
@@ -185,7 +185,7 @@ class AppointmentSeriesService(
     checkCaseloadAccess(prisonCode)
     failIfCategoryNotFound(categoryCode)
     failIfLocationNotFound(inCell, prisonCode, internalLocationId)
-    failIfMissingPrisoners(prisonerNumbers, prisonerBookings)
+    failIfMissingPrisoners(prisonerNumbers, prisonNumberBookingIdMap)
 
     return AppointmentSeriesEntity(
       appointmentType = appointmentType!!,
@@ -234,12 +234,12 @@ class AppointmentSeriesService(
             updatedTime = this.updatedTime,
             updatedBy = this.updatedBy,
           ).apply {
-            prisonerBookings.forEach { prisonerBooking ->
+            prisonNumberBookingIdMap.forEach { prisonNumberBookingId ->
               this.addAttendee(
                 AppointmentAttendeeEntity(
                   appointment = this,
-                  prisonerNumber = prisonerBooking.key,
-                  bookingId = prisonerBooking.value!!.toLong(),
+                  prisonerNumber = prisonNumberBookingId.key,
+                  bookingId = prisonNumberBookingId.value,
                 ),
               )
             }
@@ -256,10 +256,10 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun createPrisonerMap(prisonerNumbers: List<String>, prisonCode: String?) =
-    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
+  private fun createNumberBookingIdMap(prisonNumbers: List<String>, prisonCode: String?) =
+    prisonerSearchApiClient.findByPrisonerNumbers(prisonNumbers)
       .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associate { it.prisonerNumber to it.bookingId }
+      .associate { it.prisonerNumber to it.bookingId!!.toLong() }
 
   private fun logAppointmentSeriesCreatedMetric(principal: Principal, request: AppointmentSeriesCreateRequest, appointmentSeries: AppointmentSeries, startTimeInMs: Long) {
     val propertiesMap = mapOf(

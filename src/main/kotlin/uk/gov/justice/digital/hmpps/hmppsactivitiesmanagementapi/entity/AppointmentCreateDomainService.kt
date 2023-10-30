@@ -21,6 +21,14 @@ class AppointmentCreateDomainService(
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val transactionHandler: TransactionHandler,
 ) {
+  fun createAppointments(
+    appointmentSeriesId: Long,
+    prisonNumberBookingIdMap: Map<String, Long>,
+  ): AppointmentSeriesModel {
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+    return createAppointments(appointmentSeries, prisonNumberBookingIdMap)
+  }
+
   /**
    * Uses the appointment series as a blueprint to create all the appointments in the series and their attendees.
    * Will only create appointments and attendees not already created making it safe to use for the partial async create process.

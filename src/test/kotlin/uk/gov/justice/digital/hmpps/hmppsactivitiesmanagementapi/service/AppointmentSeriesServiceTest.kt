@@ -232,7 +232,7 @@ class AppointmentSeriesServiceTest {
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = emptyMap(),
+        prisonNumberBookingIdMap = emptyMap(),
         categoryCode = request.categoryCode!!,
         customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
@@ -261,7 +261,7 @@ class AppointmentSeriesServiceTest {
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = emptyMap(),
+        prisonNumberBookingIdMap = emptyMap(),
         categoryCode = request.categoryCode!!,
         customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
@@ -293,7 +293,7 @@ class AppointmentSeriesServiceTest {
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = emptyMap(),
+        prisonNumberBookingIdMap = emptyMap(),
         categoryCode = request.categoryCode!!,
         customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
@@ -327,7 +327,7 @@ class AppointmentSeriesServiceTest {
         appointmentType = request.appointmentType,
         prisonCode = request.prisonCode!!,
         prisonerNumbers = request.prisonerNumbers,
-        prisonerBookings = emptyMap(),
+        prisonNumberBookingIdMap = emptyMap(),
         categoryCode = request.categoryCode!!,
         customName = request.customName,
         appointmentTier = appointmentTierNotSpecified(),
@@ -365,7 +365,7 @@ class AppointmentSeriesServiceTest {
       appointmentType = request.appointmentType,
       prisonCode = request.prisonCode!!,
       prisonerNumbers = request.prisonerNumbers,
-      prisonerBookings = mapOf(request.prisonerNumbers.first() to "1"),
+      prisonNumberBookingIdMap = mapOf(request.prisonerNumbers.first() to 1),
       categoryCode = request.categoryCode!!,
       customName = request.customName,
       appointmentTier = appointmentTierNotSpecified(),
@@ -716,6 +716,6 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 3
     }
 
-    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value.toString() }.toMap())
+    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap())
   }
 }
