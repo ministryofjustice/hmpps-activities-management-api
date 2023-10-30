@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.DeleteMigratedAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateAppointmentService
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [MigrateAppointmentController::class])
@@ -25,16 +25,16 @@ import java.time.LocalDate
 class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentController>() {
 
   @MockBean
-  private lateinit var appointmentSeriesService: AppointmentSeriesService
+  private lateinit var migrateAppointmentService: MigrateAppointmentService
 
   @MockBean
   private lateinit var deleteMigratedAppointmentsJob: DeleteMigratedAppointmentsJob
 
-  override fun controller() = MigrateAppointmentController(appointmentSeriesService, deleteMigratedAppointmentsJob)
+  override fun controller() = MigrateAppointmentController(migrateAppointmentService, deleteMigratedAppointmentsJob)
 
   @BeforeEach
   fun resetMocks() {
-    reset(appointmentSeriesService)
+    reset(migrateAppointmentService)
   }
 
   @Nested

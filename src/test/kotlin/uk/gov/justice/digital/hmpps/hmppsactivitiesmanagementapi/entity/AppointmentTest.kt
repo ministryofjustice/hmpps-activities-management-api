@@ -38,8 +38,8 @@ class AppointmentTest {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       cancelledTime = null
     }
-    entity.isCancelled() isEqualTo false
-    entity.isDeleted isEqualTo false
+    entity.isCancelled() isBool false
+    entity.isDeleted isBool false
   }
 
   @Test
@@ -48,8 +48,8 @@ class AppointmentTest {
       cancelledTime = LocalDateTime.now()
       isDeleted = false
     }
-    entity.isCancelled() isEqualTo true
-    entity.isDeleted isEqualTo false
+    entity.isCancelled() isBool true
+    entity.isDeleted isBool false
   }
 
   @Test
@@ -58,8 +58,8 @@ class AppointmentTest {
       cancelledTime = LocalDateTime.now()
       isDeleted = true
     }
-    entity.isCancelled() isEqualTo false
-    entity.isDeleted isEqualTo true
+    entity.isCancelled() isBool false
+    entity.isDeleted isBool true
   }
 
   @Test
@@ -68,7 +68,7 @@ class AppointmentTest {
       startDate = LocalDate.now()
       startTime = LocalTime.now().minusMinutes(1)
     }
-    entity.isExpired() isEqualTo true
+    entity.isExpired() isBool true
   }
 
   @Test
@@ -77,7 +77,7 @@ class AppointmentTest {
       startDate = LocalDate.now()
       startTime = LocalTime.now().plusMinutes(1)
     }
-    entity.isExpired() isEqualTo false
+    entity.isExpired() isBool false
   }
 
   @Test
@@ -88,7 +88,7 @@ class AppointmentTest {
       cancelledTime = null
       isDeleted = false
     }
-    entity.isScheduled() isEqualTo true
+    entity.isScheduled() isBool true
   }
 
   @Test
@@ -99,7 +99,7 @@ class AppointmentTest {
       cancelledTime = null
       isDeleted = false
     }
-    entity.isScheduled() isEqualTo false
+    entity.isScheduled() isBool false
   }
 
   @Test
@@ -110,7 +110,7 @@ class AppointmentTest {
       cancelledTime = LocalDateTime.now()
       isDeleted = false
     }
-    entity.isScheduled() isEqualTo false
+    entity.isScheduled() isBool false
   }
 
   @Test
@@ -121,7 +121,7 @@ class AppointmentTest {
       cancelledTime = LocalDateTime.now()
       isDeleted = true
     }
-    entity.isScheduled() isEqualTo false
+    entity.isScheduled() isBool false
   }
 
   @Test
