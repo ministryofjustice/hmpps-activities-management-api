@@ -77,7 +77,7 @@ class AppointmentCreateDomainService(
         }
 
       // Create any missing attendee records
-      val existingPrisonNumbers = appointment.findAttendees(prisonNumberBookingIdMap.keys.toList()).map { it.prisonerNumber }
+      val existingPrisonNumbers = appointment.findAttendees(prisonNumberBookingIdMap.keys).map { it.prisonerNumber }
       prisonNumberBookingIdMap.filterNot { existingPrisonNumbers.contains(it.key) }.forEach {
         transactionHandler.newSpringTransaction {
           appointmentAttendeeRepository.saveAndFlush(

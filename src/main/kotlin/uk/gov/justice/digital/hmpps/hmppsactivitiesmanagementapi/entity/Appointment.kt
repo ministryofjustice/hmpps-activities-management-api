@@ -110,7 +110,7 @@ data class Appointment(
 
   fun findAttendee(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
 
-  fun findAttendees(prisonerNumbers: List<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
+  fun findAttendees(prisonerNumbers: Collection<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
   // Should only be used when creating appointments initially. Adding new attendees after creation should use the function below
   fun addAttendee(attendee: AppointmentAttendee) {
