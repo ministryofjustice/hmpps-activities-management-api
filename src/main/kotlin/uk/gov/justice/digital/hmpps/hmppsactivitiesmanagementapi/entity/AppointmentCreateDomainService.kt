@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
@@ -46,28 +47,9 @@ class AppointmentCreateDomainService(
       val appointment = appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber }
         ?: transactionHandler.newSpringTransaction {
           appointmentRepository.saveAndFlush(
-            Appointment(
-              appointmentSeries = appointmentSeries,
-              sequenceNumber = sequenceNumber,
-              prisonCode = appointmentSeries.prisonCode,
-              categoryCode = appointmentSeries.categoryCode,
-              customName = appointmentSeries.customName,
-              appointmentTier = appointmentSeries.appointmentTier,
-              appointmentHost = appointmentSeries.appointmentHost,
-              internalLocationId = appointmentSeries.internalLocationId,
-              customLocation = appointmentSeries.customLocation,
-              inCell = appointmentSeries.inCell,
-              onWing = appointmentSeries.onWing,
-              offWing = appointmentSeries.offWing,
-              startDate = indexedStartDate.value,
-              startTime = appointmentSeries.startTime,
-              endTime = appointmentSeries.endTime,
-              unlockNotes = appointmentSeries.unlockNotes,
-              extraInformation = appointmentSeries.extraInformation,
-              createdTime = appointmentSeries.createdTime,
-              createdBy = appointmentSeries.createdBy,
-              updatedTime = appointmentSeries.updatedTime,
-              updatedBy = appointmentSeries.updatedBy,
+            appointmentSeries.createAppointment(
+              sequenceNumber,
+              indexedStartDate.value,
             ).apply {
               this.cancelledTime = cancelledTime
               this.cancellationReason = cancellationReason
@@ -95,3 +77,28 @@ class AppointmentCreateDomainService(
     return appointmentSeriesRepository.findOrThrowNotFound(appointmentSeries.appointmentSeriesId).toModel()
   }
 }
+
+fun AppointmentSeries.createAppointment(sequenceNumber: Int, startDate: LocalDate) =
+  Appointment(
+    appointmentSeries = this,
+    sequenceNumber = sequenceNumber,
+    prisonCode = this.prisonCode,
+    categoryCode = this.categoryCode,
+    customName = this.customName,
+    appointmentTier = this.appointmentTier,
+    appointmentHost = this.appointmentHost,
+    internalLocationId = this.internalLocationId,
+    customLocation = this.customLocation,
+    inCell = this.inCell,
+    onWing = this.onWing,
+    offWing = this.offWing,
+    startDate = startDate,
+    startTime = this.startTime,
+    endTime = this.endTime,
+    unlockNotes = this.unlockNotes,
+    extraInformation = this.extraInformation,
+    createdTime = this.createdTime,
+    createdBy = this.createdBy,
+    updatedTime = this.updatedTime,
+    updatedBy = this.updatedBy,
+  )

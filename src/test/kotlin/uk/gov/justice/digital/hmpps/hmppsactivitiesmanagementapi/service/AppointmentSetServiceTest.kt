@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -15,7 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -23,17 +26,26 @@ import java.util.Optional
 
 class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
+  private val appointmentTierRepository: AppointmentTierRepository = mock()
+  private val appointmentHostRepository: AppointmentHostRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
+  private val telemetryClient: TelemetryClient = mock()
+  private val auditService: AuditService = mock()
 
   private val service = AppointmentSetService(
     appointmentSetRepository,
+    appointmentTierRepository,
+    appointmentHostRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
+    TransactionHandler(),
+    telemetryClient,
+    auditService,
   )
 
   @BeforeEach

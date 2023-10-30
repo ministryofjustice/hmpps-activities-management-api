@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendanceMarkedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
@@ -62,6 +63,36 @@ fun AppointmentAttendanceMarkedEvent.toTelemetryMetricsMap() =
     PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY to nonAttendedPrisonNumbers.size.toDouble(),
     PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY to attendanceChangedPrisonNumbers.size.toDouble(),
     EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - ZonedDateTime.of(attendanceRecordedTime, ZoneId.systemDefault()).toInstant().toEpochMilli()).toDouble(),
+  )
+
+fun AppointmentSet.toTelemetryPropertiesMap(
+  categoryDescription: String,
+  internalLocationDescription: String,
+) =
+  mutableMapOf(
+    USER_PROPERTY_KEY to this.createdBy,
+    PRISON_CODE_PROPERTY_KEY to this.prisonCode,
+    APPOINTMENT_SET_ID_PROPERTY_KEY to this.appointmentSetId.toString(),
+    CATEGORY_CODE_PROPERTY_KEY to this.categoryCode,
+    CATEGORY_DESCRIPTION_PROPERTY_KEY to categoryDescription,
+    HAS_CUSTOM_NAME_PROPERTY_KEY to (this.customName != null).toString(),
+    INTERNAL_LOCATION_ID_PROPERTY_KEY to (this.internalLocationId?.toString() ?: ""),
+    INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to internalLocationDescription,
+    START_DATE_PROPERTY_KEY to this.startDate.toString(),
+    EARLIEST_START_TIME_PROPERTY_KEY to this.appointments().minOf { it.startTime }.toString(),
+    LATEST_END_TIME_PROPERTY_KEY to this.appointments().mapNotNull { it.endTime }.maxOf { it }.toString(),
+  )
+
+fun AppointmentSet.toTelemetryMetricsMap(
+  startTimeInMs: Long,
+) =
+  mutableMapOf(
+    PRISONER_COUNT_METRIC_KEY to this.prisonerNumbers().size.toDouble(),
+    APPOINTMENT_COUNT_METRIC_KEY to this.appointments().size.toDouble(),
+    APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to this.appointments().flatMap { it.attendees() }.size.toDouble(),
+    CUSTOM_NAME_LENGTH_METRIC_KEY to (this.customName?.length ?: 0).toDouble(),
+    EXTRA_INFORMATION_COUNT_METRIC_KEY to this.appointments().filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
+    EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
   )
 
 fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
