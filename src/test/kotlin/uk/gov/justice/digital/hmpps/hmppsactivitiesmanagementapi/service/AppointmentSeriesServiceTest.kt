@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -43,7 +42,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
@@ -84,7 +82,6 @@ class AppointmentSeriesServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
-  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -99,9 +96,6 @@ class AppointmentSeriesServiceTest {
   private lateinit var appointmentSeriesEntityCaptor: ArgumentCaptor<AppointmentSeries>
 
   @Captor
-  private lateinit var appointmentSetEntityCaptor: ArgumentCaptor<AppointmentSet>
-
-  @Captor
   private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
 
   @Captor
@@ -111,7 +105,6 @@ class AppointmentSeriesServiceTest {
     appointmentSeriesRepository,
     appointmentTierRepository,
     appointmentHostRepository,
-    appointmentCancellationReasonRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -119,8 +112,6 @@ class AppointmentSeriesServiceTest {
     appointmentCreateDomainService,
     createAppointmentsJob,
     TransactionHandler(),
-    telemetryClient,
-    auditService,
     maxSyncAppointmentInstanceActions = 14,
   )
 
@@ -627,7 +618,7 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
   }
 
   @Test
@@ -658,7 +649,7 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
   }
 
   @Test
@@ -689,7 +680,7 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 14
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
   }
 
   @Test
@@ -720,6 +711,6 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 3
     }
 
-    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap())
+    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap(), 0, "", "")
   }
 }

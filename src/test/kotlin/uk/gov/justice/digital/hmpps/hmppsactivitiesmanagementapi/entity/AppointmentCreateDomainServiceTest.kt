@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -33,6 +35,8 @@ class AppointmentCreateDomainServiceTest {
   private val appointmentRepository = mock<AppointmentRepository>()
   private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val appointmentCancellationReasonRepository = mock<AppointmentCancellationReasonRepository>()
+  private val telemetryClient: TelemetryClient = mock()
+  private val auditService: AuditService = mock()
 
   private val appointmentCancelledReason = appointmentCancelledReason()
 
@@ -42,6 +46,8 @@ class AppointmentCreateDomainServiceTest {
     appointmentAttendeeRepository,
     appointmentCancellationReasonRepository,
     TransactionHandler(),
+    telemetryClient,
+    auditService,
   )
 
   @BeforeEach

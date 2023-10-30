@@ -74,7 +74,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `uses request when creating appointment series`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = null)
 
@@ -109,7 +109,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `sets is migrated to true`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest()
 
@@ -121,7 +121,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `calls appointment create domain service`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest()
 
@@ -139,7 +139,7 @@ class MigrateAppointmentServiceTest {
       val appointmentAttendeeModel = mock<AppointmentAttendeeModel>()
       whenever(appointmentModel.attendees).thenReturn(listOf(appointmentAttendeeModel))
       whenever(appointmentAttendeeModel.id).thenReturn(123)
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel)
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel)
 
       val request = appointmentMigrateRequest()
 
@@ -150,7 +150,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `null comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = null)
 
@@ -164,7 +164,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `empty comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "")
 
@@ -178,7 +178,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `whitespace only comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "    ")
 
@@ -192,7 +192,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `whitespace start and end comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "   First 40 characters will become the appointments custom name but the full comment will go to extra information.  ")
 
@@ -206,7 +206,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `under 40 characters comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "Appointments custom name")
 
@@ -220,7 +220,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `40 character comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "Appointment custom name as it's 40 chars")
 
@@ -234,7 +234,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `over 40 characters comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.")
 
@@ -253,7 +253,7 @@ class MigrateAppointmentServiceTest {
         updatedBy = "DPS.USER",
       )
 
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), request.updated, request.updated))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), request.updated, request.updated))
 
       service.migrateAppointment(request)
 
@@ -265,7 +265,7 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `isCancelled defaults to false`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(isCancelled = null)
 
@@ -276,13 +276,13 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `isCancelled = true`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
 
       val request = appointmentMigrateRequest(isCancelled = true)
 
       service.migrateAppointment(request)
 
-      verify(appointmentCreateDomainService).createAppointments(appointmentSeriesCaptor.firstValue, mapOf(request.prisonerNumber!! to request.bookingId!!), true)
+      verify(appointmentCreateDomainService).createAppointments(appointmentSeriesCaptor.firstValue, mapOf(request.prisonerNumber!! to request.bookingId!!), false, true)
     }
   }
 

@@ -33,12 +33,24 @@ class CreateAppointmentsJob(
   }
 
   @Async("asyncExecutor")
-  fun execute(appointmentSeriesId: Long, prisonNumberBookingIdMap: Map<String, Long>) {
+  fun execute(
+    appointmentSeriesId: Long,
+    prisonNumberBookingIdMap: Map<String, Long>,
+    startTimeInMs: Long,
+    categoryDescription: String,
+    locationDescription: String,
+  ) {
     jobRunner.runJob(
       JobDefinition(JobType.CREATE_APPOINTMENTS) {
         log.info("Creating remaining appointments for appointment series with id '$appointmentSeriesId' asynchronously")
 
-        appointmentCreateDomainService.createAppointments(appointmentSeriesId, prisonNumberBookingIdMap)
+        appointmentCreateDomainService.createAppointments(
+          appointmentSeriesId,
+          prisonNumberBookingIdMap,
+          startTimeInMs,
+          categoryDescription,
+          locationDescription,
+        )
 
         log.info("Created remaining appointments for appointment series with id '$appointmentSeriesId' asynchronously")
       },

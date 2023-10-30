@@ -1,14 +1,39 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
@@ -20,13 +45,28 @@ class AppointmentCreateDomainService(
   private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val transactionHandler: TransactionHandler,
+  private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
   fun createAppointments(
     appointmentSeriesId: Long,
     prisonNumberBookingIdMap: Map<String, Long>,
+    startTimeInMs: Long,
+    categoryDescription: String,
+    locationDescription: String,
   ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
-    return createAppointments(appointmentSeries, prisonNumberBookingIdMap)
+    return createAppointments(
+      appointmentSeries = appointmentSeries,
+      prisonNumberBookingIdMap = prisonNumberBookingIdMap,
+      createFirstAppointmentOnly = false,
+      isCancelled = false,
+      categoryDescription = categoryDescription,
+      locationDescription = locationDescription,
+      startTimeInMs = startTimeInMs,
+      trackEvent = true,
+      auditEvent = true,
+    )
   }
 
   /**
@@ -40,6 +80,11 @@ class AppointmentCreateDomainService(
     prisonNumberBookingIdMap: Map<String, Long>,
     createFirstAppointmentOnly: Boolean = false,
     isCancelled: Boolean = false,
+    startTimeInMs: Long = 0,
+    categoryDescription: String = "",
+    locationDescription: String = "",
+    trackEvent: Boolean = false,
+    auditEvent: Boolean = false,
   ): AppointmentSeriesModel {
     require(!isCancelled || appointmentSeries.isMigrated) {
       "Only migrated appointments can be created in a cancelled state"
@@ -85,7 +130,68 @@ class AppointmentCreateDomainService(
       }
     }
 
-    return appointmentSeriesRepository.findOrThrowNotFound(appointmentSeries.appointmentSeriesId).toModel()
+    return appointmentSeriesRepository.findOrThrowNotFound(appointmentSeries.appointmentSeriesId).toModel().also {
+      if (trackEvent) it.logAppointmentSeriesCreatedMetric(prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
+      if (auditEvent) it.writeAppointmentCreatedAuditRecord(prisonNumberBookingIdMap)
+    }
+  }
+
+  private fun AppointmentSeriesModel.logAppointmentSeriesCreatedMetric(
+    prisonNumberBookingIdMap: Map<String, Long>,
+    startTimeInMs: Long,
+    categoryDescription: String,
+    locationDescription: String,
+  ) {
+    val propertiesMap = mapOf(
+      USER_PROPERTY_KEY to createdBy,
+      PRISON_CODE_PROPERTY_KEY to prisonCode,
+      APPOINTMENT_SERIES_ID_PROPERTY_KEY to id.toString(),
+      CATEGORY_CODE_PROPERTY_KEY to categoryCode,
+      CATEGORY_DESCRIPTION_PROPERTY_KEY to categoryDescription,
+      HAS_CUSTOM_NAME_PROPERTY_KEY to (customName?.isNotEmpty()).toString(),
+      INTERNAL_LOCATION_ID_PROPERTY_KEY to internalLocationId.toString(),
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to locationDescription,
+      START_DATE_PROPERTY_KEY to startDate.toString(),
+      START_TIME_PROPERTY_KEY to startTime.toString(),
+      END_TIME_PROPERTY_KEY to endTime.toString(),
+      IS_REPEAT_PROPERTY_KEY to (schedule != null).toString(),
+      FREQUENCY_PROPERTY_KEY to (schedule?.frequency?.toString() ?: ""),
+      NUMBER_OF_APPOINTMENTS_PROPERTY_KEY to (schedule?.numberOfAppointments?.toString() ?: ""),
+      HAS_EXTRA_INFORMATION_PROPERTY_KEY to (extraInformation?.isNotEmpty() == true).toString(),
+    )
+
+    val metricsMap = mapOf(
+      PRISONER_COUNT_METRIC_KEY to prisonNumberBookingIdMap.size.toDouble(),
+      APPOINTMENT_COUNT_METRIC_KEY to (schedule?.numberOfAppointments ?: 1).toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to (prisonNumberBookingIdMap.size * (schedule?.numberOfAppointments ?: 1)).toDouble(),
+      CUSTOM_NAME_LENGTH_METRIC_KEY to (customName?.length ?: 0).toDouble(),
+      EXTRA_INFORMATION_LENGTH_METRIC_KEY to (extraInformation?.length ?: 0).toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value, propertiesMap, metricsMap)
+  }
+
+  private fun AppointmentSeriesModel.writeAppointmentCreatedAuditRecord(prisonNumberBookingIdMap: Map<String, Long>) {
+    auditService.logEvent(
+      AppointmentSeriesCreatedEvent(
+        appointmentSeriesId = id,
+        prisonCode = prisonCode,
+        categoryCode = categoryCode,
+        hasCustomName = customName != null,
+        internalLocationId = internalLocationId,
+        startDate = startDate,
+        startTime = startTime,
+        endTime = endTime,
+        isRepeat = schedule != null,
+        frequency = schedule?.frequency,
+        numberOfAppointments = schedule?.numberOfAppointments,
+        hasExtraInformation = extraInformation?.isNotEmpty() == true,
+        prisonerNumbers = prisonNumberBookingIdMap.keys.toList(),
+        createdTime = createdTime,
+        createdBy = createdBy,
+      ),
+    )
   }
 }
 
