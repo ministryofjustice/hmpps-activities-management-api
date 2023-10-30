@@ -126,7 +126,12 @@ class AppointmentCreateDomainServiceTest {
     assertThrows<IllegalArgumentException>(
       "Only migrated appointments can be created in a cancelled state",
     ) {
-      service.createAppointments(appointmentSeriesEntity(isMigrated = false), emptyMap(), true)
+      service.createAppointments(
+        appointmentSeriesEntity(isMigrated = false),
+        emptyMap(),
+        createFirstAppointmentOnly = false,
+        isCancelled = true,
+      )
       appointmentSeriesEntity(
         appointmentType = AppointmentType.INDIVIDUAL,
         prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 789),
@@ -140,7 +145,7 @@ class AppointmentCreateDomainServiceTest {
 
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
 
-    service.createAppointments(appointmentSeries, emptyMap(), false)
+    service.createAppointments(appointmentSeries, emptyMap(), createFirstAppointmentOnly = false, isCancelled = false)
 
     val appointmentCaptor = argumentCaptor<Appointment>()
     verify(appointmentRepository).saveAndFlush(appointmentCaptor.capture())
@@ -161,7 +166,7 @@ class AppointmentCreateDomainServiceTest {
 
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
 
-    service.createAppointments(appointmentSeries, emptyMap(), true)
+    service.createAppointments(appointmentSeries, emptyMap(), createFirstAppointmentOnly = false, isCancelled = true)
 
     val appointmentCaptor = argumentCaptor<Appointment>()
     verify(appointmentRepository).saveAndFlush(appointmentCaptor.capture())
@@ -179,7 +184,7 @@ class AppointmentCreateDomainServiceTest {
 
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
 
-    service.createAppointments(appointmentSeries, emptyMap(), true)
+    service.createAppointments(appointmentSeries, emptyMap(), createFirstAppointmentOnly = false, isCancelled = true)
 
     val appointmentCaptor = argumentCaptor<Appointment>()
     verify(appointmentRepository).saveAndFlush(appointmentCaptor.capture())

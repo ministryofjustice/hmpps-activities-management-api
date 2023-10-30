@@ -38,6 +38,7 @@ class AppointmentCreateDomainService(
   fun createAppointments(
     appointmentSeries: AppointmentSeries,
     prisonNumberBookingIdMap: Map<String, Long>,
+    createFirstAppointmentOnly: Boolean = false,
     isCancelled: Boolean = false,
   ): AppointmentSeriesModel {
     require(!isCancelled || appointmentSeries.isMigrated) {
@@ -50,6 +51,8 @@ class AppointmentCreateDomainService(
 
     appointmentSeries.scheduleIterator().withIndex().forEach { indexedStartDate ->
       val sequenceNumber = indexedStartDate.index + 1
+
+      if (createFirstAppointmentOnly && sequenceNumber > 1) return@forEach
 
       // Retrieve or create appointment in series
       val appointment = appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber }
