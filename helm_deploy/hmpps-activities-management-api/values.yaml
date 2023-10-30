@@ -24,6 +24,10 @@ generic-service:
           deny all;
           return 401;
         }
+        location /queue-admin/retry-all-dlqs {
+          deny all;
+          return 401;
+        }
 
   # Used to access resources like SQS queues and SNS topics
   serviceAccountName: hmpps-activities-management-api
