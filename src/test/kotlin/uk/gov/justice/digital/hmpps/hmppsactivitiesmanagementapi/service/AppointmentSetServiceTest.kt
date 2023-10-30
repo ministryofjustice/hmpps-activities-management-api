@@ -43,6 +43,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -227,6 +231,9 @@ class AppointmentSetServiceTest {
         ),
       ),
     )
+
+    private val propertiesMapCaptor = argumentCaptor<Map<String, String>>()
+    private val metricsMapCaptor = argumentCaptor<Map<String, Double>>()
 
     @BeforeEach
     fun setUp() {
@@ -476,6 +483,12 @@ class AppointmentSetServiceTest {
 
       appointmentSetCaptor.firstValue.internalLocationId isEqualTo null
       appointmentSetCaptor.firstValue.inCell isBool true
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      with(propertiesMapCaptor.firstValue) {
+        this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
+      }
     }
 
     @Test
@@ -486,6 +499,12 @@ class AppointmentSetServiceTest {
 
       appointmentSetCaptor.firstValue.internalLocationId isEqualTo null
       appointmentSetCaptor.firstValue.inCell isBool true
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      with(propertiesMapCaptor.firstValue) {
+        this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
+      }
     }
 
     @Test
@@ -495,6 +514,10 @@ class AppointmentSetServiceTest {
       service.createAppointmentSet(request, principal)
 
       appointmentSetCaptor.firstValue.customName isEqualTo null
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      propertiesMapCaptor.firstValue[HAS_CUSTOM_NAME_PROPERTY_KEY] isEqualTo "false"
+      metricsMapCaptor.firstValue[CUSTOM_NAME_LENGTH_METRIC_KEY] isEqualTo 0.0
     }
 
     @Test
@@ -504,6 +527,10 @@ class AppointmentSetServiceTest {
       service.createAppointmentSet(request, principal)
 
       appointmentSetCaptor.firstValue.customName isEqualTo null
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      propertiesMapCaptor.firstValue[HAS_CUSTOM_NAME_PROPERTY_KEY] isEqualTo "false"
+      metricsMapCaptor.firstValue[CUSTOM_NAME_LENGTH_METRIC_KEY] isEqualTo 0.0
     }
 
     @Test
@@ -513,6 +540,10 @@ class AppointmentSetServiceTest {
       service.createAppointmentSet(request, principal)
 
       appointmentSetCaptor.firstValue.customName isEqualTo null
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      propertiesMapCaptor.firstValue[HAS_CUSTOM_NAME_PROPERTY_KEY] isEqualTo "false"
+      metricsMapCaptor.firstValue[CUSTOM_NAME_LENGTH_METRIC_KEY] isEqualTo 0.0
     }
 
     @Test
@@ -522,6 +553,10 @@ class AppointmentSetServiceTest {
       service.createAppointmentSet(request, principal)
 
       appointmentSetCaptor.firstValue.customName isEqualTo "Custom name"
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+      propertiesMapCaptor.firstValue[HAS_CUSTOM_NAME_PROPERTY_KEY] isEqualTo "true"
+      metricsMapCaptor.firstValue[CUSTOM_NAME_LENGTH_METRIC_KEY] isEqualTo 11.0
     }
 
     @Test

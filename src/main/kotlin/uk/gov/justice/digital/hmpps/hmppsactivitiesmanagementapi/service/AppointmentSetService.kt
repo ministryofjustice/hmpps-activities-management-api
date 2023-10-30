@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
@@ -95,7 +96,7 @@ class AppointmentSetService(
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
-      it.trackCreatedEvent(startTimeInMs, categoryDescription, locationDescription)
+      request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
       it.auditCreatedEvent()
     }.toModel()
   }
@@ -155,13 +156,16 @@ class AppointmentSetService(
       },
     )
 
-  private fun AppointmentSet.trackCreatedEvent(
+  private fun AppointmentSetCreateRequest.trackCreatedEvent(
     startTimeInMs: Long,
+    appointmentSetId: Long,
     categoryDescription: String,
     internalLocationDescription: String,
+    createdBy: String,
   ) {
-    val propertiesMap = this.toTelemetryPropertiesMap(categoryDescription, internalLocationDescription)
-    val metricsMap = this.toTelemetryMetricsMap(startTimeInMs)
+    val propertiesMap = this.toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
+    val metricsMap = this.toTelemetryMetricsMap()
+    metricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
   }
 
