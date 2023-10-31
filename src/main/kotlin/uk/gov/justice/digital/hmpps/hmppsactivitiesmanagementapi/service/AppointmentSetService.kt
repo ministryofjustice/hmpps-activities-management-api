@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.createAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.createAndAddAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
@@ -148,20 +148,18 @@ class AppointmentSetService(
         createdTime = createdTime,
         createdBy = createdBy,
       ).apply {
-        addAppointment(
-          createAppointment(
-            1,
-            startDate,
-          ).apply {
-            addAttendee(
-              AppointmentAttendee(
-                appointment = this,
-                prisonerNumber = appointment.prisonerNumber!!,
-                bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
-              ),
-            )
-          },
-        )
+        createAndAddAppointment(
+          1,
+          startDate,
+        ).apply {
+          addAttendee(
+            AppointmentAttendee(
+              appointment = this,
+              prisonerNumber = appointment.prisonerNumber!!,
+              bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
+            ),
+          )
+        }
       },
     )
 
