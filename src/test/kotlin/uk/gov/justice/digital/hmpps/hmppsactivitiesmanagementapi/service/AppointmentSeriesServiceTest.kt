@@ -9,14 +9,14 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
+import org.mockito.AdditionalAnswers
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
-import org.mockito.kotlin.times
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -86,20 +85,15 @@ class AppointmentSeriesServiceTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
-  private val appointmentCreateDomainService: AppointmentCreateDomainService = mock()
-  private val createAppointmentsJob: CreateAppointmentsJob = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
+  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), mock(), TransactionHandler(), telemetryClient, auditService))
+  private val createAppointmentsJob: CreateAppointmentsJob = mock()
   private lateinit var principal: Principal
 
-  @Captor
-  private lateinit var appointmentSeriesEntityCaptor: ArgumentCaptor<AppointmentSeries>
-
-  @Captor
-  private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
-
-  @Captor
-  private lateinit var telemetryMetricsMap: ArgumentCaptor<Map<String, Double>>
+  private val appointmentSeriesEntityCaptor = argumentCaptor<AppointmentSeries>()
+  private var telemetryPropertyMap = argumentCaptor<Map<String, String>>()
+  private var telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
   private val service = AppointmentSeriesService(
     appointmentSeriesRepository,
@@ -121,6 +115,7 @@ class AppointmentSeriesServiceTest {
     principal = SecurityContextHolder.getContext().authentication
     addCaseloadIdToRequestHeader("TPR")
     whenever(appointmentTierRepository.findById(NOT_SPECIFIED_APPOINTMENT_TIER_ID)).thenReturn(Optional.of(appointmentTierNotSpecified()))
+    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
   }
 
   @AfterEach
@@ -441,11 +436,10 @@ class AppointmentSeriesServiceTest {
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       assertThat(categoryCode).isEqualTo(request.categoryCode)
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
@@ -490,29 +484,29 @@ class AppointmentSeriesServiceTest {
         telemetryMetricsMap.capture(),
       )
 
-      with(telemetryPropertyMap) {
-        assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
-        assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
-        assertThat(value[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("1")
-        assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
-        assertThat(value[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
-        assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
-        assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
-        assertThat(value[START_TIME_PROPERTY_KEY]).isEqualTo("09:00")
-        assertThat(value[END_TIME_PROPERTY_KEY]).isEqualTo("10:30")
-        assertThat(value[IS_REPEAT_PROPERTY_KEY]).isEqualTo("false")
-        assertThat(value[FREQUENCY_PROPERTY_KEY]).isEqualTo("")
-        assertThat(value[NUMBER_OF_APPOINTMENTS_PROPERTY_KEY]).isEqualTo("")
-        assertThat(value[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
+      with(telemetryPropertyMap.firstValue) {
+        assertThat(this[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("0")
+        assertThat(this[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
+        assertThat(this[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(this[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(this[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
+        assertThat(this[START_TIME_PROPERTY_KEY]).isEqualTo("13:00")
+        assertThat(this[END_TIME_PROPERTY_KEY]).isEqualTo("14:30")
+        assertThat(this[IS_REPEAT_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(this[FREQUENCY_PROPERTY_KEY]).isEqualTo("")
+        assertThat(this[NUMBER_OF_APPOINTMENTS_PROPERTY_KEY]).isEqualTo("")
+        assertThat(this[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
       }
 
-      with(telemetryMetricsMap) {
-        assertThat(value[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
-        assertThat(value[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
-        assertThat(value[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(32.0)
-        assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+      with(telemetryMetricsMap.firstValue) {
+        assertThat(this[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+        assertThat(this[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
+        assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
       }
 
       verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
@@ -537,11 +531,10 @@ class AppointmentSeriesServiceTest {
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity())
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       with(appointments()) {
         assertThat(size).isEqualTo(1)
         with(appointments().first()) {
@@ -580,11 +573,10 @@ class AppointmentSeriesServiceTest {
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
         ),
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3))
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value.appointments()) {
+    with(appointmentSeriesEntityCaptor.firstValue.appointments()) {
       assertThat(size).isEqualTo(3)
       assertThat(map { it.sequenceNumber }).isEqualTo(listOf(1, 2, 3))
     }
@@ -609,11 +601,10 @@ class AppointmentSeriesServiceTest {
           )
         },
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 15
     }
@@ -640,11 +631,10 @@ class AppointmentSeriesServiceTest {
           )
         },
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 15
     }
@@ -671,11 +661,10 @@ class AppointmentSeriesServiceTest {
           )
         },
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       appointments() hasSize 2
       appointments().flatMap { it.attendees() } hasSize 14
     }
@@ -702,15 +691,20 @@ class AppointmentSeriesServiceTest {
           )
         },
       )
-    whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesEntityCaptor.capture())).thenReturn(appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap))
 
     service.createAppointmentSeries(request, principal)
 
-    with(appointmentSeriesEntityCaptor.value) {
+    with(appointmentSeriesEntityCaptor.firstValue) {
       appointments() hasSize 1
       appointments().flatMap { it.attendees() } hasSize 3
-    }
 
-    verify(createAppointmentsJob).execute(1, prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap(), 0, "", "")
+      verify(createAppointmentsJob).execute(
+        eq(appointmentSeriesId),
+        eq(prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap()),
+        any(),
+        eq("Test Category"),
+        eq("Test Appointment Location User Description"),
+      )
+    }
   }
 }

@@ -148,20 +148,18 @@ class AppointmentSetService(
         createdTime = createdTime,
         createdBy = createdBy,
       ).apply {
-        addAppointment(
-          createAppointment(
-            1,
-            startDate,
-          ).apply {
-            addAttendee(
-              AppointmentAttendee(
-                appointment = this,
-                prisonerNumber = appointment.prisonerNumber!!,
-                bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
-              ),
-            )
-          },
-        )
+        createAppointment(
+          1,
+          startDate,
+        ).apply {
+          addAttendee(
+            AppointmentAttendee(
+              appointment = this,
+              prisonerNumber = appointment.prisonerNumber!!,
+              bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
+            ),
+          )
+        }
       },
     )
 

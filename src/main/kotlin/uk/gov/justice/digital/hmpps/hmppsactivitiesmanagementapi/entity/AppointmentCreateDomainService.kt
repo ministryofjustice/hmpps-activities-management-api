@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -42,7 +41,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentCreateDomainService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentRepository: AppointmentRepository,
-  private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val transactionHandler: TransactionHandler,
   private val telemetryClient: TelemetryClient,
@@ -99,9 +97,8 @@ class AppointmentCreateDomainService(
 
       if (createFirstAppointmentOnly && sequenceNumber > 1) return@forEach
 
-      // Retrieve or create appointment in series
-      val appointment = appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber }
-        ?: transactionHandler.newSpringTransaction {
+      if (appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber } == null) {
+        transactionHandler.newSpringTransaction {
           appointmentRepository.saveAndFlush(
             appointmentSeries.createAppointment(
               sequenceNumber,
@@ -110,27 +107,25 @@ class AppointmentCreateDomainService(
               this.cancelledTime = cancelledTime
               this.cancellationReason = cancellationReason
               this.cancelledBy = cancelledBy
+
+              prisonNumberBookingIdMap.forEach {
+                addAttendee(
+                  AppointmentAttendee(
+                    appointment = this,
+                    prisonerNumber = it.key,
+                    bookingId = it.value,
+                  ),
+                )
+              }
             },
           )
         }
 
-      // Create any missing attendee records
-      val existingPrisonNumbers = appointment.findAttendees(prisonNumberBookingIdMap.keys).map { it.prisonerNumber }
-      prisonNumberBookingIdMap.filterNot { existingPrisonNumbers.contains(it.key) }.forEach {
-        transactionHandler.newSpringTransaction {
-          appointmentAttendeeRepository.saveAndFlush(
-            AppointmentAttendee(
-              appointment = appointment,
-              prisonerNumber = it.key,
-              bookingId = it.value,
-            ),
-          )
-        }
         // TODO: publish appointment instance created message post transaction
       }
     }
 
-    return appointmentSeriesRepository.findOrThrowNotFound(appointmentSeries.appointmentSeriesId).toModel().also {
+    return appointmentSeries.toModel().also {
       if (trackEvent) it.logAppointmentSeriesCreatedMetric(prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
       if (auditEvent) it.writeAppointmentCreatedAuditRecord(prisonNumberBookingIdMap)
     }
@@ -218,4 +213,6 @@ fun AppointmentSeries.createAppointment(sequenceNumber: Int, startDate: LocalDat
     createdBy = this.createdBy,
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
-  )
+  ).apply {
+    addAppointment(this)
+  }
