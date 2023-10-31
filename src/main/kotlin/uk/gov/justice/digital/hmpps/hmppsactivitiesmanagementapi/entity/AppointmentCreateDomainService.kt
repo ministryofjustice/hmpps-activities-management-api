@@ -190,6 +190,13 @@ class AppointmentCreateDomainService(
   }
 }
 
+/**
+ * Creates an appointment within an appointment series based on the series blueprint.
+ * This function uses the parent appointment series' updatedTime and updatedBy values even though it's creating the
+ * initial appointment data as migrated appointments can have these values set. When we migrate an appointment, we are
+ * becoming the master record for that appointment so want to bring all the data we can over. When that appointment was
+ * last updated and by whom is part of that data.
+ */
 fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: LocalDate) =
   Appointment(
     appointmentSeries = this,
