@@ -53,6 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -415,8 +416,10 @@ class AppointmentSeriesServiceTest {
         assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
         assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("0")
         assertThat(this[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
+        assertThat(this[CATEGORY_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Category")
         assertThat(this[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
         assertThat(this[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Appointment Location User Description")
         assertThat(this[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
         assertThat(this[START_TIME_PROPERTY_KEY]).isEqualTo("13:00")
         assertThat(this[END_TIME_PROPERTY_KEY]).isEqualTo("14:30")
