@@ -13,15 +13,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCELLED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
@@ -29,20 +25,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EARLIEST_START_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_EXTRA_INFORMATION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.LATEST_END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
@@ -59,7 +51,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee as AppointmentAttendeeEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries as AppointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule as AppointmentSeriesScheduleEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet as AppointmentSetEntity
 
 @Service
 class AppointmentSeriesService(
@@ -67,7 +58,6 @@ class AppointmentSeriesService(
   private val appointmentTierRepository: AppointmentTierRepository,
   private val appointmentHostRepository: AppointmentHostRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
-  private val appointmentSetRepository: AppointmentSetRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -98,51 +88,6 @@ class AppointmentSeriesService(
     val userMap = prisonApiClient.getUserDetailsList(appointmentSeries.usernames()).associateBy { it.username }
 
     return appointmentSeries.toDetails(referenceCodeMap, locationMap, userMap)
-  }
-
-  // TODO: Create AppointmentSetService and move this function
-  fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSet {
-    val startTime = System.currentTimeMillis()
-
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-
-    return require(request.appointments.isNotEmpty()) { "One or more appointments must be supplied." }.run {
-      createPrisonerMap(request.appointments.map { it.prisonerNumber!! }, request.prisonCode).let { prisonerBookings ->
-        AppointmentSetEntity(
-          prisonCode = request.prisonCode!!,
-          categoryCode = request.categoryCode!!,
-          customName = request.customName,
-          appointmentTier = appointmentTier,
-          internalLocationId = request.internalLocationId,
-          inCell = request.inCell,
-          startDate = request.startDate!!,
-          createdBy = principal.name,
-        ).apply {
-          request.appointments.map {
-            buildValidAppointmentSeriesEntity(
-              appointmentType = AppointmentType.INDIVIDUAL,
-              prisonCode = request.prisonCode,
-              prisonerNumbers = listOf(it.prisonerNumber!!),
-              prisonerBookings = prisonerBookings.filterKeys { k -> k == it.prisonerNumber },
-              categoryCode = request.categoryCode,
-              customName = request.customName,
-              appointmentTier = appointmentTier,
-              internalLocationId = request.internalLocationId,
-              inCell = request.inCell,
-              startDate = request.startDate,
-              startTime = it.startTime,
-              endTime = it.endTime,
-              extraInformation = it.extraInformation,
-              createdBy = principal.name,
-            )
-          }.forEach { appointmentSeries -> this.addAppointmentSeries(appointmentSeries) }
-        }.let { appointmentSetRepository.saveAndFlush(it).toModel() }
-          .also {
-            logAppointmentSetCreatedMetric(principal, it, startTime)
-            writeAppointmentSetCreatedAuditRecord(request, it)
-          }
-      }
-    }
   }
 
   fun createAppointmentSeries(request: AppointmentSeriesCreateRequest, principal: Principal): AppointmentSeries {
@@ -345,31 +290,6 @@ class AppointmentSeriesService(
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value, propertiesMap, metricsMap)
   }
 
-  private fun logAppointmentSetCreatedMetric(principal: Principal, appointmentSet: AppointmentSet, startTimeInMs: Long) {
-    val propertiesMap = mapOf(
-      USER_PROPERTY_KEY to principal.name,
-      PRISON_CODE_PROPERTY_KEY to appointmentSet.prisonCode,
-      APPOINTMENT_SET_ID_PROPERTY_KEY to appointmentSet.id.toString(),
-      CATEGORY_CODE_PROPERTY_KEY to appointmentSet.categoryCode,
-      HAS_CUSTOM_NAME_PROPERTY_KEY to (appointmentSet.customName != null).toString(),
-      INTERNAL_LOCATION_ID_PROPERTY_KEY to appointmentSet.internalLocationId.toString(),
-      START_DATE_PROPERTY_KEY to appointmentSet.startDate.toString(),
-      EARLIEST_START_TIME_PROPERTY_KEY to appointmentSet.appointments.minOf { it.startTime }.toString(),
-      LATEST_END_TIME_PROPERTY_KEY to appointmentSet.appointments.mapNotNull { it.endTime }.maxOf { it }.toString(),
-    )
-
-    val metricsMap = mapOf(
-      PRISONER_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
-      APPOINTMENT_COUNT_METRIC_KEY to appointmentSet.appointments.size.toDouble(),
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to appointmentSet.appointments.flatMap { it.attendees }.size.toDouble(),
-      CUSTOM_NAME_LENGTH_METRIC_KEY to (appointmentSet.customName?.length ?: 0).toDouble(),
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to appointmentSet.appointments.filterNot { it.extraInformation.isNullOrEmpty() }.size.toDouble(),
-      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
-  }
-
   private fun writeAppointmentCreatedAuditRecord(request: AppointmentSeriesCreateRequest, appointmentSeries: AppointmentSeries) {
     auditService.logEvent(
       AppointmentSeriesCreatedEvent(
@@ -387,21 +307,6 @@ class AppointmentSeriesService(
         hasExtraInformation = appointmentSeries.extraInformation?.isNotEmpty() == true,
         prisonerNumbers = request.prisonerNumbers,
         createdTime = LocalDateTime.now(),
-      ),
-    )
-  }
-
-  private fun writeAppointmentSetCreatedAuditRecord(request: AppointmentSetCreateRequest, appointment: AppointmentSet) {
-    auditService.logEvent(
-      AppointmentSetCreatedEvent(
-        appointmentSetId = appointment.id,
-        prisonCode = appointment.prisonCode,
-        categoryCode = appointment.categoryCode,
-        hasCustomName = appointment.customName != null,
-        internalLocationId = appointment.internalLocationId,
-        startDate = appointment.startDate,
-        prisonerNumbers = request.appointments.map { it.prisonerNumber!! },
-        createdAt = LocalDateTime.now(),
       ),
     )
   }

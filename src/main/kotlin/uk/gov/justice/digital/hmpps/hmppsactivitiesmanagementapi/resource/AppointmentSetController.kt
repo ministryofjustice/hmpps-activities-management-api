@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 import java.security.Principal
 
@@ -30,7 +29,6 @@ import java.security.Principal
 @RequestMapping("/appointment-set", produces = [MediaType.APPLICATION_JSON_VALUE])
 class AppointmentSetController(
   private val appointmentSetService: AppointmentSetService,
-  private val appointmentSeriesService: AppointmentSeriesService,
 ) {
   @GetMapping(value = ["/{appointmentSetId}"])
   @ResponseBody
@@ -176,5 +174,5 @@ class AppointmentSetController(
       required = true,
     )
     request: AppointmentSetCreateRequest,
-  ): AppointmentSet = appointmentSeriesService.createAppointmentSet(request, principal)
+  ): AppointmentSet = appointmentSetService.createAppointmentSet(request, principal)
 }

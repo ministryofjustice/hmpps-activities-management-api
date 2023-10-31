@@ -1,31 +1,56 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.createAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import java.security.Principal
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 class AppointmentSetService(
   private val appointmentSetRepository: AppointmentSetRepository,
+  private val appointmentTierRepository: AppointmentTierRepository,
+  private val appointmentHostRepository: AppointmentHostRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
+  private val transactionHandler: TransactionHandler,
+  private val telemetryClient: TelemetryClient,
+  private val auditService: AuditService,
 ) {
-  fun getAppointmentSetById(appointmentSetId: Long): AppointmentSet {
+  @Transactional(readOnly = true)
+  fun getAppointmentSetById(appointmentSetId: Long): AppointmentSetModel {
     val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
     checkCaseloadAccess(appointmentSet.prisonCode)
 
     return appointmentSet.toModel()
   }
 
+  @Transactional(readOnly = true)
   fun getAppointmentSetDetailsById(appointmentSetId: Long): AppointmentSetDetails {
     val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
     checkCaseloadAccess(appointmentSet.prisonCode)
@@ -39,5 +64,133 @@ class AppointmentSetService(
     val userMap = prisonApiClient.getUserDetailsList(appointmentSet.usernames()).associateBy { it.username }
 
     return appointmentSet.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  }
+
+  fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSetModel {
+    val startTimeInMs = System.currentTimeMillis()
+
+    checkCaseloadAccess(request.prisonCode!!)
+
+    val categoryDescription = request.categoryDescription()
+    val locationDescription = request.locationDescription()
+    val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
+    request.failIfMissingPrisoners(prisonNumberBookingIdMap)
+
+    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
+
+    return transactionHandler.newSpringTransaction {
+      appointmentSetRepository.saveAndFlush(
+        request.toAppointmentSet(prisonNumberBookingIdMap, appointmentTier, principal.name),
+      )
+    }.also {
+      // TODO: publish appointment instance created messages post transaction
+      request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
+      it.auditCreatedEvent()
+    }.toModel()
+  }
+
+  private fun AppointmentSetCreateRequest.categoryDescription() =
+    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+      ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
+
+  private fun AppointmentSetCreateRequest.locationDescription(): String {
+    return if (inCell) {
+      "In cell"
+    } else {
+      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
+        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+    }
+  }
+
+  private fun AppointmentSetCreateRequest.createNumberBookingIdMap() =
+    prisonerSearchApiClient.findByPrisonerNumbers(appointments.map { it.prisonerNumber!! })
+      .filter { prisoner -> prisoner.prisonId == prisonCode }
+      .associate { it.prisonerNumber to it.bookingId!!.toLong() }
+
+  private fun AppointmentSetCreateRequest.failIfMissingPrisoners(prisonNumberBookingIdMap: Map<String, Long>) {
+    appointments.map { it.prisonerNumber }.filterNot(prisonNumberBookingIdMap::containsKey).let {
+      require(it.isEmpty()) {
+        "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
+      }
+    }
+  }
+
+  private fun AppointmentSetCreateRequest.toAppointmentSet(prisonNumberBookingIdMap: Map<String, Long>, appointmentTier: AppointmentTier, createdBy: String) =
+    AppointmentSet(
+      prisonCode = prisonCode!!,
+      categoryCode = categoryCode!!,
+      customName = customName?.trim()?.takeUnless(String::isBlank),
+      appointmentTier = appointmentTier,
+      internalLocationId = if (inCell) null else internalLocationId,
+      inCell = inCell,
+      startDate = startDate!!,
+      createdBy = createdBy,
+    ).also { appointmentSet ->
+      appointments.forEach { appointment ->
+        appointmentSet.addAppointment(appointment, prisonNumberBookingIdMap)
+      }
+    }
+
+  private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) =
+    addAppointmentSeries(
+      AppointmentSeries(
+        appointmentType = AppointmentType.INDIVIDUAL,
+        prisonCode = prisonCode,
+        categoryCode = categoryCode,
+        customName = customName,
+        appointmentTier = appointmentTier,
+        internalLocationId = internalLocationId,
+        inCell = inCell,
+        startDate = startDate,
+        startTime = appointment.startTime!!,
+        endTime = appointment.endTime,
+        extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
+        createdTime = createdTime,
+        createdBy = createdBy,
+      ).apply {
+        addAppointment(
+          createAppointment(
+            1,
+            startDate,
+          ).apply {
+            addAttendee(
+              AppointmentAttendee(
+                appointment = this,
+                prisonerNumber = appointment.prisonerNumber!!,
+                bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
+              ),
+            )
+          },
+        )
+      },
+    )
+
+  private fun AppointmentSetCreateRequest.trackCreatedEvent(
+    startTimeInMs: Long,
+    appointmentSetId: Long,
+    categoryDescription: String,
+    internalLocationDescription: String,
+    createdBy: String,
+  ) {
+    val propertiesMap = toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
+    val metricsMap = toTelemetryMetricsMap()
+    metricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
+  }
+
+  private fun AppointmentSet.auditCreatedEvent() {
+    auditService.logEvent(
+      AppointmentSetCreatedEvent(
+        appointmentSetId = appointmentSetId,
+        prisonCode = prisonCode,
+        categoryCode = categoryCode,
+        hasCustomName = customName != null,
+        internalLocationId = internalLocationId,
+        startDate = startDate,
+        prisonerNumbers = prisonerNumbers(),
+        createdAt = createdTime,
+        createdBy = createdBy,
+      ),
+    )
   }
 }
