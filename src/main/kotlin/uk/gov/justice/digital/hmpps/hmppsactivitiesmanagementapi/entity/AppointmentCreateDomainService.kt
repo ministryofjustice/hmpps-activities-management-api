@@ -97,7 +97,7 @@ class AppointmentCreateDomainService(
 
       if (createFirstAppointmentOnly && sequenceNumber > 1) return@forEach
 
-      if (appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber } == null) {
+      if (appointmentSeries.appointments().none { it.sequenceNumber == sequenceNumber }) {
         transactionHandler.newSpringTransaction {
           appointmentRepository.saveAndFlush(
             appointmentSeries.createAndAddAppointment(
