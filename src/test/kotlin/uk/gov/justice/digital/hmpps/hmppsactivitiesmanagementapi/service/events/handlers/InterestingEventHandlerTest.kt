@@ -10,8 +10,10 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -41,6 +43,7 @@ class InterestingEventHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val eventReviewRepository: EventReviewRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val eventReviewCaptor = argumentCaptor<EventReview>()
 
   private val handler =
@@ -48,7 +51,7 @@ class InterestingEventHandlerTest {
       rolloutPrisonRepository,
       allocationRepository,
       eventReviewRepository,
-      prisonerSearchApiClient,
+      prisonApiClient,
     )
 
   @BeforeEach
@@ -322,16 +325,16 @@ class InterestingEventHandlerTest {
     prisonerNum: String = "123456",
     firstname: String = "Bob",
     lastname: String = "Bobson",
-    bookId: Int = 1,
+    bookId: Long = 1,
   ) {
-    val prisoner: Prisoner = mock {
-      on { prisonId } doReturn prisonCode
-      on { prisonerNumber } doReturn prisonerNum
+    val prisoner: InmateDetail = mock {
+      on { agencyId } doReturn prisonCode
+      on { offenderNo } doReturn prisonerNum
       on { firstName } doReturn firstname
       on { lastName } doReturn lastname
-      on { bookingId } doReturn bookId.toString()
+      on { bookingId } doReturn bookId
     }
 
-    whenever(prisonerSearchApiClient.findByPrisonerNumber(prisonerNum)) doReturn prisoner
+    whenever(prisonApiClient.getPrisonerDetails(prisonerNum)) doReturn Mono.just(prisoner)
   }
 }
