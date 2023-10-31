@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Even
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InmateDetailFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
@@ -182,13 +183,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `prisoner alerts updated`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonId = pentonvillePrisonCode,
-        prisonerNumber = "A11111A",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        status = "INACTIVE OUT",
-      ),
+    prisonApiMockServer.stubGetPrisonerDetails(
+      InmateDetailFixture.instance(offenderNo = "A11111A", agencyId = pentonvillePrisonCode),
+      fullInfo = true,
     )
 
     service.process(alertsUpdatedEvent(prisonerNumber = "A11111A"))
@@ -385,10 +382,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A1234BC",
+      InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = moorlandPrisonCode),
       fullInfo = true,
-      extraInfo = true,
-      jsonFileSuffix = "",
     )
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
@@ -642,6 +637,11 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
         status = "ACTIVE IN",
         prisonId = moorlandPrisonCode,
       ),
+    )
+
+    prisonApiMockServer.stubGetPrisonerDetails(
+      InmateDetailFixture.instance(offenderNo = "A22222A", agencyId = moorlandPrisonCode),
+      fullInfo = true,
     )
 
     assertThatAllocationsAreActiveFor("A22222A")
