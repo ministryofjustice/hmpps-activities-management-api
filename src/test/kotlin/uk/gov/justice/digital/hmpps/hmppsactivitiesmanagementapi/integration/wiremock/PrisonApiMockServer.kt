@@ -8,6 +8,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
@@ -196,6 +197,22 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/inmate-details-$prisonerNumber$jsonFileSuffix.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetPrisonerDetails(
+    prisoner: InmateDetail,
+    fullInfo: Boolean = true,
+    extraInfo: Boolean? = null,
+  ) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/${prisoner.offenderNo}?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(prisoner))
             .withStatus(200),
         ),
     )
