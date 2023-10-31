@@ -4,13 +4,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
-import kotlin.system.measureTimeMillis
 
 /**
  * This job is used to asynchronously create the remaining appointments and the attendees of those appointments for an appointment series.
@@ -31,72 +26,34 @@ import kotlin.system.measureTimeMillis
 @Component
 class CreateAppointmentsJob(
   private val jobRunner: SafeJobRunner,
-  private val appointmentSeriesRepository: AppointmentSeriesRepository,
-  private val appointmentRepository: AppointmentRepository,
+  private val appointmentCreateDomainService: AppointmentCreateDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @Async("asyncExecutor")
-  fun execute(appointmentId: Long, prisonerBookings: Map<String, String?>) {
+  fun execute(
+    appointmentSeriesId: Long,
+    prisonNumberBookingIdMap: Map<String, Long>,
+    startTimeInMs: Long,
+    categoryDescription: String,
+    locationDescription: String,
+  ) {
     jobRunner.runJob(
       JobDefinition(JobType.CREATE_APPOINTMENTS) {
-        createAppointments(appointmentId, prisonerBookings)
+        log.info("Creating remaining appointments for appointment series with id '$appointmentSeriesId' asynchronously")
+
+        appointmentCreateDomainService.createAppointments(
+          appointmentSeriesId,
+          prisonNumberBookingIdMap,
+          startTimeInMs,
+          categoryDescription,
+          locationDescription,
+        )
+
+        log.info("Created remaining appointments for appointment series with id '$appointmentSeriesId' asynchronously")
       },
     )
-  }
-
-  private fun createAppointments(appointmentSeriesId: Long, prisonerBookings: Map<String, String?>) {
-    log.info("Creating remaining appointments for appointment series with id $appointmentSeriesId")
-
-    val elapsed = measureTimeMillis {
-      val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
-
-      appointmentSeries.scheduleIterator().withIndex().forEach {
-        val sequenceNumber = it.index + 1
-        val appointment = appointmentRepository.findByAppointmentSeriesAndSequenceNumber(appointmentSeries, sequenceNumber)
-        if (appointment == null) {
-          log.info("Creating appointment $sequenceNumber with ${prisonerBookings.size} attendees for appointment series with id $appointmentSeriesId")
-          runCatching {
-            appointmentRepository.saveAndFlush(
-              Appointment(
-                appointmentSeries = appointmentSeries,
-                sequenceNumber = sequenceNumber,
-                prisonCode = appointmentSeries.prisonCode,
-                categoryCode = appointmentSeries.categoryCode,
-                customName = appointmentSeries.customName,
-                appointmentTier = appointmentSeries.appointmentTier,
-                appointmentHost = appointmentSeries.appointmentHost,
-                internalLocationId = appointmentSeries.internalLocationId,
-                inCell = appointmentSeries.inCell,
-                startDate = it.value,
-                startTime = appointmentSeries.startTime,
-                endTime = appointmentSeries.endTime,
-                extraInformation = appointmentSeries.extraInformation,
-                createdTime = appointmentSeries.createdTime,
-                createdBy = appointmentSeries.createdBy,
-              ).apply {
-                prisonerBookings.forEach { prisonerBooking ->
-                  this.addAttendee(
-                    AppointmentAttendee(
-                      appointment = this,
-                      prisonerNumber = prisonerBooking.key,
-                      bookingId = prisonerBooking.value!!.toLong(),
-                    ),
-                  )
-                }
-              },
-            )
-          }.onSuccess {
-            log.info("Successfully created appointment $sequenceNumber with ${prisonerBookings.size} attendees for appointment series with id $appointmentSeriesId")
-          }.onFailure {
-            log.error("Failed to create appointment $sequenceNumber with ${prisonerBookings.size} attendees for appointment series with id $appointmentSeriesId")
-          }
-        }
-      }
-    }
-
-    log.info("Creating remaining appointments for appointment series with id $appointmentSeriesId took ${elapsed}ms")
   }
 }

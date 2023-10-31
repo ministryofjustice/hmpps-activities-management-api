@@ -19,15 +19,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
@@ -45,8 +46,11 @@ class MigrateAppointmentServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
-  private val appointmentCreateDomainService: AppointmentCreateDomainService = mock()
+  private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
+  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), appointmentCancellationReasonRepository, TransactionHandler(), mock(), mock()))
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
+
+  private val appointmentCancelledReason = appointmentCancelledReason()
 
   private val service = MigrateAppointmentService(
     appointmentSeriesSpecification,
@@ -67,79 +71,83 @@ class MigrateAppointmentServiceTest {
 
     @BeforeEach
     fun setUp() {
-      whenever(appointmentTierRepository.findById(appointmentTierNotSpecified.appointmentTierId)).thenReturn(Optional.of(appointmentTierNotSpecified))
       whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
+      whenever(appointmentTierRepository.findById(appointmentTierNotSpecified.appointmentTierId)).thenReturn(Optional.of(appointmentTierNotSpecified))
       whenever(appointmentInstanceRepository.findById(any())).thenReturn(Optional.of(appointmentInstanceEntity()))
+      whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
+        Optional.of(appointmentCancelledReason),
+      )
     }
 
     @Test
     fun `uses request when creating appointment series`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = null)
 
       service.migrateAppointment(request)
 
-      verify(appointmentSeriesRepository).saveAndFlush(
-        AppointmentSeries(
-          appointmentType = AppointmentType.INDIVIDUAL,
-          prisonCode = request.prisonCode!!,
-          categoryCode = request.categoryCode!!,
-          customName = null,
-          appointmentTier = appointmentTierNotSpecified,
-          appointmentHost = null,
-          internalLocationId = request.internalLocationId,
-          customLocation = null,
-          inCell = false,
-          onWing = false,
-          offWing = true,
-          startDate = request.startDate!!,
-          startTime = request.startTime!!,
-          endTime = request.endTime,
-          unlockNotes = null,
-          extraInformation = null,
-          createdTime = request.created!!,
-          createdBy = request.createdBy!!,
-          updatedTime = request.updated,
-          updatedBy = request.updatedBy,
-          isMigrated = true,
-        ),
+      appointmentSeriesCaptor.firstValue isEqualTo AppointmentSeries(
+        appointmentType = AppointmentType.INDIVIDUAL,
+        prisonCode = request.prisonCode!!,
+        categoryCode = request.categoryCode!!,
+        customName = null,
+        appointmentTier = appointmentTierNotSpecified,
+        appointmentHost = null,
+        internalLocationId = request.internalLocationId,
+        customLocation = null,
+        inCell = false,
+        onWing = false,
+        offWing = true,
+        startDate = request.startDate!!,
+        startTime = request.startTime!!,
+        endTime = request.endTime,
+        unlockNotes = null,
+        extraInformation = null,
+        createdTime = request.created!!,
+        createdBy = request.createdBy!!,
+        updatedTime = request.updated,
+        updatedBy = request.updatedBy,
+        isMigrated = true,
       )
     }
 
     @Test
     fun `sets is migrated to true`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest()
 
       service.migrateAppointment(request)
 
-      verify(appointmentSeriesRepository).saveAndFlush(appointmentSeriesCaptor.capture())
       appointmentSeriesCaptor.firstValue.isMigrated isBool true
     }
 
     @Test
     fun `calls appointment create domain service`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest()
 
       service.migrateAppointment(request)
 
-      verify(appointmentSeriesRepository).saveAndFlush(appointmentSeriesCaptor.capture())
       verify(appointmentCreateDomainService).createAppointments(appointmentSeriesCaptor.firstValue, mapOf(request.prisonerNumber!! to request.bookingId!!), false)
     }
 
     @Test
     fun `uses attendee id as appointment instance id`() {
+      val appointmentCreateDomainService = mock<AppointmentCreateDomainService>()
+      val service = MigrateAppointmentService(
+        mock(),
+        appointmentSeriesRepository,
+        appointmentTierRepository,
+        appointmentInstanceRepository,
+        appointmentCreateDomainService,
+        mock(),
+        TransactionHandler(),
+      )
+
       val appointmentSeriesModel = mock<AppointmentSeriesModel>()
       val appointmentModel = mock<AppointmentModel>()
       whenever(appointmentSeriesModel.appointments).thenReturn(listOf(appointmentModel))
       val appointmentAttendeeModel = mock<AppointmentAttendeeModel>()
       whenever(appointmentModel.attendees).thenReturn(listOf(appointmentAttendeeModel))
       whenever(appointmentAttendeeModel.id).thenReturn(123)
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel)
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel)
 
       val request = appointmentMigrateRequest()
 
@@ -150,8 +158,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `null comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = null)
 
       service.migrateAppointment(request)
@@ -164,8 +170,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `empty comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "")
 
       service.migrateAppointment(request)
@@ -178,8 +182,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `whitespace only comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "    ")
 
       service.migrateAppointment(request)
@@ -192,8 +194,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `whitespace start and end comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "   First 40 characters will become the appointments custom name but the full comment will go to extra information.  ")
 
       service.migrateAppointment(request)
@@ -206,8 +206,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `under 40 characters comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "Appointments custom name")
 
       service.migrateAppointment(request)
@@ -220,8 +218,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `40 character comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "Appointment custom name as it's 40 chars")
 
       service.migrateAppointment(request)
@@ -234,8 +230,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `over 40 characters comment`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.")
 
       service.migrateAppointment(request)
@@ -253,8 +247,6 @@ class MigrateAppointmentServiceTest {
         updatedBy = "DPS.USER",
       )
 
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), request.updated, request.updated))
-
       service.migrateAppointment(request)
 
       with(appointmentSeriesCaptor.firstValue) {
@@ -265,8 +257,6 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `isCancelled defaults to false`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(isCancelled = null)
 
       service.migrateAppointment(request)
@@ -276,13 +266,11 @@ class MigrateAppointmentServiceTest {
 
     @Test
     fun `isCancelled = true`() {
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any())).thenReturn(appointmentSeriesModel(LocalDateTime.now(), null, null))
-
       val request = appointmentMigrateRequest(isCancelled = true)
 
       service.migrateAppointment(request)
 
-      verify(appointmentCreateDomainService).createAppointments(appointmentSeriesCaptor.firstValue, mapOf(request.prisonerNumber!! to request.bookingId!!), true)
+      verify(appointmentCreateDomainService).createAppointments(appointmentSeriesCaptor.firstValue, mapOf(request.prisonerNumber!! to request.bookingId!!), false, true)
     }
   }
 

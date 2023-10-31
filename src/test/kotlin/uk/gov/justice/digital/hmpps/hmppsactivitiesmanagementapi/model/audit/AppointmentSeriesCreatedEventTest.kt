@@ -18,7 +18,7 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
   @Test
   fun `returns correct string representation`() {
     val event = createEvent()
-    val expectedToString = "An appointment series with id '1' category C and starting on 2023-03-23 at prison PBI was created. Event created on 2023-03-22 at 09:00:03 by Bob."
+    val expectedToString = "An appointment series with id '1' category C and starting on 2023-03-23 at prison PBI was created. Event created on 2023-03-22 at 09:00:03 by CREATED_BY_USER."
     assertThat(event.toString()).isEqualTo(expectedToString)
   }
 
@@ -26,7 +26,7 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
   fun `returns the correct json representation`() {
     val event = createEvent()
     val expectedJson =
-      """{"appointmentSeriesId":1,"prisonCode":"PBI","categoryCode":"C","hasCustomName":true,"internalLocationId":2,"startDate":"2023-03-23","startTime":"09:00:00","endTime":"10:30:00","isRepeat":true,"frequency":"DAILY","numberOfAppointments":20,"hasExtraInformation":true,"prisonerNumbers":["123456"],"createdTime":"2023-03-22T09:00:03","createdBy":"Bob"}"""
+      """{"appointmentSeriesId":1,"prisonCode":"PBI","categoryCode":"C","hasCustomName":true,"internalLocationId":2,"startDate":"2023-03-23","startTime":"09:00:00","endTime":"10:30:00","isRepeat":true,"frequency":"DAILY","numberOfAppointments":20,"hasExtraInformation":true,"prisonerNumbers":["123456"],"createdTime":"2023-03-22T09:00:03","createdBy":"CREATED_BY_USER"}"""
     assertThat(event.toJson()).isEqualTo(expectedJson)
   }
 
@@ -35,6 +35,7 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
     val startTime = LocalTime.of(9, 0)
     val endTime = LocalTime.of(10, 30)
     val createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3)
+    val createdBy = "CREATED_BY_USER"
     return AppointmentSeriesCreatedEvent(
       appointmentSeriesId = 1,
       prisonCode = "PBI",
@@ -50,6 +51,7 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
       hasExtraInformation = true,
       prisonerNumbers = listOf("123456"),
       createdTime = createdAt,
+      createdBy = createdBy,
     )
   }
 }

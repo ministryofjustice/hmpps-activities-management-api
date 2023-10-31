@@ -118,7 +118,7 @@ fun appointmentSeriesCreateRequest(
   startDate: LocalDate? = LocalDate.now().plusDays(1),
   startTime: LocalTime? = LocalTime.of(13, 0),
   endTime: LocalTime? = LocalTime.of(14, 30),
-  extraInformation: String = "Appointment level comment",
+  extraInformation: String? = "Appointment level comment",
   schedule: AppointmentSeriesSchedule? = null,
 ) =
   AppointmentSeriesCreateRequest(
