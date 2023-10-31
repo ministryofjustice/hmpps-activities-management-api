@@ -36,6 +36,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -136,7 +138,7 @@ class ActivityService(
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
-    val organiser = request.organiserId?.let { activityOrganiserRepository.findOrThrowIllegalArgument(it) }
+    var organiser = request.organiserId?.let { activityOrganiserRepository.findOrThrowIllegalArgument(it) }
     val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
       .associateBy { it.prisonPayBandId }
@@ -144,10 +146,13 @@ class ActivityService(
     failDuplicateActivity(request.prisonCode, request.summary!!)
     checkEducationLevels(request.minimumEducationLevel)
 
-    val propertiesMap = mapOf(
+    val propertiesMap = mutableMapOf(
       PRISON_CODE_PROPERTY_KEY to request.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to request.summary,
-    )
+    ).apply {
+      tier?.let { this[ACTIVITY_TIER_PROPERTY_KEY] = it.description }
+      organiser?.let { this[ACTIVITY_ORGANISER_PROPERTY_KEY] = it.description }
+    }
 
     telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, activityMetricsMap())
 
@@ -155,7 +160,6 @@ class ActivityService(
       prisonCode = request.prisonCode,
       activityCategory = category,
       activityTier = tier,
-      organiser = organiser,
       attendanceRequired = request.attendanceRequired,
       summary = request.summary,
       description = request.description,
@@ -169,6 +173,7 @@ class ActivityService(
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      this.organiser = organiser
       endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
@@ -339,10 +344,13 @@ class ActivityService(
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
       }
 
-      val propertiesMap = mapOf(
-        PRISON_CODE_PROPERTY_KEY to prisonCode,
-        ACTIVITY_NAME_PROPERTY_KEY to request.summary,
-      )
+      val propertiesMap = mutableMapOf(
+        PRISON_CODE_PROPERTY_KEY to activity.prisonCode,
+        ACTIVITY_NAME_PROPERTY_KEY to activity.summary,
+      ).apply {
+        activity.tier?.let { this[ACTIVITY_TIER_PROPERTY_KEY] = it.description }
+        activity.organiser?.let { this[ACTIVITY_ORGANISER_PROPERTY_KEY] = it.description }
+      }
 
       telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
 

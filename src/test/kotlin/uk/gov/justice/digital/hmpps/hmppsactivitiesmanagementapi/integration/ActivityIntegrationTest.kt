@@ -119,7 +119,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(activity!!) {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
-      assertThat(tier!!.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(2)
       assertThat(organiser!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
@@ -1219,7 +1219,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     var updatedActivity = webTestClient.updateActivity(
       "PVI",
       1,
-      ActivityUpdateRequest(organiserId = 1),
+      ActivityUpdateRequest(tierId = 2, organiserId = 1),
     )
     updatedActivity.organiser isEqualTo ActivityOrganiser(
       id = 1,

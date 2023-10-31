@@ -41,10 +41,6 @@ data class Activity(
   @JoinColumn(name = "activity_tier_id")
   var activityTier: ActivityTier?,
 
-  @OneToOne
-  @JoinColumn(name = "activity_organiser_id")
-  var organiser: ActivityOrganiser? = null,
-
   var attendanceRequired: Boolean = true,
 
   var inCell: Boolean = false,
@@ -84,6 +80,15 @@ data class Activity(
   var endDate: LocalDate? = null
     set(value) {
       require(value == null || value >= startDate) { "Activity end date cannot be before activity start date." }
+
+      field = value
+    }
+
+  @OneToOne
+  @JoinColumn(name = "activity_organiser_id")
+  var organiser: ActivityOrganiser? = null
+    set(value) {
+      require(value == null || activityTier?.code == "TIER_2") { "Cannot add activity organiser unless activity is Tier 2." }
 
       field = value
     }

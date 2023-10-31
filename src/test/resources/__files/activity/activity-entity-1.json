@@ -9,7 +9,7 @@
   },
   "activityTier": {
     "activityTierId": 1,
-    "code": "Tier1",
+    "code": "TIER_1",
     "description": "Work, education and maintenance"
   },
   "attendanceRequired": false,

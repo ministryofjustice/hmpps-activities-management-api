@@ -62,6 +62,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Elig
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -69,7 +75,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule as EligibilityRuleEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
@@ -181,7 +187,7 @@ class ActivityServiceTest {
       .copy(startDate = TimeSource.tomorrow())
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
-    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(activityTierRepository.findById(2)).thenReturn(Optional.of(activityTier()))
     whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
     whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
       Optional.of(
@@ -197,7 +203,7 @@ class ActivityServiceTest {
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     verify(activityCategoryRepository).findById(1)
-    verify(activityTierRepository).findById(1)
+    verify(activityTierRepository).findById(2)
     verify(eligibilityRuleRepository).findById(any())
 
     with(activityCaptor.firstValue) {
@@ -208,6 +214,14 @@ class ActivityServiceTest {
       assertThat(activityTier).isEqualTo(activityTier())
       assertThat(organiser).isEqualTo(activityOrganiser())
     }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
+      ACTIVITY_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      ACTIVITY_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
   }
 
   @Test
@@ -580,6 +594,7 @@ class ActivityServiceTest {
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     val activityTier = activityTier()
     whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier))
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
@@ -634,7 +649,15 @@ class ActivityServiceTest {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
-    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(activityTierRepository.findById(1)).thenReturn(
+      Optional.of(
+        activityTier(
+          activityTierId = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+      ),
+    )
 
     val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
 
@@ -668,6 +691,13 @@ class ActivityServiceTest {
         assertThat(description).isEqualTo("Tier 1")
       }
     }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
+      ACTIVITY_TIER_PROPERTY_KEY to "Tier 1",
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, metricsPropertiesMap, activityMetricsMap())
   }
 
   @Test
@@ -1636,8 +1666,16 @@ class ActivityServiceTest {
   fun `updateActivity - add organiser`() {
     val activity = activityEntity()
 
-    val organiser = activityOrganiser()
-    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(organiser))
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
+    whenever(activityTierRepository.findById(2)).thenReturn(
+      Optional.of(
+        activityTier(
+          activityTierId = 2,
+          code = "TIER_2",
+          description = "Tier 2",
+        ),
+      ),
+    )
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -1647,7 +1685,12 @@ class ActivityServiceTest {
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(organiserId = 1), "TEST")
+    service().updateActivity(
+      moorlandPrisonCode,
+      1,
+      ActivityUpdateRequest(tierId = 2, organiserId = 1),
+      "TEST",
+    )
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -1656,6 +1699,50 @@ class ActivityServiceTest {
       this.organiser!!.code isEqualTo "PRISON_STAFF"
       this.organiser!!.description isEqualTo "Prison staff"
     }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
+      ACTIVITY_TIER_PROPERTY_KEY to "Tier 2",
+      ACTIVITY_ORGANISER_PROPERTY_KEY to "Prison staff",
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, metricsPropertiesMap, activityMetricsMap())
+  }
+
+  @Test
+  fun `updateActivity - add organiser fails if activity not tier 2`() {
+    val activity = activityEntity()
+
+    whenever(activityOrganiserRepository.findById(1)).thenReturn(Optional.of(activityOrganiser()))
+    whenever(activityTierRepository.findById(1)).thenReturn(
+      Optional.of(
+        activityTier(
+          activityTierId = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+      ),
+    )
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    assertThatThrownBy {
+      service().updateActivity(
+        moorlandPrisonCode,
+        1,
+        ActivityUpdateRequest(tierId = 1, organiserId = 1),
+        "TEST",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add activity organiser unless activity is Tier 2.")
+
+    verify(activityRepository, times(0)).saveAndFlush(any())
   }
 
   @Test
@@ -1664,7 +1751,15 @@ class ActivityServiceTest {
 
     assertThat(activity.organiser).isNotNull
 
-    whenever(activityTierRepository.findById(1)).thenReturn(Optional.of(activityTier()))
+    whenever(activityTierRepository.findById(1)).thenReturn(
+      Optional.of(
+        activityTier(
+          activityTierId = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+      ),
+    )
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(

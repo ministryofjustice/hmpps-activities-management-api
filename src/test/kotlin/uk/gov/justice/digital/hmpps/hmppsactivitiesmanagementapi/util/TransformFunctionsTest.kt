@@ -80,7 +80,7 @@ class TransformFunctionsTest {
           description = "category description",
         ),
       )
-      assertThat(tier).isEqualTo(ModelActivityTier(1, "TIER_1", "Tier 1"))
+      assertThat(tier).isEqualTo(ModelActivityTier(2, "TIER_2", "Tier 2"))
       assertThat(organiser).isEqualTo(ModelActivityOrganiser(id = 1, code = "PRISON_STAFF", description = "Prison staff"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(

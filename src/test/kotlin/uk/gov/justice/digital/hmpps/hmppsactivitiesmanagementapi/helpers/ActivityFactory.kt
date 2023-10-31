@@ -69,7 +69,6 @@ internal fun activityEntity(
     prisonCode = prisonCode,
     activityCategory = category,
     activityTier = tier,
-    organiser = organiser,
     summary = summary,
     description = description,
     riskLevel = riskLevel,
@@ -81,6 +80,7 @@ internal fun activityEntity(
     inCell = inCell,
     onWing = onWing,
   ).apply {
+    this.organiser = organiser
     this.endDate = endDate
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)
@@ -163,7 +163,11 @@ internal fun attendanceReasons() = mapOf(
 
 internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!
 
-internal fun activityTier() = ActivityTier(activityTierId = 1, code = "TIER_1", description = "Tier 1")
+internal fun activityTier(
+  activityTierId: Long = 2,
+  code: String = "TIER_2",
+  description: String = "Tier 2",
+) = ActivityTier(activityTierId = activityTierId, code = code, description = description)
 
 internal fun activityOrganiser() = ActivityOrganiser(activityOrganiserId = 1, code = "PRISON_STAFF", description = "Prison staff")
 
