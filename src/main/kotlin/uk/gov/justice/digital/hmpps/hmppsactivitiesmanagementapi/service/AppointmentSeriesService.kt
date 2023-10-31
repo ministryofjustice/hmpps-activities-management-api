@@ -68,7 +68,6 @@ class AppointmentSeriesService(
     request.failIfMaximumAppointmentInstancesExceeded()
     val categoryDescription = request.categoryDescription()
     val locationDescription = request.locationDescription()
-
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
@@ -146,7 +145,7 @@ class AppointmentSeriesService(
       appointmentType = appointmentType!!,
       prisonCode = prisonCode!!,
       categoryCode = categoryCode!!,
-      customName = customName?.takeUnless(String::isBlank),
+      customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = appointmentTier,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,

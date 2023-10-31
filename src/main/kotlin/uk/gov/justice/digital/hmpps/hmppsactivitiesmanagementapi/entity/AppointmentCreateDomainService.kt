@@ -100,7 +100,7 @@ class AppointmentCreateDomainService(
       if (appointmentSeries.appointments().singleOrNull { it.sequenceNumber == sequenceNumber } == null) {
         transactionHandler.newSpringTransaction {
           appointmentRepository.saveAndFlush(
-            appointmentSeries.createAppointment(
+            appointmentSeries.createAndAddAppointment(
               sequenceNumber,
               indexedStartDate.value,
             ).apply {
@@ -143,8 +143,8 @@ class AppointmentCreateDomainService(
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to id.toString(),
       CATEGORY_CODE_PROPERTY_KEY to categoryCode,
       CATEGORY_DESCRIPTION_PROPERTY_KEY to categoryDescription,
-      HAS_CUSTOM_NAME_PROPERTY_KEY to (customName?.isNotEmpty()).toString(),
-      INTERNAL_LOCATION_ID_PROPERTY_KEY to internalLocationId.toString(),
+      HAS_CUSTOM_NAME_PROPERTY_KEY to (!customName.isNullOrEmpty()).toString(),
+      INTERNAL_LOCATION_ID_PROPERTY_KEY to (if (this.inCell) "" else this.internalLocationId?.toString() ?: ""),
       INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to locationDescription,
       START_DATE_PROPERTY_KEY to startDate.toString(),
       START_TIME_PROPERTY_KEY to startTime.toString(),
@@ -190,7 +190,7 @@ class AppointmentCreateDomainService(
   }
 }
 
-fun AppointmentSeries.createAppointment(sequenceNumber: Int, startDate: LocalDate) =
+fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: LocalDate) =
   Appointment(
     appointmentSeries = this,
     sequenceNumber = sequenceNumber,
