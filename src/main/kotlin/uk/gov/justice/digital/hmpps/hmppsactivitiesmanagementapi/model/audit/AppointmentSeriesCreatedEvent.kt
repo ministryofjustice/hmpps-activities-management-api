@@ -20,13 +20,14 @@ class AppointmentSeriesCreatedEvent(
   private val hasExtraInformation: Boolean,
   private val prisonerNumbers: List<String>,
   createdTime: LocalDateTime,
-
+  createdBy: String,
 ) : AuditableEvent(
   auditType = AuditType.APPOINTMENT,
   auditEventType = AuditEventType.APPOINTMENT_SERIES_CREATED,
   details = "An appointment series with id '$appointmentSeriesId' category $categoryCode and starting on $startDate " +
     "at prison $prisonCode was created",
   createdAt = createdTime,
+  createdBy = createdBy,
 ),
   HmppsAuditable {
 

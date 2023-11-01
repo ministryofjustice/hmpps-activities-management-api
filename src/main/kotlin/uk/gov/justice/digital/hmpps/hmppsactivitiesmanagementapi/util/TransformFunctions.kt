@@ -110,7 +110,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     categoryCode = it.activityCategory,
     categoryDescription = it.activityCategory,
     summary = it.scheduleDescription,
-    comments = it.activitySummary,
+    comments = null,
     prisonerNumber = it.prisonerNumber,
     inCell = it.inCell,
     onWing = it.onWing,

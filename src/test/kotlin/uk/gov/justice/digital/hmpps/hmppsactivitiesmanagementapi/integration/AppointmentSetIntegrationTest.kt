@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -31,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -50,6 +53,9 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
   private lateinit var auditService: AuditService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  @MockBean
+  private lateinit var telemetryClient: TelemetryClient
 
   @Test
   fun `get appointment set authorisation required`() {
@@ -352,6 +358,8 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
       AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
       AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
     )
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
 
     verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
   }

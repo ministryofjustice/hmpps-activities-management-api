@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSeriesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSetService
 import java.security.Principal
 
@@ -28,10 +27,7 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
   @MockBean
   private lateinit var appointmentSetService: AppointmentSetService
 
-  @MockBean
-  private lateinit var appointmentSeriesService: AppointmentSeriesService
-
-  override fun controller() = AppointmentSetController(appointmentSetService, appointmentSeriesService)
+  override fun controller() = AppointmentSetController(appointmentSetService)
 
   @Test
   fun `200 response when get appointment set by valid id`() {
@@ -114,7 +110,7 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
         }
       }
 
-    verifyNoInteractions(appointmentSeriesService)
+    verifyNoInteractions(appointmentSetService)
   }
 
   @Test
@@ -136,7 +132,7 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
         }
       }
 
-    verifyNoInteractions(appointmentSeriesService)
+    verifyNoInteractions(appointmentSetService)
   }
 
   @Test
@@ -146,7 +142,7 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
 
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentSeriesService.createAppointmentSet(request, mockPrincipal)).thenReturn(expectedResponse)
+    whenever(appointmentSetService.createAppointmentSet(request, mockPrincipal)).thenReturn(expectedResponse)
 
     val response =
       mockMvc.post("/appointment-set") {

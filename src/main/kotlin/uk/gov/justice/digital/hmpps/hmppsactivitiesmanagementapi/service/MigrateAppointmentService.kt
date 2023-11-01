@@ -65,8 +65,9 @@ class MigrateAppointmentService(
       }
 
     val appointmentSeriesModel = appointmentCreateDomainService.createAppointments(
-      appointmentSeries,
-      mapOf(request.prisonerNumber!! to request.bookingId!!),
+      appointmentSeries = appointmentSeries,
+      prisonNumberBookingIdMap = mapOf(request.prisonerNumber!! to request.bookingId!!),
+      createFirstAppointmentOnly = false,
       isCancelled = request.isCancelled ?: false,
     )
 

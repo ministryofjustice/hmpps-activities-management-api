@@ -21,7 +21,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate >= :startDate
     AND sa.sessionDate <= :endDate
     AND sa.prisonerNumber = :prisonerNumber
-    AND sa.cancelled = false
     """,
   )
   fun getScheduledActivitiesForPrisonerAndDateRange(
@@ -37,7 +36,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     WHERE sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
     AND sa.prisonerNumber in :prisonerNumbers
-    AND sa.cancelled = false
     """,
   )
   fun getScheduledActivitiesForPrisonerListAndDate(
@@ -52,7 +50,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     WHERE sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
     AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
-    AND sa.cancelled = false
     """,
   )
   fun findByPrisonCodeAndDateAndTime(
@@ -69,7 +66,6 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate = :date
     AND sa.internalLocationId in :internalLocationIds
     AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
-    AND sa.cancelled = false
     """,
   )
   fun findByPrisonCodeAndInternalLocationIdsAndDateAndTime(

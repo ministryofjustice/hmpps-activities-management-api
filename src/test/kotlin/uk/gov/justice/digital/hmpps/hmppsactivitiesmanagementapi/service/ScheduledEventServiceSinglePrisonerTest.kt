@@ -404,7 +404,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.categoryCode).isEqualTo("Education")
           assertThat(it.categoryDescription).isEqualTo("Education")
           assertThat(it.summary).isEqualTo("HB1 AM")
-          assertThat(it.comments).isEqualTo("English level 1")
+          assertThat(it.comments).isNull()
           assertThat(it.date).isEqualTo(LocalDate.of(2022, 12, 14))
           assertThat(it.startTime).isEqualTo(LocalTime.of(10, 0, 0))
           assertThat(it.endTime).isEqualTo(LocalTime.of(11, 30, 0))
