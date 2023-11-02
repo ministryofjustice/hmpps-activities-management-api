@@ -37,15 +37,9 @@ class AppointmentEntityListener {
   fun onUpdate(entity: Appointment) {
     entity.attendees().forEach { attendee ->
       runCatching {
-        outboundEventsService.send(
-          when {
-            entity.isCancelled() -> OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
-            entity.isDeleted -> OutboundEvent.APPOINTMENT_INSTANCE_DELETED
-
-            else -> { OutboundEvent.APPOINTMENT_INSTANCE_UPDATED }
-          },
-          attendee.appointmentAttendeeId,
-        )
+        if (!entity.isCancelled() && !entity.isDeleted) {
+          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.appointmentAttendeeId)
+        }
       }.onFailure {
         log.error(
           "Failed to send appointment instance updated event for appointment instance id ${attendee.appointmentAttendeeId}",

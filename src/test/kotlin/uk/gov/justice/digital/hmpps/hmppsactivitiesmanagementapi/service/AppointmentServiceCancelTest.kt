@@ -19,6 +19,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -35,6 +36,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -68,6 +71,7 @@ class AppointmentServiceCancelTest {
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   @Captor
   private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
@@ -82,7 +86,14 @@ class AppointmentServiceCancelTest {
     prisonerSearchApiClient,
     prisonApiClient,
     AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService),
-    AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService),
+    AppointmentCancelDomainService(
+      appointmentSeriesRepository,
+      appointmentCancellationReasonRepository,
+      telemetryClient,
+      auditService,
+      TransactionHandler(),
+      outboundEventsService,
+    ),
     updateAppointmentsJob,
     cancelAppointmentsJob,
   )
@@ -218,6 +229,11 @@ class AppointmentServiceCancelTest {
         assertThat(isDeleted).isTrue
       }
 
+      appointment.attendees().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
+
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_DELETED.value),
         telemetryPropertyMap.capture(),
@@ -251,6 +267,11 @@ class AppointmentServiceCancelTest {
         assertThat(cancellationReason?.appointmentCancellationReasonId).isEqualTo(2L)
         assertThat(isDeleted).isFalse
       }
+
+      appointment.attendees().forEach {
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
+      }
+      verifyNoMoreInteractions(outboundEventsService)
 
       verify(telemetryClient).trackEvent(
         eq(TelemetryEvent.APPOINTMENT_CANCELLED.value),
