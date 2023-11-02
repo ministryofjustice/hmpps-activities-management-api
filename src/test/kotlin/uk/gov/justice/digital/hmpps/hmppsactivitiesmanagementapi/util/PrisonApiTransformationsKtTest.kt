@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import java.time.LocalDate
@@ -13,7 +14,7 @@ class PrisonApiTransformationsKtTest {
   @Test
   fun `transform offender adjudications to scheduled events`() {
     assertThat(
-      listOf(adjudicationHearing()).nomisAdjudicationsToScheduledEvents(moorlandPrisonCode, 99),
+      listOf(adjudicationHearing()).nomisAdjudicationsToScheduledEvents(moorlandPrisonCode, 99, locations(locationId = -2, userDescription = "Adjudication user description", description = "Adjudication description")),
     ).containsExactly(
       ScheduledEvent(
         prisonCode = moorlandPrisonCode,
@@ -22,7 +23,8 @@ class PrisonApiTransformationsKtTest {
         bookingId = null,
         internalLocationId = -2,
         internalLocationCode = null,
-        internalLocationDescription = "Adjudication room",
+        internalLocationUserDescription = "Adjudication user description",
+        internalLocationDescription = "Adjudication description",
         appointmentSeriesId = null,
         appointmentId = null,
         appointmentAttendeeId = null,

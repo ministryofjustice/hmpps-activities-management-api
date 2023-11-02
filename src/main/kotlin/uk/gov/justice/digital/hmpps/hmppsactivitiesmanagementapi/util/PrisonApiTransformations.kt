@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
@@ -29,7 +31,8 @@ fun List<PrisonApiPrisonerSchedule>.multiplePrisonerCourtEventsToScheduledEvents
 fun List<PrisonApiPrisonerSchedule>.multiplePrisonerVisitsToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonerScheduleToScheduledEvents(prisonCode, EventType.VISIT, priority)
+  prisonLocations: PrisonLocations = emptyMap(),
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.VISIT, priority, prisonLocations)
 
 fun List<PrisonApiPrisonerSchedule>.multiplePrisonerActivitiesToScheduledEvents(
   prisonCode: String,
@@ -45,7 +48,10 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
   prisonCode: String,
   eventType: EventType,
   priority: Int,
+  prisonLocations: PrisonLocations = emptyMap(),
 ) = map {
+  val mayBeInternalLocation = it.locationId?.let(prisonLocations::get)
+
   ModelScheduleEvent(
     prisonCode = prisonCode,
     eventSource = "NOMIS",
@@ -60,7 +66,8 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
     scheduledInstanceId = null,
     internalLocationId = it.locationId,
     internalLocationCode = null,
-    internalLocationDescription = it.eventLocation ?: "External",
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription ?: "External",
+    internalLocationDescription = mayBeInternalLocation?.description ?: (it.eventLocation ?: "External"),
     cancelled = it.eventStatus == "CANC",
     suspended = false,
     inCell = false,
@@ -98,6 +105,7 @@ fun PrisonApiCourtHearings?.nomisCourtHearingsToScheduledEvents(
     scheduledInstanceId = null,
     internalLocationId = null,
     internalLocationCode = null,
+    internalLocationUserDescription = null,
     internalLocationDescription = it.location?.description,
     cancelled = false,
     inCell = false,
@@ -120,7 +128,10 @@ fun PrisonApiCourtHearings?.nomisCourtHearingsToScheduledEvents(
 fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEvents(
   prisonCode: String,
   priority: Int,
+  prisonLocations: PrisonLocations,
 ): List<ModelScheduleEvent> = map {
+  val mayBeInternalLocation = it.internalLocationId.let(prisonLocations::get)
+
   ModelScheduleEvent(
     prisonCode = prisonCode,
     eventSource = "NOMIS",
@@ -130,7 +141,8 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
     prisonerNumber = it.offenderNo,
     internalLocationId = it.internalLocationId,
     internalLocationCode = null,
-    internalLocationDescription = it.internalLocationDescription,
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.internalLocationDescription,
     appointmentSeriesId = null,
     appointmentId = null,
     appointmentAttendeeId = null,
@@ -158,7 +170,10 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
 fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
   prisonerNumber: String?,
   priority: Int,
+  prisonLocations: PrisonLocations,
 ) = map {
+  val mayBeInternalLocation = it.internalLocationId().let(prisonLocations::get)
+
   ModelScheduleEvent(
     prisonCode = it.agencyId,
     eventSource = "NOMIS",
@@ -172,7 +187,8 @@ fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
     bookingId = it.bookingId,
     internalLocationId = it.eventLocationId,
     internalLocationCode = it.eventLocation,
-    internalLocationDescription = it.eventLocation,
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.eventLocation,
     cancelled = it.eventStatus == "CANC",
     inCell = false,
     categoryCode = it.eventSubType,
@@ -194,7 +210,10 @@ fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
 fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
   prisonerNumber: String?,
   priority: Int,
+  prisonLocations: PrisonLocations,
 ) = map {
+  val mayBeInternalLocation = it.internalLocationId().let(prisonLocations::get)
+
   ModelScheduleEvent(
     prisonCode = it.agencyId,
     eventSource = "NOMIS",
@@ -206,9 +225,10 @@ fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
     oicHearingId = null,
     scheduledInstanceId = null,
     bookingId = it.bookingId,
-    internalLocationId = it.eventLocationId,
+    internalLocationId = it.internalLocationId(),
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
     internalLocationCode = it.eventLocation,
-    internalLocationDescription = it.eventLocation,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.eventLocation,
     cancelled = it.eventStatus == "CANC",
     inCell = false,
     categoryCode = it.eventSubType,
@@ -230,7 +250,10 @@ fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
 fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
   prisonerNumber: String?,
   priority: Int,
+  prisonLocations: PrisonLocations,
 ) = map {
+  val mayBeInternalLocation = it.internalLocationId().let(prisonLocations::get)
+
   ModelScheduleEvent(
     prisonCode = it.agencyId,
     eventSource = "NOMIS",
@@ -244,7 +267,8 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
     bookingId = it.bookingId,
     internalLocationId = it.eventLocationId,
     internalLocationCode = it.eventLocation,
-    internalLocationDescription = it.eventLocation,
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.eventLocation,
     cancelled = it.eventStatus == "CANC",
     inCell = false,
     categoryCode = it.eventSubType,

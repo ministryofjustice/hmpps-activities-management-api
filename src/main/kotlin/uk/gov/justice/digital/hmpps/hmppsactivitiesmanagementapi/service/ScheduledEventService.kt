@@ -80,6 +80,7 @@ class ScheduledEventService(
         val prisonRolledOut = rolloutPrisonRepository.findByCode(prisonCode)
           ?: throw EntityNotFoundException("Unable to get scheduled events. Could not find prison with code $prisonCode")
         val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+        val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
 
         getSinglePrisonerEventCalls(BookingIdPrisonerNo(bookingId, prisonerNumber), prisonRolledOut, dateRange)
           .let { schedules ->
@@ -91,6 +92,7 @@ class ScheduledEventService(
               schedules.appointments.nomisAppointmentsToScheduledEvents(
                 prisonerNumber,
                 eventPriorities.getOrDefault(EventType.APPOINTMENT),
+                prisonLocations,
               ),
               schedules.courtHearings.nomisCourtHearingsToScheduledEvents(
                 bookingId,
@@ -101,10 +103,12 @@ class ScheduledEventService(
               schedules.visits.nomisVisitsToScheduledEvents(
                 prisonerNumber,
                 eventPriorities.getOrDefault(EventType.VISIT),
+                prisonLocations,
               ),
               schedules.activities.nomisActivitiesToScheduledEvents(
                 prisonerNumber,
                 eventPriorities.getOrDefault(EventType.ACTIVITY),
+                prisonLocations,
               ),
               schedules.transfers.multiplePrisonerTransfersToScheduledEvents(
                 prisonCode,
@@ -113,6 +117,7 @@ class ScheduledEventService(
               schedules.adjudications.nomisAdjudicationsToScheduledEvents(
                 prisonCode,
                 eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
+                prisonLocations,
               ),
             )
           }
@@ -123,6 +128,7 @@ class ScheduledEventService(
                 prisonCode,
                 eventPriorities,
                 getSinglePrisonerScheduledActivities(prisonCode, prisonerNumber, dateRange, slot),
+                prisonLocations,
               )
             }
 
@@ -244,9 +250,8 @@ class ScheduledEventService(
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
     locationsForAppointmentsMap: Map<Long, Location>,
   ): PrisonerScheduledEvents? = runBlocking {
-    val eventPriorities = withContext(Dispatchers.IO) {
-      prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
-    }
+    val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
+    val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
 
     val prisonRolledOut = withContext(Dispatchers.IO) {
       rolloutPrisonRepository.findByCode(prisonCode)
@@ -270,6 +275,7 @@ class ScheduledEventService(
           schedules.visits.multiplePrisonerVisitsToScheduledEvents(
             prisonCode,
             eventPriorities.getOrDefault(EventType.VISIT),
+            prisonLocations,
           ),
           schedules.activities.multiplePrisonerActivitiesToScheduledEvents(
             prisonCode,
@@ -282,6 +288,7 @@ class ScheduledEventService(
           schedules.adjudications.nomisAdjudicationsToScheduledEvents(
             prisonCode,
             eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
+            prisonLocations,
           ),
         )
       }
@@ -292,6 +299,7 @@ class ScheduledEventService(
             prisonCode,
             eventPriorities,
             getMultiplePrisonerScheduledActivities(prisonCode, prisonerNumbers, date, timeSlot),
+            prisonLocations,
           )
         }
 

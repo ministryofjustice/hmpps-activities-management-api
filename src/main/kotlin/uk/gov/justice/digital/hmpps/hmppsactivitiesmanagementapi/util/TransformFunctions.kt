@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -93,7 +95,10 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
   activitiesForPrisoners: List<PrisonerScheduledActivity>,
+  prisonLocations: PrisonLocations = emptyMap(),
 ) = activitiesForPrisoners.map {
+  val mayBeInternalLocation = it.internalLocationId?.toLong().let(prisonLocations::get)
+
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventSource = "SAA",
@@ -102,7 +107,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     bookingId = it.bookingId.toLong(), // TODO: Add bookingId to allocation and retrieve in the view
     internalLocationId = it.internalLocationId?.toLong(),
     internalLocationCode = it.internalLocationCode,
-    internalLocationDescription = it.internalLocationDescription,
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.internalLocationDescription,
     eventId = null,
     appointmentSeriesId = null,
     appointmentId = null,
@@ -145,6 +151,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     bookingId = it.bookingId,
     internalLocationId = it.internalLocationId,
     internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available",
+    internalLocationUserDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
     internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
     eventId = null,
     appointmentSeriesId = it.appointmentSeriesId,

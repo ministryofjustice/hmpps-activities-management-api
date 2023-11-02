@@ -226,6 +226,7 @@ class TransformFunctionsTest {
           bookingId = entity.bookingId,
           internalLocationId = entity.internalLocationId,
           internalLocationCode = "LOC123",
+          internalLocationUserDescription = "User location desc",
           internalLocationDescription = "User location desc",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,
