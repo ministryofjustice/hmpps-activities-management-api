@@ -1,5 +1,6 @@
 {
   "summary": "IT level 1 - updated",
   "categoryId": 1,
-  "tierId": 1
+  "tierCode": "TIER_2",
+  "organiserCode": "PRISON_STAFF"
 }

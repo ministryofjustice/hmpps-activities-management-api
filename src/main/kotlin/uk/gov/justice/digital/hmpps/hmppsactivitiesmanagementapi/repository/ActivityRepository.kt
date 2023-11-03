@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import java.time.LocalDate
 
 @Repository
@@ -35,7 +35,7 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
 
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
-  fun findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode: String, activityTier: ActivityTier, activityCategory: ActivityCategory): List<Activity>
+  fun findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode: String, activityTier: EventTier, activityCategory: ActivityCategory): List<Activity>
 
   @Query(value = "SELECT ab from ActivityBasic ab WHERE ab.activityId = :activityId")
   fun getActivityBasicById(@Param("activityId") activityId: Long): ActivityBasic?

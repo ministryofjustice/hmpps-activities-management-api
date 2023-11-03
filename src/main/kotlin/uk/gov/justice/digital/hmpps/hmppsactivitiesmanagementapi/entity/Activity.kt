@@ -39,7 +39,7 @@ data class Activity(
 
   @OneToOne
   @JoinColumn(name = "activity_tier_id")
-  var activityTier: ActivityTier?,
+  var activityTier: EventTier?,
 
   var attendanceRequired: Boolean = true,
 
@@ -86,9 +86,9 @@ data class Activity(
 
   @OneToOne
   @JoinColumn(name = "activity_organiser_id")
-  var organiser: ActivityOrganiser? = null
+  var organiser: EventOrganiser? = null
     set(value) {
-      require(value == null || activityTier?.code == "TIER_2") { "Cannot add activity organiser unless activity is Tier 2." }
+      require(value == null || activityTier?.isTierTwo() == true) { "Cannot add activity organiser unless activity is Tier 2." }
 
       field = value
     }

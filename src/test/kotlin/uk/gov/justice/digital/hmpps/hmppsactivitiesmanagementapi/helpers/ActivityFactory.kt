@@ -4,18 +4,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -47,8 +47,8 @@ val activeAllocation = activityEntity().schedules().first().allocations().first(
 
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
-  tier: ActivityTier = activityTier(),
-  organiser: ActivityOrganiser = activityOrganiser(),
+  tier: EventTier = eventTier(),
+  organiser: EventOrganiser = eventOrganiser(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   activityId: Long = 1L,
   prisonCode: String = "MDI",
@@ -163,13 +163,17 @@ internal fun attendanceReasons() = mapOf(
 
 internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!
 
-internal fun activityTier(
-  activityTierId: Long = 2,
+internal fun eventTier(
+  eventTierId: Long = 2,
   code: String = "TIER_2",
   description: String = "Tier 2",
-) = ActivityTier(activityTierId = activityTierId, code = code, description = description)
+) = EventTier(eventTierId = eventTierId, code = code, description = description)
 
-internal fun activityOrganiser() = ActivityOrganiser(activityOrganiserId = 1, code = "PRISON_STAFF", description = "Prison staff")
+internal fun eventOrganiser(
+  eventOrganiserId: Long = 1,
+  code: String = "PRISON_STAFF",
+  description: String = "Prison staff",
+) = EventOrganiser(eventOrganiserId = eventOrganiserId, code = code, description = description)
 
 internal fun activitySchedule(
   activity: Activity,
@@ -349,8 +353,8 @@ internal fun activityCreateRequest(
     summary = "Test activity",
     description = "Test activity",
     categoryId = activityCategory().activityCategoryId,
-    tierId = activityTier().activityTierId,
-    organiserId = activityOrganiser().activityOrganiserId,
+    tierCode = eventTier().code,
+    organiserCode = eventOrganiser().code,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
     pay = emptyList(),
     riskLevel = "high",

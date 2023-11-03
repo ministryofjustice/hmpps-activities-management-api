@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -36,7 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -47,7 +47,7 @@ class MigrateActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val activityTierRepository: ActivityTierRepository = mock()
+  private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val featureSwitches: FeatureSwitches = mock()
@@ -64,7 +64,7 @@ class MigrateActivityServiceTest {
     ActivityCategory(9, "SAA_OTHER", "Other", "desc"),
   )
 
-  private val listOfTiers = listOf(ActivityTier(1, "Tier1", "Tier one"))
+  private val listOfTiers = listOf(EventTier(1, "Tier1", "Tier one"))
   private val rolledOutMoorland = rolledOutPrison("MDI")
   private val rolledOutRisley = rolledOutPrison("RSI")
   private val payBandsMoorland = prisonPayBands("MDI")
@@ -81,7 +81,7 @@ class MigrateActivityServiceTest {
     activityRepository,
     activityScheduleRepository,
     prisonerSearchApiClient,
-    activityTierRepository,
+    eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
     featureSwitches,
@@ -89,7 +89,7 @@ class MigrateActivityServiceTest {
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
 
-  private fun getTier(code: String): ActivityTier? = listOfTiers.find { it.code == code }
+  private fun getTier(code: String): EventTier? = listOfTiers.find { it.code == code }
 
   private fun rolledOutPrison(prisonCode: String) = RolloutPrisonPlan(
     prisonCode = prisonCode,
@@ -108,7 +108,7 @@ class MigrateActivityServiceTest {
     @BeforeEach
     fun setupMocks() {
       whenever(activityCategoryRepository.findAll()).thenReturn(listOfCategories)
-      whenever(activityTierRepository.findAll()).thenReturn(listOfTiers)
+      whenever(eventTierRepository.findAll()).thenReturn(listOfTiers)
       whenever(rolloutPrisonService.getByPrisonCode("MDI")).thenReturn(rolledOutMoorland)
       whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
@@ -138,7 +138,7 @@ class MigrateActivityServiceTest {
       assertThat(response.splitRegimeActivityId).isNull()
 
       verify(rolloutPrisonService).getByPrisonCode("MDI")
-      verify(activityTierRepository).findAll()
+      verify(eventTierRepository).findAll()
       verify(activityCategoryRepository).findAll()
       verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
@@ -582,7 +582,7 @@ class MigrateActivityServiceTest {
       assertThat(response.splitRegimeActivityId).isEqualTo(2)
 
       verify(rolloutPrisonService).getByPrisonCode("RSI")
-      verify(activityTierRepository, times(2)).findAll()
+      verify(eventTierRepository, times(2)).findAll()
       verify(activityCategoryRepository, times(2)).findAll()
       verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
@@ -1184,7 +1184,7 @@ class MigrateActivityServiceTest {
 
     @BeforeEach
     fun setupMocks() {
-      whenever(activityTierRepository.findAll()).thenReturn(listOfTiers)
+      whenever(eventTierRepository.findAll()).thenReturn(listOfTiers)
     }
 
     @Test

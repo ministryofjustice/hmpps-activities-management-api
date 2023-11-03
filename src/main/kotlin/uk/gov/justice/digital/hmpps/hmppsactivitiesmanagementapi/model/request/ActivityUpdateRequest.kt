@@ -16,11 +16,11 @@ data class ActivityUpdateRequest(
   @Schema(description = "The category id for this activity, one of the high-level categories")
   val categoryId: Long? = null,
 
-  @Schema(description = "The tier id for this activity, as defined by the Future Prison Regime team", example = "1")
-  val tierId: Long? = null,
+  @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", example = "TIER_1")
+  val tierCode: String? = null,
 
-  @Schema(description = "The organiser id for this activity", example = "1")
-  val organiserId: Long? = null,
+  @Schema(description = "The organiser code for this activity", example = "PRISON_STAFF")
+  val organiserCode: String? = null,
 
   @field:Size(max = 50, message = "Summary should not exceed {max} characters")
   @Schema(

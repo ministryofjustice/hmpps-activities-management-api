@@ -34,11 +34,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
@@ -570,7 +570,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("Maths")
       assertThat(description).isEqualTo("Maths Level 1")
       assertThat(category).isEqualTo(educationCategory)
-      assertThat(tier).isEqualTo(ActivityTier(1, "TIER_1", "Tier 1"))
+      assertThat(tier).isEqualTo(EventTier(1, "TIER_1", "Tier 1"))
       assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 10))
       assertThat(endDate).isNull()
@@ -683,7 +683,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(summary).isEqualTo("English")
       assertThat(description).isEqualTo("English Level 2")
       assertThat(category).isEqualTo(educationCategory)
-      assertThat(tier).isEqualTo(ActivityTier(2, "TIER_2", "Tier 2"))
+      assertThat(tier).isEqualTo(EventTier(1, "TIER_1", "Tier 1"))
       assertThat(pay).isEqualTo(listOf(testActivityPayRateBand1, testActivityPayRateBand2, testActivityPayRateBand3))
       assertThat(startDate).isEqualTo(LocalDate.of(2022, 10, 21))
       assertThat(endDate).isNull()
@@ -878,7 +878,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(id).isNotNull
       assertThat(category.id).isEqualTo(1)
       assertThat(summary).isEqualTo("IT level 1 - updated")
-      assertThat(tier!!.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(2)
+      assertThat(organiser!!.id).isEqualTo(1)
       assertThat(pay.size).isEqualTo(1)
       assertThat(updatedBy).isEqualTo("test-client")
       assertThat(schedules.first().updatedBy).isEqualTo("test-client")
@@ -1215,17 +1216,23 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity - Add organiser`() {
-    // Add organiser
-    var updatedActivity = webTestClient.updateActivity(
-      "PVI",
-      1,
-      ActivityUpdateRequest(tierId = 2, organiserId = 1),
-    )
-    updatedActivity.organiser isEqualTo ActivityOrganiser(
+    val activity = webTestClient.getActivityById(1, "PVI")
+    activity.organiser isEqualTo EventOrganiser(
       id = 1,
       code = "PRISON_STAFF",
       description = "Prison staff",
     )
-    updatedActivity.category.id isEqualTo 1
+
+    // Add organiser
+    val updatedActivity = webTestClient.updateActivity(
+      "PVI",
+      1,
+      ActivityUpdateRequest(tierCode = "TIER_2", organiserCode = "PRISONER"),
+    )
+    updatedActivity.organiser isEqualTo EventOrganiser(
+      id = 2,
+      code = "PRISONER",
+      description = "A prisoner or group of prisoners",
+    )
   }
 }

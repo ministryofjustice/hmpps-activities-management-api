@@ -8,11 +8,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "activity_organiser")
-data class ActivityOrganiser(
+@Table(name = "event_organiser")
+data class EventOrganiser(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityOrganiserId: Long = 0,
+  val eventOrganiserId: Long = 0,
 
   @Column(nullable = false)
   val code: String,

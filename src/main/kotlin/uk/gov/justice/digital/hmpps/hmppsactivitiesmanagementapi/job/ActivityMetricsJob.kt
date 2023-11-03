@@ -6,11 +6,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyActivityMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
@@ -44,7 +44,7 @@ import kotlin.system.measureTimeMillis
 @Component
 class ActivityMetricsJob(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val activityTierRepository: ActivityTierRepository,
+  private val eventTierRepository: EventTierRepository,
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val dailyActivityMetricsService: DailyActivityMetricsService,
@@ -64,13 +64,13 @@ class ActivityMetricsJob(
 
         val elapsed = measureTimeMillis {
           val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
-          val allActivityTiers = activityTierRepository.findAll()
+          val allEventTiers = eventTierRepository.findAll()
           val allActivityCategories = activityCategoryRepository.findAll()
 
           allPrisonCodes.forEach { prisonCode ->
-            allActivityTiers.forEach { activityTier ->
+            allEventTiers.forEach { eventTier ->
               allActivityCategories.forEach { activityCategory ->
-                sendActivitiesDailyStatsEvent(prisonCode, activityTier, activityCategory)
+                sendActivitiesDailyStatsEvent(prisonCode, eventTier, activityCategory)
               }
             }
           }
@@ -83,7 +83,7 @@ class ActivityMetricsJob(
 
   private fun sendActivitiesDailyStatsEvent(
     prisonCode: String,
-    activityTier: ActivityTier,
+    activityTier: EventTier,
     activityCategory: ActivityCategory,
   ) {
     val yesterday = LocalDate.now().minusDays(1)

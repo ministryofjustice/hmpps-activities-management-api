@@ -46,10 +46,10 @@ data class Activity(
   val category: ActivityCategory,
 
   @Schema(description = "The tier for this activity, as defined by the Future Prison Regime team")
-  val tier: ActivityTier?,
+  val tier: EventTier?,
 
   @Schema(description = "The organiser of this activity")
-  val organiser: ActivityOrganiser? = null,
+  val organiser: EventOrganiser? = null,
 
   @Schema(description = "A list of eligibility rules which apply to this activity. These can be positive (include) and negative (exclude)", example = "[FEMALE_ONLY,AGED_18-25]")
   val eligibilityRules: List<ActivityEligibility> = emptyList(),

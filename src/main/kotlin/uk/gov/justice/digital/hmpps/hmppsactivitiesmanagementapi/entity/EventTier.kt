@@ -8,11 +8,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 
 @Entity
-@Table(name = "activity_tier")
-data class ActivityTier(
+@Table(name = "event_tier")
+data class EventTier(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val activityTierId: Long = 0,
+  val eventTierId: Long = 0,
 
   @Column(nullable = false)
   val code: String,
@@ -20,3 +20,5 @@ data class ActivityTier(
   @Column(nullable = false)
   val description: String,
 )
+
+fun EventTier.isTierTwo() = this.code == "TIER_2"

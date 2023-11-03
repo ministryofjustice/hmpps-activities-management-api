@@ -296,6 +296,25 @@ class AllocationServiceTest {
   }
 
   @Test
+  fun `updateAllocation - fails if updating end date without reason`() {
+    val allocation = allocation(startDate = TimeSource.yesterday())
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    val updateAllocationRequest = AllocationUpdateRequest(endDate = TimeSource.tomorrow())
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Reason code must be supplied when setting the allocation end date")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
   fun `updateAllocation - fails if allocation not found`() {
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
 
