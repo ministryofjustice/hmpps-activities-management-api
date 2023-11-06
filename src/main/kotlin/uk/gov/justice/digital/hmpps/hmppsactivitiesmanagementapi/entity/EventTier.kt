@@ -19,6 +19,6 @@ data class EventTier(
 
   @Column(nullable = false)
   val description: String,
-)
-
-fun EventTier.isTierTwo() = this.code == "TIER_2"
+) {
+  fun isTierTwo() = this.code == "TIER_2"
+}
