@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -46,7 +46,7 @@ class MigrateActivityService(
   private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val activityTierRepository: ActivityTierRepository,
+  private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val feature: FeatureSwitches,
@@ -382,9 +382,9 @@ class MigrateActivityService(
   fun List<ActivityCategory>.isFaithSpirituality() = this.find { it.code == "SAA_FAITH_SPIRITUALITY" }
   fun List<ActivityCategory>.isOther() = this.find { it.code == "SAA_OTHER" }
 
-  fun mapProgramToTier(programServiceCode: String): ActivityTier? {
+  fun mapProgramToTier(programServiceCode: String): EventTier? {
     // We only have one tier
-    val tiers = activityTierRepository.findAll()
+    val tiers = eventTierRepository.findAll()
     return if (tiers.size > 0) tiers.first() else null
   }
 
