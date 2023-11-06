@@ -14,6 +14,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -38,6 +39,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -53,8 +56,18 @@ class AppointmentServiceAsyncTest {
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService))
-  private val appointmentCancelDomainService = spy(AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
+  private val appointmentCancelDomainService = spy(
+    AppointmentCancelDomainService(
+      appointmentSeriesRepository,
+      appointmentCancellationReasonRepository,
+      telemetryClient,
+      auditService,
+      TransactionHandler(),
+      outboundEventsService,
+    ),
+  )
 
   private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -505,6 +518,11 @@ class AppointmentServiceAsyncTest {
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
+    appointment.attendees().forEach {
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
@@ -551,6 +569,13 @@ class AppointmentServiceAsyncTest {
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
+    scheduledAppointments.forEach {
+      it.attendees().forEach { attendee ->
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId)
+      }
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_CANCELLED.value), any(), any())
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
 
@@ -596,6 +621,11 @@ class AppointmentServiceAsyncTest {
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    appointment.attendees().forEach { attendee ->
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId)
+    }
+    verifyNoMoreInteractions(outboundEventsService)
 
     verifyNoInteractions(telemetryClient)
 
@@ -658,6 +688,11 @@ class AppointmentServiceAsyncTest {
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
 
+    appointment.attendees().forEach { attendee ->
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+    }
+    verifyNoMoreInteractions(outboundEventsService)
+
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
 
@@ -674,7 +709,7 @@ class AppointmentServiceAsyncTest {
       numberOfAppointments = 2,
     )
     val appointment = appointmentSeries.appointments().first()
-    val scheduledAppointmentss = appointmentSeries.scheduledAppointments().toSet()
+    val scheduledAppointments = appointmentSeries.scheduledAppointments().toSet()
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
@@ -690,7 +725,7 @@ class AppointmentServiceAsyncTest {
     verify(appointmentCancelDomainService).cancelAppointments(
       eq(appointmentSeries),
       eq(appointment.appointmentId),
-      eq(scheduledAppointmentss),
+      eq(scheduledAppointments),
       eq(request),
       cancelled.capture(),
       eq("TEST.USER"),
@@ -703,6 +738,13 @@ class AppointmentServiceAsyncTest {
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    scheduledAppointments.forEach {
+      it.attendees().forEach { attendee ->
+        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+      }
+    }
+    verifyNoMoreInteractions(outboundEventsService)
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_DELETED.value), any(), any())
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())
@@ -749,6 +791,11 @@ class AppointmentServiceAsyncTest {
 
     assertThat(cancelled.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    appointment.attendees().forEach { attendee ->
+      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
+    }
+    verifyNoMoreInteractions(outboundEventsService)
 
     verifyNoInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentDeletedEvent>())

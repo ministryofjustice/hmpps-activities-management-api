@@ -270,6 +270,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
@@ -303,6 +304,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.cancelled")
@@ -333,6 +335,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     assertThat(appointmentSeries.appointments).isEmpty()
 
     verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.deleted")
@@ -366,6 +369,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
@@ -415,6 +419,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
@@ -652,6 +657,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher, times(6)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
       assertThat(size).isEqualTo(2)
