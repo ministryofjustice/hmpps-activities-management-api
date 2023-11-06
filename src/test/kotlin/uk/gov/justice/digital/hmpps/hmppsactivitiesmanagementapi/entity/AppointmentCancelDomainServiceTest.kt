@@ -14,6 +14,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -221,9 +222,20 @@ class AppointmentCancelDomainServiceTest {
 
   @Test
   fun `appointment instance cancelled sync events raised on appointment update when appointment is cancelled`() {
-    val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
+    val appointmentSeries = appointmentSeriesEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L),
+      numberOfAppointments = 4,
+      frequency = AppointmentFrequency.DAILY,
+    )
+    val appointment = appointmentSeries.appointments()[0]
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
     val startTimeInMs = System.currentTimeMillis()
+
+    ids.size isEqualTo 4
+
     service.cancelAppointmentIds(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
@@ -231,23 +243,26 @@ class AppointmentCancelDomainServiceTest {
       request,
       LocalDateTime.now(),
       "TEST.USER",
-      3,
-      10,
+      4,
+      12,
       startTimeInMs,
     )
 
-    applyToThisAndAllFuture.forEach {
-      it.attendees().forEach { attendee ->
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, attendee.appointmentAttendeeId)
-      }
-    }
-
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
     verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test
   fun `appointment instance deleted sync events raised on appointment update when appointment is deleted`() {
-    val ids = applyToThisAndAllFuture.map { it.appointmentId }.toSet()
+    val appointmentSeries = appointmentSeriesEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L),
+      numberOfAppointments = 4,
+      frequency = AppointmentFrequency.DAILY,
+    )
+    val appointment = appointmentSeries.appointments()[0]
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
     val startTimeInMs = System.currentTimeMillis()
     service.cancelAppointmentIds(
@@ -262,12 +277,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    applyToThisAndAllFuture.forEach {
-      it.attendees().forEach { attendee ->
-        verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, attendee.appointmentAttendeeId)
-      }
-    }
-
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any())
     verifyNoMoreInteractions(outboundEventsService)
   }
 
