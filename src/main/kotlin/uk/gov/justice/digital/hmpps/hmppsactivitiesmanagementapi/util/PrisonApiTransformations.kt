@@ -66,7 +66,7 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
     scheduledInstanceId = null,
     internalLocationId = it.locationId,
     internalLocationCode = null,
-    internalLocationUserDescription = mayBeInternalLocation?.userDescription ?: "External",
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
     internalLocationDescription = mayBeInternalLocation?.description ?: (it.eventLocation ?: "External"),
     cancelled = it.eventStatus == "CANC",
     suspended = false,
