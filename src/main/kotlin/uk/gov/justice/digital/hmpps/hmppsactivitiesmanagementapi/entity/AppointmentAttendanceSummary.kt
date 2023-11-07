@@ -50,6 +50,7 @@ data class AppointmentAttendanceSummary(
   val notRecordedCount: Long,
 ) {
   fun toModel(
+    attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
   ) =
@@ -70,10 +71,12 @@ data class AppointmentAttendanceSummary(
       attendedCount,
       nonAttendedCount,
       notRecordedCount,
+      attendees.toResult(),
     )
 }
 
 fun List<AppointmentAttendanceSummary>.toModel(
+  attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-) = map { it.toModel(referenceCodeMap, locationMap) }
+) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }

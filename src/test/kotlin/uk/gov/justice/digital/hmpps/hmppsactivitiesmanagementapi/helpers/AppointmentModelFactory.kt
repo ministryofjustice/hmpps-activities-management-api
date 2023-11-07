@@ -368,4 +368,5 @@ fun appointmentAttendanceSummaryModel() = AppointmentAttendanceSummary(
   3,
   2,
   1,
+  listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
 )
