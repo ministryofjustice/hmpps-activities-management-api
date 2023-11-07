@@ -276,7 +276,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
-        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
+        emptyList(),
       ),
     )
 
