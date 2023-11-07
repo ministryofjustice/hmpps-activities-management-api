@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -108,6 +109,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         3,
         2,
         1,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Single appointments, ids 9-11
       // No attendance marked
@@ -124,6 +126,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -139,6 +142,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -154,6 +158,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Appointment set, returned as single appointments with ids 12-14
       AppointmentAttendanceSummary(
@@ -169,6 +174,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -184,6 +190,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -199,6 +206,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
     )
 
@@ -264,6 +272,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(AppointmentAttendeeSearchResult(1, "A1234BC", 456)),
       ),
     )
 
