@@ -1,8 +1,11 @@
 SET REFERENTIAL_INTEGRITY FALSE;
 
+--Common
+truncate table event_tier restart identity;
+truncate table event_organiser restart identity;
+
 --Activities
 truncate table activity_category restart identity;
-truncate table activity_tier restart identity;
 truncate table eligibility_rule restart identity;
 truncate table rollout_prison restart identity;
 truncate table attendance restart identity;

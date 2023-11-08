@@ -120,7 +120,7 @@ fun adjudicationHearing(
   hearingType: String = "Governor's Hearing Adult",
   startTime: LocalDateTime = LocalDate.now().atStartOfDay(),
   internalLocationId: Long = -2,
-  internalLocationDescription: String = "Adjudication room",
+  internalLocationDescription: String? = "Adjudication room",
   eventStatus: String = "SCH",
 ) =
   OffenderAdjudicationHearing(
@@ -156,4 +156,21 @@ fun movement(
     movementDate = movementDate,
     movementTime = movementTime.toIsoTime(),
     movementReason = "Abscond",
+  )
+
+fun visit(prisonerNumber: String = "G4793VF", locationId: Long = -1, dateTime: LocalDateTime) =
+  PrisonerSchedule(
+    offenderNo = prisonerNumber,
+    locationId = locationId,
+    firstName = "Fred",
+    lastName = "Bloggs",
+    cellLocation = null,
+    event = "event code",
+    eventType = "VISIT",
+    eventDescription = "visit event description",
+    eventLocationId = locationId,
+    eventLocation = "visit event location",
+    eventStatus = null,
+    startTime = dateTime.toIsoDateTime(),
+    comment = "visit comments",
   )

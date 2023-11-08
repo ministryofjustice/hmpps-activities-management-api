@@ -10,6 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -25,6 +28,8 @@ class AppointmentCancelDomainService(
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
   fun cancelAppointmentIds(
     appointmentSeriesId: Long,
@@ -69,33 +74,87 @@ class AppointmentCancelDomainService(
   ): AppointmentSeriesModel {
     val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
 
-    // TODO: Once all cancellation and deletion logic (prisoner released, released to hospital, OCUCANTR etc.) routes
-    // through this domain service, wrap in transaction and publish sync events
-    appointmentsToCancel.forEach {
-      it.cancel(cancelledTime, cancellationReason, cancelledBy)
-    }
+    transactionHandler.newSpringTransaction {
+      appointmentsToCancel.forEach {
+        it.cancel(cancelledTime, cancellationReason, cancelledBy)
+      }
+    }.let {
+      publishSyncEvent(appointmentsToCancel, cancellationReason)
 
-    if (trackEvent) {
-      val customEventName = if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value
-      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(cancelledBy, appointmentSeries.prisonCode, appointmentSeries.appointmentSeriesId, appointmentId)
-      val telemetryMetricsMap = mapOf(
-        APPOINTMENT_COUNT_METRIC_KEY to cancelAppointmentsCount.toDouble(),
-        APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to cancelInstancesCount.toDouble(),
-        EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
-      )
-      telemetryClient.trackEvent(customEventName, telemetryPropertiesMap, telemetryMetricsMap)
-    }
+      if (trackEvent) {
+        sendTelemetryEvent(
+          cancellationReason,
+          request,
+          cancelledBy,
+          appointmentSeries,
+          appointmentId,
+          cancelAppointmentsCount,
+          cancelInstancesCount,
+          startTimeInMs,
+        )
+      }
 
-    if (auditEvent) {
-      writeAuditEvent(appointmentId, request, appointmentSeries, cancelledTime, cancelledBy, cancellationReason.isDelete)
-    }
+      if (auditEvent) {
+        writeAuditEvent(
+          appointmentId,
+          request,
+          appointmentSeries,
+          cancelledTime,
+          cancelledBy,
+          cancellationReason.isDelete,
+        )
+      }
 
-    return appointmentSeries.toModel()
+      return appointmentSeries.toModel()
+    }
   }
 
   fun getCancelInstancesCount(
     appointmentsToCancel: Collection<Appointment>,
   ) = appointmentsToCancel.flatMap { it.attendees() }.size
+
+  private fun publishSyncEvent(
+    appointmentsToCancel: Set<Appointment>,
+    cancellationReason: AppointmentCancellationReason,
+  ) {
+    val syncEvent = if (cancellationReason.isDelete) {
+      OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+    } else {
+      OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
+    }
+    appointmentsToCancel.forEach {
+      it.attendees().forEach {
+          attendee ->
+        outboundEventsService.send(syncEvent, attendee.appointmentAttendeeId)
+      }
+    }
+  }
+
+  private fun sendTelemetryEvent(
+    cancellationReason: AppointmentCancellationReason,
+    request: AppointmentCancelRequest,
+    cancelledBy: String,
+    appointmentSeries: AppointmentSeries,
+    appointmentId: Long,
+    cancelAppointmentsCount: Int,
+    cancelInstancesCount: Int,
+    startTimeInMs: Long,
+  ) {
+    val customEventName =
+      if (cancellationReason.isDelete) TelemetryEvent.APPOINTMENT_DELETED.value else TelemetryEvent.APPOINTMENT_CANCELLED.value
+    val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
+      cancelledBy,
+      appointmentSeries.prisonCode,
+      appointmentSeries.appointmentSeriesId,
+      appointmentId,
+    )
+    val telemetryMetricsMap = mapOf(
+      APPOINTMENT_COUNT_METRIC_KEY to cancelAppointmentsCount.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to cancelInstancesCount.toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+    telemetryClient.trackEvent(customEventName, telemetryPropertiesMap, telemetryMetricsMap)
+  }
 
   private fun writeAuditEvent(
     appointmentId: Long,

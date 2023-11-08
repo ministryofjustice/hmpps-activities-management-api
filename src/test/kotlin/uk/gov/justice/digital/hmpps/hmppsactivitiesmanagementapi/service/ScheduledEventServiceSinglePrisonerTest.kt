@@ -20,6 +20,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
@@ -107,9 +109,9 @@ class ScheduledEventServiceSinglePrisonerTest {
       listOf(PrisonApiScheduledEventFixture.appointmentInstance())
     }
     val activities = listOf(PrisonApiScheduledEventFixture.activityInstance())
-    val visits = listOf(PrisonApiScheduledEventFixture.visitInstance())
+    val visits = listOf(PrisonApiScheduledEventFixture.visitInstance(eventLocationId = 100))
     val courtHearings = PrisonApiCourtHearingsFixture.instance()
-    val adjudications = listOf(adjudicationHearing(prisonCode, prisonerNumber))
+    val adjudications = listOf(adjudicationHearing(prisonCode, prisonerNumber, internalLocationId = 200))
     val transferEventsToday = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = LocalDate.now()))
 
     val sensitiveEventDateRange = LocalDateRange(
@@ -172,6 +174,15 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber))
         }
       } doReturn adjudications
+
+      on {
+        runBlocking {
+          prisonApiClient.getEventLocationsForPrison(prisonCode)
+        }
+      } doReturn mapOf(
+        visits.single().internalLocationId()!! to location(locationId = visits.single().internalLocationId()!!, userDescription = "Visit user description", description = "Visit description"),
+        adjudications.single().internalLocationId to location(locationId = adjudications.single().internalLocationId, userDescription = "Adjudication user description", description = "Adjudication description"),
+      )
     }
   }
 
@@ -293,7 +304,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
@@ -355,9 +366,10 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.eventType).isEqualTo(EventType.VISIT.name)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
           assertThat(it.bookingId).isEqualTo(bookingId)
-          assertThat(it.internalLocationId).isEqualTo(1)
+          assertThat(it.internalLocationId).isEqualTo(100)
           assertThat(it.internalLocationCode).isEqualTo("VISITS ROOM")
-          assertThat(it.internalLocationDescription).isEqualTo("VISITS ROOM")
+          assertThat(it.internalLocationUserDescription).isEqualTo("Visit user description")
+          assertThat(it.internalLocationDescription).isEqualTo("Visit description")
           assertThat(it.categoryCode).isEqualTo("VISIT")
           assertThat(it.categoryDescription).isEqualTo("Visits")
           assertThat(it.eventId).isEqualTo(1)
@@ -420,9 +432,10 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.oicHearingId).isEqualTo(-1L)
           assertThat(it.eventId).isNull()
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-          assertThat(it.internalLocationId).isEqualTo(-2L)
+          assertThat(it.internalLocationId).isEqualTo(200)
           assertThat(it.internalLocationCode).isNull()
-          assertThat(it.internalLocationDescription).isEqualTo("Adjudication room")
+          assertThat(it.internalLocationUserDescription).isEqualTo("Adjudication user description")
+          assertThat(it.internalLocationDescription).isEqualTo("Adjudication description")
           assertThat(it.categoryCode).isNull()
           assertThat(it.categoryDescription).isEqualTo("Governor's Hearing Adult")
           assertThat(it.summary).isEqualTo("Governor's Hearing Adult")

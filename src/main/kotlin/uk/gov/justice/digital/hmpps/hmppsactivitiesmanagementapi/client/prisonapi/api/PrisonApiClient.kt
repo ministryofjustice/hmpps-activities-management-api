@@ -24,12 +24,13 @@ import java.time.LocalDate
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
+typealias PrisonLocations = Map<Long, Location>
+
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
-  @Deprecated("Use prisoner search API client in place of this if it has what is needed.")
   fun getPrisonerDetails(
     prisonerNumber: String,
     fullInfo: Boolean = true,
@@ -295,6 +296,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<Location>())
+
+  suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations =
+    getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
 
   suspend fun getLocationAsync(locationId: Long, includeInactive: Boolean = false): Location =
     prisonApiWebClient.get()

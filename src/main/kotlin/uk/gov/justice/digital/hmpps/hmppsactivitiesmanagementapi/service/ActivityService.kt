@@ -27,14 +27,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EligibilityRuleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -54,7 +58,8 @@ class ActivityService(
   private val activityRepository: ActivityRepository,
   private val activitySummaryRepository: ActivitySummaryRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
-  private val activityTierRepository: ActivityTierRepository,
+  private val eventTierRepository: EventTierRepository,
+  private val eventOrganiserRepository: EventOrganiserRepository,
   private val eligibilityRuleRepository: EligibilityRuleRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -133,20 +138,14 @@ class ActivityService(
     require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-    val tier = request.tierId?.let { activityTierRepository.findOrThrowIllegalArgument(it) }
+    val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
+    val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
     val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
     val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
       .associateBy { it.prisonPayBandId }
       .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
     failDuplicateActivity(request.prisonCode, request.summary!!)
     checkEducationLevels(request.minimumEducationLevel)
-
-    val propertiesMap = mapOf(
-      PRISON_CODE_PROPERTY_KEY to request.prisonCode,
-      ACTIVITY_NAME_PROPERTY_KEY to request.summary,
-    )
-
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, propertiesMap, activityMetricsMap())
 
     val activity = Activity(
       prisonCode = request.prisonCode,
@@ -165,6 +164,7 @@ class ActivityService(
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
     ).apply {
+      this.organiser = organiser
       endDate = request.endDate
       eligibilityRules.forEach { this.addEligibilityRule(it) }
       request.pay.forEach {
@@ -203,10 +203,29 @@ class ActivityService(
         schedule.addSlots(request.slots!!)
         schedule.addInstances()
 
-        return transform(activityRepository.saveAndFlush(activity))
+        val activityModel = transform(activityRepository.saveAndFlush(activity))
+
+        publishCreateTelemetryEvent(activityModel)
+
+        return activityModel
       }
     }
   }
+
+  private fun ModelActivity.toTelemetryPropertiesMap() =
+    mutableMapOf(
+      PRISON_CODE_PROPERTY_KEY to this.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to this.summary,
+    ).also { propsMap ->
+      this.tier?.let { propsMap[ACTIVITY_TIER_PROPERTY_KEY] = it.description }
+      this.organiser?.let { propsMap[ACTIVITY_ORGANISER_PROPERTY_KEY] = it.description }
+    }
+
+  private fun publishCreateTelemetryEvent(activity: ModelActivity) =
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
+
+  private fun publishUpdateTelemetryEvent(activity: ModelActivity) =
+    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
@@ -302,6 +321,7 @@ class ActivityService(
 
       applyCategoryUpdate(request, activity)
       applyTierUpdate(request, activity)
+      applyOrganiserUpdate(request, activity)
       applySummaryUpdate(prisonCode, request, activity)
       applyStartDateUpdate(request, activity)
       applyEndDateUpdate(request, activity)
@@ -328,18 +348,14 @@ class ActivityService(
       }
 
       activityRepository.saveAndFlush(activity)
+
       updatedAllocationIds to transform(activity)
     }.let { (updatedAllocationIds, activity) ->
+      publishUpdateTelemetryEvent(activity)
+
       updatedAllocationIds.forEach {
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
       }
-
-      val propertiesMap = mapOf(
-        PRISON_CODE_PROPERTY_KEY to prisonCode,
-        ACTIVITY_NAME_PROPERTY_KEY to request.summary,
-      )
-
-      telemetryClient.trackEvent(TelemetryEvent.EDIT_ACTIVITY.value, propertiesMap, activityMetricsMap())
 
       return activity
     }
@@ -366,8 +382,20 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.tierId?.apply {
-      activity.activityTier = activityTierRepository.findOrThrowIllegalArgument(this)
+    request.tierCode?.apply {
+      activity.activityTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
+      if (activity.activityTier?.isTierTwo() != true) {
+        activity.organiser = null
+      }
+    }
+  }
+
+  private fun applyOrganiserUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.organiserCode?.apply {
+      activity.organiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument(this)
     }
   }
 

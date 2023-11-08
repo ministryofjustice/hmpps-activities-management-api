@@ -49,11 +49,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser as ModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as ModelEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
@@ -79,7 +80,8 @@ class TransformFunctionsTest {
           description = "category description",
         ),
       )
-      assertThat(tier).isEqualTo(ModelActivityTier(1, "T1", "Tier 1"))
+      assertThat(tier).isEqualTo(ModelEventTier(2, "TIER_2", "Tier 2"))
+      assertThat(organiser).isEqualTo(ModelEventOrganiser(id = 1, code = "PRISON_STAFF", description = "Prison staff"))
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
           0,
@@ -224,6 +226,7 @@ class TransformFunctionsTest {
           bookingId = entity.bookingId,
           internalLocationId = entity.internalLocationId,
           internalLocationCode = "LOC123",
+          internalLocationUserDescription = "User location desc",
           internalLocationDescription = "User location desc",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,

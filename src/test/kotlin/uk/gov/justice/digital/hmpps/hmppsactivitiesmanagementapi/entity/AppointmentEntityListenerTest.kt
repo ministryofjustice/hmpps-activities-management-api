@@ -10,7 +10,6 @@ import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import java.time.LocalDateTime
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles("test")
@@ -30,28 +29,6 @@ class AppointmentEntityListenerTest(@Autowired private val listener: Appointment
 
     appointment.attendees().forEach {
       verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it.appointmentAttendeeId)
-    }
-    verifyNoMoreInteractions(outboundEventsService)
-  }
-
-  @Test
-  fun `appointment instance cancelled events raised on appointment update when appointment is cancelled`() {
-    appointment.cancelledTime = LocalDateTime.now()
-    listener.onUpdate(appointment)
-
-    appointment.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, it.appointmentAttendeeId)
-    }
-    verifyNoMoreInteractions(outboundEventsService)
-  }
-
-  @Test
-  fun `appointment instance deleted events raised on appointment update when appointment is deleted`() {
-    appointment.isDeleted = true
-    listener.onUpdate(appointment)
-
-    appointment.attendees().forEach {
-      verify(outboundEventsService).send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
     }
     verifyNoMoreInteractions(outboundEventsService)
   }
