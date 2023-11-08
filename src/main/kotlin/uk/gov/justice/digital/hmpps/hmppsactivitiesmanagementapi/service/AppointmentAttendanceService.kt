@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendanceSummaryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -21,6 +22,7 @@ class AppointmentAttendanceService(
   private val appointmentRepository: AppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
+  private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
 ) {
   fun getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate): List<AppointmentAttendanceSummary> {
     checkCaseloadAccess(prisonCode)
@@ -31,7 +33,10 @@ class AppointmentAttendanceService(
 
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
 
-    return summaries.toModel(referenceCodeMap, locationMap)
+    val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(summaries.map { it.appointmentId })
+      .groupBy { it.appointmentSearch.appointmentId }
+
+    return summaries.toModel(attendeeMap, referenceCodeMap, locationMap)
   }
 
   fun markAttendance(appointmentId: Long, request: AppointmentAttendanceRequest, principal: Principal): Appointment {

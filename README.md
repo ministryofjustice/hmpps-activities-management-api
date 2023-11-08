@@ -166,3 +166,8 @@ To register pre-commit check to run Ktlint format:
 ```
 ./gradlew ktlintApplyToIdea addKtlintCheckGitPreCommitHook
 ```
+
+To run integration tests use below command
+```
+./gradlew integrationTest
+```

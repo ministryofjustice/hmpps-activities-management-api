@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -57,4 +58,14 @@ data class AppointmentAttendanceSummary(
 
   @Schema(description = "The number of attendees whose attendance has not yet been recorded", example = "3")
   val notRecordedCount: Long,
+
+  @Schema(
+    description =
+    """
+    The prisoner or prisoners attending this appointment. Appointments of type INDIVIDUAL will have one
+    prisoner attending each appointment. Appointments of type GROUP can have more than one prisoner
+    attending each appointment
+    """,
+  )
+  val attendees: List<AppointmentAttendeeSearchResult>,
 )
