@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -45,6 +46,7 @@ import java.util.Optional
 class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()
+  private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -52,6 +54,7 @@ class ScheduledInstanceServiceTest {
     repository,
     attendanceReasonRepository,
     attendanceSummaryRepository,
+    prisonerScheduledActivityRepository,
     outboundEventsService,
     TransactionHandler(),
     telemetryClient,
