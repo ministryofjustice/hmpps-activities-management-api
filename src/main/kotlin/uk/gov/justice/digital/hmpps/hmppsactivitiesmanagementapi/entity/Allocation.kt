@@ -5,14 +5,20 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -30,6 +36,10 @@ data class Allocation(
   @ManyToOne
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
+
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val exclusions: MutableList<Exclusion> = mutableListOf(),
 
   val prisonerNumber: String,
 
@@ -199,6 +209,13 @@ data class Allocation(
       plannedDeallocation = plannedDeallocation?.toModel(),
     )
 
+  fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
+    exclusions.any {
+      date.dayOfWeek in it.getDaysOfWeek() &&
+        timeSlot == it.getTimeSlot() &&
+        activitySchedule.getWeekNumber(date) == it.getWeekNumber()
+    }
+
   fun activate() =
     this.apply {
       failWithMessageIfAllocationsIsNot("You can only activate pending allocations", PrisonerStatus.PENDING)
@@ -248,6 +265,11 @@ data class Allocation(
   }
 
   fun isEnded() = status(PrisonerStatus.ENDED)
+
+  fun addExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion {
+    exclusions.add(Exclusion.valueOf(this, slot, daysOfWeek))
+    return exclusions.last()
+  }
 
   @Override
   override fun toString(): String {

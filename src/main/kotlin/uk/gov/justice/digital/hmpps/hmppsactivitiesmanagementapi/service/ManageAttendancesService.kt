@@ -66,9 +66,11 @@ class ManageAttendancesService(
           val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
 
           // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
-          val attendancesForInstance = allocations.mapNotNull { allocation ->
-            createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
-          }
+          val attendancesForInstance = allocations
+            .filterNot { allocation -> allocation.isExcluded(today, instance.timeSlot()) }
+            .mapNotNull { allocation ->
+              createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
+            }
 
           attendancesForInstance.ifNotEmpty {
             runCatching {

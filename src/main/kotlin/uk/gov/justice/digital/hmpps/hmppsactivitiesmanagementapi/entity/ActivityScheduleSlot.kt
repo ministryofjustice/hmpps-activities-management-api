@@ -7,6 +7,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -133,6 +134,8 @@ data class ActivityScheduleSlot(
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
+
+  fun timeSlot() = TimeSlot.slot(startTime)
 
   @Override
   override fun toString(): String {

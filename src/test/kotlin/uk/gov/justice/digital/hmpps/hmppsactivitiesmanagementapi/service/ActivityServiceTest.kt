@@ -961,9 +961,9 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
-    val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(listOf(prisoner))
+    val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
+    val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
 
     service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 
@@ -974,7 +974,7 @@ class ActivityServiceTest {
       assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
 
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+    verify(outboundEventsService, times(2)).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
   @Test

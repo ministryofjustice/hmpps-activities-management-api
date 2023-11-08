@@ -116,6 +116,14 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - does not contain exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `403 when fetching a schedule by its id for the wrong caseload`() {
       webTestClient.get()

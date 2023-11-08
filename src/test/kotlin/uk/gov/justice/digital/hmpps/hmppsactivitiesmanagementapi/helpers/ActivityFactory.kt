@@ -188,6 +188,7 @@ internal fun activitySchedule(
   noSlots: Boolean = false,
   noAllocations: Boolean = false,
   noInstances: Boolean = false,
+  noExclusions: Boolean = false,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -212,7 +213,16 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      if (!noAllocations && !noExclusions) {
+        this.allocatePrisoner(
+          prisonerNumber = "A1111BB".toPrisonerNumber(),
+          bookingId = 20002,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+          startDate = startDate ?: activity.startDate,
+        ).apply { this.addExclusion(slot, DayOfWeek.entries.toSet()) }
+      }
     }
     if (!noInstances && !noSlots) {
       this.addInstance(

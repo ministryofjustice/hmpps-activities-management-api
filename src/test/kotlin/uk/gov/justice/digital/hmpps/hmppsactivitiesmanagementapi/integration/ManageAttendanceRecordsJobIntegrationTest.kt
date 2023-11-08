@@ -129,6 +129,62 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+  @Test
+  fun `Attendance records are not created for where there are exclusions`() {
+    val allocatedPrisoners = listOf(listOf("G4793VF"), listOf("G4793VF", "A5193DY"))
+    allocatedPrisoners.forEach {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        prisonerNumbers = it,
+        prisoners = it.map { prisonNumber ->
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonNumber, prisonId = "MDI")
+        },
+      )
+    }
+
+    assertThat(attendanceRepository.count()).isZero
+    val activity = activityRepository.findById(1).orElseThrow()
+    val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
+
+    with(activity) {
+      assertThat(description).isEqualTo("Maths Level 1")
+    }
+
+    assertThat(activitySchedules).hasSize(1)
+
+    with(activitySchedules.first()) {
+      assertThat(allocations()).hasSize(2)
+      assertThat(instances()).hasSize(2)
+      val scheduledInstances = scheduledInstanceRepository.findAll()
+      assertThat(scheduledInstances).isNotEmpty
+      scheduledInstances.forEach { assertThat(it.attendances).isEmpty() }
+    }
+
+    webTestClient.manageAttendanceRecords()
+
+    val activityAfter = activityRepository.findById(1).orElseThrow()
+    val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
+    log.info("ActivitySchedulesAfter count = ${activitySchedulesAfter.size}")
+
+    val morningSession = scheduledInstanceRepository.getReferenceById(1)
+    log.info("ScheduledInstanceId (AM) = ${morningSession.scheduledInstanceId} attendances ${morningSession.attendances.size}")
+    assertThat(morningSession.attendances).hasSize(1)
+
+    val afternoonSession = scheduledInstanceRepository.getReferenceById(2)
+    log.info("ScheduledInstanceId (PM) = ${afternoonSession.scheduledInstanceId} attendances ${afternoonSession.attendances.size}")
+    assertThat(afternoonSession.attendances).hasSize(2)
+
+    assertThat(attendanceRepository.count()).isEqualTo(3)
+
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    eventCaptor.allValues.map {
+      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
+      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
+    }
+  }
+
   @Sql("classpath:test_data/seed-activity-id-4.sql")
   @Test
   fun `Multiple calls on same day does not result in duplicate attendances`() {
