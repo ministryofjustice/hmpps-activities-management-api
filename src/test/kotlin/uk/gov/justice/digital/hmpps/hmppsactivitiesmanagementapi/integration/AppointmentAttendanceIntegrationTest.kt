@@ -110,9 +110,12 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         2,
         1,
         listOf(
-          AppointmentAttendeeSearchResult(appointmentAttendeeId = 1, prisonerNumber = "A1234BC", bookingId = 1),
-          AppointmentAttendeeSearchResult(appointmentAttendeeId = 2, prisonerNumber = "B2345CD", bookingId = 2),
-          AppointmentAttendeeSearchResult(appointmentAttendeeId = 3, prisonerNumber = "C3456DE", bookingId = 3),
+          AppointmentAttendeeSearchResult(4, "A1234BC", 1),
+          AppointmentAttendeeSearchResult(5, "B2345CD", 2),
+          AppointmentAttendeeSearchResult(6, "C3456DE", 3),
+          AppointmentAttendeeSearchResult(7, "D4567EF", 4),
+          AppointmentAttendeeSearchResult(8, "E5678FG", 5),
+          AppointmentAttendeeSearchResult(9, "F6789GH", 6),
         ),
       ),
       // Single appointments, ids 9-11
@@ -130,7 +133,9 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
-        emptyList(),
+        listOf(
+          AppointmentAttendeeSearchResult(17, "A1234BC", 1),
+        ),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -146,7 +151,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
-        listOf(AppointmentAttendeeSearchResult(appointmentAttendeeId = 18, prisonerNumber = "B2345CD", bookingId = 2)),
+        listOf(AppointmentAttendeeSearchResult(18, "B2345CD", 2)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -162,7 +167,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
-        listOf(AppointmentAttendeeSearchResult(appointmentAttendeeId = 18, prisonerNumber = "B2345CD", bookingId = 2)),
+        listOf(AppointmentAttendeeSearchResult(19, "C3456DE", 3)),
       ),
       // Appointment set, returned as single appointments with ids 12-14
       AppointmentAttendanceSummary(
@@ -178,7 +183,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
-        listOf(AppointmentAttendeeSearchResult(appointmentAttendeeId = 20, prisonerNumber = "A1234BC", bookingId = 1)),
+        listOf(AppointmentAttendeeSearchResult(20, "A1234BC", 1)),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -194,7 +199,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
-        listOf(AppointmentAttendeeSearchResult(appointmentAttendeeId = 21, prisonerNumber = "B2345CD", bookingId = 2)),
+        listOf(AppointmentAttendeeSearchResult(21, "B2345CD", 2)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -210,7 +215,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
-        listOf(AppointmentAttendeeSearchResult(appointmentAttendeeId = 22, prisonerNumber = "C3456DE", bookingId = 3)),
+        listOf(AppointmentAttendeeSearchResult(22, "C3456DE", 3)),
       ),
     )
 
@@ -261,6 +266,11 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         3,
+        listOf(
+          AppointmentAttendeeSearchResult(1, "A1234BC", 1),
+          AppointmentAttendeeSearchResult(2, "B2345CD", 2),
+          AppointmentAttendeeSearchResult(3, "C3456DE", 3),
+        ),
       ),
       // Single appointments, id 4, cancelled appointment
       AppointmentAttendanceSummary(
@@ -276,7 +286,9 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
-        emptyList(),
+        listOf(
+          AppointmentAttendeeSearchResult(13, "A1234BC", 1),
+        ),
       ),
     )
 
