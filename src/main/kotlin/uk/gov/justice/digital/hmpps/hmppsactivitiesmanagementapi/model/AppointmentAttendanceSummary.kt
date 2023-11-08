@@ -63,9 +63,9 @@ data class AppointmentAttendanceSummary(
     description =
     """
     The prisoner or prisoners attending this appointment. Appointments of type INDIVIDUAL will have one
-    prisoner attending to each appointment. Appointments of type GROUP can have more than one prisoner
+    prisoner attending each appointment. Appointments of type GROUP can have more than one prisoner
     attending each appointment
     """,
   )
-  val attendees: List<AppointmentAttendeeSearchResult> = emptyList(),
+  val attendees: List<AppointmentAttendeeSearchResult>,
 )

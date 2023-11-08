@@ -63,10 +63,8 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
-      val appointmentSearch = appointmentSearchEntity()
       assertThatThrownBy { service.getAppointmentAttendanceSummaries(moorlandPrisonCode, LocalDate.now()) }
         .isInstanceOf(CaseloadAccessException::class.java)
-      whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(1))).thenReturn(appointmentSearch.attendees)
       verify(appointmentRepository, never()).saveAndFlush(any())
     }
 
