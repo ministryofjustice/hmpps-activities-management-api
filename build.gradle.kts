@@ -4,8 +4,8 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.7.0"
-  kotlin("plugin.spring") version "1.9.10"
-  kotlin("plugin.jpa") version "1.9.10"
+  kotlin("plugin.spring") version "1.9.20"
+  kotlin("plugin.jpa") version "1.9.20"
   jacoco
   id("org.openapi.generator") version "6.6.0"
 }
@@ -57,15 +57,15 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-java {
-  toolchain.languageVersion.set(JavaLanguageVersion.of(18))
+kotlin {
+  jvmToolchain(21)
 }
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
     dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel")
     kotlinOptions {
-      jvmTarget = "18"
+      jvmTarget = "21"
     }
   }
   withType<KtLintCheckTask> {
@@ -115,7 +115,7 @@ kotlin {
   }
 }
 jacoco {
-  toolVersion = "0.8.8"
+  toolVersion = "0.8.9"
 }
 
 val integrationTest = task<Test>("integrationTest") {
