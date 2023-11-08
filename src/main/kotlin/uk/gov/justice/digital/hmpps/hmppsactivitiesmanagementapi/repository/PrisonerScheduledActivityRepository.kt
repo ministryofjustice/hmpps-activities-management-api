@@ -14,6 +14,8 @@ import java.time.LocalTime
 
 interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledActivity, UniquePropertyId> {
 
+  fun getAllByScheduledInstanceId(id: Long): List<PrisonerScheduledActivity>
+
   @Query(
     """
     SELECT sa FROM PrisonerScheduledActivity sa 
