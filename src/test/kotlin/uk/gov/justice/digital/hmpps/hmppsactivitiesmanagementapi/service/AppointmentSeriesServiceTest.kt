@@ -24,6 +24,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
@@ -47,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -84,6 +86,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentSeriesServiceTest {
+  private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentHostRepository: AppointmentHostRepository = mock()
@@ -93,10 +96,11 @@ class AppointmentSeriesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), mock(), TransactionHandler(), mock(), telemetryClient, auditService))
+  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, mock(), TransactionHandler(), mock(), telemetryClient, auditService))
   private val createAppointmentsJob: CreateAppointmentsJob = mock()
   private lateinit var principal: Principal
 
+  private val appointmentCaptor = argumentCaptor<Appointment>()
   private val appointmentSeriesEntityCaptor = argumentCaptor<AppointmentSeries>()
   private var telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private var telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
@@ -138,6 +142,8 @@ class AppointmentSeriesServiceTest {
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 1, prisonId = prisonCode),
         ),
       )
+
+    whenever(appointmentRepository.saveAndFlush(appointmentCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<Appointment>())
 
     whenever(appointmentTierRepository.findById(appointmentTier.appointmentTierId)).thenReturn(Optional.of(appointmentTier))
 

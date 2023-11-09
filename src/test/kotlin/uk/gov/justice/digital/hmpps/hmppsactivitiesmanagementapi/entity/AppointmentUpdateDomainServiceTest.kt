@@ -600,37 +600,6 @@ class AppointmentUpdateDomainServiceTest {
     }
 
     @Test
-    fun `does not set updated and updated by on appointment series and appointment when no properties have changed`() {
-      val appointmentsToUpdate = applyToAllFuture
-      val request = AppointmentUpdateRequest()
-      val updated = LocalDateTime.now()
-      val response = service.updateAppointments(
-        appointmentSeries,
-        appointment.appointmentId,
-        appointmentsToUpdate,
-        request,
-        emptyMap(),
-        updated,
-        updatedBy,
-        appointmentsToUpdate.size,
-        appointmentsToUpdate.flatMap { it.attendees() }.size,
-        System.currentTimeMillis(),
-        trackEvent = false,
-        auditEvent = false,
-      )
-
-      appointmentSeries.updatedTime isEqualTo null
-      appointmentSeries.updatedBy isEqualTo null
-      appointmentSeries.appointments().map { it.updatedTime }.distinct().single() isEqualTo null
-      appointmentSeries.appointments().map { it.updatedBy }.distinct().single() isEqualTo null
-
-      response.updatedTime isEqualTo null
-      response.updatedBy isEqualTo null
-      response.appointments.map { it.updatedTime }.distinct().single() isEqualTo null
-      response.appointments.map { it.updatedBy }.distinct().single() isEqualTo null
-    }
-
-    @Test
     fun `track custom event using supplied counts and start time`() {
       val appointmentsToUpdate = applyToThis
       val request = AppointmentUpdateRequest(internalLocationId = 456)

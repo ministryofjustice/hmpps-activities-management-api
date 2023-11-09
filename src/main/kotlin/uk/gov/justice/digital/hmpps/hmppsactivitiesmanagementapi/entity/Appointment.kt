@@ -111,9 +111,10 @@ data class Appointment(
   fun findAttendees(prisonerNumbers: Collection<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
   // Should only be used when creating appointments initially. Adding new attendees after creation should use the function below
-  fun addAttendee(attendee: AppointmentAttendee) {
+  fun addAttendee(attendee: AppointmentAttendee): AppointmentAttendee {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
+    return attendee
   }
 
   fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?): AppointmentAttendee? {
@@ -130,8 +131,7 @@ data class Appointment(
       addedTime = addedTime,
       addedBy = addedBy,
     )
-    attendees.add(attendee)
-    return attendee
+    return addAttendee(attendee)
   }
 
   fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) =

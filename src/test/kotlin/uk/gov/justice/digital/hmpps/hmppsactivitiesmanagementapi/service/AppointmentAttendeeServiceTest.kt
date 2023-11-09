@@ -6,7 +6,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.AdditionalAnswers
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -18,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -56,6 +59,8 @@ class AppointmentAttendeeServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val auditService = mock<AuditService>()
 
+  private val appointmentCaptor = argumentCaptor<Appointment>()
+
   private val service = spy(
     AppointmentAttendeeService(
       appointmentRepository,
@@ -71,6 +76,11 @@ class AppointmentAttendeeServiceTest {
     ),
   )
 
+  @BeforeEach
+  fun setUp() {
+    whenever(appointmentRepository.saveAndFlush(appointmentCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<Appointment>())
+  }
+
   @Nested
   @DisplayName("Remove prisoner from future appointments")
   inner class RemovePrisonerFromFutureAppointments {
@@ -82,11 +92,20 @@ class AppointmentAttendeeServiceTest {
       val removedTime = LocalDateTime.now()
       val removedBy = "OFFENDER_RELEASED_EVENT"
       val appointmentInstance = mock<AppointmentInstance>()
-      val appointmentAttendee = mock<AppointmentAttendee>()
+      val appointmentAttendeeMock = mock<AppointmentAttendee>()
 
       whenever(appointmentInstance.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
       whenever(appointmentInstance.prisonCode).thenReturn(prisonCode)
       whenever(appointmentInstance.prisonerNumber).thenReturn(prisonerNumber)
+
+      whenever(appointmentAttendeeMock.appointmentAttendeeId).thenReturn(appointmentAttendeeId)
+      whenever(
+        appointmentAttendeeMock.remove(
+          removedTime,
+          prisonerReleasedAppointmentAttendeeRemovalReason(),
+          removedBy,
+        ),
+      ).thenReturn(appointmentAttendeeMock)
 
       whenever(appointmentAttendeeRemovalReasonRepository.findById(PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID))
         .thenReturn(Optional.of(prisonerReleasedAppointmentAttendeeRemovalReason()))
@@ -94,7 +113,8 @@ class AppointmentAttendeeServiceTest {
       whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
         .thenReturn(listOf(appointmentInstance))
 
-      whenever(appointmentAttendeeRepository.findById(appointmentAttendeeId)).thenReturn(Optional.of(appointmentAttendee))
+      whenever(appointmentAttendeeRepository.findById(appointmentInstance.appointmentAttendeeId))
+        .thenReturn(Optional.of(appointmentAttendeeMock))
 
       service.removePrisonerFromFutureAppointments(
         prisonCode,
@@ -104,7 +124,7 @@ class AppointmentAttendeeServiceTest {
         removedBy,
       )
 
-      verify(appointmentAttendee).remove(
+      verify(appointmentAttendeeMock).remove(
         removedTime,
         prisonerReleasedAppointmentAttendeeRemovalReason(),
         removedBy,
