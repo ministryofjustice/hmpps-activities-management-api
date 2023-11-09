@@ -14,8 +14,10 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
@@ -27,6 +29,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -41,11 +46,21 @@ class AppointmentCancelDomainServiceTest {
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
-  private val service = spy(AppointmentCancelDomainService(appointmentSeriesRepository, appointmentCancellationReasonRepository, telemetryClient, auditService))
+  private val service = spy(
+    AppointmentCancelDomainService(
+      appointmentSeriesRepository,
+      appointmentCancellationReasonRepository,
+      telemetryClient,
+      auditService,
+      TransactionHandler(),
+      outboundEventsService,
+    ),
+  )
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
@@ -203,6 +218,67 @@ class AppointmentCancelDomainServiceTest {
 
       verifyNoInteractions(auditService)
     }
+  }
+
+  @Test
+  fun `appointment instance cancelled sync events raised on appointment update when appointment is cancelled`() {
+    val appointmentSeries = appointmentSeriesEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L),
+      numberOfAppointments = 4,
+      frequency = AppointmentFrequency.DAILY,
+    )
+    val appointment = appointmentSeries.appointments()[0]
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
+    val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
+    val startTimeInMs = System.currentTimeMillis()
+
+    ids.size isEqualTo 4
+
+    service.cancelAppointmentIds(
+      appointmentSeries.appointmentSeriesId,
+      appointment.appointmentId,
+      ids,
+      request,
+      LocalDateTime.now(),
+      "TEST.USER",
+      4,
+      12,
+      startTimeInMs,
+    )
+
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `appointment instance deleted sync events raised on appointment update when appointment is deleted`() {
+    val appointmentSeries = appointmentSeriesEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L),
+      numberOfAppointments = 4,
+      frequency = AppointmentFrequency.DAILY,
+    )
+    val appointment = appointmentSeries.appointments()[0]
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
+    val request = AppointmentCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)
+    val startTimeInMs = System.currentTimeMillis()
+    service.cancelAppointmentIds(
+      appointmentSeries.appointmentSeriesId,
+      appointment.appointmentId,
+      ids,
+      request,
+      LocalDateTime.now(),
+      "TEST.USER",
+      3,
+      10,
+      startTimeInMs,
+    )
+
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any())
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Nested

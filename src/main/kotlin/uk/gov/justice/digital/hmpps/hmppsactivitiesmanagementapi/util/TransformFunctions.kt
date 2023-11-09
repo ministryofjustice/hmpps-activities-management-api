@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -9,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
@@ -22,10 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier as EntityActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory as EntityAttendanceHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser as EntityEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier as EntityEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime as EntityPrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison as EntityRolloutPrison
@@ -36,12 +40,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityTier as ModelActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventReview as ModelEventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as ModelEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation as ModelInternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime as ModelPrisonRegime
@@ -57,7 +61,8 @@ fun transform(activity: EntityActivity) =
     id = activity.activityId,
     prisonCode = activity.prisonCode,
     category = activity.activityCategory.toModelActivityCategory(),
-    tier = activity.activityTier?.toModelActivityTier(),
+    tier = activity.activityTier?.toModelEventTier(),
+    organiser = activity.organiser?.toModelEventOrganiser(),
     eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
     schedules = activity.schedules().toModelSchedules(),
     pay = activity.activityPay().toModelActivityPayList(),
@@ -90,7 +95,10 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
   activitiesForPrisoners: List<PrisonerScheduledActivity>,
+  prisonLocations: PrisonLocations = emptyMap(),
 ) = activitiesForPrisoners.map {
+  val mayBeInternalLocation = it.internalLocationId?.toLong().let(prisonLocations::get)
+
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventSource = "SAA",
@@ -99,7 +107,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     bookingId = it.bookingId.toLong(), // TODO: Add bookingId to allocation and retrieve in the view
     internalLocationId = it.internalLocationId?.toLong(),
     internalLocationCode = it.internalLocationCode,
-    internalLocationDescription = it.internalLocationDescription,
+    internalLocationUserDescription = mayBeInternalLocation?.userDescription,
+    internalLocationDescription = mayBeInternalLocation?.description ?: it.internalLocationDescription,
     eventId = null,
     appointmentSeriesId = null,
     appointmentId = null,
@@ -142,6 +151,7 @@ fun transformAppointmentInstanceToScheduledEvents(
     bookingId = it.bookingId,
     internalLocationId = it.internalLocationId,
     internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available",
+    internalLocationUserDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
     internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
     eventId = null,
     appointmentSeriesId = it.appointmentSeriesId,
@@ -176,9 +186,16 @@ fun EntityActivityCategory.toModelActivityCategory() =
     this.description,
   )
 
-private fun EntityActivityTier.toModelActivityTier() =
-  ModelActivityTier(
-    id = this.activityTierId,
+private fun EntityEventTier.toModelEventTier() =
+  ModelEventTier(
+    id = this.eventTierId,
+    code = this.code,
+    description = this.description,
+  )
+
+private fun EntityEventOrganiser.toModelEventOrganiser() =
+  EventOrganiser(
+    id = this.eventOrganiserId,
     code = this.code,
     description = this.description,
   )

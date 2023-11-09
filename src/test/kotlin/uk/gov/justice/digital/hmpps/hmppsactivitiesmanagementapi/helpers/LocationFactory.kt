@@ -6,6 +6,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.activityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.appointmentInstance
 
+fun location(
+  agencyId: String = moorlandPrisonCode,
+  userDescription: String = "User Description",
+  description: String = "Some Description",
+  locationId: Long = 123L,
+  locationType: String = "Some Type",
+) = Location(
+  agencyId = agencyId,
+  description = description,
+  locationId = locationId,
+  locationType = locationType,
+  userDescription = userDescription,
+)
+
 fun locations(
   agencyId: String = "PBI",
   description: String = "Some Description",

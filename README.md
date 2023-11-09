@@ -13,7 +13,7 @@ This service requires a postgresql database.
 
 Tools required:
 
-* JDK v19+
+* JDK v21+
 * Kotlin (Intellij)
 * docker
 * docker-compose
@@ -165,4 +165,9 @@ To register pre-commit check to run Ktlint format:
 ...or to register pre-commit check to only run Ktlint check:
 ```
 ./gradlew ktlintApplyToIdea addKtlintCheckGitPreCommitHook
+```
+
+To run integration tests use below command
+```
+./gradlew integrationTest
 ```

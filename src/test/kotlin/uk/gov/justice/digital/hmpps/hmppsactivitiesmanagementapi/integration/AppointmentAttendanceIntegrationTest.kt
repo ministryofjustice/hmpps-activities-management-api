@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
@@ -108,6 +109,14 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         3,
         2,
         1,
+        listOf(
+          AppointmentAttendeeSearchResult(4, "A1234BC", 1),
+          AppointmentAttendeeSearchResult(5, "B2345CD", 2),
+          AppointmentAttendeeSearchResult(6, "C3456DE", 3),
+          AppointmentAttendeeSearchResult(7, "D4567EF", 4),
+          AppointmentAttendeeSearchResult(8, "E5678FG", 5),
+          AppointmentAttendeeSearchResult(9, "F6789GH", 6),
+        ),
       ),
       // Single appointments, ids 9-11
       // No attendance marked
@@ -124,6 +133,9 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(
+          AppointmentAttendeeSearchResult(17, "A1234BC", 1),
+        ),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -139,6 +151,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
+        listOf(AppointmentAttendeeSearchResult(18, "B2345CD", 2)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -154,6 +167,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
+        listOf(AppointmentAttendeeSearchResult(19, "C3456DE", 3)),
       ),
       // Appointment set, returned as single appointments with ids 12-14
       AppointmentAttendanceSummary(
@@ -169,6 +183,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(AppointmentAttendeeSearchResult(20, "A1234BC", 1)),
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -184,6 +199,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         0,
+        listOf(AppointmentAttendeeSearchResult(21, "B2345CD", 2)),
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -199,6 +215,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         0,
+        listOf(AppointmentAttendeeSearchResult(22, "C3456DE", 3)),
       ),
     )
 
@@ -249,6 +266,11 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         3,
+        listOf(
+          AppointmentAttendeeSearchResult(1, "A1234BC", 1),
+          AppointmentAttendeeSearchResult(2, "B2345CD", 2),
+          AppointmentAttendeeSearchResult(3, "C3456DE", 3),
+        ),
       ),
       // Single appointments, id 4, cancelled appointment
       AppointmentAttendanceSummary(
@@ -264,6 +286,9 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         1,
+        listOf(
+          AppointmentAttendeeSearchResult(13, "A1234BC", 1),
+        ),
       ),
     )
 

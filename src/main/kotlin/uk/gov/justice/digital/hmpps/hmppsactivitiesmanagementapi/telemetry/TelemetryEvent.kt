@@ -4,6 +4,7 @@ enum class TelemetryEvent(val value: String) {
 
   ACTIVITIES_DAILY_STATS("SAA-Activities-Daily-Stats"),
   ACTIVITY_CREATED("SAA-Activity-Created"),
+  ACTIVITY_EDITED("SAA-Activity-Edited"),
   RECORD_ATTENDANCE("SAA-Record-Attendance"),
   CREATE_ALLOCATION("SAA-Create-Allocation"),
   APPOINTMENT_CANCELLED("SAA-Appointment-Cancelled"),
@@ -15,7 +16,6 @@ enum class TelemetryEvent(val value: String) {
   APPOINTMENT_ATTENDANCE_MARKED_METRICS("SAA-Appointment-Attendance-Marked"),
   APPOINTMENTS_AGGREGATE_METRICS("SAA-Appointments-Aggregate-Metrics"),
   COC("SAA-Activity-Circumstances-Changed"),
-  EDIT_ACTIVITY("SAA-Activity-Edited"),
   PRISONER_ADDED_TO_WAITLIST("SAA-Prisoner-Added-To-Waitlist"),
   PRISONER_APPROVED_ON_WAITLIST("SAA-Prisoner-Apporved-On-Waitlist"),
   PRISONER_DEALLOCATED("SAA-PrisonerDeallocated"),

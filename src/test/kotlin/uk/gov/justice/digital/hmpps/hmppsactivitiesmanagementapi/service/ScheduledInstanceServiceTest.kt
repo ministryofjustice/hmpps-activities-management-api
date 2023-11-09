@@ -21,13 +21,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEve
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -45,6 +49,7 @@ import java.util.Optional
 class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()
+  private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -52,6 +57,7 @@ class ScheduledInstanceServiceTest {
     repository,
     attendanceReasonRepository,
     attendanceSummaryRepository,
+    prisonerScheduledActivityRepository,
     outboundEventsService,
     TransactionHandler(),
     telemetryClient,
@@ -116,6 +122,58 @@ class ScheduledInstanceServiceTest {
 
       result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.ED)
       assertThat(result).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("getAttendeesForScheduledInstance")
+  inner class GetAttendeesForScheduledInstance {
+    @Test
+    fun `get attendees by instance - success`() {
+      addCaseloadIdToRequestHeader("MDI")
+      whenever(repository.findById(1)).thenReturn(Optional.of(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+      whenever(prisonerScheduledActivityRepository.getAllByScheduledInstanceId(1)).thenReturn(
+        listOf(
+          PrisonerScheduledActivity(
+            scheduledInstanceId = 1,
+            allocationId = 2,
+            prisonCode = "MDI",
+            sessionDate = LocalDate.now(),
+            startTime = LocalTime.now(),
+            endTime = LocalTime.now(),
+            prisonerNumber = "ABC123",
+            bookingId = 100001,
+            inCell = false,
+            onWing = false,
+            offWing = true,
+            activityCategory = "SAA_OUT_OF_WORK",
+            activityId = 1,
+          ),
+        ),
+      )
+
+      val result = service.getAttendeesForScheduledInstance(1)
+
+      assertThat(result).hasSize(1)
+      assertThat(result).isEqualTo(
+        listOf(
+          ScheduledAttendee(
+            scheduledInstanceId = 1,
+            allocationId = 2,
+            prisonerNumber = "ABC123",
+            bookingId = 100001,
+            suspended = false,
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `get attendees by instance - not found`() {
+      whenever(repository.findById(1)).thenReturn(Optional.empty())
+
+      val exception = assertThrows<EntityNotFoundException> { service.getAttendeesForScheduledInstance(1) }
+      assertThat(exception.message).isEqualTo("Scheduled Instance 1 not found")
     }
   }
 

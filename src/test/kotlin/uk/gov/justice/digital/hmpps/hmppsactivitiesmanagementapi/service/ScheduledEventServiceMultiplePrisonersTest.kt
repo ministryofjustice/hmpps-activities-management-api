@@ -165,6 +165,12 @@ class ScheduledEventServiceMultiplePrisonersTest {
           )
         }
       } doReturn adjudications
+
+      on {
+        runBlocking {
+          prisonApiClient.getEventLocationsForPrison(any())
+        }
+      } doReturn emptyMap()
     }
   }
 
@@ -176,7 +182,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     startTime: LocalTime? = LocalTime.of(10, 0),
     endTime: LocalTime? = LocalTime.of(11, 30),
     prisonerNumber: String = "G4793VF",
-    bookingId: Int = 900001,
+    bookingId: Long = 900001,
     inCell: Boolean = false,
     onWing: Boolean = false,
     offWing: Boolean = false,
@@ -289,7 +295,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         .thenReturn(listOf(activityEntity))
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
@@ -442,7 +448,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         .thenReturn(listOf(activityEntity))
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,

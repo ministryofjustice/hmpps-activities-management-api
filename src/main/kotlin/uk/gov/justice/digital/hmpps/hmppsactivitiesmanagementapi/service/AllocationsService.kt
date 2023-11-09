@@ -112,7 +112,7 @@ class AllocationsService(
     updatedBy: String,
   ) {
     request.endDate?.apply {
-      require(allocation.endDate !== null || request.reasonCode !== null) {
+      require(allocation.endDate != null || request.reasonCode != null) {
         "Reason code must be supplied when setting the allocation end date"
       }
       require(allocation.activitySchedule.activity.endDate == null || this <= allocation.activitySchedule.activity.endDate) {

@@ -8,8 +8,8 @@
     "description": "Such as classes in English, maths, construction and computer skills"
   },
   "activityTier": {
-    "activityTierId": 1,
-    "code": "Tier1",
+    "eventTierId": 1,
+    "code": "TIER_1",
     "description": "Work, education and maintenance"
   },
   "attendanceRequired": false,

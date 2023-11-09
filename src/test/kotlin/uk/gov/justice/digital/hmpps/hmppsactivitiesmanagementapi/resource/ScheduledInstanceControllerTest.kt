@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -61,6 +62,44 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     assertThat(response.contentAsString).contains("Not found")
 
     verify(scheduledInstanceService).getActivityScheduleInstanceById(2)
+  }
+
+  @Test
+  fun `200 response when get attendees by instance ID found`() {
+    val attendees = listOf(
+      ScheduledAttendee(
+        scheduledInstanceId = 1,
+        allocationId = 2,
+        prisonerNumber = "ABC123",
+        bookingId = 100001,
+        suspended = false,
+      ),
+    )
+
+    whenever(scheduledInstanceService.getAttendeesForScheduledInstance(1)).thenReturn(attendees)
+
+    val response = mockMvc.getScheduledAttendeesByScheduledInstance("1")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendees))
+
+    verify(scheduledInstanceService).getAttendeesForScheduledInstance(1)
+  }
+
+  @Test
+  fun `404 response when get attendees by instance by ID not found`() {
+    whenever(scheduledInstanceService.getAttendeesForScheduledInstance(2)).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.getScheduledAttendeesByScheduledInstance("2")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Not found")
+
+    verify(scheduledInstanceService).getAttendeesForScheduledInstance(2)
   }
 
   @Test
@@ -164,6 +203,9 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   private fun MockMvc.getScheduledInstanceById(instanceId: String) =
     get("/scheduled-instances/$instanceId")
+
+  private fun MockMvc.getScheduledAttendeesByScheduledInstance(instanceId: String) =
+    get("/scheduled-instances/$instanceId/scheduled-attendees")
 
   private fun MockMvc.getAttendancesByScheduledInstance(instanceId: String) =
     get("/scheduled-instances/$instanceId/attendances")

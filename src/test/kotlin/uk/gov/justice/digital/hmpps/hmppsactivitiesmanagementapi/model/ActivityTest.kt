@@ -28,7 +28,7 @@ class ActivityTest : ModelTest() {
       pieceWork = false,
       prisonCode = "PVI",
       riskLevel = "Low",
-      tier = ActivityTier(id = 2, code = "AB", description = "Activity desc"),
+      tier = EventTier(id = 2, code = "AB", description = "Activity desc"),
       attendanceRequired = true,
       category = ActivityCategory(id = 1, code = "11", name = "Cat 1", description = "Cat 1 desc"),
       description = "Some Desc",

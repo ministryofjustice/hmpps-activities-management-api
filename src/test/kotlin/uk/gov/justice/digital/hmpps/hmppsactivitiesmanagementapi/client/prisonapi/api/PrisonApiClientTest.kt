@@ -626,4 +626,15 @@ class PrisonApiClientTest {
 
     assertThat(function.returnType).isEqualTo(typeOf<List<Movement>>())
   }
+
+  @Test
+  fun `getEventLocationsForPrison - success`() {
+    val eventLocations = listOf(internalLocation(), appointmentLocation(2, moorlandPrisonCode))
+
+    prisonApiMockServer.stubGetEventLocations(moorlandPrisonCode, eventLocations)
+
+    runBlocking {
+      prisonApiClient.getEventLocationsForPrison(moorlandPrisonCode) isEqualTo eventLocations.associateBy { it.locationId }
+    }
+  }
 }

@@ -8,13 +8,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -46,7 +47,8 @@ val activeAllocation = activityEntity().schedules().first().allocations().first(
 
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
-  tier: ActivityTier = activityTier(),
+  tier: EventTier = eventTier(),
+  organiser: EventOrganiser = eventOrganiser(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
   activityId: Long = 1L,
   prisonCode: String = "MDI",
@@ -78,6 +80,7 @@ internal fun activityEntity(
     inCell = inCell,
     onWing = onWing,
   ).apply {
+    this.organiser = organiser
     this.endDate = endDate
     if (!noEligibilityRules) {
       this.addEligibilityRule(eligibilityRuleOver21)
@@ -160,7 +163,17 @@ internal fun attendanceReasons() = mapOf(
 
 internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!
 
-internal fun activityTier() = ActivityTier(activityTierId = 1, code = "T1", description = "Tier 1")
+internal fun eventTier(
+  eventTierId: Long = 2,
+  code: String = "TIER_2",
+  description: String = "Tier 2",
+) = EventTier(eventTierId = eventTierId, code = code, description = description)
+
+internal fun eventOrganiser(
+  eventOrganiserId: Long = 1,
+  code: String = "PRISON_STAFF",
+  description: String = "Prison staff",
+) = EventOrganiser(eventOrganiserId = eventOrganiserId, code = code, description = description)
 
 internal fun activitySchedule(
   activity: Activity,
@@ -340,7 +353,8 @@ internal fun activityCreateRequest(
     summary = "Test activity",
     description = "Test activity",
     categoryId = activityCategory().activityCategoryId,
-    tierId = activityTier().activityTierId,
+    tierCode = eventTier().code,
+    organiserCode = eventOrganiser().code,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
     pay = emptyList(),
     riskLevel = "high",
@@ -422,7 +436,7 @@ internal fun activityFromDbInstance(
   startTime: LocalTime? = LocalTime.of(10, 0),
   endTime: LocalTime? = LocalTime.of(11, 30),
   prisonerNumber: String = "G4793VF",
-  bookingId: Int = 900001,
+  bookingId: Long = 900001,
   inCell: Boolean = false,
   onWing: Boolean = false,
   offWing: Boolean = false,

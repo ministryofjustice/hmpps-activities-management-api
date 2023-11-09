@@ -41,10 +41,13 @@ data class ScheduledEvent(
   @Schema(description = "The NOMIS internal location id where this event takes place", example = "10001")
   val internalLocationId: Long?,
 
-  @Schema(description = "The NOMIS location code for this event", example = "MDI-HB1-EDUCATION-RM1")
+  @Schema(description = "The NOMIS location code for this event", example = "5-A-SIDE COM")
   val internalLocationCode: String?,
 
-  @Schema(description = "The NOMIS location description for this event", example = "Education Room One")
+  @Schema(description = "The NOMIS location user description for this event", example = "GYM ORDERLY")
+  val internalLocationUserDescription: String?,
+
+  @Schema(description = "The NOMIS location description for this event", example = "MDI-GYM-5-A-SIDE COM")
   val internalLocationDescription: String?,
 
   @Schema(description = "Event category code (e.g appointment category code, activity category code)", example = "GOVE")
