@@ -85,7 +85,7 @@ class AppointmentServiceCancelTest {
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
-    AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService),
+    AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), telemetryClient, auditService),
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
       appointmentCancellationReasonRepository,

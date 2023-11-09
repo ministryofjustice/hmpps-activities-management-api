@@ -57,7 +57,7 @@ class AppointmentServiceAsyncTest {
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService))
+  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), telemetryClient, auditService))
   private val appointmentCancelDomainService = spy(
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
