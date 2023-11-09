@@ -108,7 +108,7 @@ class ScheduledInstanceController(
     value = [
       ApiResponse(
         responseCode = "200",
-        description = "Scheduled instance found",
+        description = "Scheduled attendees found",
         content = [
           Content(
             mediaType = "application/json",
