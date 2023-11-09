@@ -110,3 +110,14 @@ fun alertsUpdatedEvent(
     nomsNumber = prisonerNumber,
   ),
 )
+
+fun offenderMergedEvent(
+  prisonerNumber: String = "B1111BB",
+  removedPrisonerNumber: String = "A1111AA",
+) = OffenderMergedEvent(
+  MergeInformation(
+    prisonerNumber,
+    removedPrisonerNumber,
+  ),
+)
+
