@@ -123,7 +123,9 @@ class AppointmentCreateDomainService(
             },
           )
         }.attendees().forEach {
-          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it.appointmentAttendeeId)
+          if (!appointmentSeries.isMigrated) {
+            outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it.appointmentAttendeeId)
+          }
         }
 
         appointmentSeriesRepository.saveAndFlush(appointmentSeries)

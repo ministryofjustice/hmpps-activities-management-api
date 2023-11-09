@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANC
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,6 +53,7 @@ class AppointmentAttendeeServiceTest {
   private val prisonRegimeRepository = mock<PrisonRegimeRepository>()
   private val prisonerSearch = mock<PrisonerSearchApiApplicationClient>()
   private val prisonApi = mock<PrisonApiApplicationClient>()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val auditService = mock<AuditService>()
 
   private val service = spy(
@@ -64,6 +66,7 @@ class AppointmentAttendeeServiceTest {
       prisonerSearch,
       prisonApi,
       TransactionHandler(),
+      outboundEventsService,
       auditService,
     ),
   )

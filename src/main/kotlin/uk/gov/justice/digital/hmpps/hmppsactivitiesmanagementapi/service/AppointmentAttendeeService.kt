@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRIS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -34,6 +36,7 @@ class AppointmentAttendeeService(
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
   private val prisonApi: PrisonApiApplicationClient,
   private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   private val auditService: AuditService,
 ) {
   companion object {
@@ -48,6 +51,8 @@ class AppointmentAttendeeService(
           .ifPresent { attendee ->
             transactionHandler.newSpringTransaction {
               attendee.remove(removedTime, removalReason, removedBy)
+            }.also {
+              outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it.appointmentAttendeeId)
             }
 
             log.info("Removed appointment attendee with id '${it.appointmentAttendeeId}' for prisoner '$prisonerNumber' from appointment with id '${it.appointmentId}'")
