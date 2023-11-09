@@ -121,6 +121,8 @@ class AppointmentCreateDomainService(
           )
         }
 
+        appointmentSeriesRepository.saveAndFlush(appointmentSeries)
+
         // TODO: publish appointment instance created message post transaction
       }
     }
