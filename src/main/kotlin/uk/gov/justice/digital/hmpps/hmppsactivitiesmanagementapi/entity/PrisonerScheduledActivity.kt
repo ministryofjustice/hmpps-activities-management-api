@@ -5,6 +5,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
@@ -67,7 +68,7 @@ data class PrisonerScheduledActivity(
 
   val prisonerNumber: String,
 
-  val bookingId: Int,
+  val bookingId: Long,
 
   val inCell: Boolean,
 
@@ -92,4 +93,14 @@ data class PrisonerScheduledActivity(
   val cancelled: Boolean = false,
 
   val suspended: Boolean = false,
-)
+) {
+  fun toScheduledAttendeeModel() = ScheduledAttendee(
+    scheduledInstanceId = scheduledInstanceId,
+    allocationId = allocationId,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
+    suspended = suspended,
+  )
+}
+
+fun List<PrisonerScheduledActivity>.toScheduledAttendeeModel() = map { it.toScheduledAttendeeModel() }
