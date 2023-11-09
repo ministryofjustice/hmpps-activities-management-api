@@ -118,31 +118,28 @@ data class Appointment(
     attendees.add(attendee)
   }
 
-  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?) {
+  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?): AppointmentAttendee? {
     // Soft delete any existing removed attendee records for the prisoner
     findAttendee(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+
     // Add attendee if no non-soft deleted attendee records for the prisoner exist
-    findAttendee(prisonerNumber).let {
-      if (it.isEmpty()) {
-        failIfIndividualAppointmentAlreadyAllocated()
-        attendees.add(
-          AppointmentAttendee(
-            appointment = this,
-            prisonerNumber = prisonerNumber,
-            bookingId = bookingId,
-            addedTime = addedTime,
-            addedBy = addedBy,
-          ),
-        )
-      }
-    }
+    if (findAttendee(prisonerNumber).isNotEmpty()) return null
+
+    val attendee = AppointmentAttendee(
+      appointment = this,
+      prisonerNumber = prisonerNumber,
+      bookingId = bookingId,
+      addedTime = addedTime,
+      addedBy = addedBy,
+    )
+    attendees.add(attendee)
+    return attendee
   }
 
-  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
-    findAttendee(prisonerNumber).forEach {
+  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) =
+    findAttendee(prisonerNumber).map {
       it.remove(removedTime, removalReason, removedBy)
     }
-  }
 
   fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {

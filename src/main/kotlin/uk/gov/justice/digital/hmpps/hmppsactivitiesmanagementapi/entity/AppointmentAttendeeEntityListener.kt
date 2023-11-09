@@ -29,7 +29,7 @@ class AppointmentAttendeeEntityListener {
    */
   @PostPersist
   fun onCreate(entity: AppointmentAttendee) {
-    runCatching {
+    /*runCatching {
       if (entity.appointment.appointmentSeries.isMigrated) {
         log.info("Not sending appointment instance created event for appointment instance id ${entity.appointmentAttendeeId} as it is a migration.")
       } else {
@@ -40,7 +40,7 @@ class AppointmentAttendeeEntityListener {
         "Failed to send appointment instance created event for appointment instance id ${entity.appointmentAttendeeId}",
         it,
       )
-    }
+    }*/
   }
 
   /**
@@ -52,7 +52,7 @@ class AppointmentAttendeeEntityListener {
    */
   @PostUpdate
   fun onUpdate(entity: AppointmentAttendee) {
-    runCatching {
+    /*runCatching {
       if (entity.isRemoved()) {
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED, entity.appointmentAttendeeId)
       }
@@ -64,7 +64,7 @@ class AppointmentAttendeeEntityListener {
         "Failed to send appointment instance updated event for appointment instance id ${entity.appointmentAttendeeId}",
         it,
       )
-    }
+    }*/
   }
 
   /**
@@ -76,13 +76,13 @@ class AppointmentAttendeeEntityListener {
    */
   @PostRemove
   fun onDelete(entity: AppointmentAttendee) {
-    runCatching {
+    /*runCatching {
       outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, entity.appointmentAttendeeId)
     }.onFailure {
       log.error(
         "Failed to send appointment instance deleted event for appointment instance id ${entity.appointmentAttendeeId}",
         it,
       )
-    }
+    }*/
   }
 }

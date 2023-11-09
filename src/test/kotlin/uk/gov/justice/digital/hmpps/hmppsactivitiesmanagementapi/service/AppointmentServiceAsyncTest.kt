@@ -52,12 +52,13 @@ import java.util.Optional
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceAsyncTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
+  private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), telemetryClient, auditService))
+  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), outboundEventsService, telemetryClient, auditService))
   private val appointmentCancelDomainService = spy(
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
@@ -69,7 +70,6 @@ class AppointmentServiceAsyncTest {
     ),
   )
 
-  private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()

@@ -57,11 +57,12 @@ data class AppointmentAttendee(
 
   var isDeleted: Boolean = false
 
-  fun remove(removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
+  fun remove(removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?): AppointmentAttendee {
     this.removedTime = removedTime
     this.removalReason = removalReason
     this.removedBy = removedBy
     isDeleted = removalReason.isDelete
+    return this
   }
 
   fun usernames() = listOfNotNull(addedBy, attendanceRecordedBy, removedBy).distinct()

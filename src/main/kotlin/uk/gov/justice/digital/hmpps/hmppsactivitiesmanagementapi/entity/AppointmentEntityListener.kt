@@ -35,7 +35,7 @@ class AppointmentEntityListener {
    */
   @PostUpdate
   fun onUpdate(entity: Appointment) {
-    entity.attendees().forEach { attendee ->
+    /*entity.attendees().forEach { attendee ->
       runCatching {
         if (!entity.isCancelled() && !entity.isDeleted) {
           outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, attendee.appointmentAttendeeId)
@@ -46,6 +46,6 @@ class AppointmentEntityListener {
           it,
         )
       }
-    }
+    }*/
   }
 }
