@@ -93,7 +93,7 @@ class AppointmentSeriesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), mock(), TransactionHandler(), telemetryClient, auditService))
+  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), mock(), TransactionHandler(), mock(), telemetryClient, auditService))
   private val createAppointmentsJob: CreateAppointmentsJob = mock()
   private lateinit var principal: Principal
 

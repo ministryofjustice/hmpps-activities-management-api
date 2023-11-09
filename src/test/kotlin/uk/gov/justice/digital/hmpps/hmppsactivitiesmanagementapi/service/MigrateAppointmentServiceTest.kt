@@ -47,7 +47,7 @@ class MigrateAppointmentServiceTest {
   private val appointmentTierRepository: AppointmentTierRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
-  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), appointmentCancellationReasonRepository, TransactionHandler(), mock(), mock()))
+  private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), mock(), appointmentCancellationReasonRepository, TransactionHandler(), mock(), mock(), mock()))
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
 
   private val appointmentCancelledReason = appointmentCancelledReason()

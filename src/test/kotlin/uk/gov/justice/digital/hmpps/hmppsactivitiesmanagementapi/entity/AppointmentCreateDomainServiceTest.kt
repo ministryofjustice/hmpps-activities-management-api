@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -29,6 +30,7 @@ class AppointmentCreateDomainServiceTest {
   private val appointmentSeriesRepository = mock<AppointmentSeriesRepository>()
   private val appointmentRepository = mock<AppointmentRepository>()
   private val appointmentCancellationReasonRepository = mock<AppointmentCancellationReasonRepository>()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
 
@@ -41,6 +43,7 @@ class AppointmentCreateDomainServiceTest {
     appointmentRepository,
     appointmentCancellationReasonRepository,
     TransactionHandler(),
+    outboundEventsService,
     telemetryClient,
     auditService,
   )

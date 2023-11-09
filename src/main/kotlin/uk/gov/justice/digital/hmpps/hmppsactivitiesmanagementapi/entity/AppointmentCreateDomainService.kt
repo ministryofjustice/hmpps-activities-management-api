@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANC
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
@@ -43,6 +45,7 @@ class AppointmentCreateDomainService(
   private val appointmentRepository: AppointmentRepository,
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository,
   private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
@@ -119,11 +122,11 @@ class AppointmentCreateDomainService(
               }
             },
           )
+        }.attendees().forEach {
+          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it.appointmentAttendeeId)
         }
 
         appointmentSeriesRepository.saveAndFlush(appointmentSeries)
-
-        // TODO: publish appointment instance created message post transaction
       }
     }
 
