@@ -71,8 +71,9 @@ class ScheduledInstanceService(
   }
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
-    repository.findById(id)
+    val activityScheduleInstance = repository.findById(id)
       .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
+    checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
     return prisonerScheduledActivityRepository.getAllByScheduledInstanceId(id).toScheduledAttendeeModel()
   }
 
