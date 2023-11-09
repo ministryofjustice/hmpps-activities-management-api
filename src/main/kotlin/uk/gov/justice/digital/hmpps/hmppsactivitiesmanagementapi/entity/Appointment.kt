@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -32,7 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Entity
 @Table(name = "appointment")
 @Where(clause = "NOT is_deleted")
-@EntityListeners(AppointmentEntityListener::class)
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
