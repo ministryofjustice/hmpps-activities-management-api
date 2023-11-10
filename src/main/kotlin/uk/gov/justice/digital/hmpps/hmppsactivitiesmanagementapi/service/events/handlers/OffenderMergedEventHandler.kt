@@ -4,6 +4,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -13,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
+import java.time.LocalDateTime
 
 @Component
 @Transactional(readOnly = true)
@@ -84,16 +88,17 @@ class OffenderMergedEventHandler(
 
     // TODO: Update prisoner exclusions from old to new number
 
-    /*
-    val auditRow = LocalAuditRecord(
-      username = "MERGE-EVENT",
-      auditType = AuditType.PRISONER,
-      detailType = AuditEventType.PRISONER_MERGE,
-      recordedTime = LocalDateTime.now(),
-      prisonCode = prisonCode,
-      message = "Prisoner number $oldNumber was merged to a new prisoner number $newNumber",
+    log.info("MERGE: Recording the merge event into the local audit table")
+
+    auditRepository.save(
+      LocalAuditRecord(
+        username = "MERGE-EVENT",
+        auditType = AuditType.PRISONER,
+        detailType = AuditEventType.PRISONER_MERGE,
+        recordedTime = LocalDateTime.now(),
+        prisonCode = prisonCode,
+        message = "Prisoner number $oldNumber was merged to a new prisoner number $newNumber",
+      ),
     )
-    auditRepository.save(auditRow)
-    */
   }
 }
