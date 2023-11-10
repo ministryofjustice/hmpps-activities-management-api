@@ -14,8 +14,10 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -30,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
@@ -171,6 +174,9 @@ class AppointmentUpdateDomainServiceTest {
       response.categoryCode isEqualTo "TEST"
       response.appointments.filter { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
       response.appointments.filterNot { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -200,6 +206,9 @@ class AppointmentUpdateDomainServiceTest {
       response.internalLocationId isEqualTo 123
       response.appointments.filter { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
       response.appointments.filterNot { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -243,6 +252,9 @@ class AppointmentUpdateDomainServiceTest {
         this.map { it.internalLocationId }.distinct().single() isEqualTo 123
         this.map { it.inCell }.distinct().single() isEqualTo false
       }
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -280,6 +292,9 @@ class AppointmentUpdateDomainServiceTest {
         get(2).startDate isEqualTo weekFromNow.plusDays(1)
         get(3).startDate isEqualTo weekFromNow.plusDays(2)
       }
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -309,6 +324,9 @@ class AppointmentUpdateDomainServiceTest {
       response.startTime isEqualTo LocalTime.of(9, 0)
       response.appointments.filter { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
       response.appointments.filterNot { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -338,6 +356,9 @@ class AppointmentUpdateDomainServiceTest {
       response.endTime isEqualTo LocalTime.of(10, 30)
       response.appointments.filter { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
       response.appointments.filterNot { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -367,6 +388,9 @@ class AppointmentUpdateDomainServiceTest {
       response.extraInformation isEqualTo "Appointment series level comment"
       response.appointments.filter { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
       response.appointments.filterNot { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -428,6 +452,9 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.addedTime isEqualTo null }
         onEach { it.addedBy isEqualTo null }
       }
+
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -483,6 +510,9 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.removalReasonId isEqualTo null }
         onEach { it.removedBy isEqualTo null }
       }
+
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test
@@ -553,6 +583,10 @@ class AppointmentUpdateDomainServiceTest {
         onEach { it.addedTime isEqualTo null }
         onEach { it.addedBy isEqualTo null }
       }
+
+      verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any())
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any())
+      verifyNoMoreInteractions(outboundEventsService)
     }
 
     @Test

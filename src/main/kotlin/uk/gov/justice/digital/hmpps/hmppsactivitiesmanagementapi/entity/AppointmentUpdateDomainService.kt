@@ -76,10 +76,10 @@ class AppointmentUpdateDomainService(
     transactionHandler.newSpringTransaction {
       appointmentRepository.saveAllAndFlush(appointmentsToUpdate)
     }.also {
-      val removedAttendeeIds = removedAttendees.map { it.appointmentAttendeeId }.toSet().onEach {
+      val removedAttendeeIds = removedAttendees.map { it.appointmentAttendeeId }.onEach {
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
       }
-      val addedAttendeesIds = addedAttendees.map { it.appointmentAttendeeId }.toSet().onEach {
+      val addedAttendeesIds = addedAttendees.map { it.appointmentAttendeeId }.onEach {
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it)
       }
       if (request.isPropertyUpdate()) {

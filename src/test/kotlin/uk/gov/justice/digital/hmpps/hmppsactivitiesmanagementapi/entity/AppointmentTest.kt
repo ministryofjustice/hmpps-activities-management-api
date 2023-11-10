@@ -745,6 +745,28 @@ class AppointmentTest {
   }
 
   @Test
+  fun `addAttendee returns new attendee entity`() {
+    val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = emptyMap()).appointments().first()
+    assertThat(entity.attendees()).isEmpty()
+    val addedTime = LocalDateTime.now()
+    with(entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")!!) {
+      appointment isEqualTo entity
+      prisonerNumber isEqualTo "A1234BC"
+      bookingId isEqualTo 123
+      addedTime isEqualTo addedTime
+      addedBy isEqualTo "ADDED_BY_USER"
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+      removedTime isEqualTo null
+      removalReason isEqualTo null
+      removedBy isEqualTo null
+      isRemoved() isEqualTo false
+      isDeleted isEqualTo false
+    }
+  }
+
+  @Test
   fun `addAttendee does not create duplicate attendee entity`() {
     val entity = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
     val attendee = entity.attendees().single()
@@ -864,6 +886,26 @@ class AppointmentTest {
     val removedTime = LocalDateTime.now()
     entity.removeAttendee("A1234BC", removedTime, tempRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
     with(entity.attendees().single()) {
+      this.removedTime isEqualTo removedTime
+      removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
+      removedBy isEqualTo "REMOVED_BY_USER"
+      isRemoved() isEqualTo true
+      isDeleted isEqualTo false
+    }
+  }
+
+  @Test
+  fun `removeAttendee returns attendee entity`() {
+    val appointment = appointmentSeriesEntity(prisonerNumberToBookingIdMap = mapOf("A1234BC" to 123)).appointments().first()
+    val removedTime = LocalDateTime.now()
+    with(
+      appointment.removeAttendee(
+        "A1234BC",
+        removedTime,
+        tempRemovalByUserAppointmentAttendeeRemovalReason(),
+        "REMOVED_BY_USER",
+      ).first(),
+    ) {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
