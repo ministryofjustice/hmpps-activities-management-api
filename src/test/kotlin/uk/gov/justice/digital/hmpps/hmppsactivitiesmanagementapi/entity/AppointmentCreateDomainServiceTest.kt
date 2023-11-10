@@ -14,9 +14,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentHostPrisonStaff
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTier2
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
@@ -75,7 +75,7 @@ class AppointmentCreateDomainServiceTest {
       categoryCode = appointmentSeries.categoryCode,
       customName = appointmentSeries.customName,
       appointmentTier = appointmentSeries.appointmentTier,
-      appointmentHost = appointmentSeries.appointmentHost,
+      appointmentOrganiser = appointmentSeries.appointmentOrganiser,
       internalLocationId = appointmentSeries.internalLocationId,
       customLocation = appointmentSeries.customLocation,
       inCell = appointmentSeries.inCell,
@@ -219,8 +219,8 @@ class AppointmentCreateDomainServiceTest {
       prisonCode = risleyPrisonCode,
       categoryCode = "GYMW",
       customName = "Custom name",
-      appointmentTier = appointmentTier2(),
-      appointmentHost = appointmentHostPrisonStaff(),
+      appointmentTier = eventTier(),
+      appointmentOrganiser = eventOrganiser(),
       internalLocationId = 123,
       // Not currently used by the UI. For future features
       customLocation = "Custom location",
@@ -253,7 +253,7 @@ class AppointmentCreateDomainServiceTest {
           categoryCode = this.categoryCode,
           customName = this.customName,
           appointmentTier = this.appointmentTier,
-          appointmentHost = this.appointmentHost,
+          appointmentOrganiser = this.appointmentOrganiser,
           internalLocationId = this.internalLocationId,
           customLocation = this.customLocation,
           inCell = this.inCell,

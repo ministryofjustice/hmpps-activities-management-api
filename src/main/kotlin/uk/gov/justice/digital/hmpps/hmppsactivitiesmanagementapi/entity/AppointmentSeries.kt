@@ -57,11 +57,11 @@ data class AppointmentSeries(
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
-  var appointmentTier: AppointmentTier,
+  var appointmentTier: EventTier,
 
   @OneToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "appointment_host_id")
-  var appointmentHost: AppointmentHost? = null,
+  @JoinColumn(name = "appointment_organiser_id")
+  var appointmentOrganiser: EventOrganiser? = null,
 
   val internalLocationId: Long?,
 

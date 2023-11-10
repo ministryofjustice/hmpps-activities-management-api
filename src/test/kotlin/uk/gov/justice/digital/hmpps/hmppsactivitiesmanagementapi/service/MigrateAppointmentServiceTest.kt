@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -35,9 +35,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -50,7 +50,7 @@ class MigrateAppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification = spy()
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
-  private val appointmentTierRepository: AppointmentTierRepository = mock()
+  private val eventTierRepository: EventTierRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, appointmentCancellationReasonRepository, TransactionHandler(), outboundEventsService, mock(), mock()))
@@ -61,7 +61,7 @@ class MigrateAppointmentServiceTest {
   private val service = MigrateAppointmentService(
     appointmentSeriesSpecification,
     appointmentSeriesRepository,
-    appointmentTierRepository,
+    eventTierRepository,
     appointmentInstanceRepository,
     appointmentCreateDomainService,
     appointmentCancelDomainService,
@@ -71,8 +71,6 @@ class MigrateAppointmentServiceTest {
   @Nested
   @DisplayName("migrate appointment")
   inner class MigrateAppointment {
-    private val appointmentTierNotSpecified = appointmentTierNotSpecified()
-
     private val appointmentSeriesCaptor = argumentCaptor<AppointmentSeries>()
     private val appointmentCaptor = argumentCaptor<Appointment>()
 
@@ -80,7 +78,7 @@ class MigrateAppointmentServiceTest {
     fun setUp() {
       whenever(appointmentRepository.saveAndFlush(appointmentCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<Appointment>())
       whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
-      whenever(appointmentTierRepository.findById(appointmentTierNotSpecified.appointmentTierId)).thenReturn(Optional.of(appointmentTierNotSpecified))
+      whenever(eventTierRepository.findById(foundationTier().eventTierId)).thenReturn(Optional.of(foundationTier()))
       whenever(appointmentInstanceRepository.findById(any())).thenReturn(Optional.of(appointmentInstanceEntity()))
       whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(appointmentCancelledReason),
@@ -98,8 +96,8 @@ class MigrateAppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode!!,
         customName = null,
-        appointmentTier = appointmentTierNotSpecified,
-        appointmentHost = null,
+        appointmentTier = foundationTier(),
+        appointmentOrganiser = null,
         internalLocationId = request.internalLocationId,
         customLocation = null,
         inCell = false,
@@ -151,7 +149,7 @@ class MigrateAppointmentServiceTest {
       val service = MigrateAppointmentService(
         mock(),
         appointmentSeriesRepository,
-        appointmentTierRepository,
+        eventTierRepository,
         appointmentInstanceRepository,
         appointmentCreateDomainService,
         mock(),
