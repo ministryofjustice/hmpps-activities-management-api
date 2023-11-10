@@ -30,7 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -39,11 +39,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
@@ -59,8 +58,8 @@ import java.util.Optional
 
 class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
-  private val appointmentTierRepository: AppointmentTierRepository = mock()
-  private val appointmentHostRepository: AppointmentHostRepository = mock()
+  private val eventTierRepository: EventTierRepository = mock()
+  private val eventHostRepository: EventOrganiserRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -71,8 +70,8 @@ class AppointmentSetServiceTest {
 
   private val service = AppointmentSetService(
     appointmentSetRepository,
-    appointmentTierRepository,
-    appointmentHostRepository,
+    eventTierRepository,
+    eventHostRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -183,7 +182,7 @@ class AppointmentSetServiceTest {
     private val principal = mock<Principal>()
     private val prisonCode = moorlandPrisonCode
     private val categoryCode = "MEDO"
-    private val appointmentTier = appointmentTierNotSpecified()
+    private val appointmentTier = foundationTier()
     private val internalLocationId = 1L
     private val createdBy = "CREATED_BY_USER"
 
@@ -266,7 +265,7 @@ class AppointmentSetServiceTest {
           ),
         )
 
-      whenever(appointmentTierRepository.findById(NOT_SPECIFIED_APPOINTMENT_TIER_ID))
+      whenever(eventTierRepository.findById(foundationTier().eventTierId))
         .thenReturn(Optional.of(appointmentTier))
 
       whenever(appointmentSetRepository.saveAndFlush(appointmentSetCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSet>())
@@ -367,7 +366,7 @@ class AppointmentSetServiceTest {
           categoryCode = categoryCode,
           customName = "Custom name",
           appointmentTier = appointmentTier,
-          appointmentHost = null,
+          appointmentOrganiser = null,
           internalLocationId = internalLocationId,
           customLocation = null,
           inCell = false,
@@ -390,7 +389,7 @@ class AppointmentSetServiceTest {
             categoryCode = categoryCode,
             customName = "Custom name",
             appointmentTier = appointmentTier,
-            appointmentHost = null,
+            appointmentOrganiser = null,
             internalLocationId = internalLocationId,
             customLocation = null,
             inCell = false,
@@ -418,7 +417,7 @@ class AppointmentSetServiceTest {
               categoryCode = categoryCode,
               customName = "Custom name",
               appointmentTier = appointmentTier,
-              appointmentHost = null,
+              appointmentOrganiser = null,
               internalLocationId = internalLocationId,
               customLocation = null,
               inCell = false,

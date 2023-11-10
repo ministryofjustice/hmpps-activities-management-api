@@ -16,9 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.FOUNDATION_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 class MigrateAppointmentService(
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification,
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
-  private val appointmentTierRepository: AppointmentTierRepository,
+  private val eventTierRepository: EventTierRepository,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
@@ -39,7 +39,7 @@ class MigrateAppointmentService(
   }
 
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance {
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
+    val appointmentTier = eventTierRepository.findOrThrowNotFound(FOUNDATION_ID)
 
     val appointmentSeries =
       transactionHandler.newSpringTransaction {

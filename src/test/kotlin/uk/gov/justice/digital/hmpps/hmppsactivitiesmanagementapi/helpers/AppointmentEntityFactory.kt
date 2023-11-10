@@ -7,24 +7,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendeeSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancellationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentHost
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NO_TIER_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISON_STAFF_APPOINTMENT_HOST_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TIER_1_APPOINTMENT_TIER_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.TIER_2_APPOINTMENT_TIER_ID
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -55,7 +48,7 @@ internal fun appointmentSeriesEntity(
   prisonCode = prisonCode,
   categoryCode = categoryCode,
   customName = customName,
-  appointmentTier = appointmentTierNotSpecified(),
+  appointmentTier = foundationTier(),
   internalLocationId = internalLocationId,
   inCell = inCell,
   startDate = startDate,
@@ -220,7 +213,7 @@ internal fun appointmentSetEntity(
     prisonCode = "TPR",
     categoryCode = "TEST",
     customName = customName,
-    appointmentTier = appointmentTierNotSpecified(),
+    appointmentTier = foundationTier(),
     internalLocationId = if (inCell) null else 123,
     inCell = inCell,
     startDate = startDate,
@@ -242,36 +235,6 @@ internal fun appointmentSetEntity(
       count++
     }
   }
-
-internal fun appointmentTier1() =
-  AppointmentTier(
-    TIER_1_APPOINTMENT_TIER_ID,
-    "Tier 1",
-  )
-
-internal fun appointmentTier2() =
-  AppointmentTier(
-    TIER_2_APPOINTMENT_TIER_ID,
-    "Tier 2",
-  )
-
-internal fun appointmentNoTier() =
-  AppointmentTier(
-    NO_TIER_APPOINTMENT_TIER_ID,
-    "No tier, this activity is not considered 'purposeful' for reporting",
-  )
-
-internal fun appointmentTierNotSpecified() =
-  AppointmentTier(
-    NOT_SPECIFIED_APPOINTMENT_TIER_ID,
-    "Not specified",
-  )
-
-internal fun appointmentHostPrisonStaff() =
-  AppointmentHost(
-    PRISON_STAFF_APPOINTMENT_HOST_ID,
-    "Prison staff",
-  )
 
 internal fun appointmentCreatedInErrorReason() =
   AppointmentCancellationReason(
