@@ -87,8 +87,10 @@ class AppointmentSetService(
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
-      it.appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments().flatMap { appointment -> appointment.attendees() } }.forEach { attendee ->
-        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId)
+      it.appointments().forEach { appointment ->
+        appointment.attendees().forEach { attendee ->
+          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId)
+        }
       }
       request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
       it.auditCreatedEvent()

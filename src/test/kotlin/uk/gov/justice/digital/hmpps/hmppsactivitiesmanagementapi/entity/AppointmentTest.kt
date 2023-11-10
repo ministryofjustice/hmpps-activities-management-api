@@ -739,8 +739,8 @@ class AppointmentTest {
       removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
   }
 
@@ -761,8 +761,8 @@ class AppointmentTest {
       removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
   }
 
@@ -795,8 +795,8 @@ class AppointmentTest {
       removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
   }
 
@@ -811,8 +811,8 @@ class AppointmentTest {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
-      isRemoved() isEqualTo true
-      isDeleted isEqualTo false
+      isRemoved() isBool true
+      isDeleted isBool false
     }
     val addedTime = LocalDateTime.now()
     entity.addAttendee("A1234BC", 123, addedTime, "ADDED_BY_USER")
@@ -828,15 +828,15 @@ class AppointmentTest {
       this.removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
     with(removedAttendee) {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo true
+      isRemoved() isBool false
+      isDeleted isBool true
     }
   }
 
@@ -858,8 +858,8 @@ class AppointmentTest {
       this.removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
     val removedTime = LocalDateTime.now()
     entity.removeAttendee("A1234BC", removedTime, permanentRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
@@ -868,8 +868,8 @@ class AppointmentTest {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo permanentRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo true
+      isRemoved() isBool false
+      isDeleted isBool true
     }
   }
 
@@ -880,8 +880,8 @@ class AppointmentTest {
       this.removedTime isEqualTo null
       removalReason isEqualTo null
       removedBy isEqualTo null
-      isRemoved() isEqualTo false
-      isDeleted isEqualTo false
+      isRemoved() isBool false
+      isDeleted isBool false
     }
     val removedTime = LocalDateTime.now()
     entity.removeAttendee("A1234BC", removedTime, tempRemovalByUserAppointmentAttendeeRemovalReason(), "REMOVED_BY_USER")
@@ -889,8 +889,8 @@ class AppointmentTest {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
-      isRemoved() isEqualTo true
-      isDeleted isEqualTo false
+      isRemoved() isBool true
+      isDeleted isBool false
     }
   }
 
@@ -909,8 +909,8 @@ class AppointmentTest {
       this.removedTime isEqualTo removedTime
       removalReason isEqualTo tempRemovalByUserAppointmentAttendeeRemovalReason()
       removedBy isEqualTo "REMOVED_BY_USER"
-      isRemoved() isEqualTo true
-      isDeleted isEqualTo false
+      isRemoved() isBool true
+      isDeleted isBool false
     }
   }
 

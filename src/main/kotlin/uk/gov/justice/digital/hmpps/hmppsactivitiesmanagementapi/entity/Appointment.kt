@@ -106,7 +106,7 @@ data class Appointment(
 
   fun attendees() = attendees.filterNot { it.isDeleted }.toList()
 
-  fun findAttendee(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
+  fun findAttendeeRecords(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
 
   fun findAttendees(prisonerNumbers: Collection<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
@@ -119,10 +119,10 @@ data class Appointment(
 
   fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?): AppointmentAttendee? {
     // Soft delete any existing removed attendee records for the prisoner
-    findAttendee(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+    findAttendeeRecords(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
 
     // Add attendee if no non-soft deleted attendee records for the prisoner exist
-    if (findAttendee(prisonerNumber).isNotEmpty()) return null
+    if (findAttendeeRecords(prisonerNumber).isNotEmpty()) return null
 
     val attendee = AppointmentAttendee(
       appointment = this,
@@ -135,7 +135,7 @@ data class Appointment(
   }
 
   fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) =
-    findAttendee(prisonerNumber).map {
+    findAttendeeRecords(prisonerNumber).onEach {
       it.remove(removedTime, removalReason, removedBy)
     }
 
