@@ -315,6 +315,8 @@ class ActivityService(
     transactionHandler.newSpringTransaction {
       val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
         ?: throw EntityNotFoundException("Activity $activityId not found.")
+      val updatedAllocationIds = mutableSetOf<Long>()
+
       require(activity.state(ActivityState.ARCHIVED).not()) {
         "Activity cannot be updated because it is now archived."
       }
@@ -333,9 +335,9 @@ class ActivityService(
       applyLocationUpdate(request, activity)
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
-      val updatedAllocationIds = applyPayUpdate(prisonCode, request, activity)
+      applyPayUpdate(prisonCode, request, activity).let { updatedAllocationIds.addAll(it) }
       applyScheduleWeeksUpdate(request, activity)
-      applySlotsUpdate(request, activity)
+      applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
       val now = LocalDateTime.now()
 
@@ -668,11 +670,15 @@ class ActivityService(
   private fun applySlotsUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
-  ) {
+  ): Set<Long> {
+    val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+      activity.schedules().forEach {
+        it.updateSlots(slots.toMap(timeSlots)).let { ids -> updatedAllocationIds.addAll(ids) }
+      }
     }
+    return updatedAllocationIds
   }
 
   private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):

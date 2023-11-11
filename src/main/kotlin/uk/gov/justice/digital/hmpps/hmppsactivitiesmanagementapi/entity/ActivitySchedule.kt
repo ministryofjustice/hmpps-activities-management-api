@@ -19,6 +19,7 @@ import org.hibernate.annotations.Filters
 import org.hibernate.annotations.ParamDef
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import java.time.DayOfWeek
@@ -330,21 +331,27 @@ data class ActivitySchedule(
     this.instancesLastUpdatedTime = LocalDateTime.now()
   }
 
-  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    updateMatchingSlots(updates)
+  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+    val updatedAllocationIds = mutableSetOf<Long>()
+    updateMatchingSlots(updates).let { updatedAllocationIds.addAll(it) }
     addNewSlots(updates)
-    removeRedundantSlots(updates)
+    removeRedundantSlots(updates).let { updatedAllocationIds.addAll(it) }
+    return updatedAllocationIds
   }
 
-  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) })
+  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+    val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }
+    slots.removeAll(slotsToRemove)
     require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
+    return slotsToRemove.flatMap { it.exclusions.map { ex -> ex.allocation.allocationId } }.toSet()
   }
 
-  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
+  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+    val updatedAllocationIds = mutableSetOf<Long>()
     slots.forEach { slot ->
-      updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)
+      updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)?.ifNotEmpty { updatedAllocationIds.addAll(it) }
     }
+    return updatedAllocationIds
   }
 
   private fun addNewSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {

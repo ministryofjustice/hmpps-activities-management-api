@@ -146,10 +146,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     val activity = activityRepository.findById(1).orElseThrow()
     val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
 
-    with(activity) {
-      assertThat(description).isEqualTo("Maths Level 1")
-    }
-
+    assertThat(activity.description).isEqualTo("Maths Level 1")
     assertThat(activitySchedules).hasSize(1)
 
     with(activitySchedules.first()) {

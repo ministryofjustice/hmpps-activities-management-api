@@ -101,13 +101,8 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    val allocations = instance.activitySchedule.allocations().map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(allocations))
-      .thenReturn(
-        allocations.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -271,13 +266,8 @@ class ManageAttendancesServiceTest {
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED))
       .thenReturn(attendanceReasons()["CANCELLED"])
 
-    val allocations = instance.activitySchedule.allocations().map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(allocations))
-      .thenReturn(
-        allocations.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     whenever(attendanceRepository.saveAllAndFlush(anyList()))
       .thenReturn(

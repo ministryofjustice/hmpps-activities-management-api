@@ -37,10 +37,6 @@ data class Allocation(
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
-  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  private val exclusions: MutableList<Exclusion> = mutableListOf(),
-
   val prisonerNumber: String,
 
   val bookingId: Long,
@@ -85,6 +81,10 @@ data class Allocation(
   @JoinColumn(name = "planned_deallocation_id", nullable = true)
   var plannedDeallocation: PlannedDeallocation? = null
     private set
+
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  val exclusions: MutableList<Exclusion> = mutableListOf()
 
   var deallocatedTime: LocalDateTime? = null
     private set
@@ -267,6 +267,7 @@ data class Allocation(
   fun isEnded() = status(PrisonerStatus.ENDED)
 
   fun addExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion {
+    // TODO: Check if one already exists
     exclusions.add(Exclusion.valueOf(this, slot, daysOfWeek))
     return exclusions.last()
   }

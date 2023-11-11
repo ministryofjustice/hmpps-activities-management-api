@@ -38,7 +38,7 @@ data class Exclusion(
 
   var sundayFlag: Boolean = false,
 ) {
-  fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
+  fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
     DayOfWeek.MONDAY.takeIf { mondayFlag },
     DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
     DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },

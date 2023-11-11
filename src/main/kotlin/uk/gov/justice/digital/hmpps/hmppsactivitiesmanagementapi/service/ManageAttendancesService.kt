@@ -60,6 +60,7 @@ class ManageAttendancesService(
           val allocations = instance.activitySchedule
             .allocations()
             .filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
+            .filterNot { it.isExcluded(today, instance.timeSlot()) }
 
           // Get the details of the prisoners due to attend the session
           val prisonerNumbers = allocations.map { it.prisonerNumber }
@@ -67,7 +68,6 @@ class ManageAttendancesService(
 
           // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
           val attendancesForInstance = allocations
-            .filterNot { allocation -> allocation.isExcluded(today, instance.timeSlot()) }
             .mapNotNull { allocation ->
               createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
             }
