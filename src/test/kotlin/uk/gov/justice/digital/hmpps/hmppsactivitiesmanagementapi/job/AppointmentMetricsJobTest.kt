@@ -16,13 +16,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rollout
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyAppointmentMetricsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduleReasonEventType
 import java.time.LocalDate
 
 class AppointmentMetricsJobTest {
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val service: DailyAppointmentMetricsService = mock()

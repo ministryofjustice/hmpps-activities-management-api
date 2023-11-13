@@ -11,12 +11,11 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateAppointmentService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 import java.time.LocalDate
 
 class DeleteMigratedAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val service: MigrateAppointmentService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = DeleteMigratedAppointmentsJob(safeJobRunner, service)

@@ -14,11 +14,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rollout
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 
 class ManageAppointmentAttendeesJobTest {
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository))
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val service: AppointmentAttendeeService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()

@@ -1,27 +1,22 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 class SafeJobRunnerTest {
 
   private val jobRepository: JobRepository = mock()
-  private val monitoringService: MonitoringService = mock()
-  private val runner = SafeJobRunner(jobRepository, monitoringService)
+  private val runner = SafeJobRunner(jobRepository)
   private val jobEntityCaptor = argumentCaptor<Job>()
 
   @Test
@@ -31,9 +26,9 @@ class SafeJobRunnerTest {
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      jobType isEqualTo JobType.ATTENDANCE_CREATE
-      endedAt isCloseTo TimeSource.now()
-      successful isBool true
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isTrue
     }
   }
 
@@ -47,39 +42,33 @@ class SafeJobRunnerTest {
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      jobType isEqualTo JobType.ATTENDANCE_CREATE
-      endedAt isCloseTo TimeSource.now()
-      successful isBool true
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isTrue()
     }
 
     with(jobEntityCaptor.secondValue) {
-      jobType isEqualTo JobType.DEALLOCATE_ENDING
-      endedAt isCloseTo TimeSource.now()
-      successful isBool true
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isTrue()
     }
   }
 
   @Test
   fun `runs job with error`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn Job(1, JobType.ATTENDANCE_CREATE, TimeSource.now())
-
     runner.runJob(JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("it failed") })
 
     verify(jobRepository).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      jobType isEqualTo JobType.ATTENDANCE_CREATE
-      endedAt isCloseTo TimeSource.now()
-      successful isBool false
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
     }
-
-    verify(monitoringService).capture("Job 'ATTENDANCE_CREATE' for job id '1' failed")
   }
 
   @Test
   fun `runs dependent jobs with error on first job`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn Job(2, JobType.ATTENDANCE_CREATE, TimeSource.now())
-
     runner.runDependentJobs(
       JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
       JobDefinition(JobType.DEALLOCATE_ENDING) {},
@@ -88,24 +77,20 @@ class SafeJobRunnerTest {
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      jobType isEqualTo JobType.ATTENDANCE_CREATE
-      endedAt isCloseTo TimeSource.now()
-      successful isBool false
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
     }
 
     with(jobEntityCaptor.secondValue) {
-      jobType isEqualTo JobType.DEALLOCATE_ENDING
-      endedAt isCloseTo TimeSource.now()
-      successful isBool false
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
     }
-
-    verify(monitoringService).capture("Job 'ATTENDANCE_CREATE' for job id '2' failed")
   }
 
   @Test
   fun `runs dependent jobs with error on second job`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn Job(3, JobType.DEALLOCATE_ENDING, TimeSource.now())
-
     runner.runDependentJobs(
       JobDefinition(JobType.ATTENDANCE_CREATE) { },
       JobDefinition(JobType.DEALLOCATE_ENDING) { throw RuntimeException("first job failed") },
@@ -114,17 +99,15 @@ class SafeJobRunnerTest {
     verify(jobRepository, times(2)).saveAndFlush(jobEntityCaptor.capture())
 
     with(jobEntityCaptor.firstValue) {
-      jobType isEqualTo JobType.ATTENDANCE_CREATE
-      endedAt isCloseTo TimeSource.now()
-      successful isBool true
+      assertThat(jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isTrue
     }
 
     with(jobEntityCaptor.secondValue) {
-      jobType isEqualTo JobType.DEALLOCATE_ENDING
-      endedAt isCloseTo TimeSource.now()
-      successful isBool false
+      assertThat(jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
+      assertThat(endedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(successful).isFalse
     }
-
-    verify(monitoringService).capture("Job 'DEALLOCATE_ENDING' for job id '3' failed")
   }
 }
