@@ -120,9 +120,9 @@ class AppointmentService(
     val updateFirstAppointmentOnly = updateAppointmentsCount > 1 && updateInstancesCount > maxSyncAppointmentInstanceActions
 
     val updatedAppointmentSeries = appointmentUpdateDomainService.updateAppointments(
-      appointmentSeries,
+      appointmentSeries.appointmentSeriesId,
       appointmentId,
-      if (updateFirstAppointmentOnly) setOf(appointment) else appointmentsToUpdate.toSet(),
+      if (updateFirstAppointmentOnly) setOf(appointment.appointmentId) else appointmentsToUpdate.map { it.appointmentId }.toSet(),
       request,
       prisonerMap,
       now,

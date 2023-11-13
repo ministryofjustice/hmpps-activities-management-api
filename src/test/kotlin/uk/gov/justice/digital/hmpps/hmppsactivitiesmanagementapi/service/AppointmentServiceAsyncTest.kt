@@ -52,12 +52,13 @@ import java.util.Optional
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceAsyncTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
+  private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService))
+  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), outboundEventsService, telemetryClient, auditService))
   private val appointmentCancelDomainService = spy(
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
@@ -69,7 +70,6 @@ class AppointmentServiceAsyncTest {
     ),
   )
 
-  private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -130,6 +130,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_APPOINTMENT)
 
@@ -137,9 +139,9 @@ class AppointmentServiceAsyncTest {
 
     // Update all apply to appointments synchronously and track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(setOf(appointment)),
+      eq(setOf(appointment.appointmentId)),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -172,6 +174,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -179,9 +183,9 @@ class AppointmentServiceAsyncTest {
 
     // Update all apply to appointments synchronously and track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(appointmentSeries.scheduledAppointments().toSet()),
+      eq(appointmentSeries.scheduledAppointments().map { it.appointmentId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -214,6 +218,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -221,9 +227,9 @@ class AppointmentServiceAsyncTest {
 
     // Update only the first appointment synchronously and do not track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(setOf(appointment)),
+      eq(setOf(appointment.appointmentId)),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -272,6 +278,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -279,9 +287,9 @@ class AppointmentServiceAsyncTest {
 
     // Update all apply to appointments synchronously and track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(appointmentSeries.scheduledAppointments().toSet()),
+      eq(appointmentSeries.scheduledAppointments().map { it.appointmentId }.toSet()),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -314,6 +322,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(removePrisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -321,9 +331,9 @@ class AppointmentServiceAsyncTest {
 
     // Update only the first appointment synchronously and do not track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(setOf(appointment)),
+      eq(setOf(appointment.appointmentId)),
       eq(request),
       eq(emptyMap()),
       updated.capture(),
@@ -373,6 +383,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -389,9 +401,9 @@ class AppointmentServiceAsyncTest {
 
     // Update all apply to appointments synchronously and track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(appointmentSeries.scheduledAppointments().toSet()),
+      eq(appointmentSeries.scheduledAppointments().map { it.appointmentId }.toSet()),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
       updated.capture(),
@@ -425,6 +437,8 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
       Optional.of(appointment),
     )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
 
     val request = AppointmentUpdateRequest(addPrisonerNumbers = addedPrisonerNumberToBookingIdMap.keys.toList(), applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
@@ -441,9 +455,9 @@ class AppointmentServiceAsyncTest {
 
     // Update only the first appointment synchronously and do not track custom event
     verify(appointmentUpdateDomainService).updateAppointments(
-      eq(appointmentSeries),
+      eq(appointmentSeries.appointmentSeriesId),
       eq(appointment.appointmentId),
-      eq(setOf(appointment)),
+      eq(setOf(appointment.appointmentId)),
       eq(request),
       eq(prisoners.associateBy { it.prisonerNumber }),
       updated.capture(),

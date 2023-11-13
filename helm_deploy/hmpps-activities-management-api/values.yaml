@@ -99,6 +99,8 @@ generic-service:
     digital-prison-reporting:
       DPR_USER: "DPR_USER"
       DPR_PASSWORD: "DPR_PASSWORD"
+    sentry:
+      sentry_dsn: "SENTRY_DSN"
 
   allowlist:
     office: "217.33.148.210/32"
