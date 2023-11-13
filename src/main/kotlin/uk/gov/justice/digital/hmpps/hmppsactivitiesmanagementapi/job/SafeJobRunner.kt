@@ -5,11 +5,12 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
 
 @Component
-class SafeJobRunner(private val jobRepository: JobRepository) {
+class SafeJobRunner(private val jobRepository: JobRepository, private val monitoringService: MonitoringService) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -52,8 +53,9 @@ class SafeJobRunner(private val jobRepository: JobRepository) {
       .onSuccess { jobRepository.saveAndFlush(Job.successful(jobDefinition.jobType, startedAt)) }
       .onFailure {
         log.error("Failed to run ${jobDefinition.jobType} job", it)
-
-        jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt))
+        jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt)).also { failedJob ->
+          monitoringService.capture("Job '${failedJob.jobType}' for job id '${failedJob.jobId}' failed")
+        }
       }
   }
 }
