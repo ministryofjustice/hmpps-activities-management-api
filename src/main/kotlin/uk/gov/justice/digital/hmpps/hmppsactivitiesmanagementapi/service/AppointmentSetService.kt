@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -39,6 +41,7 @@ class AppointmentSetService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonApiClient: PrisonApiClient,
   private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
@@ -84,6 +87,11 @@ class AppointmentSetService(
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
+      it.appointments().forEach { appointment ->
+        appointment.attendees().forEach { attendee ->
+          outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId)
+        }
+      }
       request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
       it.auditCreatedEvent()
     }.toModel()

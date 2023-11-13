@@ -52,7 +52,7 @@ class UpdateAppointmentsJob(
       JobDefinition(JobType.UPDATE_APPOINTMENTS) {
         log.info("Updating remaining appointments for appointment series with id $appointmentSeriesId")
         val elapsed = measureTimeMillis {
-          service.updateAppointmentIds(
+          service.updateAppointments(
             appointmentSeriesId,
             appointmentId,
             appointmentIdsToUpdate,
@@ -63,6 +63,8 @@ class UpdateAppointmentsJob(
             updateAppointmentsCount,
             updateInstancesCount,
             startTimeInMs,
+            true,
+            false,
           )
         }
         log.info("Updating remaining appointments for appointment series with id $appointmentSeriesId took ${elapsed}ms")

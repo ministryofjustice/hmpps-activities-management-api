@@ -82,7 +82,7 @@ class UpdateAppointmentsJobTest {
       startTimeInMs,
     )
 
-    verify(service).updateAppointmentIds(
+    verify(service).updateAppointments(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
       appointmentIdsToUpdate,
@@ -93,6 +93,8 @@ class UpdateAppointmentsJobTest {
       3,
       9,
       startTimeInMs,
+      true,
+      false,
     )
   }
 }
