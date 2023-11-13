@@ -119,14 +119,7 @@ data class ActivityScheduleSlot(
     exclusions
       .filterNot { daysOfWeek.containsAll(it.getDaysOfWeek()) }
       .onEach {
-        it.mondayFlag = it.mondayFlag && mondayFlag
-        it.tuesdayFlag = it.tuesdayFlag && tuesdayFlag
-        it.wednesdayFlag = it.wednesdayFlag && wednesdayFlag
-        it.thursdayFlag = it.thursdayFlag && thursdayFlag
-        it.fridayFlag = it.fridayFlag && fridayFlag
-        it.saturdayFlag = it.saturdayFlag && saturdayFlag
-        it.sundayFlag = it.sundayFlag && sundayFlag
-
+        it.syncExcludedDaysWithSlot(this)
         updatedAllocationIds.add(it.allocation.allocationId)
       }
       .filter { it.getDaysOfWeek().isEmpty() }
@@ -151,7 +144,7 @@ data class ActivityScheduleSlot(
     sundayFlag = this.sundayFlag,
   )
 
-  fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
+  fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
     DayOfWeek.MONDAY.takeIf { mondayFlag },
     DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
     DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },

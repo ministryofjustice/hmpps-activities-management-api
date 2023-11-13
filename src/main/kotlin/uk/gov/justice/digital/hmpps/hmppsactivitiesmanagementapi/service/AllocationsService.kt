@@ -62,6 +62,7 @@ class AllocationsService(
       applyRemoveEndDateUpdate(request, allocation)
       applyPayBandUpdate(request, allocation)
       applyReasonCode(request, allocation, updatedBy)
+      applyExclusionsUpdate(request, allocation)
 
       allocationRepository.saveAndFlush(allocation)
 
@@ -78,6 +79,14 @@ class AllocationsService(
   ) {
     request.reasonCode?.apply {
       allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, allocation.endDate!!, this.toDeallocationReason(), updatedBy)
+    }
+  }
+
+  private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
+    request.exclusions?.onEach { exclusion ->
+      allocation.activitySchedule.slots(exclusion.weekNumber, exclusion.timeSlot())
+        .apply { if (isEmpty()) throw IllegalArgumentException("No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
+        .forEach { allocation.updateExclusion(it, exclusion.getDaysOfWeek()) }
     }
   }
 

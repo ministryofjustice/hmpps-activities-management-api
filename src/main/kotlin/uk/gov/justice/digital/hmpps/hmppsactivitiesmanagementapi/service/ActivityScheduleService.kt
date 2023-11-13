@@ -164,6 +164,7 @@ class ActivityScheduleService(
       payBand = payBand,
       startDate = request.startDate,
       endDate = request.endDate,
+      exclusions = request.exclusions,
       allocatedBy = allocatedBy,
     ).let { allocation ->
       val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(

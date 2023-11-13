@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.FutureOrPresent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
 @Schema(description = "Describes an allocation to be updated")
@@ -31,4 +32,7 @@ data class AllocationUpdateRequest(
 
   @Schema(description = "Where a prison uses pay bands to differentiate earnings, this is the pay band given to this prisoner")
   val payBandId: Long? = null,
+
+  @Schema(description = "The days and times that the prisoner is excluded from this activity's schedule")
+  val exclusions: List<Slot>? = null,
 )

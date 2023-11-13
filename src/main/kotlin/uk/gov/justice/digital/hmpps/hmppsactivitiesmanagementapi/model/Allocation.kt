@@ -87,6 +87,9 @@ data class Allocation(
 
   @Schema(description = "The earliest release date of the prisoner. Included only if includePrisonerSummary = true")
   var earliestReleaseDate: EarliestReleaseDate? = null,
+
+  @Schema(description = "The activity slots which the allocated prisoner is excluded from attending")
+  var exclusions: List<Slot>? = null,
 )
 
 @Schema(

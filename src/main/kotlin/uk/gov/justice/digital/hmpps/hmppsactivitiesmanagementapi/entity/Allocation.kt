@@ -207,6 +207,7 @@ data class Allocation(
       suspendedTime = suspendedTime,
       status = prisonerStatus,
       plannedDeallocation = plannedDeallocation?.toModel(),
+      exclusions = exclusions.toSlotModel(),
     )
 
   fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
@@ -266,10 +267,19 @@ data class Allocation(
 
   fun isEnded() = status(PrisonerStatus.ENDED)
 
-  fun addExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion {
-    // TODO: Check if one already exists
-    exclusions.add(Exclusion.valueOf(this, slot, daysOfWeek))
-    return exclusions.last()
+  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
+    val exclusion = exclusions
+      .find { it.activityScheduleSlot == slot }
+      ?.apply { setDaysOfWeek(daysOfWeek) }
+      ?: Exclusion.valueOf(this, slot, daysOfWeek)
+
+    return if (exclusion.getDaysOfWeek().isNotEmpty()) {
+      exclusions.add(exclusion)
+      exclusions.last()
+    } else {
+      exclusions.remove(exclusion)
+      null
+    }
   }
 
   @Override

@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
@@ -164,6 +165,7 @@ class TransformFunctionsTest {
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
               plannedDeallocation = null,
+              exclusions = emptyList(),
             ),
             Allocation(
               id = 0,
@@ -180,6 +182,19 @@ class TransformFunctionsTest {
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
               plannedDeallocation = null,
+              exclusions = listOf(
+                Slot(
+                  weekNumber = 1,
+                  timeSlot = "ED",
+                  monday = true,
+                  tuesday = false,
+                  wednesday = false,
+                  thursday = false,
+                  friday = false,
+                  saturday = false,
+                  sunday = false,
+                ),
+              ),
             ),
           ),
           description = "schedule description",

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
 @Schema(
@@ -55,4 +56,7 @@ data class AllocationMigrateRequest(
 
   @Schema(description = "True if this prisoner allocation is suspended.", example = "true")
   val suspendedFlag: Boolean = false,
+
+  @Schema(description = "The days and times that the prisoner is excluded from this activity's schedule")
+  val exclusions: List<Slot>? = null,
 )

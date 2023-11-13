@@ -19,9 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.deallocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -30,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Optional
 
@@ -396,6 +400,61 @@ class AllocationServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Invalid deallocation reason specified 'ALPHA'")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - update exclusions`() {
+    val allocation = allocation().also { it.exclusions hasSize 0 }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      exclusions = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "AM",
+          monday = true,
+        ),
+      ),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.exclusions hasSize 1
+    allocationCaptor.firstValue.exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+  }
+
+  @Test
+  fun `updateAllocation - update exclusions fails if week number and time slot combination returns no slots`() {
+    val allocation = allocation().also { it.exclusions hasSize 0 }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      exclusions = listOf(
+        Slot(
+          weekNumber = 3,
+          timeSlot = "AM",
+          monday = true,
+        ),
+      ),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
   }

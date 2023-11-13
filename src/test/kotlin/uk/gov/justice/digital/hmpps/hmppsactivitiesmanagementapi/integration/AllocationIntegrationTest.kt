@@ -13,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -21,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.startsW
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
@@ -37,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -206,6 +209,39 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     )
 
     allocationRepository.findById(1).get().also { it.endDate isEqualTo TimeSource.tomorrow() }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      occurredAt isCloseTo TimeSource.now()
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  @Test
+  fun `update allocation exclusions`() {
+    webTestClient.updateAllocation(
+      pentonvillePrisonCode,
+      1,
+      AllocationUpdateRequest(
+        exclusions = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+          ),
+        ),
+      ),
+    )
+
+    val allocation = webTestClient.getAllocationBy(1)!!
+
+    with(allocation.exclusions!!) {
+      this hasSize 1
+      this.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
 
     verify(eventsPublisher).send(eventCaptor.capture())
 

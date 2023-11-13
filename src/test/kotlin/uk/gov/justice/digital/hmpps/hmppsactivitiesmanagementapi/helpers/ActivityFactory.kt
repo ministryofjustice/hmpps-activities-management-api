@@ -22,9 +22,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -221,7 +221,7 @@ internal fun activitySchedule(
           payBand = lowPayBand,
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
-        ).apply { this.addExclusion(slot, DayOfWeek.entries.toSet()) }
+        ).apply { this.updateExclusion(slot, setOf(DayOfWeek.MONDAY)) }
       }
     }
     if (!noInstances && !noSlots) {

@@ -7,6 +7,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 
 @Entity
@@ -47,8 +48,41 @@ data class Exclusion(
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
+  fun setDaysOfWeek(days: Set<DayOfWeek>) {
+    if (!activityScheduleSlot.getDaysOfWeek().containsAll(days)) {
+      throw IllegalArgumentException("Cannot set exclusions for slots where the activity does not run")
+    }
+
+    mondayFlag = days.contains(DayOfWeek.MONDAY)
+    tuesdayFlag = days.contains(DayOfWeek.TUESDAY)
+    wednesdayFlag = days.contains(DayOfWeek.WEDNESDAY)
+    thursdayFlag = days.contains(DayOfWeek.THURSDAY)
+    fridayFlag = days.contains(DayOfWeek.FRIDAY)
+    saturdayFlag = days.contains(DayOfWeek.SATURDAY)
+    sundayFlag = days.contains(DayOfWeek.SUNDAY)
+  }
   fun getTimeSlot() = activityScheduleSlot.timeSlot()
   fun getWeekNumber() = activityScheduleSlot.weekNumber
+  fun syncExcludedDaysWithSlot(slot: ActivityScheduleSlot) {
+    mondayFlag = mondayFlag && slot.mondayFlag
+    tuesdayFlag = tuesdayFlag && slot.tuesdayFlag
+    wednesdayFlag = wednesdayFlag && slot.wednesdayFlag
+    thursdayFlag = thursdayFlag && slot.thursdayFlag
+    fridayFlag = fridayFlag && slot.fridayFlag
+    saturdayFlag = saturdayFlag && slot.saturdayFlag
+    sundayFlag = sundayFlag && slot.sundayFlag
+  }
+  fun toSlotModel() = Slot(
+    weekNumber = getWeekNumber(),
+    timeSlot = getTimeSlot().toString(),
+    monday = mondayFlag,
+    tuesday = tuesdayFlag,
+    wednesday = wednesdayFlag,
+    thursday = thursdayFlag,
+    friday = fridayFlag,
+    saturday = saturdayFlag,
+    sunday = sundayFlag,
+  )
 
   companion object {
     fun valueOf(
@@ -58,13 +92,10 @@ data class Exclusion(
     ) = Exclusion(
       allocation = allocation,
       activityScheduleSlot = slot,
-      mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
-      tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
-      wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
-      thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
-      fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
-      saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
-      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
-    )
+    ).apply {
+      setDaysOfWeek(daysOfWeek)
+    }
   }
 }
+
+fun List<Exclusion>.toSlotModel() = map { it.toSlotModel() }
