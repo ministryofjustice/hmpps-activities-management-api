@@ -69,9 +69,9 @@ class AppointmentServiceCancelTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val outboundEventsService: OutboundEventsService = mock()
 
   @Captor
   private lateinit var telemetryPropertyMap: ArgumentCaptor<Map<String, String>>
@@ -85,7 +85,7 @@ class AppointmentServiceCancelTest {
     locationService,
     prisonerSearchApiClient,
     prisonApiClient,
-    AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, telemetryClient, auditService),
+    AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), outboundEventsService, telemetryClient, auditService),
     AppointmentCancelDomainService(
       appointmentSeriesRepository,
       appointmentCancellationReasonRepository,

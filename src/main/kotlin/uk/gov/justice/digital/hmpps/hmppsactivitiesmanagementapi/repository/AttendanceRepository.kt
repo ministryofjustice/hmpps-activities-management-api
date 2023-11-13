@@ -60,4 +60,6 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     prisonCode: String,
     date: LocalDate,
   ): List<BookingCount>
+
+  fun findByPrisonerNumber(prisonerNumber: String): List<Attendance>
 }

@@ -12,6 +12,10 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<OffenderReleasedEvent>(message)
   },
+  OFFENDER_MERGED("prison-offender-events.prisoner.merged") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<OffenderMergedEvent>(message)
+  },
   INCENTIVES_INSERTED("incentives.iep-review.inserted") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<IncentivesInsertedEvent>(message)
@@ -82,6 +86,16 @@ data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation)
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)
+
+// ------------ Offender merged event -----------------------------------------------------------
+
+data class OffenderMergedEvent(val additionalInformation: MergeInformation) : InboundEvent, EventOfInterest {
+  override fun prisonerNumber() = additionalInformation.nomsNumber
+  fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
+  override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
+}
+
+data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
 
 // ------------ Incentives review events --------------------------------------------------------
 

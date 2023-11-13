@@ -43,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
@@ -64,6 +65,7 @@ class AppointmentSetServiceTest {
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonApiClient: PrisonApiClient = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
 
@@ -76,6 +78,7 @@ class AppointmentSetServiceTest {
     prisonerSearchApiClient,
     prisonApiClient,
     TransactionHandler(),
+    outboundEventsService,
     telemetryClient,
     auditService,
   )

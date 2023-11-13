@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -32,7 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Entity
 @Table(name = "appointment")
 @Where(clause = "NOT is_deleted")
-@EntityListeners(AppointmentEntityListener::class)
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -108,41 +106,38 @@ data class Appointment(
 
   fun attendees() = attendees.filterNot { it.isDeleted }.toList()
 
-  fun findAttendee(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
+  fun findAttendeeRecords(prisonerNumber: String) = attendees().filter { it.prisonerNumber == prisonerNumber }
 
   fun findAttendees(prisonerNumbers: Collection<String>) = attendees().filter { prisonerNumbers.contains(it.prisonerNumber) }
 
   // Should only be used when creating appointments initially. Adding new attendees after creation should use the function below
-  fun addAttendee(attendee: AppointmentAttendee) {
+  fun addAttendee(attendee: AppointmentAttendee): AppointmentAttendee {
     failIfIndividualAppointmentAlreadyAllocated()
     attendees.add(attendee)
+    return attendee
   }
 
-  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?) {
+  fun addAttendee(prisonerNumber: String, bookingId: Long, addedTime: LocalDateTime? = LocalDateTime.now(), addedBy: String?): AppointmentAttendee? {
     // Soft delete any existing removed attendee records for the prisoner
-    findAttendee(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+    findAttendeeRecords(prisonerNumber).filter { it.isRemoved() }.forEach { it.isDeleted = true }
+
     // Add attendee if no non-soft deleted attendee records for the prisoner exist
-    findAttendee(prisonerNumber).let {
-      if (it.isEmpty()) {
-        failIfIndividualAppointmentAlreadyAllocated()
-        attendees.add(
-          AppointmentAttendee(
-            appointment = this,
-            prisonerNumber = prisonerNumber,
-            bookingId = bookingId,
-            addedTime = addedTime,
-            addedBy = addedBy,
-          ),
-        )
-      }
-    }
+    if (findAttendeeRecords(prisonerNumber).isNotEmpty()) return null
+
+    val attendee = AppointmentAttendee(
+      appointment = this,
+      prisonerNumber = prisonerNumber,
+      bookingId = bookingId,
+      addedTime = addedTime,
+      addedBy = addedBy,
+    )
+    return addAttendee(attendee)
   }
 
-  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) {
-    findAttendee(prisonerNumber).forEach {
+  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) =
+    findAttendeeRecords(prisonerNumber).onEach {
       it.remove(removedTime, removalReason, removedBy)
     }
-  }
 
   fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {
