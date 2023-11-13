@@ -103,7 +103,7 @@ data class ActivityScheduleSlot(
     )
   }
 
-  fun update(daysOfWeek: Set<DayOfWeek>): Set<Long> {
+  fun update(daysOfWeek: Set<DayOfWeek>): AllocationIds {
     require(daysOfWeek.isNotEmpty()) { "A slot must run on at least one day." }
 
     val updatedAllocationIds = mutableSetOf<Long>()

@@ -28,6 +28,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
+typealias AllocationIds = Set<Long>
+
 const val SESSION_DATE_FILTER = "SessionDateFilter"
 const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
 
@@ -331,7 +333,7 @@ data class ActivitySchedule(
     this.instancesLastUpdatedTime = LocalDateTime.now()
   }
 
-  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     updateMatchingSlots(updates).let { updatedAllocationIds.addAll(it) }
     addNewSlots(updates)
@@ -339,14 +341,14 @@ data class ActivitySchedule(
     return updatedAllocationIds
   }
 
-  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
     val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }
     slots.removeAll(slotsToRemove)
     require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
     return slotsToRemove.flatMap { it.exclusions.map { ex -> ex.allocation.allocationId } }.toSet()
   }
 
-  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): Set<Long> {
+  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     slots.forEach { slot ->
       updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)?.ifNotEmpty { updatedAllocationIds.addAll(it) }

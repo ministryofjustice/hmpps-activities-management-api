@@ -18,6 +18,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -150,8 +153,8 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedules).hasSize(1)
 
     with(activitySchedules.first()) {
-      assertThat(allocations()).hasSize(2)
-      assertThat(instances()).hasSize(2)
+      allocations() hasSize 2
+      instances() hasSize 2
       val scheduledInstances = scheduledInstanceRepository.findAll()
       assertThat(scheduledInstances).isNotEmpty
       scheduledInstances.forEach { assertThat(it.attendances).isEmpty() }
@@ -175,10 +178,10 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
-    eventCaptor.allValues.map {
-      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
-      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
-      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
+    eventCaptor.allValues.forEach {
+      it.eventType isEqualTo "activities.prisoner.attendance-created"
+      it.occurredAt isCloseTo LocalDateTime.now()
+      it.description isEqualTo "A prisoner attendance has been created in the activities management service"
     }
   }
 

@@ -52,6 +52,8 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
+typealias AllocationIds = Set<Long>
+
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
@@ -601,7 +603,7 @@ class ActivityService(
     prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
-  ): List<Long> {
+  ): AllocationIds {
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
         .associateBy { it.prisonPayBandId }
@@ -622,7 +624,7 @@ class ActivityService(
         }
       }
     }
-    return emptyList()
+    return emptySet()
   }
 
   private fun replacePayBandAllocationBeforePayRemoval(
@@ -630,8 +632,8 @@ class ActivityService(
     newPay: List<ActivityPayCreateRequest>,
     activity: Activity,
     prisonPayBands: Map<Long, PrisonPayBand>,
-  ): List<Long> {
-    val updatedAllocationIds = mutableListOf<Long>()
+  ): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     val oldPay = activity.activityPay()
     val deltaPayBand = newPay.find {
       oldPay.none { p -> p.incentiveNomisCode == it.incentiveNomisCode && p.payBand.prisonPayBandId == it.payBandId }
@@ -670,7 +672,7 @@ class ActivityService(
   private fun applySlotsUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
-  ): Set<Long> {
+  ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
