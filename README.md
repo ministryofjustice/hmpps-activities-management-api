@@ -18,6 +18,7 @@ Tools required:
 * docker
 * docker-compose
 * AWS cli
+* kubectl
 
 ## Install gradle
 
@@ -45,6 +46,36 @@ export SCHEDULE_AHEAD_DAYS=46
 ```
 
 N.B. you must escape any '$' characters with '\\$'
+
+## Service Alerting
+
+The serivce uses [Sentry.IO](https://ministryofjustice.sentry.io/) to raise alerts in Slack and email for job failures. There is a project and team set up in Sentry specifically for this service called `#hmpps-activities-management`. You can log in (and register if need be) with your MoJ github account [here](https://ministryofjustice.sentry.io/).
+
+Rules for alerts can be configured [here](https://ministryofjustice.sentry.io/alerts/rules/).
+
+For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes an environment. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
+
+```
+echo -n '<SENTRY_DSN_GOES_HERE>' | base64
+```
+
+Create a file called sentry.yaml based on the example below and add the base 64 encoded to it:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentry
+type: Opaque
+data:
+  SENTRY_DSN: <BASE_64_ENCODED_SENTRY_DSN_GOES_HERE>
+```
+
+Apply the secret to each environment with `kubectl` using the file above as required:
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> apply -f sentry.yaml
+```
 
 ## Running the service
 
