@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -15,6 +17,8 @@ class AppointmentTelemetryTransformFunctionsTest {
   private val createAppointmentSetWithThreeAppointments = AppointmentSetCreateRequest(
     prisonCode = moorlandPrisonCode,
     categoryCode = "MEDO",
+    tierCode = eventTier().code,
+    organiserCode = eventOrganiser().code,
     customName = "Custom name",
     internalLocationId = 123,
     inCell = false,

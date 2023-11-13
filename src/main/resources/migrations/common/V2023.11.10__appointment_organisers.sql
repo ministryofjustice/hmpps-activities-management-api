@@ -16,22 +16,22 @@ DROP TABLE appointment_host;
 ALTER TABLE appointment ADD COLUMN appointment_tier_id bigint REFERENCES event_tier (event_tier_id);
 ALTER TABLE appointment ADD COLUMN appointment_organiser_id bigint REFERENCES event_organiser (event_organiser_id);
 
-CREATE UNIQUE INDEX idx_appointment_appointment_tier_id ON appointment (appointment_tier_id);
-CREATE UNIQUE INDEX idx_appointment_appointment_organiser_id ON appointment (appointment_organiser_id);
+CREATE INDEX idx_appointment_appointment_tier_id ON appointment (appointment_tier_id);
+CREATE INDEX idx_appointment_appointment_organiser_id ON appointment (appointment_organiser_id);
 
 ALTER TABLE appointment_set ADD COLUMN appointment_tier_id bigint REFERENCES event_tier (event_tier_id);
 ALTER TABLE appointment_set ADD COLUMN appointment_organiser_id bigint REFERENCES event_organiser (event_organiser_id);
 
-CREATE UNIQUE INDEX idx_appointment_set_tier_id ON appointment_set (appointment_tier_id);
-CREATE UNIQUE INDEX idx_appointment_set_organiser_id ON appointment_set (appointment_organiser_id);
+CREATE INDEX idx_appointment_set_tier_id ON appointment_set (appointment_tier_id);
+CREATE INDEX idx_appointment_set_organiser_id ON appointment_set (appointment_organiser_id);
 
 ALTER TABLE appointment_series ADD COLUMN appointment_tier_id bigint REFERENCES event_tier (event_tier_id);
 ALTER TABLE appointment_series ADD COLUMN appointment_organiser_id bigint REFERENCES event_organiser (event_organiser_id);
 
-CREATE UNIQUE INDEX idx_appointment_series_tier_id ON appointment_series (appointment_tier_id);
-CREATE UNIQUE INDEX idx_appointment_series_organiser_id ON appointment_series (appointment_organiser_id);
+CREATE INDEX idx_appointment_series_tier_id ON appointment_series (appointment_tier_id);
+CREATE INDEX idx_appointment_series_organiser_id ON appointment_series (appointment_organiser_id);
 
-ALTER INDEX activity_tier_pk RENAME TO event_tier_pk;
+ALTER INDEX IF EXISTS activity_tier_pk RENAME TO event_tier_pk;
 
 CREATE OR REPLACE VIEW v_appointment_search AS
 SELECT a.appointment_series_id,

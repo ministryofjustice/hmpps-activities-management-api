@@ -112,6 +112,8 @@ fun appointmentSeriesCreateRequest(
   prisonCode: String? = "TPR",
   prisonerNumbers: List<String> = listOf("A1234BC"),
   categoryCode: String? = "TEST",
+  tierCode: String? = eventTier().code,
+  organiserCode: String? = eventOrganiser().code,
   customName: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
@@ -126,6 +128,8 @@ fun appointmentSeriesCreateRequest(
     prisonCode,
     prisonerNumbers,
     categoryCode,
+    tierCode,
+    organiserCode,
     customName,
     internalLocationId,
     inCell,
@@ -139,6 +143,8 @@ fun appointmentSeriesCreateRequest(
 fun appointmentSetCreateRequest(
   prisonCode: String? = "TPR",
   categoryCode: String? = "TEST",
+  tierCode: String? = eventTier().code,
+  organiserCode: String? = eventOrganiser().code,
   customName: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
@@ -150,6 +156,8 @@ fun appointmentSetCreateRequest(
 ) =
   AppointmentSetCreateRequest(
     categoryCode = categoryCode,
+    tierCode = tierCode,
+    organiserCode = organiserCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
     inCell = inCell,
