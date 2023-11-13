@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import java.time.LocalDateTime
@@ -38,6 +39,7 @@ class InterestingEventHandler(
     log.debug("Checking for interesting event: {}", event)
 
     if (event is InboundReleaseEvent) return recordRelease(event)
+    if (event is OffenderMergedEvent) return recordMerge(event)
 
     prisonApiClient.getPrisonerDetails(event.prisonerNumber()).block()?.let { prisoner ->
       if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
@@ -93,7 +95,31 @@ class InterestingEventHandler(
     return Outcome.success()
   }
 
-  private fun InboundEvent.getEventMessage(prisoner: InmateDetail): String {
+  private fun recordMerge(mergedEvent: OffenderMergedEvent): Outcome {
+    // Use the new prisoner number - the merged will have been actioned in prison API
+    prisonApiClient.getPrisonerDetails(mergedEvent.prisonerNumber()).block()?.let { prisoner ->
+      if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
+        val saved = eventReviewRepository.saveAndFlush(
+          EventReview(
+            eventTime = LocalDateTime.now(),
+            eventType = mergedEvent.eventType(),
+            eventData = mergedEvent.getEventMessage(prisoner, mergedEvent.removedPrisonerNumber()),
+            prisonCode = prisoner.agencyId,
+            prisonerNumber = mergedEvent.prisonerNumber(),
+            bookingId = prisoner.bookingId?.toInt(),
+          ),
+        )
+        log.debug("Saved interesting event ID ${saved.eventReviewId} - ${mergedEvent.eventType()} - replaced ${mergedEvent.removedPrisonerNumber()} with ${mergedEvent.prisonerNumber()}")
+        return Outcome.success()
+      } else {
+        log.debug("Ignoring offender merged event for ${mergedEvent.removedPrisonerNumber()} - prison ${prisoner.agencyId} is not rolled out.")
+      }
+    }
+
+    return Outcome.success()
+  }
+
+  private fun InboundEvent.getEventMessage(prisoner: InmateDetail, oldPrisonerNumber: String? = null): String {
     val prisonerDetails = "${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
 
     return when (this) {
@@ -107,6 +133,7 @@ class InterestingEventHandler(
       is IncentivesDeletedEvent -> "Incentive review deleted for $prisonerDetails"
       is OffenderReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, $prisonerDetails"
       is OffenderReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
+      is OffenderMergedEvent -> "Prisoner ${prisoner.firstName} ${prisoner.lastName} merged from ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
       else -> "Unknown event for $prisonerDetails"
     }
   }
