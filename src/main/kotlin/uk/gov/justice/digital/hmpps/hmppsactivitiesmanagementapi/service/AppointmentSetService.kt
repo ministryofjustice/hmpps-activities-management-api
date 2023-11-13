@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.createAndAddAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
@@ -18,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.FOUNDATION_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -79,11 +78,9 @@ class AppointmentSetService(
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
-    val appointmentTier = eventTierRepository.findOrThrowNotFound(FOUNDATION_ID)
-
     return transactionHandler.newSpringTransaction {
       appointmentSetRepository.saveAndFlush(
-        request.toAppointmentSet(prisonNumberBookingIdMap, appointmentTier, principal.name),
+        request.toAppointmentSet(prisonNumberBookingIdMap, principal.name),
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
@@ -123,12 +120,19 @@ class AppointmentSetService(
     }
   }
 
-  private fun AppointmentSetCreateRequest.toAppointmentSet(prisonNumberBookingIdMap: Map<String, Long>, appointmentTier: EventTier, createdBy: String) =
-    AppointmentSet(
+  private fun AppointmentSetCreateRequest.toAppointmentSet(
+    prisonNumberBookingIdMap: Map<String, Long>,
+    createdBy: String,
+  ): AppointmentSet {
+    val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(this.tierCode!!)
+    val organiser = this.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+
+    return AppointmentSet(
       prisonCode = prisonCode!!,
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
-      appointmentTier = appointmentTier,
+      appointmentTier = tier,
+      appointmentOrganiser = organiser,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
@@ -138,6 +142,7 @@ class AppointmentSetService(
         appointmentSet.addAppointment(appointment, prisonNumberBookingIdMap)
       }
     }
+  }
 
   private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) =
     addAppointmentSeries(
@@ -147,6 +152,7 @@ class AppointmentSetService(
         categoryCode = categoryCode,
         customName = customName,
         appointmentTier = appointmentTier,
+        appointmentOrganiser = appointmentOrganiser,
         internalLocationId = internalLocationId,
         inCell = inCell,
         startDate = startDate,

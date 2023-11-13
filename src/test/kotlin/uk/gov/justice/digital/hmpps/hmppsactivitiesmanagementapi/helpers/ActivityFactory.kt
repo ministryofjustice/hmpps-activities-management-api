@@ -172,7 +172,7 @@ internal fun eventTier(
 internal fun foundationTier() = eventTier(
   eventTierId = 3,
   code = "FOUNDATION",
-  description = "Routine activities also called \"Foundation\""
+  description = "Routine activities also called \"Foundation\"",
 )
 
 internal fun eventOrganiser(

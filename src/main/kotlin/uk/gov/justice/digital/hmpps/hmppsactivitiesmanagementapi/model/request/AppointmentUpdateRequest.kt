@@ -25,6 +25,12 @@ data class AppointmentUpdateRequest(
   )
   val categoryCode: String? = null,
 
+  @Schema(description = "The tier code for this appointment", example = "TIER_1")
+  val tierCode: String? = null,
+
+  @Schema(description = "The organiser code for this appointment", example = "PRISON_STAFF")
+  val organiserCode: String? = null,
+
   @Schema(
     description =
     """

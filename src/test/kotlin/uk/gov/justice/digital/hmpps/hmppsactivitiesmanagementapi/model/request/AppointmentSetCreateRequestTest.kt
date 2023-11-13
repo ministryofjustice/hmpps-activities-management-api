@@ -123,6 +123,16 @@ class AppointmentSetCreateRequestTest {
     )
   }
 
+  @Test
+  fun `appointment tier code must be supplied`() {
+    val request = appointmentSetCreateRequest(tierCode = null)
+    assertSingleValidationError(
+      validator.validate(request),
+      "tierCode",
+      "Tier code must be supplied",
+    )
+  }
+
   private fun <T> assertSingleValidationError(
     validate: MutableSet<ConstraintViolation<T>>,
     propertyName: String,

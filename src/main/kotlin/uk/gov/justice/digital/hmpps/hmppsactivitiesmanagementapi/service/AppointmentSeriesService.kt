@@ -7,7 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
@@ -15,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.FOUNDATION_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
@@ -71,14 +70,12 @@ class AppointmentSeriesService(
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
-    val appointmentTier = eventTierRepository.findOrThrowNotFound(FOUNDATION_ID)
-
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
     val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonNumberBookingIdMap.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointmentSeriesModel =
       transactionHandler.newSpringTransaction {
-        appointmentSeriesRepository.saveAndFlush(request.toAppointmentSeries(appointmentTier, principal.name))
+        appointmentSeriesRepository.saveAndFlush(request.toAppointmentSeries(principal.name))
       }.let {
         appointmentCreateDomainService.createAppointments(
           appointmentSeries = it,
@@ -140,13 +137,17 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun AppointmentSeriesCreateRequest.toAppointmentSeries(appointmentTier: EventTier, createdBy: String) =
-    AppointmentSeriesEntity(
+  private fun AppointmentSeriesCreateRequest.toAppointmentSeries(createdBy: String): AppointmentSeriesEntity {
+    val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(tierCode!!)
+    val organiser = organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+
+    return AppointmentSeriesEntity(
       appointmentType = appointmentType!!,
       prisonCode = prisonCode!!,
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
-      appointmentTier = appointmentTier,
+      appointmentTier = tier,
+      appointmentOrganiser = organiser,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
@@ -163,4 +164,5 @@ class AppointmentSeriesService(
         )
       }
     }
+  }
 }

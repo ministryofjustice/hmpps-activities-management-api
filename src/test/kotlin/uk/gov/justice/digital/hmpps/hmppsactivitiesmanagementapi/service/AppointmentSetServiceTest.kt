@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
@@ -59,7 +61,7 @@ import java.util.Optional
 class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val eventTierRepository: EventTierRepository = mock()
-  private val eventHostRepository: EventOrganiserRepository = mock()
+  private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -71,7 +73,7 @@ class AppointmentSetServiceTest {
   private val service = AppointmentSetService(
     appointmentSetRepository,
     eventTierRepository,
-    eventHostRepository,
+    eventOrganiserRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -85,6 +87,9 @@ class AppointmentSetServiceTest {
   @BeforeEach
   fun setUp() {
     addCaseloadIdToRequestHeader("TPR")
+
+    whenever(eventTierRepository.findByCode(eventTier().code)).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode(eventOrganiser().code)).thenReturn(eventOrganiser())
   }
 
   @AfterEach
@@ -191,6 +196,8 @@ class AppointmentSetServiceTest {
     private val createAppointmentSetWithOneAppointment = AppointmentSetCreateRequest(
       prisonCode = prisonCode,
       categoryCode = categoryCode,
+      tierCode = eventTier().code,
+      organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
       inCell = false,
@@ -208,6 +215,8 @@ class AppointmentSetServiceTest {
     private val createAppointmentSetWithThreeAppointments = AppointmentSetCreateRequest(
       prisonCode = prisonCode,
       categoryCode = categoryCode,
+      tierCode = eventTier().code,
+      organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
       inCell = false,
@@ -366,7 +375,7 @@ class AppointmentSetServiceTest {
           categoryCode = categoryCode,
           customName = "Custom name",
           appointmentTier = appointmentTier,
-          appointmentOrganiser = null,
+          appointmentOrganiser = appointmentOrganiser,
           internalLocationId = internalLocationId,
           customLocation = null,
           inCell = false,
@@ -389,7 +398,7 @@ class AppointmentSetServiceTest {
             categoryCode = categoryCode,
             customName = "Custom name",
             appointmentTier = appointmentTier,
-            appointmentOrganiser = null,
+            appointmentOrganiser = appointmentOrganiser,
             internalLocationId = internalLocationId,
             customLocation = null,
             inCell = false,
@@ -417,7 +426,7 @@ class AppointmentSetServiceTest {
               categoryCode = categoryCode,
               customName = "Custom name",
               appointmentTier = appointmentTier,
-              appointmentOrganiser = null,
+              appointmentOrganiser = appointmentOrganiser,
               internalLocationId = internalLocationId,
               customLocation = null,
               inCell = false,
