@@ -81,11 +81,21 @@ class TransformFunctionsTest {
         ),
       )
       assertThat(tier).isEqualTo(ModelEventTier(2, "TIER_2", "Tier 2"))
-      assertThat(organiser).isEqualTo(ModelEventOrganiser(id = 1, code = "PRISON_STAFF", description = "Prison staff"))
+      assertThat(organiser).isEqualTo(
+        ModelEventOrganiser(
+          id = 1,
+          code = "PRISON_STAFF",
+          description = "Prison staff",
+        ),
+      )
       assertThat(eligibilityRules).containsExactly(
         ModelActivityEligibility(
           0,
-          ModelEligibilityRule(1, code = "OVER_21", description = "The prisoner must be over 21 to attend"),
+          ModelEligibilityRule(
+            1,
+            code = "OVER_21",
+            description = "The prisoner must be over 21 to attend",
+          ),
         ),
       )
       assertThat(schedules).containsExactly(
@@ -143,6 +153,22 @@ class TransformFunctionsTest {
               id = 0,
               prisonerNumber = "A1234AA",
               bookingId = 10001,
+              prisonPayBand = lowPayBand.toModel(),
+              startDate = timestamp.toLocalDate(),
+              endDate = null,
+              allocatedTime = timestamp,
+              allocatedBy = "Mr Blogs",
+              activitySummary = "Maths",
+              activityId = 1,
+              scheduleId = 1,
+              scheduleDescription = "schedule description",
+              status = PrisonerStatus.ACTIVE,
+              plannedDeallocation = null,
+            ),
+            Allocation(
+              id = 0,
+              prisonerNumber = "A1111BB",
+              bookingId = 20002,
               prisonPayBand = lowPayBand.toModel(),
               startDate = timestamp.toLocalDate(),
               endDate = null,

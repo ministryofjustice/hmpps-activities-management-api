@@ -961,9 +961,9 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
-    val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(listOf(prisoner))
+    val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
+    val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
 
     service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 
@@ -1665,6 +1665,142 @@ class ActivityServiceTest {
     week2Schedules.all {
       listOf(tomorrow.plusDays(1).dayOfWeek).contains(it.dayOfWeek())
     }
+  }
+
+  @Test
+  fun `updateActivity - update slots where there is an exclusion`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    ).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    activity.addSchedule(
+      activitySchedule(
+        activity,
+        scheduleWeeks = 1,
+        noSlots = true,
+        noInstances = true,
+        noAllocations = true,
+      ),
+    ).apply {
+      val slot = addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+      allocatePrisoner(
+        prisonerNumber = "A1111BB".toPrisonerNumber(),
+        bookingId = 20002,
+        payBand = lowPayBand,
+        allocatedBy = "Mr Blogs",
+        startDate = startDate,
+      ).apply {
+        val exclusion = this.addExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.exclusions.add(exclusion)
+      }
+    }
+
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = tomorrow.dayOfWeek != DayOfWeek.MONDAY,
+            tuesday = tomorrow.dayOfWeek != DayOfWeek.TUESDAY,
+            wednesday = tomorrow.dayOfWeek != DayOfWeek.WEDNESDAY,
+            thursday = tomorrow.dayOfWeek != DayOfWeek.THURSDAY,
+            friday = tomorrow.dayOfWeek != DayOfWeek.FRIDAY,
+            saturday = tomorrow.dayOfWeek != DayOfWeek.SATURDAY,
+            sunday = tomorrow.dayOfWeek != DayOfWeek.SUNDAY,
+          ),
+        ),
+      ),
+      updatedBy = "TEST",
+    )
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+  }
+
+  @Test
+  fun `updateActivity - update slots where there is an exclusion - event not emitted if exclusion is not affected`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    ).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    activity.addSchedule(
+      activitySchedule(
+        activity,
+        scheduleWeeks = 1,
+        noSlots = true,
+        noInstances = true,
+        noAllocations = true,
+      ),
+    ).apply {
+      val slot = addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+      allocatePrisoner(
+        prisonerNumber = "A1111BB".toPrisonerNumber(),
+        bookingId = 20002,
+        payBand = lowPayBand,
+        allocatedBy = "Mr Blogs",
+        startDate = startDate,
+      ).apply {
+        val exclusion = this.addExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.exclusions.add(exclusion)
+      }
+    }
+
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            thursday = true,
+            friday = true,
+            saturday = true,
+            sunday = true,
+          ),
+        ),
+      ),
+      updatedBy = "TEST",
+    )
+
+    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
   @Test

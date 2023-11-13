@@ -7,10 +7,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
@@ -70,7 +68,7 @@ class ActivityScheduleTest {
           description = "category description",
         ),
         capacity = 1,
-        allocated = 1,
+        allocated = 2,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),
@@ -141,7 +139,7 @@ class ActivityScheduleTest {
             description = "category description",
           ),
           capacity = 1,
-          allocated = 1,
+          allocated = 2,
           createdTime = LocalDate.now().atStartOfDay(),
           activityState = ActivityState.LIVE,
         ),
@@ -206,7 +204,7 @@ class ActivityScheduleTest {
   @Test
   fun `can allocate prisoner to a schedule with existing allocation`() {
     val schedule = activitySchedule(activity = activityEntity())
-      .also { assertThat(it.allocations()).hasSize(1) }
+      .also { assertThat(it.allocations()).hasSize(2) }
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
@@ -215,7 +213,7 @@ class ActivityScheduleTest {
       allocatedBy = "FREDDIE",
     )
 
-    assertThat(schedule.allocations()).hasSize(2)
+    assertThat(schedule.allocations()).hasSize(3)
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
@@ -233,7 +231,7 @@ class ActivityScheduleTest {
   @Test
   fun `allocated prisoner status is set to PENDING when start date is in the future`() {
     val schedule = activitySchedule(activity = activityEntity())
-      .also { assertThat(it.allocations()).hasSize(1) }
+      .also { assertThat(it.allocations()).hasSize(2) }
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
@@ -243,7 +241,7 @@ class ActivityScheduleTest {
       startDate = LocalDate.now().plusDays(1),
     )
 
-    assertThat(schedule.allocations()).hasSize(2)
+    assertThat(schedule.allocations()).hasSize(3)
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)

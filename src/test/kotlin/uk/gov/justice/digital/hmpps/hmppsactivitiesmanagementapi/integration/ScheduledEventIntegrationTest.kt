@@ -137,6 +137,30 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+    fun `GET single prisoner - scheduled events with exclusions are not returned`() {
+      val prisonCode = "MDI"
+      val prisonerNumber = "A5193DY"
+      val bookingId = 1200993L
+      val startDate = LocalDate.now()
+      val endDate = LocalDate.now()
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
+      prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
+      prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      // No transfers - not today
+
+      val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, startDate, endDate)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+      }
+    }
+
+    @Test
     @Sql("classpath:test_data/make-MDI-rollout-inactive-for-both.sql")
     @Sql("classpath:test_data/seed-activity-id-3.sql")
     fun `GET single prisoner - neither activities and appointments active (both prison API) - 200 success`() {
@@ -541,6 +565,27 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings).hasSize(2)
         assertThat(visits).hasSize(2)
         assertThat(adjudications).hasSize(2)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+    fun `POST - multiple prisoners - scheduled events with exclusions are not returned`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
       }
     }
   }
