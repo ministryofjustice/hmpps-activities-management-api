@@ -83,6 +83,8 @@ class ManageAttendancesService(
                 log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
                 outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
               }
+            }.onFailure {
+              log.error("Error occurred saving attendances", it)
             }
           }
         }
