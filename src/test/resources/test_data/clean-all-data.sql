@@ -21,6 +21,7 @@ truncate table activity_schedule_slot restart identity;
 truncate table activity_eligibility restart identity;
 truncate table eligibility_rule restart identity;
 truncate table activity restart identity;
+truncate table exclusion restart identity;
 truncate table prison_pay_band restart identity;
 truncate table prison_regime restart identity;
 truncate table event_review restart identity;

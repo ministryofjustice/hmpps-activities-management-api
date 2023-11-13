@@ -52,6 +52,8 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
+typealias AllocationIds = Set<Long>
+
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
@@ -315,6 +317,8 @@ class ActivityService(
     transactionHandler.newSpringTransaction {
       val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
         ?: throw EntityNotFoundException("Activity $activityId not found.")
+      val updatedAllocationIds = mutableSetOf<Long>()
+
       require(activity.state(ActivityState.ARCHIVED).not()) {
         "Activity cannot be updated because it is now archived."
       }
@@ -333,9 +337,9 @@ class ActivityService(
       applyLocationUpdate(request, activity)
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
-      val updatedAllocationIds = applyPayUpdate(prisonCode, request, activity)
+      applyPayUpdate(prisonCode, request, activity).let { updatedAllocationIds.addAll(it) }
       applyScheduleWeeksUpdate(request, activity)
-      applySlotsUpdate(request, activity)
+      applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
       val now = LocalDateTime.now()
 
@@ -599,7 +603,7 @@ class ActivityService(
     prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
-  ): List<Long> {
+  ): AllocationIds {
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
         .associateBy { it.prisonPayBandId }
@@ -620,7 +624,7 @@ class ActivityService(
         }
       }
     }
-    return emptyList()
+    return emptySet()
   }
 
   private fun replacePayBandAllocationBeforePayRemoval(
@@ -628,8 +632,8 @@ class ActivityService(
     newPay: List<ActivityPayCreateRequest>,
     activity: Activity,
     prisonPayBands: Map<Long, PrisonPayBand>,
-  ): List<Long> {
-    val updatedAllocationIds = mutableListOf<Long>()
+  ): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     val oldPay = activity.activityPay()
     val deltaPayBand = newPay.find {
       oldPay.none { p -> p.incentiveNomisCode == it.incentiveNomisCode && p.payBand.prisonPayBandId == it.payBandId }
@@ -668,11 +672,15 @@ class ActivityService(
   private fun applySlotsUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
-  ) {
+  ): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+      activity.schedules().forEach {
+        it.updateSlots(slots.toMap(timeSlots)).let { ids -> updatedAllocationIds.addAll(ids) }
+      }
     }
+    return updatedAllocationIds
   }
 
   private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):
