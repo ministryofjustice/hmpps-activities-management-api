@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import io.sentry.Sentry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 
 /**
@@ -11,14 +12,24 @@ import org.springframework.stereotype.Service
  * Extra care must be taken when using this service not to include any PII data in any of the calls.
  */
 @Service
-class MonitoringService {
+class MonitoringService(
+  @Value("\${SENTRY_SDSN:#{null}}") dsn: String?,
+  @Value("\${SENTRY_ENVIRONMENT:#{null}}") env: String?,
+) {
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   init {
-    log.info("Monitoring service is ${if (Sentry.isEnabled()) "enabled" else "disabled"}")
+    dsn?.let {
+      Sentry.init { options ->
+        options.dsn = dsn
+        env?.let { options.environment = it }
+      }
+    }
+
+    log.info("Monitoring service is ${if (Sentry.isEnabled()) "enabled in environment $env" else "disabled"}")
   }
 
   fun capture(message: String) {
