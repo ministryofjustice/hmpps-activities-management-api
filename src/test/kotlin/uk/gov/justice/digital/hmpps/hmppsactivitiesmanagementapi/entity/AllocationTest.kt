@@ -9,8 +9,10 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -359,5 +361,23 @@ class AllocationTest {
 
     allocation.startDate isEqualTo TimeSource.tomorrow()
     allocation.endDate isEqualTo TimeSource.today()
+  }
+
+  @Test
+  fun `update exclusions - add and remove an exclusion`() {
+    val allocation = allocation()
+    allocation.exclusions hasSize 0
+
+    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+
+    allocation.exclusions hasSize 1
+    with(exclusion!!) {
+      getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+
+    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
+
+    allocation.exclusions hasSize 0
+    updatedExclusion isEqualTo null
   }
 }

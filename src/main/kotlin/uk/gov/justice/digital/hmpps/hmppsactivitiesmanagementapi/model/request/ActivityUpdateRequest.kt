@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
 @Schema(description = "Describes a top-level activity to be updated")

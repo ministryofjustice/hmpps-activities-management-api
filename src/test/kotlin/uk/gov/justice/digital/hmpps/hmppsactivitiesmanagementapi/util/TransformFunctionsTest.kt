@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -35,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
@@ -164,6 +166,7 @@ class TransformFunctionsTest {
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
               plannedDeallocation = null,
+              exclusions = emptyList(),
             ),
             Allocation(
               id = 0,
@@ -180,6 +183,19 @@ class TransformFunctionsTest {
               scheduleDescription = "schedule description",
               status = PrisonerStatus.ACTIVE,
               plannedDeallocation = null,
+              exclusions = listOf(
+                Slot(
+                  weekNumber = 1,
+                  timeSlot = TimeSlot.slot(timestamp.toLocalTime()).toString(),
+                  monday = true,
+                  tuesday = false,
+                  wednesday = false,
+                  thursday = false,
+                  friday = false,
+                  saturday = false,
+                  sunday = false,
+                ),
+              ),
             ),
           ),
           description = "schedule description",

@@ -49,9 +49,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.runEveryDayOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -1706,8 +1706,8 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        val exclusion = this.addExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.exclusions.add(exclusion)
+        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.exclusions.add(exclusion!!)
       }
     }
 
@@ -1774,8 +1774,8 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        val exclusion = this.addExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.exclusions.add(exclusion)
+        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.exclusions.add(exclusion!!)
       }
     }
 
