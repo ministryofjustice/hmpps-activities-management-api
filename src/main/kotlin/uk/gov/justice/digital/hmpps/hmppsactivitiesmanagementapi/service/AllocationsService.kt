@@ -85,7 +85,7 @@ class AllocationsService(
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
     request.exclusions?.onEach { exclusion ->
       allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
-        .apply { if (this == null) throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
+        .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
     }
   }

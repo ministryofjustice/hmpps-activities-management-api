@@ -57,6 +57,10 @@ data class AllocationMigrateRequest(
   @Schema(description = "True if this prisoner allocation is suspended.", example = "true")
   val suspendedFlag: Boolean = false,
 
-  @Schema(description = "The days and times that the prisoner is excluded from this activity's schedule")
+  @Schema(
+    description = "The days and times that the prisoner is excluded from this activity's schedule. " +
+      "All values must match a slot where the activity is scheduled to run, and due to sync to nomis, " +
+      "there can not not be exclusions defined on the same day and time slot over multiple weeks.",
+  )
   val exclusions: List<Slot>? = null,
 )

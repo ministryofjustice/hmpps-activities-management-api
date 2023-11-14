@@ -274,6 +274,16 @@ data class Allocation(
       ?: Exclusion.valueOf(this, slot, daysOfWeek)
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
+      // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
+      //  This is to respect a restraint on the nomis data model
+      require(
+        exclusions.none {
+          exclusion.getWeekNumber() != it.getWeekNumber() &&
+            exclusion.getTimeSlot() == it.getTimeSlot() &&
+            exclusion.getDaysOfWeek().intersect(it.getDaysOfWeek()).isNotEmpty()
+        },
+      ) { "Exclusions cannot be added for the same day and time slot over multiple weeks." }
+
       exclusions.add(exclusion)
       exclusions.last()
     } else {

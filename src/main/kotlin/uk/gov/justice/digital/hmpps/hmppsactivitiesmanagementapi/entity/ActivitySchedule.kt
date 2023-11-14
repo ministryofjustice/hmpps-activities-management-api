@@ -278,7 +278,7 @@ data class ActivitySchedule(
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
           slot(exclusion.weekNumber, exclusion.timeSlot())
-            .apply { if (this == null) throw IllegalArgumentException("Allocating to schedule ${activitySchedule.activityScheduleId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
+            .apply { require(this != null) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
             .let { slot -> this.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
         }
       },
