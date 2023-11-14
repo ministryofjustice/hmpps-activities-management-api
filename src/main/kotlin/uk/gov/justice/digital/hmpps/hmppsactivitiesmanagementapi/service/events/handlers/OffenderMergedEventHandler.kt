@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
@@ -22,7 +23,7 @@ import java.time.LocalDateTime
 @Transactional(readOnly = true)
 class OffenderMergedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val waitingListRepository: WaitingListRepository,
