@@ -53,7 +53,7 @@ The serivce uses [Sentry.IO](https://ministryofjustice.sentry.io/) to raise aler
 
 Rules for alerts can be configured [here](https://ministryofjustice.sentry.io/alerts/rules/).
 
-For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes an environment. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
+For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
 
 ```
 echo -n '<SENTRY_DSN_GOES_HERE>' | base64

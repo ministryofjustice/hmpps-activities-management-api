@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
@@ -78,7 +79,8 @@ class SafeJobRunnerTest {
 
   @Test
   fun `runs dependent jobs with error on first job`() {
-    whenever(jobRepository.saveAndFlush(any())) doReturn Job(2, JobType.ATTENDANCE_CREATE, TimeSource.now())
+    whenever(jobRepository.saveAndFlush(argThat { j -> j?.jobType == JobType.ATTENDANCE_CREATE && !j.successful })) doReturn Job(1, JobType.ATTENDANCE_CREATE, TimeSource.now())
+    whenever(jobRepository.saveAndFlush(argThat { j -> j?.jobType == JobType.DEALLOCATE_ENDING && !j.successful })) doReturn Job(2, JobType.DEALLOCATE_ENDING, TimeSource.now())
 
     runner.runDependentJobs(
       JobDefinition(JobType.ATTENDANCE_CREATE) { throw RuntimeException("first job failed") },
@@ -99,7 +101,8 @@ class SafeJobRunnerTest {
       successful isBool false
     }
 
-    verify(monitoringService).capture("Job 'ATTENDANCE_CREATE' for job id '2' failed")
+    verify(monitoringService).capture("Job 'ATTENDANCE_CREATE' for job id '1' failed")
+    verify(monitoringService).capture("Dependant job 'DEALLOCATE_ENDING' for job id '2' failed")
   }
 
   @Test
