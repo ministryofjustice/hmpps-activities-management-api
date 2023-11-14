@@ -279,7 +279,7 @@ class ActivityScheduleTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocating to schedule 1: No AM slots in week number 3")
+      .hasMessage("Allocating to schedule 1: No single AM slots in week number 3")
 
     schedule.allocations() hasSize 2
   }
