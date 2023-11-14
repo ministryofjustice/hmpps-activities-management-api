@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
