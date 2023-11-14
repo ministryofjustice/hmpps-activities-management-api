@@ -79,6 +79,9 @@ data class Allocation(
   @Schema(description = "Where an allocation end date has been set, this includes the details of the planned de-allocation")
   val plannedDeallocation: PlannedDeallocation?,
 
+  @Schema(description = "The activity slots which the allocated prisoner is excluded from attending")
+  val exclusions: List<Slot>? = null,
+
   @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
   var prisonerName: String? = null,
 
@@ -87,9 +90,6 @@ data class Allocation(
 
   @Schema(description = "The earliest release date of the prisoner. Included only if includePrisonerSummary = true")
   var earliestReleaseDate: EarliestReleaseDate? = null,
-
-  @Schema(description = "The activity slots which the allocated prisoner is excluded from attending")
-  var exclusions: List<Slot>? = null,
 )
 
 @Schema(

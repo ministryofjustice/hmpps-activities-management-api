@@ -50,7 +50,7 @@ data class Exclusion(
   )
   fun setDaysOfWeek(days: Set<DayOfWeek>) {
     if (!activityScheduleSlot.getDaysOfWeek().containsAll(days)) {
-      throw IllegalArgumentException("Cannot set exclusions for slots where the activity does not run")
+      throw IllegalArgumentException("Cannot set exclusions for slot with id ${activityScheduleSlot.activityScheduleSlotId} where the activity does not run")
     }
 
     mondayFlag = days.contains(DayOfWeek.MONDAY)

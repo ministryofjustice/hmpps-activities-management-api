@@ -84,9 +84,9 @@ class AllocationsService(
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
     request.exclusions?.onEach { exclusion ->
-      allocation.activitySchedule.slots(exclusion.weekNumber, exclusion.timeSlot())
-        .apply { if (isEmpty()) throw IllegalArgumentException("No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
-        .forEach { allocation.updateExclusion(it, exclusion.getDaysOfWeek()) }
+      allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
+        .apply { if (this == null) throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
+        .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
     }
   }
 

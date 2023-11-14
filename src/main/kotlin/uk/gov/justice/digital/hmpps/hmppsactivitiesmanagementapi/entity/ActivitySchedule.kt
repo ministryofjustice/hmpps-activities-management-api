@@ -133,7 +133,7 @@ data class ActivitySchedule(
 
   fun slots() = slots.toList()
 
-  fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
+  fun slot(weekNumber: Int, timeSlot: TimeSlot) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
@@ -277,9 +277,9 @@ data class ActivitySchedule(
       ).apply {
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
-          slots(exclusion.weekNumber, exclusion.timeSlot())
-            .apply { if (isEmpty()) throw IllegalArgumentException("No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
-            .forEach { this.updateExclusion(it, exclusion.getDaysOfWeek()) }
+          slot(exclusion.weekNumber, exclusion.timeSlot())
+            .apply { if (this == null) throw IllegalArgumentException("Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}") }
+            .let { slot -> this.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
         }
       },
     )

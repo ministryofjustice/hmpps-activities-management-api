@@ -454,7 +454,7 @@ class AllocationServiceTest {
       service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("No AM slots in week number 3")
+      .hasMessage("Updating allocation with id 0: No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
   }

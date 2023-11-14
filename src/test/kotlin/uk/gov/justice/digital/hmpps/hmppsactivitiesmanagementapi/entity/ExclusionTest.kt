@@ -29,7 +29,7 @@ class ExclusionTest {
 
     assertThatThrownBy { exclusion.setDaysOfWeek(setOf(DayOfWeek.TUESDAY)) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Cannot set exclusions for slots where the activity does not run")
+      .hasMessage("Cannot set exclusions for slot with id 0 where the activity does not run")
 
     with(exclusion) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)

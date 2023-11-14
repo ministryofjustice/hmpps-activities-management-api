@@ -221,7 +221,7 @@ internal fun activitySchedule(
           payBand = lowPayBand,
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
-        ).apply { this.updateExclusion(slot, setOf(DayOfWeek.MONDAY)) }
+        ).apply { this.updateExclusion(slot, daysOfWeek) }
       }
     }
     if (!noInstances && !noSlots) {
