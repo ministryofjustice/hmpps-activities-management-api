@@ -39,7 +39,9 @@ class SafeJobRunner(private val jobRepository: JobRepository, private val monito
       } else {
         log.warn("Ignoring job ${job.jobType} due to failure in a dependent job.")
 
-        jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now()))
+        jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now())).also { failedJob ->
+          monitoringService.capture("Dependant job '${failedJob.jobType}' for job id '${failedJob.jobId}' failed")
+        }
       }
     }
   }
