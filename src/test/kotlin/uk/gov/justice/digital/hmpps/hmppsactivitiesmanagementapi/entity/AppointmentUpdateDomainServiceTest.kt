@@ -20,6 +20,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
@@ -40,6 +42,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -121,6 +125,135 @@ class AppointmentUpdateDomainServiceTest {
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `updates appointment tier`() {
+      whenever(eventTierRepository.findByCode(foundationTier().code)).thenReturn(foundationTier())
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(1, "TIER_1", "Tier 1")
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(tierCode = "FOUNDATION")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      val currentEventTier = EventTier(
+        eventTierId = 2,
+        code = "TIER_2",
+        description = "Tier 2",
+      )
+      val newEventTier = EventTier(
+        eventTierId = 3,
+        code = "FOUNDATION",
+        description = "Routine activities also called \"Foundation\"",
+      )
+
+      appointmentSeries.appointmentTier isEqualTo currentEventTier
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentTier }.distinct().single() isEqualTo newEventTier
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentTier }.distinct().single() isEqualTo currentEventTier
+
+      response.tier isEqualTo currentEventTier.toModelEventTier()
+      response.appointments.filter { ids.contains(it.id) }.map { it.tier }.distinct().single() isEqualTo newEventTier.toModelEventTier()
+      response.appointments.filterNot { ids.contains(it.id) }.map { it.tier }.distinct().single() isEqualTo currentEventTier.toModelEventTier()
+    }
+
+    @Test
+    fun `updates appointment organiser`() {
+      val currentOrganiser = EventOrganiser(
+        eventOrganiserId = 1,
+        code = "PRISON_STAFF",
+        description = "Prison staff",
+      )
+      val newOrganiser = EventOrganiser(
+        eventOrganiserId = 2,
+        code = "PRISONER",
+        description = "A prisoner or group of prisoners",
+      )
+
+      whenever(eventTierRepository.findByCode(eventTier().code)).thenReturn(eventTier())
+      whenever(eventOrganiserRepository.findByCode(newOrganiser.code)).thenReturn(newOrganiser)
+
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(2, "TIER_2", "Tier 2")
+        it.appointmentOrganiser = currentOrganiser
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(organiserCode = "PRISONER")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo newOrganiser
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo currentOrganiser
+
+      response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo newOrganiser.toModelEventOrganiser()
+      response.appointments.filterNot { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo currentOrganiser.toModelEventOrganiser()
+    }
+
+    @Test
+    fun `Removes appointment organiser when updating to tier other than TIER_2`() {
+      whenever(eventTierRepository.findByCode(foundationTier().code)).thenReturn(foundationTier())
+
+      val currentOrganiser = EventOrganiser(
+        eventOrganiserId = 1,
+        code = "PRISON_STAFF",
+        description = "Prison staff",
+      )
+
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(2, "TIER_2", "Tier 2")
+        it.appointmentOrganiser = currentOrganiser
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(tierCode = "FOUNDATION")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo null
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo currentOrganiser
+
+      response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo null
+      response.appointments.filterNot { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo currentOrganiser.toModelEventOrganiser()
     }
 
     @Test

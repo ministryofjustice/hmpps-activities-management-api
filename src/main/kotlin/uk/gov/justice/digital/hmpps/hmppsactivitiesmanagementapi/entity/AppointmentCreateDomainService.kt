@@ -214,7 +214,6 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
     categoryCode = this.categoryCode,
     customName = this.customName,
     appointmentTier = this.appointmentTier,
-    appointmentOrganiser = this.appointmentOrganiser,
     internalLocationId = this.internalLocationId,
     customLocation = this.customLocation,
     inCell = this.inCell,
@@ -229,6 +228,7 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
     createdBy = this.createdBy,
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
-  ).apply {
-    addAppointment(this)
+  ).also {
+    it.appointmentOrganiser = this.appointmentOrganiser
+    this.addAppointment(it)
   }

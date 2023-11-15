@@ -9,8 +9,9 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
@@ -24,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -156,6 +159,8 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
           ),
         ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        eventTier().toModelEventTier(),
+        eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,
@@ -212,6 +217,8 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
           ),
         ),
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        eventTier().toModelEventTier(),
+        eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,

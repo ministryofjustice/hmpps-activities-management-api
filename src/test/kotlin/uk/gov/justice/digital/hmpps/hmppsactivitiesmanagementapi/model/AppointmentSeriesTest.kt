@@ -3,6 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -27,6 +31,8 @@ class AppointmentSeriesTest : ModelTest() {
       appointmentType = AppointmentType.INDIVIDUAL,
       prisonCode = "PVI",
       categoryCode = "C11",
+      tier = eventTier().toModelEventTier(),
+      organiser = eventOrganiser().toModelEventOrganiser(),
       customName = "Appointment description",
       internalLocationId = null,
       inCell = true,

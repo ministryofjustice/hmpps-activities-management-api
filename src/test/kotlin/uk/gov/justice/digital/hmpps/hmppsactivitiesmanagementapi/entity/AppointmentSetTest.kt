@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
@@ -10,12 +11,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser as EventOrganiserModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as EventTierModel
 
 class AppointmentSetTest {
   @Test
@@ -25,6 +29,16 @@ class AppointmentSetTest {
       entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,
+      EventTierModel(
+        entity.appointmentTier!!.eventTierId,
+        entity.appointmentTier!!.code,
+        entity.appointmentTier!!.description,
+      ),
+      EventOrganiserModel(
+        entity.appointmentOrganiser!!.eventOrganiserId,
+        entity.appointmentOrganiser!!.code,
+        entity.appointmentOrganiser!!.description,
+      ),
       entity.customName,
       entity.internalLocationId,
       entity.inCell,
@@ -241,4 +255,21 @@ class AppointmentSetTest {
       cellLocation = "1-2-5",
     ),
   )
+
+  @Test
+  fun `throws error when setting an organiser if tier is not TIER_2`() {
+    val entity = appointmentSetEntity(
+      appointmentTier = EventTier(
+        1,
+        "TIER_1",
+        "Tier 1",
+      ),
+      appointmentOrganiser = null,
+    )
+
+    val exception = assertThrows<IllegalArgumentException> {
+      entity.appointmentOrganiser = EventOrganiser(1, "PRISON_STAFF", "Prison staff")
+    }
+    exception.message isEqualTo "Cannot add organiser unless appointment set is Tier 2."
+  }
 }

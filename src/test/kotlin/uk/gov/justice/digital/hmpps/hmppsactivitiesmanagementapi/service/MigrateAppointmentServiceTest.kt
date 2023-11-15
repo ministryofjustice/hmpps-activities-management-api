@@ -36,8 +36,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
@@ -61,7 +61,6 @@ class MigrateAppointmentServiceTest {
   private val service = MigrateAppointmentService(
     appointmentSeriesSpecification,
     appointmentSeriesRepository,
-    eventTierRepository,
     appointmentInstanceRepository,
     appointmentCreateDomainService,
     appointmentCancelDomainService,
@@ -96,8 +95,7 @@ class MigrateAppointmentServiceTest {
         prisonCode = request.prisonCode!!,
         categoryCode = request.categoryCode!!,
         customName = null,
-        appointmentTier = foundationTier(),
-        appointmentOrganiser = null,
+        appointmentTier = null,
         internalLocationId = request.internalLocationId,
         customLocation = null,
         inCell = false,
@@ -149,7 +147,6 @@ class MigrateAppointmentServiceTest {
       val service = MigrateAppointmentService(
         mock(),
         appointmentSeriesRepository,
-        eventTierRepository,
         appointmentInstanceRepository,
         appointmentCreateDomainService,
         mock(),

@@ -147,7 +147,6 @@ class AppointmentSeriesService(
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = tier,
-      appointmentOrganiser = organiser,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
@@ -156,6 +155,7 @@ class AppointmentSeriesService(
       extraInformation = extraInformation?.trim()?.takeUnless(String::isBlank),
       createdBy = createdBy,
     ).also { appointmentSeries ->
+      appointmentSeries.appointmentOrganiser = organiser
       appointmentSeries.schedule = schedule?.let {
         AppointmentSeriesScheduleEntity(
           appointmentSeries = appointmentSeries,

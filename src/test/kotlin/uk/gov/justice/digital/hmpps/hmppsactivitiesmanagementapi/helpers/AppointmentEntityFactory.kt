@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
@@ -28,6 +30,8 @@ internal fun appointmentSeriesEntity(
   appointmentType: AppointmentType? = null,
   prisonCode: String = "TPR",
   categoryCode: String = "TEST",
+  appointmentTier: EventTier? = eventTier(),
+  appointmentOrganiser: EventOrganiser? = eventOrganiser(),
   customName: String? = "Appointment description",
   internalLocationId: Long = 123,
   inCell: Boolean = false,
@@ -47,8 +51,8 @@ internal fun appointmentSeriesEntity(
   appointmentType = appointmentType ?: if (prisonerNumberToBookingIdMap.size > 1) AppointmentType.GROUP else AppointmentType.INDIVIDUAL,
   prisonCode = prisonCode,
   categoryCode = categoryCode,
+  appointmentTier = appointmentTier,
   customName = customName,
-  appointmentTier = foundationTier(),
   internalLocationId = internalLocationId,
   inCell = inCell,
   startDate = startDate,
@@ -61,6 +65,7 @@ internal fun appointmentSeriesEntity(
   updatedBy = updatedBy,
   isMigrated = isMigrated,
 ).apply {
+  this.appointmentOrganiser = appointmentOrganiser
   appointmentSet?.addAppointmentSeries(this)
 
   frequency?.let {
@@ -96,6 +101,7 @@ fun appointmentEntity(appointmentSeries: AppointmentSeries, appointmentId: Long 
     updatedTime = updatedTime,
     updatedBy = updatedBy,
   ).apply {
+    appointmentOrganiser = appointmentSeries.appointmentOrganiser
     prisonerNumberToBookingIdMap.map {
       val appointmentAttendeeId = prisonerNumberToBookingIdMap.size * (appointmentId - 1) + this.attendees().size + 1
       this.addAttendee(appointmentAttendeeEntity(this, appointmentAttendeeId, it.key, it.value))
@@ -201,6 +207,8 @@ internal fun appointmentSearchEntity(
 
 internal fun appointmentSetEntity(
   appointmentSetId: Long = 1,
+  appointmentTier: EventTier? = eventTier(),
+  appointmentOrganiser: EventOrganiser? = eventOrganiser(),
   inCell: Boolean = false,
   customName: String? = null,
   startDate: LocalDate = LocalDate.now().plusDays(1),
@@ -213,13 +221,15 @@ internal fun appointmentSetEntity(
     prisonCode = "TPR",
     categoryCode = "TEST",
     customName = customName,
-    appointmentTier = foundationTier(),
+    appointmentTier = appointmentTier,
     internalLocationId = if (inCell) null else 123,
     inCell = inCell,
     startDate = startDate,
     createdTime = LocalDateTime.now().minusDays(1),
     createdBy = "CREATE.USER",
   ).apply {
+    this.appointmentOrganiser = appointmentOrganiser
+
     var count = 0L
     prisonerNumberToBookingIdMap.forEach {
       appointmentSeriesEntity(
