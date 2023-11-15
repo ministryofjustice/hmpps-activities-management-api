@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -101,13 +102,8 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
-      .thenReturn(
-        attendees.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     service.attendances(AttendanceOperation.CREATE)
 
@@ -143,6 +139,21 @@ class ManageAttendancesServiceTest {
     instance.activitySchedule.activity.attendanceRequired = true
 
     allocation.deallocateNowWithReason(DeallocationReason.ENDED)
+
+    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(emptyList())
+
+    service.attendances(AttendanceOperation.CREATE)
+
+    verify(attendanceRepository, times(0)).saveAllAndFlush(anyList())
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `attendance is not created if the allocation is excluded`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    allocation.updateExclusion(activitySchedule.slots().first(), setOf(today.dayOfWeek))
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(emptyList())
@@ -271,13 +282,8 @@ class ManageAttendancesServiceTest {
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED))
       .thenReturn(attendanceReasons()["CANCELLED"])
 
-    val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
-      .thenReturn(
-        attendees.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     whenever(attendanceRepository.saveAllAndFlush(anyList()))
       .thenReturn(
@@ -365,7 +371,7 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is not created when attendance is not requiredon the activity`() {
+  fun `attendance is not created when attendance is not required on the activity`() {
     instance.activitySchedule.activity.attendanceRequired = false
 
     whenever(scheduledInstanceRepository.findAllBySessionDate(today))
@@ -477,7 +483,18 @@ class ManageAttendancesServiceTest {
   }
 
   private fun setUpActivityWithAttendanceFor(activityStartDate: LocalDate) {
-    activity = activityEntity(startDate = activityStartDate, timestamp = activityStartDate.atStartOfDay())
+    activity = activityEntity(startDate = activityStartDate, timestamp = activityStartDate.atStartOfDay(), noSchedules = true)
+      .apply {
+        this.addSchedule(
+          activitySchedule(
+            this,
+            activityScheduleId = activityId,
+            activityStartDate.atStartOfDay(),
+            daysOfWeek = setOf(activityStartDate.dayOfWeek),
+            noExclusions = true,
+          ),
+        )
+      }
     activitySchedule = activity.schedules().first()
     allocation = activitySchedule.allocations().first()
     instance = activitySchedule.instances().first()

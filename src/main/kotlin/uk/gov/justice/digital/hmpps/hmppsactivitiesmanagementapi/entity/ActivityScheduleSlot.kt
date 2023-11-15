@@ -1,12 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
@@ -44,6 +50,9 @@ data class ActivityScheduleSlot(
 
   var sundayFlag: Boolean = false,
 
+  @OneToMany(mappedBy = "activityScheduleSlot", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  var exclusions: MutableList<Exclusion> = mutableListOf(),
 ) {
   init {
     failIfNoDaysSelectedForSlot()
@@ -94,10 +103,10 @@ data class ActivityScheduleSlot(
     )
   }
 
-  fun update(daysOfWeek: Set<DayOfWeek>) {
-    require(daysOfWeek.isNotEmpty()) {
-      "A slot must run on at least one day."
-    }
+  fun update(daysOfWeek: Set<DayOfWeek>): AllocationIds {
+    require(daysOfWeek.isNotEmpty()) { "A slot must run on at least one day." }
+
+    val updatedAllocationIds = mutableSetOf<Long>()
 
     mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY)
     tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY)
@@ -106,6 +115,17 @@ data class ActivityScheduleSlot(
     fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY)
     saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY)
     sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
+
+    exclusions
+      .filterNot { daysOfWeek.containsAll(it.getDaysOfWeek()) }
+      .onEach {
+        it.syncExcludedDaysWithSlot(this)
+        updatedAllocationIds.add(it.allocation.allocationId)
+      }
+      .filter { it.getDaysOfWeek().isEmpty() }
+      .forEach { exclusions.remove(it) }
+
+    return updatedAllocationIds
   }
 
   fun toModel() = ModelActivityScheduleSlot(
@@ -124,7 +144,7 @@ data class ActivityScheduleSlot(
     sundayFlag = this.sundayFlag,
   )
 
-  fun getDaysOfWeek(): List<DayOfWeek> = listOfNotNull(
+  fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
     DayOfWeek.MONDAY.takeIf { mondayFlag },
     DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
     DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },
@@ -133,6 +153,8 @@ data class ActivityScheduleSlot(
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
+
+  fun timeSlot() = TimeSlot.slot(startTime)
 
   @Override
   override fun toString(): String {

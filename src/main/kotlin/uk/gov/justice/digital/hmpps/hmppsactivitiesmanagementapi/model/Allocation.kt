@@ -79,6 +79,13 @@ data class Allocation(
   @Schema(description = "Where an allocation end date has been set, this includes the details of the planned de-allocation")
   val plannedDeallocation: PlannedDeallocation?,
 
+  @Schema(
+    description = "The days and times that the prisoner is excluded from this activity's schedule. " +
+      "All values must match a slot where the activity is scheduled to run, and due to sync to nomis, " +
+      "there can not not be exclusions defined on the same day and time slot over multiple weeks.",
+  )
+  val exclusions: List<Slot>? = null,
+
   @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
   var prisonerName: String? = null,
 

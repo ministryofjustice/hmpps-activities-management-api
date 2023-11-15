@@ -7,12 +7,18 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AllocationTest {
@@ -359,5 +365,67 @@ class AllocationTest {
 
     allocation.startDate isEqualTo TimeSource.tomorrow()
     allocation.endDate isEqualTo TimeSource.today()
+  }
+
+  @Test
+  fun `update exclusions - add and remove an exclusion`() {
+    val allocation = allocation()
+    allocation.exclusions hasSize 0
+
+    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+
+    allocation.exclusions hasSize 1
+    with(exclusion!!) {
+      getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+
+    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
+
+    allocation.exclusions hasSize 0
+    updatedExclusion isEqualTo null
+  }
+
+  @Test
+  fun `update exclusions - cannot add exclusions for same day and time slot over multiple weeks`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    )
+
+    allocation.exclusions hasSize 0
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+
+    allocation.exclusions hasSize 1
+
+    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.MONDAY)) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Exclusions cannot be added for the same day and time slot over multiple weeks.")
+
+    allocation.exclusions hasSize 1
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
+
+    allocation.exclusions hasSize 2
   }
 }

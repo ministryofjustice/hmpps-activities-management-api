@@ -12,12 +12,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEve
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -31,6 +35,7 @@ class ScheduledInstanceService(
   private val repository: ScheduledInstanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
+  private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val outboundEventsService: OutboundEventsService,
   private val transactionHandler: TransactionHandler,
   private val telemetryClient: TelemetryClient,
@@ -64,6 +69,12 @@ class ScheduledInstanceService(
     } else {
       activities
     }
+  }
+
+  fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
+    val activityScheduleInstance = repository.findOrThrowNotFound(id)
+    checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
+    return prisonerScheduledActivityRepository.getAllByScheduledInstanceId(id).toScheduledAttendeeModel()
   }
 
   fun uncancelScheduledInstance(id: Long) {

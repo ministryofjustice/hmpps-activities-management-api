@@ -110,10 +110,7 @@ class ActivityScheduleController(
     @RequestParam(value = "includePrisonerSummary", required = false)
     @Parameter(description = "If true will fetch and add prisoner details from prisoner search. Defaults to false.")
     includePrisonerSummary: Boolean?,
-    @RequestParam(
-      value = "date",
-      required = false,
-    )
+    @RequestParam(value = "date", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "If provided will filter allocations by the given date. Format YYYY-MM-DD.")
     date: LocalDate?,

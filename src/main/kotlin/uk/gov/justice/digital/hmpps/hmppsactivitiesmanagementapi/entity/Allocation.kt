@@ -5,14 +5,20 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -75,6 +81,10 @@ data class Allocation(
   @JoinColumn(name = "planned_deallocation_id", nullable = true)
   var plannedDeallocation: PlannedDeallocation? = null
     private set
+
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  val exclusions: MutableList<Exclusion> = mutableListOf()
 
   var deallocatedTime: LocalDateTime? = null
     private set
@@ -197,7 +207,15 @@ data class Allocation(
       suspendedTime = suspendedTime,
       status = prisonerStatus,
       plannedDeallocation = plannedDeallocation?.toModel(),
+      exclusions = exclusions.toSlotModel(),
     )
+
+  fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
+    exclusions.any {
+      date.dayOfWeek in it.getDaysOfWeek() &&
+        timeSlot == it.getTimeSlot() &&
+        activitySchedule.getWeekNumber(date) == it.getWeekNumber()
+    }
 
   fun activate() =
     this.apply {
@@ -248,6 +266,31 @@ data class Allocation(
   }
 
   fun isEnded() = status(PrisonerStatus.ENDED)
+
+  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
+    val exclusion = exclusions
+      .find { it.activityScheduleSlot == slot }
+      ?.apply { setDaysOfWeek(daysOfWeek) }
+      ?: Exclusion.valueOf(this, slot, daysOfWeek)
+
+    return if (exclusion.getDaysOfWeek().isNotEmpty()) {
+      // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
+      //  This is to respect a restraint on the nomis data model
+      require(
+        exclusions.none {
+          exclusion.getWeekNumber() != it.getWeekNumber() &&
+            exclusion.getTimeSlot() == it.getTimeSlot() &&
+            exclusion.getDaysOfWeek().intersect(it.getDaysOfWeek()).isNotEmpty()
+        },
+      ) { "Exclusions cannot be added for the same day and time slot over multiple weeks." }
+
+      exclusions.add(exclusion)
+      exclusions.last()
+    } else {
+      exclusions.remove(exclusion)
+      null
+    }
+  }
 
   @Override
   override fun toString(): String {

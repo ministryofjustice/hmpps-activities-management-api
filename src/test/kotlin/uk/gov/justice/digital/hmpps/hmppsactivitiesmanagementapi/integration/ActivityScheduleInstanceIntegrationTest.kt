@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -99,6 +100,39 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
+    }
+  }
+
+  @Nested
+  @DisplayName("getScheduledAttendeesByScheduledInstance")
+  inner class GetScheduledAttendeesByScheduledInstance {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `get scheduled attendees by scheduled instance id`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(2)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("A11111A") }
+      with(attendees[1]) { assertThat(prisonerNumber).isEqualTo("A22222A") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - does not contain exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `403 when fetching a schedule by its id for the wrong caseload`() {
+      webTestClient.get()
+        .uri("/scheduled-instances/1/scheduled-attendees")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+        .header(CASELOAD_ID, "MDI")
+        .exchange()
+        .expectStatus().isForbidden
     }
   }
 
@@ -395,6 +429,17 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(ActivityScheduleInstance::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.getScheduledAttendeesByInstanceId(id: Long) = get()
+    .uri("/scheduled-instances/$id/scheduled-attendees")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "PVI")
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ScheduledAttendee::class.java)
     .returnResult().responseBody
 
   private fun WebTestClient.uncancelScheduledInstance(id: Long, username: String, displayName: String) = put()

@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.ActivitiesChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderMergedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
@@ -21,6 +22,7 @@ class InboundEventsServiceTest {
   private val interestingEventHandler: InterestingEventHandler = mock()
   private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
   private val appointmentsChangedEventHandler: AppointmentChangedEventHandler = mock()
+  private val offenderMergedEventHandler: OffenderMergedEventHandler = mock()
 
   private val service = InboundEventsService(
     releasedEventHandler,
@@ -28,14 +30,25 @@ class InboundEventsServiceTest {
     interestingEventHandler,
     activitiesChangedEventHandler,
     appointmentsChangedEventHandler,
+    offenderMergedEventHandler,
   )
 
   @BeforeEach
   fun setupMocks() {
-    reset(receivedEventHandler, releasedEventHandler, interestingEventHandler)
+    reset(
+      receivedEventHandler,
+      releasedEventHandler,
+      interestingEventHandler,
+      activitiesChangedEventHandler,
+      appointmentsChangedEventHandler,
+      offenderMergedEventHandler,
+    )
     whenever(releasedEventHandler.handle(any())).thenReturn(Outcome.success())
     whenever(receivedEventHandler.handle(any())).thenReturn(Outcome.success())
     whenever(interestingEventHandler.handle(any())).thenReturn(Outcome.success())
+    whenever(activitiesChangedEventHandler.handle(any())).thenReturn(Outcome.success())
+    whenever(appointmentsChangedEventHandler.handle(any())).thenReturn(Outcome.success())
+    whenever(offenderMergedEventHandler.handle(any())).thenReturn(Outcome.success())
   }
 
   @Test
@@ -102,5 +115,19 @@ class InboundEventsServiceTest {
     val appointmentsChangedEvent = appointmentsChangedEvent("123456")
     service.process(appointmentsChangedEvent)
     verify(interestingEventHandler).handle(appointmentsChangedEvent)
+  }
+
+  @Test
+  fun `inbound offender merge event is processed by offender merge event handler`() {
+    val offenderMergedEvent = offenderMergedEvent(prisonerNumber = "B2222BB", removedPrisonerNumber = "A1111AA")
+    service.process(offenderMergedEvent)
+    verify(offenderMergedEventHandler).handle(offenderMergedEvent)
+  }
+
+  @Test
+  fun `inbound offender merge event is processed by interesting event handler`() {
+    val offenderMergedEvent = offenderMergedEvent(prisonerNumber = "B2222BB", removedPrisonerNumber = "A1111AA")
+    service.process(offenderMergedEvent)
+    verify(interestingEventHandler).handle(offenderMergedEvent)
   }
 }

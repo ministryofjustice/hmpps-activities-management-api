@@ -12,6 +12,7 @@ import java.time.LocalDateTime
 
 @Repository
 interface AuditRepository : JpaRepository<LocalAuditRecord, Long> {
+  fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<LocalAuditRecord>
 
   @Query(
     """ 

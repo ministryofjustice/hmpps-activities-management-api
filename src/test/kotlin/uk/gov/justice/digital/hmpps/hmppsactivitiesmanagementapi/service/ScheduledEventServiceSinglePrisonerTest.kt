@@ -197,7 +197,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     startTime: LocalTime? = LocalTime.of(10, 0),
     endTime: LocalTime? = LocalTime.of(11, 30),
     prisonerNumber: String = "G4793VF",
-    bookingId: Int = 900001,
+    bookingId: Long = 900001,
     inCell: Boolean = false,
     onWing: Boolean = false,
     offWing: Boolean = false,

@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -234,6 +235,52 @@ class ActivityScheduleSlotTest {
   }
 
   @Test
+  fun `change a slot which has exclusions`() {
+    val slot = ActivityScheduleSlot(
+      activityScheduleSlotId = 1,
+      weekNumber = 1,
+      activitySchedule = activitySchedule,
+      startTime = LocalTime.now(),
+      endTime = LocalTime.now(),
+      mondayFlag = true,
+      sundayFlag = true,
+      exclusions = mutableListOf(),
+    ).apply {
+      this.exclusions.add(
+        Exclusion(
+          exclusionId = 1,
+          allocation = allocation(null),
+          activityScheduleSlot = this,
+          mondayFlag = true,
+        ),
+      )
+    }
+
+    with(slot) {
+      assertThat(mondayFlag).isTrue
+      assertThat(tuesdayFlag).isFalse
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isTrue
+    }
+
+    slot.update(setOf(DayOfWeek.TUESDAY))
+
+    with(slot) {
+      assertThat(mondayFlag).isFalse
+      assertThat(tuesdayFlag).isTrue
+      assertThat(wednesdayFlag).isFalse
+      assertThat(thursdayFlag).isFalse
+      assertThat(fridayFlag).isFalse
+      assertThat(saturdayFlag).isFalse
+      assertThat(sundayFlag).isFalse
+      assertThat(exclusions).isEmpty()
+    }
+  }
+
+  @Test
   fun `must provide at least one day on update`() {
     val slot = ActivityScheduleSlot(
       activityScheduleSlotId = 1,
@@ -245,9 +292,8 @@ class ActivityScheduleSlotTest {
       sundayFlag = true,
     )
 
-    assertThatThrownBy {
-      slot.update(emptySet())
-    }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { slot.update(emptySet()) }
+      .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("A slot must run on at least one day.")
   }
 

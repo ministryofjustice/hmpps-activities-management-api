@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
@@ -41,12 +42,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrga
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -1019,6 +1020,51 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+  fun `updateActivity slots with exclusions - is successful`() {
+    val mondayTuesdaySlot = ActivityUpdateRequest(
+      slots = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "AM",
+          monday = true,
+          tuesday = true,
+        ),
+        Slot(
+          weekNumber = 1,
+          timeSlot = "PM",
+          monday = true,
+
+          tuesday = true,
+        ),
+      ),
+    )
+
+    with(webTestClient.updateActivity(moorlandPrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+      assertThat(scheduleWeeks).isEqualTo(1)
+      assertThat(slots).hasSize(2)
+      assertThat(slots[0].daysOfWeek).containsExactly("Mon", "Tue")
+      assertThat(slots[1].daysOfWeek).containsExactly("Mon", "Tue")
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+
+    with(eventCaptor.secondValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(2))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
     }
   }
 

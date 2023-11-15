@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -70,7 +71,7 @@ class ActivityScheduleTest {
           description = "category description",
         ),
         capacity = 1,
-        allocated = 1,
+        allocated = 2,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),
@@ -141,7 +142,7 @@ class ActivityScheduleTest {
             description = "category description",
           ),
           capacity = 1,
-          allocated = 1,
+          allocated = 2,
           createdTime = LocalDate.now().atStartOfDay(),
           activityState = ActivityState.LIVE,
         ),
@@ -206,7 +207,7 @@ class ActivityScheduleTest {
   @Test
   fun `can allocate prisoner to a schedule with existing allocation`() {
     val schedule = activitySchedule(activity = activityEntity())
-      .also { assertThat(it.allocations()).hasSize(1) }
+      .also { assertThat(it.allocations()).hasSize(2) }
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
@@ -215,7 +216,7 @@ class ActivityScheduleTest {
       allocatedBy = "FREDDIE",
     )
 
-    assertThat(schedule.allocations()).hasSize(2)
+    assertThat(schedule.allocations()).hasSize(3)
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
@@ -231,9 +232,62 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `can allocate prisoner to a schedule with an exclusion`() {
+    val schedule = activitySchedule(activity = activityEntity())
+      .also { it.allocations() hasSize 2 }
+
+    schedule.allocatePrisoner(
+      prisonerNumber = "654321".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 10001,
+      exclusions = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "AM",
+          monday = true,
+        ),
+      ),
+      allocatedBy = "FREDDIE",
+    )
+
+    schedule.allocations() hasSize 3
+
+    with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
+      exclusions hasSize 1
+      exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+  }
+
+  @Test
+  fun `can not allocate prisoner to a schedule with an exclusion which does not relate to a real slot`() {
+    val schedule = activitySchedule(activity = activityEntity())
+      .also { it.allocations() hasSize 2 }
+
+    assertThatThrownBy {
+      schedule.allocatePrisoner(
+        prisonerNumber = "654321".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 10001,
+        exclusions = listOf(
+          Slot(
+            weekNumber = 3,
+            timeSlot = "AM",
+            monday = true,
+          ),
+        ),
+        allocatedBy = "FREDDIE",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocating to schedule 1: No single AM slots in week number 3")
+
+    schedule.allocations() hasSize 2
+  }
+
+  @Test
   fun `allocated prisoner status is set to PENDING when start date is in the future`() {
     val schedule = activitySchedule(activity = activityEntity())
-      .also { assertThat(it.allocations()).hasSize(1) }
+      .also { assertThat(it.allocations()).hasSize(2) }
 
     schedule.allocatePrisoner(
       prisonerNumber = "654321".toPrisonerNumber(),
@@ -243,7 +297,7 @@ class ActivityScheduleTest {
       startDate = LocalDate.now().plusDays(1),
     )
 
-    assertThat(schedule.allocations()).hasSize(2)
+    assertThat(schedule.allocations()).hasSize(3)
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
       assertThat(activitySchedule).isEqualTo(schedule)
@@ -1022,7 +1076,7 @@ class ActivityScheduleTest {
 
     assertThat(schedule.slots()).containsAll(setOf(slot1, slot2))
 
-    val updates = mapOf(Pair(slot2.weekNumber, slot2.startTime to slot2.endTime) to slot2.getDaysOfWeek().toSet())
+    val updates = mapOf(Pair(slot2.weekNumber, slot2.startTime to slot2.endTime) to slot2.getDaysOfWeek())
     schedule.updateSlots(updates)
 
     assertThat(schedule.slots()).doesNotContain(slot1)

@@ -121,7 +121,7 @@ class ActivityTest {
           description = "category description",
         ),
         capacity = 1,
-        allocated = 1,
+        allocated = 2,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
       ),

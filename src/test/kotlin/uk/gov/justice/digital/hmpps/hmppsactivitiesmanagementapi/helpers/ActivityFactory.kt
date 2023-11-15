@@ -22,9 +22,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -188,6 +188,7 @@ internal fun activitySchedule(
   noSlots: Boolean = false,
   noAllocations: Boolean = false,
   noInstances: Boolean = false,
+  noExclusions: Boolean = false,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -212,7 +213,16 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      if (!noAllocations && !noExclusions) {
+        this.allocatePrisoner(
+          prisonerNumber = "A1111BB".toPrisonerNumber(),
+          bookingId = 20002,
+          payBand = lowPayBand,
+          allocatedBy = "Mr Blogs",
+          startDate = startDate ?: activity.startDate,
+        ).apply { this.updateExclusion(slot, daysOfWeek) }
+      }
     }
     if (!noInstances && !noSlots) {
       this.addInstance(
@@ -436,7 +446,7 @@ internal fun activityFromDbInstance(
   startTime: LocalTime? = LocalTime.of(10, 0),
   endTime: LocalTime? = LocalTime.of(11, 30),
   prisonerNumber: String = "G4793VF",
-  bookingId: Int = 900001,
+  bookingId: Long = 900001,
   inCell: Boolean = false,
   onWing: Boolean = false,
   offWing: Boolean = false,

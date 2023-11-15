@@ -18,14 +18,19 @@ import org.hibernate.annotations.FilterDef
 import org.hibernate.annotations.Filters
 import org.hibernate.annotations.ParamDef
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+
+typealias AllocationIds = Set<Long>
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
 const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
@@ -127,6 +132,8 @@ data class ActivitySchedule(
   fun instances() = instances.toList()
 
   fun slots() = slots.toList()
+
+  fun slot(weekNumber: Int, timeSlot: TimeSlot) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
@@ -237,6 +244,7 @@ data class ActivitySchedule(
     bookingId: Long,
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
+    exclusions: List<Slot>? = null,
     allocatedBy: String,
   ): Allocation {
     failIfAlreadyAllocated(prisonerNumber)
@@ -268,6 +276,11 @@ data class ActivitySchedule(
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
       ).apply {
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
+        exclusions?.onEach { exclusion ->
+          slot(exclusion.weekNumber, exclusion.timeSlot())
+            .apply { require(this != null) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+            .let { slot -> this.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
+        }
       },
     )
 
@@ -330,21 +343,27 @@ data class ActivitySchedule(
     this.instancesLastUpdatedTime = LocalDateTime.now()
   }
 
-  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    updateMatchingSlots(updates)
+  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
+    updateMatchingSlots(updates).let { updatedAllocationIds.addAll(it) }
     addNewSlots(updates)
-    removeRedundantSlots(updates)
+    removeRedundantSlots(updates).let { updatedAllocationIds.addAll(it) }
+    return updatedAllocationIds
   }
 
-  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    slots.removeAll(slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) })
+  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
+    val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }
+    slots.removeAll(slotsToRemove)
     require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
+    return slotsToRemove.flatMap { it.exclusions.map { ex -> ex.allocation.allocationId } }.toSet()
   }
 
-  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
+  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     slots.forEach { slot ->
-      updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)
+      updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)?.ifNotEmpty { updatedAllocationIds.addAll(it) }
     }
+    return updatedAllocationIds
   }
 
   private fun addNewSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {

@@ -5,8 +5,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.AdditionalAnswers
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentHostPrisonStaff
@@ -20,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -29,6 +36,7 @@ class AppointmentCreateDomainServiceTest {
   private val appointmentSeriesRepository = mock<AppointmentSeriesRepository>()
   private val appointmentRepository = mock<AppointmentRepository>()
   private val appointmentCancellationReasonRepository = mock<AppointmentCancellationReasonRepository>()
+  private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
 
@@ -41,6 +49,7 @@ class AppointmentCreateDomainServiceTest {
     appointmentRepository,
     appointmentCancellationReasonRepository,
     TransactionHandler(),
+    outboundEventsService,
     telemetryClient,
     auditService,
   )
@@ -190,11 +199,23 @@ class AppointmentCreateDomainServiceTest {
     }
   }
 
+  @Test
+  fun `creating an appointment should raise sync events for each appointment instance`() {
+    val appointmentSeries = appointmentSeriesWithNoAppointment().apply {
+      schedule = AppointmentSeriesSchedule(appointmentSeries = this, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 2)
+    }
+
+    service.createAppointments(appointmentSeries, mapOf("A1234BC" to 1L, "A2345BC" to 2L, "A3456BC" to 3L))
+
+    verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any())
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
   private fun appointmentSeriesWithNoAppointment(isMigrated: Boolean = false) =
     // Specify all non default values
     AppointmentSeries(
       appointmentSeriesId = 1,
-      appointmentType = AppointmentType.INDIVIDUAL,
+      appointmentType = AppointmentType.GROUP,
       prisonCode = risleyPrisonCode,
       categoryCode = "GYMW",
       customName = "Custom name",

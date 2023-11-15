@@ -11,6 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -23,10 +26,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentUpdateDomainService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
-  fun updateAppointmentIds(
+  fun updateAppointments(
     appointmentSeriesId: Long,
     appointmentId: Long,
     appointmentIdsToUpdate: Set<Long>,
@@ -37,63 +42,60 @@ class AppointmentUpdateDomainService(
     updateAppointmentsCount: Int,
     updateInstancesCount: Int,
     startTimeInMs: Long,
-  ): AppointmentSeriesModel {
-    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
-    val appointmentsToUpdate = appointmentSeries.appointments().filter { appointmentIdsToUpdate.contains(it.appointmentId) }.toSet()
-    return updateAppointments(appointmentSeries, appointmentId, appointmentsToUpdate, request, prisonerMap, updated, updatedBy, updateAppointmentsCount, updateInstancesCount, startTimeInMs, true, false)
-  }
-
-  fun updateAppointments(
-    appointmentSeries: AppointmentSeries,
-    appointmentId: Long,
-    appointmentsToUpdate: Set<Appointment>,
-    request: AppointmentUpdateRequest,
-    prisonerMap: Map<String, Prisoner>,
-    updated: LocalDateTime,
-    updatedBy: String,
-    updateAppointmentsCount: Int,
-    updateInstancesCount: Int,
-    startTimeInMs: Long,
     trackEvent: Boolean,
     auditEvent: Boolean,
   ): AppointmentSeriesModel {
-    applyCategoryCodeUpdate(request, appointmentsToUpdate)
-    applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
-    applyInternalLocationUpdate(request, appointmentsToUpdate)
-    applyStartEndTimeUpdate(request, appointmentsToUpdate)
-    applyExtraInformationUpdate(request, appointmentsToUpdate)
-    applyRemovePrisonersUpdate(request, appointmentsToUpdate, updated, updatedBy)
+    transactionHandler.newSpringTransaction {
+      val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+      val appointmentsToUpdate = appointmentSeries.appointments().filter { appointmentIdsToUpdate.contains(it.appointmentId) }.toSet()
 
-    if (request.isPropertyUpdate()) {
-      appointmentSeries.updatedTime = updated
-      appointmentSeries.updatedBy = updatedBy
+      applyPropertyUpdates(request, appointmentSeries, appointmentsToUpdate)
+      val removedAttendees = applyRemovePrisonersUpdate(request, appointmentsToUpdate, updated, updatedBy)
+      val addedAttendees = applyAddPrisonersUpdate(request, appointmentsToUpdate, prisonerMap, updated, updatedBy)
+
       appointmentsToUpdate.forEach {
         it.updatedTime = updated
         it.updatedBy = updatedBy
       }
+      appointmentSeries.updatedTime = updated
+      appointmentSeries.updatedBy = updatedBy
+
+      val updatedAppointmentSeries = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
+
+      if (auditEvent) {
+        writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
+      }
+
+      Triple(updatedAppointmentSeries.toModel(), removedAttendees, addedAttendees)
+    }.also { (updatedAppointmentSeries, removedAttendees, addedAttendees) ->
+      val removedAttendeeIds = removedAttendees.map { it.appointmentAttendeeId }.onEach {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_DELETED, it)
+      }
+      val addedAttendeesIds = addedAttendees.map { it.appointmentAttendeeId }.onEach {
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, it)
+      }
+      if (request.isPropertyUpdate()) {
+        updatedAppointmentSeries.appointments
+          .filter { appointmentIdsToUpdate.contains(it.id) }.toSet()
+          .flatMap { it.attendees.map { attendee -> attendee.id } }
+          .filter { !removedAttendeeIds.contains(it) && !addedAttendeesIds.contains(it) }
+          .forEach { outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED, it) }
+      }
+
+      if (trackEvent) {
+        val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
+          updatedBy,
+          updatedAppointmentSeries.prisonCode,
+          updatedAppointmentSeries.id,
+          appointmentId,
+        )
+        val telemetryMetricsMap = request.toTelemetryMetricsMap(updateAppointmentsCount, updateInstancesCount)
+        telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
+        telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
+      }
+
+      return updatedAppointmentSeries
     }
-
-    if (!request.addPrisonerNumbers.isNullOrEmpty()) {
-      // Adding prisoners creates new attendees on the appointment and publishes create instance events.
-      // This action must be performed after other updates have been saved and flushed to prevent update events being published as well as the create events
-      appointmentSeriesRepository.saveAndFlush(appointmentSeries)
-      applyAddPrisonersUpdate(request, appointmentsToUpdate, prisonerMap, updated, updatedBy)
-    }
-
-    val updatedAppointmentSeries = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
-
-    if (trackEvent) {
-      val telemetryPropertiesMap = request.toTelemetryPropertiesMap(updatedBy, appointmentSeries.prisonCode, appointmentSeries.appointmentSeriesId, appointmentId)
-      val telemetryMetricsMap = request.toTelemetryMetricsMap(updateAppointmentsCount, updateInstancesCount)
-      telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
-      telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_EDITED.value, telemetryPropertiesMap, telemetryMetricsMap)
-    }
-
-    if (auditEvent) {
-      writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
-    }
-
-    return updatedAppointmentSeries.toModel()
   }
 
   fun getUpdateInstancesCount(
@@ -195,15 +197,27 @@ class AppointmentUpdateDomainService(
     appointmentsToUpdate: Collection<Appointment>,
     updated: LocalDateTime,
     updatedBy: String,
-  ) {
-    if (!request.removePrisonerNumbers.isNullOrEmpty()) {
-      val removalReason = appointmentAttendeeRemovalReasonRepository.findOrThrowNotFound(PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID)
-      appointmentsToUpdate.forEach { appointmentToUpdate ->
-        request.removePrisonerNumbers.forEach { prisonerToRemove ->
-          appointmentToUpdate.removeAttendee(prisonerToRemove, updated, removalReason, updatedBy)
-        }
+  ): List<AppointmentAttendee> {
+    if (request.removePrisonerNumbers.isNullOrEmpty()) return emptyList()
+
+    val removalReason = appointmentAttendeeRemovalReasonRepository.findOrThrowNotFound(PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID)
+    return appointmentsToUpdate.flatMap { appointmentToUpdate ->
+      request.removePrisonerNumbers.flatMap { prisonerToRemove ->
+        appointmentToUpdate.removeAttendee(prisonerToRemove, updated, removalReason, updatedBy)
       }
     }
+  }
+
+  private fun applyPropertyUpdates(
+    request: AppointmentUpdateRequest,
+    appointmentSeries: AppointmentSeries,
+    appointmentsToUpdate: Collection<Appointment>,
+  ) {
+    applyCategoryCodeUpdate(request, appointmentsToUpdate)
+    applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
+    applyInternalLocationUpdate(request, appointmentsToUpdate)
+    applyStartEndTimeUpdate(request, appointmentsToUpdate)
+    applyExtraInformationUpdate(request, appointmentsToUpdate)
   }
 
   private fun applyAddPrisonersUpdate(
@@ -212,9 +226,11 @@ class AppointmentUpdateDomainService(
     prisonerMap: Map<String, Prisoner>,
     updated: LocalDateTime,
     updatedBy: String,
-  ) {
-    appointmentsToUpdate.forEach { appointmentToUpdate ->
-      request.addPrisonerNumbers?.forEach { prisonerToAdd ->
+  ): List<AppointmentAttendee> {
+    if (request.addPrisonerNumbers.isNullOrEmpty()) return emptyList()
+
+    return appointmentsToUpdate.flatMap { appointmentToUpdate ->
+      request.addPrisonerNumbers.mapNotNull { prisonerToAdd ->
         appointmentToUpdate.addAttendee(prisonerToAdd, prisonerMap[prisonerToAdd]!!.bookingId!!.toLong(), updated, updatedBy)
       }
     }
