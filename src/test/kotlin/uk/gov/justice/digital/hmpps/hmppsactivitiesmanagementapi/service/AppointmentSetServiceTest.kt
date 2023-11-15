@@ -90,6 +90,27 @@ class AppointmentSetServiceTest {
 
     whenever(eventTierRepository.findByCode(eventTier().code)).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode(eventOrganiser().code)).thenReturn(eventOrganiser())
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC", "A1234BD"))).thenReturn(
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 456,
+          firstName = "TEST01",
+          lastName = "PRISONER01",
+          prisonId = moorlandPrisonCode,
+          cellLocation = "1-2-3",
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BD",
+          bookingId = 457,
+          firstName = "TEST02",
+          lastName = "PRISONER02",
+          prisonId = moorlandPrisonCode,
+          cellLocation = "1-2-4",
+        ),
+      ),
+    )
   }
 
   @AfterEach
@@ -290,37 +311,69 @@ class AppointmentSetServiceTest {
 
     @Test
     fun `category code not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Appointment Category with code 'NOT_FOUND' not found or is not active",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = "NOT_FOUND"),
           principal,
         )
       }
+      exception.message isEqualTo "Appointment Category with code 'NOT_FOUND' not found or is not active"
 
       verifyNoInteractions(appointmentSetRepository)
     }
 
     @Test
     fun `internal location id not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Appointment location with id '999' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999),
           principal,
         )
       }
+      exception.message isEqualTo "Appointment location with id '999' not found in prison 'MDI'"
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `createAppointmentSet tier code not found`() {
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(
+            prisonCode = moorlandPrisonCode,
+            categoryCode = categoryCode,
+            internalLocationId = internalLocationId,
+            tierCode = "INVALID",
+          ),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Event tier \"INVALID\" not found"
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `createAppointmentSet organiser code not found`() {
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(
+            prisonCode = moorlandPrisonCode,
+            categoryCode = categoryCode,
+            internalLocationId = internalLocationId,
+            organiserCode = "INVALID",
+          ),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Event organiser \"INVALID\" not found"
 
       verifyNoInteractions(appointmentSetRepository)
     }
 
     @Test
     fun `prison numbers not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
             prisonCode = prisonCode,
@@ -331,6 +384,7 @@ class AppointmentSetServiceTest {
           principal,
         )
       }
+      exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found, were inactive or are residents of a different prison."
 
       verifyNoInteractions(appointmentSetRepository)
     }
@@ -345,9 +399,7 @@ class AppointmentSetServiceTest {
           ),
         )
 
-      assertThrows<IllegalArgumentException>(
-        "Prisoner(s) with prisoner number(s) 'D4567EF' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
             prisonCode = prisonCode,
@@ -358,6 +410,7 @@ class AppointmentSetServiceTest {
           principal,
         )
       }
+      exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF' not found, were inactive or are residents of a different prison."
 
       verifyNoInteractions(appointmentSetRepository)
     }

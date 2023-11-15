@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
@@ -25,6 +27,16 @@ class AppointmentSetTest {
       entity.appointmentSetId,
       entity.prisonCode,
       entity.categoryCode,
+      EventTier(
+        entity.appointmentTier.eventTierId,
+        entity.appointmentTier.code,
+        entity.appointmentTier.description,
+      ),
+      EventOrganiser(
+        entity.appointmentOrganiser!!.eventOrganiserId,
+        entity.appointmentOrganiser!!.code,
+        entity.appointmentOrganiser!!.description,
+      ),
       entity.customName,
       entity.internalLocationId,
       entity.inCell,

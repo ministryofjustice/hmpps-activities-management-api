@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
@@ -86,6 +87,12 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
         6,
         "TPR",
         "AC1",
+        EventTier(
+          id = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+        null,
         "Appointment description",
         123,
         false,
@@ -96,6 +103,12 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 1,
+              code = "TIER_1",
+              description = "Tier 1",
+            ),
+            null,
             "Appointment description",
             123,
             false,
@@ -131,6 +144,12 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 1,
+              code = "TIER_1",
+              description = "Tier 1",
+            ),
+            null,
             "Appointment description",
             123,
             false,
@@ -166,6 +185,12 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 1,
+              code = "TIER_1",
+              description = "Tier 1",
+            ),
+            null,
             "Appointment description",
             123,
             false,

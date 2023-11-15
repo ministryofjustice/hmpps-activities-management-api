@@ -50,6 +50,7 @@ class MigrateAppointmentService(
             categoryCode = request.categoryCode!!,
             customName = request.comment?.trim()?.takeUnless(String::isBlank)?.take(40),
             appointmentTier = appointmentTier,
+            appointmentOrganiser = null,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,
             startTime = request.startTime!!,

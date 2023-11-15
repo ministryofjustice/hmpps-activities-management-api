@@ -32,6 +32,12 @@ data class AppointmentSet(
   )
   val categoryCode: String,
 
+  @Schema(description = "The tier for this appointment, as defined by the Future Prison Regime team")
+  val tier: EventTier,
+
+  @Schema(description = "The organiser of this appointment")
+  val organiser: EventOrganiser?,
+
   @Schema(
     description =
     """

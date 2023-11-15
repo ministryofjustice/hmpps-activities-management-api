@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
@@ -118,6 +120,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         1,
         "TPR",
         "AC1",
+        EventTier(
+          id = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+        null,
         "Appointment description",
         123,
         false,
@@ -166,6 +174,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         1,
         "TPR",
         "AC1",
+        EventTier(
+          id = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        ),
+        null,
         "Appointment description",
         123,
         false,
@@ -227,6 +241,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `update single appointment`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
+      tierCode = "TIER_2",
+      organiserCode = "PRISON_STAFF",
       internalLocationId = 456,
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
@@ -243,6 +259,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(tier).isEqualTo(EventTier(
+        id = 1,
+        code = "TIER_1",
+        description = "Tier 1",
+      ))
+      assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
@@ -254,6 +276,16 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(updatedBy).isEqualTo("test-client")
       with(appointments.single()) {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(tier).isEqualTo(EventTier(
+          id = 2,
+          code = "TIER_2",
+          description = "Tier 2",
+        ))
+        assertThat(organiser).isEqualTo(EventOrganiser(
+          id = 1,
+          code = "PRISON_STAFF",
+          description = "Prison staff",
+        ))
         assertThat(internalLocationId).isEqualTo(request.internalLocationId)
         assertThat(inCell).isFalse
         assertThat(startDate).isEqualTo(request.startDate)
@@ -587,6 +619,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   fun `update group repeat appointment this and all future appointments`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
+      tierCode = "TIER_2",
+      organiserCode = "PRISON_STAFF",
       internalLocationId = 456,
       startDate = LocalDate.now().plusDays(3),
       startTime = LocalTime.of(13, 30),
@@ -611,6 +645,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(tier).isEqualTo(
+        EventTier(
+          id = 1,
+          code = "TIER_1",
+          description = "Tier 1",
+        )
+      )
+      assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
@@ -625,6 +667,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(appointments[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
       with(appointments.subList(0, 2)) {
         assertThat(map { it.categoryCode }.distinct().single()).isEqualTo("AC1")
+        assertThat(map { it.tier }.distinct().single()).isEqualTo(
+          EventTier(
+            id = 1,
+            code = "TIER_1",
+            description = "Tier 1",
+          )
+        )
+        assertThat(map { it.organiser }.distinct().single()).isNull()
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
@@ -639,6 +689,20 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
       with(appointments.subList(2, appointments.size)) {
         assertThat(map { it.categoryCode }.distinct().single()).isEqualTo(request.categoryCode)
+        assertThat(map { it.tier }.distinct().single()).isEqualTo(
+          EventTier(
+            id = 2,
+            code = "TIER_2",
+            description = "Tier 2",
+          )
+        )
+        assertThat(map { it.organiser }.distinct().single()).isEqualTo(
+          EventOrganiser(
+            id = 1,
+            code = "PRISON_STAFF",
+            description = "Prison staff",
+          )
+        )
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)

@@ -38,7 +38,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -285,37 +284,33 @@ class AppointmentSeriesServiceTest {
 
   @Test
   fun `createAppointmentSeries category code not found`() {
-    assertThrows<IllegalArgumentException>(
-      "Appointment Category with code 'NOT_FOUND' not found or is not active",
-    ) {
+    val exception = assertThrows<IllegalArgumentException> {
       service.createAppointmentSeries(
         appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = "NOT_FOUND"),
         principal,
       )
     }
+    exception.message isEqualTo "Appointment Category with code 'NOT_FOUND' not found or is not active"
 
     verifyNoInteractions(appointmentSeriesRepository)
   }
 
   @Test
   fun `createAppointmentSeries internal location id not found`() {
-    assertThrows<IllegalArgumentException>(
-      "Appointment location with id '999' not found in prison 'MDI'",
-    ) {
+    val exception = assertThrows<IllegalArgumentException> {
       service.createAppointmentSeries(
         appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999),
         principal,
       )
     }
+    exception.message isEqualTo "Appointment location with id '999' not found in prison '$prisonCode'"
 
     verifyNoInteractions(appointmentSeriesRepository)
   }
 
   @Test
   fun `createAppointmentSeries prison numbers not found`() {
-    assertThrows<IllegalArgumentException>(
-      "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found in prison 'MDI'",
-    ) {
+    val exception = assertThrows<IllegalArgumentException> {
       service.createAppointmentSeries(
         appointmentSeriesCreateRequest(
           prisonCode = prisonCode,
@@ -326,6 +321,43 @@ class AppointmentSeriesServiceTest {
         principal,
       )
     }
+    exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found, were inactive or are residents of a different prison."
+
+    verifyNoInteractions(appointmentSeriesRepository)
+  }
+
+  @Test
+  fun `createAppointmentSeries tier code not found`() {
+    val exception = assertThrows<IllegalArgumentException> {
+      service.createAppointmentSeries(
+        appointmentSeriesCreateRequest(
+          prisonCode = prisonCode,
+          categoryCode = categoryCode,
+          tierCode = "INVALID",
+          internalLocationId = internalLocationId,
+        ),
+        principal,
+      )
+    }
+    exception.message isEqualTo "Event tier \"INVALID\" not found"
+
+    verifyNoInteractions(appointmentSeriesRepository)
+  }
+
+  @Test
+  fun `createAppointmentSeries organiser code not found`() {
+    val exception = assertThrows<IllegalArgumentException> {
+      service.createAppointmentSeries(
+        appointmentSeriesCreateRequest(
+          prisonCode = prisonCode,
+          categoryCode = categoryCode,
+          organiserCode = "INVALID",
+          internalLocationId = internalLocationId,
+        ),
+        principal,
+      )
+    }
+    exception.message isEqualTo "Event organiser \"INVALID\" not found"
 
     verifyNoInteractions(appointmentSeriesRepository)
   }
@@ -336,13 +368,11 @@ class AppointmentSeriesServiceTest {
       .thenReturn(
         listOf(
           PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 1, prisonId = "DIFFERENT"),
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E4567FG", bookingId = 2, prisonId = moorlandPrisonCode),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E4567FG", bookingId = 2, prisonId = prisonCode),
         ),
       )
 
-    assertThrows<IllegalArgumentException>(
-      "Prisoner(s) with prisoner number(s) 'D4567EF' not found in prison 'MDI'",
-    ) {
+    val exception = assertThrows<IllegalArgumentException> {
       service.createAppointmentSeries(
         appointmentSeriesCreateRequest(
           prisonCode = prisonCode,
@@ -353,6 +383,7 @@ class AppointmentSeriesServiceTest {
         principal,
       )
     }
+    exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF' not found, were inactive or are residents of a different prison."
 
     verifyNoInteractions(appointmentSeriesRepository)
   }
