@@ -18,7 +18,10 @@ class MonitoringService {
   }
 
   init {
-    log.info("Monitoring service is ${if (Sentry.isEnabled()) "enabled" else "disabled"}")
+    // Setting this to true enables configuration via environment variables e.g. SENTRY_ENVIRONMENT
+    Sentry.init { options -> options.isEnableExternalConfiguration = true }
+
+    log.info("Monitoring service is ${if (Sentry.isEnabled()) "enabled in environment '${Sentry.getCurrentHub().options.environment}'" else "disabled"}")
   }
 
   fun capture(message: String) {
