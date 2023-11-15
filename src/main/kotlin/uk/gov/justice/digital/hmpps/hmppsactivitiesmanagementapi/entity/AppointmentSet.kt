@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,11 +42,7 @@ data class AppointmentSet(
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
-  var appointmentTier: EventTier,
-
-  @OneToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "appointment_organiser_id")
-  var appointmentOrganiser: EventOrganiser? = null,
+  val appointmentTier: EventTier?,
 
   var internalLocationId: Long?,
 
@@ -74,6 +72,15 @@ data class AppointmentSet(
   )
   private val appointmentSeries: MutableList<AppointmentSeries> = mutableListOf()
 
+  @OneToOne
+  @JoinColumn(name = "appointment_organiser_id")
+  var appointmentOrganiser: EventOrganiser? = null
+    set(value) {
+      require(value == null || appointmentTier?.isTierTwo() == true) { "Cannot add organiser unless appointment set is Tier 2." }
+
+      field = value
+    }
+
   fun appointmentSeries() = appointmentSeries.toList()
 
   fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
@@ -88,6 +95,8 @@ data class AppointmentSet(
     id = this.appointmentSetId,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
+    tier = appointmentTier?.toModelEventTier(),
+    organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,

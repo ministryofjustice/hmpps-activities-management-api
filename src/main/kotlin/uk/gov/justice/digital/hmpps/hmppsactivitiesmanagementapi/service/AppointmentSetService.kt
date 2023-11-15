@@ -132,12 +132,12 @@ class AppointmentSetService(
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = tier,
-      appointmentOrganiser = organiser,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
       createdBy = createdBy,
     ).also { appointmentSet ->
+      appointmentSet.appointmentOrganiser = organiser
       appointments.forEach { appointment ->
         appointmentSet.addAppointment(appointment, prisonNumberBookingIdMap)
       }
@@ -152,7 +152,6 @@ class AppointmentSetService(
         categoryCode = categoryCode,
         customName = customName,
         appointmentTier = appointmentTier,
-        appointmentOrganiser = appointmentOrganiser,
         internalLocationId = internalLocationId,
         inCell = inCell,
         startDate = startDate,
@@ -161,8 +160,10 @@ class AppointmentSetService(
         extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
         createdTime = createdTime,
         createdBy = createdBy,
-      ).apply {
-        createAndAddAppointment(
+      ).also {
+        it.appointmentOrganiser = this.appointmentOrganiser
+
+        it.createAndAddAppointment(
           1,
           startDate,
         ).apply {

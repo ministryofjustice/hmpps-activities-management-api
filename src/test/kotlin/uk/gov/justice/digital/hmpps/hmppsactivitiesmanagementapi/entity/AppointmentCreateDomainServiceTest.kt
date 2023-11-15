@@ -75,7 +75,6 @@ class AppointmentCreateDomainServiceTest {
       categoryCode = appointmentSeries.categoryCode,
       customName = appointmentSeries.customName,
       appointmentTier = appointmentSeries.appointmentTier,
-      appointmentOrganiser = appointmentSeries.appointmentOrganiser,
       internalLocationId = appointmentSeries.internalLocationId,
       customLocation = appointmentSeries.customLocation,
       inCell = appointmentSeries.inCell,
@@ -90,7 +89,9 @@ class AppointmentCreateDomainServiceTest {
       createdBy = appointmentSeries.createdBy,
       updatedTime = appointmentSeries.updatedTime,
       updatedBy = appointmentSeries.updatedBy,
-    )
+    ).apply {
+      appointmentOrganiser = appointmentSeries.appointmentOrganiser
+    }
   }
 
   @Test
@@ -220,7 +221,6 @@ class AppointmentCreateDomainServiceTest {
       categoryCode = "GYMW",
       customName = "Custom name",
       appointmentTier = eventTier(),
-      appointmentOrganiser = eventOrganiser(),
       internalLocationId = 123,
       // Not currently used by the UI. For future features
       customLocation = "Custom location",
@@ -241,7 +241,9 @@ class AppointmentCreateDomainServiceTest {
       updatedTime = LocalDateTime.now().minusHours(1),
       updatedBy = "UPDATED_BY_USER",
       isMigrated = isMigrated,
-    )
+    ).apply {
+      appointmentOrganiser = eventOrganiser()
+    }
 
   private fun appointmentSeriesWithOneAppointment() =
     appointmentSeriesWithNoAppointment().apply {
@@ -253,7 +255,6 @@ class AppointmentCreateDomainServiceTest {
           categoryCode = this.categoryCode,
           customName = this.customName,
           appointmentTier = this.appointmentTier,
-          appointmentOrganiser = this.appointmentOrganiser,
           internalLocationId = this.internalLocationId,
           customLocation = this.customLocation,
           inCell = this.inCell,
@@ -268,7 +269,9 @@ class AppointmentCreateDomainServiceTest {
           createdBy = this.createdBy,
           updatedTime = this.updatedTime,
           updatedBy = this.updatedBy,
-        ),
+        ).also {
+          it.appointmentOrganiser = this.appointmentOrganiser
+        },
       )
     }
 }

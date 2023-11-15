@@ -136,6 +136,9 @@ class AppointmentUpdateDomainService(
     appointmentsToUpdate.forEach {
       request.tierCode?.apply {
         it.appointmentTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
+        if (it.appointmentTier?.isTierTwo() != true) {
+          it.appointmentOrganiser = null
+        }
       }
     }
   }

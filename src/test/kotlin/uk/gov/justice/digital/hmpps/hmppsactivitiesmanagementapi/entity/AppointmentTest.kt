@@ -1121,5 +1121,17 @@ class AppointmentTest {
         ),
       )
     }
+
+    @Test
+    fun `throws error when setting an organiser if tier is not TIER_2`() {
+      val entity = appointmentSeriesEntity().appointments().first()
+
+      entity.appointmentTier = EventTier(1, "TIER_1", "Tier 1")
+
+      val exception = assertThrows<IllegalArgumentException> {
+        entity.appointmentOrganiser = EventOrganiser(1, "PRISON_STAFF", "Prison staff")
+      }
+      exception.message isEqualTo "Cannot add organiser unless appointment is Tier 2."
+    }
   }
 }

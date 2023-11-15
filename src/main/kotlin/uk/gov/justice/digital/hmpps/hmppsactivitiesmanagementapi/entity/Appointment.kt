@@ -22,6 +22,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -50,11 +52,7 @@ data class Appointment(
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_tier_id")
-  var appointmentTier: EventTier,
-
-  @OneToOne(fetch = FetchType.EAGER)
-  @JoinColumn(name = "appointment_organiser_id")
-  var appointmentOrganiser: EventOrganiser? = null,
+  var appointmentTier: EventTier? = null,
 
   var internalLocationId: Long?,
 
@@ -84,6 +82,15 @@ data class Appointment(
 
   var updatedBy: String? = null,
 ) : AbstractAggregateRoot<Appointment>() {
+  @OneToOne
+  @JoinColumn(name = "appointment_organiser_id")
+  var appointmentOrganiser: EventOrganiser? = null
+    set(value) {
+      require(value == null || appointmentTier?.isTierTwo() == true) { "Cannot add organiser unless appointment is Tier 2." }
+
+      field = value
+    }
+
   var cancelledTime: LocalDateTime? = null
 
   @OneToOne(fetch = FetchType.EAGER)
@@ -193,6 +200,8 @@ data class Appointment(
     sequenceNumber = sequenceNumber,
     prisonCode = prisonCode,
     categoryCode = categoryCode,
+    tier = appointmentTier?.toModelEventTier(),
+    organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
     internalLocationId = internalLocationId,
     inCell = inCell,
@@ -237,6 +246,8 @@ data class Appointment(
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
       attendees().map { it.toSummary(prisonerMap, userMap) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+      appointmentTier?.toModelEventTier(),
+      appointmentOrganiser?.toModelEventOrganiser(),
       customName,
       if (inCell) {
         null
