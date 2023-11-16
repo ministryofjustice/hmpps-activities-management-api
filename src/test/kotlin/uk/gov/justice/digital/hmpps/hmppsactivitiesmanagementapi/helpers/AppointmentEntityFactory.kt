@@ -38,6 +38,7 @@ internal fun appointmentSeriesEntity(
   startDate: LocalDate = LocalDate.now().plusDays(1),
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
+  extraInformation: String? = "Appointment series level comment",
   createdTime: LocalDateTime = LocalDateTime.now().minusDays(1),
   createdBy: String = "CREATE.USER",
   updatedBy: String? = "UPDATE.USER",
@@ -58,7 +59,7 @@ internal fun appointmentSeriesEntity(
   startDate = startDate,
   startTime = startTime,
   endTime = endTime,
-  extraInformation = "Appointment series level comment",
+  extraInformation = extraInformation,
   createdTime = createdTime,
   createdBy = createdBy,
   updatedTime = if (updatedBy == null) null else LocalDateTime.now(),
@@ -207,6 +208,7 @@ internal fun appointmentSearchEntity(
 
 internal fun appointmentSetEntity(
   appointmentSetId: Long = 1,
+  categoryCode: String = "TEST",
   appointmentTier: EventTier? = eventTier(),
   appointmentOrganiser: EventOrganiser? = eventOrganiser(),
   inCell: Boolean = false,
@@ -219,7 +221,7 @@ internal fun appointmentSetEntity(
   AppointmentSet(
     appointmentSetId = appointmentSetId,
     prisonCode = "TPR",
-    categoryCode = "TEST",
+    categoryCode = categoryCode,
     customName = customName,
     appointmentTier = appointmentTier,
     internalLocationId = if (inCell) null else 123,
