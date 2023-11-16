@@ -202,3 +202,25 @@ To run integration tests use below command
 ```
 ./gradlew integrationTest
 ```
+
+## Runbook
+
+### Re-running a job
+
+**IMPORTANT: extreme caution should be taken if the job failure in question is in production and probably warrants two developers working together.**
+
+There may be times on overnight job fails to run. To re-run it you can port forward onto a running pod make a `curl` request to the job in question.
+
+If for example the attendance creation failed it can be re-run as follows:
+
+In a terminal window ...
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-activities-management-api-f6954cfd6-7gb4j 8080:8080
+```
+
+In another terminal window ...
+
+```
+curl -XPOST http://hmpps-activities-management-api/job/manage-attendance-records
+```
