@@ -78,7 +78,7 @@ class AppointmentSetService(
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
-    return transactionHandler.newSpringTransaction {
+    transactionHandler.newSpringTransaction {
       appointmentSetRepository.saveAndFlush(
         request.toAppointmentSet(prisonNumberBookingIdMap, principal.name),
       )
@@ -89,9 +89,12 @@ class AppointmentSetService(
           outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId)
         }
       }
-      request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
       it.auditCreatedEvent()
-    }.toModel()
+
+      val appointmentSetModel = it.toModel()
+      appointmentSetModel.trackCreatedEvent(startTimeInMs, categoryDescription, locationDescription)
+      return appointmentSetModel
+    }
   }
 
   private fun AppointmentSetCreateRequest.categoryDescription() =
@@ -178,14 +181,12 @@ class AppointmentSetService(
       },
     )
 
-  private fun AppointmentSetCreateRequest.trackCreatedEvent(
+  private fun AppointmentSetModel.trackCreatedEvent(
     startTimeInMs: Long,
-    appointmentSetId: Long,
     categoryDescription: String,
-    internalLocationDescription: String,
-    createdBy: String,
+    locationDescription: String,
   ) {
-    val propertiesMap = toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
+    val propertiesMap = toTelemetryPropertiesMap(categoryDescription, locationDescription)
     val metricsMap = toTelemetryMetricsMap()
     metricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)
