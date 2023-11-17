@@ -18,4 +18,6 @@ class RolloutPrisonService(private val repository: RolloutPrisonRepository) {
       appointmentsToBeRolledOut = false,
     ),
   )
+
+  fun getRolloutPrisons() = repository.findAll().map { transform(it) }
 }

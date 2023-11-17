@@ -9,11 +9,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [JobTriggerController::class])
 @ContextConfiguration(classes = [JobTriggerController::class])
@@ -54,7 +56,27 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(false)
+    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), mayBePrisonCode = null, withExpiry = false)
+  }
+
+  @Test
+  fun `201 response when attendance record creation job with date option is triggered`() {
+    val response =
+      mockMvc.triggerJob("manage-attendance-records?date=2023-11-16").andExpect { status { isCreated() } }.andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
+
+    verify(manageAttendanceRecordsJob).execute(date = LocalDate.of(2023, 11, 16), mayBePrisonCode = null, withExpiry = false)
+  }
+
+  @Test
+  fun `201 response when attendance record creation job with prison code option is triggered`() {
+    val response =
+      mockMvc.triggerJob("manage-attendance-records?prisonCode=$pentonvillePrisonCode").andExpect { status { isCreated() } }.andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
+
+    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), mayBePrisonCode = pentonvillePrisonCode, withExpiry = false)
   }
 
   @Test
@@ -64,7 +86,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(true)
+    verify(manageAttendanceRecordsJob).execute(withExpiry = true)
   }
 
   @Test
