@@ -409,7 +409,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions`() {
-    val allocation = allocation().also { it.exclusions hasSize 0 }
+    val allocation = allocation().also { it.exclusions() hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -430,8 +430,8 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.exclusions hasSize 1
-    allocationCaptor.firstValue.exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    allocationCaptor.firstValue.exclusions() hasSize 1
+    allocationCaptor.firstValue.exclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
@@ -463,8 +463,8 @@ class AllocationServiceTest {
     )
       .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
       .also {
-        it.exclusions hasSize 1
-        with(it.exclusions.first()) {
+        it.exclusions() hasSize 1
+        with(it.exclusions().first()) {
           getWeekNumber() isEqualTo 1
           getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
         }
@@ -490,8 +490,8 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.exclusions hasSize 1
-    with(allocationCaptor.firstValue.exclusions.first()) {
+    allocationCaptor.firstValue.exclusions() hasSize 1
+    with(allocationCaptor.firstValue.exclusions().first()) {
       getWeekNumber() isEqualTo 2
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     }
@@ -500,7 +500,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions fails if week number and time slot combination returns no slots`() {
-    val allocation = allocation().also { it.exclusions hasSize 0 }
+    val allocation = allocation().also { it.exclusions() hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 

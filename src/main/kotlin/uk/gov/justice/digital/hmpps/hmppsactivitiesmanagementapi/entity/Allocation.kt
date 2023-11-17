@@ -84,7 +84,7 @@ data class Allocation(
 
   @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val exclusions: MutableSet<Exclusion> = mutableSetOf()
+  private val exclusions: MutableSet<Exclusion> = mutableSetOf()
 
   var deallocatedTime: LocalDateTime? = null
     private set
@@ -104,6 +104,10 @@ data class Allocation(
 
   var suspendedReason: String? = null
     private set
+
+  fun exclusions() = exclusions.toList()
+
+  fun removeExclusions(exclusionsToRemove: List<Exclusion>) = exclusions.removeAll(exclusionsToRemove.toSet())
 
   fun prisonCode() = activitySchedule.activity.prisonCode
 

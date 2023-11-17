@@ -370,18 +370,18 @@ class AllocationTest {
   @Test
   fun `update exclusions - add and remove an exclusion`() {
     val allocation = allocation()
-    allocation.exclusions hasSize 0
+    allocation.exclusions() hasSize 0
 
     val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
 
-    allocation.exclusions hasSize 1
+    allocation.exclusions() hasSize 1
     with(exclusion!!) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
     val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
 
-    allocation.exclusions hasSize 0
+    allocation.exclusions() hasSize 0
     updatedExclusion isEqualTo null
   }
 
@@ -412,20 +412,20 @@ class AllocationTest {
       startDate = activity.startDate,
     )
 
-    allocation.exclusions hasSize 0
+    allocation.exclusions() hasSize 0
 
     allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
 
-    allocation.exclusions hasSize 1
+    allocation.exclusions() hasSize 1
 
     assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.MONDAY)) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Exclusions cannot be added for the same day and time slot over multiple weeks.")
 
-    allocation.exclusions hasSize 1
+    allocation.exclusions() hasSize 1
 
     allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
 
-    allocation.exclusions hasSize 2
+    allocation.exclusions() hasSize 2
   }
 }

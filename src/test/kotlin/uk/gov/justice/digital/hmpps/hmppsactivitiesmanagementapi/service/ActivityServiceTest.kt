@@ -1707,7 +1707,7 @@ class ActivityServiceTest {
         startDate = startDate,
       ).apply {
         val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.exclusions.add(exclusion!!)
+        slot.addExclusion(exclusion!!)
       }
     }
 
@@ -1775,7 +1775,7 @@ class ActivityServiceTest {
         startDate = startDate,
       ).apply {
         val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.exclusions.add(exclusion!!)
+        slot.addExclusion(exclusion!!)
       }
     }
 

@@ -12,7 +12,7 @@ class ExclusionTest {
   @Test
   fun `setDaysOfWeek - will set day flags`() {
     val schedule = activitySchedule(activityEntity())
-    val exclusion = schedule.allocations().last().exclusions.first()
+    val exclusion = schedule.allocations().last().exclusions().first()
 
     exclusion.setDaysOfWeek(setOf(DayOfWeek.MONDAY))
 
@@ -25,7 +25,7 @@ class ExclusionTest {
   @Test
   fun `setDaysOfWeek - will throw error if selected days are not part of the schedule`() {
     val schedule = activitySchedule(activityEntity())
-    val exclusion = schedule.allocations().last().exclusions.first()
+    val exclusion = schedule.allocations().last().exclusions().first()
 
     assertThatThrownBy { exclusion.setDaysOfWeek(setOf(DayOfWeek.TUESDAY)) }
       .isInstanceOf(IllegalArgumentException::class.java)

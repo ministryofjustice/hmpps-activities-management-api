@@ -52,7 +52,7 @@ data class ActivityScheduleSlot(
 
   @OneToMany(mappedBy = "activityScheduleSlot", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val exclusions: MutableSet<Exclusion> = mutableSetOf(),
+  private val exclusions: MutableSet<Exclusion> = mutableSetOf(),
 ) {
   init {
     failIfNoDaysSelectedForSlot()
@@ -102,6 +102,9 @@ data class ActivityScheduleSlot(
       sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
     )
   }
+
+  fun exclusions() = exclusions.toList()
+  fun addExclusion(exclusion: Exclusion) = exclusions.add(exclusion)
 
   fun update(daysOfWeek: Set<DayOfWeek>): AllocationIds {
     require(daysOfWeek.isNotEmpty()) { "A slot must run on at least one day." }
