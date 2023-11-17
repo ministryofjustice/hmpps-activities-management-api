@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -141,10 +140,10 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is not created if the allocation is pending`() {
+  fun `attendance is not created if the allocation start date is in the future`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    allocation.prisonerStatus = PrisonerStatus.PENDING
+    allocation.startDate = TimeSource.tomorrow()
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())) doReturn emptyList()

@@ -7,12 +7,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import java.time.DayOfWeek
@@ -427,5 +429,72 @@ class AllocationTest {
     allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
 
     allocation.exclusions hasSize 2
+  }
+
+  @Test
+  fun `allocation starting today can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.today())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation starting today cannot be attended yesterday`() {
+    val allocation = allocation(startDate = TimeSource.today())
+
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation starting yesterday can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.yesterday())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending today can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.today()).apply { endDate = TimeSource.today() }
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending yesterday can be attended yesterday`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
+
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending yesterday cannot be attended today`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation starting tomorrow cannot be attended today`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation deallocated cannot be attended`() {
+    val allocation = allocation().deallocateNow()
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation with exclusion cannot be attended`() {
+    val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.today().dayOfWeek)).allocations().first()
+
+    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool true
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.today().dayOfWeek))
+
+    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool false
   }
 }

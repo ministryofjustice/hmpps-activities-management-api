@@ -17,6 +17,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -141,6 +142,7 @@ data class Allocation(
     when {
       activitySchedule.endDate != null -> activitySchedule.endDate
       activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
+      endDate != null -> endDate
       else -> null
     }
 
@@ -291,6 +293,11 @@ data class Allocation(
       null
     }
   }
+
+  /**
+   * Returns true if the date is between the start and end date, no clashing exclusions and not ended, otherwise false.
+   */
+  fun canAttendOn(date: LocalDate, timeSlot: TimeSlot) = date.between(startDate, maybeEndDate()) && isExcluded(date, timeSlot).not() && prisonerStatus != PrisonerStatus.ENDED
 
   @Override
   override fun toString(): String {
