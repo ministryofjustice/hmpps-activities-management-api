@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -87,6 +88,20 @@ class AllocationsService(
       allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
         .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
+    }
+
+    request.exclusions?.apply {
+      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
+
+      val exclusionsToRemove = mutableListOf<Exclusion>()
+      allocation.exclusions.onEach {
+        val oldExclusion = it.getWeekNumber() to it.getTimeSlot().toString()
+        if (oldExclusion !in newExclusions) {
+          exclusionsToRemove.add(it)
+        }
+      }
+
+      allocation.exclusions.removeAll(exclusionsToRemove.toSet())
     }
   }
 

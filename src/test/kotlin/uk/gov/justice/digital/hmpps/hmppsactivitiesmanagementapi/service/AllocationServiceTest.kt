@@ -12,11 +12,13 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.deallocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -35,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Optional
 
 class AllocationServiceTest {
@@ -429,6 +432,64 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.exclusions hasSize 1
     allocationCaptor.firstValue.exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+  }
+
+  @Test
+  fun `updateAllocation - update exclusions removes existing exclusions which are not present in the update request`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    val slot = schedule.addSlot(
+      weekNumber = 1,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    )
+      .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
+      .also { it.exclusions hasSize 1 }
+
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      exclusions = listOf(
+        Slot(
+          weekNumber = 2,
+          timeSlot = "PM",
+          thursday = true,
+        ),
+      ),
+    )
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.exclusions hasSize 1
+    with(allocationCaptor.firstValue.exclusions.first()) {
+      getWeekNumber() isEqualTo 2
+      getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
+    }
+    allocationCaptor.firstValue.exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
