@@ -88,6 +88,17 @@ class AllocationsService(
         .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
     }
+
+    request.exclusions?.apply {
+      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
+
+      val exclusionsToRemove = allocation.exclusions().mapNotNull {
+        val oldExclusion = it.getWeekNumber() to it.getTimeSlot().toString()
+        it.takeIf { oldExclusion !in newExclusions }
+      }
+
+      allocation.removeExclusions(exclusionsToRemove)
+    }
   }
 
   private fun applyStartDateUpdate(

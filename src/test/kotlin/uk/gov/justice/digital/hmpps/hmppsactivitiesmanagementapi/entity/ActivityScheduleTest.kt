@@ -253,8 +253,8 @@ class ActivityScheduleTest {
     schedule.allocations() hasSize 3
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
-      exclusions hasSize 1
-      exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      exclusions() hasSize 1
+      exclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
   }
 

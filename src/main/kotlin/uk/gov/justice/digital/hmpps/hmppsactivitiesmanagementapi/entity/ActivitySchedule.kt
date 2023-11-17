@@ -355,7 +355,7 @@ data class ActivitySchedule(
     val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }
     slots.removeAll(slotsToRemove)
     require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
-    return slotsToRemove.flatMap { it.exclusions.map { ex -> ex.allocation.allocationId } }.toSet()
+    return slotsToRemove.flatMap { it.exclusions().map { ex -> ex.allocation.allocationId } }.toSet()
   }
 
   private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {

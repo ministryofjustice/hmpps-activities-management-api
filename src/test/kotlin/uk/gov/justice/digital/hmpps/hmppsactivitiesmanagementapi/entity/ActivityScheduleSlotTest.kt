@@ -244,9 +244,9 @@ class ActivityScheduleSlotTest {
       endTime = LocalTime.now(),
       mondayFlag = true,
       sundayFlag = true,
-      exclusions = mutableListOf(),
+      exclusions = mutableSetOf(),
     ).apply {
-      this.exclusions.add(
+      this.addExclusion(
         Exclusion(
           exclusionId = 1,
           allocation = allocation(null),
@@ -276,7 +276,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(exclusions).isEmpty()
+      assertThat(exclusions()).isEmpty()
     }
   }
 

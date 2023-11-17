@@ -39,6 +39,8 @@ data class Exclusion(
 
   var sundayFlag: Boolean = false,
 ) {
+  override fun hashCode(): Int = exclusionId.hashCode()
+
   fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
     DayOfWeek.MONDAY.takeIf { mondayFlag },
     DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
@@ -98,4 +100,4 @@ data class Exclusion(
   }
 }
 
-fun List<Exclusion>.toSlotModel() = map { it.toSlotModel() }
+fun Set<Exclusion>.toSlotModel() = map { it.toSlotModel() }
