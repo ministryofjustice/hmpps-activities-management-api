@@ -244,7 +244,7 @@ class ActivityScheduleSlotTest {
       endTime = LocalTime.now(),
       mondayFlag = true,
       sundayFlag = true,
-      exclusions = mutableListOf(),
+      exclusions = mutableSetOf(),
     ).apply {
       this.exclusions.add(
         Exclusion(

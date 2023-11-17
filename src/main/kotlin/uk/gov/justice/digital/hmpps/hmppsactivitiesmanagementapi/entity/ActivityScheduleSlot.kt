@@ -52,7 +52,7 @@ data class ActivityScheduleSlot(
 
   @OneToMany(mappedBy = "activityScheduleSlot", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  var exclusions: MutableList<Exclusion> = mutableListOf(),
+  val exclusions: MutableSet<Exclusion> = mutableSetOf(),
 ) {
   init {
     failIfNoDaysSelectedForSlot()

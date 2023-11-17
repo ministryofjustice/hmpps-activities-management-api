@@ -84,7 +84,7 @@ data class Allocation(
 
   @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
-  val exclusions: MutableList<Exclusion> = mutableListOf()
+  val exclusions: MutableSet<Exclusion> = mutableSetOf()
 
   var deallocatedTime: LocalDateTime? = null
     private set
