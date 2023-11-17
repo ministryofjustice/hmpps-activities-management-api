@@ -462,7 +462,13 @@ class AllocationServiceTest {
       startDate = activity.startDate,
     )
       .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
-      .also { it.exclusions hasSize 1 }
+      .also {
+        it.exclusions hasSize 1
+        with(it.exclusions.first()) {
+          getWeekNumber() isEqualTo 1
+          getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+        }
+      }
 
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
@@ -489,7 +495,6 @@ class AllocationServiceTest {
       getWeekNumber() isEqualTo 2
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     }
-    allocationCaptor.firstValue.exclusions.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
