@@ -51,6 +51,8 @@ class ManageAttendancesService(
 
     log.info("Creating attendance records for prison '$prisonCode' on date '$date'")
 
+    var counter = 0
+
     scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
       .filter { it.attendanceRequired() }
       .forEach { instance ->
@@ -78,11 +80,18 @@ class ManageAttendancesService(
               log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
               outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
             }
-          }.onFailure {
-            log.error("Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'", it)
           }
+            .onSuccess { counter += attendancesForInstance.size }
+            .onFailure {
+              log.error(
+                "Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'",
+                it,
+              )
+            }
         }
       }
+
+    log.info("Created '$counter' attendance records for prison '$prisonCode' on date '$date'")
   }
 
   /**
@@ -114,7 +123,7 @@ class ManageAttendancesService(
       }.apply {
         // Calculate what we think the pay rate should be at the prisoner's current incentive level
         val incentiveLevelCode = prisonerDetails?.currentIncentive?.level?.code
-        payAmount = incentiveLevelCode ?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
+        payAmount = incentiveLevelCode?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
       }.also { attendance ->
         return attendance
       }
