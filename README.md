@@ -222,5 +222,5 @@ kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-act
 In another terminal window ...
 
 ```
-curl -XPOST http://hmpps-activities-management-api/job/manage-attendance-records
+curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=MDI"
 ```
