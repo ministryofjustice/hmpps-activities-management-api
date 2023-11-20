@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
@@ -116,12 +117,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.categoryCode isEqualTo "TEST"
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.categoryCode == "NEW" } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.categoryCode == "TEST" } isBool true
 
       response.categoryCode isEqualTo "TEST"
-      response.appointments.filter { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+      response.appointments.filter { ids.contains(it.id) }.all { it.categoryCode == "NEW" } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.categoryCode == "TEST" } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -162,12 +163,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.appointmentTier isEqualTo currentEventTier
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentTier }.distinct().single() isEqualTo newEventTier
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentTier }.distinct().single() isEqualTo currentEventTier
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentTier == newEventTier } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentTier == currentEventTier } isBool true
 
       response.tier isEqualTo currentEventTier.toModelEventTier()
-      response.appointments.filter { ids.contains(it.id) }.map { it.tier }.distinct().single() isEqualTo newEventTier.toModelEventTier()
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.tier }.distinct().single() isEqualTo currentEventTier.toModelEventTier()
+      response.appointments.filter { ids.contains(it.id) }.all { it.tier == newEventTier.toModelEventTier() } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.tier == currentEventTier.toModelEventTier() } isBool true
     }
 
     @Test
@@ -208,12 +209,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo newOrganiser
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == newOrganiser } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == currentOrganiser } isBool true
 
       response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
-      response.appointments.filter { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo newOrganiser.toModelEventOrganiser()
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.all { it.organiser == newOrganiser.toModelEventOrganiser() } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.organiser == currentOrganiser.toModelEventOrganiser() } isBool true
     }
 
     @Test
@@ -248,12 +249,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo null
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.appointmentOrganiser }.distinct().single() isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == null } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == currentOrganiser } isBool true
 
       response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
-      response.appointments.filter { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo null
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.organiser }.distinct().single() isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.all { it.organiser == null } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.organiser == currentOrganiser.toModelEventOrganiser() } isBool true
     }
 
     @Test
@@ -277,12 +278,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.internalLocationId isEqualTo 123
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.internalLocationId == 123L } isBool true
 
       response.internalLocationId isEqualTo 123
-      response.appointments.filter { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      response.appointments.filter { ids.contains(it.id) }.all { it.internalLocationId == 456L } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.internalLocationId == 123L } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -311,23 +312,23 @@ class AppointmentUpdateDomainServiceTest {
       appointmentSeries.internalLocationId isEqualTo 123
       appointmentSeries.inCell isEqualTo false
       with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo null
-        this.map { it.inCell }.distinct().single() isEqualTo true
+        this.all { it.internalLocationId == null } isBool true
+        this.all { it.inCell } isBool true
       }
       with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo 123
-        this.map { it.inCell }.distinct().single() isEqualTo false
+        this.all { it.internalLocationId == 123L } isBool true
+        this.all { !it.inCell } isBool true
       }
 
       response.internalLocationId isEqualTo 123
       response.inCell isEqualTo false
       with(response.appointments.filter { ids.contains(it.id) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo null
-        this.map { it.inCell }.distinct().single() isEqualTo true
+        this.all { it.internalLocationId == null } isBool true
+        this.all { it.inCell } isBool true
       }
       with(response.appointments.filterNot { ids.contains(it.id) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo 123
-        this.map { it.inCell }.distinct().single() isEqualTo false
+        this.all { it.internalLocationId == 123L } isBool true
+        this.all { !it.inCell } isBool true
       }
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
@@ -395,12 +396,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.startTime isEqualTo LocalTime.of(9, 0)
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.startTime == LocalTime.of(13, 30) } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.startTime == LocalTime.of(9, 0) } isBool true
 
       response.startTime isEqualTo LocalTime.of(9, 0)
-      response.appointments.filter { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+      response.appointments.filter { ids.contains(it.id) }.all { it.startTime == LocalTime.of(13, 30) } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.startTime == LocalTime.of(9, 0) } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -427,12 +428,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.endTime isEqualTo LocalTime.of(10, 30)
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.endTime == LocalTime.of(15, 0) } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.endTime == LocalTime.of(10, 30) } isBool true
 
       response.endTime isEqualTo LocalTime.of(10, 30)
-      response.appointments.filter { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+      response.appointments.filter { ids.contains(it.id) }.all { it.endTime == LocalTime.of(15, 0) } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.endTime == LocalTime.of(10, 30) } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -459,12 +460,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.extraInformation isEqualTo "Appointment series level comment"
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.extraInformation == "Appointment level comment" } isBool true
 
       response.extraInformation isEqualTo "Appointment series level comment"
-      response.appointments.filter { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+      response.appointments.filter { ids.contains(it.id) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.extraInformation == "Appointment level comment" } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)

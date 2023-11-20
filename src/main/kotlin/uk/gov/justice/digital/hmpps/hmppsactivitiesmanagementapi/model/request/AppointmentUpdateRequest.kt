@@ -25,10 +25,18 @@ data class AppointmentUpdateRequest(
   )
   val categoryCode: String? = null,
 
-  @Schema(description = "The tier code for this appointment", example = "TIER_1")
+  @Schema(
+    description = "The tier code for this appointment",
+    example = "TIER_1",
+    allowableValues = ["TIER_1", "TIER_2", "FOUNDATION"],
+  )
   val tierCode: String? = null,
 
-  @Schema(description = "The organiser code for this appointment", example = "PRISON_STAFF")
+  @Schema(
+    description = "The organiser code for this appointment",
+    example = "PRISON_STAFF",
+    allowableValues = ["PRISON_STAFF", "PRISONER", "EXTERNAL_PROVIDER", "OTHER"],
+  )
   val organiserCode: String? = null,
 
   @Schema(

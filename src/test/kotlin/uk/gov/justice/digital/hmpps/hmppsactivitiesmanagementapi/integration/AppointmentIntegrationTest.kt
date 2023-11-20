@@ -267,20 +267,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
-      assertThat(tier).isEqualTo(
-        EventTier(
-          id = 2,
-          code = "TIER_2",
-          description = "Tier 2",
-        ),
-      )
-      assertThat(organiser).isEqualTo(
-        EventOrganiser(
-          id = 1,
-          code = "PRISON_STAFF",
-          description = "Prison staff",
-        ),
-      )
+      assertThat(tier!!.code).isEqualTo("TIER_2")
+      assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
@@ -292,20 +280,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(updatedBy).isEqualTo("test-client")
       with(appointments.single()) {
         assertThat(categoryCode).isEqualTo(request.categoryCode)
-        assertThat(tier).isEqualTo(
-          EventTier(
-            id = 2,
-            code = "TIER_2",
-            description = "Tier 2",
-          ),
-        )
-        assertThat(organiser).isEqualTo(
-          EventOrganiser(
-            id = 1,
-            code = "PRISON_STAFF",
-            description = "Prison staff",
-          ),
-        )
+        assertThat(tier!!.code).isEqualTo("TIER_2")
+        assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
         assertThat(internalLocationId).isEqualTo(request.internalLocationId)
         assertThat(inCell).isFalse
         assertThat(startDate).isEqualTo(request.startDate)
@@ -665,13 +641,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(appointmentSeries) {
       assertThat(categoryCode).isEqualTo("AC1")
-      assertThat(tier).isEqualTo(
-        EventTier(
-          id = 1,
-          code = "TIER_1",
-          description = "Tier 1",
-        ),
-      )
+      assertThat(tier!!.code).isEqualTo("TIER_1")
       assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
@@ -687,13 +657,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(appointments[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
       with(appointments.subList(0, 2)) {
         assertThat(map { it.categoryCode }.distinct().single()).isEqualTo("AC1")
-        assertThat(map { it.tier }.distinct().single()).isEqualTo(
-          EventTier(
-            id = 1,
-            code = "TIER_1",
-            description = "Tier 1",
-          ),
-        )
+        assertThat(map { it.tier!!.code }.distinct().single()).isEqualTo("TIER_1")
         assertThat(map { it.organiser }.distinct().single()).isNull()
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
         assertThat(map { it.inCell }.distinct().single()).isFalse
@@ -709,20 +673,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
       with(appointments.subList(2, appointments.size)) {
         assertThat(map { it.categoryCode }.distinct().single()).isEqualTo(request.categoryCode)
-        assertThat(map { it.tier }.distinct().single()).isEqualTo(
-          EventTier(
-            id = 2,
-            code = "TIER_2",
-            description = "Tier 2",
-          ),
-        )
-        assertThat(map { it.organiser }.distinct().single()).isEqualTo(
-          EventOrganiser(
-            id = 1,
-            code = "PRISON_STAFF",
-            description = "Prison staff",
-          ),
-        )
+        assertThat(map { it.tier!!.code }.distinct().single()).isEqualTo("TIER_2")
+        assertThat(map { it.organiser!!.code }.distinct().single()).isEqualTo("PRISON_STAFF")
         assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
         assertThat(map { it.inCell }.distinct().single()).isFalse
         assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)

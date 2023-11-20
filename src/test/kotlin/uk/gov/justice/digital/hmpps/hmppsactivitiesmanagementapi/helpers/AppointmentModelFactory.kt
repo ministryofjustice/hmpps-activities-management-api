@@ -16,8 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -41,16 +39,8 @@ fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTim
     AppointmentType.INDIVIDUAL,
     "TPR",
     "TEST",
-    EventTier(
-      id = 2,
-      code = "TIER_2",
-      description = "Tier 2",
-    ),
-    EventOrganiser(
-      id = 1,
-      code = "PRISON_STAFF",
-      description = "Prison staff",
-    ),
+    eventTier().toModelEventTier(),
+    eventOrganiser().toModelEventOrganiser(),
     "Appointment description",
     123,
     false,
@@ -234,16 +224,8 @@ fun appointmentSeriesDetails(
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   category = category,
-  EventTier(
-    id = 2,
-    code = "TIER_2",
-    description = "Tier 2",
-  ),
-  EventOrganiser(
-    id = 1,
-    code = "PRISON_STAFF",
-    description = "Prison staff",
-  ),
+  eventTier().toModelEventTier(),
+  eventOrganiser().toModelEventOrganiser(),
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
