@@ -213,7 +213,7 @@ class AllocationTest {
     assertThatThrownBy {
       allocationNoEndDate.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Planned date cannot be after $today.")
+      .hasMessage("Planned deallocation date cannot be after activity schedule end date, $today.")
   }
 
   @Test
