@@ -20,7 +20,10 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
@@ -28,6 +31,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
@@ -38,6 +43,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -48,12 +55,25 @@ class AppointmentUpdateDomainServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val eventTierRepository: EventTierRepository = mock()
+  private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
-  private val service = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), outboundEventsService, telemetryClient, auditService))
+  private val service = spy(
+    AppointmentUpdateDomainService(
+      appointmentSeriesRepository,
+      appointmentAttendeeRemovalReasonRepository,
+      eventTierRepository,
+      eventOrganiserRepository,
+      TransactionHandler(),
+      outboundEventsService,
+      telemetryClient,
+      auditService,
+    ),
+  )
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
@@ -97,15 +117,144 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.categoryCode isEqualTo "TEST"
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.categoryCode == "NEW" } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.categoryCode == "TEST" } isBool true
 
       response.categoryCode isEqualTo "TEST"
-      response.appointments.filter { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "NEW"
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.categoryCode }.distinct().single() isEqualTo "TEST"
+      response.appointments.filter { ids.contains(it.id) }.all { it.categoryCode == "NEW" } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.categoryCode == "TEST" } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `updates appointment tier`() {
+      whenever(eventTierRepository.findByCode(foundationTier().code)).thenReturn(foundationTier())
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(1, "TIER_1", "Tier 1")
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(tierCode = "FOUNDATION")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      val currentEventTier = EventTier(
+        eventTierId = 2,
+        code = "TIER_2",
+        description = "Tier 2",
+      )
+      val newEventTier = EventTier(
+        eventTierId = 3,
+        code = "FOUNDATION",
+        description = "Routine activities also called \"Foundation\"",
+      )
+
+      appointmentSeries.appointmentTier isEqualTo currentEventTier
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentTier == newEventTier } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentTier == currentEventTier } isBool true
+
+      response.tier isEqualTo currentEventTier.toModelEventTier()
+      response.appointments.filter { ids.contains(it.id) }.all { it.tier == newEventTier.toModelEventTier() } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.tier == currentEventTier.toModelEventTier() } isBool true
+    }
+
+    @Test
+    fun `updates appointment organiser`() {
+      val currentOrganiser = EventOrganiser(
+        eventOrganiserId = 1,
+        code = "PRISON_STAFF",
+        description = "Prison staff",
+      )
+      val newOrganiser = EventOrganiser(
+        eventOrganiserId = 2,
+        code = "PRISONER",
+        description = "A prisoner or group of prisoners",
+      )
+
+      whenever(eventTierRepository.findByCode(eventTier().code)).thenReturn(eventTier())
+      whenever(eventOrganiserRepository.findByCode(newOrganiser.code)).thenReturn(newOrganiser)
+
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(2, "TIER_2", "Tier 2")
+        it.appointmentOrganiser = currentOrganiser
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(organiserCode = "PRISONER")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == newOrganiser } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == currentOrganiser } isBool true
+
+      response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.all { it.organiser == newOrganiser.toModelEventOrganiser() } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.organiser == currentOrganiser.toModelEventOrganiser() } isBool true
+    }
+
+    @Test
+    fun `Removes appointment organiser when updating to tier other than TIER_2`() {
+      whenever(eventTierRepository.findByCode(foundationTier().code)).thenReturn(foundationTier())
+
+      val currentOrganiser = EventOrganiser(
+        eventOrganiserId = 1,
+        code = "PRISON_STAFF",
+        description = "Prison staff",
+      )
+
+      val appointmentsToUpdate = applyToThisAndAllFuture.onEach {
+        it.appointmentTier = eventTier(2, "TIER_2", "Tier 2")
+        it.appointmentOrganiser = currentOrganiser
+      }
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val request = AppointmentUpdateRequest(tierCode = "FOUNDATION")
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      appointmentSeries.appointmentOrganiser isEqualTo currentOrganiser
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == null } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.appointmentOrganiser == currentOrganiser } isBool true
+
+      response.organiser isEqualTo currentOrganiser.toModelEventOrganiser()
+      response.appointments.filter { ids.contains(it.id) }.all { it.organiser == null } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.organiser == currentOrganiser.toModelEventOrganiser() } isBool true
     }
 
     @Test
@@ -129,12 +278,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.internalLocationId isEqualTo 123
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.internalLocationId == 123L } isBool true
 
       response.internalLocationId isEqualTo 123
-      response.appointments.filter { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      response.appointments.filter { ids.contains(it.id) }.all { it.internalLocationId == 456L } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.internalLocationId == 123L } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -163,23 +312,23 @@ class AppointmentUpdateDomainServiceTest {
       appointmentSeries.internalLocationId isEqualTo 123
       appointmentSeries.inCell isEqualTo false
       with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo null
-        this.map { it.inCell }.distinct().single() isEqualTo true
+        this.all { it.internalLocationId == null } isBool true
+        this.all { it.inCell } isBool true
       }
       with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo 123
-        this.map { it.inCell }.distinct().single() isEqualTo false
+        this.all { it.internalLocationId == 123L } isBool true
+        this.all { !it.inCell } isBool true
       }
 
       response.internalLocationId isEqualTo 123
       response.inCell isEqualTo false
       with(response.appointments.filter { ids.contains(it.id) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo null
-        this.map { it.inCell }.distinct().single() isEqualTo true
+        this.all { it.internalLocationId == null } isBool true
+        this.all { it.inCell } isBool true
       }
       with(response.appointments.filterNot { ids.contains(it.id) }) {
-        this.map { it.internalLocationId }.distinct().single() isEqualTo 123
-        this.map { it.inCell }.distinct().single() isEqualTo false
+        this.all { it.internalLocationId == 123L } isBool true
+        this.all { !it.inCell } isBool true
       }
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
@@ -247,12 +396,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.startTime isEqualTo LocalTime.of(9, 0)
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.startTime == LocalTime.of(13, 30) } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.startTime == LocalTime.of(9, 0) } isBool true
 
       response.startTime isEqualTo LocalTime.of(9, 0)
-      response.appointments.filter { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(13, 30)
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.startTime }.distinct().single() isEqualTo LocalTime.of(9, 0)
+      response.appointments.filter { ids.contains(it.id) }.all { it.startTime == LocalTime.of(13, 30) } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.startTime == LocalTime.of(9, 0) } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -279,12 +428,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.endTime isEqualTo LocalTime.of(10, 30)
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.endTime == LocalTime.of(15, 0) } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.endTime == LocalTime.of(10, 30) } isBool true
 
       response.endTime isEqualTo LocalTime.of(10, 30)
-      response.appointments.filter { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(15, 0)
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.endTime }.distinct().single() isEqualTo LocalTime.of(10, 30)
+      response.appointments.filter { ids.contains(it.id) }.all { it.endTime == LocalTime.of(15, 0) } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.endTime == LocalTime.of(10, 30) } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)
@@ -311,12 +460,12 @@ class AppointmentUpdateDomainServiceTest {
       )
 
       appointmentSeries.extraInformation isEqualTo "Appointment series level comment"
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
-      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.extraInformation == "Appointment level comment" } isBool true
 
       response.extraInformation isEqualTo "Appointment series level comment"
-      response.appointments.filter { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Updated appointment level comment"
-      response.appointments.filterNot { ids.contains(it.id) }.map { it.extraInformation }.distinct().single() isEqualTo "Appointment level comment"
+      response.appointments.filter { ids.contains(it.id) }.all { it.extraInformation == "Updated appointment level comment" } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.extraInformation == "Appointment level comment" } isBool true
 
       verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any())
       verifyNoMoreInteractions(outboundEventsService)

@@ -1,68 +1,53 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import java.time.LocalDate
 import java.time.LocalTime
 
 class AppointmentTelemetryTransformFunctionsTest {
-  private val createAppointmentSetWithThreeAppointments = AppointmentSetCreateRequest(
-    prisonCode = moorlandPrisonCode,
-    categoryCode = "MEDO",
+  private val appointmentSetWithThreeAppointments = appointmentSetEntity(
     customName = "Custom name",
-    internalLocationId = 123,
-    inCell = false,
+    prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
+    categoryCode = "MEDO",
+    appointmentTier = eventTier(description = "Tier 2"),
+    appointmentOrganiser = eventOrganiser(description = "Prison staff"),
     startDate = LocalDate.now(),
-    appointments = listOf(
-      AppointmentSetAppointment(
-        prisonerNumber = "A1234BC",
-        startTime = LocalTime.of(9, 15),
-        endTime = LocalTime.of(9, 45),
-        extraInformation = null,
-      ),
-      AppointmentSetAppointment(
-        prisonerNumber = "B2345CD",
-        startTime = LocalTime.of(8, 45),
-        endTime = LocalTime.of(9, 15),
-        extraInformation = "",
-      ),
-      AppointmentSetAppointment(
-        prisonerNumber = "C3456DE",
-        startTime = LocalTime.of(9, 45),
-        endTime = LocalTime.of(10, 15),
-        extraInformation = "   ",
-      ),
-      AppointmentSetAppointment(
-        prisonerNumber = "A1234BC",
-        startTime = LocalTime.of(10, 45),
-        endTime = LocalTime.of(11, 15),
-        extraInformation = "Extra medical information for 'A1234BC'",
-      ),
-      AppointmentSetAppointment(
-        prisonerNumber = "E5678FG",
-        startTime = LocalTime.of(10, 15),
-        endTime = LocalTime.of(10, 45),
-        extraInformation = "Extra medical information for 'E5678FG'",
-      ),
-    ),
-  )
+    startTime = LocalTime.of(7, 0),
+    endTime = LocalTime.of(7, 30),
+  ).apply {
+    // A second appointment for A1234BC
+    appointmentSeriesEntity(
+      4,
+      this,
+      customName = customName,
+      startTime = LocalTime.of(11, 0),
+      endTime = LocalTime.of(11, 15),
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456),
+      updatedBy = null,
+      createdTime = createdTime,
+      extraInformation = null,
+    ).appointments().apply {
+      // Remove the extra info from this appointment
+      this.onEach { appointment -> appointment.extraInformation = null }
+    }
+  }
 
   @Test
   fun `create appointment set to telemetry properties`() {
-    createAppointmentSetWithThreeAppointments.toTelemetryPropertiesMap(
-      1L,
+    appointmentSetWithThreeAppointments.toModel().toTelemetryPropertiesMap(
       "Medical - Doctor",
       "HB1 Doctors",
-      "TEST.USER",
     ) isEqualTo mutableMapOf(
-      USER_PROPERTY_KEY to "TEST.USER",
-      PRISON_CODE_PROPERTY_KEY to moorlandPrisonCode,
+      USER_PROPERTY_KEY to "CREATE.USER",
+      PRISON_CODE_PROPERTY_KEY to "TPR",
       APPOINTMENT_SET_ID_PROPERTY_KEY to "1",
       CATEGORY_CODE_PROPERTY_KEY to "MEDO",
       CATEGORY_DESCRIPTION_PROPERTY_KEY to "Medical - Doctor",
@@ -70,19 +55,19 @@ class AppointmentTelemetryTransformFunctionsTest {
       INTERNAL_LOCATION_ID_PROPERTY_KEY to "123",
       INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "HB1 Doctors",
       START_DATE_PROPERTY_KEY to LocalDate.now().toString(),
-      EARLIEST_START_TIME_PROPERTY_KEY to LocalTime.of(8, 45).toString(),
+      EARLIEST_START_TIME_PROPERTY_KEY to LocalTime.of(7, 0).toString(),
       LATEST_END_TIME_PROPERTY_KEY to LocalTime.of(11, 15).toString(),
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
     )
   }
 
   @Test
   fun `create appointment set to telemetry properties no earliest or latest time`() {
     with(
-      createAppointmentSetWithThreeAppointments.copy(appointments = emptyList()).toTelemetryPropertiesMap(
-        1L,
+      appointmentSetWithThreeAppointments.toModel().copy(appointments = emptyList()).toTelemetryPropertiesMap(
         "Medical - Doctor",
         "HB1 Doctors",
-        "TEST.USER",
       ),
     ) {
       this[EARLIEST_START_TIME_PROPERTY_KEY] isEqualTo "null"
@@ -92,12 +77,12 @@ class AppointmentTelemetryTransformFunctionsTest {
 
   @Test
   fun `create appointment set to telemetry metrics`() {
-    createAppointmentSetWithThreeAppointments.toTelemetryMetricsMap() isEqualTo mutableMapOf(
-      PRISONER_COUNT_METRIC_KEY to 4.0,
-      APPOINTMENT_COUNT_METRIC_KEY to 5.0,
-      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 5.0,
+    appointmentSetWithThreeAppointments.toModel().toTelemetryMetricsMap() isEqualTo mutableMapOf(
+      PRISONER_COUNT_METRIC_KEY to 3.0,
+      APPOINTMENT_COUNT_METRIC_KEY to 4.0,
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to 4.0,
       CUSTOM_NAME_LENGTH_METRIC_KEY to 11.0,
-      EXTRA_INFORMATION_COUNT_METRIC_KEY to 2.0,
+      EXTRA_INFORMATION_COUNT_METRIC_KEY to 3.0,
       EVENT_TIME_MS_METRIC_KEY to 0.0,
     )
   }

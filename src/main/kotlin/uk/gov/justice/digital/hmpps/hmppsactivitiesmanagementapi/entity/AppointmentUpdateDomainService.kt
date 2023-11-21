@@ -8,7 +8,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
@@ -26,6 +29,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentUpdateDomainService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository,
+  private val eventTierRepository: EventTierRepository,
+  private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
@@ -124,6 +129,31 @@ class AppointmentUpdateDomainService(
     return instanceCount
   }
 
+  private fun applyTierUpdate(
+    request: AppointmentUpdateRequest,
+    appointmentsToUpdate: Collection<Appointment>,
+  ) {
+    appointmentsToUpdate.forEach {
+      request.tierCode?.apply {
+        it.appointmentTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
+        if (it.appointmentTier?.isTierTwo() != true) {
+          it.appointmentOrganiser = null
+        }
+      }
+    }
+  }
+
+  private fun applyOrganiserUpdate(
+    request: AppointmentUpdateRequest,
+    appointmentsToUpdate: Collection<Appointment>,
+  ) {
+    appointmentsToUpdate.forEach {
+      request.organiserCode?.apply {
+        it.appointmentOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument(this)
+      }
+    }
+  }
+
   private fun applyCategoryCodeUpdate(
     request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
@@ -214,6 +244,8 @@ class AppointmentUpdateDomainService(
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     applyCategoryCodeUpdate(request, appointmentsToUpdate)
+    applyTierUpdate(request, appointmentsToUpdate)
+    applyOrganiserUpdate(request, appointmentsToUpdate)
     applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
     applyInternalLocationUpdate(request, appointmentsToUpdate)
     applyStartEndTimeUpdate(request, appointmentsToUpdate)

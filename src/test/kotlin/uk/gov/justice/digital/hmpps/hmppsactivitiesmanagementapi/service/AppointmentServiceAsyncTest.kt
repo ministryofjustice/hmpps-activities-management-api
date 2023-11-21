@@ -39,6 +39,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -58,7 +60,20 @@ class AppointmentServiceAsyncTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val auditService: AuditService = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val appointmentUpdateDomainService = spy(AppointmentUpdateDomainService(appointmentSeriesRepository, appointmentAttendeeRemovalReasonRepository, TransactionHandler(), outboundEventsService, telemetryClient, auditService))
+  private val eventTierRepository: EventTierRepository = mock()
+  private val eventOrganiserRepository: EventOrganiserRepository = mock()
+  private val appointmentUpdateDomainService = spy(
+    AppointmentUpdateDomainService(
+      appointmentSeriesRepository,
+      appointmentAttendeeRemovalReasonRepository,
+      eventTierRepository,
+      eventOrganiserRepository,
+      TransactionHandler(),
+      outboundEventsService,
+      telemetryClient,
+      auditService,
+    ),
+  )
   private val appointmentCancelDomainService = spy(
     AppointmentCancelDomainService(
       appointmentSeriesRepository,

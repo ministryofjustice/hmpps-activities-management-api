@@ -63,8 +63,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -223,8 +223,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
-      ACTIVITY_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
   }
@@ -714,8 +714,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to "Tier 2",
-      ACTIVITY_ORGANISER_PROPERTY_KEY to "Prison staff",
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
   }
@@ -1896,8 +1896,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to "Tier 2",
-      ACTIVITY_ORGANISER_PROPERTY_KEY to "A prisoner or group of prisoners",
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "A prisoner or group of prisoners",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
   }

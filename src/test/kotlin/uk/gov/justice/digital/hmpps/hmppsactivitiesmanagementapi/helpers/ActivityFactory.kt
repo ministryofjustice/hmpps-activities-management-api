@@ -169,6 +169,12 @@ internal fun eventTier(
   description: String = "Tier 2",
 ) = EventTier(eventTierId = eventTierId, code = code, description = description)
 
+internal fun foundationTier() = eventTier(
+  eventTierId = 3,
+  code = "FOUNDATION",
+  description = "Routine activities also called \"Foundation\"",
+)
+
 internal fun eventOrganiser(
   eventOrganiserId: Long = 1,
   code: String = "PRISON_STAFF",

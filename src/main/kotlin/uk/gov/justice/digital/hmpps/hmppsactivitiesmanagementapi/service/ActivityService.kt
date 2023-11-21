@@ -37,8 +37,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -219,8 +219,8 @@ class ActivityService(
       PRISON_CODE_PROPERTY_KEY to this.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to this.summary,
     ).also { propsMap ->
-      this.tier?.let { propsMap[ACTIVITY_TIER_PROPERTY_KEY] = it.description }
-      this.organiser?.let { propsMap[ACTIVITY_ORGANISER_PROPERTY_KEY] = it.description }
+      this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
+      this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
     }
 
   private fun publishCreateTelemetryEvent(activity: ModelActivity) =

@@ -7,15 +7,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
@@ -26,8 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 @Transactional
 class AppointmentSeriesService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
-  private val appointmentTierRepository: AppointmentTierRepository,
-  private val appointmentHostRepository: AppointmentHostRepository,
+  private val eventTierRepository: EventTierRepository,
+  private val eventOrganiserRepository: EventOrganiserRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -71,14 +70,12 @@ class AppointmentSeriesService(
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
     val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonNumberBookingIdMap.size > maxSyncAppointmentInstanceActions } ?: false
 
     val appointmentSeriesModel =
       transactionHandler.newSpringTransaction {
-        appointmentSeriesRepository.saveAndFlush(request.toAppointmentSeries(appointmentTier, principal.name))
+        appointmentSeriesRepository.saveAndFlush(request.toAppointmentSeries(principal.name))
       }.let {
         appointmentCreateDomainService.createAppointments(
           appointmentSeries = it,
@@ -140,13 +137,16 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun AppointmentSeriesCreateRequest.toAppointmentSeries(appointmentTier: AppointmentTier, createdBy: String) =
-    AppointmentSeriesEntity(
+  private fun AppointmentSeriesCreateRequest.toAppointmentSeries(createdBy: String): AppointmentSeriesEntity {
+    val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(tierCode!!)
+    val organiser = organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+
+    return AppointmentSeriesEntity(
       appointmentType = appointmentType!!,
       prisonCode = prisonCode!!,
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
-      appointmentTier = appointmentTier,
+      appointmentTier = tier,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
@@ -155,6 +155,7 @@ class AppointmentSeriesService(
       extraInformation = extraInformation?.trim()?.takeUnless(String::isBlank),
       createdBy = createdBy,
     ).also { appointmentSeries ->
+      appointmentSeries.appointmentOrganiser = organiser
       appointmentSeries.schedule = schedule?.let {
         AppointmentSeriesScheduleEntity(
           appointmentSeries = appointmentSeries,
@@ -163,4 +164,5 @@ class AppointmentSeriesService(
         )
       }
     }
+  }
 }
