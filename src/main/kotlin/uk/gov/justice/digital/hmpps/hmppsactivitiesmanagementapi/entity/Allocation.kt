@@ -123,7 +123,7 @@ data class Allocation(
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
       if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
-      if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
+      if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
 
       if (plannedDeallocation == null) {
         plannedDeallocation = PlannedDeallocation(
@@ -144,9 +144,9 @@ data class Allocation(
 
   private fun maybeEndDate() =
     when {
+      endDate != null -> endDate
       activitySchedule.endDate != null -> activitySchedule.endDate
       activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
-      endDate != null -> endDate
       else -> null
     }
 
