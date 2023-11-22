@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
@@ -9,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -89,16 +93,26 @@ class AppointmentTelemetryTransformFunctionsTest {
 
   @Test
   fun `update appointment to telemetry properties no property changed`() {
+    val appointmentSeriesModel = appointmentSeriesModel()
+    val appointmentModel = appointmentModel().copy(
+      id = 2,
+      tier = eventTier(description = "Tier 2").toModelEventTier(),
+      organiser = eventOrganiser(description = "Prison staff").toModelEventOrganiser(),
+    )
     AppointmentUpdateRequest().toTelemetryPropertiesMap(
       "TEST.USER",
       "MDI",
-      1,
-      2,
+      appointmentSeriesModel,
+      appointmentModel,
     ) isEqualTo mutableMapOf(
       USER_PROPERTY_KEY to "TEST.USER",
       PRISON_CODE_PROPERTY_KEY to "MDI",
       APPOINTMENT_SERIES_ID_PROPERTY_KEY to "1",
       APPOINTMENT_ID_PROPERTY_KEY to "2",
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
+      EVENT_TIER_CHANGED_PROPERTY_KEY to false.toString(),
+      EVENT_ORGANISER_CHANGED_PROPERTY_KEY to false.toString(),
       CATEGORY_CHANGED_PROPERTY_KEY to false.toString(),
       INTERNAL_LOCATION_CHANGED_PROPERTY_KEY to false.toString(),
       START_DATE_CHANGED_PROPERTY_KEY to false.toString(),
@@ -115,8 +129,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(categoryCode = "NEW").toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo true.toString()
@@ -134,8 +148,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(internalLocationId = 123).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
@@ -153,8 +167,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(startDate = LocalDate.now().plusDays(1)).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
@@ -172,8 +186,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(startTime = LocalTime.of(9, 30)).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
@@ -191,8 +205,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(endTime = LocalTime.of(15, 0)).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
@@ -210,8 +224,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(extraInformation = "New").toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
@@ -229,8 +243,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[APPLY_TO_PROPERTY_KEY] isEqualTo ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS.toString()
@@ -243,8 +257,8 @@ class AppointmentTelemetryTransformFunctionsTest {
       AppointmentUpdateRequest(applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
-        1,
-        2,
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
       ),
     ) {
       this[APPLY_TO_PROPERTY_KEY] isEqualTo ApplyTo.ALL_FUTURE_APPOINTMENTS.toString()

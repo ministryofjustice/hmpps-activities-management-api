@@ -56,6 +56,10 @@ abstract class AuditableEvent(
     prisonCode: String? = null,
     originalCategoryCode: String? = null,
     categoryCode: String? = null,
+    originalTierCode: String? = null,
+    tierCode: String? = null,
+    originalOrganiserCode: String? = null,
+    organiserCode: String? = null,
     hasCustomName: Boolean? = null,
     originalInternalLocationId: Long? = null,
     internalLocationId: Long? = null,
@@ -81,6 +85,10 @@ abstract class AuditableEvent(
       prisonCode?.let { put("prisonCode", it) }
       originalCategoryCode?.let { put("originalCategoryCode", it) }
       categoryCode?.let { put("categoryCode", it) }
+      originalTierCode?.let { put("originalTierCode", it) }
+      tierCode?.let { put("tierCode", it) }
+      originalOrganiserCode?.let { put("originalOrganiserCode", it) }
+      organiserCode?.let { put("organiserCode", it) }
       hasCustomName?.let { put("hasCustomName", it) }
       originalInternalLocationId?.let { put("originalInternalLocationId", it) }
       internalLocationId?.let { put("internalLocationId", it) }

@@ -33,7 +33,11 @@ import java.time.LocalTime
 fun appointmentCategorySummary() =
   AppointmentCategorySummary("TEST", "Test Category")
 
-fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTime?, appointmentUpdatedTime: LocalDateTime?) =
+fun appointmentSeriesModel(
+  createdTime: LocalDateTime = LocalDateTime.now(),
+  updatedTime: LocalDateTime? = null,
+  appointmentUpdatedTime: LocalDateTime? = null,
+) =
   AppointmentSeries(
     1,
     AppointmentType.INDIVIDUAL,

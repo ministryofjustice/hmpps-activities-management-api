@@ -4,6 +4,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendanceMarkedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -98,15 +100,19 @@ fun AppointmentSet.toTelemetryMetricsMap() =
 fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   user: String,
   prisonCode: String,
-  appointmentSeriesId: Long,
-  appointmentId: Long,
+  updatedAppointmentSeries: AppointmentSeries,
+  updatedAppointment: Appointment?,
 ) =
   mutableMapOf(
     USER_PROPERTY_KEY to user,
     PRISON_CODE_PROPERTY_KEY to prisonCode,
-    APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeriesId.toString(),
-    APPOINTMENT_ID_PROPERTY_KEY to appointmentId.toString(),
+    APPOINTMENT_SERIES_ID_PROPERTY_KEY to updatedAppointmentSeries.id.toString(),
+    APPOINTMENT_ID_PROPERTY_KEY to updatedAppointment?.id.toString(),
+    EVENT_TIER_PROPERTY_KEY to (updatedAppointment?.tier?.description ?: ""),
+    EVENT_ORGANISER_PROPERTY_KEY to (updatedAppointment?.organiser?.description ?: ""),
     CATEGORY_CHANGED_PROPERTY_KEY to (this.categoryCode != null).toString(),
+    EVENT_TIER_CHANGED_PROPERTY_KEY to (this.tierCode != null).toString(),
+    EVENT_ORGANISER_CHANGED_PROPERTY_KEY to (this.organiserCode != null).toString(),
     INTERNAL_LOCATION_CHANGED_PROPERTY_KEY to (this.internalLocationId != null).toString(),
     START_DATE_CHANGED_PROPERTY_KEY to (this.startDate != null).toString(),
     START_TIME_CHANGED_PROPERTY_KEY to (this.startTime != null).toString(),

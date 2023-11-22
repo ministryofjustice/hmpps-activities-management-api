@@ -91,8 +91,8 @@ class AppointmentUpdateDomainService(
         val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
           updatedBy,
           updatedAppointmentSeries.prisonCode,
-          updatedAppointmentSeries.id,
-          appointmentId,
+          updatedAppointmentSeries,
+          updatedAppointmentSeries.appointments.find { it.id == appointmentId },
         )
         val telemetryMetricsMap = request.toTelemetryMetricsMap(updateAppointmentsCount, updateInstancesCount)
         telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
@@ -281,6 +281,10 @@ class AppointmentUpdateDomainService(
         prisonCode = originalAppointmentSeries.prisonCode,
         originalCategoryCode = originalAppointmentSeries.categoryCode,
         categoryCode = updatedAppointmentSeries.categoryCode,
+        originalTierCode = originalAppointmentSeries.appointmentTier?.code,
+        tierCode = updatedAppointmentSeries.appointmentTier?.code,
+        originalOrganiserCode = originalAppointmentSeries.appointmentOrganiser?.code,
+        organiserCode = updatedAppointmentSeries.appointmentOrganiser?.code,
         originalInternalLocationId = originalAppointmentSeries.internalLocationId,
         internalLocationId = updatedAppointmentSeries.internalLocationId,
         originalStartDate = originalAppointmentSeries.startDate,
