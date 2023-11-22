@@ -315,6 +315,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           allocated = 4,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -369,6 +370,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           allocated = 4,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -425,6 +427,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           allocated = 2,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         slots = listOf(
           ActivityScheduleSlot(
@@ -495,6 +498,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           allocated = 2,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         slots = listOf(
           ActivityScheduleSlot(

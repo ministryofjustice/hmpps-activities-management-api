@@ -84,6 +84,7 @@ fun transform(activity: EntityActivity) =
     updatedTime = activity.updatedTime,
     updatedBy = activity.updatedBy,
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
+    paid = activity.paid,
   )
 
 /*

@@ -283,6 +283,17 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `createActivity - fails when unpaid activity has pay rates`() {
+    val createActivityRequestWithPayRates = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), paid = false)
+
+    assertThatThrownBy {
+      service().createActivity(createActivityRequestWithPayRates, "SCH_ACTIVITY")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unpaid activity cannot have pay rates associated with it")
+  }
+
+  @Test
   fun `createActivity - start date must be in the future`() {
     assertThatThrownBy {
       service().createActivity(
@@ -925,7 +936,7 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - update pay`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-3.json")
-    val activityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(

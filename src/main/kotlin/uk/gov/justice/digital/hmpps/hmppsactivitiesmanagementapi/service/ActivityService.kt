@@ -138,6 +138,7 @@ class ActivityService(
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
     require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+    require(request.paid || request.pay.isEmpty()) { "Unpaid activity cannot have pay rates associated with it" }
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
@@ -165,6 +166,7 @@ class ActivityService(
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
+      paid = request.paid,
     ).apply {
       this.organiser = organiser
       endDate = request.endDate

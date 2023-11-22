@@ -51,4 +51,16 @@ class ActivityCreateRequestTest {
       assertThat(it.message).isEqualTo("Schedule weeks must be either 1 or 2")
     }
   }
+
+  @Test
+  fun `Unpaid activity cannot have pay rates`() {
+    val unpaidActivity = activityCreateRequest(paid = false).copy(pay = listOf(ActivityPayCreateRequest(incentiveLevel = "1", incentiveNomisCode = "2", payBandId = 1)))
+
+    assertThat(
+      validator.validate(unpaidActivity),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("unpaid")
+      assertThat(it.message).isEqualTo("Unpaid activity cannot have pay rates associated with it")
+    }
+  }
 }

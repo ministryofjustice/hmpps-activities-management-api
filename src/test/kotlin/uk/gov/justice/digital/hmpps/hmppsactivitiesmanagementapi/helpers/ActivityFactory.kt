@@ -63,6 +63,7 @@ internal fun activityEntity(
   inCell: Boolean = false,
   onWing: Boolean = false,
   riskLevel: String = "high",
+  paid: Boolean = true,
 ) =
   Activity(
     activityId = activityId,
@@ -79,6 +80,7 @@ internal fun activityEntity(
     createdBy = "test",
     inCell = inCell,
     onWing = onWing,
+    paid = paid,
   ).apply {
     this.organiser = organiser
     this.endDate = endDate
@@ -358,6 +360,7 @@ internal fun activityCreateRequest(
   educationLevel: ReferenceCode? = null,
   studyArea: ReferenceCode? = null,
   eligibilityRules: Set<EligibilityRule> = setOf(eligibilityRuleOver21),
+  paid: Boolean = true,
 ) =
   ActivityCreateRequest(
     prisonCode = prisonCode,
@@ -392,6 +395,7 @@ internal fun activityCreateRequest(
     slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
     onWing = false,
     offWing = false,
+    paid = paid,
   )
 
 internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
