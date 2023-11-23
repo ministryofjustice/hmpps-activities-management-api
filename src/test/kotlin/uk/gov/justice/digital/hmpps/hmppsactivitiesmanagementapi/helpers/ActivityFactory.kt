@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -375,7 +376,7 @@ internal fun activityCreateRequest(
     tierCode = eventTier().code,
     organiserCode = eventOrganiser().code,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
-    pay = emptyList(),
+    pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)) else emptyList(),
     riskLevel = "high",
     minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",

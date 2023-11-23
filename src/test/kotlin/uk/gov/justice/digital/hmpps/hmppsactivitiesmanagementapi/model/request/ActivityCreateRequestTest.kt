@@ -53,11 +53,23 @@ class ActivityCreateRequestTest {
   }
 
   @Test
-  fun `Unpaid activity cannot have pay rates`() {
-    val unpaidActivity = activityCreateRequest(paid = false).copy(pay = listOf(ActivityPayCreateRequest(incentiveLevel = "1", incentiveNomisCode = "2", payBandId = 1)))
+  fun `Paid activity must have pay rates`() {
+    val paidActivityNoPay = activityCreateRequest(paid = true).copy(pay = emptyList())
 
     assertThat(
-      validator.validate(unpaidActivity),
+      validator.validate(paidActivityNoPay),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("paid")
+      assertThat(it.message).isEqualTo("Paid activity must have at least one pay rate associated with it")
+    }
+  }
+
+  @Test
+  fun `Unpaid activity cannot have pay rates`() {
+    val unpaidActivityWithPay = activityCreateRequest(paid = false).copy(pay = listOf(ActivityPayCreateRequest(incentiveLevel = "1", incentiveNomisCode = "2", payBandId = 1)))
+
+    assertThat(
+      validator.validate(unpaidActivityWithPay),
     ).satisfiesOnlyOnce {
       assertThat(it.propertyPath.toString()).isEqualTo("unpaid")
       assertThat(it.message).isEqualTo("Unpaid activity cannot have pay rates associated with it")

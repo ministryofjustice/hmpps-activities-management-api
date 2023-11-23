@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import java.time.LocalDate
@@ -338,7 +339,7 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetReferenceCode(domain: String, referenceCode: String, jsonResponseFile: String) {
+  fun stubGetReferenceCode(domain: String, referenceCode: String, jsonResponseFile: String): ReferenceCode {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/$domain/codes/$referenceCode"))
         .willReturn(
@@ -348,6 +349,8 @@ class PrisonApiMockServer : WireMockServer(8999) {
             .withStatus(200),
         ),
     )
+
+    return mapper.read(jsonResponseFile)
   }
 
   fun stubGetLocationsForAppointments(prisonCode: String, locationId: Long) {

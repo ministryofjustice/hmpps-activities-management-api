@@ -146,5 +146,8 @@ data class ActivityCreateRequest(
   val runsOnBankHoliday: Boolean = false,
 ) {
   @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
-  private fun isUnpaid() = paid || pay.isEmpty()
+  private fun isUnpaid() = pay.isEmpty() || paid
+
+  @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
+  private fun isPaid() = pay.isNotEmpty() || !paid
 }

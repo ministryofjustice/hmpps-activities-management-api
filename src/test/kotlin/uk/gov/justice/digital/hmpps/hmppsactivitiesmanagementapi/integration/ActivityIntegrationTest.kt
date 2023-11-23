@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -95,7 +96,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private lateinit var auditRepository: AuditRepository
 
   @Test
-  fun `createActivity - is successful`() {
+  fun `createActivity - paid is successful`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",
@@ -125,6 +126,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
       assertThat(createdBy).isEqualTo("test-client")
+      assertThat(paid).isTrue()
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
@@ -151,6 +153,60 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+  }
+
+  @Test
+  fun `createActivity - unpaid is successful`() {
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val newActivity = activityCreateRequest(
+      prisonCode = moorlandPrisonCode,
+      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
+      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      paid = false,
+    )
+
+    val activity = webTestClient.createActivity(newActivity)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(2)
+      assertThat(organiser!!.id).isEqualTo(1)
+      assertThat(eligibilityRules.size).isEqualTo(1)
+      assertThat(pay).isEmpty()
+      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(paid).isFalse()
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_CREATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("An activity called 'Test activity'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
     }
   }
 

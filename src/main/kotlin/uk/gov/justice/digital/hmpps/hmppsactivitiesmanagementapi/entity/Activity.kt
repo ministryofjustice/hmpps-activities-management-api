@@ -76,7 +76,7 @@ data class Activity(
 
   var updatedBy: String? = null,
 
-  val paid: Boolean,
+  private var paid: Boolean,
 ) {
 
   var endDate: LocalDate? = null
@@ -300,6 +300,8 @@ data class Activity(
     activityState = getActivityState(),
     paid = paid,
   )
+
+  fun isPaid() = paid
 
   @Override
   override fun toString(): String {
