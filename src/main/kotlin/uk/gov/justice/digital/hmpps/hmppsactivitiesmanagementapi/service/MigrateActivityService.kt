@@ -247,6 +247,7 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       updatedTime = LocalDateTime.now(),
       updatedBy = MIGRATION_USER,
+      paid = true,
     ).apply {
       endDate = request.endDate
     }.apply {

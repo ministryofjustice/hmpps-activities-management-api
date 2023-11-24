@@ -74,4 +74,7 @@ data class ActivityLite(
 
   @Schema(description = "Whether the activity is live or archived", example = "live")
   val activityState: ActivityState,
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
 )

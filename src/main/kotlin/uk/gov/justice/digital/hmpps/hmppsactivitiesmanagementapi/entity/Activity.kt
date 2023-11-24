@@ -75,6 +75,8 @@ data class Activity(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  private var paid: Boolean,
 ) {
 
   var endDate: LocalDate? = null
@@ -168,6 +170,10 @@ data class Activity(
     pieceRate: Int?,
     pieceRateItems: Int?,
   ) {
+    require(paid) {
+      "Unpaid activity '$summary' cannot have pay rates added to it"
+    }
+
     require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode }) {
       "The pay band and incentive level combination must be unique for each pay rate"
     }
@@ -292,7 +298,10 @@ data class Activity(
     endDate = endDate,
     createdTime = createdTime,
     activityState = getActivityState(),
+    paid = paid,
   )
+
+  fun isPaid() = paid
 
   @Override
   override fun toString(): String {

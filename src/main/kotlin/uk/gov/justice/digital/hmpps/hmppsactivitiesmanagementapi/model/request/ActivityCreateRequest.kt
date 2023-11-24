@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -42,6 +43,9 @@ data class ActivityCreateRequest(
 
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is a paid activity. It true then pay rates are required, if false then no pay rates should be provided", example = "true")
+  val paid: Boolean = true,
 
   @Schema(
     description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ",
@@ -140,4 +144,10 @@ data class ActivityCreateRequest(
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean = false,
-)
+) {
+  @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
+  private fun isUnpaid() = pay.isEmpty() || paid
+
+  @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
+  private fun isPaid() = pay.isNotEmpty() || !paid
+}

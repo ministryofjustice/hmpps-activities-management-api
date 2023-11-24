@@ -38,6 +38,7 @@ class ActivityScheduleTest : ModelTest() {
         allocated = 5,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
+        paid = true,
       ),
       description = "Some Desc",
       capacity = 10,

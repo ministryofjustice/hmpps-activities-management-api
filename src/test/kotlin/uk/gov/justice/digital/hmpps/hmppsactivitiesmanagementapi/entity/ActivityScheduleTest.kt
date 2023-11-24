@@ -74,6 +74,7 @@ class ActivityScheduleTest {
         allocated = 2,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
+        paid = true,
       ),
       scheduleWeeks = 1,
       slots = listOf(
@@ -145,6 +146,7 @@ class ActivityScheduleTest {
           allocated = 2,
           createdTime = LocalDate.now().atStartOfDay(),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         scheduleWeeks = 1,
         slots = listOf(

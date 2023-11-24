@@ -93,7 +93,7 @@ data class ActivityUpdateRequest(
   val minimumEducationLevel: List<ActivityMinimumEducationLevelCreateRequest>? = null,
 
   @field:Valid
-  @Schema(description = "The list of pay rates that can apply to this activity")
+  @Schema(description = "The list of pay rates that can apply to this activity. Must be null or empty if the activity is unpaid")
   val pay: List<ActivityPayCreateRequest>? = null,
 
   @field:Min(value = 1, message = "Schedule weeks must be either 1 or 2")

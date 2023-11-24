@@ -40,6 +40,7 @@ class ActivityTest : ModelTest() {
       minimumIncentiveNomisCode = "N1",
       updatedBy = "TestUser",
       updatedTime = originalCreatedTime,
+      paid = true,
     )
 
     val json = objectMapper.writeValueAsString(activity)

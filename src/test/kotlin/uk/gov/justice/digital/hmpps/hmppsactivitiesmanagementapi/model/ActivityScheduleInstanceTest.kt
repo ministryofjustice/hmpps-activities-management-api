@@ -56,6 +56,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
           allocated = 5,
           createdTime = LocalDateTime.now(),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         description = "Some Desc",
         capacity = 10,
