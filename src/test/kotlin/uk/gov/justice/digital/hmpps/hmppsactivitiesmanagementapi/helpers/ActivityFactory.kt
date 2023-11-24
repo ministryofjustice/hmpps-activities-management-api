@@ -89,7 +89,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp, paid = paid))
     }
     if (!noPayBands) {
       this.addPay(
@@ -198,6 +198,7 @@ internal fun activitySchedule(
   noAllocations: Boolean = false,
   noInstances: Boolean = false,
   noExclusions: Boolean = false,
+  paid: Boolean = true,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -216,7 +217,7 @@ internal fun activitySchedule(
       this.allocatePrisoner(
         prisonerNumber = "A1234AA".toPrisonerNumber(),
         bookingId = 10001,
-        payBand = lowPayBand,
+        payBand = if (paid) lowPayBand else null,
         allocatedBy = "Mr Blogs",
         startDate = startDate ?: activity.startDate,
       )
@@ -227,7 +228,7 @@ internal fun activitySchedule(
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),
           bookingId = 20002,
-          payBand = lowPayBand,
+          payBand = if (paid) lowPayBand else null,
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
         ).apply { this.updateExclusion(slot, daysOfWeek) }

@@ -240,7 +240,7 @@ data class ActivitySchedule(
 
   fun allocatePrisoner(
     prisonerNumber: PrisonerNumber,
-    payBand: PrisonPayBand,
+    payBand: PrisonPayBand?,
     bookingId: Long,
     startDate: LocalDate = LocalDate.now(),
     endDate: LocalDate? = null,
@@ -270,7 +270,7 @@ data class ActivitySchedule(
         prisonerNumber = prisonerNumber.toString(),
         prisonerStatus = if (startDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE,
         bookingId = bookingId,
-        payBand = payBand,
+        initialPayBand = payBand,
         startDate = startDate,
         allocatedBy = allocatedBy,
         allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
@@ -350,6 +350,8 @@ data class ActivitySchedule(
     removeRedundantSlots(updates).let { updatedAllocationIds.addAll(it) }
     return updatedAllocationIds
   }
+
+  fun isPaid() = activity.isPaid()
 
   private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
     val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }

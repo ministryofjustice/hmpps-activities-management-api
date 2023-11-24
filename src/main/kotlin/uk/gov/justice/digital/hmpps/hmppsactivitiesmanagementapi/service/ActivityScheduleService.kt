@@ -143,12 +143,17 @@ class ActivityScheduleService(
 
     val schedule = repository.findOrThrowNotFound(scheduleId)
 
-    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
-      .associateBy { it.prisonPayBandId }
-      .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+    if (schedule.isPaid().not() && request.payBandId != null) throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${schedule.activity.activityId}' is unpaid")
+    if (schedule.isPaid() && request.payBandId == null) throw IllegalArgumentException("Allocation must have a pay band when the activity '${schedule.activity.activityId}' is paid")
 
-    val payBand = prisonPayBands[request.payBandId!!]
-      ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+    val payBand = request.payBandId?.let {
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+
+      prisonPayBands[request.payBandId]
+        ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+    }
 
     val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
