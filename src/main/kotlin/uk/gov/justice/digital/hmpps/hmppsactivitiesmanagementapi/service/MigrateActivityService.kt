@@ -122,8 +122,8 @@ class MigrateActivityService(
       return false
     }
 
-    // Something in the request to identify activities that have a split regime - using *SPLIT* for now
-    if (request.description.contains("*SPLIT*")) {
+    // Something in the request to identify activities that have a split regime - using SPLIT for now
+    if (request.description.contains("SPLIT")) {
       return true
     }
 
@@ -146,7 +146,7 @@ class MigrateActivityService(
 
   /**
    * Generic rules for splitting an activity.
-   * The description indicates it is a split regime activity by containing the phrase "*SPLIT*" (temporary method)
+   * The description indicates it is a split regime activity by containing the phrase "SPLIT" (temporary method)
    * Take an activity that includes both AM and PM sessions and split it into 2 activities.
    * Group 1 has the morning sessions in week 1, and afternoon sessions in week 2.
    * Group 2 has the afternoon sessions in week 1, and morning sessions in week 2.
@@ -245,8 +245,8 @@ class MigrateActivityService(
       return description
     }
 
-    // Remove the *SPLIT* label from activity descriptions
-    val newDescription = description.replace(" *SPLIT*", "", true)
+    // Remove the SPLIT label from activity descriptions
+    val newDescription = description.replace(" SPLIT", "", true)
 
     // Add the cohort label e.g. group n, tranche n, cohort n
     val cohortLabel = cohortNames.getValue(prisonCode)

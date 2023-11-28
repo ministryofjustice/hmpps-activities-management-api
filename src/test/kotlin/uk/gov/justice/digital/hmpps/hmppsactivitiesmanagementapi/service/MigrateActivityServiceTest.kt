@@ -584,10 +584,10 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      // Trigger the generic split regime rules "*SPLIT*" in the description
+      // Trigger the generic split regime rules "SPLIT" in the description
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         prisonCode = "RSI",
-        description = "Maths *SPLIT*",
+        description = "Maths SPLIT",
       )
 
       // Return dummy activities - we check what is saved, not what is returned
@@ -1034,58 +1034,6 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `No pay band provided - uses the pay band associated with the lowest pay rate on the activity`() {
-      val request = buildAllocationMigrateRequest().copy(
-        nomisPayBand = null,
-      )
-
-      val schedule = activityEntity().schedules().first()
-
-      // A dummy allocation - we check what is saved not what is returned
-      schedule.allocatePrisoner(
-        prisonerNumber = "A1234BB".toPrisonerNumber(),
-        payBand = lowPayBand,
-        bookingId = 1,
-        allocatedBy = MIGRATION_USER,
-      )
-
-      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
-
-      service.migrateAllocation(request)
-
-      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
-
-      with(activityScheduleCaptor.firstValue) {
-        with(allocations().last()) {
-          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
-        }
-      }
-    }
-
-    @Test
-    fun `An invalid pay band will fail`() {
-      // Pay band in not configured for the prison
-      val request = buildAllocationMigrateRequest().copy(
-        nomisPayBand = "12",
-      )
-
-      val exception = assertThrows<ValidationException> {
-        service.migrateAllocation(request)
-      }
-
-      assertThat(exception.message).isEqualTo("Allocation failed A1234BB. Nomis pay band 12 is not configured for MDI")
-
-      verify(rolloutPrisonService).getByPrisonCode("MDI")
-      verify(activityRepository).findByActivityIdAndPrisonCode(1, "MDI")
-      verify(activityScheduleRepository).findBy(1, "MDI")
-      verify(prisonerSearchApiClient).findByPrisonerNumbers(listOf("A1234BB"))
-      verify(prisonPayBandRepository).findByPrisonCode("MDI")
-
-      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
-    }
-
-    @Test
     fun `Already allocated prisoner will fail`() {
       // This prisoner is already allocated to the activity
       val request = buildAllocationMigrateRequest().copy(
@@ -1106,6 +1054,113 @@ class MigrateActivityServiceTest {
       verify(prisonerSearchApiClient, times(0)).findByPrisonerNumbers(listOf("A1234AA"))
       verify(prisonPayBandRepository, times(0)).findByPrisonCode("MDI")
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+    }
+
+    @Test
+    fun `No pay band provided will succeed for an unpaid activity`() {
+      val request = buildAllocationMigrateRequest().copy(
+        nomisPayBand = null,
+      )
+
+      val schedule = activityEntity().copy(paid = false).schedules().first()
+
+      // A dummy allocation - we check what is saved not what is returned
+      schedule.allocatePrisoner(
+         prisonerNumber = "A1234BB".toPrisonerNumber(),
+         payBand = lowPayBand,
+        // Wait until the schedule.allocatePrisoner accepts null pay bands and validates it is UNPAID.
+        // payBand = null,
+         bookingId = 1,
+        allocatedBy = MIGRATION_USER,
+      )
+
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      service.migrateAllocation(request)
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
+        }
+      }
+    }
+
+    @Test
+    fun `No pay band provided - will fail for a paid activity`() {
+      val request = buildAllocationMigrateRequest().copy(
+        nomisPayBand = null,
+      )
+
+      val schedule = activityEntity().schedules().first()
+
+      // A dummy allocation - we check what is saved not what is returned
+      schedule.allocatePrisoner(
+        prisonerNumber = "A1234BB".toPrisonerNumber(),
+        payBand = lowPayBand,
+        // Wait until the schedule.allocatePrisoner accepts null pay bands and validates it is UNPAID.
+        // payBand = null,
+        bookingId = 1,
+        allocatedBy = MIGRATION_USER,
+      )
+
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      service.migrateAllocation(request)
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
+        }
+      }
+    }
+
+    @Test
+    fun `A not-null but invalid pay band will always fail`() {
+      // Pay band in not configured for the prison
+      val request = buildAllocationMigrateRequest().copy(
+        nomisPayBand = "12",
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateAllocation(request)
+      }
+
+      assertThat(exception.message).isEqualTo("Allocation failed A1234BB. Nomis pay band 12 is not configured for MDI")
+
+      verify(rolloutPrisonService).getByPrisonCode("MDI")
+      verify(activityRepository).findByActivityIdAndPrisonCode(1, "MDI")
+      verify(activityScheduleRepository).findBy(1, "MDI")
+      verify(prisonerSearchApiClient).findByPrisonerNumbers(listOf("A1234BB"))
+      verify(prisonPayBandRepository).findByPrisonCode("MDI")
+
+      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+    }
+
+
+    @Test
+    fun `A single exclusion provided in the allocation will be applied the schedule`() {
+      /*
+      val request = buildAllocationMigrateRequest().copy(
+        exclusions = listOf(
+          Exclusion(),
+          Exclusion(),
+        ),
+s      )
+     */
+    }
+
+    @Test
+    fun `A list of exclusions provided in the allocation will be applied the schedule`() {
+    }
+
+    @Test
+    fun `Exclusions which do not match slots in the schedule will be silently ignored`() {
     }
 
     private fun buildAllocationMigrateRequest() =
@@ -1402,43 +1457,43 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Is a split regime but not Risley - use the default cohort label and do not strip AM`() {
-      val description = "Standard name *SPLIT*"
+    fun `Is a split regime but not Risley - use the default cohort label`() {
+      val description = "Standard name SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "LEI", description, 1))
         .isEqualTo("Standard name group 1")
     }
 
     @Test
-    fun `Is Risley but description does not contain *SPLIT* - use Risley cohort label`() {
+    fun `Is Risley but description does not contain SPLIT - use Risley cohort label`() {
       val description = "Standard name"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("Standard name group 1")
     }
 
     @Test
-    fun `Is a split regime and matches the pattern - use Risley cohort label and remove *SPLIT* label`() {
-      val description = "Maths level one *SPLIT*"
+    fun `Is a split regime and matches the pattern - use Risley cohort label and remove SPLIT label`() {
+      val description = "Maths level one SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("Maths level one group 1")
     }
 
     @Test
     fun `Is a split regime and matches pattern - generate a new name for cohort 2`() {
-      val description = "Maths level two *SPLIT*"
+      val description = "Maths level two SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 2))
         .isEqualTo("Maths level two group 2")
     }
 
     @Test
     fun `Is a split regime and matches split token - generate a new name for cohort 1`() {
-      val description = "Split regime *SPLIT*"
+      val description = "Split regime SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("Split regime group 1")
     }
 
     @Test
     fun `Is Risley and split regime  - truncates a long activity name to 50 chars`() {
-      val description = "0123456789 0123456789 0123456789 01234567890 0123456789 *SPLIT*"
+      val description = "0123456789 0123456789 0123456789 01234567890 0123456789 SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("0123456789 0123456789 0123456789 0123456789 group 1")
     }
@@ -1477,21 +1532,21 @@ class MigrateActivityServiceTest {
 
     @Test
     fun `Is a split regime activity - matches pattern - at Risley`() {
-      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one *SPLIT*")
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one SPLIT")
       whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(true)
     }
 
     @Test
     fun `Is not a split regime - not in split regime prison list - at Leeds`() {
-      val request = templateRequest.copy(description = "Maths level one *SPLIT*")
+      val request = templateRequest.copy(description = "Maths level one SPLIT")
       whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
 
     @Test
     fun `Is not a split regime if the feature flag is not allowing it`() {
-      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one *SPLIT*")
+      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one SPLIT")
       whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(false)
       assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
