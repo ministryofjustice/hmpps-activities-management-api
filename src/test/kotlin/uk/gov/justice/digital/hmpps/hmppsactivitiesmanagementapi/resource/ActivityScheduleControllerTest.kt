@@ -49,9 +49,6 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, waitingListService)
 
-  private fun MockMvc.getActivityScheduleCapacity(activityScheduleId: Long) =
-    get("/schedules/{activityScheduleId}/capacity", activityScheduleId)
-
   @Test
   fun `200 response when get allocations by schedule identifier`() {
     val expectedAllocations = activityEntity().schedules().first().allocations().toModelAllocations()
@@ -135,16 +132,15 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   @Test
   fun `400 response when allocate offender to a schedule request constraints are violated`() {
     with(
-      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = null, payBandId = null))
+      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = null))
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {
       assertThat(contentAsString).contains("Prisoner number must be supplied")
-      assertThat(contentAsString).contains("Pay band must be supplied")
     }
 
     with(
-      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS", payBandId = 1))
+      mockMvc.allocate(1, PrisonerAllocationRequest(prisonerNumber = "TOOMANYCHARACTERS"))
         .andExpect { status { isBadRequest() } }
         .andReturn().response,
     ) {

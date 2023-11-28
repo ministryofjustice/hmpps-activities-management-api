@@ -982,7 +982,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
-      assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
+      assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)

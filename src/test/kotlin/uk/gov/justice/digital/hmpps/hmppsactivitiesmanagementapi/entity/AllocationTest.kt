@@ -205,6 +205,7 @@ class AllocationTest {
     val scheduleEndingToday: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
       on { endDate } doReturn today
+      on { isPaid() } doReturn true
     }
 
     val allocationNoEndDate = allocation().copy(activitySchedule = scheduleEndingToday).apply { endDate = null }
@@ -243,6 +244,7 @@ class AllocationTest {
     val schedule: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
       on { endDate } doReturn tomorrow.plusWeeks(1)
+      on { isPaid() } doReturn true
     }
     val allocation = allocation().copy(activitySchedule = schedule).apply { endDate = null }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
@@ -496,5 +498,63 @@ class AllocationTest {
     allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.today().dayOfWeek))
 
     allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool false
+  }
+
+  @Test
+  fun `allocation for paid activity must have a pay band`() {
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 1, paid = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = null,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must be provided for paid activity ID '1'")
+
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 2, paid = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = lowPayBand,
+      ).apply {
+        payBand = null
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must be provided for paid activity ID '2'")
+  }
+
+  @Test
+  fun `allocation for unpaid activity cannot have a pay band`() {
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 1, paid = false, noPayBands = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = lowPayBand,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '1'")
+
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 2, paid = false, noPayBands = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = null,
+      ).apply {
+        payBand = lowPayBand
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '2'")
   }
 }
