@@ -17,10 +17,9 @@ data class PrisonerAllocationRequest(
   val prisonerNumber: String?,
 
   @Schema(
-    description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner",
+    description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner. Can be null for unpaid activities.",
     example = "1",
   )
-  @field:NotNull(message = "Pay band must be supplied")
   val payBandId: Long? = null,
 
   @Schema(description = "The future date when the prisoner will start the activity", example = "2022-09-10")

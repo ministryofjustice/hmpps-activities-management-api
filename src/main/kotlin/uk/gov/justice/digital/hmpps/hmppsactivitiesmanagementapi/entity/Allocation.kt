@@ -45,17 +45,28 @@ data class Allocation(
   @Enumerated(EnumType.STRING)
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE,
 
-  @OneToOne
-  @JoinColumn(name = "prison_pay_band_id")
-  var payBand: PrisonPayBand,
-
   var startDate: LocalDate,
 
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
 
+  @Transient
+  private val initialPayBand: PrisonPayBand?,
 ) {
+  @OneToOne
+  @JoinColumn(name = "prison_pay_band_id")
+  var payBand: PrisonPayBand? = null
+    set(value) {
+      if (activitySchedule.isPaid()) requireNotNull(value) { "Pay band must be provided for paid activity ID '${activitySchedule.activity.activityId}'" }
+      if (!activitySchedule.isPaid()) require(value == null) { "Pay band must not be provided for unpaid activity ID '${activitySchedule.activity.activityId}'" }
+
+      field = value
+    }
+
+  init {
+    payBand = initialPayBand
+  }
 
   var endDate: LocalDate? = null
     set(value) {
@@ -188,14 +199,14 @@ data class Allocation(
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
   fun allocationPay(incentiveLevelCode: String) =
-    activitySchedule.activity.activityPayFor(payBand, incentiveLevelCode)
+    payBand?.let { activitySchedule.activity.activityPayFor(it, incentiveLevelCode) }
 
   fun toModel() =
     ModelAllocation(
       id = allocationId,
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
-      prisonPayBand = payBand.toModel(),
+      prisonPayBand = payBand?.toModel(),
       startDate = startDate,
       endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,

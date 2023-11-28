@@ -431,6 +431,46 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
+  fun `allocate without pay band throws exception for paid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = true))
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          prisonerNumber = "123456",
+          payBandId = null,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation must have a pay band when the activity '1' is paid")
+  }
+
+  @Test
+  fun `allocate with pay band throws exception for unpaid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = false, noPayBands = true), noAllocations = true)
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          prisonerNumber = "123456",
+          payBandId = 1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation cannot have a pay band when the activity '1' is unpaid")
+  }
+
+  @Test
   fun `successful allocation is audited`() {
     val schedule = activitySchedule(
       activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),

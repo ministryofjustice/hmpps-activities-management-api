@@ -138,8 +138,8 @@ class ActivityService(
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
     require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
-    require(request.paid || request.pay.isEmpty()) { "Unpaid activity cannot have pay rates associated with it" }
-    require(!request.paid || request.pay.isNotEmpty()) { "Paid activity must have at least one pay rate associated with it" }
+    if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
+    if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
@@ -649,7 +649,7 @@ class ActivityService(
 
         activeAllocations.forEach { allocation ->
           val prisoner = prisoners.single { it.prisonerNumber == allocation.prisonerNumber }
-          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand.prisonPayBandId }) {
+          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand!!.prisonPayBandId }) {
             allocation.apply {
               this.payBand = prisonPayBands[it.payBandId]
                 ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'")

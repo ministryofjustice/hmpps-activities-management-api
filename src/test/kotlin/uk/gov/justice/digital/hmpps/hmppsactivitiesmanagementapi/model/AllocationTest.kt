@@ -166,7 +166,7 @@ class AllocationTest : ModelTest() {
       assertThat(endDate).isEqualTo(entity.endDate)
       assertThat(allocatedTime).isEqualTo(entity.allocatedTime)
       assertThat(allocatedBy).isEqualTo(entity.allocatedBy)
-      assertThat(prisonPayBand).isEqualTo(entity.payBand.toModel())
+      assertThat(prisonPayBand).isEqualTo(entity.payBand?.toModel())
     }
   }
 }

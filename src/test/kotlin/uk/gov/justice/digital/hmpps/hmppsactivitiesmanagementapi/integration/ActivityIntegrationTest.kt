@@ -997,9 +997,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newPay).schedules.first()) {
       assertThat(allocations).hasSize(3)
-      assertThat(allocations[0].prisonPayBand.id).isEqualTo(3)
-      assertThat(allocations[1].prisonPayBand.id).isEqualTo(3)
-      assertThat(allocations[2].prisonPayBand.id).isEqualTo(2)
+      assertThat(allocations[0].prisonPayBand?.id).isEqualTo(3)
+      assertThat(allocations[1].prisonPayBand?.id).isEqualTo(3)
+      assertThat(allocations[2].prisonPayBand?.id).isEqualTo(2)
     }
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())

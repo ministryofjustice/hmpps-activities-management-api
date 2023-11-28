@@ -1,0 +1,1 @@
+ALTER TABLE allocation ALTER COLUMN prison_pay_band_id drop not null;
