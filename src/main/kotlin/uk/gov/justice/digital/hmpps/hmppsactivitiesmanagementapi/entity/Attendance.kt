@@ -51,7 +51,8 @@ data class Attendance(
 
   var pieces: Int? = null,
 
-  var issuePayment: Boolean? = null,
+  @Transient
+  var initialIssuePayment: Boolean? = null,
 
   var caseNoteId: Long? = null,
 
@@ -59,6 +60,19 @@ data class Attendance(
 
   var otherAbsenceReason: String? = null,
 ) {
+  val paid: Boolean = scheduledInstance.isPaid()
+
+  var issuePayment: Boolean? = null
+    set(value) {
+      if (paid.not() && value == true) throw IllegalArgumentException("Attendance is not payable, you cannot issue a payment for this attendance")
+
+      field = value
+    }
+
+  init {
+    issuePayment = initialIssuePayment
+  }
+
   @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
@@ -87,7 +101,7 @@ data class Attendance(
         reason = reason,
         newStatus = AttendanceStatus.COMPLETED,
         newComment = cancelledReason,
-        newIssuePayment = true,
+        newIssuePayment = paid,
         newIncentiveLevelWarningIssued = null,
         newCaseNoteId = null,
         newOtherAbsenceReason = null,

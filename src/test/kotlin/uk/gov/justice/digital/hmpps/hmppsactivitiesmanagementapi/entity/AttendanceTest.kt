@@ -5,8 +5,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -40,16 +45,38 @@ class AttendanceTest {
   }
 
   @Test
-  fun `can cancel attendance independently of its instance`() {
+  fun `can cancel payable attendance independently of its instance`() {
     attendance.cancel(reason = attendanceReason(AttendanceReasonEnum.CANCELLED), cancelledReason = "By test reason", cancelledBy = "By test user")
 
     with(attendance) {
+      assertThat(paid).isTrue()
       assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
       assertThat(issuePayment).isEqualTo(true)
       assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
       assertThat(comment).isEqualTo("By test reason")
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
       assertThat(recordedBy).isEqualTo("By test user")
+    }
+  }
+
+  @Test
+  fun `can cancel unpayable attendance independently of its instance`() {
+    activitySchedule(activityEntity(paid = false, noPayBands = true), paid = false).instances().first().attendances.first().let { unpayableAttendance ->
+      unpayableAttendance.cancel(
+        reason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+        cancelledReason = "By test reason",
+        cancelledBy = "By test user",
+      )
+
+      with(unpayableAttendance) {
+        paid isBool false
+        status() isEqualTo AttendanceStatus.COMPLETED
+        issuePayment!! isBool false
+        attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+        comment isEqualTo "By test reason"
+        recordedTime isCloseTo TimeSource.now()
+        recordedBy isEqualTo "By test user"
+      }
     }
   }
 
@@ -62,7 +89,7 @@ class AttendanceTest {
   }
 
   @Test
-  fun `cancel attendance fails when if already cancelled`() {
+  fun `cancel attendance fails if already cancelled`() {
     val attendance = Attendance(scheduledInstance = instance, prisonerNumber = "123456", attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED))
 
     assertThatThrownBy {
@@ -73,7 +100,7 @@ class AttendanceTest {
   }
 
   @Test
-  fun `cancel attendance fails if if wrong reason code`() {
+  fun `cancel attendance fails if wrong reason code`() {
     assertThatThrownBy {
       Attendance(scheduledInstance = instance, prisonerNumber = "123456").cancel(attendanceReason(AttendanceReasonEnum.ATTENDED))
     }
@@ -83,13 +110,13 @@ class AttendanceTest {
 
   @Test
   fun `marking attendance records history`() {
-    val attendanceReason = attendanceReason(AttendanceReasonEnum.OTHER)
+    val otherAttendanceReason = attendanceReason(AttendanceReasonEnum.OTHER)
     val otherAttendance = attendance.copy(
       status = AttendanceStatus.COMPLETED,
-      attendanceReason = attendanceReason,
+      attendanceReason = otherAttendanceReason,
       otherAbsenceReason = "Other reason",
       comment = "Some comment",
-      issuePayment = true,
+      initialIssuePayment = true,
     )
 
     otherAttendance.mark(
@@ -104,11 +131,11 @@ class AttendanceTest {
     )
 
     with(otherAttendance.history().last()) {
-      assertThat(this.attendanceReason).isEqualTo(attendanceReason)
-      assertThat(this.comment).isEqualTo("Some comment")
-      assertThat(this.recordedBy).isEqualTo("Joe Bloggs")
-      assertThat(this.issuePayment).isEqualTo(true)
-      assertThat(this.otherAbsenceReason).isEqualTo("Other reason")
+      assertThat(attendanceReason).isEqualTo(otherAttendanceReason)
+      assertThat(comment).isEqualTo("Some comment")
+      assertThat(recordedBy).isEqualTo("Joe Bloggs")
+      assertThat(issuePayment).isEqualTo(true)
+      assertThat(otherAbsenceReason).isEqualTo("Other reason")
     }
   }
 
@@ -139,7 +166,7 @@ class AttendanceTest {
     val instanceToday = instance.copy(sessionDate = LocalDate.now())
     val attendance = Attendance(
       scheduledInstance = instanceToday,
-      issuePayment = true,
+      initialIssuePayment = true,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
       recordedTime = LocalDateTime.now(),
@@ -152,7 +179,7 @@ class AttendanceTest {
     val instanceThreeDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(3))
     val attendance = Attendance(
       scheduledInstance = instanceThreeDaysAgo,
-      issuePayment = true,
+      initialIssuePayment = true,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
       recordedTime = LocalDateTime.now(),
@@ -165,7 +192,7 @@ class AttendanceTest {
     val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(10))
     val attendance = Attendance(
       scheduledInstance = instanceTenDaysAgo,
-      issuePayment = false,
+      initialIssuePayment = false,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
       recordedTime = LocalDateTime.now().minusDays(10),
@@ -178,7 +205,7 @@ class AttendanceTest {
     val instanceFifteenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(15))
     val attendance = Attendance(
       scheduledInstance = instanceFifteenDaysAgo,
-      issuePayment = false,
+      initialIssuePayment = false,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.WAITING,
     )
@@ -190,7 +217,7 @@ class AttendanceTest {
     val instanceYesterday = instance.copy(sessionDate = LocalDate.now().minusDays(1))
     val attendance = Attendance(
       scheduledInstance = instanceYesterday,
-      issuePayment = true,
+      initialIssuePayment = true,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
       recordedTime = LocalDateTime.now().minusDays(1),
@@ -203,7 +230,7 @@ class AttendanceTest {
     val expiredInstance = instance.copy(sessionDate = LocalDate.now().minusDays(15))
     val attendance = Attendance(
       scheduledInstance = expiredInstance,
-      issuePayment = false,
+      initialIssuePayment = false,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.WAITING,
     )

@@ -121,6 +121,7 @@ class TransformFunctionsTest {
                   recordedTime = LocalDate.now().atStartOfDay(),
                   recordedBy = "Joe Bloggs",
                   editable = true,
+                  paid = true,
                   attendanceHistory = listOf(
                     ModelAttendanceHistory(
                       id = 1,

@@ -20,6 +20,7 @@ class AttendanceTest : ModelTest() {
       status = "Y",
       issuePayment = false,
       incentiveLevelWarningIssued = false,
+      paid = true,
     )
 
     val json = objectMapper.writeValueAsString(attendance)

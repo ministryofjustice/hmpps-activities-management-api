@@ -135,7 +135,7 @@ class ManageAttendancesService(
     scheduledInstance = instance,
     prisonerNumber = allocation.prisonerNumber,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
-    issuePayment = false,
+    initialIssuePayment = false,
     status = AttendanceStatus.COMPLETED,
     recordedTime = LocalDateTime.now(),
     recordedBy = ServiceName.SERVICE_NAME.value,
@@ -144,7 +144,7 @@ class ManageAttendancesService(
   private fun cancelledAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
     scheduledInstance = instance,
     prisonerNumber = allocation.prisonerNumber,
-    issuePayment = true,
+    initialIssuePayment = instance.isPaid(),
     status = AttendanceStatus.COMPLETED,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
     recordedTime = LocalDateTime.now(),

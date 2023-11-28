@@ -40,20 +40,20 @@ values (2, 2, 'A22222A', 10001, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, current_date, '00:01:00', '00:02:00', false, null, null, null, null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (1, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, paid)
+values (1, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null, true);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (2, current_date, '23:58:00', '23:59:00', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (2, 2, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, paid)
+values (2, 2, 'A22222A', null, null, null, null, 'WAITING', null, null, null, true);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, current_date + 1, '00:01:00', '00:02:00', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (3, 3, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, paid)
+values (3, 3, 'A22222A', null, null, null, null, 'WAITING', null, null, null, true);
 
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (1, 'PVI', 'A22222A', 1207485, '2023-06-23', 2, 3, 'Fred Bloggs', 'PENDING', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);

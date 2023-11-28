@@ -26,7 +26,7 @@ data class AttendanceUpdateRequest(
   @Schema(description = "Comments such as more detail for SICK", example = "Prisoner has COVID-19")
   val comment: String?,
 
-  @Schema(description = "Should payment be issued for SICK, REST or OTHER", example = "true")
+  @Schema(description = "Should payment be issued for SICK, REST or OTHER. Will be ignored if the activity is unpaid.", example = "true")
   val issuePayment: Boolean?,
 
   @Schema(description = "Case note provided for REFUSED", example = "Prisoner refused to attend the scheduled activity without reasonable excuse")
