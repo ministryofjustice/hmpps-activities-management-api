@@ -17,6 +17,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
@@ -28,8 +29,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTie
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
@@ -755,6 +758,65 @@ class MigrateActivityServiceTest {
       }
     }
 
+    @Test
+    fun `A tier2 activity will have a default organiser`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      // Make the program service match a TIER_2 type
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(programServiceCode = "T2ICA")
+
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        assertThat(activityTier?.code).isEqualTo("TIER_2")
+        assertThat(organiser?.code).isEqualTo("OTHER")
+      }
+    }
+
+    @Test
+    fun `A foundational tier activity will NOT have a default organiser`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100))
+
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      // Make the program service match a FOUNDATION tier
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(programServiceCode = "UNEMP")
+
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        assertThat(activityTier?.code).isEqualTo("FOUNDATION")
+        assertThat(organiser).isNull()
+      }
+    }
+
     private fun buildActivityMigrateRequest(
       payRates: List<NomisPayRate> = emptyList(),
       scheduleRules: List<NomisScheduleRule> = emptyList(),
@@ -1057,23 +1119,16 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `No pay band provided will succeed for an unpaid activity`() {
+    fun `Allocation with no pay band will succeed for an unpaid activity`() {
       val request = buildAllocationMigrateRequest().copy(
         nomisPayBand = null,
       )
 
-      val schedule = activityEntity().copy(paid = false).schedules().first()
+      val activity = activityEntity(paid = false, noPayBands = true)
+      val schedule = activity.schedules().first()
 
-      // A dummy allocation - we check what is saved not what is returned
-      schedule.allocatePrisoner(
-         prisonerNumber = "A1234BB".toPrisonerNumber(),
-         payBand = lowPayBand,
-        // Wait until the schedule.allocatePrisoner accepts null pay bands and validates it is UNPAID.
-        // payBand = null,
-         bookingId = 1,
-        allocatedBy = MIGRATION_USER,
-      )
-
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
       whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
 
       service.migrateAllocation(request)
@@ -1083,29 +1138,22 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
+          assertThat(payBand).isNull()
         }
       }
     }
 
     @Test
-    fun `No pay band provided - will fail for a paid activity`() {
+    fun `Allocation with a valid pay band will succeed for an unpaid activity - with a null pay band`() {
       val request = buildAllocationMigrateRequest().copy(
-        nomisPayBand = null,
+        nomisPayBand = "1",
       )
 
-      val schedule = activityEntity().schedules().first()
+      val activity = activityEntity(paid = false, noPayBands = true)
+      val schedule = activity.schedules().first()
 
-      // A dummy allocation - we check what is saved not what is returned
-      schedule.allocatePrisoner(
-        prisonerNumber = "A1234BB".toPrisonerNumber(),
-        payBand = lowPayBand,
-        // Wait until the schedule.allocatePrisoner accepts null pay bands and validates it is UNPAID.
-        // payBand = null,
-        bookingId = 1,
-        allocatedBy = MIGRATION_USER,
-      )
-
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
       whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
 
       service.migrateAllocation(request)
@@ -1115,14 +1163,68 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand?.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
+          assertThat(payBand).isNull()
         }
       }
     }
 
     @Test
-    fun `A not-null but invalid pay band will always fail`() {
-      // Pay band in not configured for the prison
+    fun `Allocation with pay band which is valid for the prison but not on the activity pay rates will fail`() {
+      val request = buildAllocationMigrateRequest().copy(
+        nomisPayBand = "3",
+      )
+
+      val activity = activityEntity()
+      val schedule = activity.schedules().first()
+
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateAllocation(request)
+      }
+
+      assertThat(exception.message).contains("Allocation failed A1234BB")
+      assertThat(exception.message).contains("Nomis pay band 3 is not on a pay rate")
+
+      verify(rolloutPrisonService).getByPrisonCode("MDI")
+      verify(activityRepository).findByActivityIdAndPrisonCode(1, "MDI")
+      verify(activityScheduleRepository).findBy(1, "MDI")
+      verify(prisonerSearchApiClient).findByPrisonerNumbers(listOf("A1234BB"))
+      verify(prisonPayBandRepository).findByPrisonCode("MDI")
+
+      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+    }
+
+    @Test
+    fun `No pay band provided for a paid activity - will be allocated with the lowest rate pay band`() {
+      val request = buildAllocationMigrateRequest().copy(
+        nomisPayBand = null,
+      )
+
+      val activity = activityEntity()
+      val schedule = activity.schedules().first()
+
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      service.migrateAllocation(request)
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(payBand?.prisonPayBandId).isEqualTo(lowPayBand.prisonPayBandId)
+        }
+      }
+    }
+
+    @Test
+    fun `An invalid pay band for this prison will always fail`() {
+      // Pay band 12 is not configured for the prison
       val request = buildAllocationMigrateRequest().copy(
         nomisPayBand = "12",
       )
@@ -1142,25 +1244,75 @@ class MigrateActivityServiceTest {
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }
 
-
     @Test
-    fun `A single exclusion provided in the allocation will be applied the schedule`() {
-      /*
+    fun `A valid exclusion provided will be applied to the prisoner as part of the allocation`() {
       val request = buildAllocationMigrateRequest().copy(
-        exclusions = listOf(
-          Exclusion(),
-          Exclusion(),
-        ),
-s      )
-     */
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
+      )
+
+      val activity = activityEntity(noSchedules = true).apply {
+        addSchedule(activitySchedule(this, noSlots = true)).apply {
+          addSlot(
+            weekNumber = 1,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            setOf(DayOfWeek.MONDAY),
+          )
+        }
+      }
+
+      val schedule = activity.schedules().first()
+
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      service.migrateAllocation(request)
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(exclusions()).hasSize(1)
+          with(exclusions()[0]) {
+            assertThat(mondayFlag).isTrue
+            assertThat(getTimeSlot()).isEqualTo(TimeSlot.AM)
+          }
+        }
+      }
     }
 
     @Test
-    fun `A list of exclusions provided in the allocation will be applied the schedule`() {
-    }
+    fun `Exclusions which do not match slots in the schedule will fail`() {
+      val request = buildAllocationMigrateRequest().copy(
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = "PM", friday = true)),
+      )
 
-    @Test
-    fun `Exclusions which do not match slots in the schedule will be silently ignored`() {
+      val activity = activityEntity(noSchedules = true).apply {
+        addSchedule(activitySchedule(this, noSlots = true)).apply {
+          addSlot(
+            weekNumber = 1,
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
+            setOf(DayOfWeek.MONDAY),
+          )
+        }
+      }
+
+      val schedule = activity.schedules().first()
+
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      val exception = assertThrows<IllegalArgumentException> {
+        service.migrateAllocation(request)
+      }
+
+      assertThat(exception.message).contains("No single PM slots in week number 1")
+
+      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }
 
     private fun buildAllocationMigrateRequest() =

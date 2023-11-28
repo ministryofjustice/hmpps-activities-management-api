@@ -181,7 +181,7 @@ class MigrateActivityService(
     return listOf(activity1, activity2)
   }
 
-  private fun  buildActivityEntity(
+  private fun buildActivityEntity(
     request: ActivityMigrateRequest,
     splitRegime: Boolean = false,
     scheduledWeeks: Int = 1,
@@ -472,13 +472,28 @@ class MigrateActivityService(
       logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not in ${request.prisonCode} or INACTIVE")
     }
 
+    // Get the pay bands configured for this prison
     val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
-    val prisonPayBand = if (request.nomisPayBand.isNullOrEmpty()) {
-      getLowestRatePayBandForActivity(payBands, activity)
-        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Could not find the pay band associated with the lowest rate on activity ID ${activity.activityId}")
-    } else {
-      payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
-        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
+
+    // Set the value of the pay band for this allocation
+    val prisonPayBand = when {
+      request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
+        getLowestRatePayBandForActivity(payBands, activity)
+      }
+      !request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
+        // The requested pay band must be configured for this prison
+        payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
+          ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
+      }
+      else -> {
+        null
+      }
+    }
+
+    // Non-null pay bands should exist on a pay rate defined for this activity
+    if (prisonPayBand != null) {
+      activity.activityPay().find { "${it.payBand.nomisPayBand}" == "${prisonPayBand.nomisPayBand}" }
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${prisonPayBand.nomisPayBand} is not on a pay rate for ${activity.activityId} ${activity.description}")
     }
 
     schedule.allocatePrisoner(
