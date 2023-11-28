@@ -49,11 +49,11 @@ values (5, 2, 'A22222A', 10002, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, CURRENT_DATE, '10:00:00', '11:00:00', false, null, null, null, null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, paid)
-values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, paid)
-values (2, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (2, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (2, CURRENT_DATE, '14:00:00', '15:00:00', false, null, null, null, null);

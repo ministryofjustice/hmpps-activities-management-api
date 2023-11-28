@@ -60,11 +60,9 @@ data class Attendance(
 
   var otherAbsenceReason: String? = null,
 ) {
-  val paid: Boolean = scheduledInstance.isPaid()
-
   var issuePayment: Boolean? = null
     set(value) {
-      if (paid.not() && value == true) throw IllegalArgumentException("Attendance is not payable, you cannot issue a payment for this attendance")
+      if (!scheduledInstance.isPaid() && value == true) throw IllegalArgumentException("Attendance is not payable, you cannot issue a payment for this attendance")
 
       field = value
     }
@@ -101,7 +99,7 @@ data class Attendance(
         reason = reason,
         newStatus = AttendanceStatus.COMPLETED,
         newComment = cancelledReason,
-        newIssuePayment = paid,
+        newIssuePayment = isPayable(),
         newIncentiveLevelWarningIssued = null,
         newCaseNoteId = null,
         newOtherAbsenceReason = null,
@@ -235,6 +233,8 @@ data class Attendance(
   }
 
   fun hasReason(reason: AttendanceReasonEnum) = attendanceReason?.code == reason
+
+  fun isPayable() = scheduledInstance.isPaid()
 }
 
 enum class AttendanceStatus {

@@ -78,37 +78,37 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (7, 1, 'A44444A', 10004, 1, current_date + 1, null, '2022-10-10 09:00:00', 'any', null, null, null, null, null, null, 'PENDING');
 
 -- attendance for prisoner 1 on activity 1 scheduled instance 2 days ago is not included (wrong date)
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (1, 1, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (1, 1, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 1 on activity 1 scheduled instance 1 day ago is included
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (2, 2, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (2, 2, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 1 on activity 1 scheduled instance today is not included (wrong date)
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (3, 3, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (3, 3, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 1 on activity 2 scheduled instance 1 day ago is included
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (4, 5, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (4, 5, 'A11111A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 2 on activity 1 scheduled instance 1 day ago is included
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (5, 2, 'A22222A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (5, 2, 'A22222A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 2 on activity 2 scheduled instance 1 day ago is not included (prisoner allocation ended - attendance should never have existed)
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (6, 5, 'A22222A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (6, 5, 'A22222A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 3 on activity 1 scheduled instance 1 day ago is not included (attendance not paid)
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (7, 2, 'A33333A', 1, 'any', now(), 'any', 'WAITING', 150, 50, null, false, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (7, 2, 'A33333A', 1, 'any', now(), 'any', 'WAITING', 150, 50, null, false);
 
 -- attendance for prisoner 3 on activity 2 scheduled instance 1 day ago is included
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (8, 5, 'A33333A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (8, 5, 'A33333A', 1, 'any', now(), 'any', 'COMPLETED', 150, 50, null, true);
 
 -- attendance for prisoner 4 on activity 1 scheduled instance 1 day ago is not included (allocation has future start date - attendance should never have existed)
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, paid)
-values (9, 2, 'A44444A', 1, 'any', now(), 'any', 'WAITING', 150, 50, null, true, true);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
+values (9, 2, 'A44444A', 1, 'any', now(), 'any', 'WAITING', 150, 50, null, true);

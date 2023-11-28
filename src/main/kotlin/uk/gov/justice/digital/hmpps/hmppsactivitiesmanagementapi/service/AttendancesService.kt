@@ -59,7 +59,7 @@ class AttendancesService(
           reason = attendanceReasonsByCode[updateRequest.maybeAttendanceReason()],
           newStatus = updateRequest.status,
           newComment = updateRequest.comment,
-          newIssuePayment = if (updateRequest.issuePayment == true && attendance.paid.not()) false else updateRequest.issuePayment,
+          newIssuePayment = if (updateRequest.issuePayment == true && !attendance.isPayable()) false else updateRequest.issuePayment,
           newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
           newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
           newOtherAbsenceReason = updateRequest.otherAbsenceReason,

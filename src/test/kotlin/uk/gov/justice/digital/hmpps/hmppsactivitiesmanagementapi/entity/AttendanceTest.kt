@@ -49,7 +49,7 @@ class AttendanceTest {
     attendance.cancel(reason = attendanceReason(AttendanceReasonEnum.CANCELLED), cancelledReason = "By test reason", cancelledBy = "By test user")
 
     with(attendance) {
-      assertThat(paid).isTrue()
+      assertThat(isPayable()).isTrue()
       assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
       assertThat(issuePayment).isEqualTo(true)
       assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
@@ -69,7 +69,7 @@ class AttendanceTest {
       )
 
       with(unpayableAttendance) {
-        paid isBool false
+        isPayable() isBool false
         status() isEqualTo AttendanceStatus.COMPLETED
         issuePayment!! isBool false
         attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)

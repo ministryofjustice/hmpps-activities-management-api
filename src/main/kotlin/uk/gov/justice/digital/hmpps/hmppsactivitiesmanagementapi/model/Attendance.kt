@@ -67,6 +67,6 @@ data class Attendance(
   @Schema(description = "Flag to show whether this attendance is editable", example = "true")
   val editable: Boolean = true,
 
-  @Schema(description = "Flag to indicate if the attendance is paid, true if the activity is payable otherwise false", example = "true")
-  val paid: Boolean,
+  @Schema(description = "Flag to indicate if the attendance is payable", example = "true")
+  val payable: Boolean,
 )
