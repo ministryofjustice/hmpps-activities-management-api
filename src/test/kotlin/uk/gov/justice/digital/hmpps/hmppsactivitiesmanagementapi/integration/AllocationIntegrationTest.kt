@@ -93,6 +93,34 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+  @Test
+  fun `get allocation - active exclusions are returned`() {
+    with(webTestClient.getAllocationBy(2)!!) {
+      exclusions hasSize 1
+    }
+
+    with(webTestClient.getAllocationBy(3)!!) {
+      exclusions hasSize 0
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+  @Test
+  fun `get allocation - future exclusions are returned`() {
+    with(webTestClient.getAllocationBy(2)!!) {
+      exclusions hasSize 1
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+  @Test
+  fun `get allocation - past exclusions are not returned`() {
+    with(webTestClient.getAllocationBy(2)!!) {
+      exclusions hasSize 0
+    }
+  }
+
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
   fun `403 when attempting to get an allocation with the wrong case load ID`() {
@@ -238,7 +266,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     val allocation = webTestClient.getAllocationBy(1)!!
 
-    with(allocation.exclusions!!) {
+    with(allocation.exclusions) {
       this hasSize 1
       this.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }

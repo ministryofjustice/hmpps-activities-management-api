@@ -54,6 +54,7 @@ class AllocationTest : ModelTest() {
         plannedReason = DeallocationReason.PLANNED.toModel(),
         plannedAt = LocalDateTime.now(),
       ),
+      exclusions = emptyList(),
     )
 
     val json = objectMapper.writeValueAsString(allocation)

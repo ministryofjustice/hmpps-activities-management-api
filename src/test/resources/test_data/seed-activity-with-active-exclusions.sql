@@ -20,9 +20,13 @@ values (1, 1, 'G4793VF', 10001, 1, '2022-10-01', null, '2022-10-01 09:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (2, 1, 'A5193DY', 10002, 2, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (3, 1, 'F7024DX', 10003, 2, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, current_date, '10:00:00', '11:00:00', false, null, null, null, null),
        (1, current_date, '15:00:00', '16:00:00', false, null, null, null, null);
 
-insert into exclusion(allocation_id, activity_schedule_slot_id, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag)
-values (2, 1, true, true, true, true, true, true, true);
+insert into exclusion(allocation_id, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, slot_start_time, week_number, start_date, end_date)
+values (2, true, true, true, true, true, true, true, '10:00:00', 1, current_date, null),
+       (3, true, true, true, true, true, true, true, '10:00:00', 1, current_date - interval '1' day, current_date + interval '1' day);

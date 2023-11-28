@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -1274,10 +1275,10 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(exclusions()).hasSize(1)
-          with(exclusions()[0]) {
-            assertThat(mondayFlag).isTrue
-            assertThat(getTimeSlot()).isEqualTo(TimeSlot.AM)
+          assertThat(activeExclusions()).hasSize(1)
+          with(activeExclusions().first()) {
+            getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+            assertThat(timeSlot()).isEqualTo(TimeSlot.AM)
           }
         }
       }

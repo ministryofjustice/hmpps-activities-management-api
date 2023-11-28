@@ -83,21 +83,21 @@ class AllocationsService(
   }
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
+    request.exclusions?.apply {
+      allocation.endExclusions(allocation.presentExclusions())
+
+      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
+      val exclusionsToRemove = allocation.futureExclusions().mapNotNull {
+        val oldExclusion = it.weekNumber to it.timeSlot().toString()
+        it.takeIf { oldExclusion !in newExclusions }
+      }.toSet()
+      allocation.removeExclusions(exclusionsToRemove)
+    }
+
     request.exclusions?.onEach { exclusion ->
       allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
         .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
-    }
-
-    request.exclusions?.apply {
-      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
-
-      val exclusionsToRemove = allocation.exclusions().mapNotNull {
-        val oldExclusion = it.getWeekNumber() to it.getTimeSlot().toString()
-        it.takeIf { oldExclusion !in newExclusions }
-      }
-
-      allocation.removeExclusions(exclusionsToRemove)
     }
   }
 
@@ -168,7 +168,7 @@ class AllocationsService(
   }
 
   private fun String?.toDeallocationReason() =
-    DeallocationReason.values()
+    DeallocationReason.entries
       .filter(DeallocationReason::displayed)
       .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 }

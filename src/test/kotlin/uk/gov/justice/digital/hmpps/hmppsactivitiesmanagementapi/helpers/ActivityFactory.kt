@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -231,7 +233,9 @@ internal fun activitySchedule(
           payBand = if (paid) lowPayBand else null,
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
-        ).apply { this.updateExclusion(slot, daysOfWeek) }
+        ).apply {
+          this.updateExclusion(slot, daysOfWeek)
+        }
       }
     }
     if (!noInstances && !noSlots) {
@@ -276,10 +280,25 @@ internal fun activitySchedule(
     }
   }
 
-internal fun allocation(startDate: LocalDate? = null) =
-  startDate
-    ?.let { activitySchedule(activityEntity(startDate = it)).allocations().first() }
-    ?: activitySchedule(activityEntity()).allocations().first()
+internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false): Allocation {
+  val allocation = startDate
+    ?.let { activitySchedule(activityEntity(startDate = it), noExclusions = true).allocations().first() }
+    ?: activitySchedule(activityEntity(), noExclusions = true).allocations().first()
+
+  val slot = allocation.activitySchedule.slots().first()
+
+  return if (withExclusions) {
+    allocation.apply {
+      if (startDate != null) {
+        addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
+      } else {
+        addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
+      }
+    }
+  } else {
+    allocation
+  }
+}
 
 internal fun deallocation(endDate: LocalDate? = null) =
   endDate

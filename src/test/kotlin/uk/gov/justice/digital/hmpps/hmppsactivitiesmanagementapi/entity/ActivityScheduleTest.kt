@@ -255,8 +255,8 @@ class ActivityScheduleTest {
     schedule.allocations() hasSize 3
 
     with(schedule.allocations().first { it.prisonerNumber == "654321" }) {
-      exclusions() hasSize 1
-      exclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      activeExclusions() hasSize 1
+      activeExclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
   }
 
@@ -522,8 +522,9 @@ class ActivityScheduleTest {
 
     assertThatThrownBy {
       schedule.addSlot(1, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT.plusHours(1), emptySet())
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("One or more days must be specified for a given slot.")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("A slot must run on at least one day.")
   }
 
   @Test
