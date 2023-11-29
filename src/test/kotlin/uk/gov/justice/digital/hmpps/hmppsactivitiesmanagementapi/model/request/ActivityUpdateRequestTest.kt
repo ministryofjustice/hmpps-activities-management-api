@@ -45,4 +45,16 @@ class ActivityUpdateRequestTest {
       assertThat(it.message).isEqualTo("Schedule weeks must be either 1 or 2")
     }
   }
+
+  @Test
+  fun `Paid activity must have pay rates`() {
+    val paidActivityNoPay = ActivityUpdateRequest(paid = true)
+
+    assertThat(
+      validator.validate(paidActivityNoPay),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("paid")
+      assertThat(it.message).isEqualTo("Paid activity must have at least one pay rate associated with it")
+    }
+  }
 }

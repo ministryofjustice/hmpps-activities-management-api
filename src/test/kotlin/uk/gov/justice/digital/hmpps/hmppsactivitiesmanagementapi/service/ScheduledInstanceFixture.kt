@@ -52,7 +52,7 @@ object ScheduledInstanceFixture {
         riskLevel = "high",
         createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
         createdBy = "CREATED BY",
-        paid = true,
+        isPaid = true,
       ),
       description = "DESCRIPTION $activityScheduleId",
       internalLocationId = locationId,

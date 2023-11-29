@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -106,4 +107,10 @@ data class ActivityUpdateRequest(
 
   @Schema(description = "A flag to indicate that the end date is to be removed", example = "true", defaultValue = "false")
   val removeEndDate: Boolean = false,
-)
+
+  @Schema(description = "Flag to indicate if the activity is a paid activity or not. If true then pay rates are required, if false then no pay rates should be provided. Cannot be updated if already allocated.", example = "true")
+  val paid: Boolean? = null,
+) {
+  @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
+  private fun isPaid() = !pay.isNullOrEmpty() || (paid == null || !paid)
+}

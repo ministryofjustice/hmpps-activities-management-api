@@ -76,8 +76,17 @@ data class Activity(
 
   var updatedBy: String? = null,
 
-  private var paid: Boolean,
+  @Transient
+  private val isPaid: Boolean,
 ) {
+  var paid: Boolean = isPaid
+    set(value) {
+      if (schedules().any { it.allocations().isNotEmpty() }) {
+        throw IllegalArgumentException("Paid attribute cannot be updated for allocated activity '$activityId'")
+      }
+
+      field = value.also { if (!it) removePay() }
+    }
 
   var endDate: LocalDate? = null
     set(value) {

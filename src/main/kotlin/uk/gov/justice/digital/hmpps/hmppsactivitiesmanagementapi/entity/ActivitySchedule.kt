@@ -351,7 +351,7 @@ data class ActivitySchedule(
     return updatedAllocationIds
   }
 
-  fun isPaid() = activity.isPaid()
+  fun isPaid() = activity.paid
 
   private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>): AllocationIds {
     val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }

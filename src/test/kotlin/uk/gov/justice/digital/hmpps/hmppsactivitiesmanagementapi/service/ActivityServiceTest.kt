@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -51,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.runEveryDayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -2013,5 +2015,66 @@ class ActivityServiceTest {
     service(14).addScheduleInstances(schedule)
 
     schedule.instances() hasSize 2
+  }
+
+  @Test
+  fun `updateActivity - paid to unpaid when no allocations`() {
+    val activity = activitySchedule(activityEntity(paid = true, noSchedules = true), noAllocations = true).activity
+
+    activity.paid isBool true
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = false), "SCH_ACTIVITY")
+
+    activity.paid isBool false
+    activity.activityPay() hasSize 0
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid when no allocations`() {
+    val activity = activitySchedule(activityEntity(paid = false, noSchedules = true, noPayBands = true), noAllocations = true).activity
+
+    activity.paid isBool false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+
+    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1))), "SCH_ACTIVITY")
+
+    activity.paid isBool true
+  }
+
+  @Test
+  fun `updateActivity - must include pay rates when changing from unpaid to paid`() {
+    val activity = activitySchedule(activityEntity(paid = false, noSchedules = true, noPayBands = true), noAllocations = true).activity
+
+    activity.paid isBool false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        moorlandPrisonCode,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    assertThatThrownBy {
+      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Activity '1' must have at least one pay rate.")
   }
 }
