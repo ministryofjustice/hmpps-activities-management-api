@@ -5,14 +5,21 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EntityListeners
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.annotations.Fetch
+import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -38,17 +45,28 @@ data class Allocation(
   @Enumerated(EnumType.STRING)
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE,
 
-  @OneToOne
-  @JoinColumn(name = "prison_pay_band_id")
-  var payBand: PrisonPayBand,
-
   var startDate: LocalDate,
 
   var allocatedTime: LocalDateTime,
 
   var allocatedBy: String,
 
+  @Transient
+  private val initialPayBand: PrisonPayBand?,
 ) {
+  @OneToOne
+  @JoinColumn(name = "prison_pay_band_id")
+  var payBand: PrisonPayBand? = null
+    set(value) {
+      if (activitySchedule.isPaid()) requireNotNull(value) { "Pay band must be provided for paid activity ID '${activitySchedule.activity.activityId}'" }
+      if (!activitySchedule.isPaid()) require(value == null) { "Pay band must not be provided for unpaid activity ID '${activitySchedule.activity.activityId}'" }
+
+      field = value
+    }
+
+  init {
+    payBand = initialPayBand
+  }
 
   var endDate: LocalDate? = null
     set(value) {
@@ -76,6 +94,10 @@ data class Allocation(
   var plannedDeallocation: PlannedDeallocation? = null
     private set
 
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val exclusions: MutableSet<Exclusion> = mutableSetOf()
+
   var deallocatedTime: LocalDateTime? = null
     private set
 
@@ -95,6 +117,10 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
+  fun exclusions() = exclusions.toList()
+
+  fun removeExclusions(exclusionsToRemove: List<Exclusion>) = exclusions.removeAll(exclusionsToRemove.toSet())
+
   fun prisonCode() = activitySchedule.activity.prisonCode
 
   private fun activitySummary() = activitySchedule.activity.summary
@@ -108,7 +134,7 @@ data class Allocation(
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
       if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
-      if (maybeEndDate() != null && date.isAfter(maybeEndDate())) throw IllegalArgumentException("Planned date cannot be after ${maybeEndDate()}.")
+      if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
 
       if (plannedDeallocation == null) {
         plannedDeallocation = PlannedDeallocation(
@@ -129,6 +155,7 @@ data class Allocation(
 
   private fun maybeEndDate() =
     when {
+      endDate != null -> endDate
       activitySchedule.endDate != null -> activitySchedule.endDate
       activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
       else -> null
@@ -172,14 +199,14 @@ data class Allocation(
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
   fun allocationPay(incentiveLevelCode: String) =
-    activitySchedule.activity.activityPayFor(payBand, incentiveLevelCode)
+    payBand?.let { activitySchedule.activity.activityPayFor(it, incentiveLevelCode) }
 
   fun toModel() =
     ModelAllocation(
       id = allocationId,
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
-      prisonPayBand = payBand.toModel(),
+      prisonPayBand = payBand?.toModel(),
       startDate = startDate,
       endDate = plannedDeallocation?.plannedDate ?: endDate,
       allocatedTime = allocatedTime,
@@ -197,7 +224,15 @@ data class Allocation(
       suspendedTime = suspendedTime,
       status = prisonerStatus,
       plannedDeallocation = plannedDeallocation?.toModel(),
+      exclusions = exclusions.toSlotModel(),
     )
+
+  fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
+    exclusions.any {
+      date.dayOfWeek in it.getDaysOfWeek() &&
+        timeSlot == it.getTimeSlot() &&
+        activitySchedule.getWeekNumber(date) == it.getWeekNumber()
+    }
 
   fun activate() =
     this.apply {
@@ -248,6 +283,36 @@ data class Allocation(
   }
 
   fun isEnded() = status(PrisonerStatus.ENDED)
+
+  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
+    val exclusion = exclusions
+      .find { it.activityScheduleSlot == slot }
+      ?.apply { setDaysOfWeek(daysOfWeek) }
+      ?: Exclusion.valueOf(this, slot, daysOfWeek)
+
+    return if (exclusion.getDaysOfWeek().isNotEmpty()) {
+      // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
+      //  This is to respect a restraint on the nomis data model
+      require(
+        exclusions.none {
+          exclusion.getWeekNumber() != it.getWeekNumber() &&
+            exclusion.getTimeSlot() == it.getTimeSlot() &&
+            exclusion.getDaysOfWeek().intersect(it.getDaysOfWeek()).isNotEmpty()
+        },
+      ) { "Exclusions cannot be added for the same day and time slot over multiple weeks." }
+
+      exclusions.add(exclusion)
+      exclusions.last()
+    } else {
+      exclusions.remove(exclusion)
+      null
+    }
+  }
+
+  /**
+   * Returns true if the date is between the start and end date, no clashing exclusions and not ended, otherwise false.
+   */
+  fun canAttendOn(date: LocalDate, timeSlot: TimeSlot) = date.between(startDate, maybeEndDate()) && isExcluded(date, timeSlot).not() && prisonerStatus != PrisonerStatus.ENDED
 
   @Override
   override fun toString(): String {

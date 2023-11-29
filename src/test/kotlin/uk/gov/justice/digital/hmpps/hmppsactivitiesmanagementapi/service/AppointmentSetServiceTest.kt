@@ -30,7 +30,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentTierNotSpecified
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -39,10 +41,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
@@ -59,8 +60,8 @@ import java.util.Optional
 
 class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
-  private val appointmentTierRepository: AppointmentTierRepository = mock()
-  private val appointmentHostRepository: AppointmentHostRepository = mock()
+  private val eventTierRepository: EventTierRepository = mock()
+  private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
@@ -71,8 +72,8 @@ class AppointmentSetServiceTest {
 
   private val service = AppointmentSetService(
     appointmentSetRepository,
-    appointmentTierRepository,
-    appointmentHostRepository,
+    eventTierRepository,
+    eventOrganiserRepository,
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
@@ -86,6 +87,30 @@ class AppointmentSetServiceTest {
   @BeforeEach
   fun setUp() {
     addCaseloadIdToRequestHeader("TPR")
+
+    whenever(eventTierRepository.findByCode(eventTier().code)).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode(eventOrganiser().code)).thenReturn(eventOrganiser())
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC", "A1234BD"))).thenReturn(
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 456,
+          firstName = "TEST01",
+          lastName = "PRISONER01",
+          prisonId = moorlandPrisonCode,
+          cellLocation = "1-2-3",
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BD",
+          bookingId = 457,
+          firstName = "TEST02",
+          lastName = "PRISONER02",
+          prisonId = moorlandPrisonCode,
+          cellLocation = "1-2-4",
+        ),
+      ),
+    )
   }
 
   @AfterEach
@@ -183,7 +208,7 @@ class AppointmentSetServiceTest {
     private val principal = mock<Principal>()
     private val prisonCode = moorlandPrisonCode
     private val categoryCode = "MEDO"
-    private val appointmentTier = appointmentTierNotSpecified()
+    private val appointmentTier = foundationTier()
     private val internalLocationId = 1L
     private val createdBy = "CREATED_BY_USER"
 
@@ -192,6 +217,8 @@ class AppointmentSetServiceTest {
     private val createAppointmentSetWithOneAppointment = AppointmentSetCreateRequest(
       prisonCode = prisonCode,
       categoryCode = categoryCode,
+      tierCode = eventTier().code,
+      organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
       inCell = false,
@@ -209,6 +236,8 @@ class AppointmentSetServiceTest {
     private val createAppointmentSetWithThreeAppointments = AppointmentSetCreateRequest(
       prisonCode = prisonCode,
       categoryCode = categoryCode,
+      tierCode = eventTier().code,
+      organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
       inCell = false,
@@ -266,7 +295,7 @@ class AppointmentSetServiceTest {
           ),
         )
 
-      whenever(appointmentTierRepository.findById(NOT_SPECIFIED_APPOINTMENT_TIER_ID))
+      whenever(eventTierRepository.findById(foundationTier().eventTierId))
         .thenReturn(Optional.of(appointmentTier))
 
       whenever(appointmentSetRepository.saveAndFlush(appointmentSetCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSet>())
@@ -282,37 +311,69 @@ class AppointmentSetServiceTest {
 
     @Test
     fun `category code not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Appointment Category with code 'NOT_FOUND' not found or is not active",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = "NOT_FOUND"),
           principal,
         )
       }
+      exception.message isEqualTo "Appointment Category with code 'NOT_FOUND' not found or is not active"
 
       verifyNoInteractions(appointmentSetRepository)
     }
 
     @Test
     fun `internal location id not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Appointment location with id '999' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999),
           principal,
         )
       }
+      exception.message isEqualTo "Appointment location with id '999' not found in prison 'MDI'"
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `createAppointmentSet tier code not found`() {
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(
+            prisonCode = moorlandPrisonCode,
+            categoryCode = categoryCode,
+            internalLocationId = internalLocationId,
+            tierCode = "INVALID",
+          ),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Event tier \"INVALID\" not found"
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `createAppointmentSet organiser code not found`() {
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(
+            prisonCode = moorlandPrisonCode,
+            categoryCode = categoryCode,
+            internalLocationId = internalLocationId,
+            organiserCode = "INVALID",
+          ),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Event organiser \"INVALID\" not found"
 
       verifyNoInteractions(appointmentSetRepository)
     }
 
     @Test
     fun `prison numbers not found`() {
-      assertThrows<IllegalArgumentException>(
-        "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
             prisonCode = prisonCode,
@@ -323,6 +384,7 @@ class AppointmentSetServiceTest {
           principal,
         )
       }
+      exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF', 'E4567FG' not found, were inactive or are residents of a different prison."
 
       verifyNoInteractions(appointmentSetRepository)
     }
@@ -337,9 +399,7 @@ class AppointmentSetServiceTest {
           ),
         )
 
-      assertThrows<IllegalArgumentException>(
-        "Prisoner(s) with prisoner number(s) 'D4567EF' not found in prison 'MDI'",
-      ) {
+      val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
             prisonCode = prisonCode,
@@ -350,6 +410,7 @@ class AppointmentSetServiceTest {
           principal,
         )
       }
+      exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF' not found, were inactive or are residents of a different prison."
 
       verifyNoInteractions(appointmentSetRepository)
     }
@@ -365,9 +426,8 @@ class AppointmentSetServiceTest {
           appointmentSetId = 0L,
           prisonCode = prisonCode,
           categoryCode = categoryCode,
-          customName = "Custom name",
           appointmentTier = appointmentTier,
-          appointmentHost = null,
+          customName = "Custom name",
           internalLocationId = internalLocationId,
           customLocation = null,
           inCell = false,
@@ -378,7 +438,9 @@ class AppointmentSetServiceTest {
           createdBy = createdBy,
           updatedTime = null,
           updatedBy = null,
-        )
+        ).also {
+          it.appointmentOrganiser = appointmentOrganiser
+        }
 
         with(appointmentSeries().single()) {
           val appointmentSeries = this
@@ -388,9 +450,8 @@ class AppointmentSetServiceTest {
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = prisonCode,
             categoryCode = categoryCode,
-            customName = "Custom name",
             appointmentTier = appointmentTier,
-            appointmentHost = null,
+            customName = "Custom name",
             internalLocationId = internalLocationId,
             customLocation = null,
             inCell = false,
@@ -406,7 +467,9 @@ class AppointmentSetServiceTest {
             createdBy = createdBy,
             updatedTime = null,
             updatedBy = null,
-          )
+          ).also {
+            it.appointmentOrganiser = appointmentOrganiser
+          }
 
           with(appointments().single()) {
             val appointment = this
@@ -418,7 +481,6 @@ class AppointmentSetServiceTest {
               categoryCode = categoryCode,
               customName = "Custom name",
               appointmentTier = appointmentTier,
-              appointmentHost = null,
               internalLocationId = internalLocationId,
               customLocation = null,
               inCell = false,
@@ -433,7 +495,9 @@ class AppointmentSetServiceTest {
               createdBy = createdBy,
               updatedTime = null,
               updatedBy = null,
-            )
+            ).also {
+              it.appointmentOrganiser = appointmentOrganiser
+            }
 
             with(attendees().single()) {
               this isEqualTo AppointmentAttendee(

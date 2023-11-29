@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -41,50 +40,58 @@ class ManageAttendancesService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun attendances(operation: AttendanceOperation) {
-    when (operation) {
-      AttendanceOperation.CREATE -> createAttendanceRecordsForToday()
-      AttendanceOperation.EXPIRE -> expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
+  fun createAttendances(date: LocalDate, prisonCode: String) {
+    require(date <= LocalDate.now()) {
+      "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
-  }
 
-  @Transactional(propagation = Propagation.REQUIRED)
-  fun createAttendanceRecordsForToday() {
-    LocalDate.now().let { today ->
-      log.info("Creating attendance records for: $today")
+    require(rolloutPrisonRepository.findByCode(prisonCode)?.isActivitiesRolledOut() == true) {
+      "Cannot create attendance for prison '$prisonCode', not rolled out"
+    }
 
-      scheduledInstanceRepository.findAllBySessionDate(today)
-        .filter { it.attendanceRequired() }
-        .forEach { instance ->
-          // Get the allocations which are active
-          val allocations = instance.activitySchedule
-            .allocations()
-            .filterNot { it.status(PrisonerStatus.PENDING, PrisonerStatus.ENDED) }
+    log.info("Creating attendance records for prison '$prisonCode' on date '$date'")
 
-          // Get the details of the prisoners due to attend the session
-          val prisonerNumbers = allocations.map { it.prisonerNumber }
-          val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
+    var counter = 0
 
-          // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
-          val attendancesForInstance = allocations.mapNotNull { allocation ->
+    scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
+      .filter { it.attendanceRequired() }
+      .forEach { instance ->
+        // Get the allocations which can be attended on the supplied date and time slot for the instance
+        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.timeSlot()) }
+
+        // Get the details of the prisoners due to attend the session
+        val prisonerNumbers = allocations.map { it.prisonerNumber }
+        val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
+
+        // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
+        val attendancesForInstance = allocations
+          .mapNotNull { allocation ->
             createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
           }
 
-          attendancesForInstance.ifNotEmpty {
-            runCatching {
-              // Save the attendances for this session within a new sub-transaction
-              transactionHandler.newSpringTransaction {
-                log.info("Committing ${attendancesForInstance.size} attendances for ${instance.activitySchedule.description}")
-                attendanceRepository.saveAllAndFlush(attendancesForInstance)
-              }.onEach { saved ->
-                // Send a sync event for each committed attendance row
-                log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
-                outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
-              }
+        attendancesForInstance.ifNotEmpty {
+          runCatching {
+            // Save the attendances for this session within a new sub-transaction
+            transactionHandler.newSpringTransaction {
+              log.info("Committing ${attendancesForInstance.size} attendances for ${instance.activitySchedule.description}")
+              attendanceRepository.saveAllAndFlush(attendancesForInstance)
+            }.onEach { saved ->
+              // Send a sync event for each committed attendance row
+              log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
+              outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
             }
           }
+            .onSuccess { counter += attendancesForInstance.size }
+            .onFailure {
+              log.error(
+                "Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'",
+                it,
+              )
+            }
         }
-    }
+      }
+
+    log.info("Created '$counter' attendance records for prison '$prisonCode' on date '$date'")
   }
 
   /**
@@ -116,7 +123,7 @@ class ManageAttendancesService(
       }.apply {
         // Calculate what we think the pay rate should be at the prisoner's current incentive level
         val incentiveLevelCode = prisonerDetails?.currentIncentive?.level?.code
-        payAmount = incentiveLevelCode ?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
+        payAmount = incentiveLevelCode?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
       }.also { attendance ->
         return attendance
       }
@@ -156,7 +163,7 @@ class ManageAttendancesService(
    * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
    * which expires attendances at the end of the day and sets the internal movement status to 'EXP'.
    */
-  private fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
+  fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
     log.info("Expiring WAITING attendances from yesterday.")
 
     LocalDate.now().minusDays(1).let { yesterday ->
@@ -180,9 +187,4 @@ class ManageAttendancesService(
 
   private fun forEachRolledOutPrison(block: (RolloutPrison) -> Unit) =
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { block(it) }
-}
-
-enum class AttendanceOperation {
-  CREATE,
-  EXPIRE,
 }

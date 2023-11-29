@@ -816,7 +816,7 @@ class MigrateActivityServiceTest {
           assertThat(prisonerNumber).isEqualTo("A1234BB")
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
           assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-          assertThat(payBand.nomisPayBand).isEqualTo("1".toInt())
+          assertThat(payBand?.nomisPayBand).isEqualTo("1".toInt())
           assertThat(endDate).isNull()
         }
       }
@@ -1030,7 +1030,7 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(payBand.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
+          assertThat(payBand?.nomisPayBand).isEqualTo(lowPayBand.nomisPayBand)
         }
       }
     }

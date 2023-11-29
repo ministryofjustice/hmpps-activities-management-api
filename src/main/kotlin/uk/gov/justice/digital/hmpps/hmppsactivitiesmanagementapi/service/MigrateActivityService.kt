@@ -247,6 +247,7 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       updatedTime = LocalDateTime.now(),
       updatedBy = MIGRATION_USER,
+      paid = true,
     ).apply {
       endDate = request.endDate
     }.apply {
@@ -443,6 +444,7 @@ class MigrateActivityService(
       bookingId = prisoner.bookingId?.let { prisoner.bookingId.toLong() } ?: 0L,
       startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
       endDate = request.endDate,
+      exclusions = request.exclusions,
       allocatedBy = MIGRATION_USER,
     )
 

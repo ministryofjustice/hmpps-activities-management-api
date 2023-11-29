@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
 data class PrisonerAllocationRequest(
@@ -16,10 +17,9 @@ data class PrisonerAllocationRequest(
   val prisonerNumber: String?,
 
   @Schema(
-    description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner",
+    description = "Where a prison uses pay bands to differentiate earnings, this is the pay band code given to this prisoner. Can be null for unpaid activities.",
     example = "1",
   )
-  @field:NotNull(message = "Pay band must be supplied")
   val payBandId: Long? = null,
 
   @Schema(description = "The future date when the prisoner will start the activity", example = "2022-09-10")
@@ -31,4 +31,7 @@ data class PrisonerAllocationRequest(
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
+
+  @Schema(description = "The days and times that the prisoner is excluded from this activity's schedule")
+  val exclusions: List<Slot>? = null,
 )

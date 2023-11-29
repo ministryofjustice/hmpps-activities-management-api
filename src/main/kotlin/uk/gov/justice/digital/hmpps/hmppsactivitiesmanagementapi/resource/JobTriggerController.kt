@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import java.time.LocalDate
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
 // within the namespace without requiring authentication
@@ -50,11 +51,17 @@ class JobTriggerController(
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
   fun triggerManageAttendanceRecordsJob(
+    @RequestParam(value = "prisonCode", required = false)
+    @Parameter(description = "If supplied will create attendance records for the given rolled out prison.")
+    prisonCode: String? = null,
+    @RequestParam(value = "date", required = false)
+    @Parameter(description = "If supplied will create attendance records for the given date. Default to the current date.")
+    date: LocalDate? = null,
     @RequestParam(value = "withExpiry", required = false)
     @Parameter(description = "If true will run the attendance expiry process in addition to other features. Defaults to false.")
     withExpiry: Boolean = false,
   ): String {
-    manageAttendanceRecordsJob.execute(withExpiry)
+    manageAttendanceRecordsJob.execute(mayBePrisonCode = prisonCode, date = date ?: LocalDate.now(), withExpiry = withExpiry)
     return "Manage attendance records triggered"
   }
 

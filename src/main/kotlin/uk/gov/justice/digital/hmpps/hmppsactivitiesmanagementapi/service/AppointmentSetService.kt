@@ -8,17 +8,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.createAndAddAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentHostRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSetRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.NOT_SPECIFIED_APPOINTMENT_TIER_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -34,8 +33,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Transactional
 class AppointmentSetService(
   private val appointmentSetRepository: AppointmentSetRepository,
-  private val appointmentTierRepository: AppointmentTierRepository,
-  private val appointmentHostRepository: AppointmentHostRepository,
+  private val eventTierRepository: EventTierRepository,
+  private val eventOrganiserRepository: EventOrganiserRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
@@ -79,11 +78,9 @@ class AppointmentSetService(
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
 
-    val appointmentTier = appointmentTierRepository.findOrThrowNotFound(NOT_SPECIFIED_APPOINTMENT_TIER_ID)
-
-    return transactionHandler.newSpringTransaction {
+    transactionHandler.newSpringTransaction {
       appointmentSetRepository.saveAndFlush(
-        request.toAppointmentSet(prisonNumberBookingIdMap, appointmentTier, principal.name),
+        request.toAppointmentSet(prisonNumberBookingIdMap, principal.name),
       )
     }.also {
       // TODO: publish appointment instance created messages post transaction
@@ -92,9 +89,12 @@ class AppointmentSetService(
           outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_CREATED, attendee.appointmentAttendeeId)
         }
       }
-      request.trackCreatedEvent(startTimeInMs, it.appointmentSetId, categoryDescription, locationDescription, it.createdBy)
       it.auditCreatedEvent()
-    }.toModel()
+
+      val appointmentSetModel = it.toModel()
+      appointmentSetModel.trackCreatedEvent(startTimeInMs, categoryDescription, locationDescription)
+      return appointmentSetModel
+    }
   }
 
   private fun AppointmentSetCreateRequest.categoryDescription() =
@@ -123,21 +123,29 @@ class AppointmentSetService(
     }
   }
 
-  private fun AppointmentSetCreateRequest.toAppointmentSet(prisonNumberBookingIdMap: Map<String, Long>, appointmentTier: AppointmentTier, createdBy: String) =
-    AppointmentSet(
+  private fun AppointmentSetCreateRequest.toAppointmentSet(
+    prisonNumberBookingIdMap: Map<String, Long>,
+    createdBy: String,
+  ): AppointmentSet {
+    val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(this.tierCode!!)
+    val organiser = this.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+
+    return AppointmentSet(
       prisonCode = prisonCode!!,
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
-      appointmentTier = appointmentTier,
+      appointmentTier = tier,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
       startDate = startDate!!,
       createdBy = createdBy,
     ).also { appointmentSet ->
+      appointmentSet.appointmentOrganiser = organiser
       appointments.forEach { appointment ->
         appointmentSet.addAppointment(appointment, prisonNumberBookingIdMap)
       }
     }
+  }
 
   private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) =
     addAppointmentSeries(
@@ -155,8 +163,10 @@ class AppointmentSetService(
         extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
         createdTime = createdTime,
         createdBy = createdBy,
-      ).apply {
-        createAndAddAppointment(
+      ).also {
+        it.appointmentOrganiser = this.appointmentOrganiser
+
+        it.createAndAddAppointment(
           1,
           startDate,
         ).apply {
@@ -171,14 +181,12 @@ class AppointmentSetService(
       },
     )
 
-  private fun AppointmentSetCreateRequest.trackCreatedEvent(
+  private fun AppointmentSetModel.trackCreatedEvent(
     startTimeInMs: Long,
-    appointmentSetId: Long,
     categoryDescription: String,
-    internalLocationDescription: String,
-    createdBy: String,
+    locationDescription: String,
   ) {
-    val propertiesMap = toTelemetryPropertiesMap(appointmentSetId, categoryDescription, internalLocationDescription, createdBy)
+    val propertiesMap = toTelemetryPropertiesMap(categoryDescription, locationDescription)
     val metricsMap = toTelemetryMetricsMap()
     metricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SET_CREATED.value, propertiesMap, metricsMap)

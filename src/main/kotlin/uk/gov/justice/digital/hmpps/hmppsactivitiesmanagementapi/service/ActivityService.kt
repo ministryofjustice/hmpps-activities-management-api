@@ -18,11 +18,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -37,8 +37,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -51,6 +51,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
+
+typealias AllocationIds = Set<Long>
 
 @Service
 @Transactional(readOnly = true)
@@ -136,6 +138,8 @@ class ActivityService(
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
     require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+    if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
+    if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
     val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
     val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
@@ -163,6 +167,7 @@ class ActivityService(
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
+      paid = request.paid,
     ).apply {
       this.organiser = organiser
       endDate = request.endDate
@@ -217,8 +222,8 @@ class ActivityService(
       PRISON_CODE_PROPERTY_KEY to this.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to this.summary,
     ).also { propsMap ->
-      this.tier?.let { propsMap[ACTIVITY_TIER_PROPERTY_KEY] = it.description }
-      this.organiser?.let { propsMap[ACTIVITY_ORGANISER_PROPERTY_KEY] = it.description }
+      this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
+      this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
     }
 
   private fun publishCreateTelemetryEvent(activity: ModelActivity) =
@@ -315,6 +320,8 @@ class ActivityService(
     transactionHandler.newSpringTransaction {
       val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())
         ?: throw EntityNotFoundException("Activity $activityId not found.")
+      val updatedAllocationIds = mutableSetOf<Long>()
+
       require(activity.state(ActivityState.ARCHIVED).not()) {
         "Activity cannot be updated because it is now archived."
       }
@@ -333,9 +340,9 @@ class ActivityService(
       applyLocationUpdate(request, activity)
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
-      val updatedAllocationIds = applyPayUpdate(prisonCode, request, activity)
+      applyPayUpdate(prisonCode, request, activity).let { updatedAllocationIds.addAll(it) }
       applyScheduleWeeksUpdate(request, activity)
-      applySlotsUpdate(request, activity)
+      applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
       val now = LocalDateTime.now()
 
@@ -599,7 +606,7 @@ class ActivityService(
     prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
-  ): List<Long> {
+  ): AllocationIds {
     request.pay?.let { pay ->
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
         .associateBy { it.prisonPayBandId }
@@ -620,7 +627,7 @@ class ActivityService(
         }
       }
     }
-    return emptyList()
+    return emptySet()
   }
 
   private fun replacePayBandAllocationBeforePayRemoval(
@@ -628,8 +635,8 @@ class ActivityService(
     newPay: List<ActivityPayCreateRequest>,
     activity: Activity,
     prisonPayBands: Map<Long, PrisonPayBand>,
-  ): List<Long> {
-    val updatedAllocationIds = mutableListOf<Long>()
+  ): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     val oldPay = activity.activityPay()
     val deltaPayBand = newPay.find {
       oldPay.none { p -> p.incentiveNomisCode == it.incentiveNomisCode && p.payBand.prisonPayBandId == it.payBandId }
@@ -642,7 +649,7 @@ class ActivityService(
 
         activeAllocations.forEach { allocation ->
           val prisoner = prisoners.single { it.prisonerNumber == allocation.prisonerNumber }
-          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand.prisonPayBandId }) {
+          if (newPay.none { pay -> pay.incentiveNomisCode == prisoner.currentIncentive?.level?.code && pay.payBandId == allocation.payBand!!.prisonPayBandId }) {
             allocation.apply {
               this.payBand = prisonPayBands[it.payBandId]
                 ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'")
@@ -668,11 +675,15 @@ class ActivityService(
   private fun applySlotsUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
-  ) {
+  ): AllocationIds {
+    val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      activity.schedules().forEach { it.updateSlots(slots.toMap(timeSlots)) }
+      activity.schedules().forEach {
+        it.updateSlots(slots.toMap(timeSlots)).let { ids -> updatedAllocationIds.addAll(ids) }
+      }
     }
+    return updatedAllocationIds
   }
 
   private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):

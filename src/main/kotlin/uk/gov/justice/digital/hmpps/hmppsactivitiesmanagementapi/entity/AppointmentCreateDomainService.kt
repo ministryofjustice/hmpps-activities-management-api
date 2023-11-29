@@ -20,6 +20,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEG
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.FREQUENCY_PROPERTY_KEY
@@ -162,6 +164,8 @@ class AppointmentCreateDomainService(
       FREQUENCY_PROPERTY_KEY to (schedule?.frequency?.toString() ?: ""),
       NUMBER_OF_APPOINTMENTS_PROPERTY_KEY to (schedule?.numberOfAppointments?.toString() ?: ""),
       HAS_EXTRA_INFORMATION_PROPERTY_KEY to (extraInformation?.isNotEmpty() == true).toString(),
+      EVENT_TIER_PROPERTY_KEY to (tier?.description ?: ""),
+      EVENT_ORGANISER_PROPERTY_KEY to (organiser?.description ?: ""),
     )
 
     val metricsMap = mapOf(
@@ -214,7 +218,6 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
     categoryCode = this.categoryCode,
     customName = this.customName,
     appointmentTier = this.appointmentTier,
-    appointmentHost = this.appointmentHost,
     internalLocationId = this.internalLocationId,
     customLocation = this.customLocation,
     inCell = this.inCell,
@@ -229,6 +232,7 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
     createdBy = this.createdBy,
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
-  ).apply {
-    addAppointment(this)
+  ).also {
+    it.appointmentOrganiser = this.appointmentOrganiser
+    this.addAppointment(it)
   }

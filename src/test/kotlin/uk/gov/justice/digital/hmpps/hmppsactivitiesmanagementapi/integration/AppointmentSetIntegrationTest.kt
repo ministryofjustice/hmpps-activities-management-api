@@ -23,6 +23,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
@@ -86,6 +88,16 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
         6,
         "TPR",
         "AC1",
+        EventTier(
+          id = 2,
+          code = "TIER_2",
+          description = "Tier 2",
+        ),
+        EventOrganiser(
+          id = 1,
+          code = "PRISON_STAFF",
+          description = "Prison staff",
+        ),
         "Appointment description",
         123,
         false,
@@ -96,6 +108,16 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 2,
+              code = "TIER_2",
+              description = "Tier 2",
+            ),
+            EventOrganiser(
+              id = 1,
+              code = "PRISON_STAFF",
+              description = "Prison staff",
+            ),
             "Appointment description",
             123,
             false,
@@ -131,6 +153,16 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 2,
+              code = "TIER_2",
+              description = "Tier 2",
+            ),
+            EventOrganiser(
+              id = 1,
+              code = "PRISON_STAFF",
+              description = "Prison staff",
+            ),
             "Appointment description",
             123,
             false,
@@ -166,6 +198,16 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 2,
+              code = "TIER_2",
+              description = "Tier 2",
+            ),
+            EventOrganiser(
+              id = 1,
+              code = "PRISON_STAFF",
+              description = "Prison staff",
+            ),
             "Appointment description",
             123,
             false,

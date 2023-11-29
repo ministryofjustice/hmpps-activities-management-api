@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,19 +24,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.lang.IllegalArgumentException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -54,6 +58,7 @@ class ManageAttendancesServiceTest {
 
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
     on { findAll() } doReturn listOf(rolloutPrison)
+    on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison
   }
 
   private val service = ManageAttendancesService(
@@ -83,10 +88,26 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
+  fun `cannot create attendances in the future`() {
+    assertThatThrownBy {
+      service.createAttendances(TimeSource.tomorrow(), pentonvillePrisonCode)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot create attendance for prison '$pentonvillePrisonCode', date is in the future '${TimeSource.tomorrow()}'")
+  }
+
+  @Test
+  fun `cannot create attendances prison not rolled out`() {
+    assertThatThrownBy {
+      service.createAttendances(TimeSource.today(), pentonvillePrisonCode)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot create attendance for prison '$pentonvillePrisonCode', not rolled out")
+  }
+
+  @Test
   fun `attendance is created and waiting to be marked for an active allocation`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
     whenever(attendanceRepository.saveAllAndFlush(anyList()))
       .thenReturn(
         listOf(
@@ -101,15 +122,10 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
-      .thenReturn(
-        attendees.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
@@ -124,15 +140,15 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is not created if the allocation is pending`() {
+  fun `attendance is not created if the allocation start date is in the future`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    allocation.prisonerStatus = PrisonerStatus.PENDING
+    allocation.startDate = TimeSource.tomorrow()
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(emptyList())
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())) doReturn emptyList()
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository, times(0)).saveAllAndFlush(anyList())
     verifyNoInteractions(outboundEventsService)
@@ -144,10 +160,25 @@ class ManageAttendancesServiceTest {
 
     allocation.deallocateNowWithReason(DeallocationReason.ENDED)
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today)).thenReturn(listOf(instance))
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())).thenReturn(emptyList())
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())) doReturn emptyList()
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
+
+    verify(attendanceRepository, times(0)).saveAllAndFlush(anyList())
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `attendance is not created if the allocation is excluded`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    allocation.updateExclusion(activitySchedule.slots().first(), setOf(today.dayOfWeek))
+
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())) doReturn emptyList()
+
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository, times(0)).saveAllAndFlush(anyList())
     verifyNoInteractions(outboundEventsService)
@@ -158,11 +189,8 @@ class ManageAttendancesServiceTest {
     instance.activitySchedule.activity.attendanceRequired = true
     allocation.autoSuspend(today.atStartOfDay(), "reason")
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
-
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED))
-      .thenReturn(attendanceReasons()["SUSPENDED"])
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
 
     val attendees = instance.attendances.map { it.prisonerNumber }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
@@ -188,7 +216,7 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
@@ -209,11 +237,8 @@ class ManageAttendancesServiceTest {
 
     allocation.userSuspend(today.atStartOfDay(), "reason", "user")
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
-
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED))
-      .thenReturn(attendanceReasons()["SUSPENDED"])
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
 
     val attendees = instance.attendances.map { it.prisonerNumber }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
@@ -239,7 +264,7 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
@@ -265,19 +290,11 @@ class ManageAttendancesServiceTest {
       attendanceReason(AttendanceReasonEnum.CANCELLED),
     )
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
 
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED))
-      .thenReturn(attendanceReasons()["CANCELLED"])
-
-    val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(attendees))
-      .thenReturn(
-        attendees.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        }.associateBy { it.prisonerNumber },
-      )
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     whenever(attendanceRepository.saveAllAndFlush(anyList()))
       .thenReturn(
@@ -294,7 +311,7 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
@@ -321,11 +338,8 @@ class ManageAttendancesServiceTest {
       attendanceReason(AttendanceReasonEnum.CANCELLED),
     )
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
-
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED))
-      .thenReturn(attendanceReasons()["SUSPENDED"])
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
 
     val attendees = instance.attendances.map { it.prisonerNumber }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
@@ -349,7 +363,7 @@ class ManageAttendancesServiceTest {
         ),
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
@@ -365,11 +379,10 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is not created when attendance is not requiredon the activity`() {
+  fun `attendance is not created when attendance is not required on the activity`() {
     instance.activitySchedule.activity.attendanceRequired = false
 
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
 
     val attendees = instance.attendances.map { it.prisonerNumber }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
@@ -379,7 +392,7 @@ class ManageAttendancesServiceTest {
         },
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository, never()).saveAllAndFlush(anyList())
 
@@ -389,8 +402,7 @@ class ManageAttendancesServiceTest {
 
   @Test
   fun `attendance is not created if a pre-existing attendance exists for this session and allocation`() {
-    whenever(scheduledInstanceRepository.findAllBySessionDate(today))
-      .thenReturn(listOf(instance))
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
 
     whenever(
       attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(
@@ -407,7 +419,7 @@ class ManageAttendancesServiceTest {
         },
       )
 
-    service.attendances(AttendanceOperation.CREATE)
+    service.createAttendances(today, moorlandPrisonCode)
 
     verify(attendanceRepository, never()).saveAllAndFlush(anyList())
     verifyNoInteractions(outboundEventsService)
@@ -425,7 +437,7 @@ class ManageAttendancesServiceTest {
       } doReturn listOf(attendance)
     }
 
-    service.attendances(AttendanceOperation.EXPIRE)
+    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, attendance.attendanceId)
@@ -442,7 +454,7 @@ class ManageAttendancesServiceTest {
       } doReturn emptyList()
     }
 
-    service.attendances(AttendanceOperation.EXPIRE)
+    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
     verifyNoInteractions(outboundEventsService)
@@ -470,14 +482,25 @@ class ManageAttendancesServiceTest {
       } doReturn emptyList()
     }
 
-    service.attendances(AttendanceOperation.EXPIRE)
+    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     verifyNoInteractions(outboundEventsService)
   }
 
   private fun setUpActivityWithAttendanceFor(activityStartDate: LocalDate) {
-    activity = activityEntity(startDate = activityStartDate, timestamp = activityStartDate.atStartOfDay())
+    activity = activityEntity(startDate = activityStartDate, timestamp = activityStartDate.atStartOfDay(), noSchedules = true)
+      .apply {
+        this.addSchedule(
+          activitySchedule(
+            this,
+            activityScheduleId = activityId,
+            activityStartDate.atStartOfDay(),
+            daysOfWeek = setOf(activityStartDate.dayOfWeek),
+            noExclusions = true,
+          ),
+        )
+      }
     activitySchedule = activity.schedules().first()
     allocation = activitySchedule.allocations().first()
     instance = activitySchedule.instances().first()

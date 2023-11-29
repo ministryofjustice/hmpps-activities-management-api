@@ -7,12 +7,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AllocationTest {
@@ -197,6 +205,7 @@ class AllocationTest {
     val scheduleEndingToday: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
       on { endDate } doReturn today
+      on { isPaid() } doReturn true
     }
 
     val allocationNoEndDate = allocation().copy(activitySchedule = scheduleEndingToday).apply { endDate = null }
@@ -205,7 +214,7 @@ class AllocationTest {
     assertThatThrownBy {
       allocationNoEndDate.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Planned date cannot be after $today.")
+      .hasMessage("Planned deallocation date cannot be after activity schedule end date, $today.")
   }
 
   @Test
@@ -235,6 +244,7 @@ class AllocationTest {
     val schedule: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
       on { endDate } doReturn tomorrow.plusWeeks(1)
+      on { isPaid() } doReturn true
     }
     val allocation = allocation().copy(activitySchedule = schedule).apply { endDate = null }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
@@ -359,5 +369,192 @@ class AllocationTest {
 
     allocation.startDate isEqualTo TimeSource.tomorrow()
     allocation.endDate isEqualTo TimeSource.today()
+  }
+
+  @Test
+  fun `update exclusions - add and remove an exclusion`() {
+    val allocation = allocation()
+    allocation.exclusions() hasSize 0
+
+    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+
+    allocation.exclusions() hasSize 1
+    with(exclusion!!) {
+      getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+
+    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
+
+    allocation.exclusions() hasSize 0
+    updatedExclusion isEqualTo null
+  }
+
+  @Test
+  fun `update exclusions - cannot add exclusions for same day and time slot over multiple weeks`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    )
+
+    allocation.exclusions() hasSize 0
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+
+    allocation.exclusions() hasSize 1
+
+    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.MONDAY)) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Exclusions cannot be added for the same day and time slot over multiple weeks.")
+
+    allocation.exclusions() hasSize 1
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
+
+    allocation.exclusions() hasSize 2
+  }
+
+  @Test
+  fun `allocation starting today can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.today())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation starting today cannot be attended yesterday`() {
+    val allocation = allocation(startDate = TimeSource.today())
+
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation starting yesterday can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.yesterday())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending today can be attended today`() {
+    val allocation = allocation(startDate = TimeSource.today()).apply { endDate = TimeSource.today() }
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending yesterday can be attended yesterday`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
+
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool true
+  }
+
+  @Test
+  fun `allocation ending yesterday cannot be attended today`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation starting tomorrow cannot be attended today`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow())
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation deallocated cannot be attended`() {
+    val allocation = allocation().deallocateNow()
+
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+  }
+
+  @Test
+  fun `allocation with exclusion cannot be attended`() {
+    val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.today().dayOfWeek)).allocations().first()
+
+    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool true
+
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.today().dayOfWeek))
+
+    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool false
+  }
+
+  @Test
+  fun `allocation for paid activity must have a pay band`() {
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 1, paid = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = null,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must be provided for paid activity ID '1'")
+
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 2, paid = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = lowPayBand,
+      ).apply {
+        payBand = null
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must be provided for paid activity ID '2'")
+  }
+
+  @Test
+  fun `allocation for unpaid activity cannot have a pay band`() {
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 1, paid = false, noPayBands = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = lowPayBand,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '1'")
+
+    assertThatThrownBy {
+      Allocation(
+        activitySchedule = activityEntity(activityId = 2, paid = false, noPayBands = true).schedules().first(),
+        allocatedBy = "test",
+        allocatedTime = TimeSource.now(),
+        prisonerNumber = "123",
+        bookingId = 1,
+        startDate = TimeSource.today(),
+        initialPayBand = null,
+      ).apply {
+        payBand = lowPayBand
+      }
+    }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '2'")
   }
 }

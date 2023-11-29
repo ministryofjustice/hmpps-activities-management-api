@@ -8,7 +8,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
@@ -26,6 +29,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 class AppointmentUpdateDomainService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository,
+  private val eventTierRepository: EventTierRepository,
+  private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
@@ -86,8 +91,8 @@ class AppointmentUpdateDomainService(
         val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
           updatedBy,
           updatedAppointmentSeries.prisonCode,
-          updatedAppointmentSeries.id,
-          appointmentId,
+          updatedAppointmentSeries,
+          updatedAppointmentSeries.appointments.find { it.id == appointmentId },
         )
         val telemetryMetricsMap = request.toTelemetryMetricsMap(updateAppointmentsCount, updateInstancesCount)
         telemetryMetricsMap[EVENT_TIME_MS_METRIC_KEY] = (System.currentTimeMillis() - startTimeInMs).toDouble()
@@ -122,6 +127,31 @@ class AppointmentUpdateDomainService(
     }
 
     return instanceCount
+  }
+
+  private fun applyTierUpdate(
+    request: AppointmentUpdateRequest,
+    appointmentsToUpdate: Collection<Appointment>,
+  ) {
+    appointmentsToUpdate.forEach {
+      request.tierCode?.apply {
+        it.appointmentTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
+        if (it.appointmentTier?.isTierTwo() != true) {
+          it.appointmentOrganiser = null
+        }
+      }
+    }
+  }
+
+  private fun applyOrganiserUpdate(
+    request: AppointmentUpdateRequest,
+    appointmentsToUpdate: Collection<Appointment>,
+  ) {
+    appointmentsToUpdate.forEach {
+      request.organiserCode?.apply {
+        it.appointmentOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument(this)
+      }
+    }
   }
 
   private fun applyCategoryCodeUpdate(
@@ -214,6 +244,8 @@ class AppointmentUpdateDomainService(
     appointmentsToUpdate: Collection<Appointment>,
   ) {
     applyCategoryCodeUpdate(request, appointmentsToUpdate)
+    applyTierUpdate(request, appointmentsToUpdate)
+    applyOrganiserUpdate(request, appointmentsToUpdate)
     applyStartDateUpdate(request, appointmentSeries, appointmentsToUpdate)
     applyInternalLocationUpdate(request, appointmentsToUpdate)
     applyStartEndTimeUpdate(request, appointmentsToUpdate)
@@ -249,6 +281,10 @@ class AppointmentUpdateDomainService(
         prisonCode = originalAppointmentSeries.prisonCode,
         originalCategoryCode = originalAppointmentSeries.categoryCode,
         categoryCode = updatedAppointmentSeries.categoryCode,
+        originalTierCode = originalAppointmentSeries.appointmentTier?.code,
+        tierCode = updatedAppointmentSeries.appointmentTier?.code,
+        originalOrganiserCode = originalAppointmentSeries.appointmentOrganiser?.code,
+        organiserCode = updatedAppointmentSeries.appointmentOrganiser?.code,
         originalInternalLocationId = originalAppointmentSeries.internalLocationId,
         internalLocationId = updatedAppointmentSeries.internalLocationId,
         originalStartDate = originalAppointmentSeries.startDate,

@@ -58,6 +58,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         allocated = 4,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
+        paid = true,
       ),
     )
   }

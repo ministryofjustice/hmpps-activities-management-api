@@ -18,6 +18,7 @@ Tools required:
 * docker
 * docker-compose
 * AWS cli
+* kubectl
 
 ## Install gradle
 
@@ -45,6 +46,36 @@ export SCHEDULE_AHEAD_DAYS=46
 ```
 
 N.B. you must escape any '$' characters with '\\$'
+
+## Service Alerting
+
+The serivce uses [Sentry.IO](https://ministryofjustice.sentry.io/) to raise alerts in Slack and email for job failures. There is a project and team set up in Sentry specifically for this service called `#hmpps-activities-management`. You can log in (and register if need be) with your MoJ github account [here](https://ministryofjustice.sentry.io/).
+
+Rules for alerts can be configured [here](https://ministryofjustice.sentry.io/alerts/rules/).
+
+For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
+
+```
+echo -n '<SENTRY_DSN_GOES_HERE>' | base64
+```
+
+Create a file called sentry.yaml based on the example below and add the base 64 encoded to it:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentry
+type: Opaque
+data:
+  SENTRY_DSN: <BASE_64_ENCODED_SENTRY_DSN_GOES_HERE>
+```
+
+Apply the secret to each environment with `kubectl` using the file above as required:
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> apply -f sentry.yaml
+```
 
 ## Running the service
 
@@ -170,4 +201,26 @@ To register pre-commit check to run Ktlint format:
 To run integration tests use below command
 ```
 ./gradlew integrationTest
+```
+
+## Runbook
+
+### Re-running a job
+
+**IMPORTANT: extreme caution should be taken if the job failure in question is in production and probably warrants two developers working together.**
+
+There may be times on overnight job fails to run. To re-run it you can port forward onto a running pod make a `curl` request to the job in question.
+
+If for example the attendance creation failed it can be re-run as follows:
+
+In a terminal window ...
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-activities-management-api-f6954cfd6-7gb4j 8080:8080
+```
+
+In another terminal window ...
+
+```
+curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=MDI"
 ```

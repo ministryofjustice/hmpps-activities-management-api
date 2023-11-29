@@ -282,6 +282,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           allocated = 10,
           createdTime = LocalDateTime.now(),
           activityState = ActivityState.LIVE,
+          paid = true,
         ),
         slots = listOf(
           ActivityScheduleSlot(

@@ -22,7 +22,12 @@ class MonitoringService {
   }
 
   fun capture(message: String) {
-    // This checks for the presence of the Sentry environment variable SENTRY_DSN, if is disabled if not found.
-    if (Sentry.isEnabled()) Sentry.captureMessage(message)
+    // This checks for the presence of the Sentry environment variable SENTRY_DSN, it is disabled if not found.
+    if (Sentry.isEnabled()) {
+      Sentry.captureMessage(message)
+      log.info("Monitoring service is enabled, message: '$message' sent")
+    } else {
+      log.info("Monitoring service is disabled, ignoring message: '$message'")
+    }
   }
 }

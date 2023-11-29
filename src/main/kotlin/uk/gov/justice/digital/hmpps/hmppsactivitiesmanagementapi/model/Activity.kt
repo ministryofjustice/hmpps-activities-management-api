@@ -93,6 +93,9 @@ data class Activity(
 
   @Schema(description = "The list of minimum education levels that can apply to this activity")
   val minimumEducationLevel: List<ActivityMinimumEducationLevel> = emptyList(),
+
+  @Schema(description = "Whether the activity is a paid activity", example = "true")
+  val paid: Boolean,
 )
 
 enum class PayPerSession { H, F }

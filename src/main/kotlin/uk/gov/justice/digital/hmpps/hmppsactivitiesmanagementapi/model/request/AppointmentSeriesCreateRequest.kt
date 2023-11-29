@@ -54,6 +54,21 @@ data class AppointmentSeriesCreateRequest(
   )
   val categoryCode: String?,
 
+  @field:NotEmpty(message = "Tier code must be supplied")
+  @Schema(
+    description = "The tier code for this appointment",
+    example = "TIER_1",
+    allowableValues = ["TIER_1", "TIER_2", "FOUNDATION"],
+  )
+  val tierCode: String?,
+
+  @Schema(
+    description = "The organiser code for this appointment",
+    example = "PRISON_STAFF",
+    allowableValues = ["PRISON_STAFF", "PRISONER", "EXTERNAL_PROVIDER", "OTHER"],
+  )
+  val organiserCode: String?,
+
   @field:Size(max = 40, message = "Custom name should not exceed {max} characters")
   @Schema(
     description =

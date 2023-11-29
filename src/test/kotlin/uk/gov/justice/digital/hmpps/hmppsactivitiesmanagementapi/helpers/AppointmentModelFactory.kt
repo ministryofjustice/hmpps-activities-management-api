@@ -24,6 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -31,12 +33,18 @@ import java.time.LocalTime
 fun appointmentCategorySummary() =
   AppointmentCategorySummary("TEST", "Test Category")
 
-fun appointmentSeriesModel(createdTime: LocalDateTime, updatedTime: LocalDateTime?, appointmentUpdatedTime: LocalDateTime?) =
+fun appointmentSeriesModel(
+  createdTime: LocalDateTime = LocalDateTime.now(),
+  updatedTime: LocalDateTime? = null,
+  appointmentUpdatedTime: LocalDateTime? = null,
+) =
   AppointmentSeries(
     1,
     AppointmentType.INDIVIDUAL,
     "TPR",
     "TEST",
+    eventTier().toModelEventTier(),
+    eventOrganiser().toModelEventOrganiser(),
     "Appointment description",
     123,
     false,
@@ -64,6 +72,8 @@ fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTi
     1,
     "TPR",
     "TEST",
+    eventTier().toModelEventTier(),
+    eventOrganiser().toModelEventOrganiser(),
     "Appointment description",
     123,
     false,
@@ -112,6 +122,8 @@ fun appointmentSeriesCreateRequest(
   prisonCode: String? = "TPR",
   prisonerNumbers: List<String> = listOf("A1234BC"),
   categoryCode: String? = "TEST",
+  tierCode: String? = eventTier().code,
+  organiserCode: String? = eventOrganiser().code,
   customName: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
@@ -126,6 +138,8 @@ fun appointmentSeriesCreateRequest(
     prisonCode,
     prisonerNumbers,
     categoryCode,
+    tierCode,
+    organiserCode,
     customName,
     internalLocationId,
     inCell,
@@ -139,6 +153,8 @@ fun appointmentSeriesCreateRequest(
 fun appointmentSetCreateRequest(
   prisonCode: String? = "TPR",
   categoryCode: String? = "TEST",
+  tierCode: String? = eventTier().code,
+  organiserCode: String? = eventOrganiser().code,
   customName: String? = "Appointment description",
   internalLocationId: Long? = 123,
   inCell: Boolean = false,
@@ -150,6 +166,8 @@ fun appointmentSetCreateRequest(
 ) =
   AppointmentSetCreateRequest(
     categoryCode = categoryCode,
+    tierCode = tierCode,
+    organiserCode = organiserCode,
     prisonCode = prisonCode,
     internalLocationId = internalLocationId,
     inCell = inCell,
@@ -210,6 +228,8 @@ fun appointmentSeriesDetails(
   "TPR",
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   category = category,
+  eventTier().toModelEventTier(),
+  eventOrganiser().toModelEventOrganiser(),
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,
@@ -263,6 +283,8 @@ fun appointmentDetails(
   if (!customName.isNullOrEmpty()) "$customName (${category.description})" else category.description,
   prisoners.map { AppointmentAttendeeSummary(appointmentAttendeeId, it, null, null, null) },
   category,
+  eventTier().toModelEventTier(),
+  eventOrganiser().toModelEventOrganiser(),
   customName,
   AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
   false,

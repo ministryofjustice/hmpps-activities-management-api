@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -85,6 +84,7 @@ fun transform(activity: EntityActivity) =
     updatedTime = activity.updatedTime,
     updatedBy = activity.updatedBy,
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
+    paid = activity.isPaid(),
   )
 
 /*
@@ -186,14 +186,14 @@ fun EntityActivityCategory.toModelActivityCategory() =
     this.description,
   )
 
-private fun EntityEventTier.toModelEventTier() =
+fun EntityEventTier.toModelEventTier() =
   ModelEventTier(
     id = this.eventTierId,
     code = this.code,
     description = this.description,
   )
 
-private fun EntityEventOrganiser.toModelEventOrganiser() =
+fun EntityEventOrganiser.toModelEventOrganiser() =
   EventOrganiser(
     id = this.eventOrganiserId,
     code = this.code,

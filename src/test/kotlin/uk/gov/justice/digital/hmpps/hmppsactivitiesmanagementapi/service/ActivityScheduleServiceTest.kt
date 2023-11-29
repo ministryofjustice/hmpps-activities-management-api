@@ -109,7 +109,7 @@ class ActivityScheduleServiceTest {
 
     val allocations = service.getAllocationsBy(1)
 
-    assertThat(allocations).hasSize(1)
+    assertThat(allocations).hasSize(2)
     assertThat(allocations).containsExactlyInAnyOrder(
       *schedule.allocations().toModelAllocations().toTypedArray(),
     )
@@ -118,7 +118,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `ended allocations for a given schedule are not returned`() {
     val schedule = schedule(pentonvillePrisonCode).apply {
-      allocations().first().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
+      allocations().forEach { it.apply { deallocateNowWithReason(DeallocationReason.ENDED) } }
     }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
@@ -129,16 +129,23 @@ class ActivityScheduleServiceTest {
   @Test
   fun `getAllocationsBy - prisoner information is returned`() {
     val schedule = schedule(pentonvillePrisonCode)
-    val prisoner: Prisoner = mock {
+    val prisoner1: Prisoner = mock {
       on { firstName } doReturn "JOE"
       on { lastName } doReturn "BLOGGS"
       on { cellLocation } doReturn "MDI-1-1-001"
       on { releaseDate } doReturn LocalDate.now()
       on { prisonerNumber } doReturn "A1234AA"
     }
+    val prisoner2: Prisoner = mock {
+      on { firstName } doReturn "JOE"
+      on { lastName } doReturn "BLOGGS"
+      on { cellLocation } doReturn "MDI-1-1-001"
+      on { releaseDate } doReturn LocalDate.now()
+      on { prisonerNumber } doReturn "A1111BB"
+    }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)).thenReturn(schedule)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA"))).thenReturn(listOf(prisoner))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1111BB"))).thenReturn(listOf(prisoner1, prisoner2))
 
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {
@@ -421,6 +428,46 @@ class ActivityScheduleServiceTest {
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation start date must be in the future")
+  }
+
+  @Test
+  fun `allocate without pay band throws exception for paid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = true))
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          prisonerNumber = "123456",
+          payBandId = null,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation must have a pay band when the activity '1' is paid")
+  }
+
+  @Test
+  fun `allocate with pay band throws exception for unpaid activity`() {
+    val schedule = activitySchedule(activityEntity(paid = false, noPayBands = true), noAllocations = true)
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          prisonerNumber = "123456",
+          payBandId = 1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation cannot have a pay band when the activity '1' is unpaid")
   }
 
   @Test

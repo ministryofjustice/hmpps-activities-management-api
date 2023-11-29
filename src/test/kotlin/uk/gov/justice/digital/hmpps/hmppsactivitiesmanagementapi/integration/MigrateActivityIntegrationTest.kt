@@ -15,6 +15,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
@@ -349,6 +350,9 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       endDate = null,
       endComment = null,
       suspendedFlag = false,
+      exclusions = listOf(
+        Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+      ),
     )
 
   private fun WebTestClient.migrateActivity(request: ActivityMigrateRequest, roles: List<String>) =

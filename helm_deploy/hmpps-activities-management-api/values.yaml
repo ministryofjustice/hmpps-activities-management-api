@@ -99,7 +99,7 @@ generic-service:
       DPR_USER: "DPR_USER"
       DPR_PASSWORD: "DPR_PASSWORD"
     sentry:
-      sentry_dsn: "SENTRY_DSN"
+      SENTRY_DSN: "SENTRY_DSN"
 
   allowlist:
     ark-nps-hmcts-ttp1: 195.59.75.0/24

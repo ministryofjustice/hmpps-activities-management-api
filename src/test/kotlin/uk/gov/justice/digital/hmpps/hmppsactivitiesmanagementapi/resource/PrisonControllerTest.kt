@@ -75,6 +75,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         allocated = 10,
         createdTime = LocalDateTime.now(),
         activityState = ActivityState.LIVE,
+        paid = true,
       ),
     )
 

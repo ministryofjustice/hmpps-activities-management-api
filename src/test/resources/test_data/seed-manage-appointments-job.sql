@@ -14,16 +14,16 @@ INSERT INTO appointment_series_schedule (appointment_series_schedule_id, frequen
 VALUES (1, 'DAILY', 7);
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (1, 'GROUP', 'RSI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '10:30', 1, now()::timestamp, 'TEST.USER');
+VALUES (1, 'GROUP', 'RSI', 'CHAP', 1, 123, false, now()::date - 1, '09:00', '10:30', 1, now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted)
-VALUES  (1, 1, 1, 'RSI', 'CHAP', 4, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (2, 1, 2, 'RSI', 'CHAP', 4, 123, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (3, 1, 2, 'RSI', 'CHAP', 4, 123, false, now()::date + 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (4, 1, 3, 'RSI', 'CHAP', 4, 123, false, now()::date + 2, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (5, 1, 4, 'RSI', 'CHAP', 4, 123, false, now()::date + 3, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
-        (6, 1, 5, 'RSI', 'CHAP', 4, 123, false, now()::date + 4, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'CANCEL.USER', false), -- Cancelled appointment
-        (7, 1, 6, 'RSI', 'CHAP', 4, 123, false, now()::date + 5, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true); -- Deleted appointment
+VALUES  (1, 1, 1, 'RSI', 'CHAP', 1, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (2, 1, 2, 'RSI', 'CHAP', 1, 123, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (3, 1, 2, 'RSI', 'CHAP', 1, 123, false, now()::date + 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (4, 1, 3, 'RSI', 'CHAP', 1, 123, false, now()::date + 2, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (5, 1, 4, 'RSI', 'CHAP', 1, 123, false, now()::date + 3, '09:00', '10:30', now()::timestamp, 'TEST.USER', null, null, null, false),
+        (6, 1, 5, 'RSI', 'CHAP', 1, 123, false, now()::date + 4, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'CANCEL.USER', false), -- Cancelled appointment
+        (7, 1, 6, 'RSI', 'CHAP', 1, 123, false, now()::date + 5, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true); -- Deleted appointment
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (1, 1, 'A1234BC', 1),
@@ -51,17 +51,17 @@ VALUES  (12, 7, 'A1234BC', 1),
 -- ====================================
 
 INSERT INTO appointment_set (appointment_set_id, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, created_time, created_by)
-VALUES  (1, 'RSI', 'AC1', 4, 123, false, now()::date + 2, now()::timestamp, 'TEST.USER');
+VALUES  (1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES  (10, 'INDIVIDUAL', 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (11, 'INDIVIDUAL', 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
-        (12, 'INDIVIDUAL', 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
+VALUES  (10, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
+        (11, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
+        (12, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES  (10, 10, 1, 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (11, 11, 1, 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
-        (12, 12, 1, 'RSI', 'AC1', 4, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
+VALUES  (10, 10, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
+        (11, 11, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
+        (12, 12, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (20, 10, 'A1234BC', 123),

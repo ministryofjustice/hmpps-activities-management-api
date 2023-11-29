@@ -49,9 +49,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.runEveryDayOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -63,8 +63,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Pris
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ORGANISER_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -223,8 +223,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
-      ACTIVITY_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
   }
@@ -280,6 +280,17 @@ class ActivityServiceTest {
         ).isEmpty()
       }
     }
+  }
+
+  @Test
+  fun `createActivity - fails when unpaid activity has pay rates`() {
+    val createActivityRequestWithPayRates = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), paid = false)
+
+    assertThatThrownBy {
+      service().createActivity(createActivityRequestWithPayRates, "SCH_ACTIVITY")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unpaid activity cannot have pay rates associated with it")
   }
 
   @Test
@@ -714,8 +725,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to "Tier 2",
-      ACTIVITY_ORGANISER_PROPERTY_KEY to "Prison staff",
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
   }
@@ -925,7 +936,7 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - update pay`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-3.json")
-    val activityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -961,9 +972,9 @@ class ActivityServiceTest {
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    val prisonerNumber = activityEntity.schedules().first().allocations().first().prisonerNumber
-    val prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonerNumber)
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf(prisonerNumber))).thenReturn(listOf(prisoner))
+    val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
+    val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
 
     service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
 
@@ -971,7 +982,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
-      assertThat(schedules().first().allocations().first().payBand.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
+      assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
@@ -1668,6 +1679,142 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update slots where there is an exclusion`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    ).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    activity.addSchedule(
+      activitySchedule(
+        activity,
+        scheduleWeeks = 1,
+        noSlots = true,
+        noInstances = true,
+        noAllocations = true,
+      ),
+    ).apply {
+      val slot = addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+      allocatePrisoner(
+        prisonerNumber = "A1111BB".toPrisonerNumber(),
+        bookingId = 20002,
+        payBand = lowPayBand,
+        allocatedBy = "Mr Blogs",
+        startDate = startDate,
+      ).apply {
+        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.addExclusion(exclusion!!)
+      }
+    }
+
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = tomorrow.dayOfWeek != DayOfWeek.MONDAY,
+            tuesday = tomorrow.dayOfWeek != DayOfWeek.TUESDAY,
+            wednesday = tomorrow.dayOfWeek != DayOfWeek.WEDNESDAY,
+            thursday = tomorrow.dayOfWeek != DayOfWeek.THURSDAY,
+            friday = tomorrow.dayOfWeek != DayOfWeek.FRIDAY,
+            saturday = tomorrow.dayOfWeek != DayOfWeek.SATURDAY,
+            sunday = tomorrow.dayOfWeek != DayOfWeek.SUNDAY,
+          ),
+        ),
+      ),
+      updatedBy = "TEST",
+    )
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+  }
+
+  @Test
+  fun `updateActivity - update slots where there is an exclusion - event not emitted if exclusion is not affected`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val activity = activityEntity(
+      startDate = tomorrow,
+      noSchedules = true,
+    ).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    activity.addSchedule(
+      activitySchedule(
+        activity,
+        scheduleWeeks = 1,
+        noSlots = true,
+        noInstances = true,
+        noAllocations = true,
+      ),
+    ).apply {
+      val slot = addSlot(
+        weekNumber = 1,
+        startTime = LocalTime.of(9, 0),
+        endTime = LocalTime.of(12, 0),
+        daysOfWeek = setOf(tomorrow.dayOfWeek),
+      )
+      allocatePrisoner(
+        prisonerNumber = "A1111BB".toPrisonerNumber(),
+        bookingId = 20002,
+        payBand = lowPayBand,
+        allocatedBy = "Mr Blogs",
+        startDate = startDate,
+      ).apply {
+        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        slot.addExclusion(exclusion!!)
+      }
+    }
+
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            thursday = true,
+            friday = true,
+            saturday = true,
+            sunday = true,
+          ),
+        ),
+      ),
+      updatedBy = "TEST",
+    )
+
+    verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+  }
+
+  @Test
   fun `updateActivity - update to off-wing`() {
     val activity = activityEntity()
 
@@ -1760,8 +1907,8 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to activityCaptor.firstValue.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
-      ACTIVITY_TIER_PROPERTY_KEY to "Tier 2",
-      ACTIVITY_ORGANISER_PROPERTY_KEY to "A prisoner or group of prisoners",
+      EVENT_TIER_PROPERTY_KEY to "Tier 2",
+      EVENT_ORGANISER_PROPERTY_KEY to "A prisoner or group of prisoners",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
   }

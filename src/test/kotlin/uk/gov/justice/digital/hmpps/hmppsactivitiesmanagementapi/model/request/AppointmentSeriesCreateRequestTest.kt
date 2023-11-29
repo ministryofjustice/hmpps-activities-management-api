@@ -123,6 +123,16 @@ class AppointmentSeriesCreateRequestTest {
     assertSingleValidationError(validator.validate(request), "extraInformation", "Extra information must not exceed 4000 characters")
   }
 
+  @Test
+  fun `appointment tier code must be supplied`() {
+    val request = appointmentSeriesCreateRequest(tierCode = null)
+    assertSingleValidationError(
+      validator.validate(request),
+      "tierCode",
+      "Tier code must be supplied",
+    )
+  }
+
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<AppointmentSeriesCreateRequest>>, propertyName: String, message: String) {
     assertThat(validate.size).isEqualTo(1)
     assertThat(validate.first().propertyPath.toString()).isEqualTo(propertyName)

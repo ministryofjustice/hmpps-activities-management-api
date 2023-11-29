@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -10,9 +11,8 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import java.time.DayOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 
 @Schema(description = "Describes a top-level activity to be created")
@@ -43,6 +43,9 @@ data class ActivityCreateRequest(
 
   @Schema(description = "Flag to indicate if the activity carried out outside of the prison", example = "false")
   var outsideWork: Boolean,
+
+  @Schema(description = "Flag to indicate if the activity is a paid activity. It true then pay rates are required, if false then no pay rates should be provided", example = "true")
+  val paid: Boolean = true,
 
   @Schema(
     description = "Indicates whether the activity session is a (F)ull day or a (H)alf day (for payment purposes). ",
@@ -141,53 +144,10 @@ data class ActivityCreateRequest(
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean = false,
-)
-
-@Schema(
-  description = """
-    Describes time slot and day (or days) the scheduled activity would run. At least one day must be specified.
-    
-    e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
-  """,
-)
-
-data class Slot(
-  @field:Positive(message = "The week number must be a positive integer")
-  @Schema(description = "The week of the schedule this slot relates to", example = "1")
-  val weekNumber: Int,
-
-  @field:NotEmpty(message = "The time slot must supplied")
-  @Schema(
-    description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
-    example = "AM",
-  )
-  val timeSlot: String?,
-
-  val monday: Boolean = false,
-
-  val tuesday: Boolean = false,
-
-  val wednesday: Boolean = false,
-
-  val thursday: Boolean = false,
-
-  val friday: Boolean = false,
-
-  val saturday: Boolean = false,
-
-  val sunday: Boolean = false,
 ) {
-  fun getDaysOfWeek(): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { monday },
-      DayOfWeek.TUESDAY.takeIf { tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { wednesday },
-      DayOfWeek.THURSDAY.takeIf { thursday },
-      DayOfWeek.FRIDAY.takeIf { friday },
-      DayOfWeek.SATURDAY.takeIf { saturday },
-      DayOfWeek.SUNDAY.takeIf { sunday },
-    )
-  }
+  @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
+  private fun isUnpaid() = pay.isEmpty() || paid
 
-  fun timeSlot() = TimeSlot.valueOf(timeSlot!!)
+  @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
+  private fun isPaid() = pay.isNotEmpty() || !paid
 }

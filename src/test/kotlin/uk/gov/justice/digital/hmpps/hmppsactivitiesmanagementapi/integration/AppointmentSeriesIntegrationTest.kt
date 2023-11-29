@@ -24,6 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
@@ -83,6 +85,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         "TPR",
         "AC1",
+        EventTier(
+          id = 2,
+          code = "TIER_2",
+          description = "Tier 2",
+        ),
+        EventOrganiser(
+          id = 1,
+          code = "PRISON_STAFF",
+          description = "Prison staff",
+        ),
         "Appointment description",
         123,
         false,
@@ -101,6 +113,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             1,
             "TPR",
             "AC1",
+            EventTier(
+              id = 2,
+              code = "TIER_2",
+              description = "Tier 2",
+            ),
+            EventOrganiser(
+              id = 1,
+              code = "PRISON_STAFF",
+              description = "Prison staff",
+            ),
             "Appointment description",
             123,
             false,
@@ -173,6 +195,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         "TPR",
         "Appointment description (Appointment Category 1)",
         AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        EventTier(
+          id = 2,
+          code = "TIER_2",
+          description = "Tier 2",
+        ),
+        EventOrganiser(
+          id = 1,
+          code = "PRISON_STAFF",
+          description = "Prison staff",
+        ),
         "Appointment description",
         AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
         false,
@@ -435,6 +467,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
+        EventTier(
+          id = appointmentSeries.tier!!.id,
+          code = request.tierCode!!,
+          description = appointmentSeries.tier!!.description,
+        ),
+        EventOrganiser(
+          id = appointmentSeries.organiser!!.id,
+          code = request.organiserCode!!,
+          description = appointmentSeries.organiser!!.description,
+        ),
         request.customName,
         request.internalLocationId,
         request.inCell,
@@ -453,6 +495,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             1,
             request.prisonCode!!,
             request.categoryCode!!,
+            EventTier(
+              id = appointmentSeries.tier!!.id,
+              code = request.tierCode!!,
+              description = appointmentSeries.tier!!.description,
+            ),
+            EventOrganiser(
+              id = appointmentSeries.organiser!!.id,
+              code = request.organiserCode!!,
+              description = appointmentSeries.organiser!!.description,
+            ),
             request.customName,
             request.internalLocationId,
             request.inCell,
@@ -500,6 +552,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         request.appointmentType!!,
         request.prisonCode!!,
         request.categoryCode!!,
+        EventTier(
+          id = appointmentSeries.tier!!.id,
+          code = request.tierCode!!,
+          description = appointmentSeries.tier!!.description,
+        ),
+        EventOrganiser(
+          id = appointmentSeries.organiser!!.id,
+          code = request.organiserCode!!,
+          description = appointmentSeries.organiser!!.description,
+        ),
         request.customName,
         request.internalLocationId,
         request.inCell,
@@ -518,6 +580,16 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             1,
             request.prisonCode!!,
             request.categoryCode!!,
+            EventTier(
+              id = appointmentSeries.tier!!.id,
+              code = request.tierCode!!,
+              description = appointmentSeries.tier!!.description,
+            ),
+            EventOrganiser(
+              id = appointmentSeries.organiser!!.id,
+              code = request.organiserCode!!,
+              description = appointmentSeries.organiser!!.description,
+            ),
             request.customName,
             request.internalLocationId,
             request.inCell,

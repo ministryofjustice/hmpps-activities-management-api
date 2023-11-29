@@ -83,6 +83,7 @@ class ActivityTest {
       allocated = 0,
       createdTime = LocalDate.now().atStartOfDay(),
       activityState = ActivityState.LIVE,
+      paid = true,
     )
     assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
   }
@@ -121,9 +122,10 @@ class ActivityTest {
           description = "category description",
         ),
         capacity = 1,
-        allocated = 1,
+        allocated = 2,
         createdTime = LocalDate.now().atStartOfDay(),
         activityState = ActivityState.LIVE,
+        paid = true,
       ),
     )
 
@@ -351,8 +353,8 @@ class ActivityTest {
   }
 
   @Test
-  fun `can add pay bands to activity`() {
-    val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
+  fun `can add pay bands to paid activity`() {
+    val activity = activityEntity(noPayBands = true, paid = true).also { assertThat(it.activityPay()).isEmpty() }
 
     activity.addPay(
       incentiveNomisCode = "BAS",
@@ -392,6 +394,23 @@ class ActivityTest {
         activity = activity,
       ),
     )
+  }
+
+  @Test
+  fun `cannot add pay bands to unpaid activity`() {
+    val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
+
+    assertThatThrownBy {
+      activity.addPay(
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unpaid activity 'Maths' cannot have pay rates added to it")
   }
 
   @Test

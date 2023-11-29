@@ -21,5 +21,6 @@
   "minimumIncentiveLevel": "Basic",
   "riskLevel": "high",
   "createdTime": "2022-06-26T14:38:00",
-  "createdBy": "activities-management-admin-1"
+  "createdBy": "activities-management-admin-1",
+  "paid": true
 }

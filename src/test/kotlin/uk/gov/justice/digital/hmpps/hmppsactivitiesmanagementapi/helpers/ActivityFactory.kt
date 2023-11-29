@@ -22,9 +22,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -63,6 +64,7 @@ internal fun activityEntity(
   inCell: Boolean = false,
   onWing: Boolean = false,
   riskLevel: String = "high",
+  paid: Boolean = true,
 ) =
   Activity(
     activityId = activityId,
@@ -79,6 +81,7 @@ internal fun activityEntity(
     createdBy = "test",
     inCell = inCell,
     onWing = onWing,
+    paid = paid,
   ).apply {
     this.organiser = organiser
     this.endDate = endDate
@@ -86,7 +89,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp, paid = paid))
     }
     if (!noPayBands) {
       this.addPay(
@@ -169,6 +172,12 @@ internal fun eventTier(
   description: String = "Tier 2",
 ) = EventTier(eventTierId = eventTierId, code = code, description = description)
 
+internal fun foundationTier() = eventTier(
+  eventTierId = 3,
+  code = "FOUNDATION",
+  description = "Routine activities also called \"Foundation\"",
+)
+
 internal fun eventOrganiser(
   eventOrganiserId: Long = 1,
   code: String = "PRISON_STAFF",
@@ -188,6 +197,8 @@ internal fun activitySchedule(
   noSlots: Boolean = false,
   noAllocations: Boolean = false,
   noInstances: Boolean = false,
+  noExclusions: Boolean = false,
+  paid: Boolean = true,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
@@ -206,13 +217,22 @@ internal fun activitySchedule(
       this.allocatePrisoner(
         prisonerNumber = "A1234AA".toPrisonerNumber(),
         bookingId = 10001,
-        payBand = lowPayBand,
+        payBand = if (paid) lowPayBand else null,
         allocatedBy = "Mr Blogs",
         startDate = startDate ?: activity.startDate,
       )
     }
     if (!noSlots) {
-      this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      if (!noAllocations && !noExclusions) {
+        this.allocatePrisoner(
+          prisonerNumber = "A1111BB".toPrisonerNumber(),
+          bookingId = 20002,
+          payBand = if (paid) lowPayBand else null,
+          allocatedBy = "Mr Blogs",
+          startDate = startDate ?: activity.startDate,
+        ).apply { this.updateExclusion(slot, daysOfWeek) }
+      }
     }
     if (!noInstances && !noSlots) {
       this.addInstance(
@@ -342,6 +362,7 @@ internal fun activityCreateRequest(
   educationLevel: ReferenceCode? = null,
   studyArea: ReferenceCode? = null,
   eligibilityRules: Set<EligibilityRule> = setOf(eligibilityRuleOver21),
+  paid: Boolean = true,
 ) =
   ActivityCreateRequest(
     prisonCode = prisonCode,
@@ -356,7 +377,7 @@ internal fun activityCreateRequest(
     tierCode = eventTier().code,
     organiserCode = eventOrganiser().code,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
-    pay = emptyList(),
+    pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)) else emptyList(),
     riskLevel = "high",
     minimumIncentiveNomisCode = "BAS",
     minimumIncentiveLevel = "Basic",
@@ -376,6 +397,7 @@ internal fun activityCreateRequest(
     slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
     onWing = false,
     offWing = false,
+    paid = paid,
   )
 
 internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
