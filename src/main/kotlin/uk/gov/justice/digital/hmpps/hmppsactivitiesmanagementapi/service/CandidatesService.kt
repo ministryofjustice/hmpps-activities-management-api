@@ -13,8 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -69,7 +69,7 @@ class CandidatesService(
 
     return AllocationSuitability(
       workplaceRiskAssessment = wraSuitability(schedule.activity.riskLevel, candidateDetails.alerts),
-      incentiveLevel = incentiveLevelSuitability(schedule.activity.activityPay(), candidateDetails.currentIncentive),
+      incentiveLevel = incentiveLevelSuitability(schedule.activity, candidateDetails.currentIncentive),
       education = educationSuitability(schedule.activity.activityMinimumEducationLevel(), prisonerEducation),
       releaseDate = releaseDateSuitability(schedule.startDate, candidateDetails),
       nonAssociation = nonAssociationSuitability(prisonerNumbers, prisonerNonAssociations),
@@ -204,10 +204,10 @@ class CandidatesService(
   }
 
   private fun incentiveLevelSuitability(
-    activityPay: List<ActivityPay>,
+    activity: Activity,
     prisonerIncentiveLevel: CurrentIncentive?,
   ) = IncentiveLevelSuitability(
-    suitable = activityPay.any { it.incentiveNomisCode == prisonerIncentiveLevel?.level?.code },
+    suitable = !activity.isPaid() || activity.activityPay().any { it.incentiveNomisCode == prisonerIncentiveLevel?.level?.code },
     incentiveLevel = prisonerIncentiveLevel?.level?.description,
   )
 
