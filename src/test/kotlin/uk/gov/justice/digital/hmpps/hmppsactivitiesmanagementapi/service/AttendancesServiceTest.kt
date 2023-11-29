@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -21,9 +20,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -188,7 +189,7 @@ class AttendancesServiceTest {
     )
     val waitingAttendance = attendance.copy(
       recordedTime = null,
-      issuePayment = false,
+      initialIssuePayment = false,
       attendanceReason = null,
       status = AttendanceStatus.WAITING,
       scheduledInstance = pastInstance,
@@ -202,7 +203,7 @@ class AttendancesServiceTest {
         attendanceId = 4,
         prisonerNumber = "D4444DD",
         recordedTime = LocalDateTime.now().minusDays(2),
-        issuePayment = true,
+        initialIssuePayment = true,
         attendanceReason = attendanceReasons()["ATTENDED"]!!,
         status = AttendanceStatus.COMPLETED,
       ),
@@ -324,7 +325,7 @@ class AttendancesServiceTest {
   @Test
   fun `not found`() {
     whenever(attendanceRepository.findById(1)).thenReturn(Optional.empty())
-    Assertions.assertThatThrownBy { service.getAttendanceById(-1) }
+    assertThatThrownBy { service.getAttendanceById(-1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Attendance -1 not found")
   }
@@ -335,6 +336,76 @@ class AttendancesServiceTest {
       attendanceList(),
     )
     assertThat(service.getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
+  }
+
+  @Test
+  fun `marking attendance records to issue payment is ignored for unpaid activity`() {
+    val unpaidSession = activitySchedule(activityEntity(paid = false, noPayBands = true), paid = false).instances().first()
+
+    val unpaidAttendance = attendance.copy(
+      recordedTime = null,
+      initialIssuePayment = null,
+      attendanceReason = null,
+      status = AttendanceStatus.WAITING,
+      scheduledInstance = unpaidSession,
+    )
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(unpaidAttendance.attendanceId))).thenReturn(listOf(unpaidAttendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(unpaidAttendance).map {
+        AttendanceUpdateRequest(
+          it.attendanceId,
+          moorlandPrisonCode,
+          AttendanceStatus.COMPLETED,
+          "ATTENDED",
+          null,
+          true,
+          null,
+          null,
+          null,
+        )
+      },
+    )
+
+    unpaidAttendance.issuePayment!! isBool false
+  }
+
+  @Test
+  fun `marking attendance records to issue payment is not ignored for paid activity`() {
+    val paidSession = activitySchedule(activityEntity(), paid = true).instances().first()
+
+    val paidAttendance = paidSession.attendances.first().copy(
+      recordedTime = null,
+      initialIssuePayment = null,
+      attendanceReason = null,
+      status = AttendanceStatus.WAITING,
+      scheduledInstance = paidSession,
+    )
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(paidAttendance.attendanceId))).thenReturn(listOf(paidAttendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(paidAttendance).map {
+        AttendanceUpdateRequest(
+          it.attendanceId,
+          moorlandPrisonCode,
+          AttendanceStatus.COMPLETED,
+          "ATTENDED",
+          null,
+          true,
+          null,
+          null,
+          null,
+        )
+      },
+    )
+
+    paidAttendance.issuePayment!! isBool true
   }
 
   companion object {

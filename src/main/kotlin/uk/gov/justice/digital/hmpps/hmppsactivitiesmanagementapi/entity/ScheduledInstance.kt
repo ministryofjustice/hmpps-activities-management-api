@@ -135,6 +135,8 @@ data class ScheduledInstance(
 
     attendances.remove(attendance)
   }
+
+  fun isPaid() = activitySchedule.isPaid()
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }
