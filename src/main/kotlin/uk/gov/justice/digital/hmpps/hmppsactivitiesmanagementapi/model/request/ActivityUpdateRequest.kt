@@ -111,6 +111,9 @@ data class ActivityUpdateRequest(
   @Schema(description = "Flag to indicate if the activity is a paid activity or not. If true then pay rates are required, if false then no pay rates should be provided. Cannot be updated if already allocated.", example = "true")
   val paid: Boolean? = null,
 ) {
+  @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
+  private fun isUnpaid() = pay.isNullOrEmpty() || (paid == null || paid == true)
+
   @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
   private fun isPaid() = !pay.isNullOrEmpty() || (paid == null || !paid)
 }
