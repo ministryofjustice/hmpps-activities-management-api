@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -1340,5 +1341,35 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       code = "PRISONER",
       description = "A prisoner or group of prisoners",
     )
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-paid-no-allocations.sql")
+  fun `updateActivity - can change paid activity to unpaid activity`() {
+    with(webTestClient.getActivityById(1, "PVI")) {
+      paid isBool true
+      pay.isNotEmpty() isBool true
+    }
+
+    with(webTestClient.updateActivity("PVI", 1, ActivityUpdateRequest(paid = false))) {
+      paid isBool false
+      pay hasSize 0
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-unpaid-no-allocations-or-pay-rates.sql")
+  fun `updateActivity - can change unpaid activity to paid activity`() {
+    with(webTestClient.getActivityById(1, "PVI")) {
+      paid isBool false
+      pay hasSize 0
+    }
+
+    val activityPay = ActivityPayCreateRequest(incentiveNomisCode = "BAS", incentiveLevel = "Basic", payBandId = 1L, rate = 125, pieceRate = 150, pieceRateItems = 1)
+
+    with(webTestClient.updateActivity("PVI", 1, ActivityUpdateRequest(paid = true, pay = listOf(activityPay)))) {
+      paid isBool true
+      pay.isNotEmpty() isBool true
+    }
   }
 }
