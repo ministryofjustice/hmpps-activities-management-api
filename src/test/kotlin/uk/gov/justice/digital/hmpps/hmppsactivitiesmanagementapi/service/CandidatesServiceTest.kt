@@ -217,6 +217,25 @@ class CandidatesServiceTest {
     }
 
     @Test
+    fun `incentiveLevelSuitability (Zero pay activity) - suitable`() {
+      val activity = activityEntity(paid = false, noPayBands = true)
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
+
+      candidateSuitabilitySetup(activity, candidate)
+      val suitability = service.candidateSuitability(
+        activity.schedules().first().activityScheduleId,
+        candidate.prisonerNumber,
+      )
+
+      assertThat(suitability.incentiveLevel).isEqualTo(
+        IncentiveLevelSuitability(
+          suitable = true,
+          incentiveLevel = "Basic",
+        ),
+      )
+    }
+
+    @Test
     fun `incentiveLevelSuitability - not suitable`() {
       val activity = activityEntity()
       val candidate = PrisonerSearchPrisonerFixture.instance(
