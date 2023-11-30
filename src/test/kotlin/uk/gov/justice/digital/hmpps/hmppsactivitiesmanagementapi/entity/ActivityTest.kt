@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -11,6 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -605,5 +608,36 @@ class ActivityTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity end date cannot be before activity start date.")
+  }
+
+  @Test
+  fun `can update paid attribute on activity when not allocated`() {
+    val activity = activitySchedule(activityEntity(noSchedules = true), noAllocations = true).activity
+
+    activity.paid isBool true
+    activity.activityPay() hasSize 1
+
+    assertDoesNotThrow { activity.paid = false }
+
+    activity.paid isBool false
+    activity.activityPay() hasSize 0
+
+    assertDoesNotThrow { activity.paid = true }
+
+    activity.paid isBool true
+    activity.activityPay() hasSize 0
+  }
+
+  @Test
+  fun `cannot update paid attribute on activity when allocated`() {
+    val activity = activityEntity()
+
+    assertThatThrownBy { activity.paid = false }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
+
+    assertThatThrownBy { activity.paid = true }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
   }
 }

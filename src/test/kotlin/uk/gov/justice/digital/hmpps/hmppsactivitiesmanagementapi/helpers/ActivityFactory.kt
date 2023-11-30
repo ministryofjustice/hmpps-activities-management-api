@@ -81,7 +81,7 @@ internal fun activityEntity(
     createdBy = "test",
     inCell = inCell,
     onWing = onWing,
-    paid = paid,
+    isPaid = paid,
   ).apply {
     this.organiser = organiser
     this.endDate = endDate

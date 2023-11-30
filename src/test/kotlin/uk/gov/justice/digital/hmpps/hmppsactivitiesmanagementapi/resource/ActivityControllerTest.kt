@@ -361,6 +361,29 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
+  fun `updateActivity - fails for paid activity with no pay rates`() {
+    mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/1") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(ActivityUpdateRequest(paid = true))
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Paid activity must have at least one pay rate associated with it"))
+          }
+        }
+      }
+
+    verifyNoInteractions(activityService)
+  }
+
+  @Test
   fun `updateActivity - no request body`() {
     mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
       principal = user

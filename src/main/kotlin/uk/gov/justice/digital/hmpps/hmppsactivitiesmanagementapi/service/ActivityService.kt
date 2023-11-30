@@ -45,6 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.lang.IllegalStateException
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -167,7 +168,7 @@ class ActivityService(
       minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
-      paid = request.paid,
+      isPaid = request.paid,
     ).apply {
       this.organiser = organiser
       endDate = request.endDate
@@ -329,7 +330,7 @@ class ActivityService(
       applyCategoryUpdate(request, activity)
       applyTierUpdate(request, activity)
       applyOrganiserUpdate(request, activity)
-      applySummaryUpdate(prisonCode, request, activity)
+      applySummaryUpdate(request, activity)
       applyStartDateUpdate(request, activity)
       applyEndDateUpdate(request, activity)
       applyMinimumIncentiveNomisCodeUpdate(request, activity)
@@ -340,7 +341,7 @@ class ActivityService(
       applyLocationUpdate(request, activity)
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
-      applyPayUpdate(prisonCode, request, activity).let { updatedAllocationIds.addAll(it) }
+      applyPayUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
       applyScheduleWeeksUpdate(request, activity)
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
@@ -407,13 +408,12 @@ class ActivityService(
   }
 
   private fun applySummaryUpdate(
-    prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
     if (activity.summary != request.summary) {
       request.summary?.apply {
-        failDuplicateActivity(prisonCode, this)
+        failDuplicateActivity(activity.prisonCode, this)
         activity.summary = this
         activity.description = this
         activity.schedules().forEach { it.description = this }
@@ -603,23 +603,24 @@ class ActivityService(
   }
 
   private fun applyPayUpdate(
-    prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
   ): AllocationIds {
-    request.pay?.let { pay ->
-      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
-        .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
+    request.paid?.let { activity.paid = request.paid }
 
-      return replacePayBandAllocationBeforePayRemoval(prisonCode, pay, activity, prisonPayBands).also {
+    request.pay?.let { pay ->
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}") }
+
+      return replacePayBandAllocationBeforePayRemoval(activity.prisonCode, pay, activity, prisonPayBands).also {
         activity.removePay()
         pay.forEach {
           activity.addPay(
             incentiveNomisCode = it.incentiveNomisCode!!,
             incentiveLevel = it.incentiveLevel!!,
             payBand = prisonPayBands[it.payBandId]
-              ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
+              ?: throw IllegalArgumentException("Pay band not found for prison '${activity.prisonCode}'"),
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
@@ -627,6 +628,9 @@ class ActivityService(
         }
       }
     }
+
+    if (request.paid != null && activity.paid && activity.activityPay().isEmpty()) throw IllegalStateException("Activity '${activity.activityId}' must have at least one pay rate.")
+
     return emptySet()
   }
 
