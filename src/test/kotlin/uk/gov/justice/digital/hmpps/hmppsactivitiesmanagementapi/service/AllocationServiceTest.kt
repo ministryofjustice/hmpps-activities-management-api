@@ -15,6 +15,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -409,7 +410,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions`() {
-    val allocation = allocation().also { it.activeExclusions() hasSize 0 }
+    val allocation = allocation().also { it.exclusions(ExclusionsFilter.ACTIVE) hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -430,8 +431,8 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.activeExclusions() hasSize 1
-    allocationCaptor.firstValue.activeExclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
@@ -463,8 +464,8 @@ class AllocationServiceTest {
     )
       .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
       .also {
-        it.activeExclusions() hasSize 1
-        with(it.activeExclusions().first()) {
+        it.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+        with(it.exclusions(ExclusionsFilter.ACTIVE).first()) {
           weekNumber isEqualTo 1
           getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
         }
@@ -490,8 +491,8 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.activeExclusions() hasSize 1
-    with(allocationCaptor.firstValue.activeExclusions().first()) {
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+    with(allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first()) {
       weekNumber isEqualTo 2
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     }
@@ -500,7 +501,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions fails if week number and time slot combination returns no slots`() {
-    val allocation = allocation().also { it.activeExclusions() hasSize 0 }
+    val allocation = allocation().also { it.exclusions(ExclusionsFilter.ACTIVE) hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 

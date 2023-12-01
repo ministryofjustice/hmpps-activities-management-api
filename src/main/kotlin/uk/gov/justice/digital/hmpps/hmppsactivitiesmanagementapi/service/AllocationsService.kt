@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -84,10 +85,10 @@ class AllocationsService(
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
     request.exclusions?.apply {
-      allocation.endExclusions(allocation.presentExclusions())
+      allocation.endExclusions(allocation.exclusions(ExclusionsFilter.PRESENT))
 
       val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
-      val exclusionsToRemove = allocation.futureExclusions().mapNotNull {
+      val exclusionsToRemove = allocation.exclusions(ExclusionsFilter.FUTURE).mapNotNull {
         val oldExclusion = it.weekNumber to it.timeSlot().toString()
         it.takeIf { oldExclusion !in newExclusions }
       }.toSet()
@@ -96,7 +97,7 @@ class AllocationsService(
 
     request.exclusions?.onEach { exclusion ->
       allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
-        .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+        .apply { requireNotNull(this) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
     }
   }

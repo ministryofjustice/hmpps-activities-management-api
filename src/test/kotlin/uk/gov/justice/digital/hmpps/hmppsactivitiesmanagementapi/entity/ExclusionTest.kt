@@ -9,7 +9,7 @@ class ExclusionTest {
 
   @Test
   fun `setDaysOfWeek - will set day flags`() {
-    val exclusion = allocation(withExclusions = true).activeExclusions().first()
+    val exclusion = allocation(withExclusions = true).exclusions(ExclusionsFilter.ACTIVE).first()
 
     exclusion.setDaysOfWeek(setOf(DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY))
 
