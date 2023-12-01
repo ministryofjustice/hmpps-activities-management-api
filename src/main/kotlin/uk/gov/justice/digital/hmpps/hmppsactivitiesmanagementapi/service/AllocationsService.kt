@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -83,21 +84,21 @@ class AllocationsService(
   }
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
-    request.exclusions?.onEach { exclusion ->
-      allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
-        .apply { require(this != null) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
-        .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
+    request.exclusions?.apply {
+      allocation.endExclusions(allocation.exclusions(ExclusionsFilter.PRESENT))
+
+      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
+      val exclusionsToRemove = allocation.exclusions(ExclusionsFilter.FUTURE).mapNotNull {
+        val oldExclusion = it.weekNumber to it.timeSlot().toString()
+        it.takeIf { oldExclusion !in newExclusions }
+      }.toSet()
+      allocation.removeExclusions(exclusionsToRemove)
     }
 
-    request.exclusions?.apply {
-      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
-
-      val exclusionsToRemove = allocation.exclusions().mapNotNull {
-        val oldExclusion = it.getWeekNumber() to it.getTimeSlot().toString()
-        it.takeIf { oldExclusion !in newExclusions }
-      }
-
-      allocation.removeExclusions(exclusionsToRemove)
+    request.exclusions?.onEach { exclusion ->
+      allocation.activitySchedule.slot(exclusion.weekNumber, exclusion.timeSlot())
+        .apply { requireNotNull(this) { "Updating allocation with id ${allocation.allocationId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+        .let { slot -> allocation.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
     }
   }
 
@@ -168,7 +169,7 @@ class AllocationsService(
   }
 
   private fun String?.toDeallocationReason() =
-    DeallocationReason.values()
+    DeallocationReason.entries
       .filter(DeallocationReason::displayed)
       .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 }

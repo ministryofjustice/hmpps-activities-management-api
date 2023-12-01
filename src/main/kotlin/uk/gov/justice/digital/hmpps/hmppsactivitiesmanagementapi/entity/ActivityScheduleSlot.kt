@@ -1,17 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -49,21 +44,10 @@ data class ActivityScheduleSlot(
   var saturdayFlag: Boolean = false,
 
   var sundayFlag: Boolean = false,
-
-  @OneToMany(mappedBy = "activityScheduleSlot", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  private val exclusions: MutableSet<Exclusion> = mutableSetOf(),
 ) {
   init {
-    failIfNoDaysSelectedForSlot()
     failIfDatesAreInvalidForSlot()
     failIfWeekNumberInvalid()
-  }
-
-  private fun failIfNoDaysSelectedForSlot() {
-    if (mondayFlag.not() && tuesdayFlag.not() && wednesdayFlag.not() && thursdayFlag.not() && fridayFlag.not() && saturdayFlag.not() && sundayFlag.not()) {
-      throw IllegalArgumentException("One or more days must be specified for a given slot.")
-    }
   }
 
   private fun failIfDatesAreInvalidForSlot() {
@@ -93,23 +77,13 @@ data class ActivityScheduleSlot(
       weekNumber = weekNumber,
       startTime = startTime,
       endTime = endTime,
-      mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
-      tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
-      wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
-      thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
-      fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
-      saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
-      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
-    )
+    ).apply {
+      update(daysOfWeek)
+    }
   }
 
-  fun exclusions() = exclusions.toList()
-  fun addExclusion(exclusion: Exclusion) = exclusions.add(exclusion)
-
-  fun update(daysOfWeek: Set<DayOfWeek>): AllocationIds {
+  fun update(daysOfWeek: Set<DayOfWeek>) {
     require(daysOfWeek.isNotEmpty()) { "A slot must run on at least one day." }
-
-    val updatedAllocationIds = mutableSetOf<Long>()
 
     mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY)
     tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY)
@@ -118,17 +92,6 @@ data class ActivityScheduleSlot(
     fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY)
     saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY)
     sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
-
-    exclusions
-      .filterNot { daysOfWeek.containsAll(it.getDaysOfWeek()) }
-      .onEach {
-        it.syncExcludedDaysWithSlot(this)
-        updatedAllocationIds.add(it.allocation.allocationId)
-      }
-      .filter { it.getDaysOfWeek().isEmpty() }
-      .forEach { exclusions.remove(it) }
-
-    return updatedAllocationIds
   }
 
   fun toModel() = ModelActivityScheduleSlot(

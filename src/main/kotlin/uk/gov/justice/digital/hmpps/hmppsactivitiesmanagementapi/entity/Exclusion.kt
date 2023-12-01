@@ -7,8 +7,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Entity
 @Table(name = "exclusion")
@@ -21,24 +24,29 @@ data class Exclusion(
   @JoinColumn(name = "allocation_id", nullable = false)
   val allocation: Allocation,
 
-  @ManyToOne
-  @JoinColumn(name = "activity_schedule_slot_id", nullable = false)
-  val activityScheduleSlot: ActivityScheduleSlot,
+  val startDate: LocalDate,
 
-  var mondayFlag: Boolean = false,
+  val slotStartTime: LocalTime,
 
-  var tuesdayFlag: Boolean = false,
+  val weekNumber: Int,
 
-  var wednesdayFlag: Boolean = false,
+  private var mondayFlag: Boolean = false,
 
-  var thursdayFlag: Boolean = false,
+  private var tuesdayFlag: Boolean = false,
 
-  var fridayFlag: Boolean = false,
+  private var wednesdayFlag: Boolean = false,
 
-  var saturdayFlag: Boolean = false,
+  private var thursdayFlag: Boolean = false,
 
-  var sundayFlag: Boolean = false,
+  private var fridayFlag: Boolean = false,
+
+  private var saturdayFlag: Boolean = false,
+
+  private var sundayFlag: Boolean = false,
 ) {
+  var endDate: LocalDate? = null
+    private set
+
   override fun hashCode(): Int = exclusionId.hashCode()
 
   fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
@@ -51,10 +59,6 @@ data class Exclusion(
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
   fun setDaysOfWeek(days: Set<DayOfWeek>) {
-    if (!activityScheduleSlot.getDaysOfWeek().containsAll(days)) {
-      throw IllegalArgumentException("Cannot set exclusions for slot with id ${activityScheduleSlot.activityScheduleSlotId} where the activity does not run")
-    }
-
     mondayFlag = days.contains(DayOfWeek.MONDAY)
     tuesdayFlag = days.contains(DayOfWeek.TUESDAY)
     wednesdayFlag = days.contains(DayOfWeek.WEDNESDAY)
@@ -63,20 +67,14 @@ data class Exclusion(
     saturdayFlag = days.contains(DayOfWeek.SATURDAY)
     sundayFlag = days.contains(DayOfWeek.SUNDAY)
   }
-  fun getTimeSlot() = activityScheduleSlot.timeSlot()
-  fun getWeekNumber() = activityScheduleSlot.weekNumber
-  fun syncExcludedDaysWithSlot(slot: ActivityScheduleSlot) {
-    mondayFlag = mondayFlag && slot.mondayFlag
-    tuesdayFlag = tuesdayFlag && slot.tuesdayFlag
-    wednesdayFlag = wednesdayFlag && slot.wednesdayFlag
-    thursdayFlag = thursdayFlag && slot.thursdayFlag
-    fridayFlag = fridayFlag && slot.fridayFlag
-    saturdayFlag = saturdayFlag && slot.saturdayFlag
-    sundayFlag = sundayFlag && slot.sundayFlag
-  }
+
+  fun endNow() = run { endDate = LocalDate.now() }
+
+  fun timeSlot() = TimeSlot.slot(slotStartTime)
+
   fun toSlotModel() = Slot(
-    weekNumber = getWeekNumber(),
-    timeSlot = getTimeSlot().toString(),
+    weekNumber = weekNumber,
+    timeSlot = timeSlot().toString(),
     monday = mondayFlag,
     tuesday = tuesdayFlag,
     wednesday = wednesdayFlag,
@@ -87,13 +85,19 @@ data class Exclusion(
   )
 
   companion object {
+    val tomorrow: LocalDate = LocalDate.now().plusDays(1)
+
     fun valueOf(
       allocation: Allocation,
-      slot: ActivityScheduleSlot,
+      slotStartTime: LocalTime,
+      weekNumber: Int,
       daysOfWeek: Set<DayOfWeek>,
+      startDate: LocalDate = tomorrow,
     ) = Exclusion(
       allocation = allocation,
-      activityScheduleSlot = slot,
+      slotStartTime = slotStartTime,
+      weekNumber = weekNumber,
+      startDate = startDate,
     ).apply {
       setDaysOfWeek(daysOfWeek)
     }

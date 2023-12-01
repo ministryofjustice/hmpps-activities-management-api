@@ -683,8 +683,10 @@ class ActivityService(
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      activity.schedules().forEach {
-        it.updateSlots(slots.toMap(timeSlots)).let { ids -> updatedAllocationIds.addAll(ids) }
+      activity.schedules().forEach { schedule ->
+        val activeAllocations = schedule.allocations(excludeEnded = true)
+        activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(slots)?.let { updatedAllocationIds.add(it) } }
+        schedule.updateSlots(slots.toMap(timeSlots))
       }
     }
     return updatedAllocationIds

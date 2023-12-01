@@ -116,9 +116,43 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
-    fun `get scheduled attendees by scheduled instance id - does not contain exclusions`() {
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - does not contain exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - ignores historical exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(2)
+      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
+      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - respects historical exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - ignores future exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(2)
+      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
+      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - respects future exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
       assertThat(attendees).hasSize(1)
       with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
     }

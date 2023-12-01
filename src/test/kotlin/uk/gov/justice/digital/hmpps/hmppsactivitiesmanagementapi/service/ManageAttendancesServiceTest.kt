@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -173,7 +174,10 @@ class ManageAttendancesServiceTest {
   fun `attendance is not created if the allocation is excluded`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    allocation.updateExclusion(activitySchedule.slots().first(), setOf(today.dayOfWeek))
+    val slot = activitySchedule.slots().first()
+    allocation.apply {
+      addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, slot.getDaysOfWeek(), startDate))
+    }
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(emptyList())) doReturn emptyList()

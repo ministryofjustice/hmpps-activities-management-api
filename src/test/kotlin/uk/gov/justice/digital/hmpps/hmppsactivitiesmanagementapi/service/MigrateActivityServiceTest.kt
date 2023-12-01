@@ -26,10 +26,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -1274,10 +1276,10 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
-          assertThat(exclusions()).hasSize(1)
-          with(exclusions()[0]) {
-            assertThat(mondayFlag).isTrue
-            assertThat(getTimeSlot()).isEqualTo(TimeSlot.AM)
+          assertThat(exclusions(ExclusionsFilter.ACTIVE)).hasSize(1)
+          with(exclusions(ExclusionsFilter.ACTIVE).first()) {
+            getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+            assertThat(timeSlot()).isEqualTo(TimeSlot.AM)
           }
         }
       }

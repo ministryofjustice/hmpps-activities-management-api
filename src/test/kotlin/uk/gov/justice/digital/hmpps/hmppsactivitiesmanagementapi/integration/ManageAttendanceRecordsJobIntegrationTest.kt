@@ -132,7 +132,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+  @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
   @Test
   fun `Attendance records are not created for where there are exclusions`() {
     val allocatedPrisoners = listOf(listOf("G4793VF"), listOf("G4793VF", "A5193DY"))
@@ -153,7 +153,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedules).hasSize(1)
 
     with(activitySchedules.first()) {
-      allocations() hasSize 2
+      allocations() hasSize 3
       instances() hasSize 2
       val scheduledInstances = scheduledInstanceRepository.findAll()
       assertThat(scheduledInstances).isNotEmpty
@@ -172,11 +172,11 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     val afternoonSession = scheduledInstanceRepository.getReferenceById(2)
     log.info("ScheduledInstanceId (PM) = ${afternoonSession.scheduledInstanceId} attendances ${afternoonSession.attendances.size}")
-    assertThat(afternoonSession.attendances).hasSize(2)
+    assertThat(afternoonSession.attendances).hasSize(3)
 
-    assertThat(attendanceRepository.count()).isEqualTo(3)
+    assertThat(attendanceRepository.count()).isEqualTo(4)
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
 
     eventCaptor.allValues.forEach {
       it.eventType isEqualTo "activities.prisoner.attendance-created"
