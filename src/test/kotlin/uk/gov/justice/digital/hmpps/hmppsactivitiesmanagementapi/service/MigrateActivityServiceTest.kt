@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.validation.ValidationException
+import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -450,6 +451,33 @@ class MigrateActivityServiceTest {
         assertThat(inCell).isFalse
         assertThat(onWing).isTrue
       }
+    }
+
+    @Test
+    fun `Migrating duplicate slots throws error`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          tuesday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        runsOnBankHoliday = true,
+      )
+
+      Assertions.assertThatThrownBy {
+        service.migrateActivity(request)
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Adding slot to activity schedule with ID: 0: AM slot already exists for week number 1")
     }
 
     @Test

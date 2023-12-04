@@ -156,7 +156,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
 
@@ -179,7 +179,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(yesterday)
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
 
@@ -202,7 +202,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(tomorrow)
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
 
@@ -631,7 +631,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
 
@@ -652,7 +652,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(date)
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
 
@@ -673,7 +673,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(date)
-        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(15, 0))
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
   }
