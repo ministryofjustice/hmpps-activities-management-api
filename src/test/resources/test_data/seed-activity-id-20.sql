@@ -8,4 +8,4 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:00:00', '11:00:00', true);
+values (1, 1, '09:00:00', '12:00:00', true);

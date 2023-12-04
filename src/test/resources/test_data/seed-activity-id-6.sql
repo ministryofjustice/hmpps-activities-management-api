@@ -43,4 +43,4 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (5, 2, 'A22222A', 10002, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'MRS BLOGS', null, null, null, '2022-10-11 10:00:00', 'SYSTEM', 'Temporary absence', 'AUTO_SUSPENDED');
 
 insert into exclusion(allocation_id, monday_flag, week_number, slot_start_time, start_date)
-values (5, true, 1, '10:00', current_date);
+values (5, true, 1, '10:00:00', current_date);

@@ -1099,7 +1099,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           weekNumber = 1,
           timeSlot = "PM",
           monday = true,
-
           tuesday = true,
         ),
       ),

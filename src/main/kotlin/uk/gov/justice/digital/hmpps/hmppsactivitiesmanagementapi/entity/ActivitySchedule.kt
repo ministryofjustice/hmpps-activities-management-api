@@ -231,6 +231,7 @@ data class ActivitySchedule(
   }
 
   fun addSlot(weekNumber: Int, startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
+    require(slot(weekNumber, TimeSlot.slot(startTime)) == null) { "Adding slot to activity schedule with ID: $activityScheduleId: ${TimeSlot.slot(startTime)} slot already exists for week number $weekNumber" }
     slots.add(ActivityScheduleSlot.valueOf(this, weekNumber, startTime, endTime, daysOfWeek))
     return slots.last()
   }

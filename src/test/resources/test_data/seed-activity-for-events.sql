@@ -11,7 +11,7 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (1, 1, 'Maths Level 1', 1, 'MDI-EDU-ROOM1', 'Education room 1', 10, '2022-10-01', null, 1);
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, saturday_flag, week_number)
-values (1, 1, '10:00:00', '11:00:00', true, 1);
+values (1, 1, '09:00:00', '12:00:00', true, 1);
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (1, 1, 'G4793VF', 10001, 1, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
@@ -20,4 +20,4 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (2, 1, 'A5193DY', 10002, 2, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, '2022-10-01', '10:00:00', '11:00:00', false, null, null, null, null);
+values (1, '2022-10-01', '09:00:00', '12:00:00', false, null, null, null, null);
