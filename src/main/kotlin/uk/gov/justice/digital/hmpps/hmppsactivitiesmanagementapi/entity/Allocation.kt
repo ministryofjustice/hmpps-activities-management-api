@@ -18,6 +18,8 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.intersectIfNotNull
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
@@ -342,21 +344,30 @@ data class Allocation(
         removeExclusions(it.toSet())
       }
 
+    // TODO: The disallowedExclusionDays in the following blocks are temporary, for as long as we need to sync events of this service back to nomis.
+    //  This is to respect a restraint on the nomis data model. Exclusions on any slot which has a matching slot over multiple weeks
+    //  must be ended or removed.
+
     exclusions(ExclusionsFilter.PRESENT).forEach {
       val matchingSlot = scheduleSlots.singleOrNull { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
-      if (matchingSlot != null && !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
+
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || matchingSlot != null && !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
         editedSome = true
         it.endNow()
-        val intersect = matchingSlot.getDaysOfWeek().intersect(it.getDaysOfWeek())
+        val intersect = it.getDaysOfWeek().intersectIfNotNull(matchingSlot?.getDaysOfWeek()).subtract(disallowedExclusionDays)
         if (intersect.isNotEmpty()) { addExclusion(Exclusion.valueOf(this, it.slotStartTime, it.weekNumber, intersect)) }
       }
     }
     exclusions(ExclusionsFilter.FUTURE).forEach {
-      val matchingSlot = scheduleSlots.singleOrNull { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
-      if (matchingSlot != null && !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
+      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
         editedSome = true
-        val intersect = matchingSlot.getDaysOfWeek().intersect(it.getDaysOfWeek())
-        if (intersect.isEmpty()) { removeExclusion(it) } else { it.setDaysOfWeek(intersect) }
+        val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
+        if (intersect.isNotEmpty()) { it.setDaysOfWeek(intersect) } else { removeExclusion(it) }
       }
     }
 

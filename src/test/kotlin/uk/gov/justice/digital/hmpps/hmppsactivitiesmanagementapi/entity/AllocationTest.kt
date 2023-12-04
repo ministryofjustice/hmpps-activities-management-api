@@ -611,6 +611,120 @@ class AllocationTest {
   }
 
   @Test
+  fun `syncExclusionsWithScheduleSlots - removes present exclusions on a multi-week model where they do not map to nomis data model`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    ).apply {
+      addExclusion(Exclusion.valueOf(this, LocalTime.NOON, 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), LocalDate.now()))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "PM",
+          monday = true,
+          friday = true,
+        ),
+        Slot(
+          weekNumber = 2,
+          timeSlot = "PM",
+          monday = true,
+          thursday = true,
+        ),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+    }
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - removes future exclusions on a multi-week model where they do not map to nomis data model`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      startTime = LocalTime.NOON,
+      endTime = LocalTime.NOON.plusHours(1),
+      daysOfWeek = setOf(DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    ).apply {
+      addExclusion(Exclusion.valueOf(this, LocalTime.NOON, 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.FUTURE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = "PM",
+          monday = true,
+          friday = true,
+        ),
+        Slot(
+          weekNumber = 2,
+          timeSlot = "PM",
+          monday = true,
+          thursday = true,
+        ),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.FUTURE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+    }
+  }
+
+  @Test
   fun `allocation starting today can be attended today`() {
     val allocation = allocation(startDate = TimeSource.today())
 
