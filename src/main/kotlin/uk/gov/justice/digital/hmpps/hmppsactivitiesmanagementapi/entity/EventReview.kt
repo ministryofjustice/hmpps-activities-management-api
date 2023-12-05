@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import java.time.LocalDateTime
 
 @Entity
@@ -31,4 +32,8 @@ data class EventReview(
   var acknowledgedTime: LocalDateTime? = null,
 
   var acknowledgedBy: String? = null,
-)
+) {
+  fun merge(offenderMergeDetails: OffenderMergeDetails) {
+    // TODO to be implemented
+  }
+}

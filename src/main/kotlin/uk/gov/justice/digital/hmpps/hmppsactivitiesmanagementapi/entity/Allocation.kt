@@ -16,6 +16,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
@@ -402,6 +403,10 @@ data class Allocation(
     ) { "Exclusions cannot be added for the same day and time slot over multiple weeks." }
 
     exclusions.add(exclusion)
+  }
+
+  fun merge(offenderMergeDetails: OffenderMergeDetails) {
+    // TODO to be implemented
   }
 
   @Override
