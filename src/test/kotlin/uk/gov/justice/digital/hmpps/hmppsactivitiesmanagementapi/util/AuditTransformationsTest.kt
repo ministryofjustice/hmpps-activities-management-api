@@ -35,7 +35,7 @@ class AuditTransformationsTest {
   @Test
   fun `fails to transform to prisoner deallocated event if not deallocated`() {
     assertThatThrownBy {
-      allocation().copy(allocationId = 123456, prisonerNumber = "ABCDEF").toPrisonerDeallocatedEvent()
+      allocation().copy(allocationId = 123456, allocatedPrisonerNumber = "ABCDEF").toPrisonerDeallocatedEvent()
     }
       .isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Prisoner ABCDEF is missing expected deallocation details for allocation id 123456")

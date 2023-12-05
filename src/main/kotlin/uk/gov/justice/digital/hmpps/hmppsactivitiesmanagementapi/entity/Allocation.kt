@@ -42,9 +42,11 @@ data class Allocation(
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
-  val prisonerNumber: String,
+  @Transient
+  private val allocatedPrisonerNumber: String,
 
-  val bookingId: Long,
+  @Transient
+  private val allocatedBookingId: Long,
 
   @Enumerated(EnumType.STRING)
   var prisonerStatus: PrisonerStatus = PrisonerStatus.ACTIVE,
@@ -58,6 +60,12 @@ data class Allocation(
   @Transient
   private val initialPayBand: PrisonPayBand?,
 ) {
+  var prisonerNumber: String = allocatedPrisonerNumber
+    private set
+
+  var bookingId: Long = allocatedBookingId
+    private set
+
   @OneToOne
   @JoinColumn(name = "prison_pay_band_id")
   var payBand: PrisonPayBand? = null
@@ -406,7 +414,12 @@ data class Allocation(
   }
 
   fun merge(offenderMergeDetails: OffenderMergeDetails) {
-    // TODO to be implemented
+    require(offenderMergeDetails.oldNumber == prisonerNumber) {
+      "Current prisoner number '$prisonerNumber' does not match the old prisoner merge number '${offenderMergeDetails.oldNumber}' for allocation ID '$allocationId'"
+    }
+
+    prisonerNumber = offenderMergeDetails.newNumber
+    offenderMergeDetails.newBookingId?.let { bookingId = it }
   }
 
   @Override

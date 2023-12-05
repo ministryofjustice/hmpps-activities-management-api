@@ -90,7 +90,7 @@ class CandidatesServiceTest {
           candidate.prisonerNumber,
         ),
       ).thenReturn(
-        listOf(allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber)),
+        listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = candidate.prisonerNumber)),
       )
     }
 
@@ -504,7 +504,7 @@ class CandidatesServiceTest {
         candidate.prisonerNumber,
       )
 
-      val candidateAllocation = allocation().copy(allocationId = 1, prisonerNumber = "A1234BC")
+      val candidateAllocation = allocation().copy(allocationId = 1, allocatedPrisonerNumber = "A1234BC")
 
       assertThat(suitability.allocations).containsOnly(
         AllocationPayRate(

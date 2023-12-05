@@ -48,7 +48,7 @@ class WaitingListTest {
 
   @Test
   fun `allocated fails if allocation belongs to a different prisoner`() {
-    val allocation = allocation().copy(prisonerNumber = "XYZ")
+    val allocation = allocation().copy(allocatedPrisonerNumber = "XYZ")
     val waitingList = waitingList(prisonerNumber = "ABC", prisonCode = allocation.prisonCode())
 
     assertThatThrownBy {
@@ -60,7 +60,7 @@ class WaitingListTest {
 
   @Test
   fun `allocated fails if allocation belongs to a different prison`() {
-    val allocation = allocation().copy(prisonerNumber = "ABC")
+    val allocation = allocation().copy(allocatedPrisonerNumber = "ABC")
     val waitingList = waitingList(prisonCode = allocation.prisonCode().plus("X"), prisonerNumber = "ABC")
 
     assertThatThrownBy {

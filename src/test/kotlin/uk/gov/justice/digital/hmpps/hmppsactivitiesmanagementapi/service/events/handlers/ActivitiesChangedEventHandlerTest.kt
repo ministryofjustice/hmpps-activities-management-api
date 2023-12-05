@@ -104,17 +104,17 @@ class ActivitiesChangedEventHandlerTest {
   @Test
   fun `active allocations and pending allocations starting on or before today are auto-suspended on suspend action`() {
     val allocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
+      allocation().copy(allocationId = 2, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE),
       allocation().copy(
         allocationId = 3,
-        prisonerNumber = "123456",
+        allocatedPrisonerNumber = "123456",
         prisonerStatus = PrisonerStatus.PENDING,
         startDate = TimeSource.today(),
       ),
       allocation().copy(
         allocationId = 4,
-        prisonerNumber = "123456",
+        allocatedPrisonerNumber = "123456",
         prisonerStatus = PrisonerStatus.PENDING,
         startDate = TimeSource.tomorrow(),
       ),
@@ -145,7 +145,7 @@ class ActivitiesChangedEventHandlerTest {
 
   @Test
   fun `only future attendances are suspended on suspend action`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+    listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456")).also {
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
           moorlandPrisonCode,
@@ -218,7 +218,7 @@ class ActivitiesChangedEventHandlerTest {
 
   @Test
   fun `future attendances are not removed on suspend`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+    listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456")).also {
       whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
     }
 

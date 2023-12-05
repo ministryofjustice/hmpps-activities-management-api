@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -357,7 +359,7 @@ class AllocationTest {
 
   @Test
   fun `allocation end date must be on or after the start date`() {
-    val allocation = allocation().copy(prisonerNumber = "123456")
+    val allocation = allocation().copy(allocatedPrisonerNumber = "123456")
 
     allocation.endDate = allocation.startDate
     allocation.endDate = null
@@ -370,7 +372,7 @@ class AllocationTest {
 
   @Test
   fun `allocation end date must be on or after the start date unless ended`() {
-    val allocation = allocation().copy(prisonerNumber = "123456", startDate = TimeSource.tomorrow()).also { it.endDate isEqualTo null }
+    val allocation = allocation().copy(allocatedPrisonerNumber = "123456", startDate = TimeSource.tomorrow()).also { it.endDate isEqualTo null }
 
     assertDoesNotThrow { allocation.deallocateNow() }
 
@@ -798,8 +800,8 @@ class AllocationTest {
         activitySchedule = activityEntity(activityId = 1, paid = true).schedules().first(),
         allocatedBy = "test",
         allocatedTime = TimeSource.now(),
-        prisonerNumber = "123",
-        bookingId = 1,
+        allocatedPrisonerNumber = "123",
+        allocatedBookingId = 1,
         startDate = TimeSource.today(),
         initialPayBand = null,
       )
@@ -810,8 +812,8 @@ class AllocationTest {
         activitySchedule = activityEntity(activityId = 2, paid = true).schedules().first(),
         allocatedBy = "test",
         allocatedTime = TimeSource.now(),
-        prisonerNumber = "123",
-        bookingId = 1,
+        allocatedPrisonerNumber = "123",
+        allocatedBookingId = 1,
         startDate = TimeSource.today(),
         initialPayBand = lowPayBand,
       ).apply {
@@ -827,8 +829,8 @@ class AllocationTest {
         activitySchedule = activityEntity(activityId = 1, paid = false, noPayBands = true).schedules().first(),
         allocatedBy = "test",
         allocatedTime = TimeSource.now(),
-        prisonerNumber = "123",
-        bookingId = 1,
+        allocatedPrisonerNumber = "123",
+        allocatedBookingId = 1,
         startDate = TimeSource.today(),
         initialPayBand = lowPayBand,
       )
@@ -839,13 +841,39 @@ class AllocationTest {
         activitySchedule = activityEntity(activityId = 2, paid = false, noPayBands = true).schedules().first(),
         allocatedBy = "test",
         allocatedTime = TimeSource.now(),
-        prisonerNumber = "123",
-        bookingId = 1,
+        allocatedPrisonerNumber = "123",
+        allocatedBookingId = 1,
         startDate = TimeSource.today(),
         initialPayBand = null,
       ).apply {
         payBand = lowPayBand
       }
     }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '2'")
+  }
+
+  @Test
+  fun `allocation offender merge succeeds`() {
+    val allocation = activityEntity().schedules().first().allocations().first().copy(allocatedPrisonerNumber = "ABC123", allocatedBookingId = 1)
+
+    allocation.prisonerNumber isEqualTo "ABC123"
+    allocation.bookingId isEqualTo 1
+
+    allocation.merge(OffenderMergeDetails(prisonCode = moorlandPrisonCode, oldNumber = "ABC123", newNumber = "DEF123", newBookingId = 2))
+
+    allocation.prisonerNumber isEqualTo "DEF123"
+    allocation.bookingId isEqualTo 2
+  }
+
+  @Test
+  fun `allocation offender merge fails if old number does not match`() {
+    val allocation = activityEntity().schedules().first().allocations().first().copy(allocatedPrisonerNumber = "ABC123", allocatedBookingId = 1)
+
+    assertThatThrownBy {
+      allocation.merge(OffenderMergeDetails(prisonCode = moorlandPrisonCode, oldNumber = "BDC123", newNumber = "DEF123", newBookingId = 2))
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Current prisoner number 'ABC123' does not match the old prisoner merge number 'BDC123' for allocation ID '0'")
+
+    allocation.prisonerNumber isEqualTo "ABC123"
+    allocation.bookingId isEqualTo 1
   }
 }

@@ -209,7 +209,7 @@ class ActivityScheduleServiceTest {
   @Test
   fun `can deallocate a prisoner from activity schedule`() {
     val schedule = mock<ActivitySchedule>().stub {
-      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation().copy(prisonerNumber = "1")
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation().copy(allocatedPrisonerNumber = "1")
     }
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))

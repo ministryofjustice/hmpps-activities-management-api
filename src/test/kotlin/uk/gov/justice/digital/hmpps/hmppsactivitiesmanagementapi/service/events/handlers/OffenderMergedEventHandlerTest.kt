@@ -12,6 +12,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -38,6 +41,8 @@ class OffenderMergedEventHandlerTest {
   // Define old and new prisoner numbers in the merge
   private val oldNumber = "A1111AA"
   private val newNumber = "B2222BB"
+  private val oldBookingId = 1L
+  private val newBookingId = 2L
 
   private val prisonerSearchResult: Prisoner = mock {
     on { prisonerNumber } doReturn newNumber
@@ -45,6 +50,7 @@ class OffenderMergedEventHandlerTest {
     on { lastName } doReturn "Macdonald"
     on { status } doReturn "ACTIVE IN"
     on { prisonId } doReturn moorlandPrisonCode
+    on { bookingId } doReturn newBookingId.toString()
   }
 
   private val handler = OffenderMergedEventHandler(
@@ -87,11 +93,21 @@ class OffenderMergedEventHandlerTest {
 
   @Test
   fun `inbound merged event is processed when the prisoner is at a rolled out prison`() {
+    val allocation = allocation().copy(allocatedPrisonerNumber = oldNumber, allocatedBookingId = oldBookingId)
+
+    allocationRepository.stub {
+      on { findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber) } doReturn listOf(allocation)
+    }
+
     val inboundEvent = offenderMergedEvent(prisonerNumber = newNumber, removedPrisonerNumber = oldNumber)
 
-    val outcome = handler.handle(inboundEvent)
+    allocation.prisonerNumber isEqualTo oldNumber
+    allocation.bookingId isEqualTo oldBookingId
 
-    assertThat(outcome.isSuccess()).isTrue
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    allocation.prisonerNumber isEqualTo newNumber
+    allocation.bookingId isEqualTo newBookingId
 
     verify(prisonerSearchApiClient).findByPrisonerNumber(newNumber)
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)

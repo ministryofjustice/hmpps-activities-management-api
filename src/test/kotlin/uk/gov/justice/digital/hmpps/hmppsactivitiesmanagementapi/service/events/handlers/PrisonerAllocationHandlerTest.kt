@@ -42,9 +42,9 @@ class PrisonerAllocationHandlerTest {
   @Test
   fun `un-ended allocations are ended on release from remand`() {
     val previouslyActiveAllocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456"),
+      allocation().copy(allocationId = 2, allocatedPrisonerNumber = "123456"),
+      allocation().copy(allocationId = 3, allocatedPrisonerNumber = "123456"),
     ).onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
       assertThat(it.deallocatedBy).isNull()
@@ -86,9 +86,9 @@ class PrisonerAllocationHandlerTest {
   @Test
   fun `un-ended allocations are ended on release from custodial`() {
     val previouslyActiveAllocations = listOf(
-      allocation().copy(allocationId = 1, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 2, prisonerNumber = "123456"),
-      allocation().copy(allocationId = 3, prisonerNumber = "123456"),
+      allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456"),
+      allocation().copy(allocationId = 2, allocatedPrisonerNumber = "123456"),
+      allocation().copy(allocationId = 3, allocatedPrisonerNumber = "123456"),
     ).onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
       assertThat(it.deallocatedBy).isNull()
@@ -124,9 +124,9 @@ class PrisonerAllocationHandlerTest {
 
   @Test
   fun `only un-ended allocations are ended on release of prisoner`() {
-    val previouslySuspendedAllocation = allocation().copy(allocationId = 2, prisonerNumber = "123456")
+    val previouslySuspendedAllocation = allocation().copy(allocationId = 2, allocatedPrisonerNumber = "123456")
       .also { it.autoSuspend(LocalDateTime.now(), "reason") }
-    val previouslyActiveAllocation = allocation().copy(allocationId = 3, prisonerNumber = "123456")
+    val previouslyActiveAllocation = allocation().copy(allocationId = 3, allocatedPrisonerNumber = "123456")
 
     val allocations = listOf(previouslySuspendedAllocation, previouslyActiveAllocation)
 
@@ -153,7 +153,7 @@ class PrisonerAllocationHandlerTest {
 
   @Test
   fun `only future attendances are removed on release`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+    listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456")).also {
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
           moorlandPrisonCode,

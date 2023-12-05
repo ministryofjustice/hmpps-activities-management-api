@@ -53,7 +53,7 @@ class OffenderMergedEventHandler(
                 prisonCode = prisonId,
                 oldNumber = oldNumber,
                 newNumber = newNumber,
-                newBookingId = prisoner.bookingId?.toInt(),
+                newBookingId = prisoner.bookingId?.toLong(),
               ),
             )
           }

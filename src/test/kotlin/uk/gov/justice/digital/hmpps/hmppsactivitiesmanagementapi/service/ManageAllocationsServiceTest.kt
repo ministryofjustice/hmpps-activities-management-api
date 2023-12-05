@@ -388,14 +388,14 @@ class ManageAllocationsServiceTest {
 
     val pendingAllocationYesterday: Allocation = allocation().copy(
       allocationId = 1,
-      prisonerNumber = "1",
+      allocatedPrisonerNumber = "1",
       startDate = TimeSource.yesterday(),
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
     val pendingAllocationToday: Allocation = allocation().copy(
       allocationId = 2,
-      prisonerNumber = "2",
+      allocatedPrisonerNumber = "2",
       startDate = TimeSource.today(),
       prisonerStatus = PrisonerStatus.PENDING,
     )
@@ -430,14 +430,14 @@ class ManageAllocationsServiceTest {
 
     val pendingAllocationYesterday: Allocation = allocation().copy(
       allocationId = 1,
-      prisonerNumber = "1",
+      allocatedPrisonerNumber = "1",
       startDate = TimeSource.yesterday(),
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
     val pendingAllocationToday: Allocation = allocation().copy(
       allocationId = 2,
-      prisonerNumber = "2",
+      allocatedPrisonerNumber = "2",
       startDate = TimeSource.today(),
       prisonerStatus = PrisonerStatus.PENDING,
     )
@@ -475,7 +475,7 @@ class ManageAllocationsServiceTest {
 
     val pendingAllocation: Allocation = allocation().copy(
       allocationId = 1,
-      prisonerNumber = "1",
+      allocatedPrisonerNumber = "1",
       startDate = TimeSource.yesterday(),
       prisonerStatus = PrisonerStatus.PENDING,
     ).also {

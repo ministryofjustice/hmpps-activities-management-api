@@ -65,7 +65,7 @@ class InterestingEventHandlerTest {
     mockPrisoner()
 
     val activeAllocations =
-      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
+      listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
     mockAllocations(pentonvillePrisonCode, "123456", activeAllocations)
 
     val inboundEvent = cellMoveEvent("123456")
@@ -91,7 +91,7 @@ class InterestingEventHandlerTest {
     mockPrisoner(bookId = 2)
 
     val activeAllocations =
-      listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.PENDING))
+      listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.PENDING))
     mockAllocations(pentonvillePrisonCode, "123456", activeAllocations)
 
     val inboundEvent = cellMoveEvent("123456")
@@ -116,7 +116,7 @@ class InterestingEventHandlerTest {
   fun `stores an iep-review-inserted event despite the reason and prisonId being null`() {
     mockPrisoner(firstname = "Bobby")
 
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456"))
     mockAllocations(pentonvillePrisonCode, "123456", activeAllocations)
 
     val inboundEvent = iepReviewInsertedEvent("123456")
@@ -141,7 +141,7 @@ class InterestingEventHandlerTest {
   fun `stores a received event when allocations exist`() {
     mockPrisoner(lastname = "Geldof")
 
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456"))
     mockAllocations(pentonvillePrisonCode, "123456", activeAllocations)
 
     val inboundEvent = offenderReceivedFromTemporaryAbsence(pentonvillePrisonCode, "123456")
@@ -188,7 +188,7 @@ class InterestingEventHandlerTest {
   fun `stores an alerts updated event`() {
     mockPrisoner(prisonerNum = "ABC1234")
 
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "ABC1234"))
     mockAllocations(pentonvillePrisonCode, "ABC1234", activeAllocations)
 
     val inboundEvent = alertsUpdatedEvent(prisonerNumber = "ABC1234")

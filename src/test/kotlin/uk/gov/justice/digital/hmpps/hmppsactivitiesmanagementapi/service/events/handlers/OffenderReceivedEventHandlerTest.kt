@@ -89,12 +89,12 @@ class OffenderReceivedEventHandlerTest {
     val now = LocalDateTime.now()
 
     val autoSuspendedOne =
-      allocation().copy(allocationId = 1, prisonerNumber = "123456").autoSuspend(now, "Auto reason")
+      allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456").autoSuspend(now, "Auto reason")
     val autoSuspendedTwo =
-      allocation().copy(allocationId = 2, prisonerNumber = "123456").autoSuspend(now, "Auto Reason")
+      allocation().copy(allocationId = 2, allocatedPrisonerNumber = "123456").autoSuspend(now, "Auto Reason")
     val userSuspended =
-      allocation().copy(allocationId = 3, prisonerNumber = "123456").userSuspend(now, "User reason", "username")
-    val ended = allocation().copy(allocationId = 3, prisonerNumber = "123456").deallocateNowWithReason(DeallocationReason.ENDED)
+      allocation().copy(allocationId = 3, allocatedPrisonerNumber = "123456").userSuspend(now, "User reason", "username")
+    val ended = allocation().copy(allocationId = 3, allocatedPrisonerNumber = "123456").deallocateNowWithReason(DeallocationReason.ENDED)
 
     val allocations = listOf(autoSuspendedOne, autoSuspendedTwo, userSuspended, ended)
 
@@ -122,7 +122,7 @@ class OffenderReceivedEventHandlerTest {
 
   @Test
   fun `future attendances are unsuspended on receipt of prisoner`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
+    listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
       whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
     }
 
@@ -186,7 +186,7 @@ class OffenderReceivedEventHandlerTest {
 
   @Test
   fun `future attendances are cancelled on receipt of prisoner when instance cancelled after initial suspension`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
+    listOf(allocation().copy(allocationId = 1, allocatedPrisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
       whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
     }
 

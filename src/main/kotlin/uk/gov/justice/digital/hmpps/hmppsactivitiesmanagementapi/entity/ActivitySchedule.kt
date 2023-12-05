@@ -265,9 +265,9 @@ data class ActivitySchedule(
     allocations.add(
       Allocation(
         activitySchedule = this,
-        prisonerNumber = prisonerNumber.toString(),
+        allocatedPrisonerNumber = prisonerNumber.toString(),
         prisonerStatus = if (startDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE,
-        bookingId = bookingId,
+        allocatedBookingId = bookingId,
         initialPayBand = payBand,
         startDate = startDate,
         allocatedBy = allocatedBy,
