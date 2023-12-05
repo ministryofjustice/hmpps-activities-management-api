@@ -15,6 +15,8 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -23,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
@@ -85,6 +89,13 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+    }
+
+    val activity = webTestClient.getActivityById(response.activityId)
+
+    with(activity.schedules.first()) {
+      slots.single().startTime isEqualTo LocalTime.of(9, 0)
+      slots.single().endTime isEqualTo LocalTime.NOON
     }
   }
 
@@ -417,4 +428,16 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
         ),
       ),
     )
+
+  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") =
+    get()
+      .uri("/activities/$id")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Activity::class.java)
+      .returnResult().responseBody!!
 }

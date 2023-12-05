@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 import java.time.LocalTime
@@ -37,4 +38,18 @@ data class PrisonRegime(
 
   fun hasExpired(predicate: () -> LocalDate?) =
     predicate()?.onOrBefore(LocalDate.now().minusDays(maxDaysToExpiry.toLong())) == true
+
+  fun startTimeForTimeSlot(timeSlot: TimeSlot): LocalTime =
+    when (timeSlot) {
+      TimeSlot.AM -> amStart
+      TimeSlot.PM -> pmStart
+      TimeSlot.ED -> edStart
+    }
+
+  fun endTimeForTimeSlot(timeSlot: TimeSlot): LocalTime =
+    when (timeSlot) {
+      TimeSlot.AM -> amFinish
+      TimeSlot.PM -> pmFinish
+      TimeSlot.ED -> edFinish
+    }
 }

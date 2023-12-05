@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
@@ -46,6 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,6 +62,7 @@ class MigrateActivityServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val featureSwitches: FeatureSwitches = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
+  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -102,6 +105,7 @@ class MigrateActivityServiceTest {
     prisonPayBandRepository,
     featureSwitches,
     eventOrganiserRepository,
+    prisonRegimeRepository,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -132,6 +136,7 @@ class MigrateActivityServiceTest {
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
       whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      whenever(prisonRegimeRepository.findByPrisonCode(any())).thenReturn(prisonRegime())
     }
 
     @Test
@@ -201,8 +206,8 @@ class MigrateActivityServiceTest {
           // Check the slots created
           assertThat(slots()).hasSize(1)
           with(slots().first()) {
-            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isFalse
             assertThat(wednesdayFlag).isFalse
@@ -277,20 +282,20 @@ class MigrateActivityServiceTest {
           assertThat(slots()).hasSize(3)
 
           with(slots()[0]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
             assertThat(mondayFlag).isTrue
           }
 
           with(slots()[1]) {
             assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(14, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(16, 30))
             assertThat(mondayFlag).isTrue
           }
 
           with(slots()[2]) {
             assertThat(startTime).isEqualTo(LocalTime.of(18, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(19, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(20, 0))
             assertThat(mondayFlag).isTrue
           }
         }
@@ -340,8 +345,8 @@ class MigrateActivityServiceTest {
         with(schedules().first()) {
           assertThat(slots()).hasSize(1)
           with(slots().first()) {
-            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isTrue
             assertThat(wednesdayFlag).isTrue
@@ -673,8 +678,8 @@ class MigrateActivityServiceTest {
 
           // Check the AM slot on Mondays and Tuesdays
           with(slots()[0]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isTrue
             assertThat(wednesdayFlag).isFalse
@@ -687,8 +692,8 @@ class MigrateActivityServiceTest {
 
           // Check that a PM slot is generated for the same days
           with(slots()[1]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(15, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(16, 30))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isTrue
             assertThat(wednesdayFlag).isFalse
@@ -721,8 +726,8 @@ class MigrateActivityServiceTest {
 
           // Check the afternoon slots are generated for week 1
           with(slots()[0]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(12, 0))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isTrue
             assertThat(wednesdayFlag).isFalse
@@ -735,8 +740,8 @@ class MigrateActivityServiceTest {
 
           // Check the morning slots are in week 2
           with(slots()[1]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
-            assertThat(endTime).isEqualTo(LocalTime.of(15, 0))
+            assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
+            assertThat(endTime).isEqualTo(LocalTime.of(16, 30))
             assertThat(mondayFlag).isTrue
             assertThat(tuesdayFlag).isTrue
             assertThat(wednesdayFlag).isFalse

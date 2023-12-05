@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
@@ -28,10 +30,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 const val MIGRATION_USER = "MIGRATION"
 const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
@@ -53,6 +57,7 @@ class MigrateActivityService(
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val feature: FeatureSwitches,
   private val eventOrganiserRepository: EventOrganiserRepository,
+  private val prisonRegimeRepository: PrisonRegimeRepository,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -134,7 +139,7 @@ class MigrateActivityService(
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     val activity = buildActivityEntity(request)
     request.scheduleRules.forEach {
-      activity.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+      activity.schedules().first().addRegimeSlot(1, it.startTime, getRequestDaysOfWeek(it), request.prisonCode)
     }
     return listOf(activity)
   }
@@ -158,10 +163,10 @@ class MigrateActivityService(
     // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity1.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addRegimeSlot(1, it.startTime, getRequestDaysOfWeek(it), request.prisonCode)
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity1.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addRegimeSlot(2, it.startTime, getRequestDaysOfWeek(it), request.prisonCode)
       }
     }
 
@@ -171,10 +176,10 @@ class MigrateActivityService(
     // Add the afternoon sessions to week 1 and the morning sessions to week 2
     request.scheduleRules.forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity2.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addRegimeSlot(1, it.startTime, getRequestDaysOfWeek(it), request.prisonCode)
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity2.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addRegimeSlot(2, it.startTime, getRequestDaysOfWeek(it), request.prisonCode)
       }
     }
 
@@ -545,5 +550,13 @@ class MigrateActivityService(
     val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
       ?: logAndThrowValidationException("Failed to delete. Activity $activityId was not found at prison $prisonCode")
     activityRepository.delete(activity)
+  }
+
+  private fun ActivitySchedule.addRegimeSlot(weekNumber: Int, startTime: LocalTime, daysOfWeek: Set<DayOfWeek>, prisonCode: String): ActivityScheduleSlot {
+    val prisonRegime = prisonRegimeRepository.findByPrisonCode(prisonCode)!!
+    val timeSlot = TimeSlot.slot(startTime)
+    val start = prisonRegime.startTimeForTimeSlot(timeSlot)
+    val end = prisonRegime.endTimeForTimeSlot(timeSlot)
+    return this.addSlot(weekNumber, start, end, daysOfWeek)
   }
 }
