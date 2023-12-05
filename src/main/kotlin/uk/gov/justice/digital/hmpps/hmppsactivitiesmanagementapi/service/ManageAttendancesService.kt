@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
@@ -45,7 +46,7 @@ class ManageAttendancesService(
       "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
 
-    require(rolloutPrisonRepository.findByCode(prisonCode)?.isActivitiesRolledOut() == true) {
+    require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
       "Cannot create attendance for prison '$prisonCode', not rolled out"
     }
 

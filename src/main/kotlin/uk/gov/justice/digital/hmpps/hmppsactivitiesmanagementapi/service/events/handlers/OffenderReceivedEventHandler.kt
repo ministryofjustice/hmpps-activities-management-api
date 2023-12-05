@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -40,7 +41,7 @@ class OffenderReceivedEventHandler(
   override fun handle(event: OffenderReceivedEvent): Outcome {
     log.debug("Handling offender received event {}", event)
 
-    if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
+    if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
       prisonApiClient.getPrisonerDetails(prisonerNumber = event.prisonerNumber()).block()?.let { prisoner ->
         if (prisoner.isActiveInPrison(event.prisonCode())) {
           transactionHandler.newSpringTransaction {
@@ -67,9 +68,6 @@ class OffenderReceivedEventHandler(
 
     return Outcome.success()
   }
-
-  private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
-    this.findByCode(prisonCode)?.isActivitiesRolledOut() == true
 
   private fun List<Allocation>.resetSuspendedAllocations(event: OffenderReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }

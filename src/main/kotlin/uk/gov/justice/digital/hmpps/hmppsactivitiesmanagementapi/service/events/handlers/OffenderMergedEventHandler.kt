@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import java.time.LocalDateTime
@@ -44,9 +45,9 @@ class OffenderMergedEventHandler(
     prisonerSearchApiClient.findByPrisonerNumber(newNumber)?.let { prisoner ->
       log.info("MERGE: Search $newNumber = ${prisoner.firstName} ${prisoner.lastName} ${prisoner.prisonId} ${prisoner.status}")
       prisoner.prisonId?.let { prisonId ->
-        if (rolloutPrisonRepository.prisonIsRolledOut(prisonId)) {
+        if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonId)) {
           transactionHandler.newSpringTransaction {
-            processMergeEvent(prisonId, newNumber, oldNumber, prisoner.bookingId?.let { it.toInt() } ?: 0)
+            processMergeEvent(prisonId, newNumber, oldNumber, prisoner.bookingId?.toInt() ?: 0)
           }
         } else {
           log.info("MERGE: $prisonId is not rolled out on activities and appointments - ignoring merge")
@@ -56,10 +57,7 @@ class OffenderMergedEventHandler(
     return Outcome.success()
   }
 
-  private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
-    this.findByCode(prisonCode)?.isActivitiesRolledOut() == true
-
-  fun processMergeEvent(prisonCode: String, newNumber: String, oldNumber: String, newBookingId: Int) {
+  private fun processMergeEvent(prisonCode: String, newNumber: String, oldNumber: String, newBookingId: Int) {
     log.info("MERGE: Processing merge event from $oldNumber to $newNumber with new booking Id $newBookingId")
 
     // Update all allocation rows - any status
@@ -86,7 +84,9 @@ class OffenderMergedEventHandler(
     val appointmentAttendees = appointmentAttendeeRepository.findByPrisonerNumber(oldNumber)
     log.info("MERGE: Would alter ${appointmentAttendees.size} appointment attendee rows (including new booking Id)")
 
-    // TODO: Update prisoner exclusions from old to new number
+    // TODO: Prisoner exclusions do not need to be updated, they do not have a prisoner number on them.
+
+    // TODO: Prisoner number is not mutable at present this will need changing!
 
     log.info("MERGE: Recording the merge event into the local audit table")
 
