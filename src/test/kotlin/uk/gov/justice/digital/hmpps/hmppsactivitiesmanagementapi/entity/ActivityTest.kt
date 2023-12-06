@@ -629,15 +629,26 @@ class ActivityTest {
   }
 
   @Test
-  fun `cannot update paid attribute on activity when allocated`() {
+  fun `cannot update paid attribute on paid activity when allocated`() {
     val activity = activityEntity()
 
     assertThatThrownBy { activity.paid = false }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
 
+    // no op so allowed
+    assertDoesNotThrow { activity.paid = true }
+  }
+
+  @Test
+  fun `cannot update paid attribute on unpaid activity when allocated`() {
+    val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
+
     assertThatThrownBy { activity.paid = true }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
+
+    // no op so allowed
+    assertDoesNotThrow { activity.paid = false }
   }
 }

@@ -81,6 +81,8 @@ data class Activity(
 ) {
   var paid: Boolean = isPaid
     set(value) {
+      if (field == value) return // no op, ignore
+
       if (schedules().any { it.allocations().isNotEmpty() }) {
         throw IllegalArgumentException("Paid attribute cannot be updated for allocated activity '$activityId'")
       }
