@@ -443,15 +443,13 @@ class AllocationServiceTest {
 
     val slot = schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
     )
 
     schedule.addSlot(
       weekNumber = 2,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
     )
 
@@ -521,7 +519,7 @@ class AllocationServiceTest {
       service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Updating allocation with id 0: No single AM slots in week number 3")
+      .hasMessage("Updating allocation with id 0: No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
   }

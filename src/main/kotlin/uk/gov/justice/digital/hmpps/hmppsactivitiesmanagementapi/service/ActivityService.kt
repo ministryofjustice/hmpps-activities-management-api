@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -49,7 +50,6 @@ import java.lang.IllegalStateException
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
@@ -254,10 +254,10 @@ class ActivityService(
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+      val slotTimes = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
       val daysOfWeek = getDaysOfWeek(slot)
-      this.addSlot(slot.weekNumber, start, end, daysOfWeek)
+      this.addSlot(slot.weekNumber, slotTimes, daysOfWeek)
     }
   }
 
@@ -279,7 +279,7 @@ class ActivityService(
 
       this.slots().filter { slot -> slot.weekNumber == scheduleWeekNumber }.forEach { slot ->
         if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
-          this.hasNoInstancesOnDate(activeDay, slot.startTime to slot.endTime) &&
+          this.hasNoInstancesOnDate(activeDay, slot.slotTimes()) &&
           (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
         ) {
           this.addInstance(sessionDate = activeDay, slot = slot)
@@ -507,7 +507,7 @@ class ActivityService(
         this.slots().none { slot ->
           slot.weekNumber == this.getWeekNumber(it.sessionDate) &&
             slot.getDaysOfWeek().contains(it.dayOfWeek()) &&
-            it.startTime to it.endTime == slot.startTime to slot.endTime
+            it.slotTimes() == slot.slotTimes()
         } ||
         !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
     }
@@ -682,18 +682,18 @@ class ActivityService(
   ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
-      val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
+      val regimeTimeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
       activity.schedules().forEach { schedule ->
         val activeAllocations = schedule.allocations(excludeEnded = true)
-        activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(slots)?.let { updatedAllocationIds.add(it) } }
-        schedule.updateSlots(slots.toMap(timeSlots))
+        activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(slots, regimeTimeSlots)?.let { updatedAllocationIds.add(it) } }
+        schedule.updateSlots(slots.toMap(regimeTimeSlots))
       }
     }
     return updatedAllocationIds
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):
-    Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>> {
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>):
+    Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
     return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
   }
 }

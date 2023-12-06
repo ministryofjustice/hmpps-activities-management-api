@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
@@ -130,7 +129,9 @@ data class ActivitySchedule(
 
   fun slots() = slots.toList()
 
-  fun slot(weekNumber: Int, timeSlot: TimeSlot) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
+  fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
+
+  fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
@@ -188,7 +189,7 @@ data class ActivitySchedule(
   fun hasNoInstancesOnDate(day: LocalDate) =
     instances.none { instance -> instance.sessionDate == day }
 
-  fun hasNoInstancesOnDate(day: LocalDate, startEndTime: Pair<LocalTime, LocalTime>) =
+  fun hasNoInstancesOnDate(day: LocalDate, startEndTime: SlotTimes) =
     instances.none { instance ->
       instance.sessionDate == day &&
         instance.startTime == startEndTime.first &&
@@ -230,9 +231,9 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(weekNumber: Int, startTime: LocalTime, endTime: LocalTime, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
-    require(slot(weekNumber, TimeSlot.slot(startTime)) == null) { "Adding slot to activity schedule with ID: $activityScheduleId: ${TimeSlot.slot(startTime)} slot already exists for week number $weekNumber" }
-    slots.add(ActivityScheduleSlot.valueOf(this, weekNumber, startTime, endTime, daysOfWeek))
+  fun addSlot(weekNumber: Int, slotTimes: SlotTimes, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
+    require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
+    slots.add(ActivityScheduleSlot.valueOf(this, weekNumber, slotTimes, daysOfWeek))
     return slots.last()
   }
 
@@ -275,9 +276,10 @@ data class ActivitySchedule(
       ).apply {
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
-          slot(exclusion.weekNumber, exclusion.timeSlot())
-            .apply { require(this != null) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No single ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
-            .let { slot -> this.updateExclusion(slot!!, exclusion.getDaysOfWeek()) }
+          slots(exclusion.weekNumber, exclusion.timeSlot())
+            .apply { require(this.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+            .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
+            .forEach { slot -> this.updateExclusion(slot, exclusion.getDaysOfWeek()) }
         }
       },
     )
@@ -341,7 +343,7 @@ data class ActivitySchedule(
     this.instancesLastUpdatedTime = LocalDateTime.now()
   }
 
-  fun updateSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
+  fun updateSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
     updateMatchingSlots(updates)
     addNewSlots(updates)
     removeRedundantSlots(updates)
@@ -349,24 +351,22 @@ data class ActivitySchedule(
 
   fun isPaid() = activity.paid
 
-  private fun removeRedundantSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.startTime to it.endTime)) }
+  private fun removeRedundantSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
+    val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.slotTimes())) }
     slots.removeAll(slotsToRemove)
     require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
   }
 
-  private fun updateMatchingSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
+  private fun updateMatchingSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
     slots.forEach { slot ->
-      updates[Pair(slot.weekNumber, slot.startTime to slot.endTime)]?.let(slot::update)
+      updates[Pair(slot.weekNumber, slot.slotTimes())]?.let(slot::update)
     }
   }
 
-  private fun addNewSlots(updates: Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>>) {
-    updates.keys.filterNot { key ->
-      slots.map { Pair(it.weekNumber, it.startTime to it.endTime) }.contains(key)
-    }.forEach {
-      addSlot(it.first, it.second.first, it.second.second, updates[it]!!)
-    }
+  private fun addNewSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
+    updates.keys
+      .filterNot { key -> slots.map { Pair(it.weekNumber, it.slotTimes()) }.contains(key) }
+      .forEach { addSlot(it.first, it.second, updates[it]!!) }
   }
 }
 

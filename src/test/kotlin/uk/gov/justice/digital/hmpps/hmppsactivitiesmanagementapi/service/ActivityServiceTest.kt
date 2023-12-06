@@ -1138,7 +1138,7 @@ class ActivityServiceTest {
   fun `updateActivity - setting of the end date is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow())
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON, LocalTime.NOON.plusHours(1), DayOfWeek.values().toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1202,7 +1202,7 @@ class ActivityServiceTest {
   fun `updateActivity - bringing the end date closer is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(5))
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON, LocalTime.NOON.plusHours(1), DayOfWeek.values().toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1328,16 +1328,12 @@ class ActivityServiceTest {
     val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
     val slot1 = schedule.addSlot(
       1,
-      prisonRegime().amStart,
-      prisonRegime().amFinish,
-      setOf(
-        tomorrow.dayOfWeek,
-      ),
+      prisonRegime().amStart to prisonRegime().amFinish,
+      setOf(tomorrow.dayOfWeek),
     )
     val slot2 = schedule.addSlot(
       1,
-      prisonRegime().pmStart,
-      prisonRegime().pmFinish,
+      prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
@@ -1393,14 +1389,12 @@ class ActivityServiceTest {
 
     val slot1 = schedule.addSlot(
       1,
-      prisonRegime().amStart,
-      prisonRegime().amFinish,
+      prisonRegime().amStart to prisonRegime().amFinish,
       setOf(tomorrow.dayOfWeek),
     )
     val slot2 = schedule.addSlot(
       1,
-      prisonRegime().pmStart,
-      prisonRegime().pmFinish,
+      prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
@@ -1470,8 +1464,7 @@ class ActivityServiceTest {
         .apply {
           addSlot(
             1,
-            LocalTime.NOON,
-            LocalTime.NOON.plusHours(1),
+            LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
           )
         }
@@ -1510,8 +1503,7 @@ class ActivityServiceTest {
         .apply {
           addSlot(
             1,
-            LocalTime.NOON,
-            LocalTime.NOON.plusHours(1),
+            LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
           )
         }
@@ -1560,14 +1552,12 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.NOON,
-        endTime = LocalTime.NOON.plusHours(1),
+        slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.dayOfWeek, tomorrow.plusDays(2).dayOfWeek),
       )
       addSlot(
         weekNumber = 2,
-        startTime = LocalTime.NOON,
-        endTime = LocalTime.NOON.plusHours(1),
+        slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.plusDays(1).dayOfWeek, tomorrow.plusDays(3).dayOfWeek),
       )
     }
@@ -1624,8 +1614,7 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
     }
@@ -1708,8 +1697,7 @@ class ActivityServiceTest {
     ).apply {
       val slot = addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       allocatePrisoner(
@@ -1775,8 +1763,7 @@ class ActivityServiceTest {
     ).apply {
       val slot = addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       allocatePrisoner(
@@ -1992,14 +1979,12 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       addSlot(
         weekNumber = 2,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
     }

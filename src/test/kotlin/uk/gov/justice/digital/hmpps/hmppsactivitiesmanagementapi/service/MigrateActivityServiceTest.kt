@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.validation.ValidationException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -32,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
@@ -454,7 +454,7 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Migrating duplicate slots throws error`() {
+    fun `Migrating duplicate slot times consolidates them into 1 slot`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
@@ -473,11 +473,17 @@ class MigrateActivityServiceTest {
         runsOnBankHoliday = true,
       )
 
-      Assertions.assertThatThrownBy {
-        service.migrateActivity(request)
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      service.migrateActivity(request)
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        val slot = schedules().first().slots().single()
+        slot.slotTimes() isEqualTo (LocalTime.of(10, 0) to LocalTime.of(11, 0))
+        slot.getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
       }
-        .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Adding slot to activity schedule with ID: 0: AM slot already exists for week number 1")
     }
 
     @Test
@@ -1284,8 +1290,7 @@ class MigrateActivityServiceTest {
         addSchedule(activitySchedule(this, noSlots = true)).apply {
           addSlot(
             weekNumber = 1,
-            startTime = LocalTime.of(10, 0),
-            endTime = LocalTime.of(11, 0),
+            slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
             setOf(DayOfWeek.MONDAY),
           )
         }
@@ -1314,6 +1319,77 @@ class MigrateActivityServiceTest {
     }
 
     @Test
+    fun `Multiple exclusions for common timeSlot and weekNumber pairs will be applied to the correct slots`() {
+      val request = buildAllocationMigrateRequest().copy(
+        exclusions = listOf(
+          Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+          Slot(weekNumber = 1, timeSlot = "AM", tuesday = true),
+          Slot(weekNumber = 1, timeSlot = "PM", wednesday = true),
+          Slot(weekNumber = 2, timeSlot = "PM", thursday = true),
+        ),
+      )
+
+      val activity = activityEntity(noSchedules = true).apply {
+        addSchedule(activitySchedule(this, noSlots = true, scheduleWeeks = 2)).apply {
+          addSlot(
+            weekNumber = 1,
+            slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
+            setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+          )
+          addSlot(
+            weekNumber = 1,
+            slotTimes = LocalTime.of(11, 0) to LocalTime.of(12, 0),
+            setOf(DayOfWeek.MONDAY),
+          )
+          addSlot(
+            weekNumber = 1,
+            slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
+            setOf(DayOfWeek.WEDNESDAY),
+          )
+          addSlot(
+            weekNumber = 2,
+            slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
+            setOf(DayOfWeek.THURSDAY),
+          )
+        }
+      }
+
+      val schedule = activity.schedules().first()
+
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1, "MDI")).thenReturn(activity)
+      whenever(activityScheduleRepository.findBy(any(), any())).thenReturn(schedule)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      service.migrateAllocation(request)
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          with(exclusions(ExclusionsFilter.ACTIVE)) {
+            this hasSize 4
+
+            this.elementAt(0).weekNumber isEqualTo 1
+            this.elementAt(0).slotTimes() isEqualTo (LocalTime.of(10, 0) to LocalTime.of(11, 0))
+            this.elementAt(0).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
+
+            this.elementAt(1).weekNumber isEqualTo 1
+            this.elementAt(1).slotTimes() isEqualTo (LocalTime.of(11, 0) to LocalTime.of(12, 0))
+            this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+
+            this.elementAt(2).weekNumber isEqualTo 1
+            this.elementAt(2).slotTimes() isEqualTo (LocalTime.of(13, 0) to LocalTime.of(14, 0))
+            this.elementAt(2).getDaysOfWeek() isEqualTo setOf(DayOfWeek.WEDNESDAY)
+
+            this.elementAt(3).weekNumber isEqualTo 2
+            this.elementAt(3).slotTimes() isEqualTo (LocalTime.of(13, 0) to LocalTime.of(14, 0))
+            this.elementAt(3).getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
+          }
+        }
+      }
+    }
+
+    @Test
     fun `Exclusions which do not match slots in the schedule will fail`() {
       val request = buildAllocationMigrateRequest().copy(
         exclusions = listOf(Slot(weekNumber = 1, timeSlot = "PM", friday = true)),
@@ -1323,8 +1399,7 @@ class MigrateActivityServiceTest {
         addSchedule(activitySchedule(this, noSlots = true)).apply {
           addSlot(
             weekNumber = 1,
-            startTime = LocalTime.of(10, 0),
-            endTime = LocalTime.of(11, 0),
+            slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
             setOf(DayOfWeek.MONDAY),
           )
         }
@@ -1340,7 +1415,7 @@ class MigrateActivityServiceTest {
         service.migrateAllocation(request)
       }
 
-      assertThat(exception.message).contains("No single PM slots in week number 1")
+      assertThat(exception.message).contains("No PM slots in week number 1")
 
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }

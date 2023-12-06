@@ -14,6 +14,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot as ModelActivityScheduleSlot
 
+typealias SlotTimes = Pair<LocalTime, LocalTime>
+
 @Entity
 @Table(name = "activity_schedule_slot")
 data class ActivityScheduleSlot(
@@ -69,14 +71,13 @@ data class ActivityScheduleSlot(
     fun valueOf(
       activitySchedule: ActivitySchedule,
       weekNumber: Int,
-      startTime: LocalTime,
-      endTime: LocalTime,
+      slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
-      startTime = startTime,
-      endTime = endTime,
+      startTime = slotTimes.first,
+      endTime = slotTimes.second,
     ).apply {
       update(daysOfWeek)
     }
@@ -121,6 +122,8 @@ data class ActivityScheduleSlot(
   )
 
   fun timeSlot() = TimeSlot.slot(startTime)
+
+  fun slotTimes(): SlotTimes = startTime to endTime
 
   @Override
   override fun toString(): String {

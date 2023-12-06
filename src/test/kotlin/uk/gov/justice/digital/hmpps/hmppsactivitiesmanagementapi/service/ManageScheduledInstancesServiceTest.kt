@@ -487,14 +487,12 @@ class ManageScheduledInstancesServiceTest {
             this.suspensions.clear()
             this.addSlot(
               weekNumber = 1,
-              startTime = LocalTime.of(9, 30),
-              endTime = LocalTime.of(11, 30),
+              slotTimes = LocalTime.of(9, 30) to LocalTime.of(11, 30),
               daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             )
             this.addSlot(
               weekNumber = 1,
-              startTime = LocalTime.of(13, 30),
-              endTime = LocalTime.of(15, 30),
+              slotTimes = LocalTime.of(13, 30) to LocalTime.of(15, 30),
               daysOfWeek = setOf(LocalDate.now().dayOfWeek),
             )
           },

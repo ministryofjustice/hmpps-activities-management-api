@@ -57,7 +57,7 @@ class ManageAttendancesService(
       .filter { it.attendanceRequired() }
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
-        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.timeSlot()) }
+        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.slotTimes()) }
 
         // Get the details of the prisoners due to attend the session
         val prisonerNumbers = allocations.map { it.prisonerNumber }
