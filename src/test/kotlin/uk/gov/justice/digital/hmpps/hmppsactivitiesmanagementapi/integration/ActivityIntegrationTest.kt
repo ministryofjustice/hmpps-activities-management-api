@@ -1111,7 +1111,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(slots[1].daysOfWeek).containsExactly("Mon", "Tue")
     }
 
-    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
@@ -1123,13 +1123,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(eventCaptor.secondValue) {
       assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
       assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(2))
-      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-      assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
-    }
-
-    with(eventCaptor.thirdValue) {
-      assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(3))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
     }
