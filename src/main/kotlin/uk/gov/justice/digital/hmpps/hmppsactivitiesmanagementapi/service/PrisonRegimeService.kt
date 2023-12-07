@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
@@ -76,7 +77,7 @@ class PrisonRegimeService(
         LocalTimeRange(start, end)
       }
 
-  fun getPrisonTimeSlots(prisonCode: String): Map<TimeSlot, Pair<LocalTime, LocalTime>> =
+  fun getPrisonTimeSlots(prisonCode: String): Map<TimeSlot, SlotTimes> =
     getPrisonRegimeByPrisonCode(prisonCode).let { pr ->
       mapOf(
         TimeSlot.AM to Pair(pr.amStart, pr.amFinish),

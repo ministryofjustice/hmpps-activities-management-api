@@ -26,5 +26,5 @@ values (1, current_date, '09:00:00', '12:00:00', false, null, null, null, null),
        (1, current_date + interval '1' day, '09:00:00', '12:00:00', false, null, null, null, null),
        (1, current_date + interval '1' day, '13:00:00', '16:30:00', false, null, null, null, null);
 
-insert into exclusion(allocation_id, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, slot_start_time, week_number, start_date)
-values (2, true, true, true, true, true, true, true, '09:00:00', 1, current_date + interval '1' day);
+insert into exclusion(allocation_id, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, slot_start_time, slot_end_time, week_number, start_date)
+values (2, true, true, true, true, true, true, true, '09:00:00', '12:00:00', 1, current_date + interval '1' day);

@@ -54,3 +54,21 @@ data class Slot(
 
   fun timeSlot() = TimeSlot.valueOf(timeSlot!!)
 }
+
+fun List<Slot>.consolidateMatchingSlots() =
+  groupBy { it.weekNumber to it.timeSlot }
+    .let { rulesBySlots ->
+      rulesBySlots.map { (slots, groupedRules) ->
+        Slot(
+          weekNumber = slots.first,
+          timeSlot = slots.second,
+          monday = groupedRules.any { it.monday },
+          tuesday = groupedRules.any { it.tuesday },
+          wednesday = groupedRules.any { it.wednesday },
+          thursday = groupedRules.any { it.thursday },
+          friday = groupedRules.any { it.friday },
+          saturday = groupedRules.any { it.saturday },
+          sunday = groupedRules.any { it.sunday },
+        )
+      }
+    }

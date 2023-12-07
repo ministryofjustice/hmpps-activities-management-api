@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -26,9 +27,11 @@ data class Exclusion(
 
   val startDate: LocalDate,
 
-  val slotStartTime: LocalTime,
-
   val weekNumber: Int,
+
+  private var slotStartTime: LocalTime,
+
+  private var slotEndTime: LocalTime,
 
   private var mondayFlag: Boolean = false,
 
@@ -72,6 +75,13 @@ data class Exclusion(
 
   fun timeSlot() = TimeSlot.slot(slotStartTime)
 
+  fun slotTimes() = slotStartTime to slotEndTime
+
+  fun setSlotTimes(slotTimes: SlotTimes) = run {
+    slotStartTime = slotTimes.first
+    slotEndTime = slotTimes.second
+  }
+
   fun toSlotModel() = Slot(
     weekNumber = weekNumber,
     timeSlot = timeSlot().toString(),
@@ -89,13 +99,14 @@ data class Exclusion(
 
     fun valueOf(
       allocation: Allocation,
-      slotStartTime: LocalTime,
+      slotTimes: SlotTimes,
       weekNumber: Int,
       daysOfWeek: Set<DayOfWeek>,
-      startDate: LocalDate = tomorrow,
+      startDate: LocalDate = maxOf(tomorrow, allocation.startDate),
     ) = Exclusion(
       allocation = allocation,
-      slotStartTime = slotStartTime,
+      slotStartTime = slotTimes.first,
+      slotEndTime = slotTimes.second,
       weekNumber = weekNumber,
       startDate = startDate,
     ).apply {
@@ -104,4 +115,4 @@ data class Exclusion(
   }
 }
 
-fun Set<Exclusion>.toSlotModel() = map { it.toSlotModel() }
+fun Set<Exclusion>.toSlotModel() = map { it.toSlotModel() }.consolidateMatchingSlots()
