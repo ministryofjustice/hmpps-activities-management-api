@@ -346,12 +346,12 @@ data class Allocation(
     //  This is to respect a restraint on the nomis data model. Exclusions on any slot which has a matching slot over multiple weeks
     //  must be ended or removed.
 
-    exclusions(ExclusionsFilter.PRESENT).forEach {
+    exclusions(ExclusionsFilter.PRESENT).filter { it.endDate == null }.forEach {
       val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
       val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
 
-      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
         editedSome = true
         it.endNow()
         val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
@@ -362,7 +362,7 @@ data class Allocation(
       val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
       val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
-      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek())) {
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
         editedSome = true
         val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
         if (intersect.isNotEmpty()) {
