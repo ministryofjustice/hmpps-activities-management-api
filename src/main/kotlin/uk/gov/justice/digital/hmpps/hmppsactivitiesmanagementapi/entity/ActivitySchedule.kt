@@ -277,7 +277,7 @@ data class ActivitySchedule(
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
           slots(exclusion.weekNumber, exclusion.timeSlot())
-            .apply { require(this.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+            .also { require(it.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
             .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
             .forEach { slot -> this.updateExclusion(slot, exclusion.getDaysOfWeek()) }
         }
