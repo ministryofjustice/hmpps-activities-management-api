@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -12,6 +11,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -34,6 +36,7 @@ class OffenderMergedEventHandlerTest {
   private val auditRepository: AuditRepository = mock()
   private val eventReviewRepository: EventReviewRepository = mock()
   private val appointmentAttendeeRepository: AppointmentAttendeeRepository = mock()
+  private val featureSwitches: FeatureSwitches = mock { on { isEnabled(Feature.OFFENDER_MERGED_ENABLED) } doReturn true }
 
   // Define old and new prisoner numbers in the merge
   private val oldNumber = "A1111AA"
@@ -57,6 +60,7 @@ class OffenderMergedEventHandlerTest {
     eventReviewRepository,
     appointmentAttendeeRepository,
     TransactionHandler(),
+    featureSwitches,
   )
 
   @BeforeEach
@@ -89,18 +93,31 @@ class OffenderMergedEventHandlerTest {
   fun `inbound merged event is processed when the prisoner is at a rolled out prison`() {
     val inboundEvent = offenderMergedEvent(prisonerNumber = newNumber, removedPrisonerNumber = oldNumber)
 
-    val outcome = handler.handle(inboundEvent)
-
-    assertThat(outcome.isSuccess()).isTrue
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(prisonerSearchApiClient).findByPrisonerNumber(newNumber)
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(allocationRepository).mergeOffender(oldNumber, newNumber)
+
     verify(attendanceRepository).findByPrisonerNumber(oldNumber)
+    verify(attendanceRepository).mergeOffender(oldNumber, newNumber)
+
     verify(waitingListRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(waitingListRepository).mergeOffender(oldNumber, newNumber)
+
     verify(auditRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(auditRepository).mergeOffender(oldNumber, newNumber)
+
     verify(eventReviewRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(eventReviewRepository).mergeOffender(oldNumber, newNumber)
+
     verify(appointmentAttendeeRepository).findByPrisonerNumber(oldNumber)
+    verify(appointmentAttendeeRepository).mergeOffender(oldNumber, newNumber)
+
+    verify(auditRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(auditRepository).mergeOffender(oldNumber, newNumber)
     verify(auditRepository).save(any())
   }
 
@@ -116,9 +133,7 @@ class OffenderMergedEventHandlerTest {
         )
     }
 
-    val outcome = handler.handle(inboundEvent)
-
-    assertThat(outcome.isSuccess()).isTrue
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(prisonerSearchApiClient).findByPrisonerNumber(newNumber)
     verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)

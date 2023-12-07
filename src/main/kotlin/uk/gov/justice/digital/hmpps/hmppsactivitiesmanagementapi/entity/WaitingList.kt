@@ -11,7 +11,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -104,10 +103,6 @@ data class WaitingList(
       this.status = WaitingListStatus.ALLOCATED
       this.allocation = allocation
     }
-
-  fun merge(offenderMergeDetails: OffenderMergeDetails) {
-    // TODO to be implemented
-  }
 }
 
 enum class WaitingListStatus {

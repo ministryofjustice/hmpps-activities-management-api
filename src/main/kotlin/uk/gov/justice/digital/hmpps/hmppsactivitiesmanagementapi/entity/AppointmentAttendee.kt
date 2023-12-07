@@ -12,7 +12,6 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Where
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDateTime
@@ -91,10 +90,6 @@ data class AppointmentAttendee(
       userMap[attendanceRecordedBy].toSummary(attendanceRecordedBy!!)
     },
   )
-
-  fun merge(offenderMergeDetails: OffenderMergeDetails) {
-    // TODO to be implemented
-  }
 }
 
 fun List<AppointmentAttendee>.toModel() = map { it.toModel() }

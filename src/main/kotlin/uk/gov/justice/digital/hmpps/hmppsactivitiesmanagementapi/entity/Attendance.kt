@@ -15,7 +15,6 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.OffenderMergeDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -236,10 +235,6 @@ data class Attendance(
   fun hasReason(reason: AttendanceReasonEnum) = attendanceReason?.code == reason
 
   fun isPayable() = scheduledInstance.isPaid()
-
-  fun merge(offenderMergeDetails: OffenderMergeDetails) {
-    // TODO to be implemented
-  }
 }
 
 enum class AttendanceStatus {
