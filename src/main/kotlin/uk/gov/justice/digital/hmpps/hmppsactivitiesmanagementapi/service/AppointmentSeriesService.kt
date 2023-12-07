@@ -65,7 +65,6 @@ class AppointmentSeriesService(
     checkCaseloadAccess(request.prisonCode!!)
 
     request.failIfMaximumAppointmentInstancesExceeded()
-    // Should fail when category is VLB and extra information is mandatory
     request.failIfCategoryIsVideoLink()
     val categoryDescription = request.categoryDescription()
     val locationDescription = request.locationDescription()
@@ -114,6 +113,7 @@ class AppointmentSeriesService(
   }
 
   private fun AppointmentSeriesCreateRequest.failIfCategoryIsVideoLink() {
+    // Should fail when category is VLB and extra information is mandatory
     if (categoryCode == "VLB") {
       require(extraInformation?.isNotEmpty() == true) {
         "Enter the court name and any extra information"
