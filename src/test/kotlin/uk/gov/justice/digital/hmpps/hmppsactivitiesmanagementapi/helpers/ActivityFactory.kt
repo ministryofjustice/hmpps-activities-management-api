@@ -225,7 +225,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek)
       if (!noAllocations && !noExclusions) {
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),
@@ -290,9 +290,9 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
   return if (withExclusions) {
     allocation.apply {
       if (startDate != null) {
-        addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
+        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
       } else {
-        addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
+        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
       }
     }
   } else {

@@ -176,7 +176,7 @@ class ManageAttendancesServiceTest {
 
     val slot = activitySchedule.slots().first()
     allocation.apply {
-      addExclusion(Exclusion.valueOf(this, slot.startTime, slot.weekNumber, slot.getDaysOfWeek(), startDate))
+      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, slot.getDaysOfWeek(), startDate))
     }
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(moorlandPrisonCode, today, today)) doReturn listOf(instance)

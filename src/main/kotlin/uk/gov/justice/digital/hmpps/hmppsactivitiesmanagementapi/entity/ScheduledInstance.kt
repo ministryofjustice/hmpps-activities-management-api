@@ -80,6 +80,8 @@ data class ScheduledInstance(
 
   fun timeSlot() = TimeSlot.slot(startTime)
 
+  fun slotTimes() = startTime to endTime
+
   fun attendanceRequired() = activitySchedule.activity.attendanceRequired
 
   /**

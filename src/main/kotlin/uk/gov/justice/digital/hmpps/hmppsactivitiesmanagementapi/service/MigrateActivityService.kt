@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
@@ -133,8 +134,8 @@ class MigrateActivityService(
   fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     val activity = buildActivityEntity(request)
-    request.scheduleRules.forEach {
-      activity.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
+      activity.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
     }
     return listOf(activity)
   }
@@ -156,12 +157,12 @@ class MigrateActivityService(
     val activity1 = buildActivityEntity(request, true, 2, 1)
 
     // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
-    request.scheduleRules.forEach {
+    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity1.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity1.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addSlot(2, it.startTime to it.endTime, getRequestDaysOfWeek(it))
       }
     }
 
@@ -169,12 +170,12 @@ class MigrateActivityService(
     val activity2 = buildActivityEntity(request, true, 2, 2)
 
     // Add the afternoon sessions to week 1 and the morning sessions to week 2
-    request.scheduleRules.forEach {
+    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity2.schedules().first().addSlot(1, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity2.schedules().first().addSlot(2, it.startTime, it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addSlot(2, it.startTime to it.endTime, getRequestDaysOfWeek(it))
       }
     }
 
@@ -502,7 +503,7 @@ class MigrateActivityService(
       bookingId = prisoner.bookingId?.let { prisoner.bookingId.toLong() } ?: 0L,
       startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
       endDate = request.endDate,
-      exclusions = request.exclusions,
+      exclusions = request.exclusions?.consolidateMatchingSlots(),
       allocatedBy = MIGRATION_USER,
     )
 
@@ -546,4 +547,22 @@ class MigrateActivityService(
       ?: logAndThrowValidationException("Failed to delete. Activity $activityId was not found at prison $prisonCode")
     activityRepository.delete(activity)
   }
+
+  private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() =
+    groupBy { it.startTime to it.endTime }
+      .let { rulesBySlotTimes ->
+        rulesBySlotTimes.map { (slotTimes, groupedRules) ->
+          NomisScheduleRule(
+            startTime = slotTimes.first,
+            endTime = slotTimes.second,
+            monday = groupedRules.any { it.monday },
+            tuesday = groupedRules.any { it.tuesday },
+            wednesday = groupedRules.any { it.wednesday },
+            thursday = groupedRules.any { it.thursday },
+            friday = groupedRules.any { it.friday },
+            saturday = groupedRules.any { it.saturday },
+            sunday = groupedRules.any { it.sunday },
+          )
+        }
+      }
 }
