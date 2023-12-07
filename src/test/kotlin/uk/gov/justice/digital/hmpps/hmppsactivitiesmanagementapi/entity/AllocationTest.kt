@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -476,8 +475,9 @@ class AllocationTest {
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
 
     allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 3, timeSlot = "AM")),
-      prisonRegime,
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+      ),
     )
 
     allocation.exclusions(ExclusionsFilter.PRESENT) hasSize 1
@@ -492,34 +492,13 @@ class AllocationTest {
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
 
     allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 3, timeSlot = "AM")),
-      prisonRegime,
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+      ),
     )
 
     allocation.exclusions(ExclusionsFilter.FUTURE) hasSize 0
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
-  }
-
-  @Test
-  fun `syncExclusionsWithScheduleSlots - updates present exclusions - removes exclusions which have all days as false`() {
-    val allocation = allocation(startDate = LocalDate.now(), withExclusions = true)
-
-    with(allocation) {
-      exclusions(ExclusionsFilter.PRESENT) hasSize 1
-      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
-      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
-    }
-
-    allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = false)),
-      prisonRegime,
-    )
-
-    with(allocation) {
-      exclusions(ExclusionsFilter.PRESENT) hasSize 1
-      exclusions(ExclusionsFilter.PRESENT).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
-      exclusions(ExclusionsFilter.ACTIVE) hasSize 0
-    }
   }
 
   @Test
@@ -538,8 +517,9 @@ class AllocationTest {
     }
 
     allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true, tuesday = false)),
-      prisonRegime,
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+      ),
     )
 
     with(allocation) {
@@ -547,27 +527,6 @@ class AllocationTest {
       exclusions(ExclusionsFilter.PRESENT).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
       exclusions(ExclusionsFilter.ACTIVE) hasSize 1
       exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
-    }
-  }
-
-  @Test
-  fun `syncExclusionsWithScheduleSlots - updates future exclusions - removes exclusions which have all days as false`() {
-    val allocation = allocation(withExclusions = true)
-
-    with(allocation) {
-      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
-      exclusions(ExclusionsFilter.FUTURE) hasSize 1
-      exclusions(ExclusionsFilter.FUTURE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
-    }
-
-    allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = false)),
-      prisonRegime,
-    )
-
-    with(allocation) {
-      exclusions(ExclusionsFilter.ACTIVE) hasSize 0
-      exclusions(ExclusionsFilter.FUTURE) hasSize 0
     }
   }
 
@@ -587,8 +546,9 @@ class AllocationTest {
     }
 
     allocation.syncExclusionsWithScheduleSlots(
-      listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true, tuesday = false)),
-      prisonRegime,
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+      ),
     )
 
     with(allocation) {
@@ -606,13 +566,13 @@ class AllocationTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      slotTimes = LocalTime.of(14, 0) to LocalTime.of(15, 0),
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
     )
 
     schedule.addSlot(
       weekNumber = 2,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.THURSDAY),
     )
 
@@ -623,7 +583,7 @@ class AllocationTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     ).apply {
-      addExclusion(Exclusion.valueOf(this, LocalTime.of(14, 0) to LocalTime.of(15, 0), 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), LocalDate.now()))
+      addExclusion(Exclusion.valueOf(this, prisonRegime[TimeSlot.PM]!!, 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), LocalDate.now()))
     }
 
     with(allocation) {
@@ -633,20 +593,9 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        Slot(
-          weekNumber = 1,
-          timeSlot = "PM",
-          monday = true,
-          friday = true,
-        ),
-        Slot(
-          weekNumber = 2,
-          timeSlot = "PM",
-          monday = true,
-          thursday = true,
-        ),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
       ),
-      prisonRegime,
     )
 
     with(allocation) {
@@ -662,13 +611,13 @@ class AllocationTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
     )
 
     schedule.addSlot(
       weekNumber = 2,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.THURSDAY),
     )
 
@@ -689,20 +638,9 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        Slot(
-          weekNumber = 1,
-          timeSlot = "PM",
-          monday = true,
-          friday = true,
-        ),
-        Slot(
-          weekNumber = 2,
-          timeSlot = "PM",
-          monday = true,
-          thursday = true,
-        ),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
       ),
-      prisonRegime,
     )
 
     with(allocation) {
