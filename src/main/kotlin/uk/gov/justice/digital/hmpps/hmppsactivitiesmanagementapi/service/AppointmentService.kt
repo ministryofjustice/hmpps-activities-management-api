@@ -66,7 +66,7 @@ class AppointmentService(
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 
-    request.failIfCategoryIsVideoLink()
+    request.failIfCategoryIsVideoLinkAndMissingExtraInfo()
 
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
@@ -200,7 +200,7 @@ class AppointmentService(
 
     return cancelledAppointmentSeries
   }
-  private fun AppointmentUpdateRequest.failIfCategoryIsVideoLink() {
+  private fun AppointmentUpdateRequest.failIfCategoryIsVideoLinkAndMissingExtraInfo() {
     // Should fail when category is VLB and extra information is mandatory
     if (categoryCode == "VLB") {
       require(extraInformation?.isNotEmpty() == true) {

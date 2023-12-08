@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.util.Optional
+
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -121,10 +123,24 @@ class AppointmentServiceTest {
   }
 
   @Test
-  fun `failIfCategoryIsVideoLink should throw exception when category is VLB and extraInformation is empty`() {
+  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should throw exception when category is VLB and extraInformation is empty`() {
     val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "")
 
     assertThrows<IllegalArgumentException> {
+      service.updateAppointment(1L, request, principal)
+    }
+  }
+
+  @Test
+  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should not throw exception when category is VLB and extraInformation is not empty`() {
+    addCaseloadIdToRequestHeader("TPR")
+    val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "Video Link Session Court")
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(mapOf("VLB" to appointmentCategoryReferenceCode("")))
+
+    assertDoesNotThrow {
       service.updateAppointment(1L, request, principal)
     }
   }

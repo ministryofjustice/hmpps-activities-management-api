@@ -65,7 +65,7 @@ class AppointmentSeriesService(
     checkCaseloadAccess(request.prisonCode!!)
 
     request.failIfMaximumAppointmentInstancesExceeded()
-    request.failIfCategoryIsVideoLink()
+    request.failIfCategoryIsVideoLinkAndMissingExtraInfo()
     val categoryDescription = request.categoryDescription()
     val locationDescription = request.locationDescription()
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
@@ -112,7 +112,7 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun AppointmentSeriesCreateRequest.failIfCategoryIsVideoLink() {
+  private fun AppointmentSeriesCreateRequest.failIfCategoryIsVideoLinkAndMissingExtraInfo() {
     // Should fail when category is VLB and extra information is mandatory
     if (categoryCode == "VLB") {
       require(extraInformation?.isNotEmpty() == true) {
