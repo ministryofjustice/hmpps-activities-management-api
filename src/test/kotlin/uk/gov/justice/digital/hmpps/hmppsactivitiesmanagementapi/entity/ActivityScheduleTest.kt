@@ -53,8 +53,6 @@ class ActivityScheduleTest {
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ActivityMinimumEducationLevel(
             id = 0,
@@ -125,8 +123,6 @@ class ActivityScheduleTest {
           summary = "Maths",
           description = "Maths basic",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
               id = 0,

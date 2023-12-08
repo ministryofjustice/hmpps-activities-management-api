@@ -42,8 +42,6 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         summary = "Maths",
         description = "Maths Level 1",
         riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ActivityMinimumEducationLevel(
             id = 1,

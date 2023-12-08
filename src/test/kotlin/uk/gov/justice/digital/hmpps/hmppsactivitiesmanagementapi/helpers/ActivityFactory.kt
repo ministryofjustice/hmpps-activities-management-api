@@ -76,8 +76,6 @@ internal fun activityEntity(
     summary = summary,
     description = description,
     riskLevel = riskLevel,
-    minimumIncentiveNomisCode = "BAS",
-    minimumIncentiveLevel = "Basic",
     startDate = startDate,
     createdTime = timestamp,
     createdBy = "test",
@@ -398,8 +396,6 @@ internal fun activityCreateRequest(
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
     pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)) else emptyList(),
     riskLevel = "high",
-    minimumIncentiveNomisCode = "BAS",
-    minimumIncentiveLevel = "Basic",
     startDate = TimeSource.tomorrow(),
     endDate = null,
     minimumEducationLevel = listOf(

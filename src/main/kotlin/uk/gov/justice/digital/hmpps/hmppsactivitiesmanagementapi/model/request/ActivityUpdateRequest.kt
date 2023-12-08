@@ -46,17 +46,6 @@ data class ActivityUpdateRequest(
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
-  @field:Size(max = 3, message = "Minimum incentive level NOMIS code should not exceed {max} characters")
-  @Schema(
-    description = "The NOMIS code for the minimum incentive/earned privilege level for this activity",
-    example = "BAS",
-  )
-  val minimumIncentiveNomisCode: String? = null,
-
-  @field:Size(max = 10, message = "Minimum incentive level should not exceed {max} characters")
-  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
-  val minimumIncentiveLevel: String? = null,
-
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean? = null,
 

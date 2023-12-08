@@ -207,8 +207,6 @@ class MigrateActivityService(
       outsideWork = request.outsideWork,
       startDate = tomorrow,
       riskLevel = DEFAULT_RISK_LEVEL,
-      minimumIncentiveNomisCode = request.minimumIncentiveLevel,
-      minimumIncentiveLevel = mapIncentiveLevel(request.minimumIncentiveLevel),
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,
       updatedTime = LocalDateTime.now(),

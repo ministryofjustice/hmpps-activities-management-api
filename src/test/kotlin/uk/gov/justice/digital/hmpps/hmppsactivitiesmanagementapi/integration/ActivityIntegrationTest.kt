@@ -356,8 +356,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
               id = 1,
@@ -411,8 +409,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
               id = 1,
@@ -477,8 +473,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           category = educationCategory,
           capacity = 10,
           allocated = 2,
@@ -548,8 +542,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           category = educationCategory,
           capacity = 10,
           allocated = 2,

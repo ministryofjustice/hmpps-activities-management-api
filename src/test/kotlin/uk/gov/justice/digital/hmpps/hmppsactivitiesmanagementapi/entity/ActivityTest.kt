@@ -74,8 +74,6 @@ class ActivityTest {
       summary = "Maths",
       description = "Maths basic",
       riskLevel = "high",
-      minimumIncentiveNomisCode = "BAS",
-      minimumIncentiveLevel = "Basic",
       category = ActivityCategory(
         id = 1L,
         code = "category code",
@@ -107,8 +105,6 @@ class ActivityTest {
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ModelActivityMinimumEducationLevel(
             id = 0,

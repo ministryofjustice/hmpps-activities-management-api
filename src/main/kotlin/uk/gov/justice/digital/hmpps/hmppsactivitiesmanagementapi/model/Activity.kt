@@ -71,12 +71,6 @@ data class Activity(
   @Schema(description = "The most recent risk assessment level for this activity", example = "high")
   val riskLevel: String,
 
-  @Schema(description = "The NOMIS code for the minimum incentive/earned privilege level for this activity", example = "BAS")
-  val minimumIncentiveNomisCode: String,
-
-  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
-  val minimumIncentiveLevel: String,
-
   @Schema(description = "The date and time when this activity was created", example = "2022-09-01T09:01:02")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val createdTime: LocalDateTime,
