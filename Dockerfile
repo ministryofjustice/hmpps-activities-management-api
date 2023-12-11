@@ -36,6 +36,7 @@ COPY --from=builder --chown=appuser:appgroup /app/build/libs/hmpps-activities-ma
 COPY --from=builder --chown=appuser:appgroup /app/build/libs/applicationinsights-agent*.jar /app/agent.jar
 COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.json /app
 COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.dev.json /app
+COPY --from=builder --chown=appuser:appgroup /app/run.sh /app
 
 USER 2000
 
