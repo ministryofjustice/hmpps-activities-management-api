@@ -4,9 +4,14 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
@@ -18,12 +23,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
+import java.security.Principal
 import java.util.Optional
 
+@ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
@@ -34,6 +43,7 @@ class AppointmentServiceTest {
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
+  private lateinit var principal: Principal
 
   private val service = AppointmentService(
     appointmentRepository,
@@ -46,6 +56,11 @@ class AppointmentServiceTest {
     updateAppointmentsJob,
     cancelAppointmentsJob,
   )
+
+  @BeforeEach
+  fun setUp() {
+    principal = SecurityContextHolder.getContext().authentication
+  }
 
   @AfterEach
   fun tearDown() {
@@ -105,5 +120,28 @@ class AppointmentServiceTest {
     val entity = appointmentSeries.appointments().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should throw exception when category is VLB and extraInformation is empty`() {
+    val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "")
+
+    assertThrows<IllegalArgumentException> {
+      service.updateAppointment(1L, request, principal)
+    }
+  }
+
+  @Test
+  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should not throw exception when category is VLB and extraInformation is not empty`() {
+    addCaseloadIdToRequestHeader("TPR")
+    val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "Video Link Session Court")
+    val appointmentSeries = appointmentSeriesEntity()
+    val entity = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(mapOf("VLB" to appointmentCategoryReferenceCode("")))
+
+    assertDoesNotThrow {
+      service.updateAppointment(1L, request, principal)
+    }
   }
 }
