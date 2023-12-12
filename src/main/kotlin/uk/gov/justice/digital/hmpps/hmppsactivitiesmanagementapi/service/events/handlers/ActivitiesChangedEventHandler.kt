@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
@@ -48,7 +49,7 @@ class ActivitiesChangedEventHandler(
   override fun handle(event: ActivitiesChangedEvent): Outcome {
     log.debug("Handling activities changed event {}", event)
 
-    if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
+    if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
       return when (event.action()) {
         Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event).let { Outcome.success() }
         Action.END -> {

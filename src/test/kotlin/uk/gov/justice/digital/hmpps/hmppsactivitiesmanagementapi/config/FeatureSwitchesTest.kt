@@ -17,6 +17,7 @@ class FeatureSwitchesTest {
 
   @TestPropertySource(
     properties = [
+      "feature.offender.merge.enabled=true",
       "feature.migrate.split.regime.enabled=true",
       "feature.audit.service.hmpps.enabled=true",
       "feature.audit.service.local.enabled=true",
@@ -51,15 +52,15 @@ class FeatureSwitchesTest {
   inner class EnabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are enabled`() {
-      Feature.values().forEach {
+      Feature.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} not enabled").isTrue
       }
 
-      OutboundEvent.values().forEach {
+      OutboundEvent.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
       }
 
-      InboundEventType.values().forEach {
+      InboundEventType.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} not enabled").isTrue
       }
     }
@@ -70,15 +71,15 @@ class FeatureSwitchesTest {
   inner class DisabledFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
     fun `features are disabled by default`() {
-      Feature.values().forEach {
+      Feature.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.label} enabled").isFalse
       }
 
-      OutboundEvent.values().forEach {
+      OutboundEvent.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
       }
 
-      InboundEventType.values().forEach {
+      InboundEventType.entries.forEach {
         assertThat(featureSwitches.isEnabled(it)).withFailMessage("${it.eventType} enabled").isFalse
       }
     }
@@ -88,11 +89,10 @@ class FeatureSwitchesTest {
   @DisplayName("Features can be defaulted when not present")
   inner class DefaultedFeatures(@Autowired val featureSwitches: FeatureSwitches) {
     @Test
-    fun `feature types can be defaulted `() {
+    fun `different feature types can be defaulted `() {
       assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, true)).isTrue
       assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED, true)).isTrue
-      assertThat(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, true)).isTrue
     }
   }
 }

@@ -42,4 +42,5 @@ enum class Feature(val label: String) {
   LOCAL_AUDIT_ENABLED("feature.audit.service.local.enabled"),
   OUTBOUND_EVENTS_ENABLED("feature.events.sns.enabled"),
   MIGRATE_SPLIT_REGIME_ENABLED("feature.migrate.split.regime.enabled"),
+  OFFENDER_MERGED_ENABLED("feature.offender.merge.enabled"),
 }

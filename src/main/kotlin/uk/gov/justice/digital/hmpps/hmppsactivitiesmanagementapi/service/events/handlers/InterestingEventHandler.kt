@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
@@ -42,7 +43,7 @@ class InterestingEventHandler(
     if (event is OffenderMergedEvent) return recordMerge(event)
 
     prisonApiClient.getPrisonerDetails(event.prisonerNumber()).block()?.let { prisoner ->
-      if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
+      if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisoner.agencyId!!)) {
         if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
             prisonCode = prisoner.agencyId,
             prisonerNumber = event.prisonerNumber(),
@@ -72,7 +73,7 @@ class InterestingEventHandler(
   }
 
   private fun recordRelease(releaseEvent: InboundReleaseEvent): Outcome {
-    if (rolloutPrisonRepository.findByCode(releaseEvent.prisonCode())?.isActivitiesRolledOut() == true) {
+    if (rolloutPrisonRepository.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
       prisonApiClient.getPrisonerDetails(releaseEvent.prisonerNumber()).block()?.let { prisoner ->
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
@@ -98,7 +99,7 @@ class InterestingEventHandler(
   private fun recordMerge(mergedEvent: OffenderMergedEvent): Outcome {
     // Use the new prisoner number - the merged will have been actioned in prison API
     prisonApiClient.getPrisonerDetails(mergedEvent.prisonerNumber()).block()?.let { prisoner ->
-      if (rolloutPrisonRepository.findByCode(prisoner.agencyId!!)?.isActivitiesRolledOut() == true) {
+      if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisoner.agencyId!!)) {
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
             eventTime = LocalDateTime.now(),
