@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -31,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
@@ -48,6 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import java.time.LocalDateTime
@@ -60,6 +63,7 @@ import java.time.temporal.ChronoUnit
   properties = [
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
+    "feature.offender.merge.enabled=true",
   ],
 )
 class InboundEventsIntegrationTest : IntegrationTestBase() {
@@ -87,6 +91,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository
+
+  @Autowired
+  private lateinit var auditRepository: AuditRepository
 
   @MockBean
   private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
@@ -693,5 +700,54 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       .onEach {
         it.status isEqualTo status
       }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-merged-event.sql")
+  fun `offender merged event replaces old prisoner number with new prisoner number`() {
+    val (oldNumber, newNumber) = "A11111A" to "B11111B"
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = newNumber,
+        inOutStatus = Prisoner.InOutStatus.IN,
+        status = "ACTIVE IN",
+        prisonId = pentonvillePrisonCode,
+      ),
+    )
+
+    prisonApiMockServer.stubGetPrisonerDetails(
+      InmateDetailFixture.instance(offenderNo = newNumber, agencyId = pentonvillePrisonCode),
+      fullInfo = true,
+    )
+
+    // Check all set to the old prisoner number before event is processed
+    allocationRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+    waitingListRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+    auditRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+    eventReviewRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+    appointmentAttendeeRepository.findAll().single().prisonerNumber isEqualTo oldNumber
+
+    service.process(offenderMergedEvent(prisonerNumber = newNumber, removedPrisonerNumber = oldNumber))
+
+    // Check all set to the new prisoner number after event is processed
+    allocationRepository.findAll().single().prisonerNumber isEqualTo newNumber
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo newNumber
+    waitingListRepository.findAll().single().prisonerNumber isEqualTo newNumber
+
+    // There will an extra audit entry after processing the event successfully.
+    with(auditRepository.findAll()) {
+      this hasSize 2
+      map { it.prisonerNumber }.distinct().single() isEqualTo newNumber
+    }
+
+    // There will an extra event review entry after processing the event successfully.
+    with(eventReviewRepository.findAll()) {
+      this hasSize 2
+      map { it.prisonerNumber }.distinct().single() isEqualTo newNumber
+    }
+
+    appointmentAttendeeRepository.findAll().single().prisonerNumber isEqualTo newNumber
   }
 }

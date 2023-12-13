@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -98,4 +99,8 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
     prisonerStatus: PrisonerStatus,
     startDate: LocalDate,
   ): List<Allocation>
+
+  @Query(value = "UPDATE Allocation a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
+  @Modifying
+  fun mergeOffender(oldNumber: String, newNumber: String)
 }

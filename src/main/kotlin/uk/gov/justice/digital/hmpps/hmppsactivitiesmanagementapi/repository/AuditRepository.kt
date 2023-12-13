@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
@@ -40,4 +41,8 @@ interface AuditRepository : JpaRepository<LocalAuditRecord, Long> {
     scheduleId: Long? = null,
     pageable: Pageable,
   ): Page<LocalAuditRecord>
+
+  @Query(value = "UPDATE LocalAuditRecord l SET l.prisonerNumber = :newNumber WHERE l.prisonerNumber = :oldNumber")
+  @Modifying
+  fun mergeOffender(oldNumber: String, newNumber: String)
 }
