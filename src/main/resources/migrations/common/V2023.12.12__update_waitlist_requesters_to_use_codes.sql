@@ -13,6 +13,7 @@ SET requested_by = (
         WHEN wl.requested_by = 'Reception staff' THEN 'RECP_STAFF'
         WHEN wl.requested_by = 'Orderly or Red Band' THEN 'RED_BAND'
         WHEN wl.requested_by = 'Other' THEN 'OTHER'
+        ELSE 'PRISONER'
     END
 );
 
