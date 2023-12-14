@@ -31,6 +31,8 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
+  fun getPrisonerDetailsLite(prisonerNumber: String): InmateDetail? = getPrisonerDetails(prisonerNumber, fullInfo = false).block()
+
   fun getPrisonerDetails(
     prisonerNumber: String,
     fullInfo: Boolean = true,

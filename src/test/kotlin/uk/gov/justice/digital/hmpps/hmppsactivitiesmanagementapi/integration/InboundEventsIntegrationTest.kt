@@ -707,13 +707,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `offender merged event replaces old prisoner number with new prisoner number`() {
     val (oldNumber, newNumber) = "A11111A" to "B11111B"
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = newNumber,
-        inOutStatus = Prisoner.InOutStatus.IN,
-        status = "ACTIVE IN",
-        prisonId = pentonvillePrisonCode,
-      ),
+    prisonApiMockServer.stubGetPrisonerDetails(
+      InmateDetailFixture.instance(offenderNo = newNumber, agencyId = pentonvillePrisonCode),
+      fullInfo = false,
     )
 
     prisonApiMockServer.stubGetPrisonerDetails(
