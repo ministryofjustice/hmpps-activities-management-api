@@ -12,8 +12,11 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ModelTest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.LocalDate
 
 @WebMvcTest(controllers = [RolloutController::class])
 @ContextConfiguration(classes = [RolloutController::class])
@@ -54,5 +57,24 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
     verify(prisonService).getByPrisonCode("PVX")
   }
 
+  @Test
+  fun `get list of all rolled out prisons`() {
+    val originalRolloutDate = LocalDate.parse("01 Feb 2023", ModelTest.dateFormatter)
+    val rolloutPrison = RolloutPrisonPlan(
+      prisonCode = "LPI",
+      activitiesRolledOut = true,
+      activitiesRolloutDate = originalRolloutDate,
+      appointmentsRolledOut = true,
+      appointmentsRolloutDate = originalRolloutDate,
+    )
+    whenever(prisonService.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
+
+    val response = mockMvc.get("/rollout")
+      .andExpect { status { isOk() } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(rolloutPrison)))
+  }
   private fun MockMvc.getPrisonByCode(code: String) = get("/rollout/{code}", code)
 }
