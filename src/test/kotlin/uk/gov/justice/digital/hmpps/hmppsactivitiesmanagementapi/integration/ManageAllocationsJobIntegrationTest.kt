@@ -104,7 +104,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")
   @Test
-  fun `deallocate offenders allocations due to expire and waiting lists declined`() {
+  fun `deallocate offenders allocations due to expire and waiting list applications removed`() {
     val prisoner = PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
@@ -141,7 +141,11 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
     expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
 
-    waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
+    with(waitingListRepository.findAll().prisoner("A11111A")) {
+      status isStatus REMOVED
+      updatedTime isCloseTo LocalDateTime.now()
+      updatedBy isEqualTo "Activities Management Service"
+    }
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
@@ -206,13 +210,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private infix fun WaitingListStatus.isStatus(status: WaitingListStatus) {
     this isEqualTo status
-  }
-
-  private infix fun WaitingList.isDeclinedWithReason(reason: String) {
-    status isEqualTo DECLINED
-    declinedReason isEqualTo reason
-    updatedTime isCloseTo LocalDateTime.now()
-    updatedBy isEqualTo "Activities Management Service"
   }
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }

@@ -135,7 +135,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-for-release.sql")
-  fun `permanent release of prisoner ends allocations, declines waiting list and deletes pending allocation for offender`() {
+  fun `permanent release of prisoner ends allocations, removes waiting list applications and deletes pending allocations for offender`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A11111A",
@@ -172,7 +172,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A11111A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 4L)
@@ -181,7 +181,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(hmppsAuditApiClient, times(4)).createEvent(hmppsAuditEventCaptor.capture())
 
-    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_DECLINED_FROM_WAITING_LIST"
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
     hmppsAuditEventCaptor.secondValue.what isEqualTo "PRISONER_DEALLOCATED"
     hmppsAuditEventCaptor.thirdValue.what isEqualTo "PRISONER_DEALLOCATED"
     hmppsAuditEventCaptor.lastValue.what isEqualTo "PRISONER_DEALLOCATED"
