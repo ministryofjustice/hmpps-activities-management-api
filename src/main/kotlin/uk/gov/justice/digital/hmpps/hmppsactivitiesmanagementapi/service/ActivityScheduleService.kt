@@ -177,11 +177,16 @@ class ActivityScheduleService(
         request.prisonerNumber,
         schedule,
       )
+        .also {
+          val pending = it.filter { it.status == WaitingListStatus.PENDING }
+          require(pending.isEmpty()) {
+            "Prisoner has a PENDING waiting application. It must be APPROVED before they can be allocated"
+          }
+        }
         .filter { it.status == WaitingListStatus.APPROVED }
         .also {
           require(it.size <= 1) {
-            "" +
-              "Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list"
+            "Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list"
           }
         }
         .singleOrNull()?.allocated(allocation)
