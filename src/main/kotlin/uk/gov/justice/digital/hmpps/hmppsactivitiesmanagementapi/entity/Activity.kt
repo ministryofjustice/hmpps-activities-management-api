@@ -64,10 +64,6 @@ data class Activity(
 
   var riskLevel: String,
 
-  var minimumIncentiveNomisCode: String,
-
-  var minimumIncentiveLevel: String,
-
   val createdTime: LocalDateTime,
 
   val createdBy: String,
@@ -299,8 +295,6 @@ data class Activity(
     description = description,
     category = activityCategory.toModel(),
     riskLevel = riskLevel,
-    minimumIncentiveNomisCode = minimumIncentiveNomisCode,
-    minimumIncentiveLevel = minimumIncentiveLevel,
     minimumEducationLevel = activityMinimumEducationLevel().toModel(),
     capacity = schedules().sumOf { schedule -> schedule.capacity },
     allocated = schedules().sumOf { schedule ->

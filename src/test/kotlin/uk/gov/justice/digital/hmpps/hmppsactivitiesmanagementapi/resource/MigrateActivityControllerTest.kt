@@ -273,7 +273,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       prisonCode = moorlandPrisonCode,
       startDate,
       endDate,
-      minimumIncentiveLevel = "BAS",
       description = "Test activity",
       internalLocationId = 123L,
       internalLocationCode = "WOW",

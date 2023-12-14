@@ -360,7 +360,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       capacity = 10,
       description = "An activity",
       payPerSession = "H",
-      minimumIncentiveLevel = "BAS",
       runsOnBankHoliday = false,
       outsideWork = false,
       scheduleRules,

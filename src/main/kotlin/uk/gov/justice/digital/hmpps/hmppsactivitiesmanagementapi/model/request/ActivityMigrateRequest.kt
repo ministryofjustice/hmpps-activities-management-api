@@ -52,10 +52,6 @@ data class ActivityMigrateRequest(
   @Schema(description = "Indicates (F)ull or (H)alf day (for payment purposes). Not nullable.", example = "H", allowableValues = ["H", "F"])
   val payPerSession: String,
 
-  @field:NotEmpty(message = "Minimum incentive level is required.")
-  @Schema(description = "The NOMIS code for the minimum incentive level for this activity", example = "BAS")
-  val minimumIncentiveLevel: String,
-
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean = false,
 

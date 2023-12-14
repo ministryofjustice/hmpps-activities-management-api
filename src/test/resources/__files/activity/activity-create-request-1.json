@@ -7,8 +7,6 @@
   "tierCode": "TIER_2",
   "organiserCode": "PRISON_STAFF",
   "eligibilityRuleIds": [1],
-  "minimumIncentiveNomisCode": "BAS",
-  "minimumIncentiveLevel": "Basic",
   "riskLevel": "high",
   "pay": [
     {

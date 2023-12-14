@@ -868,7 +868,6 @@ class MigrateActivityServiceTest {
         capacity = 10,
         description = "An activity",
         payPerSession = "H",
-        minimumIncentiveLevel = "BAS",
         runsOnBankHoliday = false,
         outsideWork = false,
         scheduleRules,
@@ -1769,7 +1768,6 @@ class MigrateActivityServiceTest {
       internalLocationCode = null,
       internalLocationDescription = null,
       payPerSession = "H",
-      minimumIncentiveLevel = "STD",
       scheduleRules = listOf(
         NomisScheduleRule(
           startTime = LocalTime.of(9, 0),

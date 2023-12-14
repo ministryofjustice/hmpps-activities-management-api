@@ -164,8 +164,6 @@ class ActivityService(
       offWing = request.offWing,
       startDate = request.startDate,
       riskLevel = request.riskLevel!!,
-      minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
-      minimumIncentiveLevel = request.minimumIncentiveLevel!!,
       createdTime = LocalDateTime.now(),
       createdBy = createdBy,
       isPaid = request.paid,
@@ -333,8 +331,6 @@ class ActivityService(
       applySummaryUpdate(request, activity)
       applyStartDateUpdate(request, activity)
       applyEndDateUpdate(request, activity)
-      applyMinimumIncentiveNomisCodeUpdate(request, activity)
-      applyMinimumIncentiveLevelUpdate(request, activity)
       applyRunsOnBankHolidayUpdate(request, activity)
       applyCapacityUpdate(request, activity)
       applyRiskLevelUpdate(request, activity)
@@ -462,24 +458,6 @@ class ActivityService(
         activity.endDate = newEndDate
         activity.schedules().forEach { it.endDate = newEndDate }
       }
-    }
-  }
-
-  private fun applyMinimumIncentiveNomisCodeUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
-    request.minimumIncentiveNomisCode?.apply {
-      activity.minimumIncentiveNomisCode = this
-    }
-  }
-
-  private fun applyMinimumIncentiveLevelUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
-    request.minimumIncentiveLevel?.apply {
-      activity.minimumIncentiveLevel = this
     }
   }
 
