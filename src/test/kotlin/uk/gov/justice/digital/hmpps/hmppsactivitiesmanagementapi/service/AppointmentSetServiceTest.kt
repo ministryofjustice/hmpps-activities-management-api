@@ -96,7 +96,7 @@ class AppointmentSetServiceTest {
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = "A1234BC",
           bookingId = 456,
-          firstName = "TEST01",
+          firstName = "TEST02",
           lastName = "PRISONER01",
           prisonId = moorlandPrisonCode,
           cellLocation = "1-2-3",
