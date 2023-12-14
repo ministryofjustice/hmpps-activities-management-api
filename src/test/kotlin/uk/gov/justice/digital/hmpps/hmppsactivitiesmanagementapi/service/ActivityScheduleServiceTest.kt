@@ -639,6 +639,45 @@ class ActivityScheduleServiceTest {
         prisoner,
       ),
     )
+    whenever(repository.saveAndFlush(any())).doReturn(schedule)
+    whenever(
+      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+        caseLoad,
+        "123456",
+        schedule,
+      ),
+    ).thenReturn(waitingLists)
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list")
+  }
+
+  @Test
+  fun `allocation fails if pending waiting list`() {
+    val schedule = activitySchedule(activity = activityEntity(prisonCode = pentonvillePrisonCode))
+    val waitingLists = listOf(
+      waitingList(
+        prisonCode = schedule.activity.prisonCode,
+        initialStatus = WaitingListStatus.PENDING,
+        waitingListId = 1,
+      ),
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)).thenReturn(
+      prisonPayBandsLowMediumHigh(caseLoad),
+    )
     whenever(prisonApiClient.getPrisonerDetails("123456", fullInfo = false)).doReturn(
       Mono.just(
         prisoner,
@@ -665,6 +704,6 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list")
+      .hasMessage("Prisoner has a PENDING waiting application. It must be APPROVED before they can be allocated")
   }
 }
