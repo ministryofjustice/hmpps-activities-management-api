@@ -69,7 +69,7 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
     )
     whenever(prisonService.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
 
-    val response = mockMvc.get("/rollout")
+    val response = mockMvc.getRolledOutPrisons()
       .andExpect { status { isOk() } }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andReturn().response
@@ -77,4 +77,5 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(rolloutPrison)))
   }
   private fun MockMvc.getPrisonByCode(code: String) = get("/rollout/{code}", code)
+  private fun MockMvc.getRolledOutPrisons() = get("/rollout")
 }
