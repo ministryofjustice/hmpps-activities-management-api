@@ -660,7 +660,7 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list")
+      .hasMessage("Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application.")
   }
 
   @Test
@@ -704,6 +704,6 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner has a PENDING waiting application. It must be APPROVED before they can be allocated")
+      .hasMessage("Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated.")
   }
 }
