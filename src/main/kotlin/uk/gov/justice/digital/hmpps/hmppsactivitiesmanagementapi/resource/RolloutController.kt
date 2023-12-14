@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -65,4 +66,48 @@ class RolloutController(
   )
   fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrisonPlan =
     rolloutService.getByPrisonCode(prisonCode)
+
+  @Operation(
+    summary = "Get all rollout prisons",
+    description = "Returns a list of all rolled out prisons.",
+  )
+  @GetMapping
+  @PreAuthorize("hasRole('ACTIVITY_ADMIN')")
+  @ResponseBody
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "List of prisons that are rolled out",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = RolloutPrisonPlan::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  fun getRolledOutPrisons(): List<RolloutPrisonPlan> =
+    rolloutService.getRolloutPrisons()
 }
