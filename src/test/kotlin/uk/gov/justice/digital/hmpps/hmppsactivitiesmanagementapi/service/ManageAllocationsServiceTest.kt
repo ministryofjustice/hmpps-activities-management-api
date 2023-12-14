@@ -334,7 +334,7 @@ class ManageAllocationsServiceTest {
     verify(waitingListService).removeOpenApplications(
       prison.code,
       allocation.prisonerNumber,
-      ServiceName.SERVICE_NAME.value
+      ServiceName.SERVICE_NAME.value,
     )
   }
 
