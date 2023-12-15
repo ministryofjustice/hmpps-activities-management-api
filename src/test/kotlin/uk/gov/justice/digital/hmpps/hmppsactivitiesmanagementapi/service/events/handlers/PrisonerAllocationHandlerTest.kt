@@ -75,10 +75,9 @@ class PrisonerAllocationHandlerTest {
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       moorlandPrisonCode,
       "123456",
-      "Temporarily released or transferred",
       "Activities Management Service",
     )
   }
@@ -114,10 +113,9 @@ class PrisonerAllocationHandlerTest {
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       moorlandPrisonCode,
       "123456",
-      "Released from prison",
       "Activities Management Service",
     )
   }
@@ -143,10 +141,9 @@ class PrisonerAllocationHandlerTest {
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       moorlandPrisonCode,
       "123456",
-      "Released from prison",
       "Activities Management Service",
     )
   }

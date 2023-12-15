@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
@@ -224,10 +225,9 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       prison.code,
       allocation.prisonerNumber,
-      "Released",
       "Activities Management Service",
     )
 
@@ -260,10 +260,9 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       prison.code,
       allocation.prisonerNumber,
-      "Released",
       "Activities Management Service",
     )
 
@@ -294,13 +293,13 @@ class ManageAllocationsServiceTest {
     // Multiple moves to demonstrate takes the latest move for an offender
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
       listOf(
-//        movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
+        movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
         movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.code, movementDate = TimeSource.today()),
       )
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(waitingListService, never()).declinePendingOrApprovedApplications(any(), any(), any(), any())
+    verify(waitingListService, never()).removeOpenApplications(any(), any(), any())
 
     allocation.prisonerStatus isEqualTo PrisonerStatus.PENDING
 
@@ -332,11 +331,10 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(waitingListService).declinePendingOrApprovedApplications(
+    verify(waitingListService).removeOpenApplications(
       prison.code,
       allocation.prisonerNumber,
-      "Released",
-      "Activities Management Service",
+      ServiceName.SERVICE_NAME.value,
     )
   }
 
