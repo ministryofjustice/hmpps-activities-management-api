@@ -1,6 +1,7 @@
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.7.0"
@@ -64,7 +65,7 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "copyPreCommitHook")
     kotlinOptions {
       jvmTarget = "21"
     }
@@ -88,7 +89,7 @@ val configValues = mapOf(
 
 val buildDirectory: Directory = layout.buildDirectory.get()
 
-tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+tasks.register("buildPrisonApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/prison-api.json")
   outputDir.set("$buildDir/generated/prisonapi")
@@ -97,13 +98,20 @@ tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.t
   globalProperties.set(mapOf("models" to ""))
 }
 
-tasks.register("buildNonAssociationsApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/non-associations-api.json")
   outputDir.set("$buildDir/generated/nonassociations")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("copyPreCommitHook", Copy::class) {
+  from(project.file("pre-commit"))
+  into(project.file(".git/hooks"))
+  setFileMode(0b111101101)
+  dependsOn("generateGitProperties")
 }
 
 val generatedProjectDirs = listOf("prisonapi", "nonassociations")
