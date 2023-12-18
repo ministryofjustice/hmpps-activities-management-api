@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import jakarta.annotation.PostConstruct
 import org.springdoc.core.customizers.OperationCustomizer
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
@@ -87,7 +88,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     }
   }
 
-  @Bean
+  @PostConstruct
   fun enableLocalTimePrimitiveType() {
     PrimitiveType.enablePartialTime()
   }
