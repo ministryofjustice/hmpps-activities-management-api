@@ -7,13 +7,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -47,7 +45,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 @Transactional(readOnly = true)
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
-  private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -157,17 +154,20 @@ class ActivityScheduleService(
 
       val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
-      // TODO consider changing to use prisoner search API over prison API!!
-      prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
-      val prisonerDetails = prisonApiClient.getPrisonerDetailsLite(prisonerNumber.toString())
-        .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-        .failIfNotActive()
-        .failIfAtDifferentPrisonTo(schedule.activity)
+      val activePrisoner = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber)
+        ?.also { prisoner ->
+          require(prisoner.isActiveIn(schedule.activity.prisonCode)) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active in prison ${schedule.activity.prisonCode}."
+          }
+
+          requireNotNull(prisoner.bookingId) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner does not have a booking id."
+          }
+        } ?: throw IllegalArgumentException("Unable to allocate prisoner with prisoner number $prisonerNumber to schedule $scheduleId, prisoner not found.")
 
       schedule.allocatePrisoner(
         prisonerNumber = prisonerNumber,
-        bookingId = prisonerDetails.bookingId
-          ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
+        bookingId = activePrisoner.bookingId!!.toLong(),
         payBand = payBand,
         startDate = request.startDate,
         endDate = request.endDate,
@@ -201,13 +201,6 @@ class ActivityScheduleService(
       }
     }.also { allocationId -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId) }
   }
-
-  private fun InmateDetail.failIfNotActive() =
-    takeIf { it.activeFlag == true } ?: throw IllegalStateException("Prisoner ${this.offenderNo} is not active.")
-
-  private fun InmateDetail.failIfAtDifferentPrisonTo(activity: Activity) =
-    takeIf { it.agencyId == activity.prisonCode }
-      ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
 
   @Transactional
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {

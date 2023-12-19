@@ -13,8 +13,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -31,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
@@ -62,7 +61,6 @@ import java.util.Optional
 class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -73,7 +71,6 @@ class ActivityScheduleServiceTest {
   private val service =
     ActivityScheduleService(
       repository,
-      prisonApiClient,
       prisonerSearchApiClient,
       prisonPayBandRepository,
       waitingListRepository,
@@ -85,18 +82,11 @@ class ActivityScheduleServiceTest {
 
   private val caseLoad = pentonvillePrisonCode
 
-  private val prisoner = InmateDetail(
-    agencyId = caseLoad,
-    offenderNo = "123456",
-    inOutStatus = "IN",
-    firstName = "Bob",
-    lastName = "Bobson",
-    activeFlag = true,
-    offenderId = 1L,
-    rootOffenderId = 1L,
-    status = "IN",
-    dateOfBirth = LocalDate.of(2001, 10, 1),
+  private val prisoner = PrisonerSearchPrisonerFixture.instance(
+    prisonId = caseLoad,
+    prisonerNumber = "123456",
     bookingId = 1,
+    status = "ACTIVE IN",
   )
 
   @Test
@@ -318,7 +308,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -341,7 +331,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -364,7 +354,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -443,6 +433,84 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
+  fun `allocation fails if prisoner is not found`() {
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn null
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "654321",
+          1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321 to schedule 200, prisoner not found.")
+  }
+
+  @Test
+  fun `allocation fails if prisoner is not active in prison`() {
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(prisonId = moorlandPrisonCode)
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "654321",
+          1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner is not active in prison $pentonvillePrisonCode.")
+  }
+
+  @Test
+  fun `allocation fails if prisoner does not have a booking id`() {
+    val schedule = activitySchedule(
+      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
+      activityScheduleId = 200,
+      noAllocations = true,
+    )
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(bookingId = null)
+
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "654321",
+          1,
+          TimeSource.tomorrow(),
+        ),
+        "by test",
+      )
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner does not have a booking id.")
+  }
+
+  @Test
   fun `successful allocation is audited`() {
     val schedule = activitySchedule(
       activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
@@ -453,7 +521,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("654321")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner
     whenever(repository.saveAndFlush(any())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
@@ -522,7 +590,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
     whenever(repository.saveAndFlush(any())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
@@ -584,7 +652,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
     whenever(repository.saveAndFlush(any())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
@@ -622,7 +690,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonApiClient.getPrisonerDetailsLite("123456")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn prisoner
     whenever(repository.saveAndFlush(any())) doReturn schedule
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(

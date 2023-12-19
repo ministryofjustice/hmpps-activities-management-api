@@ -251,7 +251,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = moorlandPrisonCode,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -303,7 +310,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = moorlandPrisonCode,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -365,7 +379,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `allocation should set any APPROVED waitlist applications to ALLOCATED status`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = moorlandPrisonCode,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     webTestClient.allocatePrisoner(
       1,
@@ -514,7 +535,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `allocation followed by a deallocation of the same prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = moorlandPrisonCode,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
