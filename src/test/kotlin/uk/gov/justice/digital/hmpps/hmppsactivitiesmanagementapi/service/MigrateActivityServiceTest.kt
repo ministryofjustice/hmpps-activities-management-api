@@ -46,6 +46,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,6 +62,7 @@ class MigrateActivityServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val featureSwitches: FeatureSwitches = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -102,6 +105,8 @@ class MigrateActivityServiceTest {
     prisonPayBandRepository,
     featureSwitches,
     eventOrganiserRepository,
+    TransactionHandler(),
+    outboundEventsService,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -945,6 +950,8 @@ class MigrateActivityServiceTest {
           assertThat(endDate).isNull()
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     }
 
     @Test

@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -141,62 +140,66 @@ class ActivityScheduleService(
 
     require(request.startDate!! > LocalDate.now()) { "Allocation start date must be in the future" }
 
-    val schedule = repository.findOrThrowNotFound(scheduleId)
+    transactionHandler.newSpringTransaction {
+      val schedule = repository.findOrThrowNotFound(scheduleId).also {
+        if (it.isPaid().not() && request.payBandId != null) throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${it.activity.activityId}' is unpaid")
+        if (it.isPaid() && request.payBandId == null) throw IllegalArgumentException("Allocation must have a pay band when the activity '${it.activity.activityId}' is paid")
+      }
 
-    if (schedule.isPaid().not() && request.payBandId != null) throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${schedule.activity.activityId}' is unpaid")
-    if (schedule.isPaid() && request.payBandId == null) throw IllegalArgumentException("Allocation must have a pay band when the activity '${schedule.activity.activityId}' is paid")
+      val payBand = request.payBandId?.let {
+        val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+          .associateBy { it.prisonPayBandId }
+          .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
 
-    val payBand = request.payBandId?.let {
-      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
-        .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+        prisonPayBands[request.payBandId]
+          ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+      }
 
-      prisonPayBands[request.payBandId]
-        ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
-    }
+      val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
-    val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
+      // TODO consider changing to use prisoner search API over prison API!!
+      prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
+      val prisonerDetails = prisonApiClient.getPrisonerDetailsLite(prisonerNumber.toString())
+        .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
+        .failIfNotActive()
+        .failIfAtDifferentPrisonTo(schedule.activity)
 
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber.toString(), false).block()
-      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-      .failIfNotActive()
-      .failIfAtDifferentPrisonTo(schedule.activity)
-
-    schedule.allocatePrisoner(
-      prisonerNumber = prisonerNumber,
-      bookingId = prisonerDetails.bookingId
-        ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
-      payBand = payBand,
-      startDate = request.startDate,
-      endDate = request.endDate,
-      exclusions = request.exclusions,
-      allocatedBy = allocatedBy,
-    ).let { allocation ->
-      val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
-        schedule.activity.prisonCode,
-        request.prisonerNumber,
-        schedule,
-      )
-        .also {
-          val pending = it.filter { it.status == WaitingListStatus.PENDING }
-          require(pending.isEmpty()) {
-            "Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated."
+      schedule.allocatePrisoner(
+        prisonerNumber = prisonerNumber,
+        bookingId = prisonerDetails.bookingId
+          ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
+        payBand = payBand,
+        startDate = request.startDate,
+        endDate = request.endDate,
+        exclusions = request.exclusions,
+        allocatedBy = allocatedBy,
+      ).let { allocation ->
+        val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+          schedule.activity.prisonCode,
+          request.prisonerNumber,
+          schedule,
+        )
+          .also { waitingLists ->
+            require(waitingLists.none(WaitingList::isPending)) {
+              "Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated."
+            }
           }
-        }
-        .filter { it.status == WaitingListStatus.APPROVED }
-        .also {
-          require(it.size <= 1) {
-            "Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application."
+          .filter(WaitingList::isApproved)
+          .also { waitingLists ->
+            require(waitingLists.size <= 1) {
+              "Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application."
+            }
           }
-        }
-        .singleOrNull()?.allocated(allocation)
+          .singleOrNull()?.allocated(allocation)
 
-      repository.saveAndFlush(schedule)
-      auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
-      logAllocationEvent(allocation, maybeWaitingList)
-    }
+        repository.saveAndFlush(schedule)
+        auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
+        logAllocationEvent(allocation, maybeWaitingList)
+        log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
 
-    log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
+        allocation.allocationId
+      }
+    }.also { allocationId -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId) }
   }
 
   private fun InmateDetail.failIfNotActive() =

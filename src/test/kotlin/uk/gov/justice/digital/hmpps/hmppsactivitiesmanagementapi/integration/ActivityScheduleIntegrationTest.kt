@@ -4,11 +4,9 @@ import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -359,32 +357,6 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(userMessage).isEqualTo("Access denied: Access Denied")
       assertThat(developerMessage).isEqualTo("Access Denied")
       assertThat(moreInfo).isNull()
-    }
-  }
-
-  @Test
-  @Sql(
-    "classpath:test_data/seed-activity-id-7.sql",
-  )
-  fun `the allocation should be persisted even if the subsequent event notification fails`() {
-    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
-
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
-
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
-
-    webTestClient.allocatePrisoner(
-      1,
-      PrisonerAllocationRequest(
-        prisonerNumber = "G4793VF",
-        payBandId = 11,
-        startDate = TimeSource.tomorrow(),
-      ),
-    ).expectStatus().isNoContent
-
-    with(repository.findById(1).orElseThrow().allocations().first()) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocatedBy).isEqualTo("test-client")
     }
   }
 
