@@ -229,6 +229,7 @@ class ActivityServiceTest {
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
   }
 
   @Test
@@ -582,8 +583,6 @@ class ActivityServiceTest {
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow())
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(
@@ -600,7 +599,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 
@@ -624,8 +623,6 @@ class ActivityServiceTest {
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow(), inCell = false, offWing = true)
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
@@ -636,7 +633,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 

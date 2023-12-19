@@ -77,44 +77,52 @@ class MigrateActivityService(
       throw ValidationException("The requested prison ${request.prisonCode} is not rolled-out for activities")
     }
 
-    // Get the pay bands/aliases configured for this prison
-    val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+    return transactionHandler.newSpringTransaction {
+      // Get the pay bands/aliases configured for this prison
+      val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
 
-    // Detect a split regime activity (we will create 2 activities for each 1 received)
-    val splitRegime = isSplitRegimeActivity(request)
-    val activityList = if (splitRegime) {
-      buildSplitActivity(request)
-    } else {
-      buildSingleActivity(request)
-    }
+      // Detect a split regime activity (we will create 2 activities for each 1 received)
+      val splitRegime = isSplitRegimeActivity(request)
+      val activities = if (splitRegime) {
+        buildSplitActivity(request)
+      } else {
+        buildSingleActivity(request)
+      }
 
-    // Add the pay rates for paid activities - either 1 or 2 activities created
-    activityList.forEach { activity ->
-      if (activity.isPaid()) {
-        // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
-        request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
-          val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
-          if (payBand != null) {
-            activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
-          } else {
-            logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
+      // Add the pay rates for paid activities - either 1 or 2 activities created
+      activities.forEach { activity ->
+        if (activity.isPaid()) {
+          // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
+          request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
+            val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
+            if (payBand != null) {
+              activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
+            } else {
+              logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
+            }
           }
         }
       }
-    }
 
-    // Save the activity, schedule, slots and optional pay rates and obtain the IDs
-    val (activityId, splitRegimeActivityId) = activityRepository.saveAllAndFlush(activityList).let {
-      it.first().activityId to it.getOrNull(1)?.activityId
-    }
+      // Save the activity, schedule, slots and optional pay rates and obtain the activities
+      val (activity, splitRegimeActivity) = activityRepository.saveAllAndFlush(activities).let {
+        it.first() to it.getOrNull(1)
+      }
 
-    if (splitRegime) {
-      log.info("Migrated split-regime activity ${request.description} - IDs $activityId and $splitRegimeActivityId")
-    } else {
-      log.info("Migrated 1-2-1 activity ${request.description} - ID $activityId")
-    }
+      if (splitRegime) {
+        log.info("Migrated split-regime activity ${request.description} - IDs ${activity.activityId} and ${splitRegimeActivity?.activityId}")
+      } else {
+        log.info("Migrated 1-2-1 activity ${request.description} - ID ${activity.activityId}")
+      }
 
-    return ActivityMigrateResponse(request.prisonCode, activityId, splitRegimeActivityId)
+      activity to splitRegimeActivity
+    }
+      .also { (single, split) ->
+        // Send activity schedule created events
+        outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, single.schedules().first().activityScheduleId)
+        split?.let { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, it.schedules().first().activityScheduleId) }
+      }
+      .let { (single, split) -> ActivityMigrateResponse(request.prisonCode, single.activityId, split?.activityId) }
   }
 
   fun isSplitRegimeActivity(request: ActivityMigrateRequest): Boolean {

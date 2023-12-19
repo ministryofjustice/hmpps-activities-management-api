@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.PostPersist
 import jakarta.persistence.PostUpdate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,18 +16,6 @@ class ActivityScheduleEntityListener {
 
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
-  @PostPersist
-  fun onCreate(schedule: ActivitySchedule) {
-    runCatching {
-      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, schedule.activityScheduleId)
-    }.onFailure {
-      log.error(
-        "Failed to send activity schedule creation event for activity schedule ${schedule.activityScheduleId}",
-        it,
-      )
-    }
   }
 
   @PostUpdate

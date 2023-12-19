@@ -218,6 +218,8 @@ class MigrateActivityServiceTest {
           }
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
     }
 
     @Test
@@ -637,8 +639,8 @@ class MigrateActivityServiceTest {
       // Return dummy activities - we check what is saved, not what is returned
       whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(
         listOf(
-          activityEntity().copy(prisonCode = "RSI", activityId = 1),
-          activityEntity().copy(prisonCode = "RSI", activityId = 2),
+          activityEntity(activityId = 1, prisonCode = "RSI"),
+          activityEntity(activityId = 2, prisonCode = "RSI"),
         ),
       )
 
@@ -759,6 +761,9 @@ class MigrateActivityServiceTest {
           }
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 2)
     }
 
     @Test
