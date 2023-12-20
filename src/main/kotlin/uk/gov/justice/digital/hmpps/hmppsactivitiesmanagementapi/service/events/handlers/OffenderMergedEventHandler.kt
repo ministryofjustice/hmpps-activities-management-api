@@ -47,12 +47,10 @@ class OffenderMergedEventHandler(
   }
 
   override fun handle(event: OffenderMergedEvent): Outcome {
-    log.info("MERGE: Handling offender merged event {}", event)
     val newNumber = event.prisonerNumber()
     val oldNumber = event.removedPrisonerNumber()
 
     prisonApi.getPrisonerDetailsLite(newNumber)?.let { prisoner ->
-      log.info("MERGE: Search $newNumber = ${prisoner.firstName} ${prisoner.lastName} ${prisoner.agencyId} ${prisoner.status}")
       prisoner.agencyId?.let { prisonCode ->
         if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
           transactionHandler.newSpringTransaction {
@@ -66,7 +64,7 @@ class OffenderMergedEventHandler(
             )
           }
         } else {
-          log.info("MERGE: $prisonCode is not rolled out on activities and appointments - ignoring merge")
+          log.info("MERGE: $prisonCode is not rolled out on activities and appointments - ignoring merge for new prisoner number $newNumber")
         }
       }
     }
@@ -82,8 +80,6 @@ class OffenderMergedEventHandler(
     mergeLocalAuditItems(offenderMergeDetails)
     mergeEventReviewItems(offenderMergeDetails)
     mergeAppointmentAttendees(offenderMergeDetails)
-
-    log.info("MERGE: Recording the merge event into the local audit table")
 
     auditRepository.save(
       LocalAuditRecord(
