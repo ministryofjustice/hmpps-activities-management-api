@@ -18,6 +18,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -682,7 +683,7 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+    val savedActivityEntity = activityEntity()
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -728,6 +729,8 @@ class ActivityServiceTest {
       EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, savedActivityEntity.schedules().first().activityScheduleId)
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test

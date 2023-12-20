@@ -359,6 +359,10 @@ class ActivityService(
     }.let { (updatedAllocationIds, activity) ->
       publishUpdateTelemetryEvent(activity)
 
+      activity.schedules.forEach {
+        outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, it.id)
+      }
+
       updatedAllocationIds.forEach {
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
       }

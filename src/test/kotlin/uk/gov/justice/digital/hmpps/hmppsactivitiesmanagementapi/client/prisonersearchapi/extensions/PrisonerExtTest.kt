@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeOutMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.temporarilyReleasedFromMoorland
@@ -48,6 +49,15 @@ class PrisonerExtTest {
   fun `is active in prisoner`() {
     activeInMoorlandPrisoner.status isEqualTo "ACTIVE IN"
     activeInMoorlandPrisoner.isActiveIn() isBool true
+  }
+
+  @Test
+  fun `is active in prison`() {
+    activeInMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
+    activeInMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
+
+    activeInPentonvillePrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool true
+    activeInPentonvillePrisoner.isActiveAtPrison(moorlandPrisonCode) isBool false
   }
 
   @Test
