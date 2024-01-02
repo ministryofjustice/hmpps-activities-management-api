@@ -4,12 +4,12 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.10.1"
-  kotlin("plugin.spring") version "1.9.21"
-  kotlin("plugin.jpa") version "1.9.21"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.12.0"
+  kotlin("plugin.spring") version "1.9.22"
+  kotlin("plugin.jpa") version "1.9.22"
   jacoco
-  id("org.openapi.generator") version "7.1.0"
-  id("io.sentry.jvm.gradle") version "4.0.0"
+  id("org.openapi.generator") version "7.2.0"
+  id("io.sentry.jvm.gradle") version "4.1.1"
 }
 
 allOpen {
@@ -92,7 +92,7 @@ val buildDirectory: Directory = layout.buildDirectory.get()
 tasks.register("buildPrisonApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/prison-api.json")
-  outputDir.set("$buildDir/generated/prisonapi")
+  outputDir.set("$buildDirectory/generated/prisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
@@ -101,7 +101,7 @@ tasks.register("buildPrisonApiModel", GenerateTask::class) {
 tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/non-associations-api.json")
-  outputDir.set("$buildDir/generated/nonassociations")
+  outputDir.set("$buildDirectory/generated/nonassociations")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
