@@ -875,8 +875,9 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - update end date`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-4.json")
+    val newEndDate = TimeSource.today().plusYears(1)
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-3.json")
+    val updateActivityRequest = ActivityUpdateRequest(endDate = newEndDate)
 
     beforeActivityEntity.addSchedule(
       description = "Woodwork",
@@ -928,10 +929,10 @@ class ActivityServiceTest {
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
     with(activityCaptor.firstValue) {
-      assertThat(endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().allocations().find { it.prisonerNumber == "123456" }?.endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().allocations().find { it.prisonerNumber == "654321" }?.endDate).isNull()
+      endDate isEqualTo newEndDate
+      schedules().first().endDate isEqualTo newEndDate
+      schedules().first().allocations().single { it.prisonerNumber == "123456" }.endDate isEqualTo newEndDate
+      schedules().first().allocations().single { it.prisonerNumber == "654321" }.endDate isEqualTo null
     }
   }
 
@@ -1101,7 +1102,7 @@ class ActivityServiceTest {
         activitySchedule(
           this,
           activityScheduleId = 1,
-          daysOfWeek = DayOfWeek.values().toSet(),
+          daysOfWeek = DayOfWeek.entries.toSet(),
         ),
       )
     }

@@ -17,11 +17,11 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -474,7 +474,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
 
-    assertThat(response["content"] as List<ActivityCandidate>).hasSize(5)
+    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).hasSize(5)
     assertThat(response["totalPages"]).isEqualTo(4)
     assertThat(response["totalElements"]).isEqualTo(20)
   }
@@ -519,7 +519,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
 
-    assertThat(response["content"] as List<ActivityCandidate>).isEmpty()
+    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).isEmpty()
     assertThat(response["totalPages"]).isEqualTo(4)
     assertThat(response["totalElements"]).isEqualTo(20)
   }

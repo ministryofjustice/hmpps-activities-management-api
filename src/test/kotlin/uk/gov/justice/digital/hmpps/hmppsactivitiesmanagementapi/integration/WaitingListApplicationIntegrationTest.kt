@@ -7,6 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -102,7 +103,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     results["empty"] isEqualTo false
     results["totalElements"] isEqualTo 5
 
-    val content = results["content"] as List<LinkedHashMap<String, Any>>
+    val content = (results["content"] as List<*>).asListOfType<LinkedHashMap<String, Any>>()
 
     with(content[0]) {
       this["id"] isEqualTo 1
@@ -156,7 +157,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     results["empty"] isEqualTo false
     results["totalElements"] isEqualTo 2
 
-    val content = results["content"] as List<LinkedHashMap<String, Any>>
+    val content = (results["content"] as List<*>).asListOfType<LinkedHashMap<String, Any>>()
 
     with(content[0]) {
       this["id"] isEqualTo 3
