@@ -10,10 +10,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -42,7 +40,6 @@ class InterestingEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val eventReviewRepository: EventReviewRepository = mock()
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val eventReviewCaptor = argumentCaptor<EventReview>()
 
@@ -335,6 +332,6 @@ class InterestingEventHandlerTest {
       on { bookingId } doReturn bookId
     }
 
-    whenever(prisonApiClient.getPrisonerDetails(prisonerNum)) doReturn Mono.just(prisoner)
+    whenever(prisonApiClient.getPrisonerDetailsLite(prisonerNum)) doReturn prisoner
   }
 }
