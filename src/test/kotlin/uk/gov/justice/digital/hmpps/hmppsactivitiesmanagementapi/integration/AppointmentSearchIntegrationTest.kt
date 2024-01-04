@@ -238,7 +238,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    assertThat(results.filter { it.startTime == LocalTime.of(22, 30) }).isEmpty()
+    assertThat(results.filter { it.startTime == LocalTime.of(21, 30) }).isEmpty()
   }
 
   @Sql(

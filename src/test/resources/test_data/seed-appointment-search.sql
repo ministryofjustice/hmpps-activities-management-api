@@ -64,3 +64,10 @@ VALUES (327, 213, 'B2345CD', 457);
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (328, 211, 'C3456DE', 458);
 
+--Prison OTH, Prisoner A1234BC, Category AC1, Location 789, Today 21:00-22:30, Created by OTHER.USER
+INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
+VALUES (104, 'INDIVIDUAL', 'OTH', 'AC1', 1, 789, false, now()::date, '21:00', '22:30', now()::timestamp, 'OTHER.USER');
+INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
+VALUES (204, 103, 1, 'OTH', 'AC1', 1, 789, false, now()::date, '21:00', '22:30', now()::timestamp, 'OTHER.USER');
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
+VALUES (304, 203, 'D4567EF', 459);
