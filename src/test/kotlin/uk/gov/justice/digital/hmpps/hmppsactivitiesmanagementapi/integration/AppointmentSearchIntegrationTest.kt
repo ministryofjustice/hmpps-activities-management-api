@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
 import java.time.LocalTime
-import kotlin.math.log
 
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
@@ -183,6 +182,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     assertThat(results.filter { it.startTime == LocalTime.of(13, 30) }).isEmpty()
   }
+
   @Sql(
     "classpath:test_data/seed-appointment-search.sql",
   )
@@ -209,7 +209,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(17, 59))
     }
 
-     assertThat(results.filter { it.startTime == LocalTime.of(19, 30) }).isEmpty()
+    assertThat(results.filter { it.startTime == LocalTime.of(19, 30) }).isEmpty()
   }
 
   @Sql(
