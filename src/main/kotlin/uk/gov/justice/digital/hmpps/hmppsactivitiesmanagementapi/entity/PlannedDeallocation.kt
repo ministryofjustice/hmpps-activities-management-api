@@ -31,6 +31,8 @@ data class PlannedDeallocation(
   @Enumerated(EnumType.STRING)
   var plannedReason: DeallocationReason,
 
+  var caseNoteId: Long? = null,
+
   var plannedAt: LocalDateTime = LocalDateTime.now(),
 ) {
   fun toModel() = ModelPlannedDeallocation(
