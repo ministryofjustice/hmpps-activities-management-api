@@ -108,6 +108,9 @@ data class Allocation(
   var deallocatedReason: DeallocationReason? = null
     private set
 
+  var deallocationCaseNoteId: Long? = null
+    private set
+
   var suspendedTime: LocalDateTime? = null
     private set
 
@@ -145,7 +148,7 @@ data class Allocation(
    */
   fun ends(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
-  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) =
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
       if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
@@ -157,6 +160,7 @@ data class Allocation(
           plannedReason = reason,
           plannedDate = date,
           plannedBy = deallocatedBy,
+          caseNoteId = caseNoteId,
         )
       } else {
         plannedDeallocation?.apply {
@@ -164,6 +168,7 @@ data class Allocation(
           plannedDate = date
           plannedBy = deallocatedBy
           plannedAt = LocalDateTime.now()
+          this.caseNoteId = caseNoteId
         }
       }
     }
@@ -204,6 +209,7 @@ data class Allocation(
         deallocatedReason = plannedDeallocation?.plannedReason
         deallocatedBy = plannedDeallocation?.plannedBy
         deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+        deallocationCaseNoteId = plannedDeallocation?.caseNoteId
         endDate = today
       } else {
         prisonerStatus = PrisonerStatus.ENDED
@@ -239,7 +245,6 @@ data class Allocation(
       isUnemployment = activitySchedule.activity.isUnemployment(),
       deallocatedBy = deallocatedBy,
       deallocatedReason = deallocatedReason?.toModel(),
-
       deallocatedTime = deallocatedTime,
       suspendedBy = suspendedBy,
       suspendedReason = suspendedReason,
@@ -444,8 +449,8 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   fun toModel() = ModelDeallocationReason(name, description)
 
   companion object {
-    fun toModelDeallocationReasons() =
-      entries.filter(DeallocationReason::displayed).map(DeallocationReason::toModel)
+    fun displayedDeallocationReasons() = entries.filter(DeallocationReason::displayed)
+    fun toModelDeallocationReasons() = displayedDeallocationReasons().map(DeallocationReason::toModel)
   }
 }
 

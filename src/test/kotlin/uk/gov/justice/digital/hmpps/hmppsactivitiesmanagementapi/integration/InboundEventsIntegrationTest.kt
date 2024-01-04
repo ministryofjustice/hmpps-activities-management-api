@@ -192,7 +192,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `prisoner alerts updated`() {
     prisonApiMockServer.stubGetPrisonerDetails(
       InmateDetailFixture.instance(offenderNo = "A11111A", agencyId = pentonvillePrisonCode),
-      fullInfo = true,
+      fullInfo = false,
     )
 
     service.process(alertsUpdatedEvent(prisonerNumber = "A11111A"))
@@ -390,7 +390,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     prisonApiMockServer.stubGetPrisonerDetails(
       InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = moorlandPrisonCode),
-      fullInfo = true,
+      fullInfo = false,
     )
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
@@ -648,7 +648,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     prisonApiMockServer.stubGetPrisonerDetails(
       InmateDetailFixture.instance(offenderNo = "A22222A", agencyId = moorlandPrisonCode),
-      fullInfo = true,
+      fullInfo = false,
     )
 
     assertThatAllocationsAreActiveFor("A22222A")

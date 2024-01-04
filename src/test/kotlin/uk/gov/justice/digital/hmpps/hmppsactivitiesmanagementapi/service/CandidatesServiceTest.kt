@@ -9,6 +9,8 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails
@@ -23,9 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -47,12 +51,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.Optional
 
 class CandidatesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val nonAssociationsApiClient: NonAssociationsApiClient = mock()
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -61,6 +67,7 @@ class CandidatesServiceTest {
     prisonApiClient,
     prisonerSearchApiClient,
     nonAssociationsApiClient,
+    caseNotesApiClient,
     activityScheduleRepository,
     allocationRepository,
     waitingListRepository,
@@ -90,7 +97,31 @@ class CandidatesServiceTest {
           candidate.prisonerNumber,
         ),
       ).thenReturn(
-        listOf(allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber)),
+        listOf(
+          allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber),
+          allocation().copy(allocationId = 2, prisonerNumber = candidate.prisonerNumber).apply {
+            deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString(), 10001)
+            deallocateNow()
+          },
+        ),
+      )
+      whenever(caseNotesApiClient.getCaseNote(candidate.prisonerNumber, 10001)).thenReturn(
+        CaseNote(
+          caseNoteId = "10001",
+          offenderIdentifier = candidate.prisonerNumber,
+          type = "NEG",
+          typeDescription = "Negative Behaviour",
+          subType = "NEG_GEN",
+          subTypeDescription = "General Entry",
+          source = "INST",
+          creationDateTime = LocalDateTime.now(),
+          occurrenceDateTime = LocalDateTime.now(),
+          authorName = "Test",
+          authorUserId = "1",
+          text = "Test case note",
+          eventId = 1,
+          sensitive = false,
+        ),
       )
     }
 
@@ -512,6 +543,25 @@ class CandidatesServiceTest {
           payRate = candidateAllocation.allocationPay("BAS")?.toModelLite(),
         ),
       )
+    }
+
+    @Test
+    fun `previous deallocations`() {
+      val activity = activityEntity()
+      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
+
+      candidateSuitabilitySetup(activity, candidate)
+
+      val suitability = service.candidateSuitability(
+        activity.schedules().first().activityScheduleId,
+        candidate.prisonerNumber,
+      )
+
+      suitability.previousDeallocations.size isEqualTo 1
+      with(suitability.previousDeallocations.first()) {
+        allocation.deallocatedReason isEqualTo DeallocationReason.SECURITY.toModel()
+        caseNoteText isEqualTo "Test case note"
+      }
     }
   }
 

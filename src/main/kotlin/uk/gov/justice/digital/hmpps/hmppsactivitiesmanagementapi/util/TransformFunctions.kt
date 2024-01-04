@@ -337,7 +337,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     caseNoteText = attendance.caseNoteId?.let {
       caseNotesApiClient?.getCaseNote(
         attendance.prisonerNumber,
-        attendance.caseNoteId,
+        attendance.caseNoteId!!,
       )?.text
     },
     otherAbsenceReason = attendance.otherAbsenceReason,
@@ -387,7 +387,7 @@ fun transform(
     caseNoteText = attendanceHistory.caseNoteId?.let {
       caseNotesApiClient?.getCaseNote(
         prisonerNumber,
-        attendanceHistory.caseNoteId,
+        attendanceHistory.caseNoteId!!,
       )?.text
     },
   )
