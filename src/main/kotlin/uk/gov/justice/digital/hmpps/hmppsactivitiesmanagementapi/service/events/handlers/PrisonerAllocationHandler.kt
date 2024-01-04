@@ -30,21 +30,8 @@ class PrisonerAllocationHandler(
 
   @Transactional
   internal fun deallocate(prisonCode: String, prisonerNumber: String, reason: DeallocationReason) {
-    declinePrisonersWaitingListApplications(prisonCode, prisonerNumber, reason)
+    waitingListService.removeOpenApplications(prisonCode, prisonerNumber, ServiceName.SERVICE_NAME.value)
     deallocatePrisonerAndRemoveFutureAttendances(reason, prisonCode, prisonerNumber)
-  }
-
-  private fun declinePrisonersWaitingListApplications(
-    prisonCode: String,
-    prisonerNumber: String,
-    reason: DeallocationReason,
-  ) {
-    waitingListService.declinePendingOrApprovedApplications(
-      prisonCode,
-      prisonerNumber,
-      reason.description,
-      ServiceName.SERVICE_NAME.value,
-    )
   }
 
   private fun deallocatePrisonerAndRemoveFutureAttendances(

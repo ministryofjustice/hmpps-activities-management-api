@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpHeaders
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager
@@ -23,6 +24,8 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
+import java.time.Duration
 
 @Configuration
 class WebClientConfiguration(
@@ -32,17 +35,19 @@ class WebClientConfiguration(
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
+  @Value("\${api.health-timeout:2s}") val healthTimeout: Duration,
+  @Value("\${api.timeout:90s}") val apiTimeout: Duration,
   private val webClientBuilder: WebClient.Builder,
 ) {
 
   @Bean
   fun oauthApiHealthWebClient(): WebClient {
-    return webClientBuilder.baseUrl(oauthApiUrl).build()
+    return webClientBuilder.baseUrl(oauthApiUrl).timeout(healthTimeout).build()
   }
 
   @Bean
   fun prisonApiHealthWebClient(): WebClient {
-    return WebClient.builder().baseUrl(prisonApiUrl).build()
+    return WebClient.builder().baseUrl(prisonApiUrl).timeout(healthTimeout).build()
   }
 
   @Bean
@@ -53,6 +58,7 @@ class WebClientConfiguration(
 
     return WebClient.builder()
       .baseUrl(prisonApiUrl)
+      .timeout(apiTimeout)
       .filter(addAuthHeaderFilterFunction())
       .exchangeStrategies(exchangeStrategies)
       .build()
@@ -88,13 +94,14 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prison-api")
     return builder.baseUrl(rootUri)
+      .timeout(apiTimeout)
       .apply(oauth2Client.oauth2Configuration())
       .build()
   }
 
   @Bean
   fun prisonerSearchApiHealthWebClient(): WebClient {
-    return WebClient.builder().baseUrl(prisonerSearchApiUrl).build()
+    return WebClient.builder().baseUrl(prisonerSearchApiUrl).timeout(apiTimeout).build()
   }
 
   @Bean
@@ -105,6 +112,7 @@ class WebClientConfiguration(
 
     return WebClient.builder()
       .baseUrl(prisonerSearchApiUrl)
+      .timeout(apiTimeout)
       .filter(addAuthHeaderFilterFunction())
       .exchangeStrategies(exchangeStrategies)
       .build()
@@ -140,6 +148,7 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prisoner-search-api")
     return builder.baseUrl(rootUri)
+      .timeout(apiTimeout)
       .apply(oauth2Client.oauth2Configuration())
       .build()
   }
@@ -152,6 +161,7 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("non-associations-api")
     return builder.baseUrl(rootUri)
+      .timeout(apiTimeout)
       .apply(oauth2Client.oauth2Configuration())
       .build()
   }
@@ -170,15 +180,19 @@ class WebClientConfiguration(
 
   @Bean
   fun bankHolidayApiWebClient(): WebClient {
-    return webClientBuilder.baseUrl(bankHolidayApiUrl).build()
+    return webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
   }
 
   @Bean
   fun caseNotesApiWebClient(): WebClient {
     return webClientBuilder.baseUrl(caseNotesApiUrl)
+      .timeout(apiTimeout)
       .filter(addAuthHeaderFilterFunction())
       .build()
   }
+
+  private fun WebClient.Builder.timeout(duration: Duration) =
+    this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
 
   @Bean
   fun nonAssociationsApiWebClient(

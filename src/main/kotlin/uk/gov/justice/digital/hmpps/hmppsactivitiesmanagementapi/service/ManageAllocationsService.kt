@@ -179,7 +179,7 @@ class ManageAllocationsService(
     log.info("Expired allocations for prison ${regime.prisonCode}: ${expiredAllocations.map { it.allocationId }}")
 
     expiredAllocations
-      .declineExpiredAllocationsFromWaitingListFor(regime.prisonCode)
+      .removeExpiredAllocationsFromWaitingListFor(regime.prisonCode)
       .groupBy { it.activitySchedule }
       .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
   }
@@ -192,12 +192,11 @@ class ManageAllocationsService(
   private fun Map<String, Movement>.withFilteredExpiredMovesMatching(allocations: Collection<Allocation>) =
     flatMap { entry -> allocations.filter { entry.key == it.prisonerNumber } }
 
-  private fun List<Allocation>.declineExpiredAllocationsFromWaitingListFor(prisonCode: String) =
+  private fun List<Allocation>.removeExpiredAllocationsFromWaitingListFor(prisonCode: String) =
     onEach {
-      waitingListService.declinePendingOrApprovedApplications(
+      waitingListService.removeOpenApplications(
         prisonCode,
         it.prisonerNumber,
-        "Released",
         ServiceName.SERVICE_NAME.value,
       )
     }

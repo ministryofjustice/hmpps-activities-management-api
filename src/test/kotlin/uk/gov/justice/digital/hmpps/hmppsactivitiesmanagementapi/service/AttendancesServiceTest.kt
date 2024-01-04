@@ -5,8 +5,8 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -96,7 +96,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(null))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("NEG_GEN"))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
@@ -116,7 +116,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(false))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("NEG_GEN"))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
@@ -135,7 +135,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(true))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("IEP_WARN"))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 

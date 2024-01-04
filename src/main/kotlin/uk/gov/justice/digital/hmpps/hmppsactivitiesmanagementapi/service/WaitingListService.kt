@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerDeclinedFromWaitingListEvent
+import toPrisonerRemovedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveOutPrison
@@ -289,19 +290,14 @@ class WaitingListService(
   }
 
   @Transactional
-  fun declinePendingOrApprovedApplications(
-    prisonCode: String,
-    prisonerNumber: String,
-    reason: String,
-    declinedBy: String,
-  ) {
+  fun removeOpenApplications(prisonCode: String, prisonerNumber: String, removedBy: String) {
     waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
       prisonCode,
       prisonerNumber,
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
     ).forEach { application ->
-      waitingListRepository.saveAndFlush(application.decline(reason, declinedBy))
-      auditService.logEvent(application.toPrisonerDeclinedFromWaitingListEvent())
+      waitingListRepository.saveAndFlush(application.remove(removedBy))
+      auditService.logEvent(application.toPrisonerRemovedFromWaitingListEvent())
     }
   }
 
@@ -331,6 +327,20 @@ class WaitingListService(
     }
 
     log.info("Declined $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
+
+    return this
+  }
+
+  private fun WaitingList.remove(removedBy: String): WaitingList {
+    val statusBefore = this.status
+
+    apply {
+      status = WaitingListStatus.REMOVED
+      updatedTime = LocalDateTime.now()
+      updatedBy = removedBy
+    }
+
+    log.info("Removed $statusBefore waiting list application ${this.waitingListId} for prisoner number ${this.prisonerNumber}")
 
     return this
   }

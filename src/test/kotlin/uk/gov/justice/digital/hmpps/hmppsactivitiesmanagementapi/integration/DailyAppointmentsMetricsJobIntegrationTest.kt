@@ -18,6 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SET_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_RECORDED_ATTENDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_RECORDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ATTENDANCE_RECORDED_NOT_ATTENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CANCELLED_APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELETED_APPOINTMENT_COUNT_METRIC_KEY
@@ -81,6 +84,9 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
       this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1.0
       this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
       this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
+      this[ATTENDANCE_RECORDED_COUNT_METRIC_KEY] isEqualTo 3.0
+      this[ATTENDANCE_RECORDED_ATTENDED_COUNT_METRIC_KEY] isEqualTo 2.0
+      this[ATTENDANCE_RECORDED_NOT_ATTENDED_COUNT_METRIC_KEY] isEqualTo 1.0
     }
 
     verifyNoMoreInteractions(telemetryClient)

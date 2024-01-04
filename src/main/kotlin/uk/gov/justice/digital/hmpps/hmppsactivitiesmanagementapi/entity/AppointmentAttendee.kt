@@ -9,7 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Where
+import org.hibernate.annotations.SQLRestriction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment_attendee")
-@Where(clause = "NOT is_deleted")
+@SQLRestriction("NOT is_deleted")
 data class AppointmentAttendee(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

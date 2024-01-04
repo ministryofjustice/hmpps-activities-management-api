@@ -6,6 +6,9 @@
 -- - appointmentSetCount by 0,
 -- - cancelledAppointmentCount by 0,
 -- - deletedAppointmentCount by 0,
+-- - attendanceRecordedCount by 0,
+-- - attendanceRecordedAttendedCount by 0,
+-- - attendanceRecordedNotAttendedCount by 0,
 -- ===========================
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
@@ -25,6 +28,9 @@ VALUES  (1, 1, 'A1234BC', 123);
 -- - appointmentSetCount by 0,
 -- - cancelledAppointmentCount by 1,
 -- - deletedAppointmentCount by 0,
+-- - attendanceRecordedCount by 0,
+-- - attendanceRecordedAttendedCount by 0,
+-- - attendanceRecordedNotAttendedCount by 0,
 -- ===========================
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
@@ -33,8 +39,8 @@ VALUES (2, 'GROUP', 'PVI', 'CHAP', 1, 123, false, now()::date - 2, '09:00', '10:
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted)
 VALUES  (2, 2, 1, 'PVI', 'CHAP', 1, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'CANCEL.USER', false);
 
-INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
-VALUES  (2, 2, 'A1234BC', 123);
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attendance_recorded_time, attended)
+VALUES  (2, 2, 'A1234BC', 123, now() - INTERVAL '1' DAY, true);
 
 -- ===========================
 -- Deleted appointment for PVI CHAP increments:
@@ -44,6 +50,9 @@ VALUES  (2, 2, 'A1234BC', 123);
 -- - appointmentSetCount by 0,
 -- - cancelledAppointmentCount by 0,
 -- - deletedAppointmentCount by 1,
+-- - attendanceRecordedCount by 1,
+-- - attendanceRecordedAttendedCount by 1,
+-- - attendanceRecordedNotAttendedCount by 0,
 -- ===========================
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
@@ -52,8 +61,8 @@ VALUES (3, 'GROUP', 'PVI', 'CHAP', 1, 123, false, now()::date - 2, '09:00', '10:
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted)
 VALUES  (3, 3, 1, 'PVI', 'CHAP', 1, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true);
 
-INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
-VALUES  (3, 3, 'A1234BC', 123);
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attendance_recorded_time, attended)
+VALUES  (3, 3, 'A1234BC', 123, now() - INTERVAL '1' DAY, false);
 
 -- ===========================
 -- Repeating group appointment with two appointments on same day for PVI CHAP increments:
@@ -63,6 +72,9 @@ VALUES  (3, 3, 'A1234BC', 123);
 -- - appointmentSetCount by 0,
 -- - cancelledAppointmentCount by 0,
 -- - deletedAppointmentCount by 0,
+-- - attendanceRecordedCount by 1,
+-- - attendanceRecordedAttendedCount by 0,
+-- - attendanceRecordedNotAttendedCount by 1,
 -- ===========================
 
 INSERT INTO appointment_series_schedule (appointment_series_schedule_id, frequency, number_of_appointments)
@@ -97,6 +109,9 @@ VALUES  (10, 6, 'A1234BC', 123),
 -- - appointmentSetCount by 1,
 -- - cancelledAppointmentCount by 1,
 -- - deletedAppointmentCount by 1,
+-- - attendanceRecordedCount by 1,
+-- - attendanceRecordedAttendedCount by 1,
+-- - attendanceRecordedNotAttendedCount by 0,
 -- ===================================
 
 INSERT INTO appointment_set (appointment_set_id, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, created_time, created_by)
@@ -114,11 +129,11 @@ VALUES  (7, 5, 1, 'PVI', 'CHAP', 1, 123, false, now()::date - 1, '09:00', '09:15
         (9, 7, 1, 'PVI', 'CHAP', 1, 123, false, now()::date - 1, '09:30', '09:45', now()::timestamp, 'TEST.USER', null, null, null, false),
         (10, 8, 1, 'PVI', 'CHAP', 1, 123, false, now()::date - 1, '09:45', '10:00', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DELETE.USER', true);
 
-INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
-VALUES  (13, 7, 'A1234BC', 123),
-        (14, 8, 'B2345CD', 456),
-        (15, 9, 'C3456DE', 769),
-        (16, 10, 'D4567EF', 101112);
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attendance_recorded_time, attended)
+VALUES  (13, 7, 'A1234BC', 123, now() - INTERVAL '1' DAY, true),
+        (14, 8, 'B2345CD', 456, '2023-01-01 01:00:00', true),
+        (15, 9, 'C3456DE', 769, null, null),
+        (16, 10, 'D4567EF', 101112, null, null);
 
 INSERT INTO appointment_set_appointment_series (appointment_set_appointment_series_id, appointment_set_id, appointment_series_id)
 VALUES  (1, 1, 5),

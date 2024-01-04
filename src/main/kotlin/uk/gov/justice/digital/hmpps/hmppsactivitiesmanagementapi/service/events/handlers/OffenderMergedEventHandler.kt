@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
@@ -25,7 +25,7 @@ import java.time.LocalDateTime
 @Transactional(readOnly = true)
 class OffenderMergedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val prisonApi: PrisonApiApplicationClient,
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -47,18 +47,16 @@ class OffenderMergedEventHandler(
   }
 
   override fun handle(event: OffenderMergedEvent): Outcome {
-    log.info("MERGE: Handling offender merged event {}", event)
     val newNumber = event.prisonerNumber()
     val oldNumber = event.removedPrisonerNumber()
 
-    prisonerSearchApiClient.findByPrisonerNumber(newNumber)?.let { prisoner ->
-      log.info("MERGE: Search $newNumber = ${prisoner.firstName} ${prisoner.lastName} ${prisoner.prisonId} ${prisoner.status}")
-      prisoner.prisonId?.let { prisonId ->
-        if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonId)) {
+    prisonApi.getPrisonerDetailsLite(newNumber)?.let { prisoner ->
+      prisoner.agencyId?.let { prisonCode ->
+        if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
           transactionHandler.newSpringTransaction {
             processMergeEvent(
               OffenderMergeDetails(
-                prisonCode = prisonId,
+                prisonCode = prisonCode,
                 oldNumber = oldNumber,
                 newNumber = newNumber,
                 newBookingId = prisoner.bookingId?.toInt(),
@@ -66,7 +64,7 @@ class OffenderMergedEventHandler(
             )
           }
         } else {
-          log.info("MERGE: $prisonId is not rolled out on activities and appointments - ignoring merge")
+          log.info("MERGE: $prisonCode is not rolled out on activities and appointments - ignoring merge for new prisoner number $newNumber")
         }
       }
     }
@@ -82,8 +80,6 @@ class OffenderMergedEventHandler(
     mergeLocalAuditItems(offenderMergeDetails)
     mergeEventReviewItems(offenderMergeDetails)
     mergeAppointmentAttendees(offenderMergeDetails)
-
-    log.info("MERGE: Recording the merge event into the local audit table")
 
     auditRepository.save(
       LocalAuditRecord(

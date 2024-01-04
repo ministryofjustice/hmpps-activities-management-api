@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerRemovedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -65,6 +66,7 @@ class WaitingListServiceTest {
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
+  private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
   private val service = WaitingListService(
     scheduleRepository,
     waitingListRepository,
@@ -938,7 +940,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `declines pending and approved applications for prisoner and is audited`() {
+  fun `removes pending, approved and declined applications for prisoner and is audited`() {
     val pending = waitingList(
       waitingListId = 1,
       prisonCode = moorlandPrisonCode,
@@ -951,40 +953,50 @@ class WaitingListServiceTest {
       prisonerNumber = "A",
       initialStatus = WaitingListStatus.APPROVED,
     )
+    val declined = waitingList(
+      waitingListId = 3,
+      prisonCode = moorlandPrisonCode,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.DECLINED,
+    )
 
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
         prisonCode = moorlandPrisonCode,
         prisonerNumber = "A",
-        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
       ),
-    ) doReturn listOf(pending, approved)
+    ) doReturn listOf(pending, approved, declined)
 
-    service.declinePendingOrApprovedApplications(moorlandPrisonCode, "A", "reason", "Fred")
+    service.removeOpenApplications(moorlandPrisonCode, "A", "Fred")
 
     verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberAndStatusIn(
       moorlandPrisonCode,
       "A",
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
     )
 
     with(pending) {
-      status isEqualTo WaitingListStatus.DECLINED
-      declinedReason isEqualTo "reason"
+      status isEqualTo WaitingListStatus.REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
     with(approved) {
-      status isEqualTo WaitingListStatus.DECLINED
-      declinedReason isEqualTo "reason"
+      status isEqualTo WaitingListStatus.REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
-    verify(auditService, times(2)).logEvent(declinedEventCaptor.capture())
+    with(declined) {
+      status isEqualTo WaitingListStatus.REMOVED
+      updatedTime!! isCloseTo TimeSource.now()
+      updatedBy isEqualTo "Fred"
+    }
 
-    with(declinedEventCaptor.firstValue) {
+    verify(auditService, times(3)).logEvent(removedEventCaptor.capture())
+
+    with(removedEventCaptor.firstValue) {
       waitingListId isEqualTo 1
       activityId isEqualTo 1
       scheduleId isEqualTo 1
@@ -994,10 +1006,20 @@ class WaitingListServiceTest {
       createdAt isCloseTo TimeSource.now()
     }
 
-    with(declinedEventCaptor.secondValue) {
+    with(removedEventCaptor.secondValue) {
       waitingListId isEqualTo 2
       activityId isEqualTo 2
       scheduleId isEqualTo 2
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo moorlandPrisonCode
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
+    }
+
+    with(removedEventCaptor.thirdValue) {
+      waitingListId isEqualTo 3
+      activityId isEqualTo 3
+      scheduleId isEqualTo 3
       activityName isEqualTo schedule.activity.summary
       prisonCode isEqualTo moorlandPrisonCode
       prisonerNumber isEqualTo "A"
