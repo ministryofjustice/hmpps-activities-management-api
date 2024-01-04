@@ -416,12 +416,13 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
+    "classpath:test_data/seed-activity-for-suitability-check.sql",
   )
   fun `should be able to fetch suitability of a candidate for an activity`() {
     prisonApiMockServer.stubGetEducationLevels()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1143DZ")
     nonAssociationsApiMockServer.stubGetNonAssociations("A1143DZ")
+    caseNotesApiMockServer.stubGetCaseNote("A1143DZ", 1)
 
     val response = webTestClient.getCandidateSuitability(1, "A1143DZ")
       .expectStatus().isOk
@@ -458,6 +459,18 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
           ),
         ),
       )
+
+      assertThat(allocations.size).isEqualTo(1)
+      with(allocations.first()) {
+        assertThat(payRate!!.rate).isEqualTo(325)
+        assertThat(allocation.activitySummary).isEqualTo("Maths")
+      }
+
+      assertThat(previousDeallocations.size).isEqualTo(1)
+      with(previousDeallocations.first()) {
+        assertThat(allocation.deallocatedReason?.code).isEqualTo("SECURITY")
+        assertThat(caseNoteText).isEqualTo("Case Note Text")
+      }
     }
   }
 
