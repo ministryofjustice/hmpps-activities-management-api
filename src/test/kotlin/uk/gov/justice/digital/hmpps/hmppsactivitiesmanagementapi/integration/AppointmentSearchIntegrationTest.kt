@@ -162,7 +162,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      timeSlot = TimeSlot.AM,
+      timeSlot = listOf(TimeSlot.AM, TimeSlot.PM),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()

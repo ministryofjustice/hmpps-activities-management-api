@@ -57,15 +57,15 @@ class AppointmentSearchService(
         spec.and(appointmentSearchSpecification.startDateEquals(startDate!!))
       }
 
-      timeSlot?.apply {
-        val timeRange = timeSlot.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
-        spec = spec.and(
-          appointmentSearchSpecification.startTimeBetween(
-            timeRange.start,
-            timeRange.end.minusMinutes(1),
-          ),
+      val timeSlotSpecs = timeSlot?.map { slot ->
+        val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, slot)
+        appointmentSearchSpecification.startTimeBetween(
+          timeRange.start,
+          timeRange.end.minusMinutes(1),
         )
-      }
+      } ?: listOf()
+
+      spec = spec.and(timeSlotSpecs.reduceOrNull { acc, spec -> acc.or(spec) }) ?: spec
 
       categoryCode?.apply {
         spec = spec.and(appointmentSearchSpecification.categoryCodeEquals(categoryCode))

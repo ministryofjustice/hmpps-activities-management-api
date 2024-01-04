@@ -55,7 +55,7 @@ data class AppointmentSearchRequest(
     """,
     example = "PM",
   )
-  val timeSlot: TimeSlot? = null,
+  val timeSlot: List<TimeSlot>? = emptyList(),
 
   @Schema(
     description =
