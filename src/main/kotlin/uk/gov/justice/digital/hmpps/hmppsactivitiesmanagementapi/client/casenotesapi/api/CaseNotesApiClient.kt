@@ -19,15 +19,11 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
       .block()
   }
 
-  fun getCaseNote(prisonerNumber: String, caseNoteId: Long?): CaseNote? {
-    return if (caseNoteId != null) {
-      webClient.get()
-        .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
-        .retrieve()
-        .bodyToMono(CaseNote::class.java)
-        .block()
-    } else {
-      null
-    }
+  fun getCaseNote(prisonerNumber: String, caseNoteId: Long): CaseNote? {
+    return webClient.get()
+      .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
+      .retrieve()
+      .bodyToMono(CaseNote::class.java)
+      .block()
   }
 }

@@ -46,12 +46,6 @@ class CaseNotesApiClientTest {
   }
 
   @Test
-  fun `getCaseNote without passing ID - success`() {
-    val caseNote = caseNotesApiClient.getCaseNote("A1234AA", null)
-    assertThat(caseNote).isNull()
-  }
-
-  @Test
   fun `postCaseNote - success`() {
     caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", "NEG", "NEG_GEN")
     val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", "NEG", "NEG_GEN")

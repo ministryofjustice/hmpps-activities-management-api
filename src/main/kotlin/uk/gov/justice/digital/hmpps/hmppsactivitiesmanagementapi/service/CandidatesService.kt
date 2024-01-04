@@ -81,7 +81,7 @@ class CandidatesService(
       .map { allocation ->
         DeallocationCaseNote(
           allocation = allocation.toModel(),
-          caseNoteText = caseNotesApiClient.getCaseNote(allocation.prisonerNumber, allocation.deallocationCaseNoteId)?.text,
+          caseNoteText = if (allocation.deallocationCaseNoteId != null) caseNotesApiClient.getCaseNote(allocation.prisonerNumber, allocation.deallocationCaseNoteId!!)?.text else null,
         )
       }
 
