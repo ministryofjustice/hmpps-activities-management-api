@@ -16,8 +16,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -129,16 +129,17 @@ class CandidatesService(
 
     prisoners = prisoners.filter { filterByEmployment(it, prisonerAllocations, inWork) }
 
-    return prisoners.map {
+    return prisoners.map { prisoner ->
       val thisPersonsAllocations = prisonerAllocations.toModelPrisonerAllocations()
-          .find { a -> it.prisonerNumber == a.prisonerNumber }?.allocations ?: emptyList()
+        .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
+        .flatMap { it.allocations }
 
       ActivityCandidate(
-        name = "${it.firstName} ${it.lastName}",
-        prisonerNumber = it.prisonerNumber,
-        cellLocation = it.cellLocation,
+        name = "${prisoner.firstName} ${prisoner.lastName}",
+        prisonerNumber = prisoner.prisonerNumber,
+        cellLocation = prisoner.cellLocation,
         otherAllocations = thisPersonsAllocations,
-        earliestReleaseDate = determineEarliestReleaseDate(it),
+        earliestReleaseDate = determineEarliestReleaseDate(prisoner),
       )
     }
   }

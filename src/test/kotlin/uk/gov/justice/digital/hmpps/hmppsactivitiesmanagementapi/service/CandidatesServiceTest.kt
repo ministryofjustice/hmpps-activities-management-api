@@ -25,8 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -38,7 +38,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -622,7 +621,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Employment filter should filter candidates without allocations or those with only "not in work" activities when inWork == false`() {
+    fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`() {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = activityCategory("SAA_NOT_IN_WORK"))
@@ -637,11 +636,13 @@ class CandidatesServiceTest {
       // A1234BC – Has an active allocation for a "not in work" activity
       // B2345CD – Has an active allocation that's not for a "not in work" activity
       // C3456DE – Has no active allocations
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf(
-        "A1234BC",
-        "B2345CD",
-        "C3456DE",
-      ))
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumbers = listOf(
+          "A1234BC",
+          "B2345CD",
+          "C3456DE",
+        ),
+      )
 
       candidatesSetup(activity, allPrisoners, candidateAllocations = listOf(notInWorkAllocation, inWorkAllocation))
 
@@ -653,13 +654,13 @@ class CandidatesServiceTest {
         null,
       )
 
-      candidates.find { it.prisonerNumber == "A1234BC" } isNotEqualTo null
-      candidates.find { it.prisonerNumber == "B2345CD" } isEqualTo null
-      candidates.find { it.prisonerNumber == "C3456DE" } isNotEqualTo null
+      candidates.filter { it.prisonerNumber == "A1234BC" }.size isEqualTo 1
+      candidates.filter { it.prisonerNumber == "B2345CD" }.size isEqualTo 0
+      candidates.filter { it.prisonerNumber == "C3456DE" }.size isEqualTo 1
     }
 
     @Test
-    fun `Employment filter should filter candidates with allocations that are not for "not in work" activities when inWork == true`() {
+    fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`() {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = activityCategory("SAA_NOT_IN_WORK"))
@@ -674,11 +675,13 @@ class CandidatesServiceTest {
       // A1234BC – Has an active allocation for a "not in work" activity
       // B2345CD – Has an active allocation that's not for a "not in work" activity
       // C3456DE – Has no active allocations
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf(
-        "A1234BC",
-        "B2345CD",
-        "C3456DE",
-      ))
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumbers = listOf(
+          "A1234BC",
+          "B2345CD",
+          "C3456DE",
+        ),
+      )
 
       candidatesSetup(activity, allPrisoners, candidateAllocations = listOf(notInWorkAllocation, inWorkAllocation))
 
@@ -690,9 +693,9 @@ class CandidatesServiceTest {
         null,
       )
 
-      candidates.find { it.prisonerNumber == "A1234BC" } isEqualTo null
-      candidates.find { it.prisonerNumber == "B2345CD" } isNotEqualTo null
-      candidates.find { it.prisonerNumber == "C3456DE" } isEqualTo null
+      candidates.filter { it.prisonerNumber == "A1234BC" }.size isEqualTo 0
+      candidates.filter { it.prisonerNumber == "B2345CD" }.size isEqualTo 1
+      candidates.filter { it.prisonerNumber == "C3456DE" }.size isEqualTo 0
     }
 
     @Test
