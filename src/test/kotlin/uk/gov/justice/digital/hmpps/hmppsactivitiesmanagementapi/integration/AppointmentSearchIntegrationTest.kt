@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTim
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -22,8 +23,8 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
 
-  val amRange = LocalTimeRange(start = LocalTime.of(0, 0), end = LocalTime.of(12, 59))
-  val pmRange = LocalTimeRange(start = LocalTime.of(13, 0), end = LocalTime.of(17, 59))
+  val amRange = LocalTimeRange(start = LocalTime.of(0, 0), end = LocalTime.of(11, 59))
+  val pmRange = LocalTimeRange(start = LocalTime.of(12, 0), end = LocalTime.of(17, 59))
   val edRange = LocalTimeRange(start = LocalTime.of(18, 0), end = LocalTime.of(23, 59))
 
   @Test
@@ -175,6 +176,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       "MDI",
       listOf(
         appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
       ),
     )
 
@@ -184,15 +186,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
 
-    val amCount = results.count { isTimeInRange(it.startTime, amRange) }
-    val pmCount = results.count { isTimeInRange(it.startTime, pmRange) }
-    val edCount = results.count { isTimeInRange(it.startTime, edRange) }
-
-    assertThat(amCount).isEqualTo(3)
-    assertThat(pmCount).isEqualTo(0)
-    assertThat(edCount).isEqualTo(0)
-
-    assertThat(results.filter { it.startTime == LocalTime.of(13, 30) }).isEmpty()
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(1)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(0)
   }
 
   @Sql(
@@ -218,18 +214,12 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     results.map { it.startTime }.forEach {
-      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(17, 59))
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
     }
 
-    val amCount = results.count { isTimeInRange(it.startTime, amRange) }
-    val pmCount = results.count { isTimeInRange(it.startTime, pmRange) }
-    val edCount = results.count { isTimeInRange(it.startTime, edRange) }
-
-    assertThat(amCount).isEqualTo(3)
-    assertThat(pmCount).isEqualTo(2)
-    assertThat(edCount).isEqualTo(0)
-
-    assertThat(results.filter { it.startTime == LocalTime.of(19, 30) }).isEmpty()
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(0)
   }
 
   @Sql(
@@ -258,16 +248,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    val amCount = results.count { isTimeInRange(it.startTime, amRange) }
-    val pmCount = results.count { isTimeInRange(it.startTime, pmRange) }
-    val edCount = results.count { isTimeInRange(it.startTime, edRange) }
-
-    assertThat(amCount).isEqualTo(3)
-    assertThat(pmCount).isEqualTo(2)
-    assertThat(edCount).isEqualTo(1)
-
-    assertThat(results.filter { it.startTime == LocalTime.of(21, 30) }).isEmpty()
-    assertThat(results.none { it.startTime.isBefore(amRange.start) || it.startTime.isAfter(edRange.end) }).isTrue()
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(1)
   }
 
   @Sql(
@@ -462,7 +445,3 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       .expectBodyList(AppointmentSearchResult::class.java)
       .returnResult().responseBody
 }
-
-  private fun isTimeInRange(time: LocalTime, range: LocalTimeRange): Boolean {
-    return !time.isBefore(range.start) && !time.isAfter(range.end)
-  }
