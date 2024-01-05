@@ -1,38 +1,17 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions
 
 import org.junit.jupiter.api.Test
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
-import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeOutMoorlandPrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.temporarilyReleasedFromMoorland
 
 class PrisonerExtTest {
-
-  private val temporarilyReleasedFromMoorland = Prisoner(
-    prisonerNumber = "1",
-    firstName = "Freddie",
-    lastName = "Bloggs",
-    dateOfBirth = LocalDate.EPOCH,
-    gender = "Female",
-    status = "ACTIVE OUT",
-    prisonId = moorlandPrisonCode,
-    confirmedReleaseDate = null,
-  )
-
-  private val permanentlyReleasedFromMoorland = Prisoner(
-    prisonerNumber = "1",
-    firstName = "Freddie",
-    lastName = "Bloggs",
-    dateOfBirth = LocalDate.EPOCH,
-    gender = "Female",
-    status = "INACTIVE OUT",
-    prisonId = moorlandPrisonCode,
-    confirmedReleaseDate = TimeSource.today(),
-    lastMovementTypeCode = "REL",
-  )
 
   @Test
   fun `is temporarily released`() {
@@ -49,54 +28,41 @@ class PrisonerExtTest {
 
   @Test
   fun `is permanently released`() {
-    permanentlyReleasedFromMoorland.status isEqualTo "INACTIVE OUT"
-    permanentlyReleasedFromMoorland.isInactiveOut() isBool true
-    permanentlyReleasedFromMoorland.isPermanentlyReleased() isBool true
+    permanentlyReleasedPrisonerToday.status isEqualTo "INACTIVE OUT"
+    permanentlyReleasedPrisonerToday.isInactiveOut() isBool true
+    permanentlyReleasedPrisonerToday.isPermanentlyReleased() isBool true
   }
 
   @Test
   fun `is not permanently released`() {
-    permanentlyReleasedFromMoorland.copy(confirmedReleaseDate = TimeSource.tomorrow()).isPermanentlyReleased() isBool false
+    permanentlyReleasedPrisonerToday.copy(confirmedReleaseDate = TimeSource.tomorrow()).isPermanentlyReleased() isBool false
   }
 
   @Test
   fun `is restricted patient`() {
-    permanentlyReleasedFromMoorland.copy(restrictedPatient = true).isRestrictedPatient() isBool true
-    permanentlyReleasedFromMoorland.copy(restrictedPatient = false).isRestrictedPatient() isBool false
+    permanentlyReleasedPrisonerToday.copy(restrictedPatient = true).isRestrictedPatient() isBool true
+    permanentlyReleasedPrisonerToday.copy(restrictedPatient = false).isRestrictedPatient() isBool false
   }
 
   @Test
   fun `is active in prisoner`() {
-    val activeInPrisoner = Prisoner(
-      prisonerNumber = "1",
-      firstName = "Freddie",
-      lastName = "Bloggs",
-      dateOfBirth = LocalDate.EPOCH,
-      gender = "Female",
-      status = "ACTIVE IN",
-      prisonId = moorlandPrisonCode,
-      confirmedReleaseDate = null,
-    )
+    activeInMoorlandPrisoner.status isEqualTo "ACTIVE IN"
+    activeInMoorlandPrisoner.isActiveIn() isBool true
+  }
 
-    activeInPrisoner.status isEqualTo "ACTIVE IN"
-    activeInPrisoner.isActiveIn() isBool true
+  @Test
+  fun `is active at prison`() {
+    activeInMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
+    activeInMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
+
+    activeOutMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
+    activeOutMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
   }
 
   @Test
   fun `is at different location`() {
-    val activeInPrisoner = Prisoner(
-      prisonerNumber = "1",
-      firstName = "Freddie",
-      lastName = "Bloggs",
-      dateOfBirth = LocalDate.EPOCH,
-      gender = "Female",
-      status = "ACTIVE IN",
-      prisonId = moorlandPrisonCode,
-      confirmedReleaseDate = null,
-    )
-
-    activeInPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
-    activeInPrisoner.copy(prisonId = null).isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
-    activeInPrisoner.isAtDifferentLocationTo(moorlandPrisonCode) isBool false
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(moorlandPrisonCode) isBool false
   }
 }
