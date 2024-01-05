@@ -21,6 +21,10 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
 
+  val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
+  val pmRange = LocalTime.of(13, 0)..LocalTime.of(17, 59)
+  val edRange = LocalTime.of(18, 0)..LocalTime.of(23, 59)
+
   @Test
   fun `search appointments authorisation required`() {
     webTestClient.post()
@@ -169,8 +173,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments(
       "MDI",
       listOf(
-        appointmentLocation(123, "MDI", userDescription = "Location 123"),
-        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+        appointmentLocation(123, "MDI", userDescription = "Location 123")
       ),
     )
 
@@ -179,6 +182,14 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     results.map { it.startTime }.distinct().forEach {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
+
+    val amCount = results.count { it.startTime in amRange }
+    val pmCount = results.count { it.startTime in pmRange }
+    val edCount = results.count { it.startTime in edRange }
+
+    assertThat(amCount).isEqualTo(3)
+    assertThat(pmCount).isEqualTo(0)
+    assertThat(edCount).isEqualTo(0)
 
     assertThat(results.filter { it.startTime == LocalTime.of(13, 30) }).isEmpty()
   }
@@ -209,6 +220,14 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(17, 59))
     }
 
+    val amCount = results.count { it.startTime in amRange }
+    val pmCount = results.count { it.startTime in pmRange }
+    val edCount = results.count { it.startTime in edRange }
+
+    assertThat(amCount).isEqualTo(3)
+    assertThat(pmCount).isEqualTo(2)
+    assertThat(edCount).isEqualTo(0)
+
     assertThat(results.filter { it.startTime == LocalTime.of(19, 30) }).isEmpty()
   }
 
@@ -228,7 +247,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       "MDI",
       listOf(
         appointmentLocation(123, "MDI", userDescription = "Location 123"),
-        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456")
       ),
     )
 
@@ -238,7 +257,18 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
+    val amCount = results.count { it.startTime in amRange }
+    val pmCount = results.count { it.startTime in pmRange }
+    val edCount = results.count { it.startTime in edRange }
+
+    assertThat(amCount).isEqualTo(3)
+    assertThat(pmCount).isEqualTo(2)
+    assertThat(edCount).isEqualTo(1)
+
+
     assertThat(results.filter { it.startTime == LocalTime.of(21, 30) }).isEmpty()
+    assertThat(results.none { it.startTime.isBefore(amRange.start) || it.startTime.isAfter(edRange.endInclusive) }).isTrue()
+
   }
 
   @Sql(

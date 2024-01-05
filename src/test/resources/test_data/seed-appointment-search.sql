@@ -31,6 +31,15 @@ VALUES (203, 103, 1, 'OTH', 'AC1', 1, 789, false, now()::date, '09:00', '10:30',
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (303, 203, 'D4567EF', 459);
 
+--Individual appointments--
+--Prisoner A1234BC, Category AC1, Location 123, Today 08:30-10:00, Created by TEST.USER
+INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
+VALUES (104, 'INDIVIDUAL', 'MDI', 'AC1', 1, 123, false, now()::date, '21:00', '22:30', now()::timestamp, 'TEST.USER');
+INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
+VALUES (204, 104, 1, 'MDI', 'AC1', 1, 123, false, now()::date, '21:00', '22:30', now()::timestamp, 'TEST.USER');
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
+VALUES (304, 204, 'A1234BC', 456);
+
 --Group appointments--
 --Prisoners A1234BC and B2345CD, Category AC1, Location 123, Started one week ago 09:00-10:30, Repeating weekly 4 times, One edited, One cancelled, One deleted, Created by TEST.USER
 INSERT INTO appointment_series_schedule (appointment_series_schedule_id, frequency, number_of_appointments)
@@ -63,11 +72,3 @@ INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, priso
 VALUES (327, 213, 'B2345CD', 457);
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (328, 211, 'C3456DE', 458);
-
---Prison OTH, Prisoner A1234BC, Category AC1, Location 789, Today 21:00-22:30, Created by OTHER.USER
-INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (104, 'INDIVIDUAL', 'OTH', 'AC1', 1, 789, false, now()::date, '21:00', '22:30', now()::timestamp, 'OTHER.USER');
-INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (204, 103, 1, 'OTH', 'AC1', 1, 789, false, now()::date, '21:00', '22:30', now()::timestamp, 'OTHER.USER');
-INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
-VALUES (304, 203, 'D4567EF', 459);
