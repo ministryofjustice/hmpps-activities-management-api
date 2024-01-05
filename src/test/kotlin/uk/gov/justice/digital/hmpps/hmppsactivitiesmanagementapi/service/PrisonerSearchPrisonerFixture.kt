@@ -78,5 +78,6 @@ object PrisonerSearchPrisonerFixture {
       legalStatus = legalStatus,
     )
 
-  fun pagedResult(prisonerNumber: String = "G4793VF") = PagedPrisoner(content = listOf(instance(prisonerNumber)))
+  fun pagedResult(prisonerNumbers: List<String> = listOf("G4793VF"))
+    = PagedPrisoner(content = prisonerNumbers.map { instance(it) })
 }
