@@ -6,7 +6,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import java.time.LocalDate
+
+val activeInMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = moorlandPrisonCode, status = "ACTIVE IN")
+val activeInPentonvillePrisoner = activeInMoorlandPrisoner.copy(prisonId = pentonvillePrisonCode)
+val activeOutMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = moorlandPrisonCode, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
+val activeOutPentonvillePrisoner = activeOutMoorlandPrisoner.copy(prisonId = pentonvillePrisonCode)
+val temporarilyReleasedFromMoorland = PrisonerSearchPrisonerFixture.instance(prisonId = moorlandPrisonCode, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
+val permanentlyReleasedPrisonerToday = PrisonerSearchPrisonerFixture.instance(prisonId = null, status = "INACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT, lastMovementType = MovementType.RELEASE, confirmedReleaseDate = TimeSource.today())
 
 object PrisonerSearchPrisonerFixture {
   fun instance(

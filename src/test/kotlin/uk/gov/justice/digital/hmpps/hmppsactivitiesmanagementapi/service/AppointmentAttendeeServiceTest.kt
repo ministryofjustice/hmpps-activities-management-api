@@ -18,8 +18,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
@@ -164,41 +162,13 @@ class AppointmentAttendeeServiceTest {
   inner class ManageAppointmentAttendees {
     private val prisonNumber = "A1234BC"
 
-    private val activeInPrisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = prisonNumber,
-      inOutStatus = Prisoner.InOutStatus.IN,
-      status = "ACTIVE IN",
-      prisonId = moorlandPrisonCode,
-      lastMovementType = null,
-      confirmedReleaseDate = null,
-    )
+    private val activeInPrisoner = activeInMoorlandPrisoner.copy(prisonerNumber = prisonNumber)
 
-    private val activeInDifferentPrison = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = prisonNumber,
-      inOutStatus = Prisoner.InOutStatus.IN,
-      status = "ACTIVE IN",
-      prisonId = pentonvillePrisonCode,
-      lastMovementType = null,
-      confirmedReleaseDate = null,
-    )
+    private val activeInDifferentPrison = activeInPentonvillePrisoner.copy(prisonerNumber = prisonNumber)
 
-    private val activeOutPrisoner = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = prisonNumber,
-      inOutStatus = Prisoner.InOutStatus.OUT,
-      status = "ACTIVE OUT",
-      prisonId = moorlandPrisonCode,
-      lastMovementType = null,
-      confirmedReleaseDate = null,
-    )
+    private val activeOutPrisoner = activeOutMoorlandPrisoner.copy(prisonerNumber = prisonNumber)
 
-    private val prisonerReleasedToday = PrisonerSearchPrisonerFixture.instance(
-      prisonerNumber = prisonNumber,
-      inOutStatus = Prisoner.InOutStatus.OUT,
-      status = "INACTIVE OUT",
-      prisonId = null,
-      lastMovementType = MovementType.RELEASE,
-      confirmedReleaseDate = LocalDate.now(),
-    )
+    private val prisonerReleasedToday = permanentlyReleasedPrisonerToday.copy(prisonerNumber = prisonNumber)
 
     private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.yesterday())
     private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = moorlandPrisonCode, movementDate = TimeSource.today())

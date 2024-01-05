@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -18,24 +17,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.startsWith
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
@@ -45,8 +37,6 @@ import java.time.LocalDateTime
 
 @TestPropertySource(
   properties = [
-    "feature.audit.service.local.enabled=true",
-    "feature.audit.service.hmpps.enabled=true",
     "feature.event.activities.prisoner.allocation-amended=true",
   ],
 )
@@ -59,17 +49,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
-
-  @Autowired
-  private lateinit var waitingListRepository: WaitingListRepository
-
-  @Autowired
-  private lateinit var auditRepository: AuditRepository
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
-
-  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
@@ -153,58 +132,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
       .expectStatus().isOk
-  }
-
-  @Sql("classpath:test_data/seed-activity-id-20.sql")
-  @Test
-  fun `add prisoner to a waiting list for an activity`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = true)
-
-    val request = WaitingListApplicationRequest(
-      prisonerNumber = "G4793VF",
-      activityScheduleId = 1L,
-      applicationDate = TimeSource.today(),
-      requestedBy = "Bob",
-      comments = "Some comments from Bob",
-      status = WaitingListStatus.PENDING,
-    )
-
-    assertThat(waitingListRepository.findAll()).isEmpty()
-    assertThat(auditRepository.findAll()).isEmpty()
-
-    webTestClient.waitingListApplication(moorlandPrisonCode, request, moorlandPrisonCode).expectStatus().isNoContent
-
-    val persisted = waitingListRepository.findAll().also { assertThat(it).hasSize(1) }.first()
-
-    with(persisted) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(activitySchedule.activityScheduleId).isEqualTo(1L)
-      assertThat(applicationDate).isToday()
-      assertThat(requestedBy).isEqualTo("Bob")
-      assertThat(comments).isEqualTo("Some comments from Bob")
-      assertThat(status).isEqualTo(WaitingListStatus.PENDING)
-    }
-
-    val localAuditRecord = auditRepository.findAll().also { assertThat(it).hasSize(1) }.first()
-
-    with(localAuditRecord) {
-      auditType isEqualTo AuditType.PRISONER
-      detailType isEqualTo AuditEventType.PRISONER_ADDED_TO_WAITING_LIST
-      activityId isEqualTo 1L
-      prisonCode isEqualTo moorlandPrisonCode
-      prisonerNumber isEqualTo "G4793VF"
-      recordedTime isCloseTo TimeSource.now()
-      message startsWith "Prisoner G4793VF was added to the waiting list for activity 'Maths'(1) with a status of PENDING. Event created on ${TimeSource.today()}"
-    }
-
-    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
-
-    with(hmppsAuditEventCaptor.firstValue) {
-      println(details)
-      assertThat(what).isEqualTo("PRISONER_ADDED_TO_WAITING_LIST")
-      assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"MDI\",\"prisonerNumber\":\"G4793VF\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
-    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-20.sql")

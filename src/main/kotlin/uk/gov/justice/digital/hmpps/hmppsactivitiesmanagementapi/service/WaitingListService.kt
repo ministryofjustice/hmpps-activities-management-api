@@ -12,9 +12,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerDeclinedFromWaitingListEvent
 import toPrisonerRemovedFromWaitingListEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveOutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -42,7 +41,7 @@ class WaitingListService(
   private val waitingListRepository: WaitingListRepository,
   private val waitingListSearchSpecification: WaitingListSearchSpecification,
   private val activityRepository: ActivityRepository,
-  private val prisonApiClient: PrisonApiClient,
+  private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
@@ -57,7 +56,7 @@ class WaitingListService(
     scheduleRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-      .let { schedule -> waitingListRepository.findByActivitySchedule(schedule).map { it.toModel() } }
+      .let(waitingListRepository::findByActivitySchedule).map(WaitingList::toModel)
 
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
@@ -109,7 +108,7 @@ class WaitingListService(
     request.activityId?.let { spec = spec.and(waitingListSearchSpecification.activityIdEqual(it)) }
 
     val pageable: Pageable = PageRequest.of(pageNumber, pageSize, Sort.by("applicationDate"))
-    return waitingListRepository.findAll(spec, pageable).map { it.toModel() }
+    return waitingListRepository.findAll(spec, pageable).map(WaitingList::toModel)
   }
 
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
@@ -146,10 +145,10 @@ class WaitingListService(
   }
 
   private fun getActivePrisonerBookingId(prisonCode: String, request: WaitingListApplicationRequest): Long {
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(request.prisonerNumber!!).block()
+    val prisonerDetails = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber!!)
       ?: throw IllegalArgumentException("Prisoner with ${request.prisonerNumber} not found")
 
-    require(prisonerDetails.isActiveInPrison(prisonCode) || prisonerDetails.isActiveOutPrison(prisonCode)) {
+    require(prisonerDetails.isActiveAtPrison(prisonCode)) {
       "${prisonerDetails.firstName} ${prisonerDetails.lastName} is not resident at this prison"
     }
 
@@ -157,7 +156,7 @@ class WaitingListService(
       "Prisoner ${request.prisonerNumber} has no booking id at prison $prisonCode"
     }
 
-    return prisonerDetails.bookingId
+    return prisonerDetails.bookingId.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {
