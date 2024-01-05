@@ -173,7 +173,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments(
       "MDI",
       listOf(
-        appointmentLocation(123, "MDI", userDescription = "Location 123")
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
       ),
     )
 
@@ -247,7 +247,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       "MDI",
       listOf(
         appointmentLocation(123, "MDI", userDescription = "Location 123"),
-        appointmentLocation(456, "MDI", userDescription = "Location 456")
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
       ),
     )
 
@@ -265,10 +265,8 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     assertThat(pmCount).isEqualTo(2)
     assertThat(edCount).isEqualTo(1)
 
-
     assertThat(results.filter { it.startTime == LocalTime.of(21, 30) }).isEmpty()
     assertThat(results.none { it.startTime.isBefore(amRange.start) || it.startTime.isAfter(edRange.endInclusive) }).isTrue()
-
   }
 
   @Sql(
