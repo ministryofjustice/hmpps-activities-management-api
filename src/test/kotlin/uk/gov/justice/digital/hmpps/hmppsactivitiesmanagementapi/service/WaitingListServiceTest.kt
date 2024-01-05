@@ -20,8 +20,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -62,7 +61,7 @@ class WaitingListServiceTest {
   private val waitingListRepository: WaitingListRepository = mock {}
   private val waitingListSearchSpecification: WaitingListSearchSpecification = spy()
   private val activityRepository: ActivityRepository = mock {}
-  private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
@@ -72,7 +71,7 @@ class WaitingListServiceTest {
     waitingListRepository,
     waitingListSearchSpecification,
     activityRepository,
-    prisonApiClient,
+    prisonerSearchApiClient,
     telemetryClient,
     auditService,
   )
@@ -87,14 +86,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if prisoner is at different prison to the activities prison`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "INACTIVE OUT",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInMoorlandPrisoner
     }
 
     val request = WaitingListApplicationRequest(
@@ -112,15 +105,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if status not PENDING, APPROVED or DECLINED`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeOutPentonvillePrisoner
     }
 
     val request = WaitingListApplicationRequest(
@@ -155,15 +141,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if prisoner has no booking id`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = null,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner.copy(bookingId = null)
     }
 
     val request = WaitingListApplicationRequest(
@@ -319,97 +298,83 @@ class WaitingListServiceTest {
 
   @Test
   fun `add prisoner to waiting list succeeds`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner
+    }
 
-      val request = WaitingListApplicationRequest(
-        prisonerNumber = "123456",
-        activityScheduleId = 1L,
-        applicationDate = TimeSource.today(),
-        requestedBy = "Bob",
-        comments = "Bob's comments",
-        status = WaitingListStatus.PENDING,
-      )
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
 
-      service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
 
-      verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
-      verify(telemetryClient).trackEvent(
-        TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
-        mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
-        mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
-      )
+    verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
 
-      with(waitingListCaptor.firstValue) {
-        prisonerNumber isEqualTo "123456"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.today()
-        requestedBy isEqualTo "Bob"
-        comments isEqualTo "Bob's comments"
-        status isEqualTo WaitingListStatus.PENDING
-      }
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "123456"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.PENDING
     }
   }
 
   @Test
   fun `can add multiple waiting list records for the same prisoner`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "654321") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "654321",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "654321") } doReturn activeInPentonvillePrisoner
+    }
 
-      val request = WaitingListApplicationRequest(
-        prisonerNumber = "654321",
-        activityScheduleId = 1L,
-        applicationDate = TimeSource.today(),
-        requestedBy = "Bob",
-        comments = "Bob's comments",
-        status = WaitingListStatus.DECLINED,
-      )
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "654321",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.DECLINED,
+    )
 
-      service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
-      service.addPrisoner(
-        DEFAULT_CASELOAD_PENTONVILLE,
-        request.copy(
-          applicationDate = TimeSource.yesterday(),
-          requestedBy = "Fred",
-          comments = "Fred's comments",
-          status = WaitingListStatus.PENDING,
-        ),
-        "Test user",
-      )
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+    service.addPrisoner(
+      DEFAULT_CASELOAD_PENTONVILLE,
+      request.copy(
+        applicationDate = TimeSource.yesterday(),
+        requestedBy = "Fred",
+        comments = "Fred's comments",
+        status = WaitingListStatus.PENDING,
+      ),
+      "Test user",
+    )
 
-      verify(waitingListRepository, times(2)).saveAndFlush(waitingListCaptor.capture())
+    verify(waitingListRepository, times(2)).saveAndFlush(waitingListCaptor.capture())
 
-      with(waitingListCaptor.firstValue) {
-        prisonerNumber isEqualTo "654321"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.today()
-        requestedBy isEqualTo "Bob"
-        comments isEqualTo "Bob's comments"
-        status isEqualTo WaitingListStatus.DECLINED
-      }
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "654321"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.DECLINED
+    }
 
-      with(waitingListCaptor.secondValue) {
-        prisonerNumber isEqualTo "654321"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.yesterday()
-        requestedBy isEqualTo "Fred"
-        comments isEqualTo "Fred's comments"
-        status isEqualTo WaitingListStatus.PENDING
-      }
+    with(waitingListCaptor.secondValue) {
+      prisonerNumber isEqualTo "654321"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.yesterday()
+      requestedBy isEqualTo "Fred"
+      comments isEqualTo "Fred's comments"
+      status isEqualTo WaitingListStatus.PENDING
     }
   }
 
