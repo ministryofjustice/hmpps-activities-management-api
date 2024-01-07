@@ -111,6 +111,8 @@ class WaitingListService(
     return waitingListRepository.findAll(spec, pageable).map(WaitingList::toModel)
   }
 
+  fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED))
+
   private fun WaitingListApplicationRequest.failIfNotAllowableStatus() {
     require(
       status != null &&

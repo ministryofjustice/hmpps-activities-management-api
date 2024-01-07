@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -57,6 +58,7 @@ class ActivitiesChangedEventHandlerTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
+  private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
@@ -67,6 +69,7 @@ class ActivitiesChangedEventHandlerTest {
     prisonerSearchApiClient,
     prisonerAllocationHandler,
     TransactionHandler(),
+    waitingListService,
     outboundEventsService,
   )
 

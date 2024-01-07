@@ -134,6 +134,34 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
+  fun `permanent release of prisoner removes waiting list applications for offender`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = "A11111A",
+        inOutStatus = Prisoner.InOutStatus.OUT,
+        status = "INACTIVE OUT",
+      ),
+    )
+
+    prisonApiMockServer.stubGetPrisonerDetails(
+      prisonerNumber = "A11111A",
+      fullInfo = true,
+      extraInfo = true,
+    )
+
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A11111A")
+
+    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-offender-for-release.sql")
   fun `permanent release of prisoner ends allocations, removes waiting list applications and deletes pending allocations for offender`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
@@ -625,7 +653,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -669,7 +697,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -696,7 +724,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   private fun assertThatWaitingListStatusIs(status: WaitingListStatus, prisonCode: String, prisonerNumber: String) {
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(prisonCode, prisonerNumber, setOf(status))
+    waitingListRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, prisonerNumber)
       .onEach {
         it.status isEqualTo status
       }

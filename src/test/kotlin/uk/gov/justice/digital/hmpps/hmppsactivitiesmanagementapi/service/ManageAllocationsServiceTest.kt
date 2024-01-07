@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -225,12 +226,6 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(waitingListService).removeOpenApplications(
-      prison.code,
-      allocation.prisonerNumber,
-      "Activities Management Service",
-    )
-
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
@@ -259,12 +254,6 @@ class ManageAllocationsServiceTest {
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.code, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
-
-    verify(waitingListService).removeOpenApplications(
-      prison.code,
-      allocation.prisonerNumber,
-      "Activities Management Service",
-    )
 
     allocation.verifyIsExpired()
 
@@ -307,33 +296,25 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `prisoners due to expire waiting lists are declined`() {
+  fun `prisoners due to expire waiting lists are removed`() {
     val prison = rolloutPrison()
-    val activity = activityEntity(startDate = yesterday, endDate = today)
-    val schedule = activity.schedules().first()
-    val allocation = schedule.allocations().first().autoSuspend(LocalDateTime.now().minusDays(5), "reason")
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
-      on { prisonerNumber } doReturn allocation.prisonerNumber
+      on { prisonerNumber } doReturn "A1234AA"
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
     whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
-    whenever(
-      allocationRepository.findByPrisonCodePrisonerStatus(
-        prison.code,
-        PrisonerStatus.AUTO_SUSPENDED,
-      ),
-    ) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
+    whenever(waitingListService.fetchOpenApplicationsForPrison(prison.code)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf("A1234AA"))) doReturn
+      listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
     verify(waitingListService).removeOpenApplications(
       prison.code,
-      allocation.prisonerNumber,
+      "A1234AA",
       ServiceName.SERVICE_NAME.value,
     )
   }
