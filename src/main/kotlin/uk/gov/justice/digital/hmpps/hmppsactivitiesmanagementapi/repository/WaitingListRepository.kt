@@ -20,6 +20,7 @@ interface WaitingListRepository : JpaRepository<WaitingList, Long>, JpaSpecifica
 
   fun findByActivitySchedule(activitySchedule: ActivitySchedule): List<WaitingList>
   fun findByPrisonCodeAndPrisonerNumberAndStatusIn(prisonCode: String, prisonerNumber: String, statuses: Set<WaitingListStatus>): List<WaitingList>
+  fun findByPrisonCodeAndStatusIn(prisonCode: String, statuses: Set<WaitingListStatus>): List<WaitingList>
   fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<WaitingList>
   fun findByActivityAndStatusIn(activity: Activity, statuses: Set<WaitingListStatus>): List<WaitingList>
 
