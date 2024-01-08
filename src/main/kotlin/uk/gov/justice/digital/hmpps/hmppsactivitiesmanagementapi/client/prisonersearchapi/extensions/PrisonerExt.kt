@@ -13,11 +13,13 @@ fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 
 fun Prisoner.isRestrictedPatient(): Boolean = restrictedPatient == true
 
+fun Prisoner.isActiveAtPrison(prisonCode: String) = prisonId == prisonCode && (isActiveIn() || isActiveOut())
+
 fun Prisoner.isActiveOut(): Boolean = status == "ACTIVE OUT"
 
 fun Prisoner.isActiveIn(): Boolean = status == "ACTIVE IN"
 
-fun Prisoner.isActiveAtPrison(prisonCode: String) = prisonId == prisonCode && (isActiveIn() || isActiveOut())
+fun Prisoner.isActiveInPrison(prisonCode: String) = prisonId == prisonCode && isActiveIn()
 
 fun Prisoner.isActiveIn(prisonCode: String): Boolean = isActiveIn() && prisonId == prisonCode
 

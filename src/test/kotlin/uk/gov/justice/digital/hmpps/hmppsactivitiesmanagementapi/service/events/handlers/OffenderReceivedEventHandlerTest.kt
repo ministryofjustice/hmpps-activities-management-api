@@ -13,9 +13,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -31,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
@@ -41,17 +40,13 @@ import java.time.LocalTime
 class OffenderReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
-  private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val attendanceRepository: AttendanceRepository = mock()
-  private val activeMoorlandPrisoner: InmateDetail = mock {
-    on { status } doReturn "ACTIVE IN"
-    on { agencyId } doReturn moorlandPrisonCode
-  }
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient, attendanceRepository, attendanceReasonRepository, TransactionHandler(), outboundEventsService)
+    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceRepository, attendanceReasonRepository, TransactionHandler(), outboundEventsService)
 
   @BeforeEach
   fun beforeTests() {
@@ -103,8 +98,8 @@ class OffenderReceivedEventHandlerTest {
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
     allocationRepository.stub {
@@ -172,8 +167,8 @@ class OffenderReceivedEventHandlerTest {
       ),
     ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
     handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
@@ -244,8 +239,8 @@ class OffenderReceivedEventHandlerTest {
       ),
     ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
     handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))

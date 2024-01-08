@@ -35,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -654,9 +655,7 @@ class CandidatesServiceTest {
         null,
       )
 
-      candidates.filter { it.prisonerNumber == "A1234BC" }.size isEqualTo 1
-      candidates.filter { it.prisonerNumber == "B2345CD" }.size isEqualTo 0
-      candidates.filter { it.prisonerNumber == "C3456DE" }.size isEqualTo 1
+      candidates.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")
     }
 
     @Test
@@ -693,9 +692,7 @@ class CandidatesServiceTest {
         null,
       )
 
-      candidates.filter { it.prisonerNumber == "A1234BC" }.size isEqualTo 0
-      candidates.filter { it.prisonerNumber == "B2345CD" }.size isEqualTo 1
-      candidates.filter { it.prisonerNumber == "C3456DE" }.size isEqualTo 0
+      candidates.map { it.prisonerNumber } containsExactly listOf("B2345CD")
     }
 
     @Test
