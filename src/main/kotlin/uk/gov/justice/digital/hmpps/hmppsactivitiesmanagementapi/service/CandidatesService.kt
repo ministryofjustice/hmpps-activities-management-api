@@ -16,12 +16,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.DeallocationCaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
@@ -100,7 +100,7 @@ class CandidatesService(
     scheduleId: Long,
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
-    suitableForEmployed: Boolean?,
+    inWork: Boolean?,
     searchString: String?,
   ): List<ActivityCandidate> {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
@@ -126,22 +126,20 @@ class CandidatesService(
       prisoners.map { it.prisonerNumber },
     )
       .filterNot { it.status(PrisonerStatus.ENDED) }
-      .toModelPrisonerAllocations()
 
-    prisoners =
-      prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
+    prisoners = prisoners.filter { filterByEmployment(it, prisonerAllocations, inWork) }
 
-    return prisoners.map {
-      val thisPersonsAllocations =
-        prisonerAllocations.find { a -> it.prisonerNumber == a.prisonerNumber }?.allocations
-          ?: emptyList()
+    return prisoners.map { prisoner ->
+      val thisPersonsAllocations = prisonerAllocations.toModelPrisonerAllocations()
+        .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
+        .flatMap { it.allocations }
 
       ActivityCandidate(
-        name = "${it.firstName} ${it.lastName}",
-        prisonerNumber = it.prisonerNumber,
-        cellLocation = it.cellLocation,
+        name = "${prisoner.firstName} ${prisoner.lastName}",
+        prisonerNumber = prisoner.prisonerNumber,
+        cellLocation = prisoner.cellLocation,
         otherAllocations = thisPersonsAllocations,
-        earliestReleaseDate = determineEarliestReleaseDate(it),
+        earliestReleaseDate = determineEarliestReleaseDate(prisoner),
       )
     }
   }
@@ -173,14 +171,14 @@ class CandidatesService(
 
   private fun filterByEmployment(
     prisoner: Prisoner,
-    prisonerAllocations: List<PrisonerAllocations>,
-    suitableForEmployed: Boolean?,
+    prisonerAllocations: List<Allocation>,
+    inWork: Boolean?,
   ): Boolean {
-    val allocations =
-      prisonerAllocations.find { it.prisonerNumber == prisoner.prisonerNumber }?.allocations
-        ?: emptyList()
+    val employmentAllocations = prisonerAllocations.filter {
+      it.prisonerNumber == prisoner.prisonerNumber && !it.activitySchedule.activity.isUnemployment()
+    }
 
-    return suitableForEmployed == null || allocations.isNotEmpty() == suitableForEmployed
+    return inWork == null || employmentAllocations.isNotEmpty() == inWork
   }
 
   private fun filterBySearchString(

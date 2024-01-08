@@ -150,6 +150,8 @@ internal fun activityCategory2(code: String = "category code 2") =
     description = "category description 2",
   )
 
+val notInWorkCategory = activityCategory("SAA_NOT_IN_WORK")
+
 internal fun schedule(prisonCode: String = moorlandPrisonCode) = activityEntity(prisonCode = prisonCode).schedules().first()
 
 internal fun attendanceReasons() = mapOf(
