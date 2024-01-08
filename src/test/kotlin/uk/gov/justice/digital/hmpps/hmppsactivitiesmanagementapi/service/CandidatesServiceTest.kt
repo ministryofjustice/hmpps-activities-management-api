@@ -32,13 +32,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
@@ -624,7 +624,7 @@ class CandidatesServiceTest {
     fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`() {
       val activity = activityEntity()
 
-      val notInWorkActivity = activityEntity(category = activityCategory("SAA_NOT_IN_WORK"))
+      val notInWorkActivity = activityEntity(category = notInWorkCategory)
       val notInWorkAllocation = allocation().copy(
         prisonerNumber = "A1234BC",
         prisonerStatus = PrisonerStatus.ACTIVE,
@@ -663,7 +663,7 @@ class CandidatesServiceTest {
     fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`() {
       val activity = activityEntity()
 
-      val notInWorkActivity = activityEntity(category = activityCategory("SAA_NOT_IN_WORK"))
+      val notInWorkActivity = activityEntity(category = notInWorkCategory)
       val notInWorkAllocation = allocation().copy(
         prisonerNumber = "A1234BC",
         prisonerStatus = PrisonerStatus.ACTIVE,
