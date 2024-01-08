@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -26,6 +27,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -38,6 +41,7 @@ class ManageScheduledInstancesServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -60,7 +64,7 @@ class ManageScheduledInstancesServiceTest {
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest)
 
-  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, 7L)
+  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, outboundEventsService, 7L)
 
   private val today = LocalDate.now()
   private val weekFromToday = today.plusWeeks(1)
@@ -102,6 +106,10 @@ class ManageScheduledInstancesServiceTest {
       schedule.instances().forEach { instance -> assertThat(instance.sessionDate).isBetween(today, weekFromToday) }
       assertThat(schedule.instancesLastUpdatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
+
+    (1L..6L).forEach { updatedScheduleId -> verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduleId) }
+
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test

@@ -1,19 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 
 class WaitingListTest {
 
   @Test
-  fun `isStatus checks the status of a waiting list application`() {
+  fun `check the status of a waiting list application`() {
     with(waitingList().apply { status = WaitingListStatus.PENDING }) {
-      assertThat(isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED)).isTrue
-      assertThat(isStatus(WaitingListStatus.APPROVED)).isFalse
+      isStatus(WaitingListStatus.PENDING, WaitingListStatus.APPROVED) isBool true
+      isStatus(WaitingListStatus.APPROVED) isBool false
+      isPending() isBool true
+      isApproved() isBool false
     }
   }
 
@@ -27,8 +29,8 @@ class WaitingListTest {
         prisonerNumber = allocation.prisonerNumber,
       ).apply { allocated(allocation) },
     ) {
-      assertThat(this.status).isEqualTo(WaitingListStatus.ALLOCATED)
-      assertThat(this.allocation).isEqualTo(allocation)
+      status isEqualTo WaitingListStatus.ALLOCATED
+      this.allocation isEqualTo allocation
     }
   }
 

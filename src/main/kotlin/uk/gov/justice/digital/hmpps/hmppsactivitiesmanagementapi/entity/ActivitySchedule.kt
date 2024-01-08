@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EntityListeners
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -33,7 +32,6 @@ const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
 
 @Entity
 @Table(name = "activity_schedule")
-@EntityListeners(ActivityScheduleEntityListener::class)
 @FilterDef(
   name = SESSION_DATE_FILTER,
   parameters = [
