@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Even
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findByCodeOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -54,6 +56,8 @@ class MigrateActivityService(
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val feature: FeatureSwitches,
   private val eventOrganiserRepository: EventOrganiserRepository,
+  private val transactionHandler: TransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -73,44 +77,52 @@ class MigrateActivityService(
       throw ValidationException("The requested prison ${request.prisonCode} is not rolled-out for activities")
     }
 
-    // Get the pay bands/aliases configured for this prison
-    val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+    return transactionHandler.newSpringTransaction {
+      // Get the pay bands/aliases configured for this prison
+      val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
 
-    // Detect a split regime activity (we will create 2 activities for each 1 received)
-    val splitRegime = isSplitRegimeActivity(request)
-    val activityList = if (splitRegime) {
-      buildSplitActivity(request)
-    } else {
-      buildSingleActivity(request)
-    }
+      // Detect a split regime activity (we will create 2 activities for each 1 received)
+      val splitRegime = isSplitRegimeActivity(request)
+      val activities = if (splitRegime) {
+        buildSplitActivity(request)
+      } else {
+        buildSingleActivity(request)
+      }
 
-    // Add the pay rates for paid activities - either 1 or 2 activities created
-    activityList.forEach { activity ->
-      if (activity.isPaid()) {
-        // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
-        request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
-          val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
-          if (payBand != null) {
-            activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
-          } else {
-            logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
+      // Add the pay rates for paid activities - either 1 or 2 activities created
+      activities.forEach { activity ->
+        if (activity.isPaid()) {
+          // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
+          request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
+            val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
+            if (payBand != null) {
+              activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
+            } else {
+              logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
+            }
           }
         }
       }
-    }
 
-    // Save the activity, schedule, slots and optional pay rates and obtain the IDs
-    val (activityId, splitRegimeActivityId) = activityRepository.saveAllAndFlush(activityList).let {
-      it.first().activityId to it.getOrNull(1)?.activityId
-    }
+      // Save the activity, schedule, slots and optional pay rates and obtain the activities
+      val (activity, splitRegimeActivity) = activityRepository.saveAllAndFlush(activities).let {
+        it.first() to it.getOrNull(1)
+      }
 
-    if (splitRegime) {
-      log.info("Migrated split-regime activity ${request.description} - IDs $activityId and $splitRegimeActivityId")
-    } else {
-      log.info("Migrated 1-2-1 activity ${request.description} - ID $activityId")
-    }
+      if (splitRegime) {
+        log.info("Migrated split-regime activity ${request.description} - IDs ${activity.activityId} and ${splitRegimeActivity?.activityId}")
+      } else {
+        log.info("Migrated 1-2-1 activity ${request.description} - ID ${activity.activityId}")
+      }
 
-    return ActivityMigrateResponse(request.prisonCode, activityId, splitRegimeActivityId)
+      activity to splitRegimeActivity
+    }
+      .also { (single, split) ->
+        // Send activity schedule created events
+        outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, single.schedules().first().activityScheduleId)
+        split?.let { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, it.schedules().first().activityScheduleId) }
+      }
+      .let { (single, split) -> ActivityMigrateResponse(request.prisonCode, single.activityId, split?.activityId) }
   }
 
   fun isSplitRegimeActivity(request: ActivityMigrateRequest): Boolean {
@@ -437,87 +449,92 @@ class MigrateActivityService(
       logAndThrowValidationException("Prison ${request.prisonCode} is not rolled out for activities")
     }
 
-    val activity = activityRepository.findByActivityIdAndPrisonCode(request.activityId, request.prisonCode)
-      ?: logAndThrowValidationException("Activity ${request.activityId} was not found at prison ${request.prisonCode}")
+    return transactionHandler.newSpringTransaction {
+      val activity = activityRepository.findByActivityIdAndPrisonCode(request.activityId, request.prisonCode)
+        ?: logAndThrowValidationException("Activity ${request.activityId} was not found at prison ${request.prisonCode}")
 
-    log.info("Migrating allocation ${request.prisonerNumber} to activity ${request.activityId} ${activity.summary}")
+      log.info("Migrating allocation ${request.prisonerNumber} to activity ${request.activityId} ${activity.summary}")
 
-    val today = LocalDate.now()
-    val tomorrow = today.plusDays(1)
+      val today = LocalDate.now()
+      val tomorrow = today.plusDays(1)
 
-    if (!activity.isActive(tomorrow)) {
-      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} activity is not active tomorrow")
-    }
-
-    val activityScheduleId = activity.schedules().first().activityScheduleId
-    val schedule = activityScheduleRepository.findBy(activityScheduleId, activity.prisonCode)
-      ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber} to ${request.activityId} ${activity.summary}. Activity schedule ID $activityScheduleId not found.")
-
-    if (!schedule.isActiveOn(tomorrow)) {
-      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} - schedule is not active tomorrow")
-    }
-
-    if (schedule.allocations(excludeEnded = true).any { allocation -> allocation.prisonerNumber == request.prisonerNumber }) {
-      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Already allocated to ${request.activityId} ${activity.summary}")
-    }
-
-    val prisonerResults = prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber))
-    if (prisonerResults.isEmpty()) {
-      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not found in prisoner search.")
-    }
-
-    val prisoner = prisonerResults.first()
-    if (prisoner.prisonId != request.prisonCode || prisoner.status.contains("INACTIVE")) {
-      logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not in ${request.prisonCode} or INACTIVE")
-    }
-
-    // Get the pay bands configured for this prison
-    val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
-
-    // Set the value of the pay band for this allocation
-    val prisonPayBand = when {
-      request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
-        getLowestRatePayBandForActivity(payBands, activity)
+      if (!activity.isActive(tomorrow)) {
+        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} activity is not active tomorrow")
       }
-      !request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
-        // The requested pay band must be configured for this prison
-        payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
-          ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
+
+      val activityScheduleId = activity.schedules().first().activityScheduleId
+      val schedule = activityScheduleRepository.findBy(activityScheduleId, activity.prisonCode)
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber} to ${request.activityId} ${activity.summary}. Activity schedule ID $activityScheduleId not found.")
+
+      if (!schedule.isActiveOn(tomorrow)) {
+        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} - schedule is not active tomorrow")
       }
-      else -> {
-        null
+
+      if (schedule.allocations(excludeEnded = true).any { allocation -> allocation.prisonerNumber == request.prisonerNumber }) {
+        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Already allocated to ${request.activityId} ${activity.summary}")
       }
+
+      val prisonerResults = prisonerSearchApiClient.findByPrisonerNumbers(listOf(request.prisonerNumber))
+      if (prisonerResults.isEmpty()) {
+        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not found in prisoner search.")
+      }
+
+      val prisoner = prisonerResults.first()
+      if (prisoner.prisonId != request.prisonCode || prisoner.status.contains("INACTIVE")) {
+        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not in ${request.prisonCode} or INACTIVE")
+      }
+
+      // Get the pay bands configured for this prison
+      val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+
+      // Set the value of the pay band for this allocation
+      val prisonPayBand = when {
+        request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
+          getLowestRatePayBandForActivity(payBands, activity)
+        }
+        !request.nomisPayBand.isNullOrEmpty() && activity.isPaid() -> {
+          // The requested pay band must be configured for this prison
+          payBands.find { "${it.nomisPayBand}" == request.nomisPayBand }
+            ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${request.nomisPayBand} is not configured for ${request.prisonCode}")
+        }
+        else -> {
+          null
+        }
+      }
+
+      // Non-null pay bands should exist on a pay rate defined for this activity
+      if (prisonPayBand != null) {
+        activity.activityPay().find { "${it.payBand.nomisPayBand}" == "${prisonPayBand.nomisPayBand}" }
+          ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${prisonPayBand.nomisPayBand} is not on a pay rate for ${activity.activityId} ${activity.description}")
+      }
+
+      schedule.allocatePrisoner(
+        prisonerNumber = request.prisonerNumber.toPrisonerNumber(),
+        payBand = prisonPayBand,
+        bookingId = prisoner.bookingId?.let { prisoner.bookingId.toLong() } ?: 0L,
+        startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
+        endDate = request.endDate,
+        exclusions = request.exclusions?.consolidateMatchingSlots(),
+        allocatedBy = MIGRATION_USER,
+      )
+
+      if (request.suspendedFlag) {
+        log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+      }
+
+      val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)
+
+      val allocation = savedSchedule.allocations(excludeEnded = true)
+        .find { it.prisonerNumber == request.prisonerNumber }
+        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Could not re-read the saved allocation")
+
+      log.info("Allocated ${request.prisonerNumber} to ${activity.activityId} ${activity.summary} with allocation ID ${allocation.allocationId}")
+
+      allocation.allocationId
+    }.let { allocationId ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId)
+      AllocationMigrateResponse(request.activityId, allocationId)
     }
-
-    // Non-null pay bands should exist on a pay rate defined for this activity
-    if (prisonPayBand != null) {
-      activity.activityPay().find { "${it.payBand.nomisPayBand}" == "${prisonPayBand.nomisPayBand}" }
-        ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${prisonPayBand.nomisPayBand} is not on a pay rate for ${activity.activityId} ${activity.description}")
-    }
-
-    schedule.allocatePrisoner(
-      prisonerNumber = request.prisonerNumber.toPrisonerNumber(),
-      payBand = prisonPayBand,
-      bookingId = prisoner.bookingId?.let { prisoner.bookingId.toLong() } ?: 0L,
-      startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
-      endDate = request.endDate,
-      exclusions = request.exclusions?.consolidateMatchingSlots(),
-      allocatedBy = MIGRATION_USER,
-    )
-
-    if (request.suspendedFlag) {
-      log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
-    }
-
-    val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)
-
-    val allocation = savedSchedule.allocations(excludeEnded = true)
-      .find { it.prisonerNumber == request.prisonerNumber }
-      ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Could not re-read the saved allocation")
-
-    log.info("Allocated ${request.prisonerNumber} to ${activity.activityId} ${activity.summary} with allocation ID ${allocation.allocationId}")
-
-    return AllocationMigrateResponse(request.activityId, allocation.allocationId)
   }
 
   private fun logAndThrowValidationException(msg: String): Nothing {
