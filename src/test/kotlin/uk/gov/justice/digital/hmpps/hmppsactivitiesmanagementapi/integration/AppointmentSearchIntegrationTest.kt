@@ -9,6 +9,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -20,6 +21,9 @@ import java.time.LocalTime
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
+  val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
+  val pmRange = LocalTime.of(13, 0)..LocalTime.of(17, 59)
+  val edRange = LocalTime.of(18, 0)..LocalTime.of(23, 59)
 
   @Test
   fun `search appointments authorisation required`() {
@@ -146,7 +150,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointments("MDI", request)!!
 
-    results.map { it.startDate }.distinct().forEach {
+    results.map { it.startDate }.forEach {
       assertThat(it).isBetween(request.startDate, request.endDate)
     }
 
@@ -162,7 +166,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      timeSlot = TimeSlot.AM,
+      timeSlot = listOf(TimeSlot.AM),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
@@ -176,11 +180,75 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointments("MDI", request)!!
 
-    results.map { it.startTime }.distinct().forEach {
-      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(13, 0))
+    results.map { it.startTime }.forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
 
-    assertThat(results.filter { it.startTime == LocalTime.of(13, 0) }).isEmpty()
+    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in pmRange }.isEqualTo(0)
+    results.count { it.startTime in edRange }.isEqualTo(0)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointments starting in AM and PM timeslots`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      timeSlot = listOf(TimeSlot.AM, TimeSlot.PM),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    results.map { it.startTime }.forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
+    }
+
+    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in pmRange }.isEqualTo(2)
+    results.count { it.startTime in edRange }.isEqualTo(0)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointments in AM, PM, and ED timeslots`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusMonths(1),
+      timeSlot = listOf(TimeSlot.AM, TimeSlot.PM, TimeSlot.ED),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    results.map { it.startTime }.forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
+    }
+
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
+    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(1)
   }
 
   @Sql(
