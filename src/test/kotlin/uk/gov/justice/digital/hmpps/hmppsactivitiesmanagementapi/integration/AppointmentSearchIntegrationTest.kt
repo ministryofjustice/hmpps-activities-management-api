@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -22,10 +21,9 @@ import java.time.LocalTime
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
-
-  val amRange = LocalTimeRange(start = LocalTime.of(0, 0), end = LocalTime.of(11, 59))
-  val pmRange = LocalTimeRange(start = LocalTime.of(12, 0), end = LocalTime.of(17, 59))
-  val edRange = LocalTimeRange(start = LocalTime.of(18, 0), end = LocalTime.of(23, 59))
+  val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
+  val pmRange = LocalTime.of(13, 0)..LocalTime.of(17, 59)
+  val edRange = LocalTime.of(18, 0)..LocalTime.of(23, 59)
 
   @Test
   fun `search appointments authorisation required`() {
@@ -186,9 +184,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
 
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(1)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(0)
+    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in pmRange }.isEqualTo(0)
+    results.count { it.startTime in edRange }.isEqualTo(0)
   }
 
   @Sql(
@@ -217,9 +215,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
     }
 
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(0)
+    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in pmRange }.isEqualTo(2)
+    results.count { it.startTime in edRange }.isEqualTo(0)
   }
 
   @Sql(
