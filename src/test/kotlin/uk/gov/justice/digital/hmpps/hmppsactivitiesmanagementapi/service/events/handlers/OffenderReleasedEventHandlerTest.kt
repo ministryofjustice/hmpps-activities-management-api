@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
@@ -40,12 +42,14 @@ class OffenderReleasedEventHandlerTest {
   }
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
+  private val waitingListService: WaitingListService = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
   private val allocationRepository: AllocationRepository = mock()
 
   private val handler = OffenderReleasedEventHandler(
     rolloutPrisonRepository,
     appointmentAttendeeService,
+    waitingListService,
     prisonerSearchApiClient,
     prisonerAllocationHandler,
     allocationRepository,
@@ -94,6 +98,7 @@ class OffenderReleasedEventHandlerTest {
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
+    verify(waitingListService).removeOpenApplications(moorlandPrisonCode, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 
@@ -105,6 +110,7 @@ class OffenderReleasedEventHandlerTest {
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456")).also { it.isSuccess() isBool true }
 
+    verify(waitingListService).removeOpenApplications(moorlandPrisonCode, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 
@@ -116,6 +122,7 @@ class OffenderReleasedEventHandlerTest {
 
     handler.handle(offenderReleasedEvent(moorlandPrisonCode, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
+    verify(waitingListService).removeOpenApplications(moorlandPrisonCode, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
   }
 
