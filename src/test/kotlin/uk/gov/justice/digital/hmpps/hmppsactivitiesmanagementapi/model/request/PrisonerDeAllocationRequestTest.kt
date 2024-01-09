@@ -16,6 +16,7 @@ class PrisonerDeAllocationRequestTest {
       prisonerNumbers = listOf("G4793VF"),
       endDate = TimeSource.yesterday(),
       reasonCode = "OTHER",
+      caseNote = null,
     )
     assertSingleValidationError(validator.validate(request), "endDate", "End date must not be in the past")
   }

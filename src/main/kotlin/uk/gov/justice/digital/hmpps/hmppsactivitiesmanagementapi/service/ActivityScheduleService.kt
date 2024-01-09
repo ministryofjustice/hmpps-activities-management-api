@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -46,6 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val caseNotesApiClient: CaseNotesApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
@@ -214,9 +216,15 @@ class ActivityScheduleService(
             request.endDate!!,
             request.reasonCode.toDeallocationReason(),
             deallocatedBy,
-          ).also {
-            log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}")
-          }
+          )
+            .apply {
+              if (request.caseNote != null) {
+                val subType = if (request.caseNote.type == "GEN") "OSE" else "NEG_GEN"
+                val caseNote = caseNotesApiClient.postCaseNote(prisonCode(), prisonerNumber, request.caseNote.text, request.caseNote.type, subType)!!
+                plannedDeallocation!!.caseNoteId = caseNote.caseNoteId.toLong()
+              }
+            }
+            .also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
         }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
       }
     }.onEach { (allocationId, prisonerNumber) ->

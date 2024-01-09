@@ -103,7 +103,7 @@ class CandidatesServiceTest {
         listOf(
           allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber),
           allocation().copy(allocationId = 2, prisonerNumber = candidate.prisonerNumber).apply {
-            deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString(), 10001)
+            deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString()).apply { plannedDeallocation!!.caseNoteId = 10001 }
             deallocateNow()
           },
         ),

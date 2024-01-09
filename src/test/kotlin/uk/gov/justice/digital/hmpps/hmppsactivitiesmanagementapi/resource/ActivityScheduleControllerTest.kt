@@ -156,6 +156,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       prisonerNumbers = listOf("654321"),
       reasonCode = DeallocationReason.RELEASED.name,
       endDate = TimeSource.tomorrow(),
+      caseNote = null,
     )
 
     val mockPrincipal: Principal = mock()
@@ -242,6 +243,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
         prisonerNumbers = listOf("654321"),
         reasonCode = DeallocationReason.RELEASED.name,
         endDate = TimeSource.tomorrow(),
+        caseNote = null,
       )
 
       @Test

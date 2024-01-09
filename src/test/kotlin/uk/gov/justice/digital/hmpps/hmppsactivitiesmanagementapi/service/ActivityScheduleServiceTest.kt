@@ -10,9 +10,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -35,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerAllocatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AddCaseNoteRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
@@ -62,6 +67,7 @@ class ActivityScheduleServiceTest {
 
   private val repository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val caseNotesApiClient: CaseNotesApiClient = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
   private val auditService: AuditService = mock()
@@ -72,6 +78,7 @@ class ActivityScheduleServiceTest {
     ActivityScheduleService(
       repository,
       prisonerSearchApiClient,
+      caseNotesApiClient,
       prisonPayBandRepository,
       waitingListRepository,
       auditService,
@@ -207,6 +214,7 @@ class ActivityScheduleServiceTest {
         listOf("1"),
         DeallocationReason.OTHER.name,
         TimeSource.tomorrow(),
+        null,
       ),
       "by test",
     )
@@ -217,6 +225,58 @@ class ActivityScheduleServiceTest {
       DeallocationReason.OTHER,
       "by test",
     )
+    verify(repository).saveAndFlush(schedule)
+    verify(caseNotesApiClient, never()).postCaseNote(any(), any(), any(), any(), any())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_DEALLOCATED.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
+    )
+  }
+
+  @Test
+  fun `can add a case note when deallocating a prisoner from activity schedule`() {
+    val schedule = mock<ActivitySchedule>().stub {
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn
+        allocation().copy(prisonerNumber = "1").apply { deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, "test") }
+    }
+
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), any(), any())) doReturn CaseNote(
+      caseNoteId = "10001",
+      offenderIdentifier = "1",
+      type = "NEG",
+      typeDescription = "Negative Behaviour",
+      subType = "NEG_GEN",
+      subTypeDescription = "General Entry",
+      source = "INST",
+      creationDateTime = LocalDateTime.now(),
+      occurrenceDateTime = LocalDateTime.now(),
+      authorName = "Test",
+      authorUserId = "1",
+      text = "Test case note",
+      eventId = 1,
+      sensitive = false,
+    )
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+
+    service.deallocatePrisoners(
+      schedule.activityScheduleId,
+      PrisonerDeallocationRequest(
+        listOf("1"),
+        DeallocationReason.OTHER.name,
+        TimeSource.tomorrow(),
+        AddCaseNoteRequest(type = "GEN", text = "Test case note"),
+      ),
+      "by test",
+    )
+
+    verify(schedule).deallocatePrisonerOn(
+      "1",
+      TimeSource.tomorrow(),
+      DeallocationReason.OTHER,
+      "by test",
+    )
+    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", "GEN", "OSE")
     verify(repository).saveAndFlush(schedule)
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
@@ -239,6 +299,7 @@ class ActivityScheduleServiceTest {
         listOf("1", "2"),
         DeallocationReason.OTHER.name,
         TimeSource.tomorrow(),
+        null,
       ),
       "by test",
     )
@@ -272,6 +333,7 @@ class ActivityScheduleServiceTest {
           listOf(allocation.prisonerNumber),
           DeallocationReason.RELEASED.name,
           TimeSource.tomorrow(),
+          null,
         ),
         "by test",
       )
@@ -293,6 +355,7 @@ class ActivityScheduleServiceTest {
             listOf("123456"),
             reasonCode,
             TimeSource.tomorrow(),
+            null,
           ),
           "by test",
         )

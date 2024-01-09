@@ -561,6 +561,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         prisonerNumbers = listOf("G4793VF"),
         reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
         endDate = TimeSource.tomorrow(),
+        caseNote = null,
       ),
     ).expectStatus().isNoContent
 
