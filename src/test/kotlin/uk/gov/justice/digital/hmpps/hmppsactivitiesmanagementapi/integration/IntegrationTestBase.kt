@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -16,6 +17,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
@@ -73,6 +75,12 @@ abstract class IntegrationTestBase {
       caseNotesApiMockServer.stop()
     }
 
+    @BeforeEach
+    fun initMocks() {
+      prisonApiMockServer.resetAll()
+      prisonerSearchApiMockServer.resetAll()
+    }
+
     @AfterEach
     fun afterEach() {
       prisonApiMockServer.resetAll()
@@ -90,4 +98,12 @@ abstract class IntegrationTestBase {
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
+
+  internal fun stubPrisonerForInterestingEvent(prisoner: InmateDetail) {
+    prisonApiMockServer.stubGetPrisonerDetails(prisoner, fullInfo = false)
+  }
+
+  internal fun stubPrisonerForInterestingEvent(prisonerNumber: String) {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber, fullInfo = false)
+  }
 }

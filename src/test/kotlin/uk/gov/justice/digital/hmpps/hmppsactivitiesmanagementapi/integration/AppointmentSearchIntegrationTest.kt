@@ -21,9 +21,11 @@ import java.time.LocalTime
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
-  val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
-  val pmRange = LocalTime.of(13, 0)..LocalTime.of(17, 59)
-  val edRange = LocalTime.of(18, 0)..LocalTime.of(23, 59)
+
+  // Note these time slots coincide with the Moorland prison regime SQL seed data.
+  private val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
+  private val pmRange = LocalTime.of(13, 0)..LocalTime.of(17, 59)
+  private val edRange = LocalTime.of(18, 0)..LocalTime.of(23, 59)
 
   @Test
   fun `search appointments authorisation required`() {
