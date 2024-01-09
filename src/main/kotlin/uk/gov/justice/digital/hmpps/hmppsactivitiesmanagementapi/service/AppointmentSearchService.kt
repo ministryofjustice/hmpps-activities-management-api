@@ -58,7 +58,7 @@ class AppointmentSearchService(
       }
 
       val timeSlotSpecs = timeSlots?.map { slot ->
-      val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, slot)
+        val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, slot)
         appointmentSearchSpecification.startTimeBetween(
           timeRange.start,
           timeRange.end.minusMinutes(1),
