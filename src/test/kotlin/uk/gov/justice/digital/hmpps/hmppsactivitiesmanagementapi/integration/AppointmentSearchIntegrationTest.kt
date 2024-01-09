@@ -166,7 +166,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      timeSlot = listOf(TimeSlot.AM),
+      timeSlots = listOf(TimeSlot.AM),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
@@ -197,7 +197,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      timeSlot = listOf(TimeSlot.AM, TimeSlot.PM),
+      timeSlots = listOf(TimeSlot.AM, TimeSlot.PM),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
@@ -228,7 +228,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
-      timeSlot = listOf(TimeSlot.AM, TimeSlot.PM, TimeSlot.ED),
+      timeSlots = listOf(TimeSlot.AM, TimeSlot.PM, TimeSlot.ED),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
