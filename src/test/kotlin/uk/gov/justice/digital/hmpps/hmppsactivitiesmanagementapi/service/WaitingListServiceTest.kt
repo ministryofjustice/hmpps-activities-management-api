@@ -25,11 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
@@ -49,7 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
-import java.util.*
+import java.util.Optional
 
 @ExtendWith(FakeCaseLoad::class)
 class WaitingListServiceTest {
@@ -168,7 +168,7 @@ class WaitingListServiceTest {
       status = WaitingListStatus.PENDING,
     )
 
-    activity.activityCategory = activityCategory(code = "SAA_NOT_IN_WORK")
+    activity.activityCategory = notInWorkCategory
 
     assertThatThrownBy {
       service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test")
