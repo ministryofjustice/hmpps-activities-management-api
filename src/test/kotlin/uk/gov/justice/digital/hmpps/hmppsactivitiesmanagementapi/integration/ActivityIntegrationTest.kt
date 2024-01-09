@@ -4,7 +4,6 @@ import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
@@ -16,7 +15,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -861,48 +859,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   private fun List<ActivitySchedule>.schedule(description: String) =
     firstOrNull { it.description.uppercase() == description.uppercase() }
       ?: throw RuntimeException("Activity schedule $description not found.")
-
-  @Test
-  fun `the activity should be persisted even if the subsequent event notification fails`() {
-    prisonApiMockServer.stubGetReferenceCode(
-      "EDU_LEVEL",
-      "1",
-      "prisonapi/education-level-code-1.json",
-    )
-
-    prisonApiMockServer.stubGetReferenceCode(
-      "STUDY_AREA",
-      "ENGLA",
-      "prisonapi/study-area-code-ENGLA.json",
-    )
-
-    val createActivityRequest =
-      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
-
-    prisonApiMockServer.stubGetLocation(
-      locationId = 1,
-      location = Location(
-        locationId = 1,
-        locationType = "CELL",
-        description = "House_block_7-1-002",
-        agencyId = "MDI",
-        currentOccupancy = 1,
-        locationPrefix = "LEI-House-block-7-1-002",
-        operationalCapacity = 2,
-        userDescription = "user description",
-        internalLocationCode = "internal location code",
-      ),
-    )
-
-    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
-    val activity = webTestClient.createActivity(createActivityRequest)!!
-
-    with(activity) {
-      assertThat(summary).isEqualTo("IT level 1")
-      assertThat(startDate).isEqualTo(TimeSource.tomorrow())
-      assertThat(description).isEqualTo("A basic IT course")
-    }
-  }
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")

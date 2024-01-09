@@ -265,6 +265,54 @@ class AppointmentSearchServiceTest {
   }
 
   @Test
+  fun `search by multiple time slots`() {
+    val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlot = listOf(TimeSlot.AM, TimeSlot.PM))
+    val result = appointmentSearchEntity()
+
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.AM))
+      .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.PM))
+      .thenReturn(LocalTimeRange(LocalTime.of(13, 0), LocalTime.of(17, 59)))
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+
+    service.searchAppointments("TPR", request, principal)
+
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
+    verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(13, 0), LocalTime.of(17, 58))
+    verifyNoMoreInteractions(appointmentSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlot.toString())
+      assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[CREATED_BY_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
+  }
+
+  @Test
   fun `search by category code`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), categoryCode = "TEST")
     val result = appointmentSearchEntity()

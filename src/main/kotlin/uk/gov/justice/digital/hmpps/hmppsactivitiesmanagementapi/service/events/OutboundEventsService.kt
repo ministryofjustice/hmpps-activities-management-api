@@ -25,6 +25,7 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
 
   fun send(outboundEvent: OutboundEvent, identifier: Long) {
     if (featureSwitches.isEnabled(outboundEvent)) {
+      log.info("Sending outbound event $outboundEvent for identifier $identifier")
       when (outboundEvent) {
         ACTIVITY_SCHEDULE_CREATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))
         ACTIVITY_SCHEDULE_UPDATED -> publisher.send(outboundEvent.event(ScheduleCreatedInformation(identifier)))

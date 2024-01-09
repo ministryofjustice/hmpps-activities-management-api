@@ -86,6 +86,10 @@ data class WaitingList(
 
   fun isStatus(vararg s: WaitingListStatus) = s.any { it == status }
 
+  fun isPending() = isStatus(WaitingListStatus.PENDING)
+
+  fun isApproved() = isStatus(WaitingListStatus.APPROVED)
+
   fun allocated(allocation: Allocation) =
     apply {
       require(allocation.prisonCode() == prisonCode) {

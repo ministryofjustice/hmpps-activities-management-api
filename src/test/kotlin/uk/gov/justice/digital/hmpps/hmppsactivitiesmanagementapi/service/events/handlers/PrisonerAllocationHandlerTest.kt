@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,12 +28,10 @@ import java.time.temporal.ChronoUnit
 class PrisonerAllocationHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
-  private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val handler = PrisonerAllocationHandler(
     allocationRepository,
     attendanceRepository,
-    waitingListService,
     TransactionHandler(),
     outboundEventsService,
   )
@@ -74,12 +71,6 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-
-    verify(waitingListService).removeOpenApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Activities Management Service",
-    )
   }
 
   @Test
@@ -112,12 +103,6 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-
-    verify(waitingListService).removeOpenApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Activities Management Service",
-    )
   }
 
   @Test
@@ -140,12 +125,6 @@ class PrisonerAllocationHandlerTest {
 
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
-
-    verify(waitingListService).removeOpenApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Activities Management Service",
-    )
   }
 
   @Test

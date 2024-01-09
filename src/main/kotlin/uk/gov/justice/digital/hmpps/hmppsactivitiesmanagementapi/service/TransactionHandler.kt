@@ -7,6 +7,9 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * To be used in services or components where a new transaction is required to ensure any DB changes are committed prior
  * to taking any further action e.g. emitting new/update/delete events.
+ *
+ * It also needs to be a separate bean so that the Spring @Transactional annotations are honoured - they
+ * work through bean proxies, and if called within the same bean the transactional annotations have no effect.
  */
 @Component
 class TransactionHandler {

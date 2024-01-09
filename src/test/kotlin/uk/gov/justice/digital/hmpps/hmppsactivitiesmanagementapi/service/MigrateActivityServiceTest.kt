@@ -46,6 +46,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,6 +62,7 @@ class MigrateActivityServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val featureSwitches: FeatureSwitches = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
+  private val outboundEventsService: OutboundEventsService = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -102,6 +105,8 @@ class MigrateActivityServiceTest {
     prisonPayBandRepository,
     featureSwitches,
     eventOrganiserRepository,
+    TransactionHandler(),
+    outboundEventsService,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -213,6 +218,8 @@ class MigrateActivityServiceTest {
           }
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
     }
 
     @Test
@@ -632,8 +639,8 @@ class MigrateActivityServiceTest {
       // Return dummy activities - we check what is saved, not what is returned
       whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(
         listOf(
-          activityEntity().copy(prisonCode = "RSI", activityId = 1),
-          activityEntity().copy(prisonCode = "RSI", activityId = 2),
+          activityEntity(activityId = 1, prisonCode = "RSI"),
+          activityEntity(activityId = 2, prisonCode = "RSI"),
         ),
       )
 
@@ -754,6 +761,9 @@ class MigrateActivityServiceTest {
           }
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 2)
     }
 
     @Test
@@ -945,6 +955,8 @@ class MigrateActivityServiceTest {
           assertThat(endDate).isNull()
         }
       }
+
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     }
 
     @Test

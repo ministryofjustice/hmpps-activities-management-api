@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -38,7 +37,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InmateDetailFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandInmate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvilleInmate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
@@ -53,6 +55,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -106,13 +109,17 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @BeforeEach
   fun initMocks() {
     reset(outboundEventsService)
+
+    prisonApiMockServer.resetAll()
+    prisonerSearchApiMockServer.resetAll()
   }
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `release with unknown reason does not affect allocations but is treated as an interesting event`() {
     assertThat(eventReviewRepository.count()).isEqualTo(0)
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = false)
+
+    stubPrisonerForInterestingEvent("A11111A")
 
     assertThatAllocationsAreActiveFor("A11111A")
 
@@ -134,21 +141,31 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
+  fun `permanent release of prisoner removes waiting list applications for offender`() {
+    // Fixture necessary for the release event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday)
+
+    stubPrisonerForInterestingEvent("A11111A")
+
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+
+    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A11111A")
+
+    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-offender-for-release.sql")
   fun `permanent release of prisoner ends allocations, removes waiting list applications and deletes pending allocations for offender`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A11111A",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        status = "INACTIVE OUT",
-      ),
-    )
+    // Fixture necessary for the release event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A11111A"))
 
-    prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A11111A",
-      fullInfo = true,
-      extraInfo = true,
-    )
+    stubPrisonerForInterestingEvent("A11111A")
 
     assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
 
@@ -190,10 +207,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   fun `prisoner alerts updated`() {
-    prisonApiMockServer.stubGetPrisonerDetails(
-      InmateDetailFixture.instance(offenderNo = "A11111A", agencyId = pentonvillePrisonCode),
-      fullInfo = false,
-    )
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     service.process(alertsUpdatedEvent(prisonerNumber = "A11111A"))
 
@@ -207,20 +221,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-offender-released-event-deletes-attendances.sql")
   fun `permanent release of prisoner removes any future attendances at time of event being raised`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A11111A",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        status = "INACTIVE OUT",
-        confirmedReleaseDate = null,
-      ),
-    )
+    // Fixture necessary for the release event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A11111A"))
 
-    prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A11111A",
-      fullInfo = true,
-      extraInfo = true,
-    )
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
 
@@ -245,12 +249,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `appointments deleted when appointments changed event received with action set to YES`() {
     val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
-    prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A1234BC",
-      fullInfo = true,
-      extraInfo = true,
-      jsonFileSuffix = "",
-    )
+
+    stubPrisonerForInterestingEvent(activeInMoorlandInmate.copy(offenderNo = "A1234BC"))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
@@ -312,12 +312,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `appointments deleted when offender released event received`() {
     val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
-    prisonApiMockServer.stubGetPrisonerDetails(
-      prisonerNumber = "A1234BC",
-      fullInfo = true,
-      extraInfo = true,
-      jsonFileSuffix = "",
-    )
+
+    stubPrisonerForInterestingEvent(activeInMoorlandInmate.copy(offenderNo = "A1234BC"))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE)).isTrue
@@ -379,19 +375,9 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `no appointments are cancelled when appointments changed event received with action set to NO`() {
     val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonId = moorlandPrisonCode,
-        prisonerNumber = "A1234BC",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        status = "INACTIVE OUT",
-      ),
-    )
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A1234BC"))
 
-    prisonApiMockServer.stubGetPrisonerDetails(
-      InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = moorlandPrisonCode),
-      fullInfo = false,
-    )
+    stubPrisonerForInterestingEvent(InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = moorlandPrisonCode))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -438,6 +424,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
     assertThatAllocationsAreActiveFor("A11111A")
 
     attendanceRepository.findAllById(listOf(1L, 2L, 3L)).onEach {
@@ -493,7 +481,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
   fun `two allocations and two future attendance are unsuspended on receipt of offender received event`() {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
+    // Fixture necessary for the received event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
+
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
 
@@ -543,7 +534,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-offender-received-event-cancel-suspensions.sql")
   fun `two suspended allocations are unsuspended and two future attendance are cancelled for offender received event`() {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = "A11111A", fullInfo = true)
+    // Fixture necessary for the received event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
+
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -599,13 +593,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
   fun `allocations are ended and future attendances are removed for activities changed event set to END on release`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A22222A",
-        inOutStatus = Prisoner.InOutStatus.OUT,
-        status = "INACTIVE OUT",
-      ),
-    )
+    // Fixture necessary for the activities changed event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A22222A"))
+
+    stubPrisonerForInterestingEvent(InmateDetailFixture.instance(offenderNo = "A22222A"))
 
     assertThatAllocationsAreActiveFor("A22222A")
 
@@ -625,7 +616,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -637,19 +628,10 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activities-changed-event-deletes-attendances.sql")
   fun `allocations are ended and future attendances are removed for activities changed event set to END on temporary release`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
-      PrisonerSearchPrisonerFixture.instance(
-        prisonerNumber = "A22222A",
-        inOutStatus = Prisoner.InOutStatus.IN,
-        status = "ACTIVE IN",
-        prisonId = moorlandPrisonCode,
-      ),
-    )
+    // Fixture necessary for the activities changed event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInMoorlandPrisoner.copy(prisonerNumber = "A22222A"))
 
-    prisonApiMockServer.stubGetPrisonerDetails(
-      InmateDetailFixture.instance(offenderNo = "A22222A", agencyId = moorlandPrisonCode),
-      fullInfo = false,
-    )
+    stubPrisonerForInterestingEvent(activeInMoorlandInmate.copy(offenderNo = "A22222A"))
 
     assertThatAllocationsAreActiveFor("A22222A")
 
@@ -669,7 +651,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.DECLINED, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -696,7 +678,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   private fun assertThatWaitingListStatusIs(status: WaitingListStatus, prisonCode: String, prisonerNumber: String) {
-    waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(prisonCode, prisonerNumber, setOf(status))
+    waitingListRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, prisonerNumber)
       .onEach {
         it.status isEqualTo status
       }
@@ -707,15 +689,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `offender merged event replaces old prisoner number with new prisoner number`() {
     val (oldNumber, newNumber) = "A11111A" to "B11111B"
 
-    prisonApiMockServer.stubGetPrisonerDetails(
-      InmateDetailFixture.instance(offenderNo = newNumber, agencyId = pentonvillePrisonCode),
-      fullInfo = false,
-    )
-
-    prisonApiMockServer.stubGetPrisonerDetails(
-      InmateDetailFixture.instance(offenderNo = newNumber, agencyId = pentonvillePrisonCode),
-      fullInfo = true,
-    )
+    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newNumber), fullInfo = false)
 
     // Check all set to the old prisoner number before event is processed
     allocationRepository.findAll().single().prisonerNumber isEqualTo oldNumber
