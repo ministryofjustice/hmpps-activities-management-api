@@ -11,6 +11,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -96,7 +98,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("NEG_GEN"))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.NEGATIVE_GENERAL))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
@@ -116,7 +118,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("NEG_GEN"))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.NEGATIVE_GENERAL))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
@@ -135,7 +137,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq("NEG"), eq("IEP_WARN"))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.INCENTIVE_WARNING))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 

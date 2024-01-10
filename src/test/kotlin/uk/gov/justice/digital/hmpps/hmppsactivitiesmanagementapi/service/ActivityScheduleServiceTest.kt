@@ -15,6 +15,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -236,8 +238,9 @@ class ActivityScheduleServiceTest {
   @Test
   fun `can add a case note when deallocating a prisoner from activity schedule`() {
     val schedule = mock<ActivitySchedule>().stub {
-      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test", 10001) } doReturn
         allocation().copy(prisonerNumber = "1").apply { deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, "test") }
+      on { activity } doReturn activityEntity()
     }
 
     whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), any(), any())) doReturn CaseNote(
@@ -270,13 +273,14 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
+    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GENERAL, CaseNoteSubType.OFFENDER_SUPERVISOR_ENTRY)
     verify(schedule).deallocatePrisonerOn(
       "1",
       TimeSource.tomorrow(),
       DeallocationReason.OTHER,
       "by test",
+      10001,
     )
-    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", "GEN", "OSE")
     verify(repository).saveAndFlush(schedule)
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,

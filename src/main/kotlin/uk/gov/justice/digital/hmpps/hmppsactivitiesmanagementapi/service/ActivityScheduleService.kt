@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
@@ -210,22 +212,22 @@ class ActivityScheduleService(
 
     transactionHandler.newSpringTransaction {
       repository.findOrThrowNotFound(scheduleId).run {
-        request.prisonerNumbers!!.distinct().map { prisonerNumber ->
-          deallocatePrisonerOn(
-            prisonerNumber,
-            request.endDate!!,
-            request.reasonCode.toDeallocationReason(),
-            deallocatedBy,
-          )
-            .apply {
-              if (request.caseNote != null) {
-                val subType = if (request.caseNote.type == "GEN") "OSE" else "NEG_GEN"
-                val caseNote = caseNotesApiClient.postCaseNote(prisonCode(), prisonerNumber, request.caseNote.text, request.caseNote.type, subType)!!
-                plannedDeallocation!!.caseNoteId = caseNote.caseNoteId.toLong()
-              }
+        request.prisonerNumbers!!.distinct()
+          .map { prisonerNumber ->
+            var caseNoteId: Long? = null
+            if (request.caseNote != null) {
+              val subType = if (request.caseNote.type == CaseNoteType.GENERAL.code) CaseNoteSubType.OFFENDER_SUPERVISOR_ENTRY else CaseNoteSubType.NEGATIVE_GENERAL
+              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, CaseNoteType.get(request.caseNote.type), subType).caseNoteId.toLong()
             }
-            .also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
-        }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
+
+            deallocatePrisonerOn(
+              prisonerNumber,
+              request.endDate!!,
+              request.reasonCode.toDeallocationReason(),
+              deallocatedBy,
+              caseNoteId,
+            ).also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
+          }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
       }
     }.onEach { (allocationId, prisonerNumber) ->
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
