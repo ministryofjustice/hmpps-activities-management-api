@@ -128,8 +128,11 @@ class ActivityScheduleService(
       }
   }
 
-  fun getScheduleById(scheduleId: Long) =
-    repository.findOrThrowNotFound(scheduleId).checkCaseloadAccess().toModelSchedule()
+  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate) =
+    repository.getActivityScheduleByIdWithFilters(
+      activityScheduleId = scheduleId,
+      earliestSessionDate = earliestSessionDate,
+    )?.checkCaseloadAccess()?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
   @Transactional
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {

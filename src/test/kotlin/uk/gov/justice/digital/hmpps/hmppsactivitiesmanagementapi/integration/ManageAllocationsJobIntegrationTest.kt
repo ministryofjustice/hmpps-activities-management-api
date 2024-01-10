@@ -14,6 +14,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
@@ -131,7 +132,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = TimeSource.daysInPast(10))),
+      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = 10.daysAgo())),
     )
 
     with(allocationRepository.findAll()) {
@@ -170,7 +171,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = TimeSource.daysInPast(10))),
+      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = 10.daysAgo())),
     )
 
     webTestClient.manageAllocations(withDeallocate = true)

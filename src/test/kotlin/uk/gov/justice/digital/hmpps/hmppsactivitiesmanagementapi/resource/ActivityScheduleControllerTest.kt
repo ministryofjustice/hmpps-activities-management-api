@@ -6,6 +6,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -19,9 +21,11 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -81,23 +85,36 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     get("/schedules/$scheduleId/allocations")
 
   @Test
-  fun `200 response when get schedule lite by schedule identifier`() {
-    val expected = activityEntity().schedules().first().toModelSchedule()
+  fun `200 response when get schedule by schedule identifier with earliest session date default`() {
+    val expected = activityEntity().schedules().first().copy(1).toModelSchedule()
 
-    whenever(activityScheduleService.getScheduleById(1)).thenReturn(expected)
+    whenever(activityScheduleService.getScheduleById(1, 4.weeksAgo())) doReturn expected
 
     val response = mockMvc.getScheduleById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expected))
-    verify(activityScheduleService).getScheduleById(1)
+    response.contentAsString isEqualTo mapper.writeValueAsString(expected)
+  }
+
+  @Test
+  fun `200 response when get schedule by schedule identifier with earliest session date specified`() {
+    val expected = activityEntity().schedules().first().copy(1).toModelSchedule()
+
+    whenever(activityScheduleService.getScheduleById(1, 4.weeksAgo())) doReturn expected
+
+    val response = mockMvc.getScheduleById(1, 4.weeksAgo())
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    response.contentAsString isEqualTo mapper.writeValueAsString(expected)
   }
 
   @Test
   fun `404 response when get schedule by id not found`() {
-    whenever(activityScheduleService.getScheduleById(-99)).thenThrow(EntityNotFoundException("not found"))
+    whenever(activityScheduleService.getScheduleById(eq(-99), any())).thenThrow(EntityNotFoundException("not found"))
 
     val response = mockMvc.getScheduleById(-99)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -105,12 +122,10 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       .andReturn().response
 
     assertThat(response.contentAsString).contains("not found")
-
-    verify(activityScheduleService).getScheduleById(-99)
   }
 
-  private fun MockMvc.getScheduleById(scheduleId: Long) =
-    get("/schedules/$scheduleId")
+  private fun MockMvc.getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate? = null) =
+    get("/schedules/$scheduleId${earliestSessionDate?.let { "?earliestSessionDate=$it" } ?: ""}")
 
   @Test
   fun `204 response when allocate offender to a schedule`() {

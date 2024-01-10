@@ -15,7 +15,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
@@ -87,8 +87,8 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     confirmedReleaseDate = LocalDate.now(),
   )
 
-  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = TimeSource.daysInPast(5))
-  private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = TimeSource.daysInPast(4))
+  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = 5.daysAgo())
+  private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = 4.daysAgo())
 
   @Sql("classpath:test_data/seed-manage-appointments-job.sql")
   @Test

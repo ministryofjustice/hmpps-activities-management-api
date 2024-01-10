@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -168,8 +169,14 @@ class ActivityScheduleController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  fun getScheduleId(@PathVariable("scheduleId") scheduleId: Long) =
-    scheduleService.getScheduleById(scheduleId)
+  fun getScheduleId(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(value = "earliestSessionDate", required = false)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "If provided will filter earliest sessions >= the given date. Format YYYY-MM-DD, otherwise defaults to 4 weeks prior to the current date.")
+    earliestSessionDate: LocalDate?,
+  ) =
+    scheduleService.getScheduleById(scheduleId, earliestSessionDate ?: 4.weeksAgo())
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
