@@ -216,8 +216,8 @@ class ActivityScheduleService(
           .map { prisonerNumber ->
             var caseNoteId: Long? = null
             if (request.caseNote != null) {
-              val subType = if (request.caseNote.type == CaseNoteType.GENERAL.code) CaseNoteSubType.OFFENDER_SUPERVISOR_ENTRY else CaseNoteSubType.NEGATIVE_GENERAL
-              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, CaseNoteType.get(request.caseNote.type), subType).caseNoteId.toLong()
+              val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.OSE else CaseNoteSubType.NEG_GEN
+              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, request.caseNote.type, subType).caseNoteId.toLong()
             }
 
             deallocatePrisonerOn(

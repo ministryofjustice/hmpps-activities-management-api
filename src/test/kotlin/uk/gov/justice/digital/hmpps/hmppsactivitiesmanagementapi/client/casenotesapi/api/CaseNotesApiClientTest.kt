@@ -47,8 +47,8 @@ class CaseNotesApiClientTest {
 
   @Test
   fun `postCaseNote - success`() {
-    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", CaseNoteType.NEGATIVE_BEHAVIOUR, CaseNoteSubType.NEGATIVE_GENERAL)
-    val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", CaseNoteType.NEGATIVE_BEHAVIOUR, CaseNoteSubType.NEGATIVE_GENERAL)
+    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
+    val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
     assertThat(caseNote.text).isEqualTo("Case Note Text")
   }
 }

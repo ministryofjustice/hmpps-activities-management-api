@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
 
   fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, type: CaseNoteType, subType: CaseNoteSubType): CaseNote {
-    val newCaseNote = NewCaseNote(prisonCode, type.code, subType.code, null, caseNote)
+    val newCaseNote = NewCaseNote(prisonCode, type.name, subType.name, null, caseNote)
     return webClient.post()
       .uri("/case-notes/{offenderNo}", prisonerNumber)
       .bodyValue(newCaseNote)
@@ -28,25 +28,15 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
   }
 }
 
-enum class CaseNoteType(val code: String) {
-  GENERAL("GEN"),
-  NEGATIVE_BEHAVIOUR("NEG"),
+enum class CaseNoteType(val description: String) {
+  GEN("General"),
+  NEG("Negative behaviour"),
   ;
-
-  companion object {
-    fun get(code: String) = CaseNoteType.entries.find { it.code == code }
-      ?: throw NullPointerException("No CaseNoteType found with code: $code")
-  }
 }
 
-enum class CaseNoteSubType(val code: String) {
-  OFFENDER_SUPERVISOR_ENTRY("OSE"),
-  NEGATIVE_GENERAL("NEG_GEN"),
-  INCENTIVE_WARNING("IEP_WARN"),
+enum class CaseNoteSubType(val description: String) {
+  OSE("Offender supervisor entry"),
+  NEG_GEN("Negative general"),
+  IEP_WARN("Incentive warning"),
   ;
-
-  companion object {
-    fun get(code: String) = CaseNoteSubType.entries.find { it.code == code }
-      ?: throw NullPointerException("No CaseNoteSubType found with code: $code")
-  }
 }

@@ -28,7 +28,7 @@ class CaseNotesApiMockServer : WireMockServer(8444) {
       WireMock.post(WireMock.urlEqualTo("/case-notes/$prisonerNumber"))
         .withRequestBody(
           WireMock.equalToJson(
-            mapper.writeValueAsString(NewCaseNote(prisonCode, type.code, subType.code, null, caseNote)),
+            mapper.writeValueAsString(NewCaseNote(prisonCode, type.name, subType.name, null, caseNote)),
           ),
         )
         .willReturn(

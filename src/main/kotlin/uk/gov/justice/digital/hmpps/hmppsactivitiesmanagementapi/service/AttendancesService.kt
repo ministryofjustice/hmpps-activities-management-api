@@ -86,8 +86,8 @@ class AttendancesService(
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
     caseNote?.let {
-      val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.INCENTIVE_WARNING else CaseNoteSubType.NEGATIVE_GENERAL
-      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, CaseNoteType.NEGATIVE_BEHAVIOUR, subType)
+      val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.IEP_WARN else CaseNoteSubType.NEG_GEN
+      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, CaseNoteType.NEG, subType)
     }
 
   private fun AttendanceUpdateRequest.maybeAttendanceReason() =

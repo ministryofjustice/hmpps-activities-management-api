@@ -268,12 +268,12 @@ class ActivityScheduleServiceTest {
         listOf("1"),
         DeallocationReason.OTHER.name,
         TimeSource.tomorrow(),
-        AddCaseNoteRequest(type = "GEN", text = "Test case note"),
+        AddCaseNoteRequest(type = CaseNoteType.GEN, text = "Test case note"),
       ),
       "by test",
     )
 
-    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GENERAL, CaseNoteSubType.OFFENDER_SUPERVISOR_ENTRY)
+    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GEN, CaseNoteSubType.OSE)
     verify(schedule).deallocatePrisonerOn(
       "1",
       TimeSource.tomorrow(),

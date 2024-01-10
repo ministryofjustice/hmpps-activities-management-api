@@ -98,7 +98,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.NEGATIVE_GENERAL))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
@@ -118,7 +118,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.NEGATIVE_GENERAL))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
@@ -137,7 +137,7 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEGATIVE_BEHAVIOUR), eq(CaseNoteSubType.INCENTIVE_WARNING))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN))).thenReturn(caseNote)
 
     service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
