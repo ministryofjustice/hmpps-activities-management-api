@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -84,8 +86,8 @@ class AttendancesService(
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
     caseNote?.let {
-      val subType = if (incentiveLevelWarningIssued == true) "IEP_WARN" else "NEG_GEN"
-      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, "NEG", subType)
+      val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.IEP_WARN else CaseNoteSubType.NEG_GEN
+      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, CaseNoteType.NEG, subType)
     }
 
   private fun AttendanceUpdateRequest.maybeAttendanceReason() =

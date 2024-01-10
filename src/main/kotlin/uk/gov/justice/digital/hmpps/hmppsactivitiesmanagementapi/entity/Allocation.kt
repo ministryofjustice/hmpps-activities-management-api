@@ -441,6 +441,7 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   TRANSFERRED("Transferred to another activity", true),
   WITHDRAWN_STAFF("Withdrawn by staff", true),
   WITHDRAWN_OWN("Withdrawn at own request", true),
+  DISMISSED("Dismissed", true),
   HEALTH("Health", true),
   SECURITY("Security", true),
   OTHER("Other", true),

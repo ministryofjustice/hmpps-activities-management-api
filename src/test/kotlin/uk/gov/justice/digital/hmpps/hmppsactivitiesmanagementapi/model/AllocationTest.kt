@@ -141,7 +141,7 @@ class AllocationTest : ModelTest() {
 
   @Test
   fun `check displayable deallocation reasons`() {
-    assertThat(DeallocationReason.toModelDeallocationReasons()).hasSize(7)
+    assertThat(DeallocationReason.toModelDeallocationReasons()).hasSize(8)
 
     assertThat(DeallocationReason.toModelDeallocationReasons()).containsExactlyInAnyOrder(
       DeallocationReason.COMPLETED.toModel(),
@@ -151,6 +151,7 @@ class AllocationTest : ModelTest() {
       DeallocationReason.TRANSFERRED.toModel(),
       DeallocationReason.WITHDRAWN_OWN.toModel(),
       DeallocationReason.WITHDRAWN_STAFF.toModel(),
+      DeallocationReason.DISMISSED.toModel(),
     )
   }
 
