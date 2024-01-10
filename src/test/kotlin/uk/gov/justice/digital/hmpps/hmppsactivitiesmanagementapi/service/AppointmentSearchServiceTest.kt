@@ -173,10 +173,10 @@ class AppointmentSearchServiceTest {
 
   @Test
   fun `search by time slot`() {
-    val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlot = listOf(TimeSlot.AM))
+    val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlots = listOf(TimeSlot.AM))
     val result = appointmentSearchEntity()
 
-    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlot?.get(0) ?: TimeSlot.PM))
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlots?.get(0) ?: TimeSlot.PM))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
     whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -203,7 +203,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
-      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlot.toString())
+      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo("")
@@ -218,7 +218,7 @@ class AppointmentSearchServiceTest {
 
   @Test
   fun `search by multiple time slots`() {
-    val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlot = listOf(TimeSlot.AM, TimeSlot.PM))
+    val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlots = listOf(TimeSlot.AM, TimeSlot.PM))
     val result = appointmentSearchEntity()
 
     whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.AM))
@@ -251,7 +251,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
       assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo("")
-      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlot.toString())
+      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo("")
