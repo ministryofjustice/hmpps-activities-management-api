@@ -57,7 +57,7 @@ class AppointmentSearchService(
         spec.and(appointmentSearchSpecification.startDateEquals(startDate!!))
       }
 
-      val timeSlotSpecs = timeSlot?.map { slot ->
+      val timeSlotSpecs = timeSlots?.map { slot ->
         val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, slot)
         appointmentSearchSpecification.startTimeBetween(
           timeRange.start,
@@ -108,7 +108,7 @@ class AppointmentSearchService(
       PRISON_CODE_PROPERTY_KEY to prisonCode,
       START_DATE_PROPERTY_KEY to (request.startDate?.toString() ?: ""),
       END_DATE_PROPERTY_KEY to (request.endDate?.toString() ?: ""),
-      TIME_SLOT_PROPERTY_KEY to (request.timeSlot?.toString() ?: ""),
+      TIME_SLOT_PROPERTY_KEY to (request.timeSlots?.toString() ?: ""),
       CATEGORY_CODE_PROPERTY_KEY to (request.categoryCode ?: ""),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to (request.internalLocationId?.toString() ?: ""),
       PRISONER_NUMBER_PROPERTY_KEY to (request.prisonerNumbers?.joinToString() ?: ""),

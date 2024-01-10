@@ -11,6 +11,4 @@ object TimeSource {
   fun yesterday(): LocalDate = today().minusDays(1)
 
   fun tomorrow(): LocalDate = today().plusDays(1)
-
-  fun daysInPast(days: Long): LocalDate = today().minusDays(days)
 }

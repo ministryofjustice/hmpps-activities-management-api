@@ -35,7 +35,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvilleActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
@@ -56,9 +58,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -780,5 +784,37 @@ class ActivityScheduleServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated.")
+  }
+
+  @Test
+  fun `should retrieve schedule by id and date`() {
+    val schedule = pentonvilleActivity.schedule()
+
+    whenever(repository.getActivityScheduleByIdWithFilters(schedule.activityScheduleId, TimeSource.today())) doReturn schedule
+
+    service.getScheduleById(schedule.activityScheduleId, TimeSource.today()) isEqualTo schedule.toModelSchedule()
+  }
+
+  @Test
+  fun `should fail to retrieve schedule by id and date when invalid case load`() {
+    val schedule = moorlandActivity.schedule()
+
+    whenever(repository.getActivityScheduleByIdWithFilters(schedule.activityScheduleId, TimeSource.today())) doReturn schedule
+
+    assertThatThrownBy {
+      service.getScheduleById(schedule.activityScheduleId, TimeSource.today()) isEqualTo schedule.toModelSchedule()
+    }.isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `should fail to retrieve schedule by id and date when schedule not found`() {
+    val schedule = pentonvilleActivity.schedule()
+
+    whenever(repository.getActivityScheduleByIdWithFilters(schedule.activityScheduleId, TimeSource.today())) doReturn null
+
+    assertThatThrownBy {
+      service.getScheduleById(schedule.activityScheduleId, TimeSource.today()) isEqualTo schedule.toModelSchedule()
+    }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity schedule ID ${schedule.activityScheduleId} not found")
   }
 }

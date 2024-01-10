@@ -46,7 +46,12 @@ val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMAL
 val lowPayBand = prisonPayBandsLowMediumHigh()[0]
 val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
 
-val activeAllocation = activityEntity().schedules().first().allocations().first()
+val activeAllocation = activityEntity().schedule().allocations().first()
+
+val pentonvilleActivity = activityEntity(prisonCode = pentonvillePrisonCode)
+val moorlandActivity = activityEntity(prisonCode = moorlandPrisonCode)
+
+internal fun Activity.schedule() = this.schedules().single()
 
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
