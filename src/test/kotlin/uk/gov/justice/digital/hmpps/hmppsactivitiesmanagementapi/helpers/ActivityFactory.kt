@@ -40,16 +40,16 @@ const val moorlandPrisonCode = "MDI"
 const val pentonvillePrisonCode = "PVI"
 const val risleyPrisonCode = "RSI"
 
-val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
-val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
+internal val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
+internal val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
 
-val lowPayBand = prisonPayBandsLowMediumHigh()[0]
-val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
+internal val lowPayBand = prisonPayBandsLowMediumHigh()[0]
+internal val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
 
-val activeAllocation = activityEntity().schedule().allocations().first()
+internal val activeAllocation = activityEntity().schedule().allocations().first()
 
-val pentonvilleActivity = activityEntity(prisonCode = pentonvillePrisonCode)
-val moorlandActivity = activityEntity(prisonCode = moorlandPrisonCode)
+internal val pentonvilleActivity = activityEntity(prisonCode = pentonvillePrisonCode)
+internal val moorlandActivity = activityEntity(prisonCode = moorlandPrisonCode)
 
 internal fun Activity.schedule() = this.schedules().single()
 
@@ -155,7 +155,7 @@ internal fun activityCategory2(code: String = "category code 2") =
     description = "category description 2",
   )
 
-val notInWorkCategory = activityCategory("SAA_NOT_IN_WORK")
+internal val notInWorkCategory = activityCategory("SAA_NOT_IN_WORK")
 
 internal fun schedule(prisonCode: String = moorlandPrisonCode) = activityEntity(prisonCode = prisonCode).schedules().first()
 
@@ -310,7 +310,7 @@ internal fun deallocation(endDate: LocalDate? = null) =
     ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
     ?: activitySchedule(activityEntity()).allocations().first()
 
-fun rolloutPrison() = RolloutPrison(
+internal fun rolloutPrison() = RolloutPrison(
   1,
   pentonvillePrisonCode,
   "HMP Pentonville",
@@ -320,7 +320,7 @@ fun rolloutPrison() = RolloutPrison(
   LocalDate.of(2022, 12, 23),
 )
 
-fun prisonRegime(
+internal fun prisonRegime(
   prisonCode: String = pentonvillePrisonCode,
 ) = PrisonRegime(
   1,
@@ -334,7 +334,7 @@ fun prisonRegime(
   1,
 )
 
-fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listOf(
+internal fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listOf(
   PrisonPayBand(
     prisonPayBandId = 1,
     prisonCode = prisonCode,
@@ -432,7 +432,7 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   sundayFlag = true
 }
 
-fun waitingList(
+internal fun waitingList(
   waitingListId: Long = 1,
   prisonCode: String = pentonvillePrisonCode,
   prisonerNumber: String = "123456",

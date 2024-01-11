@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveIn
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -163,8 +163,8 @@ class ActivityScheduleService(
 
       val activePrisoner = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber)
         ?.also { prisoner ->
-          require(prisoner.isActiveIn(schedule.activity.prisonCode)) {
-            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active in prison ${schedule.activity.prisonCode}."
+          require(prisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
           }
 
           requireNotNull(prisoner.bookingId) {

@@ -32,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandActivity
@@ -95,12 +94,7 @@ class ActivityScheduleServiceTest {
 
   private val caseLoad = pentonvillePrisonCode
 
-  private val prisoner = PrisonerSearchPrisonerFixture.instance(
-    prisonId = caseLoad,
-    prisonerNumber = "123456",
-    bookingId = 1,
-    status = "ACTIVE IN",
-  )
+  private val prisoner = activeInPentonvillePrisoner
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
@@ -505,11 +499,8 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocation fails if prisoner is not found`() {
-    val schedule = activitySchedule(
-      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
-      activityScheduleId = 200,
-      noAllocations = true,
-    )
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn null
@@ -526,16 +517,13 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Unable to allocate prisoner with prisoner number 654321 to schedule 200, prisoner not found.")
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321 to schedule ${schedule.activityScheduleId}, prisoner not found.")
   }
 
   @Test
-  fun `allocation fails if prisoner is not active in prison`() {
-    val schedule = activitySchedule(
-      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
-      activityScheduleId = 200,
-      noAllocations = true,
-    )
+  fun `allocation fails if prisoner is not active at prison`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(prisonId = moorlandPrisonCode)
@@ -552,16 +540,13 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner is not active in prison $pentonvillePrisonCode.")
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner is not active at prison $pentonvillePrisonCode.")
   }
 
   @Test
   fun `allocation fails if prisoner does not have a booking id`() {
-    val schedule = activitySchedule(
-      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
-      activityScheduleId = 200,
-      noAllocations = true,
-    )
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
     whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(bookingId = null)
@@ -582,25 +567,14 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
-  fun `successful allocation is audited`() {
-    val schedule = activitySchedule(
-      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
-      activityScheduleId = 200,
-      noAllocations = true,
-    )
-    schedule.allocations() hasSize 0
+  fun `should successfully allocate an active in prison prisoner`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeInPentonvillePrisoner
     whenever(repository.saveAndFlush(any())) doReturn schedule
-    whenever(
-      waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
-        caseLoad,
-        "654321",
-        schedule,
-      ),
-    ).thenReturn(emptyList())
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
 
     service.allocatePrisoner(
       schedule.activityScheduleId,
@@ -612,30 +586,78 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
-    with(schedule.allocations().single()) {
-      prisonerNumber isEqualTo "654321"
-    }
+    schedule.allocations().single().prisonerNumber isEqualTo "654321"
+
+    verify(auditService).logEvent(any())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
+  }
+
+  @Test
+  fun `should successfully allocate an active out prison prisoner`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeOutPentonvillePrisoner
+    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
+
+    service.allocatePrisoner(
+      schedule.activityScheduleId,
+      PrisonerAllocationRequest(
+        "654321",
+        1,
+        TimeSource.tomorrow(),
+      ),
+      "by test",
+    )
+
+    schedule.allocations().single().prisonerNumber isEqualTo "654321"
+
+    verify(auditService).logEvent(any())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
+  }
+
+  @Test
+  fun `should audit successful allocation of prisoner`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn activeOutPentonvillePrisoner
+    whenever(repository.saveAndFlush(any())) doReturn schedule
+    whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
+
+    service.allocatePrisoner(
+      schedule.activityScheduleId,
+      PrisonerAllocationRequest(
+        "654321",
+        1,
+        TimeSource.tomorrow(),
+      ),
+      "by test",
+    )
 
     verify(auditService).logEvent(auditCaptor.capture())
 
     with(auditCaptor.firstValue) {
-      activityId isEqualTo 100
-      activityName isEqualTo schedule.activity.summary
+      activityId isEqualTo pentonvilleActivity.activityId
+      activityName isEqualTo pentonvilleActivity.summary
       prisonCode isEqualTo pentonvillePrisonCode
       prisonerNumber isEqualTo "654321"
-      scheduleId isEqualTo 200
+      scheduleId isEqualTo schedule.activityScheduleId
       scheduleDescription isEqualTo schedule.description
       waitingListId isEqualTo null
-      createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
+      createdAt isCloseTo TimeSource.now().truncatedTo(ChronoUnit.MINUTES)
     }
 
     verify(telemetryClient).trackEvent(
       TelemetryEvent.CREATE_ALLOCATION.value,
       mapOf(
         USER_PROPERTY_KEY to "by test",
-        PRISON_CODE_PROPERTY_KEY to "PVI",
+        PRISON_CODE_PROPERTY_KEY to pentonvillePrisonCode,
         PRISONER_NUMBER_PROPERTY_KEY to "654321",
-        ACTIVITY_ID_PROPERTY_KEY to "200",
+        ACTIVITY_ID_PROPERTY_KEY to "${pentonvilleActivity.activityId}",
         ALLOCATION_START_DATE_PROPERTY_KEY to TimeSource.tomorrow().toString(),
       ),
       emptyMap(),
@@ -645,13 +667,8 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
-  fun `allocation updates APPROVED waiting list application to ALLOCATED status when present and is audited`() {
-    val schedule = activitySchedule(
-      activity = activityEntity(activityId = 100, prisonCode = pentonvillePrisonCode),
-      activityScheduleId = 200,
-      noAllocations = true,
-    )
-    schedule.allocations() hasSize 0
+  fun `allocation updates APPROVED waiting list application to ALLOCATED status when present`() {
+    val schedule = activitySchedule(activity = pentonvilleActivity, noAllocations = true)
 
     val waitingListEntity = waitingList(
       prisonCode = schedule.activity.prisonCode,
@@ -681,27 +698,12 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
-    with(schedule.allocations().single()) {
-      prisonerNumber isEqualTo "123456"
-    }
+    schedule.allocations().single().prisonerNumber isEqualTo "123456"
 
     with(waitingListEntity) {
       assertThat(status).isEqualTo(WaitingListStatus.ALLOCATED)
       assertThat(allocation?.allocatedBy).isEqualTo("by test")
       assertThat(allocation?.prisonerNumber).isEqualTo("123456")
-    }
-
-    verify(auditService).logEvent(auditCaptor.capture())
-
-    with(auditCaptor.firstValue) {
-      activityId isEqualTo 100
-      activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo pentonvillePrisonCode
-      prisonerNumber isEqualTo "123456"
-      scheduleId isEqualTo 200
-      scheduleDescription isEqualTo schedule.description
-      waitingListId isEqualTo 300
-      createdAt isCloseTo LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     }
   }
 
