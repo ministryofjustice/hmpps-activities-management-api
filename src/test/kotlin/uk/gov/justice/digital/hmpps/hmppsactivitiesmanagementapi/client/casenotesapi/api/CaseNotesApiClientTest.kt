@@ -42,7 +42,7 @@ class CaseNotesApiClientTest {
   fun `getCaseNote - success`() {
     caseNotesApiMockServer.stubGetCaseNote("A1234AA", 1)
     val caseNote = caseNotesApiClient.getCaseNote("A1234AA", 1)
-    assertThat(caseNote?.text).isEqualTo("Case Note Text")
+    assertThat(caseNote.text).isEqualTo("Case Note Text")
   }
 
   @Test

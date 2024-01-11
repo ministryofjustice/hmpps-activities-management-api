@@ -36,7 +36,7 @@ class WebClientConfiguration(
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
-  @Value("\${api.timeout:90s}") private val apiTimeout: Duration,
+  @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   private val webClientBuilder: WebClient.Builder,
 ) {
 
