@@ -595,7 +595,7 @@ class CandidatesServiceTest {
     @Test
     fun `fetch list of suitable candidates`() {
       val activity = activityEntity()
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison", "A1234BI" to "Allen"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
@@ -610,6 +610,13 @@ class CandidatesServiceTest {
 
       assertThat(candidates).isEqualTo(
         listOf(
+          ActivityCandidate(
+            name = "Tim Allen",
+            prisonerNumber = "A1234BI",
+            cellLocation = "1-2-3",
+            otherAllocations = emptyList(),
+            earliestReleaseDate = EarliestReleaseDate(null),
+          ),
           ActivityCandidate(
             name = "Tim Harrison",
             prisonerNumber = "A1234BC",
