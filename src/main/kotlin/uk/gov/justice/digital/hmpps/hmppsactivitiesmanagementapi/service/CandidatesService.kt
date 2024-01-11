@@ -128,19 +128,21 @@ class CandidatesService(
 
     prisoners = prisoners.filter { filterByEmployment(it, prisonerAllocations, inWork) }
 
-    return prisoners.map { prisoner ->
-      val thisPersonsAllocations = prisonerAllocations.toModelPrisonerAllocations()
-        .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
-        .flatMap { it.allocations }
+    return prisoners
+      .sortedBy { it.lastName }
+      .map { prisoner ->
+        val thisPersonsAllocations = prisonerAllocations.toModelPrisonerAllocations()
+          .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
+          .flatMap { it.allocations }
 
-      ActivityCandidate(
-        name = "${prisoner.firstName} ${prisoner.lastName}",
-        prisonerNumber = prisoner.prisonerNumber,
-        cellLocation = prisoner.cellLocation,
-        otherAllocations = thisPersonsAllocations,
-        earliestReleaseDate = determineEarliestReleaseDate(prisoner),
-      )
-    }
+        ActivityCandidate(
+          name = "${prisoner.firstName} ${prisoner.lastName}",
+          prisonerNumber = prisoner.prisonerNumber,
+          cellLocation = prisoner.cellLocation,
+          otherAllocations = thisPersonsAllocations,
+          earliestReleaseDate = determineEarliestReleaseDate(prisoner),
+        )
+      }
   }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
