@@ -347,7 +347,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 

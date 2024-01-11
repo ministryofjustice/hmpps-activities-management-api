@@ -689,7 +689,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `offender merged event replaces old prisoner number with new prisoner number`() {
     val (oldNumber, newNumber) = "A11111A" to "B11111B"
 
-    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newNumber), fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newNumber))
 
     // Check all set to the old prisoner number before event is processed
     allocationRepository.findAll().single().prisonerNumber isEqualTo oldNumber

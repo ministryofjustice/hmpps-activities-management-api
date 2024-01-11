@@ -50,7 +50,7 @@ class OffenderMergedEventHandler(
     val newNumber = event.prisonerNumber()
     val oldNumber = event.removedPrisonerNumber()
 
-    prisonApi.getPrisonerDetailsLite(newNumber)?.let { prisoner ->
+    prisonApi.getPrisonerDetailsLite(newNumber).let { prisoner ->
       prisoner.agencyId?.let { prisonCode ->
         if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
           transactionHandler.newSpringTransaction {
