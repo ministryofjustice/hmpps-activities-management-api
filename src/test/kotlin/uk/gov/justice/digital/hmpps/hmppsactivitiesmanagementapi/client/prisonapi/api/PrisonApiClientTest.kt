@@ -67,7 +67,7 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber)
 
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber).block()!!
+    val prisonerDetails = prisonApiClient.getPrisonerDetailsLite(prisonerNumber)
     assertThat(prisonerDetails.bookingId).isEqualTo(1200993)
   }
 
@@ -77,9 +77,9 @@ class PrisonApiClientTest {
 
     prisonApiMockServer.stubGetPrisonerDetailsNotFound(prisonerNumber)
 
-    assertThatThrownBy { prisonApiClient.getPrisonerDetails(prisonerNumber).block() }
+    assertThatThrownBy { prisonApiClient.getPrisonerDetailsLite(prisonerNumber) }
       .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/offenderNo/AAAAA?fullInfo=true")
+      .hasMessage("404 Not Found from GET http://localhost:8999/api/bookings/offenderNo/AAAAA")
   }
 
   @Test

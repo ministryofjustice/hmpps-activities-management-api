@@ -100,10 +100,10 @@ abstract class IntegrationTestBase {
     this.queryParamIfPresent(name, Optional.ofNullable(type))
 
   internal fun stubPrisonerForInterestingEvent(prisoner: InmateDetail) {
-    prisonApiMockServer.stubGetPrisonerDetails(prisoner, fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails(prisoner)
   }
 
   internal fun stubPrisonerForInterestingEvent(prisonerNumber: String) {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber, fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber)
   }
 }
