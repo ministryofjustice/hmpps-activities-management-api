@@ -4,8 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
@@ -13,7 +13,7 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `10 configured pay bands are returned for Pentonville`() {
-    val defaultPayBands = webTestClient.getPrisonPayBands(pentonvillePrisonCode)!!
+    val defaultPayBands = webTestClient.getPrisonPayBands(PENTONVILLE_PRISON_CODE)!!
 
     assertThat(defaultPayBands).hasSize(10)
     assertThat(defaultPayBands.count { it.prisonCode == "PVI" }).isEqualTo(10)
@@ -21,10 +21,10 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `3 configured pay bands are returned for Moorland`() {
-    val defaultPayBands = webTestClient.getPrisonPayBands(moorlandPrisonCode)!!
+    val defaultPayBands = webTestClient.getPrisonPayBands(MOORLAND_PRISON_CODE)!!
 
     assertThat(defaultPayBands).hasSize(3)
-    assertThat(defaultPayBands.count { it.prisonCode == moorlandPrisonCode }).isEqualTo(3)
+    assertThat(defaultPayBands.count { it.prisonCode == MOORLAND_PRISON_CODE }).isEqualTo(3)
   }
 
   private fun WebTestClient.getPrisonPayBands(prisonCode: String) =

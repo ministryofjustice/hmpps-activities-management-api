@@ -31,12 +31,10 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
 enum class CaseNoteType(val description: String) {
   GEN("General"),
   NEG("Negative behaviour"),
-  ;
 }
 
 enum class CaseNoteSubType(val description: String) {
   OSE("Offender supervisor entry"),
   NEG_GEN("Negative general"),
   IEP_WARN("Incentive warning"),
-  ;
 }

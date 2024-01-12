@@ -25,7 +25,6 @@ object ScheduledInstanceFixture {
     cancelled: Boolean = false,
     cancelledBy: String? = null,
     cancelledReason: String? = null,
-
   ) = ScheduledInstance(
     scheduledInstanceId = id,
     ActivitySchedule(

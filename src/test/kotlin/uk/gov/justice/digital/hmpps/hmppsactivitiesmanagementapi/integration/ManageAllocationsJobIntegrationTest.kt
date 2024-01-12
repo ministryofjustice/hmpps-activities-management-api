@@ -28,13 +28,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
@@ -132,7 +132,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = 10.daysAgo())),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
     )
 
     with(allocationRepository.findAll()) {
@@ -171,7 +171,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = 10.daysAgo())),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
     )
 
     webTestClient.manageAllocations(withDeallocate = true)

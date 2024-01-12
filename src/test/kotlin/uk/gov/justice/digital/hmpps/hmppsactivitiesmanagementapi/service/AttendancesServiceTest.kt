@@ -21,14 +21,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -78,7 +78,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -100,7 +100,7 @@ class AttendancesServiceTest {
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
     whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -120,7 +120,7 @@ class AttendancesServiceTest {
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
     whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -139,7 +139,7 @@ class AttendancesServiceTest {
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
     whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -163,7 +163,7 @@ class AttendancesServiceTest {
       listOf(
         AttendanceUpdateRequest(
           attendance.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "OTHER",
           null,
@@ -222,7 +222,7 @@ class AttendancesServiceTest {
         attendances.map {
           AttendanceUpdateRequest(
             it.attendanceId,
-            moorlandPrisonCode,
+            MOORLAND_PRISON_CODE,
             AttendanceStatus.COMPLETED,
             "ATTENDED",
             null,
@@ -254,7 +254,7 @@ class AttendancesServiceTest {
       listOf(
         AttendanceUpdateRequest(
           attendance.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "REFUSED",
           null,
@@ -297,7 +297,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(completedAttendance.attendanceId))).thenReturn(listOf(completedAttendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, moorlandPrisonCode, AttendanceStatus.WAITING, null, null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.WAITING, null, null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(completedAttendance)
 
@@ -334,10 +334,10 @@ class AttendancesServiceTest {
 
   @Test
   fun `retrieve daily attendance list`() {
-    whenever(allAttendanceRepository.findByPrisonCodeAndSessionDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(
+    whenever(allAttendanceRepository.findByPrisonCodeAndSessionDate(PENTONVILLE_PRISON_CODE, LocalDate.now())).thenReturn(
       attendanceList(),
     )
-    assertThat(service.getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
+    assertThat(service.getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
   }
 
   @Test
@@ -360,7 +360,7 @@ class AttendancesServiceTest {
       listOf(unpaidAttendance).map {
         AttendanceUpdateRequest(
           it.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "ATTENDED",
           null,
@@ -395,7 +395,7 @@ class AttendancesServiceTest {
       listOf(paidAttendance).map {
         AttendanceUpdateRequest(
           it.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "ATTENDED",
           null,

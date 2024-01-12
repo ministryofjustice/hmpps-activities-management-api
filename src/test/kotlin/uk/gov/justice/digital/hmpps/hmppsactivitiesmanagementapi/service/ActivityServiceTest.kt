@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
@@ -45,8 +47,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
@@ -688,16 +688,16 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(1)
     verify(eventTierRepository).findByCode("TIER_2")
@@ -742,7 +742,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -752,7 +752,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         updateDuplicateActivityRequest,
         "SCH_ACTIVITY",
@@ -771,7 +771,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -780,7 +780,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category 1 not found")
   }
@@ -792,7 +792,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -804,7 +804,7 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(null)
     whenever(eventOrganiserRepository.findByCode(any())).thenReturn(eventOrganiser())
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event tier \"TIER_2\" not found")
   }
@@ -816,7 +816,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -828,7 +828,7 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode(any())).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(null)
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event organiser \"PRISON_STAFF\" not found")
   }
@@ -850,7 +850,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(beforeActivityEntity)
@@ -858,10 +858,10 @@ class ActivityServiceTest {
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(2)
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
@@ -918,13 +918,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(beforeActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -944,14 +944,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         17,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -968,18 +968,18 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         17,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
     val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
 
-    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -998,13 +998,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date must be in the future.")
   }
@@ -1016,14 +1016,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)),
         "TEST",
@@ -1039,13 +1039,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -1057,13 +1057,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -1075,14 +1075,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(endDate = activity.endDate?.plusDays(1), removeEndDate = true),
         "TEST",
@@ -1110,7 +1110,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
@@ -1122,7 +1122,7 @@ class ActivityServiceTest {
       ).isNull()
     }
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1149,12 +1149,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1178,14 +1178,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     val newEndDate = activity.endDate!!.plusDays(4)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = newEndDate), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = newEndDate), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1214,13 +1214,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     service().updateActivity(
-      moorlandPrisonCode,
+      MOORLAND_PRISON_CODE,
       1,
       ActivityUpdateRequest(endDate = TimeSource.tomorrow().plusDays(1)),
       "TEST",
@@ -1248,23 +1248,23 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity cannot be updated because it is now archived.")
   }
 
   @Test
   fun `updateActivity - fails if activity not found`() {
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, MOORLAND_PRISON_CODE)).thenReturn(null)
 
     assertThatThrownBy {
-      service().updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
@@ -1809,12 +1809,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -1830,13 +1830,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
@@ -1864,7 +1864,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
@@ -1876,7 +1876,7 @@ class ActivityServiceTest {
     )
 
     service().updateActivity(
-      moorlandPrisonCode,
+      MOORLAND_PRISON_CODE,
       1,
       ActivityUpdateRequest(tierCode = "TIER_2", organiserCode = "PRISONER"),
       "TEST",
@@ -1917,14 +1917,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(tierCode = "TIER_1", organiserCode = "PRISON_STAFF"),
         "TEST",
@@ -1952,12 +1952,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -2010,12 +2010,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = false), "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = false), "SCH_ACTIVITY")
 
     activity.paid isBool false
     activity.activityPay() hasSize 0
@@ -2030,14 +2030,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1))), "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1))), "SCH_ACTIVITY")
 
     activity.paid isBool true
   }
@@ -2051,13 +2051,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Activity '1' must have at least one pay rate.")
   }

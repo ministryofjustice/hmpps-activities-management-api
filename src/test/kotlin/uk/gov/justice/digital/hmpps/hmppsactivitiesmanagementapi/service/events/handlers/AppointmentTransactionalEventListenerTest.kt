@@ -10,7 +10,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendanceMarkedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY
@@ -35,7 +35,7 @@ class AppointmentTransactionalEventListenerTest {
   inner class HandleAppointmentAttendanceMarkedEvent {
     private val event = AppointmentAttendanceMarkedEvent(
       appointmentId = 1,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       attendedPrisonNumbers = mutableListOf("B2345CD"),
       nonAttendedPrisonNumbers = mutableListOf("A1234BC", "C3456DE"),
       attendanceChangedPrisonNumbers = mutableListOf("B2345CD", "A1234BC", "C3456DE"),
@@ -51,7 +51,7 @@ class AppointmentTransactionalEventListenerTest {
 
       with(telemetryPropertyMap.firstValue) {
         assertThat(this[USER_PROPERTY_KEY]).isEqualTo(event.attendanceRecordedBy)
-        assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo(moorlandPrisonCode)
+        assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo(MOORLAND_PRISON_CODE)
         assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isGreaterThanOrEqualTo(event.appointmentId.toString())
       }
 

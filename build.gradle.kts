@@ -4,7 +4,7 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.13.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.14.1"
   kotlin("plugin.spring") version "1.9.22"
   kotlin("plugin.jpa") version "1.9.22"
   jacoco
@@ -16,8 +16,12 @@ allOpen {
   annotations(
     "javax.persistence.Entity",
     "javax.persistence.MappedSuperclass",
-    "javax.persistence.Embeddable"
+    "javax.persistence.Embeddable",
   )
+}
+
+dependencyCheck {
+  suppressionFiles.add("hmpps-activities-management-api-suppressions.xml")
 }
 
 configurations {
@@ -31,7 +35,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.1.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.2.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.32.0")
@@ -84,7 +88,7 @@ val configValues = mapOf(
   "dateLibrary" to "java8-localdatetime",
   "serializationLibrary" to "jackson",
   "useBeanValidation" to "false",
-  "enumPropertyNaming" to "UPPERCASE"
+  "enumPropertyNaming" to "UPPERCASE",
 )
 
 val buildDirectory: Directory = layout.buildDirectory.get()

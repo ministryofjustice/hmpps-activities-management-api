@@ -181,7 +181,6 @@ class MigrateActivityController(
     @Parameter(description = "The prison code where this activity exists", required = true)
     @PathVariable("prisonCode")
     prisonCode: String,
-
     @Parameter(description = "The activity ID to remove", required = true)
     @PathVariable("activityId")
     activityId: Long,

@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
 @Entity
 @Immutable
 @Table(name = "v_all_attendance")
-data class `AllAttendance`(
+data class AllAttendance(
   @Id
   val attendanceId: Long,
 

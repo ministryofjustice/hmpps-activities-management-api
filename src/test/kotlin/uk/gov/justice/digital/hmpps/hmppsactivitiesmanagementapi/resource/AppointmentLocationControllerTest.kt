@@ -8,8 +8,8 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
 
@@ -24,12 +24,12 @@ class AppointmentLocationControllerTest : ControllerTestBase<AppointmentLocation
 
   @Test
   fun `200 response when get all appointment locations`() {
-    val locations = listOf(appointmentLocation(1, moorlandPrisonCode))
+    val locations = listOf(appointmentLocation(1, MOORLAND_PRISON_CODE))
 
-    whenever(locationService.getLocationsForAppointments(moorlandPrisonCode)).thenReturn(locations)
+    whenever(locationService.getLocationsForAppointments(MOORLAND_PRISON_CODE)).thenReturn(locations)
 
     val response = mockMvc
-      .get("/appointment-locations/{prisonCode}", moorlandPrisonCode)
+      .get("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response

@@ -2,8 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -14,7 +14,7 @@ class PrisonRegimeTest {
 
   private val regime = PrisonRegime(
     1,
-    prisonCode = moorlandPrisonCode,
+    prisonCode = MOORLAND_PRISON_CODE,
     amStart = LocalTime.MIDNIGHT,
     amFinish = LocalTime.MIDNIGHT.plusHours(1),
     pmStart = LocalTime.NOON,

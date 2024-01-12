@@ -567,7 +567,8 @@ class ScheduledEventServiceSinglePrisonerTest {
               Priority(5, EventCategory.INDUSTRIES),
               Priority(6, EventCategory.INTERVENTIONS),
               Priority(7, EventCategory.OTHER),
-              Priority(8), // Will default to this because event category in test data does not match
+              // Will default to this because event category in test data does not match
+              Priority(8),
             ),
             EventType.APPOINTMENT to listOf(Priority(21)),
             EventType.VISIT to listOf(Priority(22)),

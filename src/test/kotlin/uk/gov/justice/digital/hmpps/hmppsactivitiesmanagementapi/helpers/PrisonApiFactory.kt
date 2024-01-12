@@ -114,7 +114,7 @@ fun prisonerTransfer(
   )
 
 fun adjudicationHearing(
-  prisonCode: String = moorlandPrisonCode,
+  prisonCode: String = MOORLAND_PRISON_CODE,
   offenderNo: String = "1234567890",
   hearingId: Long = -1,
   hearingType: String = "Governor's Hearing Adult",
@@ -136,7 +136,7 @@ fun adjudicationHearing(
 
 fun movement(
   prisonerNumber: String = "A1179MT",
-  fromPrisonCode: String = moorlandPrisonCode,
+  fromPrisonCode: String = MOORLAND_PRISON_CODE,
   movementDate: LocalDate = LocalDate.now(),
   movementTime: LocalTime = LocalTime.now(),
   movementType: Movement.MovementType = Movement.MovementType.TRN,

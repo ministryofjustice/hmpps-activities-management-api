@@ -12,8 +12,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -93,11 +93,11 @@ class DailyAppointmentMetricsServiceTest {
 
     val yesterday = LocalDate.now().minusDays(1)
 
-    whenever(appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(moorlandPrisonCode, "CHAP", yesterday)).thenReturn(appointments)
+    whenever(appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(MOORLAND_PRISON_CODE, "CHAP", yesterday)).thenReturn(appointments)
 
-    whenever(appointmentAttendeeRepository.findByPrisonCodeAndCategoryAndRecordedDate(moorlandPrisonCode, "CHAP", yesterday)).thenReturn(appointmentAttendance)
+    whenever(appointmentAttendeeRepository.findByPrisonCodeAndCategoryAndRecordedDate(MOORLAND_PRISON_CODE, "CHAP", yesterday)).thenReturn(appointmentAttendance)
 
-    dailyAppointmentMetricsService.generateAppointmentMetrics(moorlandPrisonCode, "CHAP", yesterday)
+    dailyAppointmentMetricsService.generateAppointmentMetrics(MOORLAND_PRISON_CODE, "CHAP", yesterday)
 
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
 
