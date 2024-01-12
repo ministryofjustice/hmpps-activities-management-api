@@ -379,7 +379,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.IN), prisoner(pendingAllocationToday, Prisoner.InOutStatus.IN))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, "ACTIVE IN"), prisoner(pendingAllocationToday, "ACTIVE IN"))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -421,7 +421,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.OUT), prisoner(pendingAllocationToday, Prisoner.InOutStatus.OUT))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, "ACTIVE TRN"), prisoner(pendingAllocationToday, "ACTIVE IN", "PVI"))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -478,8 +478,8 @@ class ManageAllocationsServiceTest {
     verify(allocationRepository, never()).saveAndFlush(pendingAllocation)
   }
 
-  private fun prisoner(allocation: Allocation, status: Prisoner.InOutStatus): Prisoner =
-    PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, inOutStatus = status)
+  private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner =
+    PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
 
   private fun Allocation.verifyIsActive() {
     prisonerStatus isEqualTo PrisonerStatus.ACTIVE

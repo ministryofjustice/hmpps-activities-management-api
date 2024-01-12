@@ -193,7 +193,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     listOf("PAST", "TODAY", "FUTURE").map { prisonerNumber ->
       PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = prisonerNumber,
-        inOutStatus = Prisoner.InOutStatus.IN,
+        prisonId = "PVI",
       )
     }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
 
