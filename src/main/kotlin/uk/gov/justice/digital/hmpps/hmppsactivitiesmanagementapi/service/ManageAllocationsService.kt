@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
@@ -78,10 +79,10 @@ class ManageAllocationsService(
             }
               .onEach { (allocation, prisoner) ->
                 prisoner?.let {
-                  if (prisoner.isOutOfPrison()) {
-                    allocation.autoSuspend(LocalDateTime.now(), "Temporarily released or transferred")
-                  } else {
+                  if (prisoner.isActiveInPrison(allocation.prisonCode())) {
                     allocation.activate()
+                  } else {
+                    allocation.autoSuspend(LocalDateTime.now(), "Temporarily released or transferred")
                   }
 
                   allocationRepository.saveAndFlush(allocation)
