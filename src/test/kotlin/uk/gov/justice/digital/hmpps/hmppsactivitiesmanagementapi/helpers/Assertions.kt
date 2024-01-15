@@ -29,6 +29,10 @@ internal inline infix fun <reified T> Collection<T>.containsExactly(value: Colle
   assertThat(this).containsExactly(*value.toTypedArray())
 }
 
+internal inline infix fun <reified T> Collection<T>.containsExactlyInAnyOrder(value: Collection<T>) {
+  assertThat(this).containsExactlyInAnyOrder(*value.toTypedArray())
+}
+
 internal infix fun String.startsWith(prefix: String) {
   assertThat(this).startsWith(prefix)
 }
