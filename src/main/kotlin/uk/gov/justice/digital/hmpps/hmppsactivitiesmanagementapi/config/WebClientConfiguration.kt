@@ -35,6 +35,7 @@ class WebClientConfiguration(
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
+  @Value("\${incentives.api.url}") private val incentivesApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   private val webClientBuilder: WebClient.Builder,
@@ -75,6 +76,20 @@ class WebClientConfiguration(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonApiUrl,
+    )
+  }
+
+  @Bean
+  @RequestScope
+  fun incentivesApiWebClient(
+    clientRegistrationRepository: ClientRegistrationRepository,
+    authorizedClientRepository: OAuth2AuthorizedClientRepository,
+    builder: WebClient.Builder,
+  ): WebClient {
+    return getPrisonApiOAuthWebClient(
+      authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
+      builder,
+      incentivesApiUrl,
     )
   }
 

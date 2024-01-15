@@ -19,18 +19,19 @@ class CacheConfiguration {
 
   @Bean
   fun cacheManager(): CacheManager {
-    return ConcurrentMapCacheManager(BANK_HOLIDAYS_CACHE_NAME)
+    return ConcurrentMapCacheManager(BANK_HOLIDAYS_CACHE_NAME, PRISON_INCENTIVE_LEVELS_CACHE_NAME)
   }
 
-  @CacheEvict(allEntries = true, cacheNames = [BANK_HOLIDAYS_CACHE_NAME])
+  @CacheEvict(allEntries = true, cacheNames = [BANK_HOLIDAYS_CACHE_NAME, PRISON_INCENTIVE_LEVELS_CACHE_NAME])
   @Scheduled(fixedDelay = TTL_HOURS, timeUnit = TimeUnit.HOURS)
   fun cacheEvict() {
-    log.info("Evicting cache $BANK_HOLIDAYS_CACHE_NAME")
+    log.info("Evicting caches: $BANK_HOLIDAYS_CACHE_NAME, $PRISON_INCENTIVE_LEVELS_CACHE_NAME")
   }
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val BANK_HOLIDAYS_CACHE_NAME: String = "bankHolidays"
+    const val PRISON_INCENTIVE_LEVELS_CACHE_NAME: String = "prisonIncentiveLevels"
     const val TTL_HOURS: Long = 24
   }
 }

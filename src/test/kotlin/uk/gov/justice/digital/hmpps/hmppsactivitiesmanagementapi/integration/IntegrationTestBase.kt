@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -56,6 +57,7 @@ abstract class IntegrationTestBase {
     internal val prisonerSearchApiMockServer = PrisonerSearchApiMockServer()
     internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
     internal val caseNotesApiMockServer = CaseNotesApiMockServer()
+    internal val incentivesApiMockServer = IncentivesApiMockServer()
 
     @BeforeAll
     @JvmStatic
@@ -64,6 +66,7 @@ abstract class IntegrationTestBase {
       prisonerSearchApiMockServer.start()
       nonAssociationsApiMockServer.start()
       caseNotesApiMockServer.start()
+      incentivesApiMockServer.start()
     }
 
     @AfterAll
@@ -73,12 +76,14 @@ abstract class IntegrationTestBase {
       prisonerSearchApiMockServer.stop()
       nonAssociationsApiMockServer.stop()
       caseNotesApiMockServer.stop()
+      incentivesApiMockServer.stop()
     }
 
     @BeforeEach
     fun initMocks() {
       prisonApiMockServer.resetAll()
       prisonerSearchApiMockServer.resetAll()
+      incentivesApiMockServer.resetAll()
     }
 
     @AfterEach
@@ -87,6 +92,7 @@ abstract class IntegrationTestBase {
       prisonerSearchApiMockServer.resetAll()
       nonAssociationsApiMockServer.resetAll()
       caseNotesApiMockServer.resetAll()
+      incentivesApiMockServer.resetAll()
     }
   }
 
