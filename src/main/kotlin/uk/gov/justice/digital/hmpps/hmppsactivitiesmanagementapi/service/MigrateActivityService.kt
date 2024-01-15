@@ -221,8 +221,6 @@ class MigrateActivityService(
       riskLevel = DEFAULT_RISK_LEVEL,
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,
-      updatedTime = LocalDateTime.now(),
-      updatedBy = MIGRATION_USER,
       isPaid = isPaid(request.payRates),
     ).apply {
       endDate = request.endDate
