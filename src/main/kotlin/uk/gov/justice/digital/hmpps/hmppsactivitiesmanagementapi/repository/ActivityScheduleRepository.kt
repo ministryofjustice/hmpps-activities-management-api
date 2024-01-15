@@ -11,8 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 @Repository
 interface ActivityScheduleRepository : JpaRepository<ActivitySchedule, Long>, ActivityScheduleRepositoryCustom {
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)
-  @Suppress("ktlint:standard:function-naming")
-  fun findAllByActivity_PrisonCode(prisonCode: String): List<ActivitySchedule>
+  fun findAllByActivityPrisonCode(prisonCode: String): List<ActivitySchedule>
 
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)
   fun getAllByActivity(activity: Activity): List<ActivitySchedule>
