@@ -772,7 +772,8 @@ class MigrateActivityServiceTest {
         NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
         NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
         NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110), // This is ignored
+        // This is ignored
+        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110),
         NomisPayRate(incentiveLevel = "ENT", nomisPayBand = "1", rate = 120),
         NomisPayRate(incentiveLevel = "EN2", nomisPayBand = "1", rate = 130),
         NomisPayRate(incentiveLevel = "EN3", nomisPayBand = "1", rate = 130),

@@ -14,10 +14,10 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.startsWith
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
@@ -63,7 +63,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       .uri("/waiting-list-applications/$id")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, moorlandPrisonCode)
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -112,7 +112,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       .uri("/waiting-list-applications/$id")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, moorlandPrisonCode)
+      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
       .bodyValue(request)
       .exchange()
       .expectStatus().isAccepted
@@ -210,7 +210,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(waitingListRepository.findAll()).isEmpty()
     assertThat(auditRepository.findAll()).isEmpty()
 
-    webTestClient.waitingListApplication(moorlandPrisonCode, request, moorlandPrisonCode).expectStatus().isNoContent
+    webTestClient.waitingListApplication(MOORLAND_PRISON_CODE, request, MOORLAND_PRISON_CODE).expectStatus().isNoContent
 
     val persisted = waitingListRepository.findAll().also { assertThat(it).hasSize(1) }.first()
 
@@ -229,7 +229,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       auditType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType.PRISONER
       detailType isEqualTo uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType.PRISONER_ADDED_TO_WAITING_LIST
       activityId isEqualTo 1L
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "G4793VF"
       recordedTime isCloseTo TimeSource.now()
       message startsWith "Prisoner G4793VF was added to the waiting list for activity 'Maths'(1) with a status of PENDING. Event created on ${TimeSource.today()}"

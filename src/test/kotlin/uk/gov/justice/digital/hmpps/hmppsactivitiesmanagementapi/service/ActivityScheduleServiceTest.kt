@@ -27,6 +27,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activeAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -35,9 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandActivity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvilleActivity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
@@ -92,13 +92,13 @@ class ActivityScheduleServiceTest {
       outboundEventsService,
     )
 
-  private val caseLoad = pentonvillePrisonCode
+  private val caseLoad = PENTONVILLE_PRISON_CODE
 
   private val prisoner = activeInPentonvillePrisoner
 
   @Test
   fun `current allocations for a given schedule are returned for current date`() {
-    val schedule = schedule(pentonvillePrisonCode).apply {
+    val schedule = schedule(PENTONVILLE_PRISON_CODE).apply {
       allocations().first().startDate = LocalDate.now()
     }
 
@@ -112,7 +112,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `ended allocations for a given schedule are not returned`() {
-    val schedule = schedule(pentonvillePrisonCode).apply {
+    val schedule = schedule(PENTONVILLE_PRISON_CODE).apply {
       allocations().forEach { it.apply { deallocateNowWithReason(DeallocationReason.ENDED) } }
     }
 
@@ -123,7 +123,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `getAllocationsBy - prisoner information is returned`() {
-    val schedule = schedule(pentonvillePrisonCode)
+    val schedule = schedule(PENTONVILLE_PRISON_CODE)
     val prisoner1: Prisoner = mock {
       on { firstName } doReturn "JOE"
       on { lastName } doReturn "BLOGGS"
@@ -156,7 +156,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `can get allocations for given date`() {
-    val schedule = schedule(pentonvillePrisonCode)
+    val schedule = schedule(PENTONVILLE_PRISON_CODE)
 
     whenever(
       repository.getActivityScheduleByIdWithFilters(
@@ -368,7 +368,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for start date before activity start date`() {
-    val schedule = activitySchedule(activityEntity(prisonCode = pentonvillePrisonCode))
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
     schedule.activity.startDate = LocalDate.now().plusDays(2)
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
@@ -391,7 +391,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for end date after activity end date`() {
-    val schedule = activitySchedule(activityEntity(prisonCode = pentonvillePrisonCode))
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
     schedule.activity.endDate = TimeSource.tomorrow()
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
@@ -415,7 +415,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocate throws exception for end date before activity start date`() {
-    val schedule = activitySchedule(activityEntity(prisonCode = pentonvillePrisonCode))
+    val schedule = activitySchedule(activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
@@ -526,7 +526,7 @@ class ActivityScheduleServiceTest {
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
     whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
-    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(prisonId = moorlandPrisonCode)
+    whenever(prisonerSearchApiClient.findByPrisonerNumber("654321")) doReturn prisoner.copy(prisonId = MOORLAND_PRISON_CODE)
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -540,7 +540,7 @@ class ActivityScheduleServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner is not active at prison $pentonvillePrisonCode.")
+      .hasMessage("Unable to allocate prisoner with prisoner number 654321, prisoner is not active at prison $PENTONVILLE_PRISON_CODE.")
   }
 
   @Test
@@ -643,7 +643,7 @@ class ActivityScheduleServiceTest {
     with(auditCaptor.firstValue) {
       activityId isEqualTo pentonvilleActivity.activityId
       activityName isEqualTo pentonvilleActivity.summary
-      prisonCode isEqualTo pentonvillePrisonCode
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "654321"
       scheduleId isEqualTo schedule.activityScheduleId
       scheduleDescription isEqualTo schedule.description
@@ -655,7 +655,7 @@ class ActivityScheduleServiceTest {
       TelemetryEvent.CREATE_ALLOCATION.value,
       mapOf(
         USER_PROPERTY_KEY to "by test",
-        PRISON_CODE_PROPERTY_KEY to pentonvillePrisonCode,
+        PRISON_CODE_PROPERTY_KEY to PENTONVILLE_PRISON_CODE,
         PRISONER_NUMBER_PROPERTY_KEY to "654321",
         ACTIVITY_ID_PROPERTY_KEY to "${pentonvilleActivity.activityId}",
         ALLOCATION_START_DATE_PROPERTY_KEY to TimeSource.tomorrow().toString(),
@@ -709,7 +709,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocation fails if more than one approved waiting list`() {
-    val schedule = activitySchedule(activity = activityEntity(prisonCode = pentonvillePrisonCode))
+    val schedule = activitySchedule(activity = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
     val waitingLists = listOf(
       waitingList(
         prisonCode = schedule.activity.prisonCode,
@@ -752,7 +752,7 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `allocation fails if pending waiting list`() {
-    val schedule = activitySchedule(activity = activityEntity(prisonCode = pentonvillePrisonCode))
+    val schedule = activitySchedule(activity = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE))
     val waitingLists = listOf(
       waitingList(
         prisonCode = schedule.activity.prisonCode,

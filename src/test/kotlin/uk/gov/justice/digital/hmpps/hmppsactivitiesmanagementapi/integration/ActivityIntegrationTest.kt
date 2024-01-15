@@ -17,13 +17,13 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
@@ -163,7 +163,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     val newActivity = activityCreateRequest(
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
       studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
       paid = false,
@@ -882,7 +882,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
-    val activity = webTestClient.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest)
+    val activity = webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, updateActivityRequest)
 
     with(activity) {
       assertThat(id).isNotNull
@@ -917,7 +917,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(username).isEqualTo("test-client")
       assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
-      assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
+      assertThat(prisonCode).isEqualTo(PENTONVILLE_PRISON_CODE)
       assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
     }
   }
@@ -944,7 +944,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newPay).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newPay).schedules.first()) {
       assertThat(allocations).hasSize(3)
       assertThat(allocations[0].prisonPayBand?.id).isEqualTo(3)
       assertThat(allocations[1].prisonPayBand?.id).isEqualTo(3)
@@ -993,7 +993,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(instances).hasSizeBetween(3, 4)
@@ -1009,7 +1009,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)
@@ -1052,7 +1052,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(moorlandPrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(scheduleWeeks).isEqualTo(1)
       assertThat(slots).hasSize(2)
       assertThat(slots[0].daysOfWeek).containsExactly("Mon", "Tue")
@@ -1089,7 +1089,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val newEndDate = ActivityUpdateRequest(endDate = TimeSource.tomorrow())
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newEndDate)) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newEndDate)) {
       assertThat(endDate).isEqualTo(TimeSource.tomorrow())
       assertThat(schedules.first().endDate).isEqualTo(TimeSource.tomorrow())
       assertThat(schedules.first().allocations.first().endDate).isEqualTo(TimeSource.tomorrow())

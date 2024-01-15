@@ -64,6 +64,13 @@ data class AttendanceReason(
 fun List<AttendanceReason>.toModel() = map { it.toModel() }
 
 enum class AttendanceReasonEnum {
-  SICK, REFUSED, NOT_REQUIRED, REST, CLASH,
-  OTHER, SUSPENDED, CANCELLED, ATTENDED,
+  SICK,
+  REFUSED,
+  NOT_REQUIRED,
+  REST,
+  CLASH,
+  OTHER,
+  SUSPENDED,
+  CANCELLED,
+  ATTENDED,
 }

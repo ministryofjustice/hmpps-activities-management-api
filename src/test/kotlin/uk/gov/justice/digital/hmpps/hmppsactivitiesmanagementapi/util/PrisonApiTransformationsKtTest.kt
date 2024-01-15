@@ -3,10 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.visit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import java.time.LocalDate
@@ -17,7 +17,7 @@ class PrisonApiTransformationsKtTest {
   fun `transform offender adjudications to scheduled events with user description`() {
     assertThat(
       listOf(adjudicationHearing()).nomisAdjudicationsToScheduledEvents(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         99,
         locations(
           locationId = -2,
@@ -27,7 +27,7 @@ class PrisonApiTransformationsKtTest {
       ),
     ).containsExactly(
       ScheduledEvent(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         eventSource = "NOMIS",
         eventId = null,
         bookingId = null,
@@ -57,10 +57,10 @@ class PrisonApiTransformationsKtTest {
   @Test
   fun `transform offender adjudications to scheduled events without user description`() {
     assertThat(
-      listOf(adjudicationHearing()).nomisAdjudicationsToScheduledEvents(moorlandPrisonCode, 99, emptyMap()),
+      listOf(adjudicationHearing()).nomisAdjudicationsToScheduledEvents(MOORLAND_PRISON_CODE, 99, emptyMap()),
     ).containsExactly(
       ScheduledEvent(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         eventSource = "NOMIS",
         eventId = null,
         bookingId = null,
@@ -92,10 +92,10 @@ class PrisonApiTransformationsKtTest {
     val now = TimeSource.now()
 
     assertThat(
-      listOf(visit(dateTime = now)).multiplePrisonerVisitsToScheduledEvents(prisonCode = moorlandPrisonCode, 1),
+      listOf(visit(dateTime = now)).multiplePrisonerVisitsToScheduledEvents(prisonCode = MOORLAND_PRISON_CODE, 1),
     ).containsExactly(
       ScheduledEvent(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         eventSource = "NOMIS",
         eventId = null,
         bookingId = null,

@@ -17,12 +17,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -159,7 +159,7 @@ class ManageAllocationsServiceTest {
 
   @Test
   fun `deallocate offenders from activities across multiple prisons`() {
-    val moorland = rolloutPrison().copy(code = moorlandPrisonCode)
+    val moorland = rolloutPrison().copy(code = MOORLAND_PRISON_CODE)
     val pentonville = rolloutPrison()
     whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(pentonville, moorland))
 
@@ -180,7 +180,7 @@ class ManageAllocationsServiceTest {
 
   @Test
   fun `deallocate offenders from activities ending today declines pending or approved waiting lists`() {
-    val moorland = rolloutPrison().copy(code = moorlandPrisonCode)
+    val moorland = rolloutPrison().copy(code = MOORLAND_PRISON_CODE)
     val pentonville = rolloutPrison()
     whenever(rolloutPrisonRepo.findAll()).thenReturn(listOf(pentonville, moorland))
 
@@ -322,7 +322,7 @@ class ManageAllocationsServiceTest {
   @Test
   fun `prison is skipped if regime config is missing`() {
     val prisonWithRegime = rolloutPrison()
-    val prisonWithoutRegime = rolloutPrison().copy(rolloutPrisonId = 2, code = moorlandPrisonCode)
+    val prisonWithoutRegime = rolloutPrison().copy(rolloutPrisonId = 2, code = MOORLAND_PRISON_CODE)
 
     val activity = activityEntity(startDate = yesterday, endDate = today)
     val schedule = activity.schedules().first()
@@ -379,7 +379,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.IN), prisoner(pendingAllocationToday, Prisoner.InOutStatus.IN))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, "ACTIVE IN"), prisoner(pendingAllocationToday, "ACTIVE IN"))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -421,7 +421,7 @@ class ManageAllocationsServiceTest {
       prisonerStatus = PrisonerStatus.PENDING,
     )
 
-    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, Prisoner.InOutStatus.OUT), prisoner(pendingAllocationToday, Prisoner.InOutStatus.OUT))
+    whenever(searchApiClient.findByPrisonerNumbers(listOf("1", "2"))) doReturn listOf(prisoner(pendingAllocationYesterday, "ACTIVE TRN"), prisoner(pendingAllocationToday, "ACTIVE IN", "PVI"))
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
@@ -478,8 +478,8 @@ class ManageAllocationsServiceTest {
     verify(allocationRepository, never()).saveAndFlush(pendingAllocation)
   }
 
-  private fun prisoner(allocation: Allocation, status: Prisoner.InOutStatus): Prisoner =
-    PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, inOutStatus = status)
+  private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner =
+    PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
 
   private fun Allocation.verifyIsActive() {
     prisonerStatus isEqualTo PrisonerStatus.ACTIVE

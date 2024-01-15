@@ -46,7 +46,7 @@ class InterestingEventHandler(
     if (event is InboundReleaseEvent) return recordRelease(event)
     if (event is OffenderMergedEvent) return recordMerge(event)
 
-    getPrisonerDetailsFor(event.prisonerNumber())?.let { prisoner ->
+    getPrisonerDetailsFor(event.prisonerNumber()).let { prisoner ->
       if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisoner.agencyId!!)) {
         if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
             prisonCode = prisoner.agencyId,
@@ -78,7 +78,7 @@ class InterestingEventHandler(
 
   private fun recordRelease(releaseEvent: InboundReleaseEvent): Outcome {
     if (rolloutPrisonRepository.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
-      getPrisonerDetailsFor(releaseEvent.prisonerNumber())?.let { prisoner ->
+      getPrisonerDetailsFor(releaseEvent.prisonerNumber()).let { prisoner ->
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
             eventTime = LocalDateTime.now(),
@@ -102,7 +102,7 @@ class InterestingEventHandler(
 
   private fun recordMerge(mergedEvent: OffenderMergedEvent): Outcome {
     // Use the new prisoner number - the merged will have been actioned in prison API
-    getPrisonerDetailsFor(mergedEvent.prisonerNumber())?.let { prisoner ->
+    getPrisonerDetailsFor(mergedEvent.prisonerNumber()).let { prisoner ->
       if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisoner.agencyId!!)) {
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
@@ -115,7 +115,6 @@ class InterestingEventHandler(
           ),
         )
         log.debug("Saved interesting event ID ${saved.eventReviewId} - ${mergedEvent.eventType()} - replaced ${mergedEvent.removedPrisonerNumber()} with ${mergedEvent.prisonerNumber()}")
-        return Outcome.success()
       } else {
         log.debug("Ignoring offender merged event for ${mergedEvent.removedPrisonerNumber()} - prison ${prisoner.agencyId} is not rolled out.")
       }

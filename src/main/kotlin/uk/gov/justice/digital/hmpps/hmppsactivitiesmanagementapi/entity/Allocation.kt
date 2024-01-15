@@ -361,7 +361,9 @@ data class Allocation(
         editedSome = true
         it.endNow()
         val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
-        if (intersect.isNotEmpty()) { addExclusion(Exclusion.valueOf(this, matchingSlot.slotTimes(), it.weekNumber, intersect)) }
+        if (intersect.isNotEmpty()) {
+          addExclusion(Exclusion.valueOf(this, matchingSlot.slotTimes(), it.weekNumber, intersect))
+        }
       }
     }
     exclusions(ExclusionsFilter.FUTURE).forEach {
@@ -420,7 +422,12 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED;
+  ACTIVE,
+  PENDING,
+  SUSPENDED,
+  AUTO_SUSPENDED,
+  ENDED,
+  ;
 
   companion object {
     fun allExcuding(vararg status: PrisonerStatus) = entries.filterNot { status.contains(it) }.toTypedArray()

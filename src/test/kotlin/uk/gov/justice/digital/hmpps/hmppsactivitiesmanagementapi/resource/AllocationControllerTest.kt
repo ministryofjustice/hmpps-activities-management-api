@@ -23,8 +23,8 @@ import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
@@ -105,9 +105,9 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       status = WaitingListStatus.PENDING,
     )
 
-    mockMvc.waitingListApplication(pentonvillePrisonCode, request).andExpect { status { isNoContent() } }
+    mockMvc.waitingListApplication(PENTONVILLE_PRISON_CODE, request).andExpect { status { isNoContent() } }
 
-    verify(waitingListService).addPrisoner(pentonvillePrisonCode, request, "USERNAME")
+    verify(waitingListService).addPrisoner(PENTONVILLE_PRISON_CODE, request, "USERNAME")
   }
 
   fun createAuthentication(role: String = "ROLE_PRISON"): Authentication {
@@ -129,7 +129,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Update allocation (ROLE_ACTIVITY_ADMIN) - 202`() {
-        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+        mockMvcWithSecurity.patch("/allocations/$PENTONVILLE_PRISON_CODE/allocationId/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateAllocation)
         }.andExpect { status { isAccepted() } }
@@ -138,7 +138,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Update allocation (ROLE_ACTIVITY_HUB) - 202`() {
-        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+        mockMvcWithSecurity.patch("/allocations/$PENTONVILLE_PRISON_CODE/allocationId/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateAllocation)
         }.andExpect { status { isAccepted() } }
@@ -147,7 +147,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["PRISON"])
       fun `Update allocation (ROLE_PRISON) - 403`() {
-        mockMvcWithSecurity.patch("/allocations/$pentonvillePrisonCode/allocationId/1") {
+        mockMvcWithSecurity.patch("/allocations/$PENTONVILLE_PRISON_CODE/allocationId/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateAllocation)
         }.andExpect { status { isForbidden() } }
@@ -169,7 +169,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Add to waiting list (ROLE_ACTIVITY_ADMIN) - 204`() {
-        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/waiting-list-application") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(waitingListRequest)
         }.andExpect { status { isNoContent() } }
@@ -178,7 +178,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Add to waiting list (ROLE_ACTIVITY_HUB) - 204`() {
-        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/waiting-list-application") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(waitingListRequest)
         }.andExpect { status { isNoContent() } }
@@ -187,7 +187,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
       @Test
       @WithMockUser(roles = ["PRISON"])
       fun `Add to waiting list (ROLE_PRISON) - 403`() {
-        mockMvcWithSecurity.post("/allocations/$pentonvillePrisonCode/waiting-list-application") {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/waiting-list-application") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(waitingListRequest)
         }.andExpect { status { isForbidden() } }

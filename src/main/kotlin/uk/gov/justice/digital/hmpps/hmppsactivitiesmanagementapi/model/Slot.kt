@@ -13,7 +13,6 @@ import java.time.DayOfWeek
     e.g. 'AM, Monday, Wednesday and Friday' or 'PM Tuesday, Thursday, Sunday'
   """,
 )
-
 data class Slot(
   @field:Positive(message = "The week number must be a positive integer")
   @Schema(description = "The week of the schedule this slot relates to", example = "1")

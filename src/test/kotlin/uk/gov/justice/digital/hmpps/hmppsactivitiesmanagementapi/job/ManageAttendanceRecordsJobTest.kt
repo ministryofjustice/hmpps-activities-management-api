@@ -10,10 +10,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
@@ -25,23 +25,23 @@ class ManageAttendanceRecordsJobTest {
   private val roleOutPrisonService: RolloutPrisonService = mock {
     on { getRolloutPrisons() } doReturn listOf(
       RolloutPrisonPlan(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         activitiesRolledOut = true,
         activitiesRolloutDate = null,
         appointmentsRolledOut = false,
         appointmentsRolloutDate = null,
       ),
       RolloutPrisonPlan(
-        pentonvillePrisonCode,
+        PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
         activitiesRolloutDate = null,
         appointmentsRolledOut = false,
         appointmentsRolloutDate = null,
       ),
     )
-    on { getByPrisonCode(pentonvillePrisonCode) } doReturn
+    on { getByPrisonCode(PENTONVILLE_PRISON_CODE) } doReturn
       RolloutPrisonPlan(
-        pentonvillePrisonCode,
+        PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
         activitiesRolloutDate = null,
         appointmentsRolledOut = false,
@@ -57,9 +57,9 @@ class ManageAttendanceRecordsJobTest {
 
   @Test
   fun `attendance operations triggered for single prison - without expiry`() {
-    job.execute(mayBePrisonCode = pentonvillePrisonCode, withExpiry = false)
+    job.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
 
-    verify(attendancesService).createAttendances(LocalDate.now(), pentonvillePrisonCode)
+    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
@@ -70,8 +70,8 @@ class ManageAttendanceRecordsJobTest {
   fun `attendance operations triggered for multiple prisons - without expiry`() {
     job.execute(withExpiry = false)
 
-    verify(attendancesService).createAttendances(LocalDate.now(), moorlandPrisonCode)
-    verify(attendancesService).createAttendances(LocalDate.now(), pentonvillePrisonCode)
+    verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
+    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
@@ -82,8 +82,8 @@ class ManageAttendanceRecordsJobTest {
   fun `attendance operations triggered for multiple prisons - with expiry`() {
     job.execute(withExpiry = true)
 
-    verify(attendancesService).createAttendances(LocalDate.now(), moorlandPrisonCode)
-    verify(attendancesService).createAttendances(LocalDate.now(), pentonvillePrisonCode)
+    verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
+    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
     verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
 

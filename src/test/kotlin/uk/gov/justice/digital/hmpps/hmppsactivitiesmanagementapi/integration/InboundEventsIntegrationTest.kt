@@ -20,11 +20,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
@@ -129,7 +129,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
         ReleaseInformation(
           nomsNumber = "A11111A",
           reason = "UNKNOWN",
-          prisonId = pentonvillePrisonCode,
+          prisonId = PENTONVILLE_PRISON_CODE,
         ),
       ),
     )
@@ -148,11 +148,11 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     stubPrisonerForInterestingEvent("A11111A")
 
-    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A11111A")
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A11111A")
 
     verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
 
@@ -167,7 +167,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     stubPrisonerForInterestingEvent("A11111A")
 
-    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A11111A")
 
     with(allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }) {
       size isEqualTo 3
@@ -189,7 +189,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A11111A")
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A11111A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 4L)
@@ -236,7 +236,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
 
-    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A11111A")
+    assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A11111A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -377,7 +377,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A1234BC"))
 
-    stubPrisonerForInterestingEvent(InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = moorlandPrisonCode))
+    stubPrisonerForInterestingEvent(InmateDetailFixture.instance(offenderNo = "A1234BC", agencyId = MOORLAND_PRISON_CODE))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.ACTIVE))
@@ -438,13 +438,13 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(
       activitiesChangedEvent(
-        prisonId = pentonvillePrisonCode,
+        prisonId = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
         action = Action.SUSPEND,
       ),
     )
 
-    allocationRepository.findByPrisonCodeAndPrisonerNumber(pentonvillePrisonCode, "A11111A").onEach {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(PENTONVILLE_PRISON_CODE, "A11111A").onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED))
       assertThat(it.suspendedReason).isEqualTo("Temporarily released or transferred")
       assertThat(it.suspendedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
@@ -491,7 +491,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Suspending first so can unspend afterwards.
     service.process(
       activitiesChangedEvent(
-        prisonId = pentonvillePrisonCode,
+        prisonId = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
         action = Action.SUSPEND,
       ),
@@ -499,7 +499,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(
       offenderReceivedFromTemporaryAbsence(
-        prisonCode = pentonvillePrisonCode,
+        prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),
     )
@@ -561,7 +561,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(
       offenderReceivedFromTemporaryAbsence(
-        prisonCode = pentonvillePrisonCode,
+        prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),
     )
@@ -605,18 +605,18 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       2L,
       3L,
     )
-    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A22222A")
 
     service.process(
       activitiesChangedEvent(
-        prisonId = pentonvillePrisonCode,
+        prisonId = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A22222A",
         action = Action.END,
       ),
     )
 
-    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
+    assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A22222A", DeallocationReason.RELEASED)
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -640,18 +640,18 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       2L,
       3L,
     )
-    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, pentonvillePrisonCode, "A22222A")
+    assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A22222A")
 
     service.process(
       activitiesChangedEvent(
-        prisonId = pentonvillePrisonCode,
+        prisonId = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A22222A",
         action = Action.END,
       ),
     )
 
-    assertThatAllocationsAreEndedFor(pentonvillePrisonCode, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
-    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, pentonvillePrisonCode, "A22222A")
+    assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A22222A", DeallocationReason.TEMPORARILY_RELEASED)
+    assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A22222A")
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
@@ -689,7 +689,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `offender merged event replaces old prisoner number with new prisoner number`() {
     val (oldNumber, newNumber) = "A11111A" to "B11111B"
 
-    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newNumber), fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newNumber))
 
     // Check all set to the old prisoner number before event is processed
     allocationRepository.findAll().single().prisonerNumber isEqualTo oldNumber

@@ -12,8 +12,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
@@ -43,7 +43,7 @@ class OffenderMergedEventHandlerTest {
   private val newNumber = "B2222BB"
 
   private val prisonerSearchResult = InmateDetailFixture.instance(
-    agencyId = moorlandPrisonCode,
+    agencyId = MOORLAND_PRISON_CODE,
     offenderNo = newNumber,
     firstName = "Stephen",
     lastName = "Macdonald",
@@ -76,7 +76,7 @@ class OffenderMergedEventHandlerTest {
     )
 
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = true,
           activitiesRolloutDate = LocalDate.now().plusDays(-1),
@@ -95,27 +95,27 @@ class OffenderMergedEventHandlerTest {
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(prisonerSearchApiClient).getPrisonerDetailsLite(newNumber)
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
 
-    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
     verify(allocationRepository).mergeOffender(oldNumber, newNumber)
 
     verify(attendanceRepository).findByPrisonerNumber(oldNumber)
     verify(attendanceRepository).mergeOffender(oldNumber, newNumber)
 
-    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
     verify(waitingListRepository).mergeOffender(oldNumber, newNumber)
 
-    verify(auditRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(auditRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
     verify(auditRepository).mergeOffender(oldNumber, newNumber)
 
-    verify(eventReviewRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(eventReviewRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
     verify(eventReviewRepository).mergeOffender(oldNumber, newNumber)
 
     verify(appointmentAttendeeRepository).findByPrisonerNumber(oldNumber)
     verify(appointmentAttendeeRepository).mergeOffender(oldNumber, newNumber)
 
-    verify(auditRepository).findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, oldNumber)
+    verify(auditRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
     verify(auditRepository).mergeOffender(oldNumber, newNumber)
     verify(auditRepository).save(any())
   }
@@ -125,7 +125,7 @@ class OffenderMergedEventHandlerTest {
     val inboundEvent = offenderMergedEvent(prisonerNumber = newNumber, removedPrisonerNumber = oldNumber)
 
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = false,
           activitiesRolloutDate = null,
@@ -135,7 +135,7 @@ class OffenderMergedEventHandlerTest {
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
     verify(prisonerSearchApiClient).getPrisonerDetailsLite(newNumber)
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(
       allocationRepository,
       attendanceRepository,

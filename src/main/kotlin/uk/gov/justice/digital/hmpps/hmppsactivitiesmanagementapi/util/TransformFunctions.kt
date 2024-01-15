@@ -102,7 +102,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     eventSource = "SAA",
     eventType = EventType.ACTIVITY.name,
     scheduledInstanceId = it.scheduledInstanceId,
-    bookingId = it.bookingId.toLong(), // TODO: Add bookingId to allocation and retrieve in the view
+    // TODO: Add bookingId to allocation and retrieve in the view
+    bookingId = it.bookingId,
     internalLocationId = it.internalLocationId?.toLong(),
     internalLocationCode = it.internalLocationCode,
     internalLocationUserDescription = mayBeInternalLocation?.userDescription,
@@ -122,7 +123,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     inCell = it.inCell,
     onWing = it.onWing,
     offWing = it.offWing,
-    outsidePrison = false, // TODO: Add the outside prison flag to the view
+    // TODO: Add the outside prison flag to the view
+    outsidePrison = false,
     date = it.sessionDate,
     startTime = it.startTime!!,
     endTime = it.endTime,

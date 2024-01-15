@@ -129,6 +129,7 @@ data class HmppsAuditEvent(
   val details: String,
   val who: String,
 ) {
+  @field:Suppress("ktlint:standard:property-naming")
   val `when`: String = DateTimeFormatter.ISO_INSTANT.withZone(ZoneId.systemDefault()).format(ZonedDateTime.now())
   val service = "hmpps-activities-management-api"
 }

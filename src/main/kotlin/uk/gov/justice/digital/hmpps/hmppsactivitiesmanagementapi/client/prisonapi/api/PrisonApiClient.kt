@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
+import kotlinx.coroutines.runBlocking
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
@@ -28,26 +29,32 @@ typealias PrisonLocations = Map<Long, Location>
 
 inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
+/**
+ * Provides a client to the prison API
+ *
+ * It should be noted where possible we should be using the prisoner search API in favour of prison API.
+ */
 @Service
 class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
-  fun getPrisonerDetailsLite(prisonerNumber: String): InmateDetail? = getPrisonerDetails(prisonerNumber, fullInfo = false).block()
-
-  fun getPrisonerDetails(
-    prisonerNumber: String,
-    fullInfo: Boolean = true,
-    extraInfo: Boolean? = null,
-  ): Mono<InmateDetail> {
-    return prisonApiWebClient.get()
+  /**
+   * Returns a minimal view of the prisoner's attributes in the [InmateDetail].
+   *
+   * The rationale for a minimal view is down to what we actually need in terms of information but also to reduce the
+   * load on the prison API. Asking for more information than we actually need puts unnecessary load on the prison API.
+   *
+   * With the minimal view 'status' isn't populated but 'activeFlag' is. This means you can check if a prisoner is
+   * active at a prison but not say if they are IN or OUT of the prison at the time.
+   */
+  fun getPrisonerDetailsLite(prisonerNumber: String): InmateDetail = runBlocking {
+    prisonApiWebClient.get()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
           .path("/api/bookings/offenderNo/{prisonerNumber}")
-          .queryParam("fullInfo", fullInfo)
-          .maybeQueryParam("extraInfo", extraInfo)
           .build(prisonerNumber)
       }
       .retrieve()
-      .bodyToMono(typeReference<InmateDetail>())
+      .awaitBody()
   }
 
   suspend fun getScheduledActivitiesAsync(

@@ -3,7 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common
 import java.time.LocalTime
 
 enum class TimeSlot {
-  AM, PM, ED;
+  AM,
+  PM,
+  ED,
+  ;
 
   companion object {
     fun slot(time: LocalTime) = when (time.hour) {

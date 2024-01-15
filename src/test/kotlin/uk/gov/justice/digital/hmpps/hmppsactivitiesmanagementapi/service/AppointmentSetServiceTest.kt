@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
@@ -36,7 +37,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
@@ -98,7 +98,7 @@ class AppointmentSetServiceTest {
           bookingId = 456,
           firstName = "TEST02",
           lastName = "PRISONER01",
-          prisonId = moorlandPrisonCode,
+          prisonId = MOORLAND_PRISON_CODE,
           cellLocation = "1-2-3",
         ),
         PrisonerSearchPrisonerFixture.instance(
@@ -106,7 +106,7 @@ class AppointmentSetServiceTest {
           bookingId = 457,
           firstName = "TEST02",
           lastName = "PRISONER02",
-          prisonId = moorlandPrisonCode,
+          prisonId = MOORLAND_PRISON_CODE,
           cellLocation = "1-2-4",
         ),
       ),
@@ -206,7 +206,7 @@ class AppointmentSetServiceTest {
   @DisplayName("create appointment set")
   inner class CreateAppointmentSet {
     private val principal = mock<Principal>()
-    private val prisonCode = moorlandPrisonCode
+    private val prisonCode = MOORLAND_PRISON_CODE
     private val categoryCode = "MEDO"
     private val appointmentTier = foundationTier()
     private val internalLocationId = 1L
@@ -282,16 +282,16 @@ class AppointmentSetServiceTest {
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC")))
         .thenReturn(
           listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 1, prisonId = moorlandPrisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 1, prisonId = MOORLAND_PRISON_CODE),
           ),
         )
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC", "B2345CD", "C3456DE")))
         .thenReturn(
           listOf(
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 1, prisonId = moorlandPrisonCode),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", bookingId = 2, prisonId = moorlandPrisonCode),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 3, prisonId = moorlandPrisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 1, prisonId = MOORLAND_PRISON_CODE),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", bookingId = 2, prisonId = MOORLAND_PRISON_CODE),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 3, prisonId = MOORLAND_PRISON_CODE),
           ),
         )
 
@@ -340,7 +340,7 @@ class AppointmentSetServiceTest {
       val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
-            prisonCode = moorlandPrisonCode,
+            prisonCode = MOORLAND_PRISON_CODE,
             categoryCode = categoryCode,
             internalLocationId = internalLocationId,
             tierCode = "INVALID",
@@ -358,7 +358,7 @@ class AppointmentSetServiceTest {
       val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
           appointmentSetCreateRequest(
-            prisonCode = moorlandPrisonCode,
+            prisonCode = MOORLAND_PRISON_CODE,
             categoryCode = categoryCode,
             internalLocationId = internalLocationId,
             organiserCode = "INVALID",
@@ -395,7 +395,7 @@ class AppointmentSetServiceTest {
         .thenReturn(
           listOf(
             PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 1, prisonId = "DIFFERENT"),
-            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E4567FG", bookingId = 2, prisonId = moorlandPrisonCode),
+            PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E4567FG", bookingId = 2, prisonId = MOORLAND_PRISON_CODE),
           ),
         )
 
