@@ -15,6 +15,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -34,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonIncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
@@ -57,6 +59,7 @@ class MigrateActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
+  private val incentivesApiClient: IncentivesApiClient = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
@@ -100,6 +103,7 @@ class MigrateActivityServiceTest {
     activityRepository,
     activityScheduleRepository,
     prisonerSearchApiClient,
+    incentivesApiClient,
     eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
@@ -137,6 +141,14 @@ class MigrateActivityServiceTest {
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
       whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      whenever(incentivesApiClient.getIncentiveLevelsCached(any())).thenReturn(
+        listOf(
+          prisonIncentiveLevel(levelCode = "BAS", levelName = "Basic"),
+          prisonIncentiveLevel(levelCode = "STD", levelName = "Standard"),
+          prisonIncentiveLevel(levelCode = "ENH", levelName = "Enhanced"),
+          prisonIncentiveLevel(levelCode = "EN2", levelName = "Enhanced 2", active = false),
+        ),
+      )
     }
 
     @Test
@@ -767,16 +779,11 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Any unrecognised or invalid incentive level codes in pay rates will be silently ignored`() {
+    fun `Fails if no incentive levels are found for prison`() {
+      whenever(incentivesApiClient.getIncentiveLevelsCached(any())).thenReturn(emptyList())
+
       val nomisPayRates = listOf(
         NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
-        // This is ignored
-        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110),
-        NomisPayRate(incentiveLevel = "ENT", nomisPayBand = "1", rate = 120),
-        NomisPayRate(incentiveLevel = "EN2", nomisPayBand = "1", rate = 130),
-        NomisPayRate(incentiveLevel = "EN3", nomisPayBand = "1", rate = 130),
       )
 
       val nomisScheduleRules = listOf(
@@ -787,22 +794,70 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("No incentive levels found for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Any unrecognised incentive level codes in pay rates will fail`() {
+      val nomisPayRates = listOf(
+        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
+        // Unrecognised IEP
+        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110),
+      )
+
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      val response = service.migrateActivity(request)
-
-      assertThat(response.activityId).isEqualTo(1)
-      assertThat(response.splitRegimeActivityId).isNull()
-
-      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
-
-      with(activityCaptor.firstValue[0]) {
-        assertThat(isPaid()).isTrue
-        assertThat(activityPay().size).isEqualTo(6)
-        assertThat(activityPay().first().rate).isEqualTo(100)
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
       }
+
+      assertThat(exception.message).contains("Failed to migrate activity ${request.description}. Activity incentive level XXX is not active in this prison")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Any inactive incentive level codes in pay rates will fail`() {
+      val nomisPayRates = listOf(
+        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
+        // Inactive IEP
+        NomisPayRate(incentiveLevel = "EN2", nomisPayBand = "1", rate = 120),
+      )
+
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Failed to migrate activity ${request.description}. Activity incentive level EN2 is not active in this prison")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
     }
 
     @Test

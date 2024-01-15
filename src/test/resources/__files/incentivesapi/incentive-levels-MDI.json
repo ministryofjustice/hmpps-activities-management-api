@@ -1,0 +1,67 @@
+[
+  {
+    "levelCode": "BAS",
+    "levelName": "Basic",
+    "prisonId": "MDI",
+    "active": true,
+    "defaultOnAdmission": false,
+    "remandTransferLimitInPence": 2750,
+    "remandSpendLimitInPence": 27500,
+    "convictedTransferLimitInPence": 550,
+    "convictedSpendLimitInPence": 5500,
+    "visitOrders": 2,
+    "privilegedVisitOrders": 0
+  },
+  {
+    "levelCode": "STD",
+    "levelName": "Standard",
+    "prisonId": "MDI",
+    "active": true,
+    "defaultOnAdmission": true,
+    "remandTransferLimitInPence": 6050,
+    "remandSpendLimitInPence": 60500,
+    "convictedTransferLimitInPence": 1980,
+    "convictedSpendLimitInPence": 19800,
+    "visitOrders": 3,
+    "privilegedVisitOrders": 0
+  },
+  {
+    "levelCode": "ENH",
+    "levelName": "Enhanced",
+    "prisonId": "MDI",
+    "active": true,
+    "defaultOnAdmission": false,
+    "remandTransferLimitInPence": 6600,
+    "remandSpendLimitInPence": 66000,
+    "convictedTransferLimitInPence": 4400,
+    "convictedSpendLimitInPence": 44000,
+    "visitOrders": 3,
+    "privilegedVisitOrders": 2
+  },
+  {
+    "levelCode": "EN2",
+    "levelName": "Enhanced 2",
+    "prisonId": "MDI",
+    "active": true,
+    "defaultOnAdmission": false,
+    "remandTransferLimitInPence": 6600,
+    "remandSpendLimitInPence": 66000,
+    "convictedTransferLimitInPence": 3300,
+    "convictedSpendLimitInPence": 33000,
+    "visitOrders": 2,
+    "privilegedVisitOrders": 1
+  },
+  {
+    "levelCode": "BAN",
+    "levelName": "Gold",
+    "prisonId": "MDI",
+    "active": true,
+    "defaultOnAdmission": false,
+    "remandTransferLimitInPence": 6600,
+    "remandSpendLimitInPence": 66000,
+    "convictedTransferLimitInPence": 3300,
+    "convictedSpendLimitInPence": 33000,
+    "visitOrders": 2,
+    "privilegedVisitOrders": 1
+  }
+]

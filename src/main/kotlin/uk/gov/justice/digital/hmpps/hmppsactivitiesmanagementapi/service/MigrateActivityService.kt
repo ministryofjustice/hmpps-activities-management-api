@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -51,6 +52,7 @@ class MigrateActivityService(
   private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val incentivesApiClient: IncentivesApiClient,
   private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -63,9 +65,6 @@ class MigrateActivityService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  // TODO: Get these from the incentives API for this prison
-  val commonIncentiveLevels = listOf("BAS", "STD", "ENH", "ENT", "EN2", "EN3")
-
   // Split regime settings - Risley did not use this, they changed to normal regime prior to rollout
   val prisonsWithASplitRegime = listOf(RISLEY_PRISON_CODE)
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
@@ -75,6 +74,12 @@ class MigrateActivityService(
     // Check the prison is rolled out for activities
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
       throw ValidationException("The requested prison ${request.prisonCode} is not rolled-out for activities")
+    }
+
+    // Get the incentive levels for this prison
+    val prisonIncentiveLevels = incentivesApiClient.getIncentiveLevelsCached(request.prisonCode)
+    if (prisonIncentiveLevels.isEmpty()) {
+      throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
     }
 
     return transactionHandler.newSpringTransaction {
@@ -92,14 +97,14 @@ class MigrateActivityService(
       // Add the pay rates for paid activities - either 1 or 2 activities created
       activities.forEach { activity ->
         if (activity.isPaid()) {
-          // Ignore incentive levels that are not in the commonIncentiveLevels list (avoids out of date data in NOMIS)
-          request.payRates.filter { rate -> commonIncentiveLevels.any { it == rate.incentiveLevel } }.forEach {
+          request.payRates.forEach {
             val payBand = payBands.find { pb -> pb.nomisPayBand.toString() == it.nomisPayBand }
-            if (payBand != null) {
-              activity.addPay(it.incentiveLevel, mapIncentiveLevel(it.incentiveLevel), payBand, it.rate, null, null)
-            } else {
-              logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
-            }
+              ?: logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
+
+            val iep = prisonIncentiveLevels.find { iep -> iep.levelCode == it.incentiveLevel && iep.active }
+              ?: logAndThrowValidationException("Failed to migrate activity ${request.description}. Activity incentive level ${it.incentiveLevel} is not active in this prison")
+
+            activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null)
           }
         }
       }
@@ -278,20 +283,6 @@ class MigrateActivityService(
       DayOfWeek.SATURDAY.takeIf { nomisSchedule.saturday },
       DayOfWeek.SUNDAY.takeIf { nomisSchedule.sunday },
     )
-  }
-
-  // TODO: Temporary - will work for Risley & Liverpool but we should look these up from incentives API for other prisons
-  fun mapIncentiveLevel(code: String): String {
-    val incentiveLevel = when (code) {
-      "BAS" -> "Basic"
-      "STD" -> "Standard"
-      "ENH" -> "Enhanced"
-      "ENT" -> "Entry"
-      "EN2" -> "Enhanced 2"
-      "EN3" -> "Enhanced 3"
-      else -> "Unknown"
-    }
-    return incentiveLevel
   }
 
   fun mapProgramToCategory(programServiceCode: String): ActivityCategory {

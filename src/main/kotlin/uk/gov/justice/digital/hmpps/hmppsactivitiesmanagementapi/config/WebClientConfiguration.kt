@@ -35,6 +35,7 @@ class WebClientConfiguration(
   @Value("\${bank-holiday.api.url:https://www.gov.uk}") private val bankHolidayApiUrl: String,
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
+  @Value("\${incentives.api.url}") private val incentivesApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   private val webClientBuilder: WebClient.Builder,
@@ -76,6 +77,27 @@ class WebClientConfiguration(
       builder,
       prisonApiUrl,
     )
+  }
+
+  @Bean
+  fun incentivesApiWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+  ): WebClient {
+    return getIncentivesApiOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl)
+  }
+
+  private fun getIncentivesApiOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+    rootUri: String,
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId("incentives-api")
+    return builder.baseUrl(rootUri)
+      .timeout(apiTimeout)
+      .apply(oauth2Client.oauth2Configuration())
+      .build()
   }
 
   @Bean

@@ -63,10 +63,10 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
     )
 
-    val response = webTestClient.migrateActivity(
-      buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules),
-      listOf("ROLE_NOMIS_ACTIVITIES"),
-    )
+    val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
+    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
+
+    val response = webTestClient.migrateActivity(requestBody, listOf("ROLE_NOMIS_ACTIVITIES"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ActivityMigrateResponse::class.java)
@@ -103,6 +103,8 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       prisonCode = "RSI",
       description = "Maths SPLIT",
     )
+
+    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
 
     val response = webTestClient.migrateActivity(
       requestBody,
