@@ -80,17 +80,24 @@ class WebClientConfiguration(
   }
 
   @Bean
-  @RequestScope
   fun incentivesApiWebClient(
-    clientRegistrationRepository: ClientRegistrationRepository,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository,
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
   ): WebClient {
-    return getPrisonApiOAuthWebClient(
-      authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
-      builder,
-      incentivesApiUrl,
-    )
+    return getIncentivesApiOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl)
+  }
+
+  private fun getIncentivesApiOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+    rootUri: String,
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId("incentives-api")
+    return builder.baseUrl(rootUri)
+      .timeout(apiTimeout)
+      .apply(oauth2Client.oauth2Configuration())
+      .build()
   }
 
   @Bean

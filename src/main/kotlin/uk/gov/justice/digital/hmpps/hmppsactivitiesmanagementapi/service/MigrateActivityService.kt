@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentives.api.IncentivesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -79,7 +79,7 @@ class MigrateActivityService(
     // Get the incentive levels for this prison
     val prisonIncentiveLevels = incentivesApiClient.getIncentiveLevelsCached(request.prisonCode)
     if (prisonIncentiveLevels.isEmpty()) {
-      throw RuntimeException("No incentive levels found for the requested prison ${request.prisonCode}")
+      throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
     }
 
     return transactionHandler.newSpringTransaction {

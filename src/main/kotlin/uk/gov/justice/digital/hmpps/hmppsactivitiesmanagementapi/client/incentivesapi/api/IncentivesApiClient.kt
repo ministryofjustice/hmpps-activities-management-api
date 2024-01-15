@@ -1,21 +1,21 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentives.api
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api
 
+import kotlinx.coroutines.runBlocking
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentives.model.PrisonIncentiveLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import org.springframework.web.reactive.function.client.awaitBody
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model.PrisonIncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.CacheConfiguration
 
 @Service
 class IncentivesApiClient(private val incentivesApiWebClient: WebClient) {
 
-  fun getIncentiveLevels(prisonId: String): List<PrisonIncentiveLevel> {
-    return incentivesApiWebClient.get()
+  fun getIncentiveLevels(prisonId: String): List<PrisonIncentiveLevel> = runBlocking {
+    incentivesApiWebClient.get()
       .uri("/incentive/prison-levels/$prisonId")
       .retrieve()
-      .bodyToMono(typeReference<List<PrisonIncentiveLevel>>())
-      .block() ?: emptyList()
+      .awaitBody()
   }
 
   @Cacheable(CacheConfiguration.PRISON_INCENTIVE_LEVELS_CACHE_NAME)

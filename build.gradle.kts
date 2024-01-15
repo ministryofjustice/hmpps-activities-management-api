@@ -69,18 +69,18 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "copyPreCommitHook")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "copyPreCommitHook")
     kotlinOptions {
       jvmTarget = "21"
     }
   }
   withType<KtLintCheckTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
   withType<KtLintFormatTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
 }
 
@@ -111,6 +111,15 @@ tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
   globalProperties.set(mapOf("models" to ""))
 }
 
+tasks.register("buildIncentivesApiModel", GenerateTask::class) {
+  generatorName.set("kotlin-spring")
+  inputSpec.set("openapi-specs/incentives-api.json")
+  outputDir.set("$buildDirectory/generated/incentivesapi")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
+}
+
 tasks.register("copyPreCommitHook", Copy::class) {
   from(project.file("pre-commit"))
   into(project.file(".git/hooks"))
@@ -118,7 +127,7 @@ tasks.register("copyPreCommitHook", Copy::class) {
   dependsOn("generateGitProperties")
 }
 
-val generatedProjectDirs = listOf("prisonapi", "nonassociations")
+val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi")
 
 kotlin {
   generatedProjectDirs.forEach { generatedProject ->

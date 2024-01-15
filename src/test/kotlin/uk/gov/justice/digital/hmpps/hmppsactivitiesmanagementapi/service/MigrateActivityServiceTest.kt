@@ -15,7 +15,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentives.api.IncentivesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -796,7 +796,7 @@ class MigrateActivityServiceTest {
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      val exception = assertThrows<RuntimeException> {
+      val exception = assertThrows<ValidationException> {
         service.migrateActivity(request)
       }
 

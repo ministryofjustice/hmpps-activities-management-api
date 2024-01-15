@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentives.model.PrisonIncentiveLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model.PrisonIncentiveLevel
 
 fun prisonIncentiveLevel(
   levelCode: String = "BAS",
