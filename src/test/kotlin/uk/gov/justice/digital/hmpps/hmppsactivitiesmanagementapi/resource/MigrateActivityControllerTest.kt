@@ -17,7 +17,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
@@ -44,7 +44,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
   @Test
   fun `200 response when migrating an activity`() {
-    val expectedResponse = ActivityMigrateResponse(moorlandPrisonCode, 1L, 2L)
+    val expectedResponse = ActivityMigrateResponse(MOORLAND_PRISON_CODE, 1L, 2L)
     whenever(migrateActivityService.migrateActivity(activityRequest)).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/activity") {
@@ -270,7 +270,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
     val activityRequest = ActivityMigrateRequest(
       programServiceCode = "TEST",
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       startDate,
       endDate,
       description = "Test activity",
@@ -291,7 +291,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     )
 
     val allocationRequest = AllocationMigrateRequest(
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       activityId = 1L,
       splitRegimeActivityId = 2L,
       prisonerNumber = "A1234AA",

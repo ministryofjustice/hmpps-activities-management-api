@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import java.time.LocalDate
 
-val activeInMoorlandInmate = InmateDetailFixture.instance(agencyId = moorlandPrisonCode)
-val activeInPentonvilleInmate = InmateDetailFixture.instance(agencyId = pentonvillePrisonCode)
+val activeInMoorlandInmate = InmateDetailFixture.instance(agencyId = MOORLAND_PRISON_CODE)
+val activeInPentonvilleInmate = InmateDetailFixture.instance(agencyId = PENTONVILLE_PRISON_CODE)
 
 object InmateDetailFixture {
   fun instance(

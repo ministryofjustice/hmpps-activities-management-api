@@ -676,8 +676,7 @@ class ActivityService(
     return updatedAllocationIds
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>):
-    Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
     return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
   }
 }

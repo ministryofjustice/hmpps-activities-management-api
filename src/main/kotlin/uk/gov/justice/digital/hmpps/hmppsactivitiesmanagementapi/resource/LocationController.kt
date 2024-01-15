@@ -230,12 +230,10 @@ class LocationController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
-
     @RequestParam(value = "date", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Date of scheduled events (required). Format YYYY-MM-DD. Up to 60 days in the future")
     date: LocalDate,
-
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the scheduled events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,

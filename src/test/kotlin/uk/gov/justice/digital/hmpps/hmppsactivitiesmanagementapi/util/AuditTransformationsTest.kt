@@ -6,9 +6,9 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import toPrisonerAddedToWaitingListEvent
 import toPrisonerDeallocatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -43,7 +43,7 @@ class AuditTransformationsTest {
 
   @Test
   fun `transform to prisoner added to waiting list event`() {
-    val waitingList = waitingList(prisonCode = moorlandPrisonCode)
+    val waitingList = waitingList(prisonCode = MOORLAND_PRISON_CODE)
 
     with(waitingList.toPrisonerAddedToWaitingListEvent()) {
       activityId isEqualTo waitingList.activity.activityId

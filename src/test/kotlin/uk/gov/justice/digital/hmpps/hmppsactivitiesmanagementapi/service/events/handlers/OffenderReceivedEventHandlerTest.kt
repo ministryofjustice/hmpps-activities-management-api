@@ -20,9 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -52,7 +52,7 @@ class OffenderReceivedEventHandlerTest {
   fun beforeTests() {
     reset(rolloutPrisonRepository, allocationRepository)
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = true,
           activitiesRolloutDate = LocalDate.now().plusDays(-1),
@@ -62,10 +62,10 @@ class OffenderReceivedEventHandlerTest {
 
   @Test
   fun `inbound received event is not handled for an inactive prison`() {
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     reset(rolloutPrisonRepository)
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = false,
           activitiesRolloutDate = null,
@@ -75,7 +75,7 @@ class OffenderReceivedEventHandlerTest {
     val outcome = handler.handle(inboundEvent)
 
     assertThat(outcome.isSuccess()).isTrue
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
   }
 
@@ -103,10 +103,10 @@ class OffenderReceivedEventHandlerTest {
     }
 
     allocationRepository.stub {
-      on { findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456") } doReturn allocations
+      on { findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456") } doReturn allocations
     }
 
-    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(outcome.isSuccess()).isTrue
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
@@ -118,7 +118,7 @@ class OffenderReceivedEventHandlerTest {
   @Test
   fun `future attendances are unsuspended on receipt of prisoner`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456")) doReturn it
     }
 
     val historicAttendance = Attendance(
@@ -160,7 +160,7 @@ class OffenderReceivedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
         AttendanceStatus.COMPLETED,
         "123456",
@@ -171,7 +171,7 @@ class OffenderReceivedEventHandlerTest {
       on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(historicAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isTrue
     assertThat(todaysFutureAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isFalse
@@ -182,7 +182,7 @@ class OffenderReceivedEventHandlerTest {
   @Test
   fun `future attendances are cancelled on receipt of prisoner when instance cancelled after initial suspension`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456")) doReturn it
     }
 
     val cancelledAttendanceReason = mock<AttendanceReason>().also {
@@ -232,7 +232,7 @@ class OffenderReceivedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
         AttendanceStatus.COMPLETED,
         "123456",
@@ -243,7 +243,7 @@ class OffenderReceivedEventHandlerTest {
       on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(historicAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isTrue
     assertThat(todaysFutureAttendance.hasReason(AttendanceReasonEnum.CANCELLED)).isTrue

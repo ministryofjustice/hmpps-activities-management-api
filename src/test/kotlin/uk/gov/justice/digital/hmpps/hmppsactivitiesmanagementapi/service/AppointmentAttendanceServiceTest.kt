@@ -15,12 +15,12 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
@@ -48,7 +48,7 @@ class AppointmentAttendanceServiceTest {
 
   @BeforeEach
   fun setUp() {
-    addCaseloadIdToRequestHeader(moorlandPrisonCode)
+    addCaseloadIdToRequestHeader(MOORLAND_PRISON_CODE)
     whenever(principal.name).thenReturn(username)
   }
 
@@ -63,7 +63,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
-      assertThatThrownBy { service.getAppointmentAttendanceSummaries(moorlandPrisonCode, LocalDate.now()) }
+      assertThatThrownBy { service.getAppointmentAttendanceSummaries(MOORLAND_PRISON_CODE, LocalDate.now()) }
         .isInstanceOf(CaseloadAccessException::class.java)
       verify(appointmentRepository, never()).saveAndFlush(any())
     }
@@ -73,14 +73,14 @@ class AppointmentAttendanceServiceTest {
       val date = LocalDate.now()
       val entity = appointmentAttendanceSummaryEntity()
       val appointmentSearch = appointmentSearchEntity(appointmentId = 1)
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(moorlandPrisonCode, date)).thenReturn(listOf(entity))
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(MOORLAND_PRISON_CODE, date)).thenReturn(listOf(entity))
       val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"))
       val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, entity.prisonCode, userDescription = "Chapel"))
       whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
-      whenever(locationService.getLocationsForAppointmentsMap(moorlandPrisonCode)).thenReturn(locationMap)
+      whenever(locationService.getLocationsForAppointmentsMap(MOORLAND_PRISON_CODE)).thenReturn(locationMap)
       whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(1))).thenReturn(appointmentSearch.attendees)
 
-      val summaries = service.getAppointmentAttendanceSummaries(moorlandPrisonCode, date)
+      val summaries = service.getAppointmentAttendanceSummaries(MOORLAND_PRISON_CODE, date)
 
       assertThat(summaries).isEqualTo(listOf(appointmentAttendanceSummaryModel()))
     }
@@ -102,7 +102,7 @@ class AppointmentAttendanceServiceTest {
     fun `throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
       val entity = mock<Appointment>()
-      whenever(entity.prisonCode).thenReturn(moorlandPrisonCode)
+      whenever(entity.prisonCode).thenReturn(MOORLAND_PRISON_CODE)
       whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
 
       assertThatThrownBy { service.markAttendance(1, AppointmentAttendanceRequest(), principal) }
@@ -114,7 +114,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `calls appointment mark prisoner attendance function`() {
       val entity = mock<Appointment>()
-      whenever(entity.prisonCode).thenReturn(moorlandPrisonCode)
+      whenever(entity.prisonCode).thenReturn(MOORLAND_PRISON_CODE)
       whenever(entity.toModel()).thenReturn(mock<AppointmentModel>())
       whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
       whenever(appointmentRepository.saveAndFlush(entity)).thenReturn(entity)

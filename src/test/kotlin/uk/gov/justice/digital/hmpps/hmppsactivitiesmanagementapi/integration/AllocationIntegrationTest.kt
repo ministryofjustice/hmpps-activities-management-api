@@ -11,12 +11,12 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandOne
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
@@ -146,7 +146,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       status = WaitingListStatus.PENDING,
     )
 
-    webTestClient.waitingListApplication(moorlandPrisonCode, request, pentonvillePrisonCode).expectStatus().isForbidden
+    webTestClient.waitingListApplication(MOORLAND_PRISON_CODE, request, PENTONVILLE_PRISON_CODE).expectStatus().isForbidden
   }
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
@@ -155,7 +155,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     allocationRepository.findById(1).get().also { it.endDate isEqualTo null }
 
     webTestClient.updateAllocation(
-      pentonvillePrisonCode,
+      PENTONVILLE_PRISON_CODE,
       1,
       AllocationUpdateRequest(
         endDate = TimeSource.tomorrow(),
@@ -178,7 +178,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
   @Test
   fun `update allocation exclusions`() {
     webTestClient.updateAllocation(
-      pentonvillePrisonCode,
+      PENTONVILLE_PRISON_CODE,
       1,
       AllocationUpdateRequest(
         exclusions = listOf(

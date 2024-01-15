@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.appointmentInstance
 
 fun location(
-  agencyId: String = moorlandPrisonCode,
+  agencyId: String = MOORLAND_PRISON_CODE,
   userDescription: String = "User Description",
   description: String = "Some Description",
   locationId: Long = 123L,

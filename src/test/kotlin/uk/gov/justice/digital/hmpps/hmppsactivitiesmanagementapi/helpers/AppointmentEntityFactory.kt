@@ -307,7 +307,7 @@ internal fun prisonerPermanentTransferAppointmentAttendeeRemovalReason() =
 internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false) =
   AppointmentAttendanceSummary(
     1,
-    risleyPrisonCode,
+    RISLEY_PRISON_CODE,
     "CHAP",
     "Friday Prayers",
     123,

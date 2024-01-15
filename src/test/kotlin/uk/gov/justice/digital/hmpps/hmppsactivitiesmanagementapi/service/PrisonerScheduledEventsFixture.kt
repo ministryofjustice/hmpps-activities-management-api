@@ -10,8 +10,8 @@ import java.time.LocalTime
  This object is used in testing only.
 
  Used to create mocked response objects for the tests in
-    * ScheduledEventControllerTest
-    * ScheduledEventServiceTest
+ * ScheduledEventControllerTest
+ * ScheduledEventServiceTest
 
  These objects represent those that are returned for unlock lists and calendar view, and are produced
  by the ScheduledEventService and returned to clients via the ScheduledEventController.

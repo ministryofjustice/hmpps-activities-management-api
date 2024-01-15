@@ -20,9 +20,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
@@ -256,7 +256,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
-        prisonId = moorlandPrisonCode,
+        prisonId = MOORLAND_PRISON_CODE,
         prisonerNumber = "G4793VF",
         bookingId = 1,
         status = "ACTIVE IN",
@@ -315,7 +315,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
-        prisonId = moorlandPrisonCode,
+        prisonId = MOORLAND_PRISON_CODE,
         prisonerNumber = "G4793VF",
         bookingId = 1,
         status = "ACTIVE IN",
@@ -384,7 +384,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `allocation should set any APPROVED waitlist applications to ALLOCATED status`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
-        prisonId = moorlandPrisonCode,
+        prisonId = MOORLAND_PRISON_CODE,
         prisonerNumber = "G4793VF",
         bookingId = 1,
         status = "ACTIVE IN",
@@ -540,7 +540,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `allocation followed by a deallocation of the same prisoner`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
-        prisonId = moorlandPrisonCode,
+        prisonId = MOORLAND_PRISON_CODE,
         prisonerNumber = "G4793VF",
         bookingId = 1,
         status = "ACTIVE IN",
@@ -656,7 +656,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
-  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = moorlandPrisonCode) =
+  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) =
     get()
       .uri("/schedules/$scheduleId/waiting-list-applications")
       .accept(MediaType.APPLICATION_JSON)

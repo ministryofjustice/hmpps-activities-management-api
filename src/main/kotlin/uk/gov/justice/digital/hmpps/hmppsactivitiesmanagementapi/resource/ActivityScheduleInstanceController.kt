@@ -63,17 +63,14 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
-
     @RequestParam(value = "startDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
     startDate: LocalDate,
-
     @RequestParam(value = "endDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "End date of query (required). The end date must be within 3 months of the start date.")
     endDate: LocalDate,
-
     @RequestParam(value = "slot")
     @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
     slot: TimeSlot?,

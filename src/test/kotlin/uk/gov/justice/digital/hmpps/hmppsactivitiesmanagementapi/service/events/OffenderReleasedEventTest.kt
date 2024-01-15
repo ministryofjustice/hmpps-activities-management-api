@@ -1,8 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 
 class OffenderReleasedEventTest {
   @Test
@@ -36,5 +36,5 @@ class OffenderReleasedEventTest {
   }
 
   private fun releaseEvent(reason: String) =
-    OffenderReleasedEvent(ReleaseInformation("123456", reason, moorlandPrisonCode))
+    OffenderReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
 }

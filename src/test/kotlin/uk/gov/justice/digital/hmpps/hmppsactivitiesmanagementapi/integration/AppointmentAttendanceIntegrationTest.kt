@@ -14,10 +14,10 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
@@ -72,7 +72,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get appointment attendance summary success`() {
-    val prisonCode = risleyPrisonCode
+    val prisonCode = RISLEY_PRISON_CODE
     val date = LocalDate.now()
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
@@ -229,7 +229,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get appointment attendance summary for cancelled, deleted and removed statuses success`() {
-    val prisonCode = risleyPrisonCode
+    val prisonCode = RISLEY_PRISON_CODE
     val date = LocalDate.now().minusDays(1)
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(

@@ -1,11 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions
 
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeOutMoorlandPrisoner
@@ -53,26 +53,26 @@ class PrisonerExtTest {
 
   @Test
   fun `is active in prison`() {
-    activeInMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
-    activeInMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
+    activeInMoorlandPrisoner.isActiveAtPrison(MOORLAND_PRISON_CODE) isBool true
+    activeInMoorlandPrisoner.isActiveAtPrison(PENTONVILLE_PRISON_CODE) isBool false
 
-    activeInPentonvillePrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool true
-    activeInPentonvillePrisoner.isActiveAtPrison(moorlandPrisonCode) isBool false
+    activeInPentonvillePrisoner.isActiveAtPrison(PENTONVILLE_PRISON_CODE) isBool true
+    activeInPentonvillePrisoner.isActiveAtPrison(MOORLAND_PRISON_CODE) isBool false
   }
 
   @Test
   fun `is active at prison`() {
-    activeInMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
-    activeInMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
+    activeInMoorlandPrisoner.isActiveAtPrison(MOORLAND_PRISON_CODE) isBool true
+    activeInMoorlandPrisoner.isActiveAtPrison(PENTONVILLE_PRISON_CODE) isBool false
 
-    activeOutMoorlandPrisoner.isActiveAtPrison(moorlandPrisonCode) isBool true
-    activeOutMoorlandPrisoner.isActiveAtPrison(pentonvillePrisonCode) isBool false
+    activeOutMoorlandPrisoner.isActiveAtPrison(MOORLAND_PRISON_CODE) isBool true
+    activeOutMoorlandPrisoner.isActiveAtPrison(PENTONVILLE_PRISON_CODE) isBool false
   }
 
   @Test
   fun `is at different location`() {
-    activeInMoorlandPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
-    activeInMoorlandPrisoner.isAtDifferentLocationTo(pentonvillePrisonCode) isBool true
-    activeInMoorlandPrisoner.isAtDifferentLocationTo(moorlandPrisonCode) isBool false
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(PENTONVILLE_PRISON_CODE) isBool true
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(PENTONVILLE_PRISON_CODE) isBool true
+    activeInMoorlandPrisoner.isAtDifferentLocationTo(MOORLAND_PRISON_CODE) isBool false
   }
 }

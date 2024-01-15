@@ -19,12 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -606,18 +606,18 @@ class PrisonApiClientTest {
   fun `getLatestMovementForPrisoners - success when movement found`() {
     val movement = movement(prisonerNumber = "AB1235C")
     prisonApiMockServer.stubPrisonerMovements(listOf("AB1235C"), listOf(movement))
-    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf("AB1235C")) containsExactly listOf(movement)
+    prisonApiClient.getMovementsForPrisonersFromPrison(MOORLAND_PRISON_CODE, setOf("AB1235C")) containsExactly listOf(movement)
   }
 
   @Test
   fun `getLatestMovementForPrisoners - empty when no movement found`() {
     prisonApiMockServer.stubPrisonerMovements(listOf("AB1235C"), emptyList())
-    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, setOf("AB1235C")) containsExactly emptyList()
+    prisonApiClient.getMovementsForPrisonersFromPrison(MOORLAND_PRISON_CODE, setOf("AB1235C")) containsExactly emptyList()
   }
 
   @Test
   fun `getLatestMovementForPrisoners - empty when no prisoners supplied`() {
-    prisonApiClient.getMovementsForPrisonersFromPrison(moorlandPrisonCode, emptySet()) containsExactly emptyList()
+    prisonApiClient.getMovementsForPrisonersFromPrison(MOORLAND_PRISON_CODE, emptySet()) containsExactly emptyList()
   }
 
   @Test
@@ -629,12 +629,12 @@ class PrisonApiClientTest {
 
   @Test
   fun `getEventLocationsForPrison - success`() {
-    val eventLocations = listOf(internalLocation(), appointmentLocation(2, moorlandPrisonCode))
+    val eventLocations = listOf(internalLocation(), appointmentLocation(2, MOORLAND_PRISON_CODE))
 
-    prisonApiMockServer.stubGetEventLocations(moorlandPrisonCode, eventLocations)
+    prisonApiMockServer.stubGetEventLocations(MOORLAND_PRISON_CODE, eventLocations)
 
     runBlocking {
-      prisonApiClient.getEventLocationsForPrison(moorlandPrisonCode) isEqualTo eventLocations.associateBy { it.locationId }
+      prisonApiClient.getEventLocationsForPrison(MOORLAND_PRISON_CODE) isEqualTo eventLocations.associateBy { it.locationId }
     }
   }
 }

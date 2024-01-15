@@ -17,5 +17,9 @@ class BankHolidayService(
   fun isEnglishBankHoliday(day: LocalDate) =
     bankHolidayApiClient.getBankHolidays().englandAndWales.events
       .any { it.date == day }
-      .also { truthy -> if (truthy) { log.info("$day is a bank holiday") } }
+      .also { truthy ->
+        if (truthy) {
+          log.info("$day is a bank holiday")
+        }
+      }
 }

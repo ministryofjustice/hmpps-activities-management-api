@@ -17,12 +17,12 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -183,9 +183,9 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val summaries = listOf(appointmentAttendanceSummaryModel())
 
-    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenReturn(summaries)
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(RISLEY_PRISON_CODE, date)).thenReturn(summaries)
 
-    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+    val response = mockMvc.getAppointmentAttendanceSummaries(RISLEY_PRISON_CODE, date, mockPrincipal)
       .andExpect { status { isOk() } }
       .andReturn().response
 
@@ -194,7 +194,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   @Test
   fun `400 response when no date supplied for get appointment attendance summaries`() {
-    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries")
+    mockMvc.get("/appointments/$RISLEY_PRISON_CODE/attendance-summaries")
       .andExpect { status { isBadRequest() } }
       .andExpect {
         content {
@@ -209,7 +209,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   @Test
   fun `400 response when invalid date supplied for get appointment attendance summaries`() {
-    mockMvc.get("/appointments/$risleyPrisonCode/attendance-summaries?date=invalid")
+    mockMvc.get("/appointments/$RISLEY_PRISON_CODE/attendance-summaries?date=invalid")
       .andExpect { status { isBadRequest() } }
       .andExpect {
         content {
@@ -227,9 +227,9 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     val date = LocalDate.now()
     val mockPrincipal: Principal = mock()
 
-    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(risleyPrisonCode, date)).thenThrow(RuntimeException("Error"))
+    whenever(appointmentAttendanceService.getAppointmentAttendanceSummaries(RISLEY_PRISON_CODE, date)).thenThrow(RuntimeException("Error"))
 
-    val response = mockMvc.getAppointmentAttendanceSummaries(risleyPrisonCode, date, mockPrincipal)
+    val response = mockMvc.getAppointmentAttendanceSummaries(RISLEY_PRISON_CODE, date, mockPrincipal)
       .andExpect { status { isInternalServerError() } }
       .andReturn().response
 

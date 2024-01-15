@@ -6,9 +6,9 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import java.util.Properties
 
 class ReferenceCodeServiceTest {
@@ -105,23 +105,23 @@ class ReferenceCodeServiceTest {
 
   @Test
   fun `getScheduleLocations for an event type returns locations`() {
-    whenever(prisonApiClient.getLocationsForTypeUnrestricted(moorlandPrisonCode, "APP"))
+    whenever(prisonApiClient.getLocationsForTypeUnrestricted(MOORLAND_PRISON_CODE, "APP"))
       .thenReturn(
         Mono.just(
           listOf(
-            appointmentLocation(1, moorlandPrisonCode),
-            appointmentLocation(2, moorlandPrisonCode),
-            appointmentLocation(3, moorlandPrisonCode),
+            appointmentLocation(1, MOORLAND_PRISON_CODE),
+            appointmentLocation(2, MOORLAND_PRISON_CODE),
+            appointmentLocation(3, MOORLAND_PRISON_CODE),
           ),
         ),
       )
 
-    val locations = locationService.getLocationsForAppointments(moorlandPrisonCode)
+    val locations = locationService.getLocationsForAppointments(MOORLAND_PRISON_CODE)
 
     assertThat(locations).containsExactly(
-      appointmentLocation(1, moorlandPrisonCode),
-      appointmentLocation(2, moorlandPrisonCode),
-      appointmentLocation(3, moorlandPrisonCode),
+      appointmentLocation(1, MOORLAND_PRISON_CODE),
+      appointmentLocation(2, MOORLAND_PRISON_CODE),
+      appointmentLocation(3, MOORLAND_PRISON_CODE),
     )
   }
 }

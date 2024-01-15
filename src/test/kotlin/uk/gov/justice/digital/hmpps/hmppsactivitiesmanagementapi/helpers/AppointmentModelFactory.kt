@@ -379,9 +379,9 @@ fun appointmentSetDetails(
 
 fun appointmentAttendanceSummaryModel() = AppointmentAttendanceSummary(
   1,
-  risleyPrisonCode,
+  RISLEY_PRISON_CODE,
   "Friday Prayers (Chaplaincy)",
-  AppointmentLocationSummary(123, risleyPrisonCode, "Chapel"),
+  AppointmentLocationSummary(123, RISLEY_PRISON_CODE, "Chapel"),
   LocalDate.now().plusDays(1),
   LocalTime.of(12, 0),
   LocalTime.of(13, 0),

@@ -7,13 +7,13 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -82,9 +82,9 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetLocationsForAppointments(
-      risleyPrisonCode,
+      RISLEY_PRISON_CODE,
       listOf(
-        appointmentLocation(123, risleyPrisonCode, userDescription = "Education 1"),
+        appointmentLocation(123, RISLEY_PRISON_CODE, userDescription = "Education 1"),
       ),
     )
 
@@ -98,9 +98,9 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC", "B2345CD", "C3456DE"),
       listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", firstName = "A", lastName = "A", bookingId = 1, prisonId = risleyPrisonCode),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", firstName = "B", lastName = "B", bookingId = 2, prisonId = risleyPrisonCode),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", firstName = "C", lastName = "C", bookingId = 3, prisonId = risleyPrisonCode),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", firstName = "A", lastName = "A", bookingId = 1, prisonId = RISLEY_PRISON_CODE),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", firstName = "B", lastName = "B", bookingId = 2, prisonId = RISLEY_PRISON_CODE),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", firstName = "C", lastName = "C", bookingId = 3, prisonId = RISLEY_PRISON_CODE),
       ),
     )
 
