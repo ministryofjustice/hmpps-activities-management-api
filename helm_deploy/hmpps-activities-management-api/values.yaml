@@ -1,4 +1,3 @@
----
 generic-service:
   nameOverride: hmpps-activities-management-api
 
@@ -6,14 +5,14 @@ generic-service:
 
   image:
     repository: quay.io/hmpps/hmpps-activities-management-api
-    tag: app_version    # override at deployment time
+    tag: app_version # override at deployment time
     port: 8080
 
   ingress:
     enabled: true
     v1_2_enabled: true
     v0_47_enabled: false
-    host: app-hostname.local    # override per environment
+    host: app-hostname.local # override per environment
     tlsSecretName: activities-api-cert
     path: /
     annotations:
@@ -104,19 +103,13 @@ generic-service:
       SENTRY_DSN: "SENTRY_DSN"
 
   allowlist:
-    office: "217.33.148.210/32"
-    health-kick: "35.177.252.195/32"
-    petty-france-wifi: "213.121.161.112/28"
-    global-protect: "35.176.93.186/32"
-    mojvpn: "81.134.202.29/32"
-    ark-nps-hmcts-ttp1: "195.59.75.0/24"
-    ark-nps-hmcts-ttp2: "194.33.192.0/25"
-    ark-nps-hmcts-ttp3: "194.33.193.0/25"
-    ark-nps-hmcts-ttp4: "194.33.196.0/25"
-    ark-nps-hmcts-ttp5: "194.33.197.0/25"
-    cloudplatform-live-1: "35.178.209.113/32"
-    cloudplatform-live-2: "3.8.51.207/32"
-    cloudplatform-live-3: "35.177.252.54/32"
+    ark-nps-hmcts-ttp1: 195.59.75.0/24
+    ark-nps-hmcts-ttp2: 194.33.192.0/25
+    ark-nps-hmcts-ttp3: 194.33.193.0/25
+    ark-nps-hmcts-ttp4: 194.33.196.0/25
+    ark-nps-hmcts-ttp5: 194.33.197.0/25
+    groups:
+      - internal
 
 generic-prometheus-alerts:
   targetApplication: hmpps-activities-management-api
