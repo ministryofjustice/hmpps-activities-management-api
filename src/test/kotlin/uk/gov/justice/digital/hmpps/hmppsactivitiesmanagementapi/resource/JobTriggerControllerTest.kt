@@ -9,7 +9,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
@@ -72,11 +72,11 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @Test
   fun `201 response when attendance record creation job with prison code option is triggered`() {
     val response =
-      mockMvc.triggerJob("manage-attendance-records?prisonCode=$pentonvillePrisonCode").andExpect { status { isCreated() } }.andReturn().response
+      mockMvc.triggerJob("manage-attendance-records?prisonCode=$PENTONVILLE_PRISON_CODE").andExpect { status { isCreated() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), mayBePrisonCode = pentonvillePrisonCode, withExpiry = false)
+    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
   }
 
   @Test

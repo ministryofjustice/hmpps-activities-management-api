@@ -13,24 +13,23 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
@@ -41,23 +40,19 @@ import java.time.LocalTime
 class OffenderReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
-  private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val attendanceRepository: AttendanceRepository = mock()
-  private val activeMoorlandPrisoner: InmateDetail = mock {
-    on { status } doReturn "ACTIVE IN"
-    on { agencyId } doReturn moorlandPrisonCode
-  }
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonApiClient, attendanceRepository, attendanceReasonRepository, TransactionHandler(), outboundEventsService)
+    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceRepository, attendanceReasonRepository, TransactionHandler(), outboundEventsService)
 
   @BeforeEach
   fun beforeTests() {
     reset(rolloutPrisonRepository, allocationRepository)
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = true,
           activitiesRolloutDate = LocalDate.now().plusDays(-1),
@@ -67,10 +62,10 @@ class OffenderReceivedEventHandlerTest {
 
   @Test
   fun `inbound received event is not handled for an inactive prison`() {
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456")
+    val inboundEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     reset(rolloutPrisonRepository)
     rolloutPrisonRepository.stub {
-      on { findByCode(moorlandPrisonCode) } doReturn
+      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
         rolloutPrison().copy(
           activitiesToBeRolledOut = false,
           activitiesRolloutDate = null,
@@ -80,7 +75,7 @@ class OffenderReceivedEventHandlerTest {
     val outcome = handler.handle(inboundEvent)
 
     assertThat(outcome.isSuccess()).isTrue
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
   }
 
@@ -103,15 +98,15 @@ class OffenderReceivedEventHandlerTest {
     assertThat(userSuspended.status(PrisonerStatus.SUSPENDED)).isTrue
     assertThat(ended.status(PrisonerStatus.ENDED)).isTrue
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
     allocationRepository.stub {
-      on { findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456") } doReturn allocations
+      on { findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456") } doReturn allocations
     }
 
-    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(outcome.isSuccess()).isTrue
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
@@ -123,7 +118,7 @@ class OffenderReceivedEventHandlerTest {
   @Test
   fun `future attendances are unsuspended on receipt of prisoner`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456")) doReturn it
     }
 
     val historicAttendance = Attendance(
@@ -165,18 +160,18 @@ class OffenderReceivedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
         AttendanceStatus.COMPLETED,
         "123456",
       ),
     ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(historicAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isTrue
     assertThat(todaysFutureAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isFalse
@@ -187,7 +182,7 @@ class OffenderReceivedEventHandlerTest {
   @Test
   fun `future attendances are cancelled on receipt of prisoner when instance cancelled after initial suspension`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.AUTO_SUSPENDED)).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456")) doReturn it
     }
 
     val cancelledAttendanceReason = mock<AttendanceReason>().also {
@@ -237,18 +232,18 @@ class OffenderReceivedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
         AttendanceStatus.COMPLETED,
         "123456",
       ),
     ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    prisonApiClient.stub {
-      on { getPrisonerDetails("123456") } doReturn Mono.just(activeMoorlandPrisoner)
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(moorlandPrisonCode, "123456"))
+    handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(historicAttendance.hasReason(AttendanceReasonEnum.SUSPENDED)).isTrue
     assertThat(todaysFutureAttendance.hasReason(AttendanceReasonEnum.CANCELLED)).isTrue

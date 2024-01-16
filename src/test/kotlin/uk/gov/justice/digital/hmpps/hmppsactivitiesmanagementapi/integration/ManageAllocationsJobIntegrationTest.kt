@@ -2,15 +2,19 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
@@ -24,31 +28,44 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+@TestPropertySource(
+  properties = [
+    "feature.audit.service.local.enabled=true",
+    "feature.audit.service.hmpps.enabled=true",
+  ],
+)
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
+
+  @MockBean
+  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
+
+  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
@@ -104,7 +121,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")
   @Test
-  fun `deallocate offenders allocations due to expire and waiting lists declined`() {
+  fun `deallocate offenders allocations due to expire`() {
     val prisoner = PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
@@ -112,17 +129,10 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       releaseDate = LocalDate.now().minusDays(5),
     )
 
-    with(waitingListRepository.findAll().prisoner("A11111A")) {
-      status isStatus WaitingListStatus.PENDING
-      declinedReason isEqualTo null
-      updatedBy isEqualTo null
-      updatedTime isEqualTo null
-    }
-
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = pentonvillePrisonCode, movementDate = TimeSource.daysInPast(10))),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
     )
 
     with(allocationRepository.findAll()) {
@@ -140,8 +150,41 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
 
     expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
+  }
 
-    waitingListRepository.findAll().prisoner("A11111A") isDeclinedWithReason "Released"
+  @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
+  @Test
+  fun `remove offenders waitlist applications due to expire`() {
+    val prisoner = PrisonerSearchPrisonerFixture.instance(
+      prisonerNumber = "A11111A",
+      inOutStatus = Prisoner.InOutStatus.OUT,
+      lastMovementType = MovementType.RELEASE,
+      releaseDate = LocalDate.now().minusDays(5),
+    )
+
+    with(waitingListRepository.findAll().prisoner("A11111A")) {
+      status isStatus WaitingListStatus.PENDING
+      updatedBy isEqualTo null
+      updatedTime isEqualTo null
+    }
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
+    prisonApiMockServer.stubPrisonerMovements(
+      listOf("A11111A"),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
+    )
+
+    webTestClient.manageAllocations(withDeallocate = true)
+
+    with(waitingListRepository.findAll().prisoner("A11111A")) {
+      status isStatus REMOVED
+      updatedTime isCloseTo LocalDateTime.now()
+      updatedBy isEqualTo "Activities Management Service"
+    }
+
+    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
@@ -150,7 +193,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     listOf("PAST", "TODAY", "FUTURE").map { prisonerNumber ->
       PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = prisonerNumber,
-        inOutStatus = Prisoner.InOutStatus.IN,
+        prisonId = "PVI",
       )
     }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("PAST", "TODAY"), prisoners) }
 
@@ -206,13 +249,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private infix fun WaitingListStatus.isStatus(status: WaitingListStatus) {
     this isEqualTo status
-  }
-
-  private infix fun WaitingList.isDeclinedWithReason(reason: String) {
-    status isEqualTo DECLINED
-    declinedReason isEqualTo reason
-    updatedTime isCloseTo LocalDateTime.now()
-    updatedBy isEqualTo "Activities Management Service"
   }
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }

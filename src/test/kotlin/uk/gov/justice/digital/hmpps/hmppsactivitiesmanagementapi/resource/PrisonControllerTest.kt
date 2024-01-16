@@ -14,10 +14,10 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -52,7 +52,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val expectedModel = listOf(
       ActivityLite(
         id = 1,
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         attendanceRequired = true,
         inCell = false,
         onWing = false,
@@ -63,8 +63,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
         summary = "activity summary",
         description = "activity description",
         riskLevel = "High",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         category = ActivityCategory(
           id = 1L,
           code = "LEISURE_SOCIAL",
@@ -79,32 +77,32 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       ),
     )
 
-    whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 1)).thenReturn(
+    whenever(activityService.getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 1)).thenReturn(
       expectedModel,
     )
 
-    val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 1)
+    val response = mockMvc.getActivitiesInCategory(MOORLAND_PRISON_CODE, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison(moorlandPrisonCode, 1)
+    verify(activityService, times(1)).getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 1)
   }
 
   @Test
   fun `404 response when get category activities and category does not exist`() {
-    whenever(activityService.getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)).thenThrow(
+    whenever(activityService.getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 2)).thenThrow(
       EntityNotFoundException("not found"),
     )
 
-    val response = mockMvc.getActivitiesInCategory(moorlandPrisonCode, 2)
+    val response = mockMvc.getActivitiesInCategory(MOORLAND_PRISON_CODE, 2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }.andReturn().response
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison(moorlandPrisonCode, 2)
+    verify(activityService, times(1)).getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 2)
   }
 
   private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: Long) =
@@ -133,17 +131,17 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       ),
     )
 
-    whenever(activityService.getActivitiesInPrison(moorlandPrisonCode, true)).thenReturn(
+    whenever(activityService.getActivitiesInPrison(MOORLAND_PRISON_CODE, true)).thenReturn(
       expectedModel,
     )
 
-    val response = mockMvc.getActivities(moorlandPrisonCode)
+    val response = mockMvc.getActivities(MOORLAND_PRISON_CODE)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesInPrison(moorlandPrisonCode, true)
+    verify(activityService, times(1)).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
   }
 
   private fun MockMvc.getActivities(prisonCode: String) =
@@ -155,7 +153,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     whenever(
       scheduleService.getActivitySchedulesByPrisonCode(
-        pentonvillePrisonCode,
+        PENTONVILLE_PRISON_CODE,
         LocalDate.MIN,
         TimeSlot.AM,
         1,
@@ -164,7 +162,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       schedules,
     )
 
-    val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
+    val response = mockMvc.getSchedulesBy(PENTONVILLE_PRISON_CODE, LocalDate.MIN, TimeSlot.AM, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -172,7 +170,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(schedules))
 
     verify(scheduleService).getActivitySchedulesByPrisonCode(
-      pentonvillePrisonCode,
+      PENTONVILLE_PRISON_CODE,
       LocalDate.MIN,
       TimeSlot.AM,
       1,
@@ -183,7 +181,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `200 response when get schedule by prison code and search criteria not found`() {
     whenever(
       scheduleService.getActivitySchedulesByPrisonCode(
-        pentonvillePrisonCode,
+        PENTONVILLE_PRISON_CODE,
         LocalDate.MIN,
         TimeSlot.AM,
         1,
@@ -192,7 +190,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       emptyList(),
     )
 
-    val response = mockMvc.getSchedulesBy(pentonvillePrisonCode, LocalDate.MIN, TimeSlot.AM, 1)
+    val response = mockMvc.getSchedulesBy(PENTONVILLE_PRISON_CODE, LocalDate.MIN, TimeSlot.AM, 1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -200,7 +198,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     assertThat(response.contentAsString).isEqualTo("[]")
 
     verify(scheduleService).getActivitySchedulesByPrisonCode(
-      pentonvillePrisonCode,
+      PENTONVILLE_PRISON_CODE,
       LocalDate.MIN,
       TimeSlot.AM,
       1,
@@ -219,32 +217,32 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `200 response when get pay bands by Moorland prison code`() {
     val prisonPayBands = prisonPayBandsLowMediumHigh().map { it.toModelPrisonPayBand() }
 
-    whenever(prisonRegimeService.getPayBandsForPrison(moorlandPrisonCode)).thenReturn(prisonPayBands)
+    whenever(prisonRegimeService.getPayBandsForPrison(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBands)
 
-    val response = mockMvc.getPrisonPayBandsBy(moorlandPrisonCode)
+    val response = mockMvc.getPrisonPayBandsBy(MOORLAND_PRISON_CODE)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands))
 
-    verify(prisonRegimeService).getPayBandsForPrison(moorlandPrisonCode)
+    verify(prisonRegimeService).getPayBandsForPrison(MOORLAND_PRISON_CODE)
   }
 
   @Test
   fun `200 response when get prison by code found`() {
     val prisonRegime = transform(prisonRegime())
 
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(pentonvillePrisonCode)).thenReturn(prisonRegime)
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonRegime)
 
-    val response = mockMvc.getPrisonRegimeByPrisonCode(pentonvillePrisonCode)
+    val response = mockMvc.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonRegime))
 
-    verify(prisonRegimeService).getPrisonRegimeByPrisonCode(pentonvillePrisonCode)
+    verify(prisonRegimeService).getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
   }
 
   @Test

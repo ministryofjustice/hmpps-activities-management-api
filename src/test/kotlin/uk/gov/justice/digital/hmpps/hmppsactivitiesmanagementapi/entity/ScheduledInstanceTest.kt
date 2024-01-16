@@ -9,6 +9,7 @@ import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -202,5 +203,19 @@ class ScheduledInstanceTest {
     assertThatThrownBy { instance.remove(attendance) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record with ${attendance.attendanceId} does not exist on the scheduled instance")
+  }
+
+  @Test
+  fun `session is paid`() {
+    val paidSession = activityEntity(paid = true).schedules().first()
+
+    paidSession.isPaid() isBool true
+  }
+
+  @Test
+  fun `session is not paid`() {
+    val unpaidSession = activityEntity(paid = false, noPayBands = true).schedules().first()
+
+    unpaidSession.isPaid() isBool false
   }
 }

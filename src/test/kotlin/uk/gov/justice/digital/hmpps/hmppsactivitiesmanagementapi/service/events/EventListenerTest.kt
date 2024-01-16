@@ -9,7 +9,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 
 class EventListenerTest {
 
@@ -29,7 +29,7 @@ class EventListenerTest {
 
     eventListener.onMessage("/messages/prison-offender-events.prisoner.released.json".readRawMessage())
 
-    verify(inboundEventsService).process(offenderTransferReleasedEvent(moorlandPrisonCode, "A1244AB"))
+    verify(inboundEventsService).process(offenderTransferReleasedEvent(MOORLAND_PRISON_CODE, "A1244AB"))
   }
 
   @Test
@@ -42,7 +42,7 @@ class EventListenerTest {
       activitiesChangedEvent(
         prisonerNumber = "A5119DY",
         action = Action.END,
-        prisonId = moorlandPrisonCode,
+        prisonId = MOORLAND_PRISON_CODE,
       ),
     )
   }

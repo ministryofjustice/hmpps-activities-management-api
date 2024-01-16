@@ -73,30 +73,24 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The prison code e.g. MDI")
     @NotEmpty(message = "Prison code must be supplied")
     prisonCode: String,
-
     @RequestParam(required = true)
     @Parameter(description = "The date for which to request events, format YYYY-MM-DD, e.g. 2023-10-01")
     @PastOrPresent(message = "The date supplied must be today or a date in the past.")
     date: LocalDate,
-
     @RequestParam(required = false)
     @Parameter(description = "The prisoner number, eg. A9999AA (optional). Default is all prisoner numbers.")
     prisonerNumber: String?,
-
     @RequestParam(required = false, defaultValue = "false")
     @Parameter(description = "Whether to include acknowledged events (optional). Default is false.")
     includeAcknowledged: Boolean? = false,
-
     @RequestParam(required = false, defaultValue = "0")
     @Parameter(description = "The page number to return (optional). Default is page zero.")
     @PositiveOrZero(message = "Page number cannot be negative.")
     page: Int = 0,
-
     @RequestParam(required = false, defaultValue = "10")
     @Parameter(description = "The maximum number of items to return in each page (optional). Default is 10.")
     @Positive(message = "Page size must be a positive number.")
     size: Int = 10,
-
     @RequestParam(required = false, defaultValue = "ascending")
     @Parameter(description = "The sort direction based on the time the events occurred. Default is ascending.")
     sortDirection: String = "ascending",
@@ -157,12 +151,10 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun acknowledgeEvents(
     principal: Principal,
-
     @PathVariable("prison", required = true)
     @Parameter(description = "The prison code e.g. MDI")
     @NotEmpty(message = "Prison code must be supplied")
     prisonCode: String,
-
     @Parameter(description = "The prisoner allocation request details", required = true)
     @RequestBody
     eventReviewAcknowledgeRequest: EventAcknowledgeRequest,

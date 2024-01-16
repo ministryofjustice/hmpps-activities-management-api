@@ -16,11 +16,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
@@ -116,9 +116,43 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
-    fun `get scheduled attendees by scheduled instance id - does not contain exclusions`() {
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - does not contain exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - ignores historical exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(2)
+      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
+      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - respects historical exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
+      assertThat(attendees).hasSize(1)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - ignores future exclusions today`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
+      assertThat(attendees).hasSize(2)
+      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
+      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `get scheduled attendees by scheduled instance id - respects future exclusions`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(3)!!
       assertThat(attendees).hasSize(1)
       with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
     }
@@ -145,7 +179,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
-      val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate)
 
       assertThat(scheduledInstances).hasSize(20)
     }
@@ -157,7 +191,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 11, 5)
 
       val scheduledInstances =
-        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+        webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate, TimeSlot.AM)
 
       assertThat(scheduledInstances).hasSize(10)
     }
@@ -168,7 +202,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val startDate = LocalDate.of(2022, 10, 2)
       val endDate = LocalDate.of(2022, 11, 4)
 
-      val scheduledInstances = webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate)
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate)
 
       assertThat(scheduledInstances).hasSize(16)
     }
@@ -180,7 +214,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 11, 5)
 
       val scheduledInstances =
-        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.AM)
+        webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate, TimeSlot.AM)
 
       assertThat(scheduledInstances).hasSize(1)
     }
@@ -192,7 +226,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
       val endDate = LocalDate.of(2022, 11, 5)
 
       val scheduledInstances =
-        webTestClient.getScheduledInstancesBy(moorlandPrisonCode, startDate, endDate, TimeSlot.PM)
+        webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate, TimeSlot.PM)
 
       assertThat(scheduledInstances).isEmpty()
     }
@@ -493,7 +527,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, pentonvillePrisonCode)
+    .header(CASELOAD_ID, PENTONVILLE_PRISON_CODE)
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

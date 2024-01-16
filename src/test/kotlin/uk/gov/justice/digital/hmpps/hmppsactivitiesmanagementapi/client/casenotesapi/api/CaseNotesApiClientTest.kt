@@ -42,20 +42,13 @@ class CaseNotesApiClientTest {
   fun `getCaseNote - success`() {
     caseNotesApiMockServer.stubGetCaseNote("A1234AA", 1)
     val caseNote = caseNotesApiClient.getCaseNote("A1234AA", 1)
-    assertThat(caseNote?.text).isEqualTo("Case Note Text")
+    assertThat(caseNote.text).isEqualTo("Case Note Text")
   }
 
   @Test
   fun `postCaseNote - success`() {
-    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", "NEG_GEN")
-    val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text")
-    assertThat(caseNote?.text).isEqualTo("Case Note Text")
-  }
-
-  @Test
-  fun `postCaseNote - incentive level warning issued - success`() {
-    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", "IEP_WARN")
-    val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", true)
-    assertThat(caseNote?.text).isEqualTo("Case Note Text")
+    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
+    val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
+    assertThat(caseNote.text).isEqualTo("Case Note Text")
   }
 }

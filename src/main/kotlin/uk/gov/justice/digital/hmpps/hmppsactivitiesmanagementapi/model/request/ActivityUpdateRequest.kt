@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
@@ -44,17 +45,6 @@ data class ActivityUpdateRequest(
   )
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
-
-  @field:Size(max = 3, message = "Minimum incentive level NOMIS code should not exceed {max} characters")
-  @Schema(
-    description = "The NOMIS code for the minimum incentive/earned privilege level for this activity",
-    example = "BAS",
-  )
-  val minimumIncentiveNomisCode: String? = null,
-
-  @field:Size(max = 10, message = "Minimum incentive level should not exceed {max} characters")
-  @Schema(description = "The minimum incentive/earned privilege level for this activity", example = "Basic")
-  val minimumIncentiveLevel: String? = null,
 
   @Schema(description = "Whether the schedule runs on bank holidays", example = "true")
   val runsOnBankHoliday: Boolean? = null,
@@ -106,4 +96,13 @@ data class ActivityUpdateRequest(
 
   @Schema(description = "A flag to indicate that the end date is to be removed", example = "true", defaultValue = "false")
   val removeEndDate: Boolean = false,
-)
+
+  @Schema(description = "Flag to indicate if the activity is a paid activity or not. If true then pay rates are required, if false then no pay rates should be provided. Cannot be updated if already allocated.", example = "true")
+  val paid: Boolean? = null,
+) {
+  @AssertTrue(message = "Unpaid activity cannot have pay rates associated with it")
+  private fun isUnpaid() = pay.isNullOrEmpty() || (paid == null || paid == true)
+
+  @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
+  private fun isPaid() = !pay.isNullOrEmpty() || (paid == null || !paid)
+}

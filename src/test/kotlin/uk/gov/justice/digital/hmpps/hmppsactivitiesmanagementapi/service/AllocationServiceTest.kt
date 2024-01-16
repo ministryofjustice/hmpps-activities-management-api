@@ -15,7 +15,9 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -25,7 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -323,10 +324,10 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - fails if allocation not found`() {
-    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(1, MOORLAND_PRISON_CODE)).thenReturn(null)
 
     assertThatThrownBy {
-      service.updateAllocation(1, AllocationUpdateRequest(startDate = null), moorlandPrisonCode, "user")
+      service.updateAllocation(1, AllocationUpdateRequest(startDate = null), MOORLAND_PRISON_CODE, "user")
     }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Allocation 1 not found.")
@@ -409,7 +410,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions`() {
-    val allocation = allocation().also { it.exclusions() hasSize 0 }
+    val allocation = allocation().also { it.exclusions(ExclusionsFilter.ACTIVE) hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -430,8 +431,8 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.exclusions() hasSize 1
-    allocationCaptor.firstValue.exclusions().first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
@@ -442,15 +443,13 @@ class AllocationServiceTest {
 
     val slot = schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
     )
 
     schedule.addSlot(
       weekNumber = 2,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
     )
 
@@ -463,9 +462,9 @@ class AllocationServiceTest {
     )
       .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
       .also {
-        it.exclusions() hasSize 1
-        with(it.exclusions().first()) {
-          getWeekNumber() isEqualTo 1
+        it.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+        with(it.exclusions(ExclusionsFilter.ACTIVE).first()) {
+          weekNumber isEqualTo 1
           getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
         }
       }
@@ -490,9 +489,9 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    allocationCaptor.firstValue.exclusions() hasSize 1
-    with(allocationCaptor.firstValue.exclusions().first()) {
-      getWeekNumber() isEqualTo 2
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+    with(allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first()) {
+      weekNumber isEqualTo 2
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
@@ -500,7 +499,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update exclusions fails if week number and time slot combination returns no slots`() {
-    val allocation = allocation().also { it.exclusions() hasSize 0 }
+    val allocation = allocation().also { it.exclusions(ExclusionsFilter.ACTIVE) hasSize 0 }
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
@@ -520,7 +519,7 @@ class AllocationServiceTest {
       service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Updating allocation with id 0: No single AM slots in week number 3")
+      .hasMessage("Updating allocation with id 0: No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
   }

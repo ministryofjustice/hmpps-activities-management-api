@@ -4,11 +4,9 @@ import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -17,12 +15,14 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
@@ -234,11 +234,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectStatus().isForbidden
   }
 
-  private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI") =
+  private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI", earliestSessionDate: LocalDate? = null) =
     get()
       .uri { builder ->
         builder
           .path("/schedules/$scheduleId")
+          .maybeQueryParam("earliestSessionDate", earliestSessionDate)
           .build(scheduleId)
       }
       .accept(MediaType.APPLICATION_JSON)
@@ -253,7 +254,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -305,7 +313,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `400 (bad request) response when attempt to allocate already allocated prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -332,7 +347,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -366,34 +381,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Sql(
     "classpath:test_data/seed-activity-id-7.sql",
   )
-  fun `the allocation should be persisted even if the subsequent event notification fails`() {
-    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
-
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
-
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
-
-    webTestClient.allocatePrisoner(
-      1,
-      PrisonerAllocationRequest(
-        prisonerNumber = "G4793VF",
-        payBandId = 11,
-        startDate = TimeSource.tomorrow(),
-      ),
-    ).expectStatus().isNoContent
-
-    with(repository.findById(1).orElseThrow().allocations().first()) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocatedBy).isEqualTo("test-client")
-    }
-  }
-
-  @Test
-  @Sql(
-    "classpath:test_data/seed-activity-id-7.sql",
-  )
   fun `allocation should set any APPROVED waitlist applications to ALLOCATED status`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     webTestClient.allocatePrisoner(
       1,
@@ -416,12 +412,13 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
+    "classpath:test_data/seed-activity-for-suitability-check.sql",
   )
   fun `should be able to fetch suitability of a candidate for an activity`() {
     prisonApiMockServer.stubGetEducationLevels()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1143DZ")
     nonAssociationsApiMockServer.stubGetNonAssociations("A1143DZ")
+    caseNotesApiMockServer.stubGetCaseNote("A1143DZ", 1)
 
     val response = webTestClient.getCandidateSuitability(1, "A1143DZ")
       .expectStatus().isOk
@@ -458,6 +455,18 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
           ),
         ),
       )
+
+      assertThat(allocations.size).isEqualTo(1)
+      with(allocations.first()) {
+        assertThat(payRate!!.rate).isEqualTo(325)
+        assertThat(allocation.activitySummary).isEqualTo("Maths")
+      }
+
+      assertThat(previousDeallocations.size).isEqualTo(1)
+      with(previousDeallocations.first()) {
+        assertThat(allocation.deallocatedReason?.code).isEqualTo("SECURITY")
+        assertThat(caseNoteText).isEqualTo("Case Note Text")
+      }
     }
   }
 
@@ -474,7 +483,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
 
-    assertThat(response["content"] as List<ActivityCandidate>).hasSize(5)
+    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).hasSize(5)
     assertThat(response["totalPages"]).isEqualTo(4)
     assertThat(response["totalElements"]).isEqualTo(20)
   }
@@ -519,7 +528,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
 
-    assertThat(response["content"] as List<ActivityCandidate>).isEmpty()
+    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).isEmpty()
     assertThat(response["totalPages"]).isEqualTo(4)
     assertThat(response["totalElements"]).isEqualTo(20)
   }
@@ -529,7 +538,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-7.sql",
   )
   fun `allocation followed by a deallocation of the same prisoner`() {
-    prisonApiMockServer.stubGetPrisonerDetails("G4793VF", fullInfo = false)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
 
     repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
@@ -548,6 +564,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         prisonerNumbers = listOf("G4793VF"),
         reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
         endDate = TimeSource.tomorrow(),
+        caseNote = null,
       ),
     ).expectStatus().isNoContent
 
@@ -571,6 +588,29 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get all waiting lists for Maths`() {
     webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-reduced-activity-instances.sql",
+  )
+  @Test
+  fun `should get all 7 recent instances for a given schedule`() {
+    webTestClient.getScheduleBy(1)!!.instances hasSize 7
+  }
+
+  @Sql(
+    "classpath:test_data/seed-reduced-activity-instances.sql",
+  )
+  @Test
+  fun `should get reduced number instances for a given schedule`() {
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = TimeSource.today())!!.instances hasSize 1
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 1.daysAgo())!!.instances hasSize 2
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 2.daysAgo())!!.instances hasSize 3
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 3.daysAgo())!!.instances hasSize 4
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 4.daysAgo())!!.instances hasSize 5
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 5.daysAgo())!!.instances hasSize 6
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 6.daysAgo())!!.instances hasSize 7
+    webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 7.daysAgo())!!.instances hasSize 7
   }
 
   private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
@@ -616,7 +656,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
-  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = moorlandPrisonCode) =
+  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) =
     get()
       .uri("/schedules/$scheduleId/waiting-list-applications")
       .accept(MediaType.APPLICATION_JSON)

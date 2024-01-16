@@ -16,8 +16,8 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Deallocat
 
 @Entity
 @Table(name = "allocation")
-@EntityListeners(AllocationEntityListener::class, AuditableEntityListener::class)
+@EntityListeners(AuditableEntityListener::class)
 data class Allocation(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -94,7 +94,7 @@ data class Allocation(
   var plannedDeallocation: PlannedDeallocation? = null
     private set
 
-  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val exclusions: MutableSet<Exclusion> = mutableSetOf()
 
@@ -108,6 +108,9 @@ data class Allocation(
   var deallocatedReason: DeallocationReason? = null
     private set
 
+  var deallocationCaseNoteId: Long? = null
+    private set
+
   var suspendedTime: LocalDateTime? = null
     private set
 
@@ -117,9 +120,24 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
-  fun exclusions() = exclusions.toList()
+  fun exclusions(filter: ExclusionsFilter) = filter.filtered(exclusions)
 
-  fun removeExclusions(exclusionsToRemove: List<Exclusion>) = exclusions.removeAll(exclusionsToRemove.toSet())
+  private fun exclusionsOnDate(date: LocalDate) = exclusions.filter { date.between(it.startDate, it.endDate) }.toSet()
+
+  fun removeExclusions(exclusionsToRemove: Set<Exclusion>) = run {
+    require(exclusionsToRemove.all { it.allocation == this }) { "Cannot remove the given exclusions because some of them do not belong to the allocation with id $allocationId" }
+    exclusions.removeAll(exclusionsToRemove)
+  }
+
+  private fun removeExclusion(exclusion: Exclusion) = run {
+    require(exclusion.allocation == this) { "Cannot remove the given exclusion because it does not belong to the allocation with id $allocationId" }
+    exclusions.remove(exclusion)
+  }
+
+  fun endExclusions(exclusionsToEnd: Set<Exclusion>) = run {
+    require(exclusionsToEnd.all { it.allocation == this }) { "Cannot end the given exclusions because some of them do not belong to the allocation with id $allocationId" }
+    exclusionsToEnd.forEach { it.endNow() }
+  }
 
   fun prisonCode() = activitySchedule.activity.prisonCode
 
@@ -130,7 +148,7 @@ data class Allocation(
    */
   fun ends(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
-  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String) =
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
       if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
@@ -142,6 +160,7 @@ data class Allocation(
           plannedReason = reason,
           plannedDate = date,
           plannedBy = deallocatedBy,
+          caseNoteId = caseNoteId,
         )
       } else {
         plannedDeallocation?.apply {
@@ -149,6 +168,7 @@ data class Allocation(
           plannedDate = date
           plannedBy = deallocatedBy
           plannedAt = LocalDateTime.now()
+          this.caseNoteId = caseNoteId
         }
       }
     }
@@ -170,6 +190,9 @@ data class Allocation(
       deallocatedBy = ServiceName.SERVICE_NAME.value
       deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
       endDate = LocalDate.now()
+
+      endExclusions(exclusions(ExclusionsFilter.PRESENT))
+      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
     }
 
   /**
@@ -186,6 +209,7 @@ data class Allocation(
         deallocatedReason = plannedDeallocation?.plannedReason
         deallocatedBy = plannedDeallocation?.plannedBy
         deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+        deallocationCaseNoteId = plannedDeallocation?.caseNoteId
         endDate = today
       } else {
         prisonerStatus = PrisonerStatus.ENDED
@@ -194,6 +218,9 @@ data class Allocation(
         deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
         endDate = today
       }
+
+      endExclusions(exclusions(ExclusionsFilter.PRESENT))
+      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
     }
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
@@ -224,14 +251,14 @@ data class Allocation(
       suspendedTime = suspendedTime,
       status = prisonerStatus,
       plannedDeallocation = plannedDeallocation?.toModel(),
-      exclusions = exclusions.toSlotModel(),
+      exclusions = exclusions(ExclusionsFilter.ACTIVE).toSlotModel(),
     )
 
-  fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
-    exclusions.any {
+  private fun isExcluded(date: LocalDate, slotTimes: SlotTimes) =
+    exclusionsOnDate(date).any {
       date.dayOfWeek in it.getDaysOfWeek() &&
-        timeSlot == it.getTimeSlot() &&
-        activitySchedule.getWeekNumber(date) == it.getWeekNumber()
+        slotTimes == it.slotTimes() &&
+        activitySchedule.getWeekNumber(date) == it.weekNumber
     }
 
   fun activate() =
@@ -285,26 +312,17 @@ data class Allocation(
   fun isEnded() = status(PrisonerStatus.ENDED)
 
   fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
-    val exclusion = exclusions
-      .find { it.activityScheduleSlot == slot }
-      ?.apply { setDaysOfWeek(daysOfWeek) }
-      ?: Exclusion.valueOf(this, slot, daysOfWeek)
+    val days = daysOfWeek.intersect(slot.getDaysOfWeek())
+    val exclusion = exclusions(ExclusionsFilter.FUTURE)
+      .singleOrNull { it.weekNumber == slot.weekNumber && it.slotTimes() == slot.slotTimes() }
+      ?.apply { setDaysOfWeek(days) }
+      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days)
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
-      // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
-      //  This is to respect a restraint on the nomis data model
-      require(
-        exclusions.none {
-          exclusion.getWeekNumber() != it.getWeekNumber() &&
-            exclusion.getTimeSlot() == it.getTimeSlot() &&
-            exclusion.getDaysOfWeek().intersect(it.getDaysOfWeek()).isNotEmpty()
-        },
-      ) { "Exclusions cannot be added for the same day and time slot over multiple weeks." }
-
-      exclusions.add(exclusion)
-      exclusions.last()
+      if (exclusions.contains(exclusion).not()) addExclusion(exclusion)
+      exclusion
     } else {
-      exclusions.remove(exclusion)
+      removeExclusion(exclusion)
       null
     }
   }
@@ -312,7 +330,90 @@ data class Allocation(
   /**
    * Returns true if the date is between the start and end date, no clashing exclusions and not ended, otherwise false.
    */
-  fun canAttendOn(date: LocalDate, timeSlot: TimeSlot) = date.between(startDate, maybeEndDate()) && isExcluded(date, timeSlot).not() && prisonerStatus != PrisonerStatus.ENDED
+  fun canAttendOn(date: LocalDate, slotTimes: SlotTimes) = date.between(startDate, maybeEndDate()) && isExcluded(date, slotTimes).not() && prisonerStatus != PrisonerStatus.ENDED
+
+  fun syncExclusionsWithScheduleSlots(scheduleSlots: List<ActivityScheduleSlot>): Long? {
+    var editedSome: Boolean
+    val scheduleSlotPairs = scheduleSlots.map { it.weekNumber to it.timeSlot() }
+    exclusions(ExclusionsFilter.PRESENT)
+      .filter { it.weekNumber to it.timeSlot() !in scheduleSlotPairs }
+      .let {
+        editedSome = it.isNotEmpty()
+        endExclusions(it.toSet())
+      }
+    exclusions(ExclusionsFilter.FUTURE)
+      .filter { it.weekNumber to it.timeSlot() !in scheduleSlotPairs }
+      .let {
+        editedSome = it.isNotEmpty() || editedSome
+        removeExclusions(it.toSet())
+      }
+
+    // TODO: The disallowedExclusionDays in the following blocks are temporary, for as long as we need to sync events of this service back to nomis.
+    //  This is to respect a restraint on the nomis data model. Exclusions on any slot which has a matching slot over multiple weeks
+    //  must be ended or removed.
+
+    exclusions(ExclusionsFilter.PRESENT).filter { it.endDate == null }.forEach {
+      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
+
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
+        editedSome = true
+        it.endNow()
+        val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
+        if (intersect.isNotEmpty()) {
+          addExclusion(Exclusion.valueOf(this, matchingSlot.slotTimes(), it.weekNumber, intersect))
+        }
+      }
+    }
+    exclusions(ExclusionsFilter.FUTURE).forEach {
+      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
+        editedSome = true
+        val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
+        if (intersect.isNotEmpty()) {
+          it.setSlotTimes(matchingSlot.slotTimes())
+          it.setDaysOfWeek(intersect)
+        } else {
+          removeExclusion(it)
+        }
+      }
+    }
+
+    return if (editedSome) allocationId else null
+  }
+
+  fun addExclusion(exclusion: Exclusion) = run {
+    require(
+      activitySchedule.slots().any { slot ->
+        slot.slotTimes() == exclusion.slotTimes() &&
+          slot.weekNumber == exclusion.weekNumber &&
+          slot.getDaysOfWeek().containsAll(exclusion.getDaysOfWeek())
+      },
+    ) {
+      "Cannot set exclusions where the activity does not run"
+    }
+
+    // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
+    //  This is to respect a restraint on the nomis data model
+    require(
+      activitySchedule.slots().none { slot ->
+        slot.timeSlot() == exclusion.timeSlot() &&
+          slot.weekNumber != exclusion.weekNumber &&
+          slot.getDaysOfWeek().containsAny(exclusion.getDaysOfWeek())
+      },
+    ) { "Exclusions cannot be added where the time slot exists over multiple weeks." }
+
+    require(
+      exclusions(ExclusionsFilter.ACTIVE).none { it.slotTimes() == exclusion.slotTimes() && it.weekNumber == exclusion.weekNumber },
+    ) {
+      "Failed to add exclusion to allocation with Id $allocationId, because an active exclusion for the same slot already exists"
+    }
+
+    exclusions.add(exclusion)
+  }
 
   @Override
   override fun toString(): String {
@@ -321,7 +422,12 @@ data class Allocation(
 }
 
 enum class PrisonerStatus {
-  ACTIVE, PENDING, SUSPENDED, AUTO_SUSPENDED, ENDED;
+  ACTIVE,
+  PENDING,
+  SUSPENDED,
+  AUTO_SUSPENDED,
+  ENDED,
+  ;
 
   companion object {
     fun allExcuding(vararg status: PrisonerStatus) = entries.filterNot { status.contains(it) }.toTypedArray()
@@ -342,6 +448,7 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   TRANSFERRED("Transferred to another activity", true),
   WITHDRAWN_STAFF("Withdrawn by staff", true),
   WITHDRAWN_OWN("Withdrawn at own request", true),
+  DISMISSED("Dismissed", true),
   HEALTH("Health", true),
   SECURITY("Security", true),
   OTHER("Other", true),
@@ -350,7 +457,16 @@ enum class DeallocationReason(val description: String, val displayed: Boolean = 
   fun toModel() = ModelDeallocationReason(name, description)
 
   companion object {
-    fun toModelDeallocationReasons() =
-      entries.filter(DeallocationReason::displayed).map(DeallocationReason::toModel)
+    fun displayedDeallocationReasons() = entries.filter(DeallocationReason::displayed)
+    fun toModelDeallocationReasons() = displayedDeallocationReasons().map(DeallocationReason::toModel)
   }
+}
+
+enum class ExclusionsFilter(private val f: (Collection<Exclusion>) -> Set<Exclusion>) {
+  ACTIVE({ exclusions -> exclusions.filter { it.endDate == null }.toSet() }),
+  PRESENT({ exclusions -> exclusions.filter { LocalDate.now().between(it.startDate, it.endDate) }.toSet() }),
+  FUTURE({ exclusions -> exclusions.filter { it.startDate.isAfter(LocalDate.now()) }.toSet() }),
+  ;
+
+  fun filtered(exclusions: Collection<Exclusion>) = f(exclusions)
 }

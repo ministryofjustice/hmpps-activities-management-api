@@ -6,8 +6,6 @@
   "categoryId": 1,
   "tierCode": "TIER_1",
   "eligibilityRuleIds": [1],
-  "minimumIncentiveNomisCode": "BAS",
-  "minimumIncentiveLevel": "Basic",
   "riskLevel": "high",
   "pay": [
     {

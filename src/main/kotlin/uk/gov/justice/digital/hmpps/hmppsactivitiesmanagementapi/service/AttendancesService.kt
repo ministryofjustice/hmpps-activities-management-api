@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -59,7 +61,7 @@ class AttendancesService(
           reason = attendanceReasonsByCode[updateRequest.maybeAttendanceReason()],
           newStatus = updateRequest.status,
           newComment = updateRequest.comment,
-          newIssuePayment = updateRequest.issuePayment,
+          newIssuePayment = if (updateRequest.issuePayment == true && !attendance.isPayable()) false else updateRequest.issuePayment,
           newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
           newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
           newOtherAbsenceReason = updateRequest.otherAbsenceReason,
@@ -84,7 +86,8 @@ class AttendancesService(
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
     caseNote?.let {
-      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, incentiveLevelWarningIssued)
+      val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.IEP_WARN else CaseNoteSubType.NEG_GEN
+      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, CaseNoteType.NEG, subType)
     }
 
   private fun AttendanceUpdateRequest.maybeAttendanceReason() =

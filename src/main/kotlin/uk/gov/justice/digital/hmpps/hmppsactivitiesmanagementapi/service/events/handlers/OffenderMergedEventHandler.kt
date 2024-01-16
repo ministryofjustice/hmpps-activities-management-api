@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
@@ -14,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Audi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import java.time.LocalDateTime
@@ -22,7 +25,7 @@ import java.time.LocalDateTime
 @Transactional(readOnly = true)
 class OffenderMergedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val prisonApi: PrisonApiApplicationClient,
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -30,65 +33,53 @@ class OffenderMergedEventHandler(
   private val eventReviewRepository: EventReviewRepository,
   private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
   private val transactionHandler: TransactionHandler,
+  featureSwitches: FeatureSwitches,
 ) : EventHandler<OffenderMergedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val mergeIsEnabled = featureSwitches.isEnabled(Feature.OFFENDER_MERGED_ENABLED)
+
+  init {
+    log.info("MERGE: enabled='$mergeIsEnabled'")
+  }
+
   override fun handle(event: OffenderMergedEvent): Outcome {
-    log.info("MERGE: Handling offender merged event {}", event)
     val newNumber = event.prisonerNumber()
     val oldNumber = event.removedPrisonerNumber()
 
-    prisonerSearchApiClient.findByPrisonerNumber(newNumber)?.let { prisoner ->
-      log.info("MERGE: Search $newNumber = ${prisoner.firstName} ${prisoner.lastName} ${prisoner.prisonId} ${prisoner.status}")
-      prisoner.prisonId?.let { prisonId ->
-        if (rolloutPrisonRepository.prisonIsRolledOut(prisonId)) {
+    prisonApi.getPrisonerDetailsLite(newNumber).let { prisoner ->
+      prisoner.agencyId?.let { prisonCode ->
+        if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
           transactionHandler.newSpringTransaction {
-            processMergeEvent(prisonId, newNumber, oldNumber, prisoner.bookingId?.let { it.toInt() } ?: 0)
+            processMergeEvent(
+              OffenderMergeDetails(
+                prisonCode = prisonCode,
+                oldNumber = oldNumber,
+                newNumber = newNumber,
+                newBookingId = prisoner.bookingId?.toInt(),
+              ),
+            )
           }
         } else {
-          log.info("MERGE: $prisonId is not rolled out on activities and appointments - ignoring merge")
+          log.info("MERGE: $prisonCode is not rolled out on activities and appointments - ignoring merge for new prisoner number $newNumber")
         }
       }
     }
     return Outcome.success()
   }
 
-  private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
-    this.findByCode(prisonCode)?.isActivitiesRolledOut() == true
+  private fun processMergeEvent(offenderMergeDetails: OffenderMergeDetails) {
+    log.info("MERGE: Processing merge event from ${offenderMergeDetails.oldNumber} to ${offenderMergeDetails.newNumber} with new booking ID ${offenderMergeDetails.newBookingId}")
 
-  fun processMergeEvent(prisonCode: String, newNumber: String, oldNumber: String, newBookingId: Int) {
-    log.info("MERGE: Processing merge event from $oldNumber to $newNumber with new booking Id $newBookingId")
-
-    // Update all allocation rows - any status
-    val allocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, oldNumber)
-    log.info("MERGE: Would alter ${allocations.size} allocation rows (including new booking id $newBookingId")
-
-    // Update all attendance rows - past and present
-    val attendances = attendanceRepository.findByPrisonerNumber(oldNumber)
-    log.info("MERGE: Would alter ${attendances.size} attendance rows")
-
-    // Update all waiting list rows
-    val waitingListItems = waitingListRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, oldNumber)
-    log.info("MERGE: Would alter ${waitingListItems.size} waiting list rows")
-
-    // Update all local audit rows
-    val localAuditItems = auditRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, oldNumber)
-    log.info("MERGE: Would alter ${localAuditItems.size} local audit rows")
-
-    // Update all event review rows
-    val eventReviewItems = eventReviewRepository.findByPrisonCodeAndPrisonerNumber(prisonCode, oldNumber)
-    log.info("MERGE: Would alter ${eventReviewItems.size} events of interest rows (including new booking Id)")
-
-    // Update appointment attendees
-    val appointmentAttendees = appointmentAttendeeRepository.findByPrisonerNumber(oldNumber)
-    log.info("MERGE: Would alter ${appointmentAttendees.size} appointment attendee rows (including new booking Id)")
-
-    // TODO: Update prisoner exclusions from old to new number
-
-    log.info("MERGE: Recording the merge event into the local audit table")
+    mergeAllocations(offenderMergeDetails)
+    mergeAttendances(offenderMergeDetails)
+    mergeWaitingLists(offenderMergeDetails)
+    mergeLocalAuditItems(offenderMergeDetails)
+    mergeEventReviewItems(offenderMergeDetails)
+    mergeAppointmentAttendees(offenderMergeDetails)
 
     auditRepository.save(
       LocalAuditRecord(
@@ -96,9 +87,72 @@ class OffenderMergedEventHandler(
         auditType = AuditType.PRISONER,
         detailType = AuditEventType.PRISONER_MERGE,
         recordedTime = LocalDateTime.now(),
-        prisonCode = prisonCode,
-        message = "Prisoner number $oldNumber was merged to a new prisoner number $newNumber",
+        prisonCode = offenderMergeDetails.prisonCode,
+        prisonerNumber = offenderMergeDetails.newNumber,
+        message = "Prisoner number ${offenderMergeDetails.oldNumber} was merged to a new prisoner number ${offenderMergeDetails.newNumber}",
       ),
     )
   }
+
+  private fun mergeAllocations(mergeDetails: OffenderMergeDetails) {
+    allocationRepository.findByPrisonCodeAndPrisonerNumber(mergeDetails.prisonCode, mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} allocation rows (including new booking id ${mergeDetails.newBookingId}") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old allocation prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      allocationRepository.mergeOffender(oldNumber = mergeDetails.oldNumber, newNumber = mergeDetails.newNumber)
+    }
+  }
+
+  private fun mergeAttendances(mergeDetails: OffenderMergeDetails) {
+    attendanceRepository.findByPrisonerNumber(mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} attendance rows") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old attendance prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      attendanceRepository.mergeOffender(oldNumber = mergeDetails.oldNumber, newNumber = mergeDetails.newNumber)
+    }
+  }
+
+  private fun mergeWaitingLists(mergeDetails: OffenderMergeDetails) {
+    waitingListRepository.findByPrisonCodeAndPrisonerNumber(mergeDetails.prisonCode, mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} waiting list rows") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old waiting list prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      waitingListRepository.mergeOffender(mergeDetails.oldNumber, mergeDetails.newNumber)
+    }
+  }
+
+  private fun mergeLocalAuditItems(mergeDetails: OffenderMergeDetails) {
+    auditRepository.findByPrisonCodeAndPrisonerNumber(mergeDetails.prisonCode, mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} local audit rows") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old local audit record prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      auditRepository.mergeOffender(oldNumber = mergeDetails.oldNumber, newNumber = mergeDetails.newNumber)
+    }
+  }
+
+  private fun mergeEventReviewItems(mergeDetails: OffenderMergeDetails) {
+    eventReviewRepository.findByPrisonCodeAndPrisonerNumber(mergeDetails.prisonCode, mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} events of interest rows (including new booking Id)") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old event review prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      eventReviewRepository.mergeOffender(oldNumber = mergeDetails.oldNumber, mergeDetails.newNumber)
+    }
+  }
+
+  private fun mergeAppointmentAttendees(mergeDetails: OffenderMergeDetails) {
+    appointmentAttendeeRepository.findByPrisonerNumber(mergeDetails.oldNumber)
+      .also { log.info("MERGE: Would alter ${it.size} appointment attendee rows (including new booking Id)") }
+
+    if (mergeIsEnabled) {
+      log.info("MERGE: old appointment attendee prisoner number ${mergeDetails.oldNumber} to new prisoner number ${mergeDetails.newNumber}")
+      appointmentAttendeeRepository.mergeOffender(oldNumber = mergeDetails.oldNumber, newNumber = mergeDetails.newNumber)
+    }
+  }
 }
+
+private data class OffenderMergeDetails(val prisonCode: String, val newNumber: String, val oldNumber: String, val newBookingId: Int? = null)

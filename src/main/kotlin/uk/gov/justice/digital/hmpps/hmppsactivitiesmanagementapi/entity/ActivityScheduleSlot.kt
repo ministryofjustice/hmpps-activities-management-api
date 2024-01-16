@@ -1,23 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot as ModelActivityScheduleSlot
+
+typealias SlotTimes = Pair<LocalTime, LocalTime>
 
 @Entity
 @Table(name = "activity_schedule_slot")
@@ -49,21 +46,10 @@ data class ActivityScheduleSlot(
   var saturdayFlag: Boolean = false,
 
   var sundayFlag: Boolean = false,
-
-  @OneToMany(mappedBy = "activityScheduleSlot", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
-  private val exclusions: MutableSet<Exclusion> = mutableSetOf(),
 ) {
   init {
-    failIfNoDaysSelectedForSlot()
     failIfDatesAreInvalidForSlot()
     failIfWeekNumberInvalid()
-  }
-
-  private fun failIfNoDaysSelectedForSlot() {
-    if (mondayFlag.not() && tuesdayFlag.not() && wednesdayFlag.not() && thursdayFlag.not() && fridayFlag.not() && saturdayFlag.not() && sundayFlag.not()) {
-      throw IllegalArgumentException("One or more days must be specified for a given slot.")
-    }
   }
 
   private fun failIfDatesAreInvalidForSlot() {
@@ -85,31 +71,20 @@ data class ActivityScheduleSlot(
     fun valueOf(
       activitySchedule: ActivitySchedule,
       weekNumber: Int,
-      startTime: LocalTime,
-      endTime: LocalTime,
+      slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
-      startTime = startTime,
-      endTime = endTime,
-      mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY),
-      tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY),
-      wednesdayFlag = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
-      thursdayFlag = daysOfWeek.contains(DayOfWeek.THURSDAY),
-      fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY),
-      saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY),
-      sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY),
-    )
+      startTime = slotTimes.first,
+      endTime = slotTimes.second,
+    ).apply {
+      update(daysOfWeek)
+    }
   }
 
-  fun exclusions() = exclusions.toList()
-  fun addExclusion(exclusion: Exclusion) = exclusions.add(exclusion)
-
-  fun update(daysOfWeek: Set<DayOfWeek>): AllocationIds {
+  fun update(daysOfWeek: Set<DayOfWeek>) {
     require(daysOfWeek.isNotEmpty()) { "A slot must run on at least one day." }
-
-    val updatedAllocationIds = mutableSetOf<Long>()
 
     mondayFlag = daysOfWeek.contains(DayOfWeek.MONDAY)
     tuesdayFlag = daysOfWeek.contains(DayOfWeek.TUESDAY)
@@ -118,17 +93,6 @@ data class ActivityScheduleSlot(
     fridayFlag = daysOfWeek.contains(DayOfWeek.FRIDAY)
     saturdayFlag = daysOfWeek.contains(DayOfWeek.SATURDAY)
     sundayFlag = daysOfWeek.contains(DayOfWeek.SUNDAY)
-
-    exclusions
-      .filterNot { daysOfWeek.containsAll(it.getDaysOfWeek()) }
-      .onEach {
-        it.syncExcludedDaysWithSlot(this)
-        updatedAllocationIds.add(it.allocation.allocationId)
-      }
-      .filter { it.getDaysOfWeek().isEmpty() }
-      .forEach { exclusions.remove(it) }
-
-    return updatedAllocationIds
   }
 
   fun toModel() = ModelActivityScheduleSlot(
@@ -158,6 +122,8 @@ data class ActivityScheduleSlot(
   )
 
   fun timeSlot() = TimeSlot.slot(startTime)
+
+  fun slotTimes(): SlotTimes = startTime to endTime
 
   @Override
   override fun toString(): String {

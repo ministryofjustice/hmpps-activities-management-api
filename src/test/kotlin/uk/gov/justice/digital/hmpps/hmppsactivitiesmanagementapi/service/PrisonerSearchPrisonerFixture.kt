@@ -6,7 +6,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import java.time.LocalDate
+
+val activeInMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE IN")
+val activeInPentonvillePrisoner = activeInMoorlandPrisoner.copy(prisonId = PENTONVILLE_PRISON_CODE)
+val activeOutMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
+val activeOutPentonvillePrisoner = activeOutMoorlandPrisoner.copy(prisonId = PENTONVILLE_PRISON_CODE)
+val temporarilyReleasedFromMoorland = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
+val permanentlyReleasedPrisonerToday = PrisonerSearchPrisonerFixture.instance(prisonId = null, status = "INACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT, lastMovementType = MovementType.RELEASE, confirmedReleaseDate = TimeSource.today())
 
 object PrisonerSearchPrisonerFixture {
   fun instance(
@@ -68,5 +78,9 @@ object PrisonerSearchPrisonerFixture {
       legalStatus = legalStatus,
     )
 
-  fun pagedResult(prisonerNumber: String = "G4793VF") = PagedPrisoner(content = listOf(instance(prisonerNumber)))
+  fun pagedResultWithSurnames(prisonerNumberAndSurnames: List<Pair<String, String>> = listOf("G4793VF" to "Harrison")) =
+    PagedPrisoner(content = prisonerNumberAndSurnames.map { instance(prisonerNumber = it.first, lastName = it.second) })
+
+  fun pagedResult(prisonerNumbers: List<String> = listOf("G4793VF")) =
+    PagedPrisoner(content = prisonerNumbers.map { instance(it) })
 }

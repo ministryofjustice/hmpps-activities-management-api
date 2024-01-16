@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -45,10 +46,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.lang.IllegalStateException
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
@@ -141,80 +142,80 @@ class ActivityService(
     if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
     if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
-    val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-    val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
-    val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
-    val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
-    val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
-      .associateBy { it.prisonPayBandId }
-      .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
-    failDuplicateActivity(request.prisonCode, request.summary!!)
-    checkEducationLevels(request.minimumEducationLevel)
+    return transactionHandler.newSpringTransaction {
+      val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
+      val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
+      val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+      val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${request.prisonCode}") }
+      failDuplicateActivity(request.prisonCode, request.summary!!)
+      checkEducationLevels(request.minimumEducationLevel)
 
-    val activity = Activity(
-      prisonCode = request.prisonCode,
-      activityCategory = category,
-      activityTier = tier,
-      attendanceRequired = request.attendanceRequired,
-      summary = request.summary,
-      description = request.description,
-      inCell = request.inCell,
-      onWing = request.onWing,
-      offWing = request.offWing,
-      startDate = request.startDate,
-      riskLevel = request.riskLevel!!,
-      minimumIncentiveNomisCode = request.minimumIncentiveNomisCode!!,
-      minimumIncentiveLevel = request.minimumIncentiveLevel!!,
-      createdTime = LocalDateTime.now(),
-      createdBy = createdBy,
-      paid = request.paid,
-    ).apply {
-      this.organiser = organiser
-      endDate = request.endDate
-      eligibilityRules.forEach { this.addEligibilityRule(it) }
-      request.pay.forEach {
-        this.addPay(
-          incentiveNomisCode = it.incentiveNomisCode!!,
-          incentiveLevel = it.incentiveLevel!!,
-          payBand = prisonPayBands[it.payBandId]
-            ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),
-          rate = it.rate,
-          pieceRate = it.pieceRate,
-          pieceRateItems = it.pieceRateItems,
-        )
-      }
-      request.minimumEducationLevel.forEach {
-        this.addMinimumEducationLevel(
-          educationLevelCode = it.educationLevelCode!!,
-          educationLevelDescription = it.educationLevelDescription!!,
-          studyAreaCode = it.studyAreaCode!!,
-          studyAreaDescription = it.studyAreaDescription!!,
-        )
-      }
-    }
-
-    activity.let {
-      val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId!!)
-
-      activity.addSchedule(
-        description = request.description!!,
-        internalLocation = scheduleLocation,
-        capacity = request.capacity!!,
+      val activity = Activity(
+        prisonCode = request.prisonCode,
+        activityCategory = category,
+        activityTier = tier,
+        attendanceRequired = request.attendanceRequired,
+        summary = request.summary,
+        description = request.description,
+        inCell = request.inCell,
+        onWing = request.onWing,
+        offWing = request.offWing,
         startDate = request.startDate,
-        endDate = request.endDate,
-        runsOnBankHoliday = request.runsOnBankHoliday,
-        scheduleWeeks = request.scheduleWeeks,
-      ).let { schedule ->
-        schedule.addSlots(request.slots!!)
-        schedule.addInstances()
-
-        val activityModel = transform(activityRepository.saveAndFlush(activity))
-
-        publishCreateTelemetryEvent(activityModel)
-
-        return activityModel
+        riskLevel = request.riskLevel!!,
+        createdTime = LocalDateTime.now(),
+        createdBy = createdBy,
+        isPaid = request.paid,
+      ).apply {
+        this.organiser = organiser
+        endDate = request.endDate
+        eligibilityRules.forEach { this.addEligibilityRule(it) }
+        request.pay.forEach {
+          this.addPay(
+            incentiveNomisCode = it.incentiveNomisCode!!,
+            incentiveLevel = it.incentiveLevel!!,
+            payBand = prisonPayBands[it.payBandId]
+              ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),
+            rate = it.rate,
+            pieceRate = it.pieceRate,
+            pieceRateItems = it.pieceRateItems,
+          )
+        }
+        request.minimumEducationLevel.forEach {
+          this.addMinimumEducationLevel(
+            educationLevelCode = it.educationLevelCode!!,
+            educationLevelDescription = it.educationLevelDescription!!,
+            studyAreaCode = it.studyAreaCode!!,
+            studyAreaDescription = it.studyAreaDescription!!,
+          )
+        }
       }
-    }
+
+      activity.let {
+        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId!!)
+
+        activity.addSchedule(
+          description = request.description!!,
+          internalLocation = scheduleLocation,
+          capacity = request.capacity!!,
+          startDate = request.startDate,
+          endDate = request.endDate,
+          runsOnBankHoliday = request.runsOnBankHoliday,
+          scheduleWeeks = request.scheduleWeeks,
+        ).let { schedule ->
+          schedule.addSlots(request.slots!!)
+          schedule.addInstances()
+
+          val activityModel = transform(activityRepository.saveAndFlush(activity))
+
+          publishCreateTelemetryEvent(activityModel)
+
+          activityModel
+        }
+      }
+    }.also { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, it.schedules.single().id) }
   }
 
   private fun ModelActivity.toTelemetryPropertiesMap() =
@@ -253,10 +254,10 @@ class ActivityService(
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      val (start, end) = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+      val slotTimes = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
 
       val daysOfWeek = getDaysOfWeek(slot)
-      this.addSlot(slot.weekNumber, start, end, daysOfWeek)
+      this.addSlot(slot.weekNumber, slotTimes, daysOfWeek)
     }
   }
 
@@ -278,7 +279,7 @@ class ActivityService(
 
       this.slots().filter { slot -> slot.weekNumber == scheduleWeekNumber }.forEach { slot ->
         if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
-          this.hasNoInstancesOnDate(activeDay, slot.startTime to slot.endTime) &&
+          this.hasNoInstancesOnDate(activeDay, slot.slotTimes()) &&
           (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
         ) {
           this.addInstance(sessionDate = activeDay, slot = slot)
@@ -329,18 +330,16 @@ class ActivityService(
       applyCategoryUpdate(request, activity)
       applyTierUpdate(request, activity)
       applyOrganiserUpdate(request, activity)
-      applySummaryUpdate(prisonCode, request, activity)
+      applySummaryUpdate(request, activity)
       applyStartDateUpdate(request, activity)
       applyEndDateUpdate(request, activity)
-      applyMinimumIncentiveNomisCodeUpdate(request, activity)
-      applyMinimumIncentiveLevelUpdate(request, activity)
       applyRunsOnBankHolidayUpdate(request, activity)
       applyCapacityUpdate(request, activity)
       applyRiskLevelUpdate(request, activity)
       applyLocationUpdate(request, activity)
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
-      applyPayUpdate(prisonCode, request, activity).let { updatedAllocationIds.addAll(it) }
+      applyPayUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
       applyScheduleWeeksUpdate(request, activity)
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
@@ -359,6 +358,10 @@ class ActivityService(
       updatedAllocationIds to transform(activity)
     }.let { (updatedAllocationIds, activity) ->
       publishUpdateTelemetryEvent(activity)
+
+      activity.schedules.forEach {
+        outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, it.id)
+      }
 
       updatedAllocationIds.forEach {
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it)
@@ -407,13 +410,12 @@ class ActivityService(
   }
 
   private fun applySummaryUpdate(
-    prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
     if (activity.summary != request.summary) {
       request.summary?.apply {
-        failDuplicateActivity(prisonCode, this)
+        failDuplicateActivity(activity.prisonCode, this)
         activity.summary = this
         activity.description = this
         activity.schedules().forEach { it.description = this }
@@ -465,24 +467,6 @@ class ActivityService(
     }
   }
 
-  private fun applyMinimumIncentiveNomisCodeUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
-    request.minimumIncentiveNomisCode?.apply {
-      activity.minimumIncentiveNomisCode = this
-    }
-  }
-
-  private fun applyMinimumIncentiveLevelUpdate(
-    request: ActivityUpdateRequest,
-    activity: Activity,
-  ) {
-    request.minimumIncentiveLevel?.apply {
-      activity.minimumIncentiveLevel = this
-    }
-  }
-
   private fun applyRunsOnBankHolidayUpdate(
     request: ActivityUpdateRequest,
     activity: Activity,
@@ -507,7 +491,7 @@ class ActivityService(
         this.slots().none { slot ->
           slot.weekNumber == this.getWeekNumber(it.sessionDate) &&
             slot.getDaysOfWeek().contains(it.dayOfWeek()) &&
-            it.startTime to it.endTime == slot.startTime to slot.endTime
+            it.slotTimes() == slot.slotTimes()
         } ||
         !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
     }
@@ -603,23 +587,24 @@ class ActivityService(
   }
 
   private fun applyPayUpdate(
-    prisonCode: String,
     request: ActivityUpdateRequest,
     activity: Activity,
   ): AllocationIds {
-    request.pay?.let { pay ->
-      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
-        .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '$prisonCode") }
+    request.paid?.let { activity.paid = request.paid }
 
-      return replacePayBandAllocationBeforePayRemoval(prisonCode, pay, activity, prisonPayBands).also {
+    request.pay?.let { pay ->
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}") }
+
+      return replacePayBandAllocationBeforePayRemoval(activity.prisonCode, pay, activity, prisonPayBands).also {
         activity.removePay()
         pay.forEach {
           activity.addPay(
             incentiveNomisCode = it.incentiveNomisCode!!,
             incentiveLevel = it.incentiveLevel!!,
             payBand = prisonPayBands[it.payBandId]
-              ?: throw IllegalArgumentException("Pay band not found for prison '$prisonCode'"),
+              ?: throw IllegalArgumentException("Pay band not found for prison '${activity.prisonCode}'"),
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
@@ -627,6 +612,9 @@ class ActivityService(
         }
       }
     }
+
+    if (request.paid != null && activity.paid && activity.activityPay().isEmpty()) throw IllegalStateException("Activity '${activity.activityId}' must have at least one pay rate.")
+
     return emptySet()
   }
 
@@ -678,16 +666,17 @@ class ActivityService(
   ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
-      val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      activity.schedules().forEach {
-        it.updateSlots(slots.toMap(timeSlots)).let { ids -> updatedAllocationIds.addAll(ids) }
+      val regimeTimeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
+      activity.schedules().forEach { schedule ->
+        schedule.updateSlots(slots.toMap(regimeTimeSlots))
+        val activeAllocations = schedule.allocations(excludeEnded = true)
+        activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) } }
       }
     }
     return updatedAllocationIds
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, Pair<LocalTime, LocalTime>>):
-    Map<Pair<Int, Pair<LocalTime, LocalTime>>, Set<DayOfWeek>> {
+  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
     return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
   }
 }

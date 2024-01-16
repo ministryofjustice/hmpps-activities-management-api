@@ -2,16 +2,17 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -20,12 +21,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
@@ -75,7 +78,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -95,9 +98,9 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(null))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -115,9 +118,9 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(false))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -134,9 +137,9 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(true))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -160,7 +163,7 @@ class AttendancesServiceTest {
       listOf(
         AttendanceUpdateRequest(
           attendance.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "OTHER",
           null,
@@ -188,7 +191,7 @@ class AttendancesServiceTest {
     )
     val waitingAttendance = attendance.copy(
       recordedTime = null,
-      issuePayment = false,
+      initialIssuePayment = false,
       attendanceReason = null,
       status = AttendanceStatus.WAITING,
       scheduledInstance = pastInstance,
@@ -202,7 +205,7 @@ class AttendancesServiceTest {
         attendanceId = 4,
         prisonerNumber = "D4444DD",
         recordedTime = LocalDateTime.now().minusDays(2),
-        issuePayment = true,
+        initialIssuePayment = true,
         attendanceReason = attendanceReasons()["ATTENDED"]!!,
         status = AttendanceStatus.COMPLETED,
       ),
@@ -219,7 +222,7 @@ class AttendancesServiceTest {
         attendances.map {
           AttendanceUpdateRequest(
             it.attendanceId,
-            moorlandPrisonCode,
+            MOORLAND_PRISON_CODE,
             AttendanceStatus.COMPLETED,
             "ATTENDED",
             null,
@@ -251,7 +254,7 @@ class AttendancesServiceTest {
       listOf(
         AttendanceUpdateRequest(
           attendance.attendanceId,
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           AttendanceStatus.COMPLETED,
           "REFUSED",
           null,
@@ -294,7 +297,7 @@ class AttendancesServiceTest {
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(completedAttendance.attendanceId))).thenReturn(listOf(completedAttendance))
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, moorlandPrisonCode, AttendanceStatus.WAITING, null, null, null, null, null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(completedAttendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.WAITING, null, null, null, null, null, null)))
 
     verify(attendanceRepository).saveAndFlush(completedAttendance)
 
@@ -324,17 +327,87 @@ class AttendancesServiceTest {
   @Test
   fun `not found`() {
     whenever(attendanceRepository.findById(1)).thenReturn(Optional.empty())
-    Assertions.assertThatThrownBy { service.getAttendanceById(-1) }
+    assertThatThrownBy { service.getAttendanceById(-1) }
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Attendance -1 not found")
   }
 
   @Test
   fun `retrieve daily attendance list`() {
-    whenever(allAttendanceRepository.findByPrisonCodeAndSessionDate(pentonvillePrisonCode, LocalDate.now())).thenReturn(
+    whenever(allAttendanceRepository.findByPrisonCodeAndSessionDate(PENTONVILLE_PRISON_CODE, LocalDate.now())).thenReturn(
       attendanceList(),
     )
-    assertThat(service.getAllAttendanceByDate(pentonvillePrisonCode, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
+    assertThat(service.getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
+  }
+
+  @Test
+  fun `marking attendance records to issue payment is ignored for unpaid activity`() {
+    val unpaidSession = activitySchedule(activityEntity(paid = false, noPayBands = true), paid = false).instances().first()
+
+    val unpaidAttendance = attendance.copy(
+      recordedTime = null,
+      initialIssuePayment = null,
+      attendanceReason = null,
+      status = AttendanceStatus.WAITING,
+      scheduledInstance = unpaidSession,
+    )
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(unpaidAttendance.attendanceId))).thenReturn(listOf(unpaidAttendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(unpaidAttendance).map {
+        AttendanceUpdateRequest(
+          it.attendanceId,
+          MOORLAND_PRISON_CODE,
+          AttendanceStatus.COMPLETED,
+          "ATTENDED",
+          null,
+          true,
+          null,
+          null,
+          null,
+        )
+      },
+    )
+
+    unpaidAttendance.issuePayment!! isBool false
+  }
+
+  @Test
+  fun `marking attendance records to issue payment is not ignored for paid activity`() {
+    val paidSession = activitySchedule(activityEntity(), paid = true).instances().first()
+
+    val paidAttendance = paidSession.attendances.first().copy(
+      recordedTime = null,
+      initialIssuePayment = null,
+      attendanceReason = null,
+      status = AttendanceStatus.WAITING,
+      scheduledInstance = paidSession,
+    )
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(paidAttendance.attendanceId))).thenReturn(listOf(paidAttendance))
+
+    service.mark(
+      "Joe Bloggs",
+      listOf(paidAttendance).map {
+        AttendanceUpdateRequest(
+          it.attendanceId,
+          MOORLAND_PRISON_CODE,
+          AttendanceStatus.COMPLETED,
+          "ATTENDED",
+          null,
+          true,
+          null,
+          null,
+          null,
+        )
+      },
+    )
+
+    paidAttendance.issuePayment!! isBool true
   }
 
   companion object {

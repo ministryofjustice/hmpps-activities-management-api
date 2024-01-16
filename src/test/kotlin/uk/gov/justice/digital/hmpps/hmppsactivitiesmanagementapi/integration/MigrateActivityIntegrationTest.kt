@@ -63,10 +63,10 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
     )
 
-    val response = webTestClient.migrateActivity(
-      buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules),
-      listOf("ROLE_NOMIS_ACTIVITIES"),
-    )
+    val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
+    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
+
+    val response = webTestClient.migrateActivity(requestBody, listOf("ROLE_NOMIS_ACTIVITIES"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ActivityMigrateResponse::class.java)
@@ -89,7 +89,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate activity - Risley split regime - success`() {
+  fun `migrate activity - generic split regime - success`() {
     val nomisPayRates = listOf(
       NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),
     )
@@ -98,11 +98,13 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
     )
 
-    // Build a request for Risley that will trigger the split regime rules
+    // Build a request for Risley that will trigger the generic split regime rules
     val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
       prisonCode = "RSI",
-      description = "Maths AM",
+      description = "Maths SPLIT",
     )
+
+    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
 
     val response = webTestClient.migrateActivity(
       requestBody,
@@ -188,6 +190,36 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-23.sql")
   fun `migrate allocation - success`() {
     val request = buildAllocationMigrateRequest()
+
+    stubPrisonerSearch(request.prisonCode, request.prisonerNumber, true)
+
+    val response = webTestClient.migrateAllocation(request, listOf("ROLE_NOMIS_ACTIVITIES"))
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(AllocationMigrateResponse::class.java)
+      .returnResult().responseBody
+
+    with(response!!) {
+      assertThat(allocationId).isNotNull
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    eventCaptor.allValues.forEach { event ->
+      log.info("Event captured on successful allocation: ${event.eventType}")
+    }
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-23.sql")
+  fun `migrate allocation - success with no pay band - defaults to lowest pay`() {
+    val request = buildAllocationMigrateRequest().copy(
+      nomisPayBand = null,
+    )
 
     stubPrisonerSearch(request.prisonCode, request.prisonerNumber, true)
 
@@ -330,7 +362,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       capacity = 10,
       description = "An activity",
       payPerSession = "H",
-      minimumIncentiveLevel = "BAS",
       runsOnBankHoliday = false,
       outsideWork = false,
       scheduleRules,

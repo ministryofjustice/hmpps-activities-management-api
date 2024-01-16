@@ -69,3 +69,7 @@ case-notes:
 non-associations:
   api:
     url: http://localhost:8555
+
+incentives:
+  api:
+    url: http://localhost:8666

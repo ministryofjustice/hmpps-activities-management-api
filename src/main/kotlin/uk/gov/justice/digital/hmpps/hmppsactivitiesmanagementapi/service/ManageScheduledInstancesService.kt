@@ -11,6 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 
 @Service
@@ -18,6 +20,7 @@ class ManageScheduledInstancesService(
   private val activityRepository: ActivityRepository,
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val transactionHandler: CreateInstanceTransactionHandler,
+  private val outboundEventsService: OutboundEventsService,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
 ) {
   companion object {
@@ -36,23 +39,20 @@ class ManageScheduledInstancesService(
       .forEach { prison ->
         log.info("Scheduling activities for prison ${prison.description} until $endDay")
         val activities = activityRepository.getBasicForPrisonBetweenDates(prison.code, today, endDay)
-        activities.forEach { basic ->
+        activities.mapNotNull { basic ->
           continueToRunOnFailure(
             block = { transactionHandler.createInstancesForActivitySchedule(prison, basic.activityScheduleId, listOfDatesToSchedule) },
             success = "Scheduled instances for ${prison.code} ${basic.summary}",
             failure = "Failed to schedule instances for ${prison.code} ${basic.summary}",
           )
+        }.forEach { updatedScheduledId ->
+          outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduledId)
         }
       }
   }
 
-  private fun continueToRunOnFailure(block: () -> Unit, success: String, failure: String) {
-    runCatching {
-      block()
-    }
-      .onSuccess { log.info(success) }
-      .onFailure { log.error(failure, it) }
-  }
+  private fun <R> continueToRunOnFailure(block: () -> R?, success: String, failure: String) =
+    runCatching { block() }.onSuccess { log.info(success) }.onFailure { log.error(failure, it) }.getOrNull()
 }
 
 /**
@@ -70,17 +70,23 @@ class CreateInstanceTransactionHandler(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val activityService: ActivityService,
 ) {
+  /**
+   * Returns the schedule ID if the schedule is updated otherwise returns null.
+   */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>) {
+  fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>): Long? {
     val earliestSession = LocalDate.now()
     val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
-      ?: throw(EntityNotFoundException("Activity schedule ID $scheduleId not found"))
+      ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
     val lastUpdate = schedule.instancesLastUpdatedTime
     activityService.addScheduleInstances(schedule, days)
     if (schedule.instancesLastUpdatedTime != lastUpdate) {
-      // Will generate a sync event via entity listener - activities.activity-schedule-amended
       activityScheduleRepository.saveAndFlush(schedule)
+
+      return scheduleId
     }
+
+    return null
   }
 }

@@ -45,6 +45,12 @@ spring:
             client-secret: ${system.client.secret}
             authorization-grant-type: client_credentials
             scope: read
+          incentives-api:
+            provider: hmpps-auth
+            client-id: ${system.client.id}
+            client-secret: ${system.client.secret}
+            authorization-grant-type: client_credentials
+            scope: read
         provider:
           hmpps-auth:
             token-uri: ${hmpps.auth.url}/oauth/token
@@ -65,8 +71,12 @@ spring:
     password: ${DB_PASS}
     hikari:
       pool-name: Activities-DB-CP
-      connectionTimeout: 1000
-      validationTimeout: 500
+      connectionTimeout: 5000
+      validationTimeout: 2000
+      minimumIdle: 10
+      maximumPoolSize: 50
+      idleTimeout: 300000
+      maxLifetime: 1200000
 
   flyway:
     locations: classpath:/migrations/common,classpath:/migrations/prod
@@ -121,6 +131,10 @@ online:
 applications:
   max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES}
   max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS}
+
+hmpps:
+  sqs:
+    queueAdminRole: ACTIVITY_QUEUE_ADMIN
 
 springdoc:
   swagger-ui:

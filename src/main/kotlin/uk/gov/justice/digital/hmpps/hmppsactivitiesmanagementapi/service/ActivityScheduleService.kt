@@ -7,20 +7,20 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -48,8 +48,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 @Transactional(readOnly = true)
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
-  private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val caseNotesApiClient: CaseNotesApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
   private val auditService: AuditService,
@@ -83,7 +83,7 @@ class ActivityScheduleService(
     timeSlot: TimeSlot? = null,
     locationId: Long? = null,
   ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
-    val filteredInstances = repository.findAllByActivity_PrisonCode(prisonCode)
+    val filteredInstances = repository.findAllByActivityPrisonCode(prisonCode)
       .selectSchedulesAtLocation(locationId)
       .selectSchedulesWithActiveActivitiesOn(date)
       .flatMap { it.instances() }
@@ -132,8 +132,11 @@ class ActivityScheduleService(
       }
   }
 
-  fun getScheduleById(scheduleId: Long) =
-    repository.findOrThrowNotFound(scheduleId).checkCaseloadAccess().toModelSchedule()
+  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate) =
+    repository.getActivityScheduleByIdWithFilters(
+      activityScheduleId = scheduleId,
+      earliestSessionDate = earliestSessionDate,
+    )?.checkCaseloadAccess()?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
   @Transactional
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
@@ -141,65 +144,70 @@ class ActivityScheduleService(
 
     require(request.startDate!! > LocalDate.now()) { "Allocation start date must be in the future" }
 
-    val schedule = repository.findOrThrowNotFound(scheduleId)
+    transactionHandler.newSpringTransaction {
+      val schedule = repository.findOrThrowNotFound(scheduleId).also {
+        if (it.isPaid().not() && request.payBandId != null) throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${it.activity.activityId}' is unpaid")
+        if (it.isPaid() && request.payBandId == null) throw IllegalArgumentException("Allocation must have a pay band when the activity '${it.activity.activityId}' is paid")
+      }
 
-    if (schedule.isPaid().not() && request.payBandId != null) throw IllegalArgumentException("Allocation cannot have a pay band when the activity '${schedule.activity.activityId}' is unpaid")
-    if (schedule.isPaid() && request.payBandId == null) throw IllegalArgumentException("Allocation must have a pay band when the activity '${schedule.activity.activityId}' is paid")
+      val payBand = request.payBandId?.let {
+        val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
+          .associateBy { it.prisonPayBandId }
+          .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
 
-    val payBand = request.payBandId?.let {
-      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(schedule.activity.prisonCode)
-        .associateBy { it.prisonPayBandId }
-        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${schedule.activity.prisonCode}") }
+        prisonPayBands[request.payBandId]
+          ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
+      }
 
-      prisonPayBands[request.payBandId]
-        ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
-    }
+      val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
-    val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
-
-    val prisonerDetails = prisonApiClient.getPrisonerDetails(prisonerNumber.toString(), false).block()
-      .let { it ?: throw IllegalArgumentException("Prisoner with prisoner number $prisonerNumber not found.") }
-      .failIfNotActive()
-      .failIfAtDifferentPrisonTo(schedule.activity)
-
-    schedule.allocatePrisoner(
-      prisonerNumber = prisonerNumber,
-      bookingId = prisonerDetails.bookingId
-        ?: throw IllegalStateException("Active prisoner $prisonerNumber does not have a booking id."),
-      payBand = payBand,
-      startDate = request.startDate,
-      endDate = request.endDate,
-      exclusions = request.exclusions,
-      allocatedBy = allocatedBy,
-    ).let { allocation ->
-      val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
-        schedule.activity.prisonCode,
-        request.prisonerNumber,
-        schedule,
-      )
-        .filter { it.status == WaitingListStatus.APPROVED }
-        .also {
-          require(it.size <= 1) {
-            "" +
-              "Prisoner has more than one APPROVED waiting list. A prisoner can only have one approved waiting list"
+      val activePrisoner = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber)
+        ?.also { prisoner ->
+          require(prisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
           }
-        }
-        .singleOrNull()?.allocated(allocation)
 
-      repository.saveAndFlush(schedule)
-      auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
-      logAllocationEvent(allocation, maybeWaitingList)
-    }
+          requireNotNull(prisoner.bookingId) {
+            "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner does not have a booking id."
+          }
+        } ?: throw IllegalArgumentException("Unable to allocate prisoner with prisoner number $prisonerNumber to schedule $scheduleId, prisoner not found.")
 
-    log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
+      schedule.allocatePrisoner(
+        prisonerNumber = prisonerNumber,
+        bookingId = activePrisoner.bookingId!!.toLong(),
+        payBand = payBand,
+        startDate = request.startDate,
+        endDate = request.endDate,
+        exclusions = request.exclusions,
+        allocatedBy = allocatedBy,
+      ).let { allocation ->
+        val maybeWaitingList = waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
+          schedule.activity.prisonCode,
+          request.prisonerNumber,
+          schedule,
+        )
+          .also { waitingLists ->
+            require(waitingLists.none(WaitingList::isPending)) {
+              "Prisoner has a PENDING waiting list application. It must be APPROVED before they can be allocated."
+            }
+          }
+          .filter(WaitingList::isApproved)
+          .also { waitingLists ->
+            require(waitingLists.size <= 1) {
+              "Prisoner has more than one APPROVED waiting list application. A prisoner can only have one approved waiting list application."
+            }
+          }
+          .singleOrNull()?.allocated(allocation)
+
+        repository.saveAndFlush(schedule)
+        auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
+        logAllocationEvent(allocation, maybeWaitingList)
+        log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
+
+        allocation.allocationId
+      }
+    }.also { allocationId -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId) }
   }
-
-  private fun InmateDetail.failIfNotActive() =
-    takeIf { it.activeFlag == true } ?: throw IllegalStateException("Prisoner ${this.offenderNo} is not active.")
-
-  private fun InmateDetail.failIfAtDifferentPrisonTo(activity: Activity) =
-    takeIf { it.agencyId == activity.prisonCode }
-      ?: throw IllegalStateException("Prisoners prison code ${this.agencyId} does not match that of the activity ${activity.prisonCode}.")
 
   @Transactional
   fun deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest, deallocatedBy: String) {
@@ -207,16 +215,22 @@ class ActivityScheduleService(
 
     transactionHandler.newSpringTransaction {
       repository.findOrThrowNotFound(scheduleId).run {
-        request.prisonerNumbers!!.distinct().map { prisonerNumber ->
-          deallocatePrisonerOn(
-            prisonerNumber,
-            request.endDate!!,
-            request.reasonCode.toDeallocationReason(),
-            deallocatedBy,
-          ).also {
-            log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}")
-          }
-        }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
+        request.prisonerNumbers!!.distinct()
+          .map { prisonerNumber ->
+            var caseNoteId: Long? = null
+            if (request.caseNote != null) {
+              val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.OSE else CaseNoteSubType.NEG_GEN
+              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, request.caseNote.type, subType).caseNoteId.toLong()
+            }
+
+            deallocatePrisonerOn(
+              prisonerNumber,
+              request.endDate!!,
+              request.reasonCode.toDeallocationReason(),
+              deallocatedBy,
+              caseNoteId,
+            ).also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
+          }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
       }
     }.onEach { (allocationId, prisonerNumber) ->
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)

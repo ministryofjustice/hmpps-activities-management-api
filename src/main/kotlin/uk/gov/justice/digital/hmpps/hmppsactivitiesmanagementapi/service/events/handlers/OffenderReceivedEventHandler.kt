@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.isActiveInPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -21,12 +22,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+/**
+ * Handler is responsible for un-suspending any auto-suspended allocations and suspended attendance records matching
+ * the prison and prisoner for the particular offender received domain event. Note is will not unsuspend manually
+ * suspended allocations.
+ *
+ * Will also raise allocation and attendance amended events for all allocation and attendance records updated as a
+ * result.
+ */
 @Component
 @Transactional
 class OffenderReceivedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val allocationRepository: AllocationRepository,
-  private val prisonApiClient: PrisonApiApplicationClient,
+  private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val transactionHandler: TransactionHandler,
@@ -40,8 +49,8 @@ class OffenderReceivedEventHandler(
   override fun handle(event: OffenderReceivedEvent): Outcome {
     log.debug("Handling offender received event {}", event)
 
-    if (rolloutPrisonRepository.prisonIsRolledOut(event.prisonCode())) {
-      prisonApiClient.getPrisonerDetails(prisonerNumber = event.prisonerNumber()).block()?.let { prisoner ->
+    if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
+      prisonerSearchApiApplicationClient.findByPrisonerNumber(event.prisonerNumber())?.let { prisoner ->
         if (prisoner.isActiveInPrison(event.prisonCode())) {
           transactionHandler.newSpringTransaction {
             allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
@@ -67,9 +76,6 @@ class OffenderReceivedEventHandler(
 
     return Outcome.success()
   }
-
-  private fun RolloutPrisonRepository.prisonIsRolledOut(prisonCode: String) =
-    this.findByCode(prisonCode)?.isActivitiesRolledOut() == true
 
   private fun List<Allocation>.resetSuspendedAllocations(event: OffenderReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }

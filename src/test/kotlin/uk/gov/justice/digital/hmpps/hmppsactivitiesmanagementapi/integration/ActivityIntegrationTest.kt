@@ -4,7 +4,6 @@ import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
@@ -16,15 +15,15 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
@@ -164,7 +163,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     )
 
     val newActivity = activityCreateRequest(
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
       studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
       paid = false,
@@ -355,8 +354,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
               id = 1,
@@ -410,8 +407,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           minimumEducationLevel = listOf(
             ActivityMinimumEducationLevel(
               id = 1,
@@ -476,8 +471,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           category = educationCategory,
           capacity = 10,
           allocated = 2,
@@ -547,8 +540,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           summary = "Maths",
           description = "Maths Level 1",
           riskLevel = "high",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           category = educationCategory,
           capacity = 10,
           allocated = 2,
@@ -870,48 +861,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Test
-  fun `the activity should be persisted even if the subsequent event notification fails`() {
-    prisonApiMockServer.stubGetReferenceCode(
-      "EDU_LEVEL",
-      "1",
-      "prisonapi/education-level-code-1.json",
-    )
-
-    prisonApiMockServer.stubGetReferenceCode(
-      "STUDY_AREA",
-      "ENGLA",
-      "prisonapi/study-area-code-ENGLA.json",
-    )
-
-    val createActivityRequest =
-      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
-
-    prisonApiMockServer.stubGetLocation(
-      locationId = 1,
-      location = Location(
-        locationId = 1,
-        locationType = "CELL",
-        description = "House_block_7-1-002",
-        agencyId = "MDI",
-        currentOccupancy = 1,
-        locationPrefix = "LEI-House-block-7-1-002",
-        operationalCapacity = 2,
-        userDescription = "user description",
-        internalLocationCode = "internal location code",
-      ),
-    )
-
-    whenever(eventsPublisher.send(any())).thenThrow(RuntimeException("Publishing failure"))
-    val activity = webTestClient.createActivity(createActivityRequest)!!
-
-    with(activity) {
-      assertThat(summary).isEqualTo("IT level 1")
-      assertThat(startDate).isEqualTo(TimeSource.tomorrow())
-      assertThat(description).isEqualTo("A basic IT course")
-    }
-  }
-
-  @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity - is successful`() {
     prisonApiMockServer.stubGetReferenceCode(
@@ -933,7 +882,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
 
-    val activity = webTestClient.updateActivity(pentonvillePrisonCode, 1, updateActivityRequest)
+    val activity = webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, updateActivityRequest)
 
     with(activity) {
       assertThat(id).isNotNull
@@ -968,7 +917,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(username).isEqualTo("test-client")
       assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
-      assertThat(prisonCode).isEqualTo(pentonvillePrisonCode)
+      assertThat(prisonCode).isEqualTo(PENTONVILLE_PRISON_CODE)
       assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
     }
   }
@@ -995,7 +944,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newPay).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newPay).schedules.first()) {
       assertThat(allocations).hasSize(3)
       assertThat(allocations[0].prisonPayBand?.id).isEqualTo(3)
       assertThat(allocations[1].prisonPayBand?.id).isEqualTo(3)
@@ -1044,7 +993,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(instances).hasSizeBetween(3, 4)
@@ -1060,7 +1009,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, thursdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)
@@ -1084,7 +1033,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/seed-activity-for-with-exclusions.sql")
+  @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
   fun `updateActivity slots with exclusions - is successful`() {
     val mondayTuesdaySlot = ActivityUpdateRequest(
       slots = listOf(
@@ -1098,13 +1047,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           weekNumber = 1,
           timeSlot = "PM",
           monday = true,
-
           tuesday = true,
         ),
       ),
     )
 
-    with(webTestClient.updateActivity(moorlandPrisonCode, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(scheduleWeeks).isEqualTo(1)
       assertThat(slots).hasSize(2)
       assertThat(slots[0].daysOfWeek).containsExactly("Mon", "Tue")
@@ -1141,7 +1089,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val newEndDate = ActivityUpdateRequest(endDate = TimeSource.tomorrow())
 
-    with(webTestClient.updateActivity(pentonvillePrisonCode, 1, newEndDate)) {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newEndDate)) {
       assertThat(endDate).isEqualTo(TimeSource.tomorrow())
       assertThat(schedules.first().endDate).isEqualTo(TimeSource.tomorrow())
       assertThat(schedules.first().allocations.first().endDate).isEqualTo(TimeSource.tomorrow())
@@ -1340,5 +1288,35 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       code = "PRISONER",
       description = "A prisoner or group of prisoners",
     )
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-paid-no-allocations.sql")
+  fun `updateActivity - can change paid activity to unpaid activity`() {
+    with(webTestClient.getActivityById(1, "PVI")) {
+      paid isBool true
+      pay.isNotEmpty() isBool true
+    }
+
+    with(webTestClient.updateActivity("PVI", 1, ActivityUpdateRequest(paid = false))) {
+      paid isBool false
+      pay hasSize 0
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-unpaid-no-allocations-or-pay-rates.sql")
+  fun `updateActivity - can change unpaid activity to paid activity`() {
+    with(webTestClient.getActivityById(1, "PVI")) {
+      paid isBool false
+      pay hasSize 0
+    }
+
+    val activityPay = ActivityPayCreateRequest(incentiveNomisCode = "BAS", incentiveLevel = "Basic", payBandId = 1L, rate = 125, pieceRate = 150, pieceRateItems = 1)
+
+    with(webTestClient.updateActivity("PVI", 1, ActivityUpdateRequest(paid = true, pay = listOf(activityPay)))) {
+      paid isBool true
+      pay.isNotEmpty() isBool true
+    }
   }
 }

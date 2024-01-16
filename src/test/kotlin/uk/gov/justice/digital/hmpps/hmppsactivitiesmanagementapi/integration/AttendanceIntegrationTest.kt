@@ -15,8 +15,8 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -71,8 +71,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, pentonvillePrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
-          AttendanceUpdateRequest(2, pentonvillePrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
+          AttendanceUpdateRequest(1, PENTONVILLE_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, PENTONVILLE_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -112,8 +112,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
-          AttendanceUpdateRequest(2, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
+          AttendanceUpdateRequest(2, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -148,7 +148,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .uri("/attendances")
       .bodyValue(
         listOf(
-          AttendanceUpdateRequest(1, moorlandPrisonCode, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null),
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -176,7 +176,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get attendance list for specified date`() {
-    val attendanceList = webTestClient.getAllAttendanceByDate(moorlandPrisonCode, LocalDate.of(2022, 10, 10))!!
+    val attendanceList = webTestClient.getAllAttendanceByDate(MOORLAND_PRISON_CODE, LocalDate.of(2022, 10, 10))!!
     assertThat(attendanceList.size).isEqualTo(9)
   }
 

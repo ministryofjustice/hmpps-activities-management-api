@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -16,8 +17,11 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -52,6 +56,8 @@ abstract class IntegrationTestBase {
     internal val prisonApiMockServer = PrisonApiMockServer()
     internal val prisonerSearchApiMockServer = PrisonerSearchApiMockServer()
     internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
+    internal val caseNotesApiMockServer = CaseNotesApiMockServer()
+    internal val incentivesApiMockServer = IncentivesApiMockServer()
 
     @BeforeAll
     @JvmStatic
@@ -59,6 +65,8 @@ abstract class IntegrationTestBase {
       prisonApiMockServer.start()
       prisonerSearchApiMockServer.start()
       nonAssociationsApiMockServer.start()
+      caseNotesApiMockServer.start()
+      incentivesApiMockServer.start()
     }
 
     @AfterAll
@@ -67,6 +75,15 @@ abstract class IntegrationTestBase {
       prisonApiMockServer.stop()
       prisonerSearchApiMockServer.stop()
       nonAssociationsApiMockServer.stop()
+      caseNotesApiMockServer.stop()
+      incentivesApiMockServer.stop()
+    }
+
+    @BeforeEach
+    fun initMocks() {
+      prisonApiMockServer.resetAll()
+      prisonerSearchApiMockServer.resetAll()
+      incentivesApiMockServer.resetAll()
     }
 
     @AfterEach
@@ -74,6 +91,8 @@ abstract class IntegrationTestBase {
       prisonApiMockServer.resetAll()
       prisonerSearchApiMockServer.resetAll()
       nonAssociationsApiMockServer.resetAll()
+      caseNotesApiMockServer.resetAll()
+      incentivesApiMockServer.resetAll()
     }
   }
 
@@ -85,4 +104,12 @@ abstract class IntegrationTestBase {
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
+
+  internal fun stubPrisonerForInterestingEvent(prisoner: InmateDetail) {
+    prisonApiMockServer.stubGetPrisonerDetails(prisoner)
+  }
+
+  internal fun stubPrisonerForInterestingEvent(prisonerNumber: String) {
+    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber)
+  }
 }

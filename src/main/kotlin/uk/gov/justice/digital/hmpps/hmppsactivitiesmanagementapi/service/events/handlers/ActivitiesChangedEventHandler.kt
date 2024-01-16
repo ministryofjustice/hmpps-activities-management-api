@@ -16,11 +16,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -38,6 +41,7 @@ class ActivitiesChangedEventHandler(
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
   private val transactionHandler: TransactionHandler,
+  private val waitingListService: WaitingListService,
   private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
@@ -48,10 +52,11 @@ class ActivitiesChangedEventHandler(
   override fun handle(event: ActivitiesChangedEvent): Outcome {
     log.debug("Handling activities changed event {}", event)
 
-    if (rolloutPrisonRepository.findByCode(event.prisonCode())?.isActivitiesRolledOut() == true) {
+    if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
       return when (event.action()) {
         Action.SUSPEND -> suspendPrisonerAllocationsAndAttendances(event).let { Outcome.success() }
         Action.END -> {
+          waitingListService.removeOpenApplications(event.prisonCode(), event.prisonerNumber(), ServiceName.SERVICE_NAME.value)
           if (prisonerHasAllocationsOfInterestFor(event)) {
             allocationHandler.deallocate(event.prisonCode(), event.prisonerNumber(), getDeallocationReasonFor(event))
           } else {

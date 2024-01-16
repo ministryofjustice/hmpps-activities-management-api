@@ -24,18 +24,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -49,7 +50,7 @@ class ActivitiesChangedEventHandlerTest {
   }
 
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
-    on { findByCode(moorlandPrisonCode) } doReturn rolloutPrison
+    on { findByCode(MOORLAND_PRISON_CODE) } doReturn rolloutPrison
   }
 
   private val allocationRepository: AllocationRepository = mock()
@@ -57,6 +58,7 @@ class ActivitiesChangedEventHandlerTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
+  private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
@@ -67,6 +69,7 @@ class ActivitiesChangedEventHandlerTest {
     prisonerSearchApiClient,
     prisonerAllocationHandler,
     TransactionHandler(),
+    waitingListService,
     outboundEventsService,
   )
 
@@ -85,19 +88,19 @@ class ActivitiesChangedEventHandlerTest {
   fun `event is ignored for an inactive prison`() {
     rolloutPrison.stub { on { isActivitiesRolledOut() } doReturn false }
 
-    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode)).isSuccess()).isTrue
+    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE)).isSuccess()).isTrue
 
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
   }
 
   @Test
   fun `event is ignored when no matching prison`() {
-    rolloutPrisonRepository.stub { on { findByCode(moorlandPrisonCode) } doReturn null }
+    rolloutPrisonRepository.stub { on { findByCode(MOORLAND_PRISON_CODE) } doReturn null }
 
-    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode)).isSuccess()).isTrue
+    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE)).isSuccess()).isTrue
 
-    verify(rolloutPrisonRepository).findByCode(moorlandPrisonCode)
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
   }
 
@@ -122,14 +125,14 @@ class ActivitiesChangedEventHandlerTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         "123456",
         PrisonerStatus.ACTIVE,
         PrisonerStatus.PENDING,
       ),
     ) doReturn allocations
 
-    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+    val outcome = handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
     outcome.isSuccess() isBool true
 
@@ -148,7 +151,7 @@ class ActivitiesChangedEventHandlerTest {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           "123456",
           PrisonerStatus.ACTIVE,
           PrisonerStatus.PENDING,
@@ -189,14 +192,14 @@ class ActivitiesChangedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
         AttendanceStatus.WAITING,
         "123456",
       ),
     ) doReturn listOf(historicAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
     verify(historicAttendance, never()).completeWithoutPayment(suspendedAttendanceReason)
     verify(todaysFutureAttendance).completeWithoutPayment(suspendedAttendanceReason)
@@ -209,7 +212,7 @@ class ActivitiesChangedEventHandlerTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumber(any())) doReturn null
 
     assertThatThrownBy {
-      handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+      handler.handle(activitiesChangedEvent("123456", Action.END, MOORLAND_PRISON_CODE))
     }.isInstanceOf(NullPointerException::class.java)
       .hasMessage("Prisoner search lookup failed for prisoner 123456")
 
@@ -219,7 +222,7 @@ class ActivitiesChangedEventHandlerTest {
   @Test
   fun `future attendances are not removed on suspend`() {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(moorlandPrisonCode, "123456")) doReturn it
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456")) doReturn it
     }
 
     val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
@@ -233,13 +236,13 @@ class ActivitiesChangedEventHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         sessionDate = LocalDate.now(),
         prisonerNumber = "123456",
       ),
     ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, moorlandPrisonCode))
+    handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
     verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
     verify(todaysFuturescheduledInstance, never()).remove(todaysFutureAttendance)
@@ -264,37 +267,37 @@ class ActivitiesChangedEventHandlerTest {
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
     }
 
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+    handler.handle(activitiesChangedEvent("123456", Action.END, MOORLAND_PRISON_CODE))
 
-    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
   }
 
   @Test
   fun `released (at other prison) prisoner is deallocated on 'END' with reason 'TEMPORARILY RELEASED'`() {
     mock<Prisoner> {
       on { status } doReturn "ACTIVE IN"
-      on { prisonId } doReturn pentonvillePrisonCode
+      on { prisonId } doReturn PENTONVILLE_PRISON_CODE
     }.also { permanentlyReleasedPrisoner ->
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
     }
 
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+    handler.handle(activitiesChangedEvent("123456", Action.END, MOORLAND_PRISON_CODE))
 
-    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
+    verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.TEMPORARILY_RELEASED)
   }
 
   @Test
   fun `released (but still at same prison) prisoner is deallocated on 'END' with reason 'OTHER`() {
     mock<Prisoner> {
       on { status } doReturn "ACTIVE IN"
-      on { prisonId } doReturn moorlandPrisonCode
+      on { prisonId } doReturn MOORLAND_PRISON_CODE
     }.also { permanentlyReleasedPrisoner ->
       whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn permanentlyReleasedPrisoner
     }
 
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode))
+    handler.handle(activitiesChangedEvent("123456", Action.END, MOORLAND_PRISON_CODE))
 
-    verify(prisonerAllocationHandler).deallocate(moorlandPrisonCode, "123456", DeallocationReason.OTHER)
+    verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.OTHER)
   }
 
   @Test
@@ -307,7 +310,7 @@ class ActivitiesChangedEventHandlerTest {
       ),
     ) doReturn false
 
-    handler.handle(activitiesChangedEvent("123456", Action.END, moorlandPrisonCode)).also { it.isSuccess() isBool true }
+    handler.handle(activitiesChangedEvent("123456", Action.END, MOORLAND_PRISON_CODE)).also { it.isSuccess() isBool true }
 
     verifyNoInteractions(prisonerSearchApiClient)
     verifyNoInteractions(prisonerAllocationHandler)

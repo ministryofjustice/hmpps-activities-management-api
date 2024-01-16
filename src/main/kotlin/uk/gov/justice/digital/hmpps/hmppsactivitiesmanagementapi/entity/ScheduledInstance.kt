@@ -80,6 +80,8 @@ data class ScheduledInstance(
 
   fun timeSlot() = TimeSlot.slot(startTime)
 
+  fun slotTimes() = startTime to endTime
+
   fun attendanceRequired() = activitySchedule.activity.attendanceRequired
 
   /**
@@ -135,6 +137,8 @@ data class ScheduledInstance(
 
     attendances.remove(attendance)
   }
+
+  fun isPaid() = activitySchedule.isPaid()
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

@@ -64,10 +64,6 @@ data class Activity(
 
   var riskLevel: String,
 
-  var minimumIncentiveNomisCode: String,
-
-  var minimumIncentiveLevel: String,
-
   val createdTime: LocalDateTime,
 
   val createdBy: String,
@@ -76,8 +72,19 @@ data class Activity(
 
   var updatedBy: String? = null,
 
-  private var paid: Boolean,
+  @Transient
+  private val isPaid: Boolean,
 ) {
+  var paid: Boolean = isPaid
+    set(value) {
+      if (field == value) return // no op, ignore
+
+      if (schedules().any { it.allocations().isNotEmpty() }) {
+        throw IllegalArgumentException("Paid attribute cannot be updated for allocated activity '$activityId'")
+      }
+
+      field = value.also { if (!it) removePay() }
+    }
 
   var endDate: LocalDate? = null
     set(value) {
@@ -288,8 +295,6 @@ data class Activity(
     description = description,
     category = activityCategory.toModel(),
     riskLevel = riskLevel,
-    minimumIncentiveNomisCode = minimumIncentiveNomisCode,
-    minimumIncentiveLevel = minimumIncentiveLevel,
     minimumEducationLevel = activityMinimumEducationLevel().toModel(),
     capacity = schedules().sumOf { schedule -> schedule.capacity },
     allocated = schedules().sumOf { schedule ->

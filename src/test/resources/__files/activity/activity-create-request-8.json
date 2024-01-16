@@ -5,8 +5,6 @@
   "description": "A basic IT course",
   "categoryId": 1,
   "tierCode": "TIER_1",
-  "minimumIncentiveNomisCode": "BAS",
-  "minimumIncentiveLevel": "Basic",
   "riskLevel": "high",
   "pay": [
     {

@@ -6,11 +6,9 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
@@ -20,7 +18,6 @@ import java.time.LocalDateTime
 class PrisonerAllocationHandler(
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
-  private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
 ) {
@@ -30,21 +27,7 @@ class PrisonerAllocationHandler(
 
   @Transactional
   internal fun deallocate(prisonCode: String, prisonerNumber: String, reason: DeallocationReason) {
-    declinePrisonersWaitingListApplications(prisonCode, prisonerNumber, reason)
     deallocatePrisonerAndRemoveFutureAttendances(reason, prisonCode, prisonerNumber)
-  }
-
-  private fun declinePrisonersWaitingListApplications(
-    prisonCode: String,
-    prisonerNumber: String,
-    reason: DeallocationReason,
-  ) {
-    waitingListService.declinePendingOrApprovedApplications(
-      prisonCode,
-      prisonerNumber,
-      reason.description,
-      ServiceName.SERVICE_NAME.value,
-    )
   }
 
   private fun deallocatePrisonerAndRemoveFutureAttendances(

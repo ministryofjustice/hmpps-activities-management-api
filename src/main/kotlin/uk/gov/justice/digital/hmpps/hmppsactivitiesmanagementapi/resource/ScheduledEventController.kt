@@ -94,21 +94,17 @@ class ScheduledEventController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
-
     @RequestParam(value = "prisonerNumber", required = true)
     @Parameter(description = "Prisoner number (required). Format A9999AA.")
     prisonerNumber: String,
-
     @RequestParam(value = "startDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
     startDate: LocalDate,
-
     @RequestParam(value = "endDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "End date of query (required). Format YYYY-MM-DD. The end date must be within 3 months of the start date)")
     endDate: LocalDate,
-
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
@@ -182,16 +178,13 @@ class ScheduledEventController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
-
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     date: LocalDate,
-
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-
     @RequestBody(required = true)
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>,
@@ -259,16 +252,13 @@ class ScheduledEventController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
-
     @RequestParam(value = "date", required = true)
     @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     date: LocalDate,
-
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-
     @RequestBody(required = true)
     @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
     internalLocationIds: Set<Long>,

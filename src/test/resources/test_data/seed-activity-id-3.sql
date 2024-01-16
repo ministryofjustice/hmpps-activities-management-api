@@ -1,14 +1,8 @@
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by, paid)
-values (1, 'MDI', 2, 2, true, false, false, false, 'H', 'Geography', 'Geography Level 1', '2022-10-01', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER', true);
-
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by, paid)
-values (2, 'MDI', 2, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-11-01', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER', true);
-
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by, paid)
-values (3, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1', '2022-10-10', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER', true);
-
-insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, minimum_incentive_nomis_code, minimum_incentive_level, created_time, created_by, paid)
-values (4, 'PVI', 2, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-10-21', null, 'high', 'BAS', 'Basic', '2022-9-21 00:00:00', 'SEED USER', true);
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid)
+values (1, 'MDI', 2, 2, true, false, false, false, 'H', 'Geography', 'Geography Level 1', '2022-10-01', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true),
+    (2, 'MDI', 2, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-11-01', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true),
+    (3, 'PVI', 1, 1, true, false, false, false, 'H', 'Maths', 'Maths Level 1', '2022-10-10', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true),
+    (4, 'PVI', 2, 2, true, false, false, false, 'H', 'English', 'English Level 2', '2022-10-21', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true);
 
 insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
 values (1, 1, 'BAS', 'Basic', 1, 101, 0, 0);
@@ -26,25 +20,25 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (1, 1, 'Geography AM', 1, 'L1', 'Location MDI 1', 10, '2022-10-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:01:00', '11:00:00', true);
+values (1, 1, '09:00:00', '12:00:00', true);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (2, 1, 'Geography PM', 2, 'L2', 'Location MDI 2', 10, '2022-10-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (2, 2, '14:01:00', '15:00:00', true);
+values (2, 2, '13:00:00', '16:30:00', true);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (3, 2, 'English AM', 2, 'L2', 'Location MDI 2', 10, '2022-11-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (3, 3, '10:01:00', '11:00:00', true);
+values (3, 3, '09:00:00', '12:00:00', true);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (4, 2, 'English PM', 1, 'L1', 'Location MDI 1', 10, '2022-11-01');
 
 insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (4, 4, '14:01:00', '15:00:00', true);
+values (4, 4, '13:00:00', '16:30:00', true);
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (5, 3, 'Maths AM', 3, 'L1', 'Location PVI 1', 10, '2022-10-10');
@@ -119,64 +113,64 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (16, 8, 'B22222A', 20002, 3, '2022-11-22', null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (1, 1, '2022-10-01', '10:01:00', '11:00:00', false, null, null);
+values (1, 1, '2022-10-01', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (2, 1, '2022-10-02', '10:01:00', '11:00:00', false, null, null);
+values (2, 1, '2022-10-02', '10:01:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (3, 1, '2022-10-03', '10:01:00', '11:00:00', false, null, null);
+values (3, 1, '2022-10-03', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (4, 1, '2022-10-04', '10:01:00', '11:00:00', false, null, null);
+values (4, 1, '2022-10-04', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (5, 1, '2022-10-05', '10:01:00', '11:00:00', false, null, null);
+values (5, 1, '2022-10-05', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (6, 2, '2022-10-01', '14:01:00', '15:00:00', false, null, null);
+values (6, 2, '2022-10-01', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (7, 2, '2022-10-02', '14:01:00', '15:00:00', false, null, null);
+values (7, 2, '2022-10-02', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (8, 2, '2022-10-03', '14:01:00', '15:00:00', false, null, null);
+values (8, 2, '2022-10-03', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (9, 2, '2022-10-04', '14:01:00', '15:00:00', false, null, null);
+values (9, 2, '2022-10-04', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (10, 2, '2022-10-05', '14:01:00', '15:00:00', false, null, null);
+values (10, 2, '2022-10-05', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (11, 3, '2022-11-01', '10:01:00', '11:00:00', false, null, null);
+values (11, 3, '2022-11-01', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (12, 3, '2022-11-02', '10:01:00', '11:00:00', false, null, null);
+values (12, 3, '2022-11-02', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (13, 3, '2022-11-03', '10:01:00', '11:00:00', false, null, null);
+values (13, 3, '2022-11-03', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (14, 3, '2022-11-04', '10:01:00', '11:00:00', false, null, null);
+values (14, 3, '2022-11-04', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (15, 3, '2022-11-05', '10:01:00', '11:00:00', false, null, null);
+values (15, 3, '2022-11-05', '09:00:00', '12:00:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (16, 4, '2022-11-01', '14:01:00', '15:00:00', false, null, null);
+values (16, 4, '2022-11-01', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (17, 4, '2022-11-02', '14:01:00', '15:00:00', false, null, null);
+values (17, 4, '2022-11-02', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (18, 4, '2022-11-03', '14:01:00', '15:00:00', false, null, null);
+values (18, 4, '2022-11-03', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (19, 4, '2022-11-04', '14:01:00', '15:00:00', false, null, null);
+values (19, 4, '2022-11-04', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (20, 4, '2022-11-05', '14:01:00', '15:00:00', false, null, null);
+values (20, 4, '2022-11-05', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
 values (21, 5, '2022-10-10', '10:00:00', '11:00:00', false, null, null);

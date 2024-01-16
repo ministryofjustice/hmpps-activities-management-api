@@ -51,6 +51,11 @@ non-associations:
     url: https://non-associations-api-dev.hmpps.service.justice.gov.uk
     timeout: 10s
 
+incentives:
+  api:
+    url: https://incentives-api-dev.hmpps.service.justice.gov.uk
+    timeout: 10s
+
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS:14}

@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -34,17 +36,22 @@ import java.time.LocalTime
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
-const val moorlandPrisonCode = "MDI"
-const val pentonvillePrisonCode = "PVI"
-const val risleyPrisonCode = "RSI"
+const val MOORLAND_PRISON_CODE = "MDI"
+const val PENTONVILLE_PRISON_CODE = "PVI"
+const val RISLEY_PRISON_CODE = "RSI"
 
-val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
-val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
+internal val eligibilityRuleOver21 = EligibilityRule(eligibilityRuleId = 1, code = "OVER_21", "The prisoner must be over 21 to attend")
+internal val eligibilityRuleFemale = EligibilityRule(eligibilityRuleId = 2, code = "FEMALE_ONLY", "The prisoner must be female to attend")
 
-val lowPayBand = prisonPayBandsLowMediumHigh()[0]
-val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
+internal val lowPayBand = prisonPayBandsLowMediumHigh()[0]
+internal val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
 
-val activeAllocation = activityEntity().schedules().first().allocations().first()
+internal val activeAllocation = activityEntity().schedule().allocations().first()
+
+internal val pentonvilleActivity = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE)
+internal val moorlandActivity = activityEntity(prisonCode = MOORLAND_PRISON_CODE)
+
+internal fun Activity.schedule() = this.schedules().single()
 
 internal fun activityEntity(
   category: ActivityCategory = activityCategory(),
@@ -74,14 +81,12 @@ internal fun activityEntity(
     summary = summary,
     description = description,
     riskLevel = riskLevel,
-    minimumIncentiveNomisCode = "BAS",
-    minimumIncentiveLevel = "Basic",
     startDate = startDate,
     createdTime = timestamp,
     createdBy = "test",
     inCell = inCell,
     onWing = onWing,
-    paid = paid,
+    isPaid = paid,
   ).apply {
     this.organiser = organiser
     this.endDate = endDate
@@ -150,7 +155,9 @@ internal fun activityCategory2(code: String = "category code 2") =
     description = "category description 2",
   )
 
-internal fun schedule(prisonCode: String = moorlandPrisonCode) = activityEntity(prisonCode = prisonCode).schedules().first()
+internal val notInWorkCategory = activityCategory("SAA_NOT_IN_WORK")
+
+internal fun schedule(prisonCode: String = MOORLAND_PRISON_CODE) = activityEntity(prisonCode = prisonCode).schedules().first()
 
 internal fun attendanceReasons() = mapOf(
   "SICK" to AttendanceReason(1, AttendanceReasonEnum.SICK, "Sick", false, true, true, false, false, false, true, 1, "Maps to ACCAB in NOMIS"),
@@ -223,7 +230,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime(), timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek)
       if (!noAllocations && !noExclusions) {
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),
@@ -231,7 +238,9 @@ internal fun activitySchedule(
           payBand = if (paid) lowPayBand else null,
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
-        ).apply { this.updateExclusion(slot, daysOfWeek) }
+        ).apply {
+          this.updateExclusion(slot, daysOfWeek)
+        }
       }
     }
     if (!noInstances && !noSlots) {
@@ -276,19 +285,34 @@ internal fun activitySchedule(
     }
   }
 
-internal fun allocation(startDate: LocalDate? = null) =
-  startDate
-    ?.let { activitySchedule(activityEntity(startDate = it)).allocations().first() }
-    ?: activitySchedule(activityEntity()).allocations().first()
+internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false): Allocation {
+  val allocation = startDate
+    ?.let { activitySchedule(activityEntity(startDate = it), noExclusions = true).allocations().first() }
+    ?: activitySchedule(activityEntity(), noExclusions = true).allocations().first()
+
+  val slot = allocation.activitySchedule.slots().first()
+
+  return if (withExclusions) {
+    allocation.apply {
+      if (startDate != null) {
+        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
+      } else {
+        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
+      }
+    }
+  } else {
+    allocation
+  }
+}
 
 internal fun deallocation(endDate: LocalDate? = null) =
   endDate
     ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
     ?: activitySchedule(activityEntity()).allocations().first()
 
-fun rolloutPrison() = RolloutPrison(
+internal fun rolloutPrison() = RolloutPrison(
   1,
-  pentonvillePrisonCode,
+  PENTONVILLE_PRISON_CODE,
   "HMP Pentonville",
   true,
   LocalDate.of(2022, 12, 22),
@@ -296,8 +320,8 @@ fun rolloutPrison() = RolloutPrison(
   LocalDate.of(2022, 12, 23),
 )
 
-fun prisonRegime(
-  prisonCode: String = pentonvillePrisonCode,
+internal fun prisonRegime(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
 ) = PrisonRegime(
   1,
   prisonCode,
@@ -310,7 +334,7 @@ fun prisonRegime(
   1,
 )
 
-fun prisonPayBandsLowMediumHigh(prisonCode: String = moorlandPrisonCode) = listOf(
+internal fun prisonPayBandsLowMediumHigh(prisonCode: String = MOORLAND_PRISON_CODE) = listOf(
   PrisonPayBand(
     prisonPayBandId = 1,
     prisonCode = prisonCode,
@@ -342,7 +366,7 @@ internal fun attendance() = schedule().instances().first().attendances.first()
 internal fun attendanceList() = listOf(
   AllAttendance(
     attendanceId = 1,
-    prisonCode = pentonvillePrisonCode,
+    prisonCode = PENTONVILLE_PRISON_CODE,
     sessionDate = LocalDate.now(),
     timeSlot = "AM",
     status = "WAITING",
@@ -358,7 +382,7 @@ internal fun attendanceList() = listOf(
 )
 
 internal fun activityCreateRequest(
-  prisonCode: String = moorlandPrisonCode,
+  prisonCode: String = MOORLAND_PRISON_CODE,
   educationLevel: ReferenceCode? = null,
   studyArea: ReferenceCode? = null,
   eligibilityRules: Set<EligibilityRule> = setOf(eligibilityRuleOver21),
@@ -379,8 +403,6 @@ internal fun activityCreateRequest(
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
     pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)) else emptyList(),
     riskLevel = "high",
-    minimumIncentiveNomisCode = "BAS",
-    minimumIncentiveLevel = "Basic",
     startDate = TimeSource.tomorrow(),
     endDate = null,
     minimumEducationLevel = listOf(
@@ -410,9 +432,9 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   sundayFlag = true
 }
 
-fun waitingList(
+internal fun waitingList(
   waitingListId: Long = 1,
-  prisonCode: String = pentonvillePrisonCode,
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "123456",
   initialStatus: WaitingListStatus = WaitingListStatus.DECLINED,
   applicationDate: LocalDate = TimeSource.today(),

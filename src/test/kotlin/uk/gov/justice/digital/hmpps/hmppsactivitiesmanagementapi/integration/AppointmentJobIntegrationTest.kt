@@ -15,12 +15,12 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.risleyPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
@@ -55,7 +55,7 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     prisonerNumber = "B2345CD",
     inOutStatus = Prisoner.InOutStatus.IN,
     status = "ACTIVE IN",
-    prisonId = risleyPrisonCode,
+    prisonId = RISLEY_PRISON_CODE,
     lastMovementType = null,
     confirmedReleaseDate = null,
   )
@@ -64,7 +64,7 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     prisonerNumber = prisonNumber,
     inOutStatus = Prisoner.InOutStatus.IN,
     status = "ACTIVE IN",
-    prisonId = moorlandPrisonCode,
+    prisonId = MOORLAND_PRISON_CODE,
     lastMovementType = null,
     confirmedReleaseDate = null,
   )
@@ -73,7 +73,7 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     prisonerNumber = prisonNumber,
     inOutStatus = Prisoner.InOutStatus.OUT,
     status = "ACTIVE OUT",
-    prisonId = risleyPrisonCode,
+    prisonId = RISLEY_PRISON_CODE,
     lastMovementType = null,
     confirmedReleaseDate = null,
   )
@@ -87,8 +87,8 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     confirmedReleaseDate = LocalDate.now(),
   )
 
-  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = TimeSource.daysInPast(5))
-  private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = risleyPrisonCode, movementDate = TimeSource.daysInPast(4))
+  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = RISLEY_PRISON_CODE, movementDate = 5.daysAgo())
+  private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = RISLEY_PRISON_CODE, movementDate = 4.daysAgo())
 
   @Sql("classpath:test_data/seed-manage-appointments-job.sql")
   @Test

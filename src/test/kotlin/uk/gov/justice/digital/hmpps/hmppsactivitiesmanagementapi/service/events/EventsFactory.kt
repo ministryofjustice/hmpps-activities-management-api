@@ -1,9 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 
 fun offenderTemporaryReleasedEvent(
-  prisonCode: String = pentonvillePrisonCode,
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
 ) = OffenderReleasedEvent(
   ReleaseInformation(
@@ -14,7 +14,7 @@ fun offenderTemporaryReleasedEvent(
 )
 
 fun offenderReleasedEvent(
-  prisonCode: String = pentonvillePrisonCode,
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
   reason: String = "RELEASED",
 ) = OffenderReleasedEvent(
@@ -26,7 +26,7 @@ fun offenderReleasedEvent(
 )
 
 fun offenderTransferReleasedEvent(
-  prisonCode: String = pentonvillePrisonCode,
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
 ) = OffenderReleasedEvent(
   ReleaseInformation(
@@ -37,7 +37,7 @@ fun offenderTransferReleasedEvent(
 )
 
 fun offenderReceivedFromTemporaryAbsence(
-  prisonCode: String = pentonvillePrisonCode,
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
 ) = OffenderReceivedEvent(
   ReceivedInformation(

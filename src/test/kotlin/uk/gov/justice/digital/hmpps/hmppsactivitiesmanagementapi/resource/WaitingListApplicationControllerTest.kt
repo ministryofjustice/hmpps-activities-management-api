@@ -9,6 +9,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
@@ -67,7 +68,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
   fun `200 response when searching waiting list application`() {
     val request = WaitingListSearchRequest()
     val waitingListApplication = waitingList().toModel()
-    val pagedResult = PageImpl(listOf(waitingListApplication))
+    val pagedResult = PageImpl(listOf(waitingListApplication), Pageable.ofSize(1), 1)
 
     whenever(
       waitingListService.searchWaitingLists(

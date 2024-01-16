@@ -20,20 +20,20 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import reactor.core.publisher.Mono
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeclinedFromWaitingListEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerRemovedFromWaitingListEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -49,7 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
-import java.util.*
+import java.util.Optional
 
 @ExtendWith(FakeCaseLoad::class)
 class WaitingListServiceTest {
@@ -61,16 +61,17 @@ class WaitingListServiceTest {
   private val waitingListRepository: WaitingListRepository = mock {}
   private val waitingListSearchSpecification: WaitingListSearchSpecification = spy()
   private val activityRepository: ActivityRepository = mock {}
-  private val prisonApiClient: PrisonApiClient = mock()
+  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
+  private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
   private val service = WaitingListService(
     scheduleRepository,
     waitingListRepository,
     waitingListSearchSpecification,
     activityRepository,
-    prisonApiClient,
+    prisonerSearchApiClient,
     telemetryClient,
     auditService,
   )
@@ -85,14 +86,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if prisoner is at different prison to the activities prison`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "INACTIVE OUT",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInMoorlandPrisoner
     }
 
     val request = WaitingListApplicationRequest(
@@ -110,15 +105,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if status not PENDING, APPROVED or DECLINED`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeOutPentonvillePrisoner
     }
 
     val request = WaitingListApplicationRequest(
@@ -153,15 +141,8 @@ class WaitingListServiceTest {
 
   @Test
   fun `fails if prisoner has no booking id`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = null,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner.copy(bookingId = null)
     }
 
     val request = WaitingListApplicationRequest(
@@ -187,7 +168,7 @@ class WaitingListServiceTest {
       status = WaitingListStatus.PENDING,
     )
 
-    activity.activityCategory = activityCategory(code = "SAA_NOT_IN_WORK")
+    activity.activityCategory = notInWorkCategory
 
     assertThatThrownBy {
       service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "test")
@@ -317,108 +298,94 @@ class WaitingListServiceTest {
 
   @Test
   fun `add prisoner to waiting list succeeds`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "123456") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "123456",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "123456") } doReturn activeInPentonvillePrisoner
+    }
 
-      val request = WaitingListApplicationRequest(
-        prisonerNumber = "123456",
-        activityScheduleId = 1L,
-        applicationDate = TimeSource.today(),
-        requestedBy = "Bob",
-        comments = "Bob's comments",
-        status = WaitingListStatus.PENDING,
-      )
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "123456",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.PENDING,
+    )
 
-      service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
 
-      verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
-      verify(telemetryClient).trackEvent(
-        TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
-        mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
-        mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
-      )
+    verify(waitingListRepository).saveAndFlush(waitingListCaptor.capture())
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_ADDED_TO_WAITLIST.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "123456"),
+      mapOf(NUMBER_OF_RESULTS_METRIC_KEY to 1.0),
+    )
 
-      with(waitingListCaptor.firstValue) {
-        prisonerNumber isEqualTo "123456"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.today()
-        requestedBy isEqualTo "Bob"
-        comments isEqualTo "Bob's comments"
-        status isEqualTo WaitingListStatus.PENDING
-      }
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "123456"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.PENDING
     }
   }
 
   @Test
   fun `can add multiple waiting list records for the same prisoner`() {
-    prisonApiClient.stub {
-      on { getPrisonerDetails(prisonerNumber = "654321") } doReturn Mono.just(
-        InmateDetailFixture.instance(
-          offenderNo = "654321",
-          status = "ACTIVE IN",
-          agencyId = DEFAULT_CASELOAD_PENTONVILLE,
-          bookingId = 1L,
-        ),
-      )
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber(prisonerNumber = "654321") } doReturn activeInPentonvillePrisoner
+    }
 
-      val request = WaitingListApplicationRequest(
-        prisonerNumber = "654321",
-        activityScheduleId = 1L,
-        applicationDate = TimeSource.today(),
-        requestedBy = "Bob",
-        comments = "Bob's comments",
-        status = WaitingListStatus.DECLINED,
-      )
+    val request = WaitingListApplicationRequest(
+      prisonerNumber = "654321",
+      activityScheduleId = 1L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Bob",
+      comments = "Bob's comments",
+      status = WaitingListStatus.DECLINED,
+    )
 
-      service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
-      service.addPrisoner(
-        DEFAULT_CASELOAD_PENTONVILLE,
-        request.copy(
-          applicationDate = TimeSource.yesterday(),
-          requestedBy = "Fred",
-          comments = "Fred's comments",
-          status = WaitingListStatus.PENDING,
-        ),
-        "Test user",
-      )
+    service.addPrisoner(DEFAULT_CASELOAD_PENTONVILLE, request, "Test user")
+    service.addPrisoner(
+      DEFAULT_CASELOAD_PENTONVILLE,
+      request.copy(
+        applicationDate = TimeSource.yesterday(),
+        requestedBy = "Fred",
+        comments = "Fred's comments",
+        status = WaitingListStatus.PENDING,
+      ),
+      "Test user",
+    )
 
-      verify(waitingListRepository, times(2)).saveAndFlush(waitingListCaptor.capture())
+    verify(waitingListRepository, times(2)).saveAndFlush(waitingListCaptor.capture())
 
-      with(waitingListCaptor.firstValue) {
-        prisonerNumber isEqualTo "654321"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.today()
-        requestedBy isEqualTo "Bob"
-        comments isEqualTo "Bob's comments"
-        status isEqualTo WaitingListStatus.DECLINED
-      }
+    with(waitingListCaptor.firstValue) {
+      prisonerNumber isEqualTo "654321"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.today()
+      requestedBy isEqualTo "Bob"
+      comments isEqualTo "Bob's comments"
+      status isEqualTo WaitingListStatus.DECLINED
+    }
 
-      with(waitingListCaptor.secondValue) {
-        prisonerNumber isEqualTo "654321"
-        activitySchedule isEqualTo schedule
-        applicationDate isEqualTo TimeSource.yesterday()
-        requestedBy isEqualTo "Fred"
-        comments isEqualTo "Fred's comments"
-        status isEqualTo WaitingListStatus.PENDING
-      }
+    with(waitingListCaptor.secondValue) {
+      prisonerNumber isEqualTo "654321"
+      activitySchedule isEqualTo schedule
+      applicationDate isEqualTo TimeSource.yesterday()
+      requestedBy isEqualTo "Fred"
+      comments isEqualTo "Fred's comments"
+      status isEqualTo WaitingListStatus.PENDING
     }
   }
 
   @Test
   fun `get waiting lists by the schedule identifier`() {
-    val schedule = activityEntity(prisonCode = pentonvillePrisonCode).schedules().first()
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
 
     val waitingList = WaitingList(
       waitingListId = 99,
-      prisonCode = pentonvillePrisonCode,
+      prisonCode = PENTONVILLE_PRISON_CODE,
       activitySchedule = schedule,
       prisonerNumber = "123456",
       bookingId = 100L,
@@ -449,7 +416,7 @@ class WaitingListServiceTest {
         id isEqualTo 99
         scheduleId isEqualTo schedule.activityScheduleId
         allocationId isEqualTo allocation.allocationId
-        prisonCode isEqualTo pentonvillePrisonCode
+        prisonCode isEqualTo PENTONVILLE_PRISON_CODE
         prisonerNumber isEqualTo "123456"
         bookingId isEqualTo 100L
         status isEqualTo WaitingListStatus.DECLINED
@@ -476,7 +443,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `get waiting list by id`() {
-    val waitingList = waitingList(waitingListId = 99, prisonCode = pentonvillePrisonCode)
+    val waitingList = waitingList(waitingListId = 99, prisonCode = PENTONVILLE_PRISON_CODE)
 
     whenever(waitingListRepository.findById(waitingList.waitingListId)) doReturn Optional.of(waitingList)
 
@@ -506,7 +473,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, applicationDate = TimeSource.today()).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, applicationDate = TimeSource.today()).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -527,7 +494,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date no-op if the same`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, applicationDate = TimeSource.today()).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, applicationDate = TimeSource.today()).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -548,7 +515,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update the application date fails if after creation date`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -567,7 +534,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested by`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -588,7 +555,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested by no-op if the same`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -609,7 +576,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update requested fails if blank or empty`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, requestedBy = "Fred").also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -638,7 +605,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update comments`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, comments = "Initial comments").also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, comments = "Initial comments").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -659,7 +626,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update comments no-op if the same`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, comments = "Initial comments").also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, comments = "Initial comments").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -680,7 +647,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status to APPROVED`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -709,7 +676,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status to DECLINED`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -738,7 +705,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status no-op if the same`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -762,7 +729,7 @@ class WaitingListServiceTest {
   @Test
   fun `update status fails if already allocated`() {
     val waitingList =
-      waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.ALLOCATED).also {
+      waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.ALLOCATED).also {
         whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
       }
 
@@ -784,7 +751,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if already removed`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.REMOVED).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.REMOVED).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -807,7 +774,7 @@ class WaitingListServiceTest {
   @Test
   fun `only status changes update 'statusUpdatedTime'`() {
     val waitingList = waitingList(
-      prisonCode = pentonvillePrisonCode,
+      prisonCode = PENTONVILLE_PRISON_CODE,
       initialStatus = WaitingListStatus.PENDING,
     ).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
@@ -837,7 +804,7 @@ class WaitingListServiceTest {
   @Test
   fun `update application fails if person is already allocated to the activity`() {
     val waitingList =
-      waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING, allocated = true)
+      waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING, allocated = true)
         .also {
           whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
         }
@@ -859,12 +826,12 @@ class WaitingListServiceTest {
 
   @Test
   fun `update application fails if person has a more recent application for the same activity`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING)
       .also {
         whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
 
         val moreRecentApplication =
-          waitingList(waitingListId = 2, prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING)
+          waitingList(waitingListId = 2, prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING)
         whenever(
           waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
             it.prisonCode,
@@ -891,7 +858,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update status fails if not PENDING, APPROVED or DECLINED`() {
-    val waitingList = waitingList(prisonCode = pentonvillePrisonCode, initialStatus = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -923,7 +890,7 @@ class WaitingListServiceTest {
 
   @Test
   fun `update fails if incorrect caseload`() {
-    val waitingList = waitingList(prisonCode = moorlandPrisonCode, initialStatus = WaitingListStatus.PENDING).also {
+    val waitingList = waitingList(prisonCode = MOORLAND_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
@@ -938,68 +905,88 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `declines pending and approved applications for prisoner and is audited`() {
+  fun `removes pending, approved and declined applications for prisoner and is audited`() {
     val pending = waitingList(
       waitingListId = 1,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "A",
       initialStatus = WaitingListStatus.PENDING,
     )
     val approved = waitingList(
       waitingListId = 2,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "A",
       initialStatus = WaitingListStatus.APPROVED,
+    )
+    val declined = waitingList(
+      waitingListId = 3,
+      prisonCode = MOORLAND_PRISON_CODE,
+      prisonerNumber = "A",
+      initialStatus = WaitingListStatus.DECLINED,
     )
 
     whenever(
       waitingListRepository.findByPrisonCodeAndPrisonerNumberAndStatusIn(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         prisonerNumber = "A",
-        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+        statuses = setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
       ),
-    ) doReturn listOf(pending, approved)
+    ) doReturn listOf(pending, approved, declined)
 
-    service.declinePendingOrApprovedApplications(moorlandPrisonCode, "A", "reason", "Fred")
+    service.removeOpenApplications(MOORLAND_PRISON_CODE, "A", "Fred")
 
     verify(waitingListRepository).findByPrisonCodeAndPrisonerNumberAndStatusIn(
-      moorlandPrisonCode,
+      MOORLAND_PRISON_CODE,
       "A",
-      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED),
+      setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED),
     )
 
     with(pending) {
-      status isEqualTo WaitingListStatus.DECLINED
-      declinedReason isEqualTo "reason"
+      status isEqualTo WaitingListStatus.REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
     with(approved) {
-      status isEqualTo WaitingListStatus.DECLINED
-      declinedReason isEqualTo "reason"
+      status isEqualTo WaitingListStatus.REMOVED
       updatedTime!! isCloseTo TimeSource.now()
       updatedBy isEqualTo "Fred"
     }
 
-    verify(auditService, times(2)).logEvent(declinedEventCaptor.capture())
+    with(declined) {
+      status isEqualTo WaitingListStatus.REMOVED
+      updatedTime!! isCloseTo TimeSource.now()
+      updatedBy isEqualTo "Fred"
+    }
 
-    with(declinedEventCaptor.firstValue) {
+    verify(auditService, times(3)).logEvent(removedEventCaptor.capture())
+
+    with(removedEventCaptor.firstValue) {
       waitingListId isEqualTo 1
       activityId isEqualTo 1
       scheduleId isEqualTo 1
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "A"
       createdAt isCloseTo TimeSource.now()
     }
 
-    with(declinedEventCaptor.secondValue) {
+    with(removedEventCaptor.secondValue) {
       waitingListId isEqualTo 2
       activityId isEqualTo 2
       scheduleId isEqualTo 2
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
+      prisonerNumber isEqualTo "A"
+      createdAt isCloseTo TimeSource.now()
+    }
+
+    with(removedEventCaptor.thirdValue) {
+      waitingListId isEqualTo 3
+      activityId isEqualTo 3
+      scheduleId isEqualTo 3
+      activityName isEqualTo schedule.activity.summary
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "A"
       createdAt isCloseTo TimeSource.now()
     }
@@ -1010,25 +997,25 @@ class WaitingListServiceTest {
     val activity = activityEntity()
     val pendingA = waitingList(
       waitingListId = 1,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "A",
       initialStatus = WaitingListStatus.PENDING,
     )
     val approvedA = waitingList(
       waitingListId = 2,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "A",
       initialStatus = WaitingListStatus.APPROVED,
     )
     val pendingB = waitingList(
       waitingListId = 3,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "B",
       initialStatus = WaitingListStatus.PENDING,
     )
     val approvedB = waitingList(
       waitingListId = 4,
-      prisonCode = moorlandPrisonCode,
+      prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = "B",
       initialStatus = WaitingListStatus.APPROVED,
     )
@@ -1065,7 +1052,7 @@ class WaitingListServiceTest {
       activityId isEqualTo 1
       scheduleId isEqualTo 1
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "A"
       createdAt isCloseTo TimeSource.now()
     }
@@ -1075,7 +1062,7 @@ class WaitingListServiceTest {
       activityId isEqualTo 2
       scheduleId isEqualTo 2
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "A"
       createdAt isCloseTo TimeSource.now()
     }
@@ -1085,7 +1072,7 @@ class WaitingListServiceTest {
       activityId isEqualTo 3
       scheduleId isEqualTo 3
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "B"
       createdAt isCloseTo TimeSource.now()
     }
@@ -1095,7 +1082,7 @@ class WaitingListServiceTest {
       activityId isEqualTo 4
       scheduleId isEqualTo 4
       activityName isEqualTo schedule.activity.summary
-      prisonCode isEqualTo moorlandPrisonCode
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "B"
       createdAt isCloseTo TimeSource.now()
     }

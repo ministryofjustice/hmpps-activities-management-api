@@ -20,10 +20,10 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -113,8 +113,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Prison code must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
-            value(containsString("Minimum incentive level NOMIS code must be supplied"))
-            value(containsString("Minimum incentive level must be supplied"))
             value(containsString("Risk level must be supplied"))
           }
         }
@@ -145,8 +143,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Prison code must be supplied"))
             value(containsString("Category ID must be supplied"))
             value(containsString("Activity summary must be supplied"))
-            value(containsString("Minimum incentive level NOMIS code must be supplied"))
-            value(containsString("Minimum incentive level must be supplied"))
           }
         }
       }
@@ -206,8 +202,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             value(containsString("Summary should not exceed 50 characters"))
             value(containsString("Pay band must be supplied"))
             value(containsString("Prison code should not exceed 3 characters"))
-            value(containsString("Minimum incentive level NOMIS code should not exceed 3 characters"))
-            value(containsString("Minimum incentive level should not exceed 10 characters"))
             value(containsString("Risk level should not exceed 10 characters"))
             value(containsString("Description should not exceed 300 characters"))
             value(containsString("Education level code should not exceed 10 characters"))
@@ -270,8 +264,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           summary = "Maths",
           description = "Beginner maths",
           riskLevel = "High",
-          minimumIncentiveNomisCode = "BAS",
-          minimumIncentiveLevel = "Basic",
           category = ActivityCategory(
             id = 1L,
             code = "EDUCATION",
@@ -337,12 +329,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     val updateActivityResponse: Activity = mapper.read("activity/activity-update-response-1.json")
 
-    whenever(activityService.updateActivity(pentonvillePrisonCode, 17, updateActivityRequest, user.name)).thenReturn(
+    whenever(activityService.updateActivity(PENTONVILLE_PRISON_CODE, 17, updateActivityRequest, user.name)).thenReturn(
       updateActivityResponse,
     )
 
     val response =
-      mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+      mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
         principal = user
         accept = MediaType.APPLICATION_JSON
         contentType = MediaType.APPLICATION_JSON
@@ -361,8 +353,31 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
+  fun `updateActivity - fails for paid activity with no pay rates`() {
+    mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/1") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(ActivityUpdateRequest(paid = true))
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { is4xxClientError() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(containsString("Paid activity must have at least one pay rate associated with it"))
+          }
+        }
+      }
+
+    verifyNoInteractions(activityService)
+  }
+
+  @Test
   fun `updateActivity - no request body`() {
-    mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+    mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
       principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -386,11 +401,11 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   fun `404 response when get activity id not found`() {
     val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-    whenever(activityService.updateActivity(pentonvillePrisonCode, 17, updateActivityRequest, user.name)).thenThrow(
+    whenever(activityService.updateActivity(PENTONVILLE_PRISON_CODE, 17, updateActivityRequest, user.name)).thenThrow(
       EntityNotFoundException("not found"),
     )
 
-    mockMvc.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+    mockMvc.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
       principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -448,7 +463,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       fun `updateActivity (ROLE_ACTIVITY_HUB) - 202`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isAccepted() } }
@@ -459,7 +474,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       fun `updateActivity (ROLE_ACTIVITY_ADMIN) - 202`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isAccepted() } }
@@ -470,7 +485,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       fun `updateActivity (ROLE_PRISON) - 403`() {
         val updateActivityRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-2.json")
 
-        mockMvcWithSecurity.patch("/activities/$pentonvillePrisonCode/activityId/17") {
+        mockMvcWithSecurity.patch("/activities/$PENTONVILLE_PRISON_CODE/activityId/17") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateActivityRequest)
         }.andExpect { status { isForbidden() } }

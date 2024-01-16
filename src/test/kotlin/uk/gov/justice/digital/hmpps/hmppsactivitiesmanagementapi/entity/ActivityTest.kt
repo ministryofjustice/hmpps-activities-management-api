@@ -3,16 +3,19 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -71,8 +74,6 @@ class ActivityTest {
       summary = "Maths",
       description = "Maths basic",
       riskLevel = "high",
-      minimumIncentiveNomisCode = "BAS",
-      minimumIncentiveLevel = "Basic",
       category = ActivityCategory(
         id = 1L,
         code = "category code",
@@ -104,8 +105,6 @@ class ActivityTest {
         summary = "Maths",
         description = "Maths basic",
         riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ModelActivityMinimumEducationLevel(
             id = 0,
@@ -447,9 +446,8 @@ class ActivityTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values()),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+      DayOfWeek.entries.toSet(),
     )
 
     val schedules = activity.getSchedulesOnDay(schedule.startDate)
@@ -464,9 +462,8 @@ class ActivityTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values()),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+      DayOfWeek.entries.toSet(),
     )
 
     val suspension = ActivityScheduleSuspension(
@@ -489,8 +486,7 @@ class ActivityTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
     )
 
@@ -527,9 +523,8 @@ class ActivityTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.NOON,
-        endTime = LocalTime.NOON.plusHours(1),
-        setOf(*DayOfWeek.values()),
+        slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
+        DayOfWeek.entries.toSet(),
       )
     }.also {
       assertThat(activity.schedules()).hasSize(1)
@@ -580,7 +575,7 @@ class ActivityTest {
 
   @Test
   fun `isUnemployment flag true when activity is within the 'non work' category`() {
-    val unemploymentActivity = activityEntity(category = activityCategory(code = "SAA_NOT_IN_WORK"))
+    val unemploymentActivity = activityEntity(category = notInWorkCategory)
     with(unemploymentActivity) {
       assertThat(isUnemployment()).isTrue
     }
@@ -605,5 +600,47 @@ class ActivityTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity end date cannot be before activity start date.")
+  }
+
+  @Test
+  fun `can update paid attribute on activity when not allocated`() {
+    val activity = activitySchedule(activityEntity(noSchedules = true), noAllocations = true).activity
+
+    activity.paid isBool true
+    activity.activityPay() hasSize 1
+
+    assertDoesNotThrow { activity.paid = false }
+
+    activity.paid isBool false
+    activity.activityPay() hasSize 0
+
+    assertDoesNotThrow { activity.paid = true }
+
+    activity.paid isBool true
+    activity.activityPay() hasSize 0
+  }
+
+  @Test
+  fun `cannot update paid attribute on paid activity when allocated`() {
+    val activity = activityEntity()
+
+    assertThatThrownBy { activity.paid = false }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
+
+    // no op so allowed
+    assertDoesNotThrow { activity.paid = true }
+  }
+
+  @Test
+  fun `cannot update paid attribute on unpaid activity when allocated`() {
+    val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
+
+    assertThatThrownBy { activity.paid = true }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Paid attribute cannot be updated for allocated activity '1'")
+
+    // no op so allowed
+    assertDoesNotThrow { activity.paid = false }
   }
 }

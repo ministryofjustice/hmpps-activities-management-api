@@ -29,6 +29,12 @@ class AllocationTest {
   private val yesterday = TimeSource.yesterday()
   private val tomorrow = TimeSource.tomorrow()
 
+  private val prisonRegime = mapOf(
+    TimeSlot.AM to Pair(LocalTime.of(0, 0), LocalTime.of(1, 0)),
+    TimeSlot.PM to Pair(LocalTime.of(12, 0), LocalTime.of(13, 0)),
+    TimeSlot.ED to Pair(LocalTime.of(18, 0), LocalTime.of(23, 59)),
+  )
+
   @Test
   fun `check allocation ends`() {
     with(allocation().apply { endDate = tomorrow }) {
@@ -47,12 +53,14 @@ class AllocationTest {
   @Test
   fun `check can deallocate active allocation`() {
     val dateTime = LocalDateTime.now()
-    val allocation = allocation()
+    val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
 
     assertThat(allocation.status(PrisonerStatus.ACTIVE)).isTrue
     assertThat(allocation.deallocatedReason).isNull()
     assertThat(allocation.deallocatedBy).isNull()
     assertThat(allocation.deallocatedTime).isNull()
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).hasSize(1)
+    assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
 
     allocation.deallocateNowWithReason(DeallocationReason.ENDED)
 
@@ -60,6 +68,8 @@ class AllocationTest {
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(allocation.deallocatedTime).isCloseTo(dateTime, within(2, ChronoUnit.SECONDS))
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
+    assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
   }
 
   @Test
@@ -73,7 +83,7 @@ class AllocationTest {
 
   @Test
   fun `check default deallocation when deallocate now`() {
-    val allocation = allocation()
+    val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
 
     allocation.deallocateNow()
 
@@ -81,6 +91,8 @@ class AllocationTest {
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
     assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
     assertThat(allocation.deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
+    assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
   }
 
   @Test
@@ -374,19 +386,49 @@ class AllocationTest {
   @Test
   fun `update exclusions - add and remove an exclusion`() {
     val allocation = allocation()
-    allocation.exclusions() hasSize 0
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
     val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
 
-    allocation.exclusions() hasSize 1
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     with(exclusion!!) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
     val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
 
-    allocation.exclusions() hasSize 0
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
     updatedExclusion isEqualTo null
+  }
+
+  @Test
+  fun `add exclusions - cannot add exclusions where the activity does not run`() {
+    val allocation = allocation()
+
+    with(allocation.activitySchedule) {
+      val slot = slots().single()
+      slot.slotTimes() isEqualTo (LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1))
+      slot.weekNumber isEqualTo 1
+      slot.getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+
+    assertThatThrownBy {
+      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.NOON to LocalTime.NOON.plusHours(1), 1, setOf(DayOfWeek.MONDAY)))
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot set exclusions where the activity does not run")
+
+    assertThatThrownBy {
+      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), 2, setOf(DayOfWeek.MONDAY)))
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot set exclusions where the activity does not run")
+
+    assertThatThrownBy {
+      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), 1, setOf(DayOfWeek.TUESDAY)))
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot set exclusions where the activity does not run")
   }
 
   @Test
@@ -396,15 +438,13 @@ class AllocationTest {
 
     schedule.addSlot(
       weekNumber = 1,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
     )
 
     schedule.addSlot(
       weekNumber = 2,
-      startTime = LocalTime.NOON,
-      endTime = LocalTime.NOON.plusHours(1),
+      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
     )
 
@@ -416,88 +456,266 @@ class AllocationTest {
       startDate = activity.startDate,
     )
 
-    allocation.exclusions() hasSize 0
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
-
-    allocation.exclusions() hasSize 1
-
-    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.MONDAY)) }
+    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY)) }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Exclusions cannot be added for the same day and time slot over multiple weeks.")
-
-    allocation.exclusions() hasSize 1
+      .hasMessage("Exclusions cannot be added where the time slot exists over multiple weeks.")
 
     allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
 
-    allocation.exclusions() hasSize 2
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - ends present exclusions which do not have a matching slot`() {
+    val allocation = allocation(startDate = LocalDate.now(), withExclusions = true)
+
+    allocation.exclusions(ExclusionsFilter.PRESENT) hasSize 1
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+      ),
+    )
+
+    allocation.exclusions(ExclusionsFilter.PRESENT) hasSize 1
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - removes future exclusions which do not have a matching slot`() {
+    val allocation = allocation(withExclusions = true)
+
+    allocation.exclusions(ExclusionsFilter.FUTURE) hasSize 1
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+      ),
+    )
+
+    allocation.exclusions(ExclusionsFilter.FUTURE) hasSize 0
+    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - updates present exclusions with the new days`() {
+    val activity = activityEntity()
+    val schedule = activitySchedule(activity, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY))
+    val slot = schedule.slots().first()
+    val allocation = schedule.allocations().first().apply {
+      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), LocalDate.now()))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT) hasSize 1
+      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT) hasSize 1
+      exclusions(ExclusionsFilter.PRESENT).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
+      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - updates future exclusions with the new days`() {
+    val activity = activityEntity()
+    val schedule = activitySchedule(activity, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY))
+    val slot = schedule.slots().first()
+    val allocation = schedule.allocations().first().apply {
+      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), LocalDate.now().plusDays(1)))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+      exclusions(ExclusionsFilter.FUTURE) hasSize 1
+      exclusions(ExclusionsFilter.FUTURE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      exclusions(ExclusionsFilter.FUTURE) hasSize 1
+      exclusions(ExclusionsFilter.FUTURE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    }
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - removes present exclusions on a multi-week model where they do not map to nomis data model`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
+      daysOfWeek = setOf(DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    ).apply {
+      addExclusion(Exclusion.valueOf(this, prisonRegime[TimeSlot.PM]!!, 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), LocalDate.now()))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.PRESENT).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+    }
+  }
+
+  @Test
+  fun `syncExclusionsWithScheduleSlots - removes future exclusions on a multi-week model where they do not map to nomis data model`() {
+    val activity = activityEntity(noSchedules = true)
+    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
+
+    schedule.addSlot(
+      weekNumber = 1,
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
+      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+    )
+
+    schedule.addSlot(
+      weekNumber = 2,
+      slotTimes = prisonRegime[TimeSlot.PM]!!,
+      daysOfWeek = setOf(DayOfWeek.THURSDAY),
+    )
+
+    val allocation = schedule.allocatePrisoner(
+      prisonerNumber = "A1111BB".toPrisonerNumber(),
+      bookingId = 20002,
+      payBand = lowPayBand,
+      allocatedBy = "Mr Blogs",
+      startDate = activity.startDate,
+    ).apply {
+      addExclusion(Exclusion.valueOf(this, LocalTime.NOON to LocalTime.NOON.plusHours(1), 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)))
+    }
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.FUTURE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+    }
+
+    allocation.syncExclusionsWithScheduleSlots(
+      listOf(
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
+      ),
+    )
+
+    with(allocation) {
+      exclusions(ExclusionsFilter.FUTURE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+      exclusions(ExclusionsFilter.ACTIVE).single().getDaysOfWeek() isEqualTo setOf(DayOfWeek.FRIDAY)
+    }
   }
 
   @Test
   fun `allocation starting today can be attended today`() {
     val allocation = allocation(startDate = TimeSource.today())
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
   }
 
   @Test
   fun `allocation starting today cannot be attended yesterday`() {
     val allocation = allocation(startDate = TimeSource.today())
 
-    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool false
+    allocation.canAttendOn(TimeSource.yesterday(), prisonRegime[TimeSlot.AM]!!) isBool false
   }
 
   @Test
   fun `allocation starting yesterday can be attended today`() {
     val allocation = allocation(startDate = TimeSource.yesterday())
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
   }
 
   @Test
   fun `allocation ending today can be attended today`() {
     val allocation = allocation(startDate = TimeSource.today()).apply { endDate = TimeSource.today() }
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
   }
 
   @Test
   fun `allocation ending yesterday can be attended yesterday`() {
     val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
 
-    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool true
+    allocation.canAttendOn(TimeSource.yesterday(), prisonRegime[TimeSlot.AM]!!) isBool true
   }
 
   @Test
   fun `allocation ending yesterday cannot be attended today`() {
     val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
   }
 
   @Test
   fun `allocation starting tomorrow cannot be attended today`() {
     val allocation = allocation(startDate = TimeSource.tomorrow())
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
   }
 
   @Test
   fun `allocation deallocated cannot be attended`() {
     val allocation = allocation().deallocateNow()
 
-    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
   }
 
   @Test
   fun `allocation with exclusion cannot be attended`() {
-    val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.today().dayOfWeek)).allocations().first()
+    val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.tomorrow().dayOfWeek)).allocations().first()
 
-    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool true
+    val timeSlot = allocation.activitySchedule.slots().first().timeSlot()
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.today().dayOfWeek))
+    allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool true
 
-    allocation.canAttendOn(TimeSource.today(), allocation.activitySchedule.slots().first().timeSlot()) isBool false
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek))
+
+    allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool false
   }
 
   @Test

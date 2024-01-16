@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.info.Contact
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
+import jakarta.annotation.PostConstruct
 import org.springdoc.core.customizers.OperationCustomizer
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
@@ -20,6 +21,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.method.HandlerMethod
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
@@ -59,11 +61,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     return OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->
       // Get PreAuthorize for method or fallback to class annotation
       (
-        handlerMethod.getMethodAnnotation(PreAuthorize::class.java)?.let {
-          it.value
-        } ?: handlerMethod.beanType.getAnnotation(PreAuthorize::class.java)?.let {
-          it.value
-        }
+        handlerMethod.getMethodAnnotation(PreAuthorize::class.java)?.value ?: handlerMethod.beanType.getAnnotation(PreAuthorize::class.java)?.value
         )?.let {
         val preAuthExp = SpelExpressionParser().parseExpression(it)
         val spelEvalContext = StandardEvaluationContext()
@@ -75,11 +73,16 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
           },
         )
 
-        val roles = try { preAuthExp.getValue(spelEvalContext) as List<String> } catch (e: SpelEvaluationException) { emptyList() }
+        val roles = try {
+          (preAuthExp.getValue(spelEvalContext) as List<*>).asListOfType<String>()
+        } catch (e: SpelEvaluationException) {
+          emptyList()
+        }
+
         if (roles.isNotEmpty()) {
           operation.description = "${operation.description ?: ""}\n\n" +
             "Requires one of the following roles:\n" +
-            "${roles.joinToString(prefix = "* ", separator = "\n* ")}"
+            roles.joinToString(prefix = "* ", separator = "\n* ")
         }
       }
 
@@ -87,7 +90,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     }
   }
 
-  @Bean
+  @PostConstruct
   fun enableLocalTimePrimitiveType() {
     PrimitiveType.enablePartialTime()
   }

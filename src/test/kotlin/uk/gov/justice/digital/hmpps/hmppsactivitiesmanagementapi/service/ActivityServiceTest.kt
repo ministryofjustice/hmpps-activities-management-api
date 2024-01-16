@@ -18,6 +18,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -29,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
@@ -41,16 +44,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.pentonvillePrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.runEveryDayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
@@ -227,6 +230,7 @@ class ActivityServiceTest {
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
   }
 
   @Test
@@ -580,8 +584,6 @@ class ActivityServiceTest {
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow())
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(
@@ -598,7 +600,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 
@@ -622,8 +624,6 @@ class ActivityServiceTest {
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow(), inCell = false, offWing = true)
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
-
     val activityCategory = activityCategory()
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
     whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier())
@@ -634,7 +634,7 @@ class ActivityServiceTest {
     val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
     whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
 
-    whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity())
 
     service().createActivity(createInCellActivityRequest, createdBy)
 
@@ -683,21 +683,21 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
 
-    val savedActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+    val savedActivityEntity = activityEntity()
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(savedActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(1)
     verify(eventTierRepository).findByCode("TIER_2")
@@ -729,6 +729,8 @@ class ActivityServiceTest {
       EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, savedActivityEntity.schedules().first().activityScheduleId)
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test
@@ -740,7 +742,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -750,7 +752,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         updateDuplicateActivityRequest,
         "SCH_ACTIVITY",
@@ -769,7 +771,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -778,7 +780,7 @@ class ActivityServiceTest {
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity Category 1 not found")
   }
@@ -790,7 +792,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -802,7 +804,7 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(null)
     whenever(eventOrganiserRepository.findByCode(any())).thenReturn(eventOrganiser())
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event tier \"TIER_2\" not found")
   }
@@ -814,7 +816,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
@@ -826,7 +828,7 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findByCode(any())).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(null)
 
-    assertThatThrownBy { service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, updatedBy) }
+    assertThatThrownBy { service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, updatedBy) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Event organiser \"PRISON_STAFF\" not found")
   }
@@ -848,7 +850,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(beforeActivityEntity)
@@ -856,10 +858,10 @@ class ActivityServiceTest {
     val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityCategoryRepository).findById(2)
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
@@ -873,8 +875,9 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - update end date`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-4.json")
+    val newEndDate = TimeSource.today().plusYears(1)
     val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-3.json")
+    val updateActivityRequest = ActivityUpdateRequest(endDate = newEndDate)
 
     beforeActivityEntity.addSchedule(
       description = "Woodwork",
@@ -915,21 +918,21 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(beforeActivityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
 
-    service().updateActivity(moorlandPrisonCode, 1, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
     with(activityCaptor.firstValue) {
-      assertThat(endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().allocations().find { it.prisonerNumber == "123456" }?.endDate).isEqualTo("2023-12-31")
-      assertThat(schedules().first().allocations().find { it.prisonerNumber == "654321" }?.endDate).isNull()
+      endDate isEqualTo newEndDate
+      schedules().first().endDate isEqualTo newEndDate
+      schedules().first().allocations().single { it.prisonerNumber == "123456" }.endDate isEqualTo newEndDate
+      schedules().first().allocations().single { it.prisonerNumber == "654321" }.endDate isEqualTo null
     }
   }
 
@@ -941,14 +944,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         17,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
-    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -965,18 +968,18 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         17,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activityEntity)
     whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
-    whenever(prisonPayBandRepository.findByPrisonCode(moorlandPrisonCode)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
 
     val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
     val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
 
-    service().updateActivity(moorlandPrisonCode, 17, updateActivityRequest, "SCH_ACTIVITY")
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -995,13 +998,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.today()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Start date must be in the future.")
   }
@@ -1013,14 +1016,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(startDate = activity.endDate?.plusDays(1)),
         "TEST",
@@ -1036,13 +1039,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -1054,13 +1057,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(startDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity start date cannot be changed. Activity already started.")
   }
@@ -1072,14 +1075,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(endDate = activity.endDate?.plusDays(1), removeEndDate = true),
         "TEST",
@@ -1099,7 +1102,7 @@ class ActivityServiceTest {
         activitySchedule(
           this,
           activityScheduleId = 1,
-          daysOfWeek = DayOfWeek.values().toSet(),
+          daysOfWeek = DayOfWeek.entries.toSet(),
         ),
       )
     }
@@ -1107,7 +1110,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
@@ -1119,7 +1122,7 @@ class ActivityServiceTest {
       ).isNull()
     }
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(removeEndDate = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1136,7 +1139,7 @@ class ActivityServiceTest {
   fun `updateActivity - setting of the end date is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow())
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON, LocalTime.NOON.plusHours(1), DayOfWeek.values().toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1146,12 +1149,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1175,14 +1178,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     val newEndDate = activity.endDate!!.plusDays(4)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = newEndDate), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = newEndDate), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
     with(activityCaptor.firstValue) {
@@ -1200,7 +1203,7 @@ class ActivityServiceTest {
   fun `updateActivity - bringing the end date closer is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(5))
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON, LocalTime.NOON.plusHours(1), DayOfWeek.values().toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1211,13 +1214,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     service().updateActivity(
-      moorlandPrisonCode,
+      MOORLAND_PRISON_CODE,
       1,
       ActivityUpdateRequest(endDate = TimeSource.tomorrow().plusDays(1)),
       "TEST",
@@ -1245,23 +1248,23 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity cannot be updated because it is now archived.")
   }
 
   @Test
   fun `updateActivity - fails if activity not found`() {
-    whenever(activityRepository.findByActivityIdAndPrisonCode(1, moorlandPrisonCode)).thenReturn(null)
+    whenever(activityRepository.findByActivityIdAndPrisonCode(1, MOORLAND_PRISON_CODE)).thenReturn(null)
 
     assertThatThrownBy {
-      service().updateActivity(pentonvillePrisonCode, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
+      service().updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(endDate = TimeSource.tomorrow()), "TEST")
     }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
@@ -1326,16 +1329,12 @@ class ActivityServiceTest {
     val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
     val slot1 = schedule.addSlot(
       1,
-      prisonRegime().amStart,
-      prisonRegime().amFinish,
-      setOf(
-        tomorrow.dayOfWeek,
-      ),
+      prisonRegime().amStart to prisonRegime().amFinish,
+      setOf(tomorrow.dayOfWeek),
     )
     val slot2 = schedule.addSlot(
       1,
-      prisonRegime().pmStart,
-      prisonRegime().pmFinish,
+      prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
@@ -1391,14 +1390,12 @@ class ActivityServiceTest {
 
     val slot1 = schedule.addSlot(
       1,
-      prisonRegime().amStart,
-      prisonRegime().amFinish,
+      prisonRegime().amStart to prisonRegime().amFinish,
       setOf(tomorrow.dayOfWeek),
     )
     val slot2 = schedule.addSlot(
       1,
-      prisonRegime().pmStart,
-      prisonRegime().pmFinish,
+      prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
@@ -1468,8 +1465,7 @@ class ActivityServiceTest {
         .apply {
           addSlot(
             1,
-            LocalTime.NOON,
-            LocalTime.NOON.plusHours(1),
+            LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
           )
         }
@@ -1508,8 +1504,7 @@ class ActivityServiceTest {
         .apply {
           addSlot(
             1,
-            LocalTime.NOON,
-            LocalTime.NOON.plusHours(1),
+            LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
           )
         }
@@ -1558,14 +1553,12 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.NOON,
-        endTime = LocalTime.NOON.plusHours(1),
+        slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.dayOfWeek, tomorrow.plusDays(2).dayOfWeek),
       )
       addSlot(
         weekNumber = 2,
-        startTime = LocalTime.NOON,
-        endTime = LocalTime.NOON.plusHours(1),
+        slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.plusDays(1).dayOfWeek, tomorrow.plusDays(3).dayOfWeek),
       )
     }
@@ -1622,8 +1615,7 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
     }
@@ -1706,8 +1698,7 @@ class ActivityServiceTest {
     ).apply {
       val slot = addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       allocatePrisoner(
@@ -1717,8 +1708,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.addExclusion(exclusion!!)
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
       }
     }
 
@@ -1774,8 +1764,7 @@ class ActivityServiceTest {
     ).apply {
       val slot = addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       allocatePrisoner(
@@ -1785,8 +1774,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        val exclusion = this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
-        slot.addExclusion(exclusion!!)
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
       }
     }
 
@@ -1821,12 +1809,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -1842,13 +1830,13 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
-      service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
@@ -1876,7 +1864,7 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
@@ -1888,7 +1876,7 @@ class ActivityServiceTest {
     )
 
     service().updateActivity(
-      moorlandPrisonCode,
+      MOORLAND_PRISON_CODE,
       1,
       ActivityUpdateRequest(tierCode = "TIER_2", organiserCode = "PRISONER"),
       "TEST",
@@ -1929,14 +1917,14 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
     assertThatThrownBy {
       service().updateActivity(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         1,
         ActivityUpdateRequest(tierCode = "TIER_1", organiserCode = "PRISON_STAFF"),
         "TEST",
@@ -1964,12 +1952,12 @@ class ActivityServiceTest {
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
         1,
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         LocalDate.now(),
       ),
     ).thenReturn(activity)
 
-    service().updateActivity(moorlandPrisonCode, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
 
     verify(activityRepository).saveAndFlush(activityCaptor.capture())
 
@@ -1992,14 +1980,12 @@ class ActivityServiceTest {
     ).apply {
       addSlot(
         weekNumber = 1,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
       addSlot(
         weekNumber = 2,
-        startTime = LocalTime.of(9, 0),
-        endTime = LocalTime.of(12, 0),
+        slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
       )
     }
@@ -2013,5 +1999,66 @@ class ActivityServiceTest {
     service(14).addScheduleInstances(schedule)
 
     schedule.instances() hasSize 2
+  }
+
+  @Test
+  fun `updateActivity - paid to unpaid when no allocations`() {
+    val activity = activitySchedule(activityEntity(paid = true, noSchedules = true), noAllocations = true).activity
+
+    activity.paid isBool true
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = false), "SCH_ACTIVITY")
+
+    activity.paid isBool false
+    activity.activityPay() hasSize 0
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid when no allocations`() {
+    val activity = activitySchedule(activityEntity(paid = false, noSchedules = true, noPayBands = true), noAllocations = true).activity
+
+    activity.paid isBool false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1))), "SCH_ACTIVITY")
+
+    activity.paid isBool true
+  }
+
+  @Test
+  fun `updateActivity - must include pay rates when changing from unpaid to paid`() {
+    val activity = activitySchedule(activityEntity(paid = false, noSchedules = true, noPayBands = true), noAllocations = true).activity
+
+    activity.paid isBool false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activity)
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Activity '1' must have at least one pay rate.")
   }
 }

@@ -25,7 +25,6 @@ object ScheduledInstanceFixture {
     cancelled: Boolean = false,
     cancelledBy: String? = null,
     cancelledReason: String? = null,
-
   ) = ScheduledInstance(
     scheduledInstanceId = id,
     ActivitySchedule(
@@ -47,12 +46,10 @@ object ScheduledInstanceFixture {
         summary = "ACTIVITY SUMMARY $activityId",
         description = "ACTIVITY DESCRIPTION $activityId",
         startDate = LocalDate.of(2022, 10, 1),
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         riskLevel = "high",
         createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
         createdBy = "CREATED BY",
-        paid = true,
+        isPaid = true,
       ),
       description = "DESCRIPTION $activityScheduleId",
       internalLocationId = locationId,

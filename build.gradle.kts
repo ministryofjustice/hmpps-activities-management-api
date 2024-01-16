@@ -1,22 +1,27 @@
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
 import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.7.0"
-  kotlin("plugin.spring") version "1.9.20"
-  kotlin("plugin.jpa") version "1.9.20"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.14.1"
+  kotlin("plugin.spring") version "1.9.22"
+  kotlin("plugin.jpa") version "1.9.22"
   jacoco
-  id("org.openapi.generator") version "6.6.0"
-  id("io.sentry.jvm.gradle") version "3.14.0"
+  id("org.openapi.generator") version "7.2.0"
+  id("io.sentry.jvm.gradle") version "4.1.1"
 }
 
 allOpen {
   annotations(
     "javax.persistence.Entity",
     "javax.persistence.MappedSuperclass",
-    "javax.persistence.Embeddable"
+    "javax.persistence.Embeddable",
   )
+}
+
+dependencyCheck {
+  suppressionFiles.add("hmpps-activities-management-api-suppressions.xml")
 }
 
 configurations {
@@ -30,26 +35,26 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.1.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:2.2.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.25.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.32.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
   // Other dependencies
-  implementation("org.apache.commons:commons-text:1.10.0")
+  implementation("org.apache.commons:commons-text:1.11.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
-  runtimeOnly("org.postgresql:postgresql:42.6.0")
+  runtimeOnly("org.postgresql:postgresql:42.7.1")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock:3.2.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.3.1")
   testImplementation("com.h2database:h2")
-  testImplementation("io.jsonwebtoken:jjwt-impl:0.12.0")
-  testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.0")
+  testImplementation("io.jsonwebtoken:jjwt-impl:0.12.3")
+  testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.3")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit:3.2.2")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.2.2")
@@ -64,18 +69,18 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "copyPreCommitHook")
     kotlinOptions {
       jvmTarget = "21"
     }
   }
   withType<KtLintCheckTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
   withType<KtLintFormatTask> {
     // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel")
+    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
 }
 
@@ -83,30 +88,46 @@ val configValues = mapOf(
   "dateLibrary" to "java8-localdatetime",
   "serializationLibrary" to "jackson",
   "useBeanValidation" to "false",
-  "enumPropertyNaming" to "UPPERCASE"
+  "enumPropertyNaming" to "UPPERCASE",
 )
 
 val buildDirectory: Directory = layout.buildDirectory.get()
 
-tasks.register("buildPrisonApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+tasks.register("buildPrisonApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/prison-api.json")
-  outputDir.set("$buildDir/generated/prisonapi")
+  outputDir.set("$buildDirectory/generated/prisonapi")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
 }
 
-tasks.register("buildNonAssociationsApiModel", org.openapitools.generator.gradle.plugin.tasks.GenerateTask::class) {
+tasks.register("buildNonAssociationsApiModel", GenerateTask::class) {
   generatorName.set("kotlin-spring")
   inputSpec.set("openapi-specs/non-associations-api.json")
-  outputDir.set("$buildDir/generated/nonassociations")
+  outputDir.set("$buildDirectory/generated/nonassociations")
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
 }
 
-val generatedProjectDirs = listOf("prisonapi", "nonassociations")
+tasks.register("buildIncentivesApiModel", GenerateTask::class) {
+  generatorName.set("kotlin-spring")
+  inputSpec.set("openapi-specs/incentives-api.json")
+  outputDir.set("$buildDirectory/generated/incentivesapi")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("copyPreCommitHook", Copy::class) {
+  from(project.file("pre-commit"))
+  into(project.file(".git/hooks"))
+  setFileMode(0b111101101)
+  dependsOn("generateGitProperties")
+}
+
+val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi")
 
 kotlin {
   generatedProjectDirs.forEach { generatedProject ->
@@ -132,6 +153,7 @@ tasks.named<Test>("integrationTest") {
   filter {
     includeTestsMatching("*.integration.*")
   }
+  maxHeapSize = "1024m"
 }
 
 tasks.named<Test>("test") {

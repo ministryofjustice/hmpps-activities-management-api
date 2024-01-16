@@ -140,12 +140,10 @@ class MigrateAppointmentController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
     prisonCode: String,
-
     @RequestParam(value = "startDate", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Inclusive start date of migrated appointments to be deleted. Must be today or in the future")
     startDate: LocalDate,
-
     @RequestParam(value = "categoryCode", required = false)
     @Parameter(description = "The category code assigned to migrated appointments to be deleted.")
     categoryCode: String? = null,

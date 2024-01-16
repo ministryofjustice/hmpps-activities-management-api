@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
@@ -45,7 +46,7 @@ class ManageAttendancesService(
       "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
 
-    require(rolloutPrisonRepository.findByCode(prisonCode)?.isActivitiesRolledOut() == true) {
+    require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
       "Cannot create attendance for prison '$prisonCode', not rolled out"
     }
 
@@ -57,7 +58,7 @@ class ManageAttendancesService(
       .filter { it.attendanceRequired() }
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
-        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.timeSlot()) }
+        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.slotTimes()) }
 
         // Get the details of the prisoners due to attend the session
         val prisonerNumbers = allocations.map { it.prisonerNumber }
@@ -135,7 +136,7 @@ class ManageAttendancesService(
     scheduledInstance = instance,
     prisonerNumber = allocation.prisonerNumber,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
-    issuePayment = false,
+    initialIssuePayment = false,
     status = AttendanceStatus.COMPLETED,
     recordedTime = LocalDateTime.now(),
     recordedBy = ServiceName.SERVICE_NAME.value,
@@ -144,7 +145,7 @@ class ManageAttendancesService(
   private fun cancelledAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
     scheduledInstance = instance,
     prisonerNumber = allocation.prisonerNumber,
-    issuePayment = true,
+    initialIssuePayment = instance.isPaid(),
     status = AttendanceStatus.COMPLETED,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
     recordedTime = LocalDateTime.now(),

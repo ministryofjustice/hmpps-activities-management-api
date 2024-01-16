@@ -77,14 +77,12 @@ fun transform(activity: EntityActivity) =
     startDate = activity.startDate,
     endDate = activity.endDate,
     riskLevel = activity.riskLevel,
-    minimumIncentiveNomisCode = activity.minimumIncentiveNomisCode,
-    minimumIncentiveLevel = activity.minimumIncentiveLevel,
     createdTime = activity.createdTime,
     createdBy = activity.createdBy,
     updatedTime = activity.updatedTime,
     updatedBy = activity.updatedBy,
     minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
-    paid = activity.isPaid(),
+    paid = activity.paid,
   )
 
 /*
@@ -104,7 +102,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     eventSource = "SAA",
     eventType = EventType.ACTIVITY.name,
     scheduledInstanceId = it.scheduledInstanceId,
-    bookingId = it.bookingId.toLong(), // TODO: Add bookingId to allocation and retrieve in the view
+    // TODO: Add bookingId to allocation and retrieve in the view
+    bookingId = it.bookingId,
     internalLocationId = it.internalLocationId?.toLong(),
     internalLocationCode = it.internalLocationCode,
     internalLocationUserDescription = mayBeInternalLocation?.userDescription,
@@ -124,7 +123,8 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     inCell = it.inCell,
     onWing = it.onWing,
     offWing = it.offWing,
-    outsidePrison = false, // TODO: Add the outside prison flag to the view
+    // TODO: Add the outside prison flag to the view
+    outsidePrison = false,
     date = it.sessionDate,
     startTime = it.startTime!!,
     endTime = it.endTime,
@@ -339,7 +339,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     caseNoteText = attendance.caseNoteId?.let {
       caseNotesApiClient?.getCaseNote(
         attendance.prisonerNumber,
-        attendance.caseNoteId,
+        attendance.caseNoteId!!,
       )?.text
     },
     otherAbsenceReason = attendance.otherAbsenceReason,
@@ -354,6 +354,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
         )
       },
     editable = attendance.editable(),
+    payable = attendance.isPayable(),
   )
 
 fun transform(
@@ -388,7 +389,7 @@ fun transform(
     caseNoteText = attendanceHistory.caseNoteId?.let {
       caseNotesApiClient?.getCaseNote(
         prisonerNumber,
-        attendanceHistory.caseNoteId,
+        attendanceHistory.caseNoteId!!,
       )?.text
     },
   )

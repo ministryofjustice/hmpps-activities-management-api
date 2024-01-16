@@ -12,14 +12,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.moorlandPrisonCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -29,12 +28,10 @@ import java.time.temporal.ChronoUnit
 class PrisonerAllocationHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
-  private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val handler = PrisonerAllocationHandler(
     allocationRepository,
     attendanceRepository,
-    waitingListService,
     TransactionHandler(),
     outboundEventsService,
   )
@@ -57,7 +54,7 @@ class PrisonerAllocationHandlerTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         "123456",
         *PrisonerStatus.allExcuding(
           PrisonerStatus.ENDED,
@@ -65,7 +62,7 @@ class PrisonerAllocationHandlerTest {
       ),
     ) doReturn previouslyActiveAllocations.plus(pendingAllocation)
 
-    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.TEMPORARILY_RELEASED)
+    handler.deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.TEMPORARILY_RELEASED)
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -74,13 +71,6 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-
-    verify(waitingListService).declinePendingOrApprovedApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Temporarily released or transferred",
-      "Activities Management Service",
-    )
   }
 
   @Test
@@ -98,13 +88,13 @@ class PrisonerAllocationHandlerTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         "123456",
         *PrisonerStatus.allExcuding(PrisonerStatus.ENDED),
       ),
     ) doReturn previouslyActiveAllocations
 
-    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    handler.deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
 
     previouslyActiveAllocations.forEach {
       assertThat(it.status(PrisonerStatus.ENDED)).isTrue
@@ -113,13 +103,6 @@ class PrisonerAllocationHandlerTest {
       assertThat(it.deallocatedTime)
         .isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
     }
-
-    verify(waitingListService).declinePendingOrApprovedApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Released from prison",
-      "Activities Management Service",
-    )
   }
 
   @Test
@@ -132,23 +115,16 @@ class PrisonerAllocationHandlerTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-        moorlandPrisonCode,
+        MOORLAND_PRISON_CODE,
         "123456",
         *PrisonerStatus.allExcuding(PrisonerStatus.ENDED),
       ),
     ) doReturn allocations
 
-    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    handler.deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
 
     assertThat(previouslySuspendedAllocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(previouslyActiveAllocation.status(PrisonerStatus.ENDED)).isTrue
-
-    verify(waitingListService).declinePendingOrApprovedApplications(
-      moorlandPrisonCode,
-      "123456",
-      "Released from prison",
-      "Activities Management Service",
-    )
   }
 
   @Test
@@ -156,7 +132,7 @@ class PrisonerAllocationHandlerTest {
     listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-          moorlandPrisonCode,
+          MOORLAND_PRISON_CODE,
           "123456",
           *PrisonerStatus.allExcuding(PrisonerStatus.ENDED),
         ),
@@ -174,13 +150,13 @@ class PrisonerAllocationHandlerTest {
 
     whenever(
       attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = moorlandPrisonCode,
+        prisonCode = MOORLAND_PRISON_CODE,
         sessionDate = LocalDate.now(),
         prisonerNumber = "123456",
       ),
     ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
 
-    handler.deallocate(moorlandPrisonCode, "123456", DeallocationReason.RELEASED)
+    handler.deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
 
     verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
     verify(todaysFuturescheduledInstance).remove(todaysFutureAttendance)

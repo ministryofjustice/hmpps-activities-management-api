@@ -261,7 +261,6 @@ class AppointmentController(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code (required)")
     prisonCode: String,
-
     @RequestParam(value = "date", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Date of appointments (required). Format YYYY-MM-DD")

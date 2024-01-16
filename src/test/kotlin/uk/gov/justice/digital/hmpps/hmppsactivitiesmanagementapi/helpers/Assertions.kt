@@ -21,16 +21,16 @@ internal infix fun <T> T.isEqualTo(value: T) {
   assertThat(this).isEqualTo(value)
 }
 
-internal infix fun <T> T.isNotEqualTo(value: T) {
-  assertThat(this).isNotEqualTo(value)
-}
-
 internal infix fun <T> Collection<T>.hasSize(size: Int) {
   assertThat(this).hasSize(size)
 }
 
 internal inline infix fun <reified T> Collection<T>.containsExactly(value: Collection<T>) {
   assertThat(this).containsExactly(*value.toTypedArray())
+}
+
+internal inline infix fun <reified T> Collection<T>.containsExactlyInAnyOrder(value: Collection<T>) {
+  assertThat(this).containsExactlyInAnyOrder(*value.toTypedArray())
 }
 
 internal infix fun String.startsWith(prefix: String) {

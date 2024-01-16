@@ -234,7 +234,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI_2_C",
       "MDI-2-1-0(2[7-9]|3[0-8]),MDI-2-2-0(2[7-9]|3[0-8]),MDI-2-3-0(2[7-9]|3[0-8])",
     )
-    val ONE_A_PREFIXES = arrayOf(
+    val oneAPrefixes = arrayOf(
       "MDI-1-1-001",
       "MDI-1-1-002",
       "MDI-1-1-003",
@@ -272,7 +272,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-3-011",
       "MDI-1-3-012",
     )
-    val ONE_B_PREFIXES = arrayOf(
+    val oneBPrefixes = arrayOf(
       "MDI-1-1-013",
       "MDI-1-1-014",
       "MDI-1-1-015",
@@ -316,7 +316,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-3-025",
       "MDI-1-3-026",
     )
-    val ONE_C_PREFIXES = arrayOf(
+    val oneCPrefixes = arrayOf(
       "MDI-1-1-027",
       "MDI-1-1-028",
       "MDI-1-1-029",
@@ -358,7 +358,7 @@ class LocationGroupFromPropertiesServiceTest {
       "MDI-1-1-039",
     )
 
-    val locationPrefixes = arrayOf(*ONE_A_PREFIXES, *ONE_B_PREFIXES, *ONE_C_PREFIXES, *extraPrefixes)
+    val locationPrefixes = arrayOf(*oneAPrefixes, *oneBPrefixes, *oneCPrefixes, *extraPrefixes)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1"),
@@ -370,19 +370,19 @@ class LocationGroupFromPropertiesServiceTest {
         service.locationGroupFilter("MDI", "1_A"),
         *locationPrefixes,
       ),
-    ).containsExactly(*ONE_A_PREFIXES)
+    ).containsExactly(*oneAPrefixes)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1_B"),
         *locationPrefixes,
       ),
-    ).containsExactly(*ONE_B_PREFIXES)
+    ).containsExactly(*oneBPrefixes)
     assertThat(
       applyPredicatesToLocations(
         service.locationGroupFilter("MDI", "1_C"),
         *locationPrefixes,
       ),
-    ).containsExactly(*ONE_C_PREFIXES)
+    ).containsExactly(*oneCPrefixes)
   }
 
   @Test

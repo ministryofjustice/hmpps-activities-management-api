@@ -186,14 +186,9 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(
-    prisonerNumber: String,
-    fullInfo: Boolean = true,
-    extraInfo: Boolean? = null,
-    jsonFileSuffix: String = "",
-  ) {
+  fun stubGetPrisonerDetails(prisonerNumber: String, jsonFileSuffix: String = "") {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
@@ -203,13 +198,9 @@ class PrisonApiMockServer : WireMockServer(8999) {
     )
   }
 
-  fun stubGetPrisonerDetails(
-    prisoner: InmateDetail,
-    fullInfo: Boolean = true,
-    extraInfo: Boolean? = null,
-  ) {
+  fun stubGetPrisonerDetails(prisoner: InmateDetail) {
     stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/${prisoner.offenderNo}?fullInfo=$fullInfo${extraInfo?.let { "&extraInfo=$it" } ?: ""}"))
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/${prisoner.offenderNo}"))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

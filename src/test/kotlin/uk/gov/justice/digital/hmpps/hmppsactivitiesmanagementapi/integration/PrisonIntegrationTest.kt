@@ -1,16 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
@@ -26,9 +31,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all activities in a category for a prison`() {
-    val activities = webTestClient.getActivitiesForCategory("PVI", 1)
+    val activities = webTestClient.getActivitiesForCategory("PVI", 1)!!
 
-    assertThat(activities).containsExactlyInAnyOrder(
+    activities.single() isEqualTo
       ActivityLite(
         id = 1,
         prisonCode = "PVI",
@@ -42,8 +47,6 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         summary = "Maths",
         description = "Maths Level 1",
         riskLevel = "high",
-        minimumIncentiveNomisCode = "BAS",
-        minimumIncentiveLevel = "Basic",
         minimumEducationLevel = listOf(
           ActivityMinimumEducationLevel(
             id = 1,
@@ -59,8 +62,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
         paid = true,
-      ),
-    )
+      )
   }
 
   @Sql(
@@ -68,9 +70,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all activities for a prison`() {
-    val activities = webTestClient.getActivities("PVI")
+    val activities = webTestClient.getActivities("PVI")!!
 
-    assertThat(activities).containsExactlyInAnyOrder(
+    activities.single() isEqualTo
       ActivitySummary(
         id = 1,
         activityName = "Maths Level 1",
@@ -80,8 +82,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         waitlisted = 1,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
-      ),
-    )
+      )
   }
 
   @Sql(
@@ -89,9 +90,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all scheduled prison locations for HMP Pentonville on Oct 10th 2022`() {
-    val locations = webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10))
+    val locations = webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10))!!
 
-    assertThat(locations).containsExactlyInAnyOrder(
+    locations containsExactlyInAnyOrder listOf(
       InternalLocation(1, "L1", "Location 1"),
       InternalLocation(2, "L2", "Location 2"),
     )
@@ -103,9 +104,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get all scheduled prison locations for HMP Pentonville morning of Oct 10th 2022`() {
     val locations =
-      webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10), TimeSlot.AM)
+      webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10), TimeSlot.AM)!!
 
-    assertThat(locations).containsExactly(InternalLocation(1, "L1", "Location 1"))
+    locations.single() isEqualTo InternalLocation(1, "L1", "Location 1")
   }
 
   @Sql(
@@ -114,9 +115,9 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get all scheduled prison locations for HMP Pentonville afternoon of Oct 10th 2022`() {
     val locations =
-      webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10), TimeSlot.PM)
+      webTestClient.getLocationsPrisonByCode("PVI", LocalDate.of(2022, 10, 10), TimeSlot.PM)!!
 
-    assertThat(locations).containsExactly(InternalLocation(2, "L2", "Location 2"))
+    locations.single() isEqualTo InternalLocation(2, "L2", "Location 2")
   }
 
   private fun WebTestClient.getActivitiesForCategory(prisonCode: String, categoryId: Long) =
@@ -163,38 +164,32 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   fun `get all schedules for Pentonville prison on Monday 10th October 2022`() {
     val schedules =
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10))!!
-        .also { assertThat(it).hasSize(2) }
+        .also { it hasSize 2 }
 
-    val morningSchedule = with(schedules.first()) {
-      assertThat(allocations).hasSize(3)
-      assertThat(instances).hasSize(1)
+    val morningSchedule = with(schedules.single { it.description == "Maths AM" }) {
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A33333A")
+      instances hasSize 1
       this
     }
 
-    morningSchedule.allocatedPrisoner("A11111A")
-    morningSchedule.allocatedPrisoner("A22222A")
-
-    with(morningSchedule.instances.first()) {
-      assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
-      assertThat(cancelled).isFalse
-      assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+    with(morningSchedule.instances.single()) {
+      date isEqualTo LocalDate.of(2022, 10, 10)
+      cancelled isBool false
+      startTime isEqualTo LocalTime.of(10, 0)
+      endTime isEqualTo LocalTime.of(11, 0)
     }
 
-    val afternoonSchedule = with(schedules.second()) {
-      assertThat(allocations).hasSize(2)
-      assertThat(instances).hasSize(1)
+    val afternoonSchedule = with(schedules.single { it.description == "Maths PM" }) {
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A")
+      instances hasSize 1
       this
     }
 
-    afternoonSchedule.allocatedPrisoner("A11111A")
-    afternoonSchedule.allocatedPrisoner("A22222A")
-
-    with(afternoonSchedule.instances.first()) {
-      assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
-      assertThat(cancelled).isFalse
-      assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(15, 0))
+    with(afternoonSchedule.instances.single()) {
+      date isEqualTo LocalDate.of(2022, 10, 10)
+      cancelled isBool false
+      startTime isEqualTo LocalTime.of(14, 0)
+      endTime isEqualTo LocalTime.of(15, 0)
     }
   }
 
@@ -205,23 +200,19 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   fun `get morning schedules for Pentonville prison on Monday 10th October 2022`() {
     val schedules =
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10), TimeSlot.AM)!!
-        .also { assertThat(it).hasSize(1) }
 
-    val schedule = with(schedules.first()) {
-      assertThat(allocations).hasSize(3)
-      assertThat(instances).hasSize(1)
-      assertThat(internalLocation).isEqualTo(InternalLocation(1, "L1", "Location 1"))
+    val schedule = with(schedules.single { it.description == "Maths AM" }) {
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A33333A")
+      instances hasSize 1
+      internalLocation isEqualTo InternalLocation(1, "L1", "Location 1")
       this
     }
 
-    schedule.allocatedPrisoner("A11111A")
-    schedule.allocatedPrisoner("A22222A")
-
-    with(schedule.instances.first()) {
-      assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
-      assertThat(cancelled).isFalse
-      assertThat(startTime).isEqualTo(LocalTime.of(10, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(11, 0))
+    with(schedule.instances.single()) {
+      date isEqualTo LocalDate.of(2022, 10, 10)
+      cancelled isBool false
+      startTime isEqualTo LocalTime.of(10, 0)
+      endTime isEqualTo LocalTime.of(11, 0)
     }
   }
 
@@ -232,22 +223,18 @@ class PrisonIntegrationTest : IntegrationTestBase() {
   fun `get afternoon schedules for Pentonville prison on Monday 10th October 2022`() {
     val schedules =
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10), TimeSlot.PM)!!
-        .also { assertThat(it).hasSize(1) }
 
-    val schedule = with(schedules.first()) {
-      assertThat(allocations).hasSize(2)
-      assertThat(instances).hasSize(1)
+    val schedule = with(schedules.single { it.description == "Maths PM" }) {
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A")
+      instances hasSize 1
       this
     }
 
-    schedule.allocatedPrisoner("A11111A")
-    schedule.allocatedPrisoner("A22222A")
-
-    with(schedule.instances.first()) {
-      assertThat(date).isEqualTo(LocalDate.of(2022, 10, 10))
-      assertThat(cancelled).isFalse
-      assertThat(startTime).isEqualTo(LocalTime.of(14, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(15, 0))
+    with(schedule.instances.single()) {
+      date isEqualTo LocalDate.of(2022, 10, 10)
+      cancelled isBool false
+      startTime isEqualTo LocalTime.of(14, 0)
+      endTime isEqualTo LocalTime.of(15, 0)
     }
   }
 
@@ -271,6 +258,4 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ActivitySchedule::class.java)
       .returnResult().responseBody
-
-  private fun List<ActivitySchedule>.second() = this[1]
 }
