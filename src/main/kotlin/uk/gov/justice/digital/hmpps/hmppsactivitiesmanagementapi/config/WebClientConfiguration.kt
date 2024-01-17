@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -41,15 +43,15 @@ class WebClientConfiguration(
   private val webClientBuilder: WebClient.Builder,
 ) {
 
-  @Bean
-  fun oauthApiHealthWebClient(): WebClient {
-    return webClientBuilder.baseUrl(oauthApiUrl).timeout(healthTimeout).build()
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @Bean
-  fun prisonApiHealthWebClient(): WebClient {
-    return WebClient.builder().baseUrl(prisonApiUrl).timeout(healthTimeout).build()
-  }
+  fun oauthApiHealthWebClient(): WebClient = webClientBuilder.baseUrl(oauthApiUrl).timeout(healthTimeout).build()
+
+  @Bean
+  fun prisonApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(prisonApiUrl).timeout(healthTimeout).build()
 
   @Bean
   fun prisonApiUserWebClient(): WebClient {
@@ -63,6 +65,7 @@ class WebClientConfiguration(
       .filter(addAuthHeaderFilterFunction())
       .exchangeStrategies(exchangeStrategies)
       .build()
+      .also { log.info("WEB CLIENT CONFIG: creating prison api user web client") }
   }
 
   @Bean
@@ -71,21 +74,19 @@ class WebClientConfiguration(
     clientRegistrationRepository: ClientRegistrationRepository,
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getPrisonApiOAuthWebClient(
+  ): WebClient =
+    getPrisonApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonApiUrl,
-    )
-  }
+    ).also { log.info("WEB CLIENT CONFIG: creating prison api request scope web client") }
 
   @Bean
   fun incentivesApiWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getIncentivesApiOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl)
-  }
+  ): WebClient = getIncentivesApiOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl)
+    .also { log.info("WEB CLIENT CONFIG: creating incentives api web client") }
 
   private fun getIncentivesApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
@@ -104,9 +105,9 @@ class WebClientConfiguration(
   fun prisonApiAppWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getPrisonApiOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
-  }
+  ): WebClient =
+    getPrisonApiOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
+      .also { log.info("WEB CLIENT CONFIG: creating prison api app web client") }
 
   private fun getPrisonApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
@@ -122,9 +123,8 @@ class WebClientConfiguration(
   }
 
   @Bean
-  fun prisonerSearchApiHealthWebClient(): WebClient {
-    return WebClient.builder().baseUrl(prisonerSearchApiUrl).timeout(apiTimeout).build()
-  }
+  fun prisonerSearchApiHealthWebClient(): WebClient =
+    WebClient.builder().baseUrl(prisonerSearchApiUrl).timeout(apiTimeout).build()
 
   @Bean
   fun prisonerSearchApiUserWebClient(): WebClient {
@@ -137,7 +137,7 @@ class WebClientConfiguration(
       .timeout(apiTimeout)
       .filter(addAuthHeaderFilterFunction())
       .exchangeStrategies(exchangeStrategies)
-      .build()
+      .build().also { log.info("WEB CLIENT CONFIG: creating prisoner search api user web client") }
   }
 
   @Bean
@@ -146,21 +146,20 @@ class WebClientConfiguration(
     clientRegistrationRepository: ClientRegistrationRepository,
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getPrisonerSearchApiOAuthWebClient(
+  ): WebClient =
+    getPrisonerSearchApiOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonerSearchApiUrl,
-    )
-  }
+    ).also { log.info("WEB CLIENT CONFIG: creating prisoner search api request scope web client") }
 
   @Bean
   fun prisonerSearchApiAppWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getPrisonerSearchApiOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl)
-  }
+  ): WebClient =
+    getPrisonerSearchApiOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl)
+      .also { log.info("WEB CLIENT CONFIG: creating prisoner search api app web client") }
 
   private fun getPrisonerSearchApiOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
@@ -201,17 +200,15 @@ class WebClientConfiguration(
   }
 
   @Bean
-  fun bankHolidayApiWebClient(): WebClient {
-    return webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
-  }
+  fun bankHolidayApiWebClient(): WebClient = webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
+    .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
   @Bean
-  fun caseNotesApiWebClient(): WebClient {
-    return webClientBuilder.baseUrl(caseNotesApiUrl)
+  fun caseNotesApiWebClient(): WebClient =
+    webClientBuilder.baseUrl(caseNotesApiUrl)
       .timeout(apiTimeout)
       .filter(addAuthHeaderFilterFunction())
-      .build()
-  }
+      .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
 
   private fun WebClient.Builder.timeout(duration: Duration) =
     this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
@@ -220,9 +217,8 @@ class WebClientConfiguration(
   fun nonAssociationsApiWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ): WebClient {
-    return getNonAssociationsApiOAuthWebClient(authorizedClientManager, builder, nonAssociationsApiUrl)
-  }
+  ) = getNonAssociationsApiOAuthWebClient(authorizedClientManager, builder, nonAssociationsApiUrl)
+    .also { log.info("WEB CLIENT CONFIG: creating non associations api web client") }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context
   // and adds it to the request
