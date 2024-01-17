@@ -421,7 +421,12 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonerNumbers.ifNotEmpty {
       prisonApiWebClient
         .post()
-        .uri("/api/movements/offenders")
+        .uri { uriBuilder: UriBuilder ->
+          uriBuilder
+            .path("/api/movements/offenders")
+            .queryParam("latestOnly", false)
+            .build()
+        }
         .bodyValue(prisonerNumbers)
         .retrieve()
         .bodyToMono(typeReference<List<Movement>>())
