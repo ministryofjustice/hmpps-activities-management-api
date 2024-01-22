@@ -321,7 +321,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
           appointmentDetails(
             6, null, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
-              PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
+              PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "ACTIVE IN", "TPR", "1-2-3"),
             ),
             category, customName,
             LocalTime.of(9, 0),
@@ -333,7 +333,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
           appointmentDetails(
             7, null, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
-              PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
+              PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "ACTIVE IN", "TPR", "1-2-4"),
             ),
             category, customName,
             LocalTime.of(9, 15),
@@ -345,7 +345,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
           appointmentDetails(
             8, null, AppointmentSetSummary(6, 3, 3), 1,
             listOf(
-              PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
+              PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "ACTIVE IN", "TPR", "1-2-5"),
             ),
             category, customName,
             LocalTime.of(9, 30),

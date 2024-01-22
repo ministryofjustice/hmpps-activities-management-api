@@ -28,6 +28,12 @@ data class PrisonerSummary(
   val lastName: String,
 
   @Schema(
+    description = "The prisoner's status at their current prison",
+    example = "ACTIVE IN",
+  )
+  val status: String,
+
+  @Schema(
     description =
     """
     The NOMIS AGENCY_LOCATIONS.AGY_LOC_ID value for mapping to NOMIS.

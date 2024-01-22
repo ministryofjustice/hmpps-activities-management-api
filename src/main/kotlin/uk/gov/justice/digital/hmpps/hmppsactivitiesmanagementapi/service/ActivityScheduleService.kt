@@ -125,6 +125,8 @@ class ActivityScheduleService(
           map {
             val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }!!
             it.prisonerName = "${prisoner.firstName} ${prisoner.lastName}"
+            it.prisonerStatus = prisoner.status
+            it.prisonerPrisonCode = prisoner.prisonId
             it.cellLocation = prisoner.cellLocation
             it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
           }

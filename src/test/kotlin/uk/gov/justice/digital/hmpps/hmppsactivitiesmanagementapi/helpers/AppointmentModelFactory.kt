@@ -261,7 +261,7 @@ fun appointmentDetails(
   appointmentSetSummary: AppointmentSetSummary? = null,
   sequenceNumber: Int = 3,
   prisoners: List<PrisonerSummary> = listOf(
-    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+    PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
   ),
   category: AppointmentCategorySummary = appointmentCategorySummary(),
   customName: String? = null,
@@ -343,7 +343,7 @@ fun appointmentSetDetails(
     appointmentDetails(
       1, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
-        PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "TPR", "1-2-3"),
+        PrisonerSummary("A1234BC", 456, "TEST01", "PRISONER01", "ACTIVE IN", "TPR", "1-2-3"),
       ),
       category, customName,
       LocalTime.of(9, 0),
@@ -353,7 +353,7 @@ fun appointmentSetDetails(
     appointmentDetails(
       2, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
-        PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "TPR", "1-2-4"),
+        PrisonerSummary("B2345CD", 457, "TEST02", "PRISONER02", "ACTIVE IN", "TPR", "1-2-4"),
       ),
       category, customName,
       LocalTime.of(9, 30),
@@ -363,7 +363,7 @@ fun appointmentSetDetails(
     appointmentDetails(
       3, null, AppointmentSetSummary(1, 3, 3), 1,
       listOf(
-        PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "TPR", "1-2-5"),
+        PrisonerSummary("C3456DE", 458, "TEST03", "PRISONER03", "ACTIVE IN", "TPR", "1-2-5"),
       ),
       category, customName,
       LocalTime.of(10, 0),

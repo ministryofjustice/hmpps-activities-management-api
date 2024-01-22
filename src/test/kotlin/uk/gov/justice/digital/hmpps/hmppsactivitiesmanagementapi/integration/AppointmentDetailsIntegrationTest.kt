@@ -152,7 +152,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         attendees = listOf(
           AppointmentAttendeeSummary(
             3,
-            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3"),
             null,
             null,
             null,
@@ -210,7 +210,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         attendees = listOf(
           AppointmentAttendeeSummary(
             6,
-            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "TPR", "1-2-3"),
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3"),
             null,
             null,
             null,
