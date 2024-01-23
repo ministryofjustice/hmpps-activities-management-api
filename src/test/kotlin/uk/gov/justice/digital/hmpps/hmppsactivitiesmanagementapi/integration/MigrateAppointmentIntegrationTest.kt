@@ -17,6 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
@@ -180,17 +181,17 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     // Appointments starting earlier than supplied date should not have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {
-      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+      webTestClient.getAppointmentById(it).isDeleted isEqualTo false
     }
 
     // Not migrated
-    assertThat(webTestClient.getAppointmentById(14)).isNotNull
+    webTestClient.getAppointmentById(14).isDeleted isEqualTo false
     // On start date
-    webTestClient.expectGetAppointmentByIdNotFound(15)
+    webTestClient.getAppointmentById(15).isDeleted isEqualTo true
     // Different prison
-    assertThat(webTestClient.getAppointmentById(16)).isNotNull
+    webTestClient.getAppointmentById(16).isDeleted isEqualTo false
     // On start date
-    webTestClient.expectGetAppointmentByIdNotFound(17)
+    webTestClient.getAppointmentById(17).isDeleted isEqualTo true
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -218,17 +219,17 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     // Appointments starting earlier than supplied date should not have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {
-      assertThat(webTestClient.getAppointmentById(it)).isNotNull
+      webTestClient.getAppointmentById(it).isDeleted isEqualTo false
     }
 
     // Not migrated
-    assertThat(webTestClient.getAppointmentById(14)).isNotNull
+    webTestClient.getAppointmentById(14).isDeleted isEqualTo false
     // On start date with matching category code
-    webTestClient.expectGetAppointmentByIdNotFound(15)
+    webTestClient.getAppointmentById(15).isDeleted isEqualTo true
     // Different prison
-    assertThat(webTestClient.getAppointmentById(16)).isNotNull
+    webTestClient.getAppointmentById(16).isDeleted isEqualTo false
     // On start date with different category code
-    assertThat(webTestClient.getAppointmentById(17)).isNotNull
+    webTestClient.getAppointmentById(17).isDeleted isEqualTo false
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -255,7 +256,7 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
 
     // All appointments in the seed data should have been deleted
     setOf(10L, 11L, 12L, 13L).forEach {
-      webTestClient.expectGetAppointmentByIdNotFound(it)
+      webTestClient.getAppointmentById(it).isDeleted isEqualTo true
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())

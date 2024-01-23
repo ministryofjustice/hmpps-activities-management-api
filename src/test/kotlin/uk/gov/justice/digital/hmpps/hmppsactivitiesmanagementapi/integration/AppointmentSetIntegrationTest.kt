@@ -132,6 +132,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(
                 6,
@@ -177,6 +178,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(
                 7,
@@ -222,6 +224,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(
                 8,

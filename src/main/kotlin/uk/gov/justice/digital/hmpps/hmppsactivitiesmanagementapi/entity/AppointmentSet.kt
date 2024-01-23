@@ -83,13 +83,13 @@ data class AppointmentSet(
 
   fun appointmentSeries() = appointmentSeries.toList()
 
-  fun appointments() = appointmentSeries().map { series -> series.appointments() }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
+  fun appointments(includeDeleted: Boolean = false) = appointmentSeries().map { series -> series.appointments(includeDeleted) }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
 
   fun addAppointmentSeries(appointmentSeries: AppointmentSeries) = this.appointmentSeries.add(appointmentSeries)
 
-  fun prisonerNumbers() = appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments().flatMap { it.prisonerNumbers() } }.distinct()
+  fun prisonerNumbers() = appointmentSeries().flatMap { appointmentSeries -> appointmentSeries.appointments(true).flatMap { it.prisonerNumbers() } }.distinct()
 
-  fun usernames() = listOfNotNull(createdBy, updatedBy).union(appointments().flatMap { appointment -> appointment.usernames() }).distinct()
+  fun usernames() = listOfNotNull(createdBy, updatedBy).union(appointments(true).flatMap { appointment -> appointment.usernames() }).distinct()
 
   fun toModel() = AppointmentSetModel(
     id = this.appointmentSetId,
@@ -108,7 +108,7 @@ data class AppointmentSet(
 
   fun toSummary() = AppointmentSetSummary(
     id = this.appointmentSetId,
-    appointmentCount = this.appointmentSeries().flatMap { it.appointments() }.size,
+    appointmentCount = this.appointmentSeries().flatMap { it.appointments(true) }.size,
     scheduledAppointmentCount = this.appointmentSeries().flatMap { it.scheduledAppointments() }.size,
   )
 

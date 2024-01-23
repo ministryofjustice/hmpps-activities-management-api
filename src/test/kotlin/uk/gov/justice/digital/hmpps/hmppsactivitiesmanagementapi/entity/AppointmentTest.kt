@@ -220,6 +220,7 @@ class AppointmentTest {
         LocalTime.of(10, 30),
         isEdited = true,
         isCancelled = false,
+        isDeleted = false,
       ),
     )
   }
@@ -237,6 +238,7 @@ class AppointmentTest {
           entity.endTime,
           isEdited = true,
           isCancelled = false,
+          isDeleted = false,
         ),
       ),
     )

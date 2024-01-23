@@ -88,6 +88,7 @@ fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTi
     null,
     null,
     null,
+    false,
     attendees = listOf(appointmentAttendeeModel()),
   )
 
@@ -251,6 +252,7 @@ fun appointmentSeriesDetails(
       LocalTime.of(10, 30),
       isEdited = updatedTime != null,
       isCancelled = false,
+      isDeleted = false,
     ),
   ),
 )
@@ -298,6 +300,7 @@ fun appointmentDetails(
   updatedTime != null,
   updatedTime,
   updatedBy,
+  false,
   false,
   null,
   null,

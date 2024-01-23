@@ -97,12 +97,12 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(0)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 10
+    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 10
     }
 
-    with(webTestClient.getAppointmentSetById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 3
+    with(webTestClient.getAppointmentSetById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 3
     }
 
     verifyNoInteractions(eventsPublisher)
@@ -116,15 +116,15 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 7
-      appointments.single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
-      appointments.filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 7
+      single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
+      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
     }
 
-    with(webTestClient.getAppointmentSetById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 2
-      appointments.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+    with(webTestClient.getAppointmentSetById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 2
+      flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
@@ -149,12 +149,12 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 10
+    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 10
     }
 
-    with(webTestClient.getAppointmentSetById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 3
+    with(webTestClient.getAppointmentSetById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 3
     }
 
     verifyNoInteractions(eventsPublisher)
@@ -169,15 +169,15 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 7
-      appointments.single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
-      appointments.filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 7
+      single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
+      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
     }
 
-    with(webTestClient.getAppointmentSetById(1)!!) {
-      appointments.flatMap { it.attendees } hasSize 2
-      appointments.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+    with(webTestClient.getAppointmentSetById(1)!!.appointments.filterNot { it.isDeleted }) {
+      flatMap { it.attendees } hasSize 2
+      flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())

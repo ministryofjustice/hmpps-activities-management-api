@@ -229,6 +229,32 @@ class AppointmentSetTest {
     entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointments hasSize 2
   }
 
+  @Test
+  fun `appointments filters out soft deleted appointments`() {
+    val entity = appointmentSetEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
+    )
+    entity.appointments().first().isDeleted = true
+
+    with(entity.appointments()) {
+      assertThat(size).isEqualTo(2)
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
+    }
+  }
+
+  @Test
+  fun `appointments includes soft deleted appointments when "includeDeleted=true"`() {
+    val entity = appointmentSetEntity(
+      prisonerNumberToBookingIdMap = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
+    )
+    entity.appointments().first().isDeleted = true
+
+    with(entity.appointments(true)) {
+      assertThat(size).isEqualTo(3)
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L, 3L))
+    }
+  }
+
   private fun getPrisonerMap() = mapOf(
     "A1234BC" to PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A1234BC",

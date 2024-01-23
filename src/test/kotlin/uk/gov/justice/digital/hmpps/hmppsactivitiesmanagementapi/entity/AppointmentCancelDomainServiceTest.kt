@@ -171,8 +171,8 @@ class AppointmentCancelDomainServiceTest {
         startTimeInMs,
       )
 
-      response.appointments.filter { ids.contains(it.id) } hasSize 0
-      response.appointments.filterNot { ids.contains(it.id) } hasSize 1
+      response.appointments.filter { ids.contains(it.id) && it.isDeleted } hasSize 3
+      response.appointments.filterNot { ids.contains(it.id) && it.isDeleted } hasSize 1
 
       verify(service).cancelAppointments(
         appointmentSeries,
