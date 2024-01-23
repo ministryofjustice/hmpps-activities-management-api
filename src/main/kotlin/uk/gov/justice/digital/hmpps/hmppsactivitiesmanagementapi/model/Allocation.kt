@@ -89,6 +89,12 @@ data class Allocation(
   @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
   var prisonerName: String? = null,
 
+  @Schema(description = "The status of the prisoner. Included only if includePrisonerSummary = true", example = "ACTIVE IN")
+  var prisonerStatus: String? = null,
+
+  @Schema(description = "The prison code of the prison which of the prisoner currently resides. Included only if includePrisonerSummary = true", example = "MDI")
+  var prisonerPrisonCode: String? = null,
+
   @Schema(description = "The cell location of the prisoner. Included only if includePrisonerSummary = true")
   var cellLocation: String? = null,
 

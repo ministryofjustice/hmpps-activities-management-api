@@ -68,7 +68,7 @@ class AppointmentAttendeeTest {
     assertThat(entity.toSummary(prisonerMap, emptyMap())).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
-        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
         null,
         null,
         null,
@@ -97,7 +97,7 @@ class AppointmentAttendeeTest {
     assertThat(entity.toSummary(prisonerMap, userMap)).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
-        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "TPR", "1-2-3"),
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
         true,
         entity.attendanceRecordedTime,
         UserSummary(1, "ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"),

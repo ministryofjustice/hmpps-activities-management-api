@@ -13,6 +13,7 @@ fun PrisonerSearchApiPrisoner.toSummary() =
     bookingId?.toLong() ?: -1,
     firstName,
     lastName,
+    status,
     prisonId ?: "UNKNOWN",
     cellLocation ?: "UNKNOWN",
   )
@@ -21,6 +22,7 @@ fun PrisonerSearchApiPrisoner?.toSummary(prisonNumber: String, bookingId: Long) 
   this?.toSummary() ?: ModelPrisonerSummary(
     prisonNumber,
     bookingId,
+    "UNKNOWN",
     "UNKNOWN",
     "UNKNOWN",
     "UNKNOWN",

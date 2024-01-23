@@ -130,6 +130,8 @@ class ActivityScheduleServiceTest {
       on { cellLocation } doReturn "MDI-1-1-001"
       on { releaseDate } doReturn LocalDate.now()
       on { prisonerNumber } doReturn "A1234AA"
+      on { prisonId } doReturn "MDI"
+      on { status } doReturn "ACTIVE IN"
     }
     val prisoner2: Prisoner = mock {
       on { firstName } doReturn "JOE"
@@ -137,6 +139,8 @@ class ActivityScheduleServiceTest {
       on { cellLocation } doReturn "MDI-1-1-001"
       on { releaseDate } doReturn LocalDate.now()
       on { prisonerNumber } doReturn "A1111BB"
+      on { prisonId } doReturn "MDI"
+      on { status } doReturn "ACTIVE IN"
     }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)) doReturn schedule
@@ -147,6 +151,8 @@ class ActivityScheduleServiceTest {
         it.prisonerName = "JOE BLOGGS"
         it.cellLocation = "MDI-1-1-001"
         it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
+        it.prisonerStatus = "ACTIVE IN"
+        it.prisonerPrisonCode = "MDI"
       }
     }
 
