@@ -4,12 +4,12 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.14.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.1"
   kotlin("plugin.spring") version "1.9.22"
   kotlin("plugin.jpa") version "1.9.22"
   jacoco
   id("org.openapi.generator") version "7.2.0"
-  id("io.sentry.jvm.gradle") version "4.1.1"
+  id("io.sentry.jvm.gradle") version "4.2.0"
 }
 
 allOpen {
@@ -18,10 +18,6 @@ allOpen {
     "javax.persistence.MappedSuperclass",
     "javax.persistence.Embeddable",
   )
-}
-
-dependencyCheck {
-  suppressionFiles.add("hmpps-activities-management-api-suppressions.xml")
 }
 
 configurations {

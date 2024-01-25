@@ -349,9 +349,10 @@ class PrisonApiClientTest {
     val agencyId = "LEI"
     val locationType = "CELL"
     prisonApiMockServer.stubGetLocationsForTypeUnrestrictedNotFound(agencyId, locationType)
-    assertThatThrownBy { prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block() }
-      .isInstanceOf(WebClientResponseException::class.java)
-      .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations?eventType=CELL")
+
+    assertThrows<WebClientResponseException>(
+      "404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations?eventType=CELL",
+    ) { prisonApiClient.getLocationsForTypeUnrestricted(agencyId, locationType).block() }
   }
 
   @Test
