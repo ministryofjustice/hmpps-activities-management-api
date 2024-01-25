@@ -676,6 +676,25 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
       }
     }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-prisoner-deallocated-on-same-day-as-session.sql")
+    fun `POST - multiple prisoners - scheduled events not returned if the prisoner was deallocated earlier the same day`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G4793VF")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).isEmpty()
+      }
+    }
   }
 
   @Nested
