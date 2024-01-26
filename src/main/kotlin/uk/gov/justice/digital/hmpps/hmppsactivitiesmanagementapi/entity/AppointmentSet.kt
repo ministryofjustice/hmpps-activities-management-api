@@ -83,7 +83,7 @@ data class AppointmentSet(
 
   fun appointmentSeries() = appointmentSeries.toList()
 
-  fun appointments(includeDeleted: Boolean = false) = appointmentSeries().map { series -> series.appointments(includeDeleted) }.flatten().sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
+  fun appointments(includeDeleted: Boolean = false) = appointmentSeries().flatMap { series -> series.appointments(includeDeleted) }.sortedWith(compareBy<Appointment> { it.startDate }.thenBy { it.startTime })
 
   fun addAppointmentSeries(appointmentSeries: AppointmentSeries) = this.appointmentSeries.add(appointmentSeries)
 
