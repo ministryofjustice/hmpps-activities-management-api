@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
@@ -48,5 +49,5 @@ class ManageAttendanceRecordsJob(
     (
       mayBePrisonCode?.let { listOf(roleOutPrisonService.getByPrisonCode(it)) }
         ?: roleOutPrisonService.getRolloutPrisons()
-      ).filter(RolloutPrisonPlan::activitiesRolledOut).map(RolloutPrisonPlan::prisonCode)
+      ).filter { it.activitiesRolledOut && it.activitiesRolloutDate.onOrBefore(LocalDate.now()) }.map(RolloutPrisonPlan::prisonCode)
 }
