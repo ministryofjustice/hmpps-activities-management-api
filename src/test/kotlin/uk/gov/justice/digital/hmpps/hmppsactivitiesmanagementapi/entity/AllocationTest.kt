@@ -38,15 +38,15 @@ class AllocationTest {
   @Test
   fun `check allocation ends`() {
     with(allocation().apply { endDate = tomorrow }) {
-      assertThat(endsOn(yesterday)).isFalse
-      assertThat(endsOn(today)).isFalse
-      assertThat(endsOn(tomorrow)).isTrue
+      assertThat(ends(yesterday)).isFalse
+      assertThat(ends(today)).isFalse
+      assertThat(ends(tomorrow)).isTrue
     }
 
     with(allocation().apply { endDate = null }) {
-      assertThat(endsOn(yesterday)).isFalse
-      assertThat(endsOn(today)).isFalse
-      assertThat(endsOn(tomorrow)).isFalse
+      assertThat(ends(yesterday)).isFalse
+      assertThat(ends(today)).isFalse
+      assertThat(ends(tomorrow)).isFalse
     }
   }
 
@@ -248,7 +248,7 @@ class AllocationTest {
       assertThat(plannedAt).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     }
 
-    assertThat(allocation.endsOn(tomorrow))
+    assertThat(allocation.ends(tomorrow))
   }
 
   @Test
@@ -271,7 +271,7 @@ class AllocationTest {
       assertThat(plannedAt).isCloseTo(LocalDateTime.now(), within(5, ChronoUnit.SECONDS))
     }
 
-    assertThat(allocation.endsOn(tomorrow.plusDays(1)))
+    assertThat(allocation.ends(tomorrow.plusDays(1)))
   }
 
   @Test
