@@ -366,8 +366,6 @@ data class ActivitySchedule(
       .filterNot { key -> slots.map { Pair(it.weekNumber, it.slotTimes()) }.contains(key) }
       .forEach { addSlot(it.first, it.second, updates[it]!!) }
   }
-
-  fun endsOn(date: LocalDate) = date == endDate
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
