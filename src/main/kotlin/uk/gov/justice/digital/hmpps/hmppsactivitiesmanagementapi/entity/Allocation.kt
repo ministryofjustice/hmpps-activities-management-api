@@ -146,7 +146,7 @@ data class Allocation(
   /**
    * This will also check the planned end date should the end date be different or null.
    */
-  fun endsOn(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
+  fun ends(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
   fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) =
     this.apply {

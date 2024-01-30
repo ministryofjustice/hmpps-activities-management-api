@@ -48,8 +48,8 @@ internal val mediumPayBand = prisonPayBandsLowMediumHigh()[1]
 
 internal val activeAllocation = activityEntity().schedule().allocations().first()
 
-internal val pentonvilleActivity = activityEntity(activityId = 1, prisonCode = PENTONVILLE_PRISON_CODE)
-internal val moorlandActivity = activityEntity(activityId = 2, prisonCode = MOORLAND_PRISON_CODE)
+internal val pentonvilleActivity = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE)
+internal val moorlandActivity = activityEntity(prisonCode = MOORLAND_PRISON_CODE)
 
 internal fun Activity.schedule() = this.schedules().single()
 
@@ -310,9 +310,9 @@ internal fun deallocation(endDate: LocalDate? = null) =
     ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
     ?: activitySchedule(activityEntity()).allocations().first()
 
-internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = RolloutPrison(
+internal fun rolloutPrison() = RolloutPrison(
   1,
-  prisonCode,
+  PENTONVILLE_PRISON_CODE,
   "HMP Pentonville",
   true,
   LocalDate.of(2022, 12, 22),

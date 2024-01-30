@@ -22,19 +22,19 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Rollout
 import java.time.LocalDate
 
 class ManageAttendanceRecordsJobTest {
-  private val rollOutPrisonService: RolloutPrisonService = mock {
+  private val roleOutPrisonService: RolloutPrisonService = mock {
     on { getRolloutPrisons() } doReturn listOf(
       RolloutPrisonPlan(
         MOORLAND_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
+        activitiesRolloutDate = null,
         appointmentsRolledOut = false,
         appointmentsRolloutDate = null,
       ),
       RolloutPrisonPlan(
         PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
+        activitiesRolloutDate = null,
         appointmentsRolledOut = false,
         appointmentsRolloutDate = null,
       ),
@@ -43,7 +43,7 @@ class ManageAttendanceRecordsJobTest {
       RolloutPrisonPlan(
         PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
+        activitiesRolloutDate = null,
         appointmentsRolledOut = false,
         appointmentsRolloutDate = null,
       )
@@ -52,7 +52,7 @@ class ManageAttendanceRecordsJobTest {
   private val attendancesService: ManageAttendancesService = mock()
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
-  private val job = ManageAttendanceRecordsJob(rollOutPrisonService, attendancesService, safeJobRunner)
+  private val job = ManageAttendanceRecordsJob(roleOutPrisonService, attendancesService, safeJobRunner)
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 
   @Test
@@ -96,7 +96,7 @@ class ManageAttendanceRecordsJobTest {
     job.execute(date = TimeSource.tomorrow(), withExpiry = false)
 
     verifyNoInteractions(attendancesService)
-    verifyNoInteractions(rollOutPrisonService)
+    verifyNoInteractions(roleOutPrisonService)
     verifyNoInteractions(safeJobRunner)
   }
 }
