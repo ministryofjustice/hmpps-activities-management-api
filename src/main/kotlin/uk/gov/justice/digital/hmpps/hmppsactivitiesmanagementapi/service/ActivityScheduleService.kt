@@ -219,16 +219,17 @@ class ActivityScheduleService(
       repository.findOrThrowNotFound(scheduleId).run {
         request.prisonerNumbers!!.distinct()
           .map { prisonerNumber ->
+            val deallocationReason = request.reasonCode!!.toDeallocationReason()
             var caseNoteId: Long? = null
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
-              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, request.caseNote.type, subType).caseNoteId.toLong()
+              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, request.caseNote.type, subType, "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}").caseNoteId.toLong()
             }
 
             deallocatePrisonerOn(
               prisonerNumber,
               request.endDate!!,
-              request.reasonCode.toDeallocationReason(),
+              deallocationReason,
               deallocatedBy,
               caseNoteId,
             ).also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
@@ -240,7 +241,7 @@ class ActivityScheduleService(
     }
   }
 
-  private fun String?.toDeallocationReason() =
+  private fun String.toDeallocationReason() =
     DeallocationReason.entries
       .filter(DeallocationReason::displayed)
       .firstOrNull { it.name == this }

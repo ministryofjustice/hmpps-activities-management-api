@@ -9,8 +9,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 @Service
 class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
 
-  fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, type: CaseNoteType, subType: CaseNoteSubType): CaseNote {
-    val newCaseNote = NewCaseNote(prisonCode, type.name, subType.name, null, caseNote)
+  fun postCaseNote(prisonCode: String, prisonerNumber: String, caseNote: String, type: CaseNoteType, subType: CaseNoteSubType, caseNotePrefix: String? = null): CaseNote {
+    val newCaseNote = NewCaseNote(prisonCode, type.name, subType.name, null, if (caseNotePrefix != null) "$caseNotePrefix\n\n$caseNote".take(4000) else caseNote)
     return webClient.post()
       .uri("/case-notes/{offenderNo}", prisonerNumber)
       .bodyValue(newCaseNote)
@@ -34,7 +34,7 @@ enum class CaseNoteType(val description: String) {
 }
 
 enum class CaseNoteSubType(val description: String) {
-  HIS("History Sheet Entry"),
+  HIS("History sheet entry"),
   NEG_GEN("Negative general"),
   IEP_WARN("Incentive warning"),
 }

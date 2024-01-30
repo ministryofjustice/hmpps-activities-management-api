@@ -232,7 +232,7 @@ class ActivityScheduleServiceTest {
       "by test",
     )
     verify(repository).saveAndFlush(schedule)
-    verify(caseNotesApiClient, never()).postCaseNote(any(), any(), any(), any(), any())
+    verify(caseNotesApiClient, never()).postCaseNote(any(), any(), any(), any(), any(), any())
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
       mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
@@ -247,7 +247,7 @@ class ActivityScheduleServiceTest {
       on { activity } doReturn activityEntity()
     }
 
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), any(), any())) doReturn CaseNote(
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), any(), any(), any())) doReturn CaseNote(
       caseNoteId = "10001",
       offenderIdentifier = "1",
       type = "NEG",
@@ -277,7 +277,7 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
-    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GEN, CaseNoteSubType.HIS)
+    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GEN, CaseNoteSubType.HIS, "Deallocated from activity - Other - Maths")
     verify(schedule).deallocatePrisonerOn(
       "1",
       TimeSource.tomorrow(),
