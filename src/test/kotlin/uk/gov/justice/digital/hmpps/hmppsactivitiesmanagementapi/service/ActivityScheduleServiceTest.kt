@@ -277,7 +277,7 @@ class ActivityScheduleServiceTest {
       "by test",
     )
 
-    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GEN, CaseNoteSubType.OSE)
+    verify(caseNotesApiClient, times(1)).postCaseNote("MDI", "1", "Test case note", CaseNoteType.GEN, CaseNoteSubType.HIS)
     verify(schedule).deallocatePrisonerOn(
       "1",
       TimeSource.tomorrow(),
