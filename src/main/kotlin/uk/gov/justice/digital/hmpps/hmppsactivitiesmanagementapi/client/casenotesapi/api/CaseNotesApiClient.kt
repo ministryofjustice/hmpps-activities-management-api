@@ -34,7 +34,7 @@ enum class CaseNoteType(val description: String) {
 }
 
 enum class CaseNoteSubType(val description: String) {
-  OSE("Offender supervisor entry"),
+  HIS("History Sheet Entry"),
   NEG_GEN("Negative general"),
   IEP_WARN("Incentive warning"),
 }
