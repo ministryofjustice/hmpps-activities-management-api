@@ -96,18 +96,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-deleted-id-2.sql",
-  )
-  @Test
-  fun `get deleted appointment returns 404 not found`() {
-    webTestClient.get()
-      .uri("/appointments/3")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
-  @Sql(
     "classpath:test_data/seed-appointment-single-id-1.sql",
   )
   @Test
@@ -144,6 +132,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         null,
         null,
         null,
+        false,
         attendees = listOf(
           AppointmentAttendee(
             3,
@@ -202,6 +191,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         null,
         null,
         null,
+        false,
         attendees = listOf(
           AppointmentAttendee(
             6,
@@ -355,12 +345,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     )
 
     val originalAppointmentSeries = webTestClient.getAppointmentSeriesById(1)!!
-    val appointmentIds = originalAppointmentSeries.appointments
+    val appointmentIds = originalAppointmentSeries.appointments.filterNot { it.isDeleted }
       .flatMap { it.attendees.map { attendee -> attendee.id } }
 
     val appointmentSeries = webTestClient.cancelAppointment(2, request)!!
 
-    assertThat(appointmentSeries.appointments).isEmpty()
+    assertThat(appointmentSeries.appointments.filterNot { it.isDeleted }).isEmpty()
 
     verify(eventsPublisher, times(1)).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
@@ -387,21 +377,21 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     val appointmentSeries = webTestClient.cancelAppointment(12, request)!!
 
-    with(appointmentSeries) {
-      with(appointments.subList(0, 2)) {
-        assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
-        assertThat(map { it.cancelledBy }.distinct().single()).isNull()
-        assertThat(map { it.cancelledTime }.distinct().single()).isNull()
-      }
-      assertThat(appointments.subList(2, appointments.size)).isEmpty()
+    with(appointmentSeries.appointments.filterNot { it.isDeleted }) {
+      assertThat(map { it.cancellationReasonId }.distinct().single()).isNull()
+      assertThat(map { it.cancelledBy }.distinct().single()).isNull()
+      assertThat(map { it.cancelledTime }.distinct().single()).isNull()
+      assertThat(subList(2, size)).isEmpty()
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
+    val activeAppointments = appointmentSeries.appointments.filterNot { it.isDeleted }
+
     with(eventCaptor.allValues) {
       assertThat(map { it.additionalInformation }).containsAll(
-        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+        activeAppointments.subList(2, activeAppointments.size).flatMap {
           it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
             .map { attendee -> AppointmentInstanceInformation(attendee.id) }
         },
@@ -556,7 +546,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
 
     // Synchronous delete. Delete specified appointment only
-    with(appointmentSeries.appointments) {
+    with(appointmentSeries.appointments.filterNot { it.isDeleted }) {
       singleOrNull { it.id == appointmentId } isEqualTo null
       filter { it.id != appointmentId } hasSize 3
     }
@@ -564,7 +554,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // Wait for remaining appointments to be deleted
     Thread.sleep(1000)
     appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments hasSize 0
+    appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 

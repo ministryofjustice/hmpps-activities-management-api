@@ -51,26 +51,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-appointment-deleted-id-2.sql",
-  )
-  @Test
-  fun `get deleted appointment details returns 404 not found`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A1234BC"),
-      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
-    )
-
-    webTestClient.get()
-      .uri("/appointments/3/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
-  @Sql(
     "classpath:test_data/seed-appointment-attendance.sql",
   )
   @Test
@@ -175,6 +155,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         null,
         null,
         false,
+        false,
         null,
         null,
       ),
@@ -232,6 +213,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         false,
         null,
         null,
+        false,
         false,
         null,
         null,

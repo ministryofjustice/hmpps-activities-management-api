@@ -81,6 +81,7 @@ class AppointmentUpdateDomainService(
       }
       if (request.isPropertyUpdate()) {
         updatedAppointmentSeries.appointments
+          .filterNot { it.isDeleted }
           .filter { appointmentIdsToUpdate.contains(it.id) }.toSet()
           .flatMap { it.attendees.map { attendee -> attendee.id } }
           .filter { !removedAttendeeIds.contains(it) && !addedAttendeesIds.contains(it) }
