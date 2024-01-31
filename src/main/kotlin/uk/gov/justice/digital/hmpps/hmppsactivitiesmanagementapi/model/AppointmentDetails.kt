@@ -218,6 +218,15 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
+    Indicates that this appointment has been deleted and removed from scheduled events.
+    """,
+    example = "false",
+  )
+  val isDeleted: Boolean,
+
+  @Schema(
+    description =
+    """
     The date and time this appointment was cancelled.
     Will be null if this appointment has not been cancelled
     """,

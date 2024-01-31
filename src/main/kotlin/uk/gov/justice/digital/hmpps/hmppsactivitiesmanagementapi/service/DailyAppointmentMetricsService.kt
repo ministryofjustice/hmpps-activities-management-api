@@ -67,7 +67,7 @@ class DailyAppointmentMetricsService(
   private fun List<Appointment>.countUniqueAppointmentSets() =
     this.mapNotNull { it.appointmentSeries.appointmentSet }.map { it.appointmentSetId }.distinct().size.toDouble()
 
-  private fun List<Appointment>.countCancelledAppointments() = this.filter { it.isCancelled() }.size.toDouble()
+  private fun List<Appointment>.countCancelledAppointments() = this.filter { it.isCancelled() && !it.isDeleted }.size.toDouble()
 
   private fun List<Appointment>.countDeletedAppointments() = this.filter { it.isDeleted }.size.toDouble()
 }

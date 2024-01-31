@@ -11,7 +11,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.SQLRestriction
 import org.springframework.data.domain.AbstractAggregateRoot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -32,7 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 
 @Entity
 @Table(name = "appointment")
-@SQLRestriction("NOT is_deleted")
 data class Appointment(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -216,6 +214,7 @@ data class Appointment(
     cancelledTime = cancelledTime,
     cancellationReasonId = cancellationReason?.appointmentCancellationReasonId,
     cancelledBy = cancelledBy,
+    isDeleted = isDeleted,
     attendees = attendees().toModel(),
   )
 
@@ -228,6 +227,7 @@ data class Appointment(
       endTime,
       isEdited = isEdited(),
       isCancelled = isCancelled(),
+      isDeleted = isDeleted,
     )
 
   fun toDetails(
@@ -270,6 +270,7 @@ data class Appointment(
         userMap[updatedBy].toSummary(updatedBy!!)
       },
       isCancelled(),
+      isDeleted,
       cancelledTime,
       if (cancelledBy == null) {
         null

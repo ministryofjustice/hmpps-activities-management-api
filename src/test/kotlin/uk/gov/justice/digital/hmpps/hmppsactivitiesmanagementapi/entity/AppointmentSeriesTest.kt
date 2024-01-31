@@ -42,6 +42,18 @@ class AppointmentSeriesTest {
     with(entity.appointments()) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
+      assertThat(this.map { it.isDeleted }).isEqualTo(listOf(false, false))
+    }
+  }
+
+  @Test
+  fun `appointments includes soft deleted appointments when "includeDeleted=true"`() {
+    val entity = appointmentSeriesEntity(frequency = AppointmentFrequency.WEEKLY, numberOfAppointments = 3)
+    entity.appointments().first().isDeleted = true
+    with(entity.appointments(true)) {
+      assertThat(size).isEqualTo(3)
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L, 3L))
+      assertThat(this.map { it.isDeleted }).isEqualTo(listOf(true, false, false))
     }
   }
 

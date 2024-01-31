@@ -228,6 +228,7 @@ class AppointmentSeriesServiceTest {
             appointmentEntity.endTime,
             isEdited = true,
             isCancelled = false,
+            isDeleted = false,
           ),
         ),
       ),

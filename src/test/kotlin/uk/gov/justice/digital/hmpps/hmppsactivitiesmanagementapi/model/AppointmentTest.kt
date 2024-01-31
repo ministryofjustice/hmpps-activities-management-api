@@ -46,6 +46,7 @@ class AppointmentTest : ModelTest() {
       cancelledTime = null,
       cancellationReasonId = null,
       cancelledBy = null,
+      isDeleted = false,
     )
 
     val json = objectMapper.writeValueAsString(appointment)

@@ -65,4 +65,13 @@ data class AppointmentSummary(
     example = "false",
   )
   val isCancelled: Boolean,
+
+  @Schema(
+    description =
+    """
+    Indicates that this appointment has been deleted and removed from scheduled events.
+    """,
+    example = "false",
+  )
+  val isDeleted: Boolean,
 )

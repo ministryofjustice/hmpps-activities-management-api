@@ -114,7 +114,7 @@ data class AppointmentSeries(
   @OrderBy("sequenceNumber ASC")
   private val appointments: MutableList<Appointment> = mutableListOf()
 
-  fun appointments() = appointments.filterNot { it.isDeleted }.toList()
+  fun appointments(includeDeleted: Boolean = false) = appointments.filter { !it.isDeleted || includeDeleted }.toList()
 
   fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
@@ -147,7 +147,7 @@ data class AppointmentSeries(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
     userMap: Map<String, UserDetail>,
-  ) = appointments().toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  ) = appointments(true).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
 
   fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
@@ -174,13 +174,13 @@ data class AppointmentSeries(
     createdBy = createdBy,
     updatedTime = updatedTime,
     updatedBy = updatedBy,
-    appointments = appointments().toModel(),
+    appointments = appointments(true).toModel(),
   )
 
   fun toSummary() = AppointmentSeriesSummary(
     id = appointmentSeriesId,
     schedule = schedule?.toModel(),
-    appointmentCount = appointments().size,
+    appointmentCount = appointments(true).size,
     scheduledAppointmentCount = scheduledAppointments().size,
   )
 
@@ -217,7 +217,7 @@ data class AppointmentSeries(
       } else {
         userMap[updatedBy].toSummary(updatedBy!!)
       },
-      appointments().toSummary(),
+      appointments(true).toSummary(),
     )
 }
 

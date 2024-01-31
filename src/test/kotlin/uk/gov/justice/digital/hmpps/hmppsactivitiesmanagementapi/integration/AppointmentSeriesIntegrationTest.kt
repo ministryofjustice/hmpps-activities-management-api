@@ -137,6 +137,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(
                 3,
@@ -226,6 +227,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             LocalTime.of(10, 30),
             isEdited = false,
             isCancelled = false,
+            isDeleted = false,
           ),
         ),
       ),
@@ -519,6 +521,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(
                 appointmentSeries.appointments.first().attendees.first().id,
@@ -604,6 +607,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             null,
             null,
             null,
+            isDeleted = false,
             attendees = listOf(
               AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null, null),
               AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2, null, null, null, null, null, null, null, null),
