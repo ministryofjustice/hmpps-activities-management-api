@@ -89,18 +89,16 @@ class AttendancesService(
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? =
     caseNote?.let {
       val caseNoteReason = if (attendance.issuePayment == true && issuePayment == false) "Pay removed" else if (maybeAttendanceReason() == AttendanceReasonEnum.REFUSED) "Refused to attend" else null
-      val activityName = attendance.scheduledInstance.activitySchedule.activity.summary
-      val location = attendance.scheduledInstance.activitySchedule.internalLocationDescription
-      val datetime = attendance.scheduledInstance.sessionDate.atTime(attendance.scheduledInstance.startTime).toMediumFormatStyle()
-      val prefix = if (caseNoteReason != null) {
+      val activityName = attendance.scheduledInstance.activitySummary()
+      val location = attendance.scheduledInstance.internalLocationDescription()
+      val datetime = attendance.scheduledInstance.dateTime().toMediumFormatStyle()
+      val prefix = caseNoteReason?.let {
         listOfNotNull(
           caseNoteReason,
           activityName,
           location,
           datetime,
         ).joinToString(" - ")
-      } else {
-        null
       }
 
       val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.IEP_WARN else CaseNoteSubType.NEG_GEN

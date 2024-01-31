@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 
 @Schema(description = "Request object for updating an attendance record")
@@ -30,6 +31,7 @@ data class AttendanceUpdateRequest(
   val issuePayment: Boolean?,
 
   @Schema(description = "Case note provided for REFUSED", example = "Prisoner refused to attend the scheduled activity without reasonable excuse")
+  @field:Size(max = 3800, message = "The case note must not exceed {max} characters")
   val caseNote: String?,
 
   @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
