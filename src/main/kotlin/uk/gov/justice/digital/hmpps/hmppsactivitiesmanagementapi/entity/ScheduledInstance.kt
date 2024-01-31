@@ -139,6 +139,12 @@ data class ScheduledInstance(
   }
 
   fun isPaid() = activitySchedule.isPaid()
+
+  fun activitySummary() = activitySchedule.activity.summary
+
+  fun internalLocationDescription() = activitySchedule.internalLocationDescription
+
+  fun dateTime() = sessionDate.atTime(startTime)
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

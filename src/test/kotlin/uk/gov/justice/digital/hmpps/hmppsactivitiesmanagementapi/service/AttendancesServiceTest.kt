@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -91,16 +92,40 @@ class AttendancesServiceTest {
   }
 
   @Test
-  fun `mark attendance record with case note`() {
+  fun `mark attendance record with case note - Refused to attend`() {
+    val expectedCaseNotePrefix = "Refused to attend - Maths - Education - R1 - ${LocalDate.now().atTime(attendance.scheduledInstance.startTime).toMediumFormatStyle()}"
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
 
     assertThat(attendance.attendanceReason).isNull()
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, null, "test case note", null, null)))
+
+    verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
+    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.incentiveLevelWarningIssued).isNull()
+  }
+
+  @Test
+  fun `mark attendance record with case note - Pay removed`() {
+    val expectedCaseNotePrefix = "Pay removed - Maths - Education - R1 - ${LocalDate.now().atTime(attendance.scheduledInstance.startTime).toMediumFormatStyle()}"
+
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance.apply { issuePayment = true }))
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))).thenReturn(caseNote)
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, false, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
@@ -118,14 +143,14 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), any())).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", false, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, null, "test case note", false, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
-    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
     assertThat(attendance.incentiveLevelWarningIssued).isFalse
   }
@@ -137,16 +162,36 @@ class AttendancesServiceTest {
 
     whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
     whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
-    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN))).thenReturn(caseNote)
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN), any())).thenReturn(caseNote)
 
-    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", true, null)))
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, null, "test case note", true, null)))
+
+    verify(attendanceRepository).saveAndFlush(attendance)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
+    assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
+    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.incentiveLevelWarningIssued).isTrue
+  }
+
+  @Test
+  fun `mark attendance record - case note not prefixed if the person did attend`() {
+    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
+
+    assertThat(attendance.attendanceReason).isNull()
+
+    whenever(attendanceReasonRepository.findAll()).thenReturn(attendanceReasons().map { it.value })
+    whenever(attendanceRepository.findAllById(setOf(attendance.attendanceId))).thenReturn(listOf(attendance))
+    whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(null))).thenReturn(caseNote)
+
+    service.mark("Joe Bloggs", listOf(AttendanceUpdateRequest(attendance.attendanceId, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, "test case note", null, null)))
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isEqualTo(1)
-    assertThat(attendance.incentiveLevelWarningIssued).isTrue
+    assertThat(attendance.incentiveLevelWarningIssued).isNull()
   }
 
   @Test

@@ -13,6 +13,6 @@ data class AddCaseNoteRequest(
 
   @Schema(description = "The text which will appear on the case note.")
   @field:NotEmpty(message = "The case note text must be supplied.")
-  @field:Size(max = 4000, message = "The case note text should not exceed {max} characters")
+  @field:Size(max = 3800, message = "The case note text should not exceed {max} characters")
   val text: String,
 )

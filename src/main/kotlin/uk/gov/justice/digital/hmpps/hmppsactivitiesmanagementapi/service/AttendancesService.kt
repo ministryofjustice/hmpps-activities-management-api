@@ -7,7 +7,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -63,7 +65,7 @@ class AttendancesService(
           newComment = updateRequest.comment,
           newIssuePayment = if (updateRequest.issuePayment == true && !attendance.isPayable()) false else updateRequest.issuePayment,
           newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
-          newCaseNoteId = updateRequest.mayBeCaseNote(attendance.prisonerNumber)?.caseNoteId,
+          newCaseNoteId = updateRequest.mayBeCaseNote(attendance)?.caseNoteId,
           newOtherAbsenceReason = updateRequest.otherAbsenceReason,
         )
 
@@ -84,10 +86,23 @@ class AttendancesService(
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
-  private fun AttendanceUpdateRequest.mayBeCaseNote(prisonerNumber: String): CaseNote? =
+  private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? =
     caseNote?.let {
+      val caseNoteReason = if (attendance.issuePayment == true && issuePayment == false) "Pay removed" else if (maybeAttendanceReason() == AttendanceReasonEnum.REFUSED) "Refused to attend" else null
+      val activityName = attendance.scheduledInstance.activitySummary()
+      val location = attendance.scheduledInstance.internalLocationDescription()
+      val datetime = attendance.scheduledInstance.dateTime().toMediumFormatStyle()
+      val prefix = caseNoteReason?.let {
+        listOfNotNull(
+          caseNoteReason,
+          activityName,
+          location,
+          datetime,
+        ).joinToString(" - ")
+      }
+
       val subType = if (incentiveLevelWarningIssued == true) CaseNoteSubType.IEP_WARN else CaseNoteSubType.NEG_GEN
-      caseNotesApiClient.postCaseNote(prisonCode, prisonerNumber, caseNote, CaseNoteType.NEG, subType)
+      caseNotesApiClient.postCaseNote(prisonCode, attendance.prisonerNumber, caseNote, CaseNoteType.NEG, subType, prefix)
     }
 
   private fun AttendanceUpdateRequest.maybeAttendanceReason() =
