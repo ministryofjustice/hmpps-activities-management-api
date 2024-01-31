@@ -73,8 +73,8 @@ class ManageAllocationsService(
     }
 
     if (date == now.toLocalDate()) {
-      require(now.toLocalTime().onOrAfter(LocalTime.of(22, 0))) {
-        "You can only end today's allocations from 10pm onwards."
+      require(now.toLocalTime().onOrAfter(LocalTime.of(20, 0))) {
+        "You can only end today's allocations from 8pm onwards."
       }
     }
 

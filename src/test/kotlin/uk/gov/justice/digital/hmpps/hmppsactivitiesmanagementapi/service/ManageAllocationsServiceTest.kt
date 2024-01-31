@@ -47,7 +47,7 @@ class ManageAllocationsServiceTest {
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonApi: PrisonApiApplicationClient = mock()
-  private val fixedTimeSource = SystemTimeSource { LocalDate.now().atTime(22, 0) }
+  private val fixedTimeSource = SystemTimeSource { LocalDate.now().atTime(20, 0) }
 
   private val service =
     ManageAllocationsService(
@@ -118,7 +118,7 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `should fail to deallocate offenders when before 10pm today`() {
+  fun `should fail to deallocate offenders when before 8pm today`() {
     val prison = rolloutPrison()
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
 
@@ -136,9 +136,9 @@ class ManageAllocationsServiceTest {
         TransactionHandler(),
         outboundEventsService,
         prisonApi,
-      ) { TimeSource.today().atTime(21, 59) }.endAllocationsDueToEnd(prison.code, TimeSource.today())
+      ) { TimeSource.today().atTime(19, 59) }.endAllocationsDueToEnd(prison.code, TimeSource.today())
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("You can only end today's allocations from 10pm onwards.")
+      .hasMessage("You can only end today's allocations from 8pm onwards.")
   }
 
   @Test
