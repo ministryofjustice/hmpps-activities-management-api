@@ -9,19 +9,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.lastMovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.OTHER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
@@ -36,13 +32,12 @@ import java.time.LocalDateTime
 class ActivitiesChangedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val allocationRepository: AllocationRepository,
-  private val attendanceRepository: AttendanceRepository,
-  private val attendanceReasonRepository: AttendanceReasonRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
   private val transactionHandler: TransactionHandler,
   private val waitingListService: WaitingListService,
   private val outboundEventsService: OutboundEventsService,
+  private val attendanceSuspensionService: AttendanceSuspensionService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -87,50 +82,24 @@ class ActivitiesChangedEventHandler(
           event.prisonerNumber(),
           PrisonerStatus.ACTIVE,
           PrisonerStatus.PENDING,
+          PrisonerStatus.SUSPENDED,
         )
           .excludingFuturePendingAllocations()
-          .suspendPrisonersAllocations(now, event)
-          .suspendPrisonersFutureAttendances(now, event)
-      }.let { (suspendedAllocations, suspendedAttendances) ->
+          .autoSuspendPrisonersAllocations(now, event)
+      }.let { suspendedAllocations ->
         suspendedAllocations.forEach {
+          attendanceSuspensionService.suspendFutureAttendancesForAllocation(now, it)
           outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
         }.also { log.info("Sending allocation amended events.") }
-        suspendedAttendances.forEach {
-          outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it.attendanceId)
-        }.also { log.info("Sending attendance amended events.") }
       }
     }
 
   private fun List<Allocation>.excludingFuturePendingAllocations() =
     filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
 
-  private fun List<Allocation>.suspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
+  private fun List<Allocation>.autoSuspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
     onEach { it.autoSuspend(suspendedAt, "Temporarily released or transferred") }
-      .also { log.info("Suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
-
-  private fun List<Allocation>.suspendPrisonersFutureAttendances(
-    dateTime: LocalDateTime,
-    event: ActivitiesChangedEvent,
-  ): Pair<List<Allocation>, List<Attendance>> {
-    val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
-
-    return this to flatMap { allocation ->
-      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        event.prisonCode(),
-        dateTime.toLocalDate(),
-        AttendanceStatus.WAITING,
-        allocation.prisonerNumber,
-      )
-        .filter { attendance ->
-          attendance.editable() && (
-            (attendance.scheduledInstance.sessionDate == dateTime.toLocalDate() && attendance.scheduledInstance.startTime > dateTime.toLocalTime()) ||
-              (attendance.scheduledInstance.sessionDate > dateTime.toLocalDate())
-            )
-        }
-        .onEach { attendance -> attendance.completeWithoutPayment(reason) }
-        .also { log.info("Suspended ${it.size} attendances for prisoner ${allocation.prisonerNumber} allocation ID ${allocation.allocationId} at prison ${event.prisonCode()}.") }
-    }
-  }
+      .also { log.info("Auto suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
   private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) =
     prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -105,16 +107,16 @@ class AllocationTest : ModelTest() {
   fun `check user suspended allocation transformation`() {
     val now = LocalDateTime.now()
 
-    val allocation = allocation().also {
-      it.userSuspend(now, "user suspend reason", "by test")
+    val allocation = allocation(withPlannedSuspensions = true).also {
+      it.activatePlannedSuspension()
       assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED)
     }
 
     with(allocation.toModel()) {
       assertOnCommonModalTransformation(this, allocation)
-      assertThat(suspendedBy).isEqualTo("by test")
-      assertThat(suspendedReason).isEqualTo("user suspend reason")
-      assertThat(suspendedTime).isEqualTo(now)
+      suspendedBy isEqualTo "Test"
+      suspendedReason isEqualTo "Planned reason"
+      suspendedTime isCloseTo now
       assertThat(deallocatedBy).isNull()
       assertThat(deallocatedReason).isNull()
       assertThat(deallocatedTime).isNull()

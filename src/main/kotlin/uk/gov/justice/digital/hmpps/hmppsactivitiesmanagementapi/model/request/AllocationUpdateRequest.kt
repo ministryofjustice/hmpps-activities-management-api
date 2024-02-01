@@ -39,4 +39,17 @@ data class AllocationUpdateRequest(
       "there can not not be exclusions defined on the same day and time slot over multiple weeks.",
   )
   val exclusions: List<Slot>? = null,
+
+  @Schema(description = "The date when the prisoner will be suspended from the activity", example = "2023-09-10")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  @field:FutureOrPresent(message = "Suspension start date must not be in the past")
+  val suspendFrom: LocalDate? = null,
+
+  @Schema(description = "The reason for suspension", example = "Negative behaviour")
+  val suspensionReason: String? = null,
+
+  @Schema(description = "The date when the prisoner will be suspended from the activity", example = "2023-09-10")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  @field:FutureOrPresent(message = "Suspension end date must not be in the past")
+  val suspendUntil: LocalDate? = null,
 )

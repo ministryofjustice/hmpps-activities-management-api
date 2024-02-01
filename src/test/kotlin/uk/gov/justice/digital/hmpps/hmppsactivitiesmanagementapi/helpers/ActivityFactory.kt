@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Eligibil
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -285,14 +286,14 @@ internal fun activitySchedule(
     }
   }
 
-internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false): Allocation {
+internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false, withPlannedSuspensions: Boolean = false): Allocation {
   val allocation = startDate
     ?.let { activitySchedule(activityEntity(startDate = it), noExclusions = true).allocations().first() }
     ?: activitySchedule(activityEntity(), noExclusions = true).allocations().first()
 
   val slot = allocation.activitySchedule.slots().first()
 
-  return if (withExclusions) {
+  if (withExclusions) {
     allocation.apply {
       if (startDate != null) {
         addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
@@ -300,9 +301,23 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
         addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
       }
     }
-  } else {
-    allocation
   }
+
+  if (withPlannedSuspensions) {
+    allocation.apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = this.startDate,
+          plannedReason = "Planned reason",
+          plannedBy = "Test",
+          updatedBy = "Test",
+        ),
+      )
+    }
+  }
+
+  return allocation
 }
 
 internal fun deallocation(endDate: LocalDate? = null) =

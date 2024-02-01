@@ -27,6 +27,18 @@ class ManageAllocationsJob(
           service.allocations(AllocationOperation.STARTING_TODAY)
         },
       )
+
+      jobRunner.runJob(
+        JobDefinition(JobType.START_SUSPENSIONS) {
+          service.allocations(AllocationOperation.SUSPENSION_START_TODAY)
+        },
+      )
+
+      jobRunner.runJob(
+        JobDefinition(JobType.END_SUSPENSIONS) {
+          service.allocations(AllocationOperation.SUSPENSION_END_TODAY)
+        },
+      )
     }
 
     if (withDeallocateEnding) {

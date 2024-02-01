@@ -8,6 +8,8 @@ operator fun LocalDate.rangeTo(other: LocalDate) = LocalDateRange(this, other)
 fun LocalDate.between(from: LocalDate, to: LocalDate?) = this >= from && (to == null || this <= to)
 
 fun LocalDate?.onOrBefore(date: LocalDate) = this != null && this <= date
+fun LocalDate.onOrAfter(date: LocalDate) = this >= date
+fun LocalDate?.afterOrNull(date: LocalDate) = this == null || this.isAfter(date)
 
 fun LocalDate.toIsoDate(): String = this.format(DateTimeFormatter.ISO_DATE)
 
