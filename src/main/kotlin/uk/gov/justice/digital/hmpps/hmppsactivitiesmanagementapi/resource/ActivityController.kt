@@ -143,7 +143,7 @@ class ActivityController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getActivityByIdWithFilters(
     @PathVariable("activityId") activityId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)
