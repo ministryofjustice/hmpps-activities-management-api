@@ -494,10 +494,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     @Nested
     @DisplayName("Authorization tests")
-    inner class AuthorizationTests() {
+    inner class AuthorizationTests {
       @Nested
       @DisplayName("Get activity by id")
-      inner class GetActivityByIdTests() {
+      inner class GetActivityByIdTests {
         @Test
         @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
         fun `Get activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -506,6 +506,19 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             header(CASELOAD_ID, "MDI")
           }.andExpect { status { isOk() } }
         }
+      }
+    }
+
+    @Nested
+    @DisplayName("Get filtered activity by id")
+    inner class GetFilteredActivityByIdTests {
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get filtered activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.get("/activities/1/filtered") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
       }
     }
   }
