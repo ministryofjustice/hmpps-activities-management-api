@@ -43,6 +43,7 @@ class ActivityController(
   @Operation(
     summary = "Get an activity by its id",
     description = "Returns a single activity and its details by its unique identifier.",
+    deprecated = true,
   )
   @ApiResponses(
     value = [
