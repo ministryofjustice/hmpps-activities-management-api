@@ -100,8 +100,8 @@ class SubjectAccessRequestController(private val service: SubjectAccessRequestSe
         .body(
           ErrorResponse(
             status = HttpStatus.NO_CONTENT,
-            userMessage = "No content found for the prisoner number.",
-            developerMessage = "No content found for the prisoner number.",
+            userMessage = "Request successfully processed - no content found",
+            developerMessage = "Request successfully processed - no content found",
           ),
         )
   }

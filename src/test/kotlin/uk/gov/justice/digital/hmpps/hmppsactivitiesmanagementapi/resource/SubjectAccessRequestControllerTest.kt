@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -24,11 +25,13 @@ class SubjectAccessRequestControllerTest : ControllerTestBase<SubjectAccessReque
   @MockBean
   private lateinit var service: SubjectAccessRequestService
 
+  private val content: SubjectAccessRequestContent = mock()
+
   override fun controller() = SubjectAccessRequestController(service)
 
   @Test
   fun `should return 200 response when prisoner found and no dates provided`() {
-    whenever(service.getContentFor("123456", null, null)) doReturn SubjectAccessRequestContent("SAR content")
+    whenever(service.getContentFor("123456", null, null)) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -39,7 +42,7 @@ class SubjectAccessRequestControllerTest : ControllerTestBase<SubjectAccessReque
 
   @Test
   fun `should return 200 response when prisoner found and from date provided`() {
-    whenever(service.getContentFor("123456", TimeSource.today(), null)) doReturn SubjectAccessRequestContent("SAR content")
+    whenever(service.getContentFor("123456", TimeSource.today(), null)) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456&fromDate=${TimeSource.today()}")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -50,7 +53,7 @@ class SubjectAccessRequestControllerTest : ControllerTestBase<SubjectAccessReque
 
   @Test
   fun `should return 200 response when prisoner found and to date provided`() {
-    whenever(service.getContentFor("123456", null, TimeSource.today())) doReturn SubjectAccessRequestContent("SAR content")
+    whenever(service.getContentFor("123456", null, TimeSource.today())) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456&toDate=${TimeSource.today()}")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
