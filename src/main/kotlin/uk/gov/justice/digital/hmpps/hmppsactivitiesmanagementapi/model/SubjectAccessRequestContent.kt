@@ -44,6 +44,9 @@ data class SarAllocation(
 
   @Schema(description = "A brief summary description of this activity", example = "Maths level 1")
   val activitySummary: String,
+
+  @Schema(description = "The pay band for the allocation, can be null e.g. unpaid activity", example = "Pay band 1 (lowest)")
+  val payBand: String?,
 ) {
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
@@ -53,5 +56,6 @@ data class SarAllocation(
     allocation.endDate,
     allocation.activityId,
     allocation.activitySummary,
+    allocation.payBand,
   )
 }

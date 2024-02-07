@@ -29,6 +29,7 @@ class SubjectAccessRequestServiceTest {
     endDate = null,
     activityId = 2,
     activitySummary = "Activity Summary",
+    payBand = "Pay band 1",
   )
 
   @Test

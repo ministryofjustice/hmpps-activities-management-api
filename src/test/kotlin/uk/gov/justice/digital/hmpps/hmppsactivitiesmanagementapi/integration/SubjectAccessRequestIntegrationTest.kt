@@ -29,6 +29,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
         activitySummary = "Maths Level 1",
+        payBand = "Pay band 1 (lowest)",
       ),
     )
   }
@@ -47,6 +48,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
         activitySummary = "Maths Level 1",
+        payBand = "Pay band 1 (lowest)",
       ),
       SarAllocation(
         allocationId = 2,
@@ -56,6 +58,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         endDate = null,
         activityId = 1,
         activitySummary = "Maths Level 1",
+        payBand = "Pay band 1 (lowest)",
       ),
     )
   }
