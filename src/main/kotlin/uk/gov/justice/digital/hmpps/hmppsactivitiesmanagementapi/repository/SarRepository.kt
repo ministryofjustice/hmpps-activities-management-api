@@ -13,11 +13,10 @@ interface SarAllocationRepository : ReadOnlyRepository<SarAllocation, Long> {
     """
     SELECT sa FROM SarAllocation sa
      WHERE sa.prisonerNumber = :prisonerNumber
-       AND sa.startDate >= :startDate
-       AND (sa.endDate is null or sa.endDate <= :endDate)
+       AND sa.startDate >= :fromDate AND sa.startDate <= :toDate
     """,
   )
-  fun findBy(@Param("prisonerNumber") prisonerNumber: String, @Param("startDate") startDate: LocalDate, @Param("endDate") endDate: LocalDate): List<SarAllocation>
+  fun findBy(@Param("prisonerNumber") prisonerNumber: String, @Param("fromDate") fromDat: LocalDate, @Param("toDate") toDate: LocalDate): List<SarAllocation>
 }
 
 @Component

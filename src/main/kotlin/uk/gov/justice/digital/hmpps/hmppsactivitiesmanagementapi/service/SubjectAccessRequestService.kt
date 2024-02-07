@@ -8,6 +8,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarR
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
 
+/**
+ * Prisoners have the right to access and receive a copy of their personal data and other supplementary information.
+ *
+ * This is commonly referred to as a subject access request or ‘SAR’.
+ *
+ * The purpose of this service is to surface all relevant prisoner specific information for a subject access request.
+ */
 @Service
 class SubjectAccessRequestService(private val repository: SarRepository) {
   companion object {
@@ -15,16 +22,20 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
   }
 
   fun getContentFor(prisonerNumber: String, fromDate: LocalDate?, toDate: LocalDate?): SubjectAccessRequestContent? {
+    log.info("SAR: processing subject access request for prisoner $prisonerNumber")
+
     val from = fromDate ?: LocalDate.now()
     val to = toDate ?: LocalDate.now()
 
-    log.info("before")
-    val allocations = repository.findAllocationsBy(prisonerNumber, from, to).also { log.info(it.joinToString(",")) }
-    log.info("after")
+    val allocations = repository.findAllocationsBy(prisonerNumber, from, to)
+
+    // TODO we also need to surface prisoner attendance, waiting list and appointment data here.
 
     return if (allocations.isEmpty()) {
+      log.info("SAR: no data found for subject access request for prisoner $prisonerNumber for dates $from to date $to")
       null
     } else {
+      log.info("SAR: data found for subject access request for prisoner $prisonerNumber for dates $from to date $to")
       SubjectAccessRequestContent(
         prisonerNumber = prisonerNumber,
         fromDate = from,
