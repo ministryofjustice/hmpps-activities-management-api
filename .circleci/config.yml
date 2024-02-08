@@ -7,10 +7,10 @@ orbs:
 parameters:
   alerts-slack-channel:
     type: string
-    default: farsight-alerts
+    default: activities-and-appointments-alerts
   releases-slack-channel:
     type: string
-    default: farsight-alerts
+    default: activities-and-appointments-alerts
 
 jobs:
   validate:
