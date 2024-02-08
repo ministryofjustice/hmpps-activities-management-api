@@ -37,63 +37,6 @@ import java.time.LocalDate
 class ActivityController(
   private val activityService: ActivityService,
 ) {
-
-  @GetMapping(value = ["/{activityId}"])
-  @ResponseBody
-  @Operation(
-    summary = "Get an activity by its id",
-    description = "Returns a single activity and its details by its unique identifier.",
-    deprecated = true,
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = Activity::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The activity for this ID was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  @CaseloadHeader
-  fun getActivityById(@PathVariable("activityId") activityId: Long): Activity =
-    activityService.getActivityById(activityId)
-
   @GetMapping(value = ["/{activityId}/filtered"])
   @ResponseBody
   @Operation(
@@ -145,6 +88,7 @@ class ActivityController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
+  @CaseloadHeader
   fun getActivityByIdWithFilters(
     @PathVariable("activityId") activityId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)

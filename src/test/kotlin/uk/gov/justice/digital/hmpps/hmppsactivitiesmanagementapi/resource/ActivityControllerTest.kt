@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -214,10 +216,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
-  fun `200 response when get activity by ID found`() {
+  fun `200 response when get filtered activity by ID found`() {
     val activity = activityModel(activityEntity())
 
-    whenever(activityService.getActivityById(1)).thenReturn(activity)
+    whenever(activityService.getActivityByIdWithFilters(1)) doReturn activity
 
     val response = mockMvc.getActivityById(1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -226,12 +228,12 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(activity))
 
-    verify(activityService).getActivityById(1)
+    verify(activityService).getActivityByIdWithFilters(1)
   }
 
   @Test
-  fun `404 response when get activity by ID not found`() {
-    whenever(activityService.getActivityById(2)).thenThrow(EntityNotFoundException("not found"))
+  fun `404 response when get filtered activity by ID not found`() {
+    whenever(activityService.getActivityByIdWithFilters(2)) doThrow EntityNotFoundException("not found")
 
     val response = mockMvc.getActivityById(2)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -240,7 +242,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).contains("Not found")
 
-    verify(activityService).getActivityById(2)
+    verify(activityService).getActivityByIdWithFilters(2)
   }
 
   @Test
@@ -500,31 +502,16 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
       inner class GetActivityByIdTests {
         @Test
         @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
-        fun `Get activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-          mockMvcWithSecurity.get("/activities/1") {
+        fun `Get filtered activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
+          mockMvcWithSecurity.get("/activities/1/filtered") {
             contentType = MediaType.APPLICATION_JSON
             header(CASELOAD_ID, "MDI")
           }.andExpect { status { isOk() } }
         }
       }
     }
-
-    @Nested
-    @DisplayName("Get filtered activity by id")
-    inner class GetFilteredActivityByIdTests {
-      @Test
-      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
-      fun `Get filtered activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.get("/activities/1/filtered") {
-          contentType = MediaType.APPLICATION_JSON
-          header(CASELOAD_ID, "MDI")
-        }.andExpect { status { isOk() } }
-      }
-    }
   }
+  private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}/filtered", id)
 
-  private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
-  private fun MockMvc.getActivityCapacity(id: Long) = get("/activities/{activityId}/capacity", id)
-  private fun MockMvc.getActivitySchedules(id: Long) =
-    get("/activities/{activityId}/schedules", id)
+  private fun MockMvc.getActivitySchedules(id: Long) = get("/activities/{activityId}/schedules", id)
 }

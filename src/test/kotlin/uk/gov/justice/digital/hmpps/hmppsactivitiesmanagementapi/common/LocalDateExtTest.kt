@@ -36,4 +36,19 @@ class LocalDateExtTest {
         .hasMessage("Weeks ago must be positive")
     }
   }
+
+  @Test
+  fun `months ago`() {
+    (1..10).forEach { it.monthsAgo() isEqualTo LocalDate.now().minusMonths(it.toLong()) }
+  }
+
+  @Test
+  fun `months ago fails if not a positive number`() {
+    (0 downTo -10).forEach {
+      assertThatThrownBy {
+        (it).monthsAgo()
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Months ago must be positive")
+    }
+  }
 }

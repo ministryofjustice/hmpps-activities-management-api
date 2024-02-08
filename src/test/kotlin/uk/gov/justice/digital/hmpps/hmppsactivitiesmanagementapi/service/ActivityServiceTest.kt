@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.monthsAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -389,22 +390,36 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `getActivityById returns an activity for known activity ID`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = caseLoad)))
+  fun `getActivityById returns an activity for known activity ID defaulting to one month as the earliest session date`() {
+    whenever(activityRepository.getActivityByIdWithFilters(1, 1.monthsAgo())) doReturn activityEntity(prisonCode = caseLoad)
 
-    assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
+    assertThat(service().getActivityByIdWithFilters(1)).isInstanceOf(ModelActivity::class.java)
+  }
+
+  @Test
+  fun `getActivityById returns an activity for known activity ID with two months as the earliest session date`() {
+    whenever(activityRepository.getActivityByIdWithFilters(1, 2.monthsAgo())) doReturn activityEntity(prisonCode = caseLoad)
+
+    assertThat(service().getActivityByIdWithFilters(1, 2.monthsAgo())).isInstanceOf(ModelActivity::class.java)
+  }
+
+  @Test
+  fun `getActivityById returns an activity for known activity ID`() {
+    whenever(activityRepository.getActivityByIdWithFilters(1, 1.monthsAgo())) doReturn activityEntity(prisonCode = caseLoad)
+
+    assertThat(service().getActivityByIdWithFilters(1)).isInstanceOf(ModelActivity::class.java)
   }
 
   @Test
   fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = "DIFFERENT_PRISON_CODE")))
+    whenever(activityRepository.getActivityByIdWithFilters(1, 1.monthsAgo())) doReturn activityEntity(prisonCode = "DIFFERENT_PRISON_CODE")
 
-    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseloadAccessException::class.java)
+    assertThatThrownBy { service().getActivityByIdWithFilters(1) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test
   fun `getActivityById throws entity not found exception for unknown activity ID`() {
-    assertThatThrownBy { service().getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
+    assertThatThrownBy { service().getActivityByIdWithFilters(-1) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity -1 not found")
   }
 

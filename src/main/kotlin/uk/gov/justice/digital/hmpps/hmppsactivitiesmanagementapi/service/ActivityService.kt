@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.monthsAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -79,18 +80,13 @@ class ActivityService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate?): ModelActivity {
-    // TODO: Caseload check
-    val earliestSession = earliestSessionDate ?: LocalDate.now().minusMonths(1)
+  fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate? = null): ModelActivity {
+    val earliestSession = earliestSessionDate ?: 1.monthsAgo()
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
-      ?: throw (EntityNotFoundException("Activity $activityId not found"))
-    return transform(activity)
-  }
+      ?: throw EntityNotFoundException("Activity $activityId not found")
 
-  fun getActivityById(activityId: Long): ModelActivity {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
     checkCaseloadAccess(activity.prisonCode)
+
     return transform(activity)
   }
 

@@ -691,7 +691,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   fun `attempting to get an activity from a different caseload returns a 403`() {
     webTestClient.get()
-      .uri("/activities/2")
+      .uri("/activities/2/filtered")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, "MDI")
@@ -705,7 +705,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   fun `attempting to get an activity without specifying a caseload succeeds if using a client token`() {
     webTestClient.get()
-      .uri("/activities/2")
+      .uri("/activities/2/filtered")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
@@ -718,7 +718,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   fun `attempting to get an activity without specifying a caseload succeeds if admin role present`() {
     webTestClient.get()
-      .uri("/activities/2")
+      .uri("/activities/2/filtered")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
@@ -812,7 +812,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") =
     get()
-      .uri("/activities/$id")
+      .uri("/activities/$id/filtered")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, caseLoadId)
