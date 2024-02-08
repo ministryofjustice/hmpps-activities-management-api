@@ -8,8 +8,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -44,7 +42,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Optional
 
-@ExtendWith(MockitoExtension::class)
 class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()

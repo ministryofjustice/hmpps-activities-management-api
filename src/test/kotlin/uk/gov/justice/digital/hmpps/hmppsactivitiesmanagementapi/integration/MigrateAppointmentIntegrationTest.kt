@@ -312,5 +312,5 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Appointment::class.java)
-      .returnResult().responseBody
+      .returnResult().responseBody!!
 }
