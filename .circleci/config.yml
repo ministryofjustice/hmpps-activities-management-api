@@ -70,6 +70,12 @@ workflows:
   version: 2
   build-test-and-deploy:
     jobs:
+      - hmpps/gradle_owasp_dependency_check:
+          slack_channel: << pipeline.parameters.alerts-slack-channel >>
+          context:
+            - hmpps-common-vars
+          cache_key: "v3_0"
+          jdk_tag: << pipeline.parameters.java-version >>
       - validate:
           filters:
             tags:
