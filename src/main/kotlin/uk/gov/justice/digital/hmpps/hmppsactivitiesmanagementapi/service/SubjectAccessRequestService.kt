@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList as ModelSarWaitingList
 
 /**
  * Prisoners have the right to access and receive a copy of their personal data and other supplementary information.
@@ -28,10 +29,11 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
     val to = toDate ?: LocalDate.now()
 
     val allocations = repository.findAllocationsBy(prisonerNumber, from, to)
+    val waitingLists = repository.findWaitingListsBy(prisonerNumber, from, to.plusDays(1))
 
     // TODO we also need to surface prisoner attendance, waiting list and appointment data here.
 
-    return if (allocations.isEmpty()) {
+    return if (allocations.isEmpty() && waitingLists.isEmpty()) {
       log.info("SAR: no data found for subject access request for prisoner $prisonerNumber for dates $from to date $to")
       null
     } else {
@@ -41,6 +43,7 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
         fromDate = from,
         toDate = to,
         allocations = allocations.map(::ModelSarAllocation),
+        waitingListApplications = waitingLists.map(::ModelSarWaitingList),
       )
     }
   }
