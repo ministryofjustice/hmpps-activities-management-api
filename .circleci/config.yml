@@ -11,12 +11,15 @@ parameters:
   releases-slack-channel:
     type: string
     default: activities-and-appointments-alerts
+  java-version:
+    type: string
+    default: "21.0"
 
 jobs:
   validate:
     executor:
       name: hmpps/java
-      tag: "21.0"
+      tag: << pipeline.parameters.java-version >>
     environment:
       _JAVA_OPTIONS: -Xmx512m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
@@ -43,7 +46,7 @@ jobs:
   integration-test:
     executor:
       name: hmpps/java
-      tag: "21.0"
+      tag: << pipeline.parameters.java-version >>
     environment:
       _JAVA_OPTIONS: -Xmx1024m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
@@ -137,6 +140,7 @@ workflows:
           context:
             - hmpps-common-vars
           cache_key: "v3_0"
+          jdk_tag: << pipeline.parameters.java-version >>
       - hmpps/trivy_latest_scan:
           slack_channel: << pipeline.parameters.alerts-slack-channel >>
           context:
