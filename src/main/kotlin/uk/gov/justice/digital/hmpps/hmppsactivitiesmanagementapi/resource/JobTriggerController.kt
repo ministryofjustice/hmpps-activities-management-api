@@ -80,11 +80,14 @@ class JobTriggerController(
     @RequestParam(value = "withActivate", required = false)
     @Parameter(description = "If true will run the activate pending allocations process. Defaults to false.")
     withActivate: Boolean = false,
-    @RequestParam(value = "withDeallocate", required = false)
-    @Parameter(description = "If true will run the deallocate allocations process. Defaults to false.")
-    withDeallocate: Boolean = false,
+    @RequestParam(value = "withDeallocateEnding", required = false)
+    @Parameter(description = "If true will run the deallocate allocations that are ending process. Defaults to false.")
+    withDeallocateEnding: Boolean = false,
+    @RequestParam(value = "withDeallocateExpiring", required = false)
+    @Parameter(description = "If true will run the deallocate allocations that are expiring process. Defaults to false.")
+    withDeallocateExpiring: Boolean = false,
   ): String {
-    manageAllocationsJob.execute(withActivate = withActivate, withDeallocate = withDeallocate)
+    manageAllocationsJob.execute(withActivate = withActivate, withDeallocateEnding = withDeallocateEnding, withDeallocateExpiring = withDeallocateExpiring)
 
     return "Manage allocations triggered operations"
   }

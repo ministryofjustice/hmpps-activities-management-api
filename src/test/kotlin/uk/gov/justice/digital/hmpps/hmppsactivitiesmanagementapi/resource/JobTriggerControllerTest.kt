@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -89,34 +92,28 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     verify(manageAttendanceRecordsJob).execute(withExpiry = true)
   }
 
-  @Test
-  fun `201 response when manage allocations job triggered for activate allocations`() {
-    val response = mockMvc.triggerJob(jobName = "manage-allocations?withActivate=true")
+  @ParameterizedTest(name = " where withActivate = {0}, withDeallocateEnding={1}, withDeallocateExpiring={2}")
+  @MethodSource("allocationArgs")
+  fun `201 response when manage allocations job triggered`(withActivate: Boolean, withDeallocateEnding: Boolean, withDeallocateExpiring: Boolean) {
+    val response = mockMvc.triggerJob(jobName = "manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
       .andExpect { status { isCreated() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage allocations triggered operations")
 
-    verify(manageAllocationsJob).execute(withActivate = true, withDeallocate = false)
+    verify(manageAllocationsJob).execute(withActivate = withActivate, withDeallocateEnding = withDeallocateEnding, withDeallocateExpiring = withDeallocateExpiring)
   }
 
-  @Test
-  fun `201 response when manage allocations job triggered for deallocate allocations`() {
-    val response = mockMvc.triggerJob(jobName = "manage-allocations?withDeallocate=true")
-      .andExpect { status { isCreated() } }.andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo("Manage allocations triggered operations")
-
-    verify(manageAllocationsJob).execute(withActivate = false, withDeallocate = true)
-  }
-
-  @Test
-  fun `201 response when manage allocations job triggered for activate and deallocate allocations`() {
-    val response = mockMvc.triggerJob(jobName = "manage-allocations?withActivate=true&withDeallocate=true")
-      .andExpect { status { isCreated() } }.andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo("Manage allocations triggered operations")
-
-    verify(manageAllocationsJob).execute(withActivate = true, withDeallocate = true)
+  companion object {
+    @JvmStatic
+    fun allocationArgs(): List<Arguments> = listOf(
+      Arguments.of(true, false, false),
+      Arguments.of(false, true, false),
+      Arguments.of(false, false, true),
+      Arguments.of(true, true, false),
+      Arguments.of(true, false, true),
+      Arguments.of(false, true, true),
+      Arguments.of(true, true, true),
+    )
   }
 
   @Test

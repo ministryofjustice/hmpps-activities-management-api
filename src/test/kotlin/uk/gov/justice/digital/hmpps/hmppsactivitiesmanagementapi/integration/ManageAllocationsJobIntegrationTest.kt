@@ -81,7 +81,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
-  fun `deallocate offenders for activity ending today`() {
+  fun `deallocate offenders for activity ending yesterday`() {
     whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
 
     val activeAllocations = with(allocationRepository.findAll().filterNot(Allocation::isEnded)) {
@@ -94,7 +94,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
     }
 
-    webTestClient.manageAllocations(withDeallocate = true)
+    webTestClient.manageAllocations(withDeallocateEnding = true)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
@@ -122,7 +122,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       onEach { it isStatus ACTIVE }
     }
 
-    webTestClient.manageAllocations(withDeallocate = true)
+    webTestClient.manageAllocations(withDeallocateEnding = true)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
@@ -157,7 +157,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
     }
 
-    webTestClient.manageAllocations(withDeallocate = true)
+    webTestClient.manageAllocations(withDeallocateExpiring = true)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
@@ -190,7 +190,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
     )
 
-    webTestClient.manageAllocations(withDeallocate = true)
+    webTestClient.manageAllocations(withDeallocateExpiring = true)
 
     with(waitingListRepository.findAll().prisoner("A11111A")) {
       status isStatus REMOVED
@@ -285,9 +285,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     deallocatedTime isCloseTo TimeSource.now()
   }
 
-  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocate: Boolean = false) {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false) {
     post()
-      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocate=$withDeallocate")
+      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated

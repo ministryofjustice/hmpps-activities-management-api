@@ -2,12 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
-import java.time.LocalDate
 
 @Component
 class ManageAllocationsJob(
@@ -17,7 +17,7 @@ class ManageAllocationsJob(
 ) {
 
   @Async("asyncExecutor")
-  fun execute(withActivate: Boolean = false, withDeallocate: Boolean = false) {
+  fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false) {
     if (withActivate) {
       jobRunner.runJob(
         JobDefinition(JobType.ALLOCATE) {
@@ -26,17 +26,17 @@ class ManageAllocationsJob(
       )
     }
 
-    if (withDeallocate) {
+    if (withDeallocateEnding) {
       jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
-          val today = LocalDate.now()
-
           getRolledOutPrisonCodes().forEach { prisonCode ->
-            service.endAllocationsDueToEnd(prisonCode, today)
+            service.endAllocationsDueToEnd(prisonCode, 1.daysAgo())
           }
         },
       )
+    }
 
+    if (withDeallocateExpiring) {
       jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
           service.allocations(AllocationOperation.EXPIRING_TODAY)
