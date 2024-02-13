@@ -72,7 +72,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -92,7 +92,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -106,13 +106,13 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
-  fun `should return two waiting list application for a subject access request`() {
+  fun `should return two waiting list applications for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
 
     response.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -123,7 +123,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
       SarWaitingList(
         waitingListId = 3,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -156,7 +156,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -167,7 +167,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
       SarWaitingList(
         waitingListId = 3,
-        prisonCode = "MVI",
+        prisonCode = "PVI",
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",

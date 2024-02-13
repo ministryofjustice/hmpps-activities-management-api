@@ -32,7 +32,7 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (3, 2, '111222', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by)
-values (2, 'MVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-10 09:00:00', 'SEED USER');
+values (2, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-10 09:00:00', 'SEED USER');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, status_updated_time, comments)
-values (3, 'MVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-12 09:00:00', 'SEED USER', '2022-11-12 09:00:00', 'added to the waiting list');
+values (3, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-12 09:00:00', 'SEED USER', '2022-11-12 09:00:00', 'added to the waiting list');

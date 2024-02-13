@@ -21,7 +21,7 @@ data class SubjectAccessRequestContent(
   @Schema(description = "All of the allocations for the prisoner for the period")
   val allocations: List<SarAllocation>,
 
-  @Schema(description = "Waiting list application for a prisoner")
+  @Schema(description = "Waiting list applications for a prisoner")
   val waitingListApplications: List<SarWaitingList>,
 )
 
@@ -78,7 +78,7 @@ data class SarWaitingList(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val applicationDate: LocalDate,
 
-  @Schema(description = "The identity of the requester of the activity", example = "2022-01-01")
+  @Schema(description = "The identity of the requester of the activity", example = "Prison staff")
   val originator: String,
 
   @Schema(description = "The status of the waiting list entry", example = "ACTIVE")
@@ -88,7 +88,7 @@ data class SarWaitingList(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val statusDate: LocalDate?,
 
-  @Schema(description = "The comments associated with this waiting list entry, can be null", example = "ACTIVE")
+  @Schema(description = "The comments associated with this waiting list entry, can be null", example = "OK to proceed")
   val comments: String?,
 
   @Schema(description = "The date the waiting list entry was created", example = "2022-01-01")
