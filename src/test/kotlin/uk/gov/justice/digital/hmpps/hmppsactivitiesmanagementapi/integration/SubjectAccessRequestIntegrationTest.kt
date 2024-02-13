@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Role
 import java.time.LocalDate
@@ -59,6 +60,121 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activityId = 1,
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return single waiting list application with a 2 day boundary for a subject access request`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 9), LocalDate.of(2022, 10, 11))
+
+    response.waitingListApplications containsExactly listOf(
+      SarWaitingList(
+        waitingListId = 2,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = null,
+        comments = null,
+        createdDate = LocalDate.of(2022, 10, 10),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return single waiting list application for a same day date boundary for a subject access request`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 10))
+
+    response.waitingListApplications containsExactly listOf(
+      SarWaitingList(
+        waitingListId = 2,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = null,
+        comments = null,
+        createdDate = LocalDate.of(2022, 10, 10),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return two waiting list applications for a subject access request`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
+
+    response.waitingListApplications containsExactlyInAnyOrder listOf(
+      SarWaitingList(
+        waitingListId = 2,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = null,
+        comments = null,
+        createdDate = LocalDate.of(2022, 10, 10),
+      ),
+      SarWaitingList(
+        waitingListId = 3,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = LocalDate.of(2022, 11, 12),
+        comments = "added to the waiting list",
+        createdDate = LocalDate.of(2022, 10, 12),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one allocation and two waiting list application for a subject access request`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
+
+    response.allocations containsExactly listOf(
+      SarAllocation(
+        allocationId = 3,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        prisonerStatus = "ACTIVE",
+        startDate = LocalDate.of(2022, 10, 10),
+        endDate = null,
+        activityId = 2,
+        activitySummary = "Activity Summary WL",
+        payBand = "Pay band 1 (lowest)",
+      ),
+    )
+
+    response.waitingListApplications containsExactlyInAnyOrder listOf(
+      SarWaitingList(
+        waitingListId = 2,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = null,
+        comments = null,
+        createdDate = LocalDate.of(2022, 10, 10),
+      ),
+      SarWaitingList(
+        waitingListId = 3,
+        prisonCode = "PVI",
+        activitySummary = "Activity Summary WL",
+        applicationDate = LocalDate.of(2023, 8, 8),
+        originator = "Prison staff",
+        status = "APPROVED",
+        statusDate = LocalDate.of(2022, 11, 12),
+        comments = "added to the waiting list",
+        createdDate = LocalDate.of(2022, 10, 12),
       ),
     )
   }

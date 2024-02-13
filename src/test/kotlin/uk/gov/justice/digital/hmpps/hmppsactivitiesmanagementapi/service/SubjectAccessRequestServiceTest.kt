@@ -7,12 +7,15 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList as ModelSarWaitingList
 
 class SubjectAccessRequestServiceTest {
 
@@ -30,6 +33,19 @@ class SubjectAccessRequestServiceTest {
     activityId = 2,
     activitySummary = "Activity Summary",
     payBand = "Pay band 1",
+  )
+
+  private val sarWaitingList = SarWaitingList(
+    waitingListId = 2,
+    prisonCode = PENTONVILLE_PRISON_CODE,
+    prisonerNumber = "p89765",
+    activitySummary = "Activity Summary WL",
+    applicationDate = TimeSource.today(),
+    originator = "GUIDANCE_STAFF",
+    status = "PENDING",
+    statusDate = TimeSource.tomorrow(),
+    comments = "Like to try",
+    createdDate = TimeSource.yesterday(),
   )
 
   @Test
@@ -50,6 +66,39 @@ class SubjectAccessRequestServiceTest {
       fromDate = TimeSource.yesterday(),
       toDate = TimeSource.tomorrow(),
       allocations = listOf(sarAllocation).map(::ModelSarAllocation),
+      waitingListApplications = emptyList(),
+    )
+
+    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
+  }
+
+  @Test
+  fun `should return content when waiting lists found`() {
+    whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.tomorrow())) doReturn emptyList()
+    whenever(repository.findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarWaitingList)
+
+    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+      prisonerNumber = sarAllocation.prisonerNumber,
+      fromDate = TimeSource.yesterday(),
+      toDate = TimeSource.tomorrow(),
+      allocations = emptyList(),
+      waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
+    )
+
+    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
+  }
+
+  @Test
+  fun `should return content when allocation and waiting lists found`() {
+    whenever(repository.findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(sarAllocation)
+    whenever(repository.findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarWaitingList)
+
+    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+      prisonerNumber = sarAllocation.prisonerNumber,
+      fromDate = TimeSource.yesterday(),
+      toDate = TimeSource.tomorrow(),
+      allocations = listOf(sarAllocation).map(::ModelSarAllocation),
+      waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
