@@ -51,6 +51,10 @@ data class SarAllocation(
 
   @Schema(description = "The pay band for the allocation, can be null e.g. unpaid activity", example = "Pay band 1 (lowest)")
   val payBand: String?,
+
+  @Schema(description = "The date the allocation entry was created", example = "2022-01-01")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val createdDate: LocalDate,
 ) {
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
@@ -61,6 +65,7 @@ data class SarAllocation(
     allocation.activityId,
     allocation.activitySummary,
     allocation.payBand,
+    allocation.createdDate,
   )
 }
 

@@ -29,7 +29,7 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
     val to = toDate ?: LocalDate.now()
 
     val allocations = repository.findAllocationsBy(prisonerNumber, from, to)
-    val waitingLists = repository.findWaitingListsBy(prisonerNumber, from, to.plusDays(1))
+    val waitingLists = repository.findWaitingListsBy(prisonerNumber, from, to)
 
     // TODO we also need to surface prisoner attendance, waiting list and appointment data here.
 
