@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -13,7 +12,6 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.SystemTimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -47,7 +45,6 @@ class ManageAllocationsServiceTest {
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonApi: PrisonApiApplicationClient = mock()
-  private val fixedTimeSource = SystemTimeSource { LocalDate.now().atTime(20, 0) }
 
   private val service =
     ManageAllocationsService(
@@ -60,7 +57,6 @@ class ManageAllocationsServiceTest {
       TransactionHandler(),
       outboundEventsService,
       prisonApi,
-      fixedTimeSource,
     )
   private val yesterday = LocalDate.now().minusDays(1)
   private val today = yesterday.plusDays(1)
@@ -101,44 +97,6 @@ class ManageAllocationsServiceTest {
       "Activity ended",
       "Activities Management Service",
     )
-  }
-
-  @Test
-  fun `should fail to deallocate offenders when future date supplied`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
-
-    whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
-
-    assertThatThrownBy {
-      service.endAllocationsDueToEnd(prison.code, TimeSource.tomorrow())
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("You cannot end allocations in the future.")
-  }
-
-  @Test
-  fun `should fail to deallocate offenders when before 8pm today`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
-
-    whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
-
-    assertThatThrownBy {
-      ManageAllocationsService(
-        rolloutPrisonRepo,
-        activityScheduleRepo,
-        allocationRepository,
-        prisonRegimeRepository,
-        searchApiClient,
-        waitingListService,
-        TransactionHandler(),
-        outboundEventsService,
-        prisonApi,
-      ) { TimeSource.today().atTime(19, 59) }.endAllocationsDueToEnd(prison.code, TimeSource.today())
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("You can only end today's allocations from 8pm onwards.")
   }
 
   @Test

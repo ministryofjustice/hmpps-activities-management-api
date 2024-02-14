@@ -9,9 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.SystemTimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -28,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 
 @Service
 class ManageAllocationsService(
@@ -41,7 +37,6 @@ class ManageAllocationsService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val prisonApi: PrisonApiApplicationClient,
-  private val timeSource: SystemTimeSource,
 ) {
 
   companion object {
@@ -66,18 +61,6 @@ class ManageAllocationsService(
    * Caution to be used when using the current date. Allocations should be ended at the end of the day.
    */
   fun endAllocationsDueToEnd(prisonCode: String, date: LocalDate) {
-    val now = timeSource.now()
-
-    require(date.onOrBefore(now.toLocalDate())) {
-      "You cannot end allocations in the future."
-    }
-
-    if (date == now.toLocalDate()) {
-      require(now.toLocalTime().onOrAfter(LocalTime.of(20, 0))) {
-        "You can only end today's allocations from 8pm onwards."
-      }
-    }
-
     require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
       "Supplied prison $prisonCode is not rolled out."
     }
