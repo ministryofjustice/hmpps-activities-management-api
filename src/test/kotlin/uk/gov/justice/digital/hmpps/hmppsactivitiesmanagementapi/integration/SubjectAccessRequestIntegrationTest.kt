@@ -18,7 +18,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
-  fun `should return single allocation for subject access request`() {
+  fun `should return single allocation for a same day date boundary subject access request`() {
     val response = webTestClient.getSarContent("111111", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 1))
 
     response.allocations containsExactly listOf(
@@ -26,11 +26,12 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerStatus = "ENDED",
-        startDate = LocalDate.of(2020, 1, 1),
+        startDate = LocalDate.of(2020, 1, 2),
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
+        createdDate = LocalDate.of(2020, 1, 1),
       ),
     )
   }
@@ -38,18 +39,19 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
   fun `should return two allocations for subject access request`() {
-    val response = webTestClient.getSarContent("111111", LocalDate.of(2020, 1, 1), TimeSource.today())
+    val response = webTestClient.getSarContent("111111", LocalDate.of(2020, 1, 1), LocalDate.of(2023, 1, 1))
 
     response.allocations containsExactlyInAnyOrder listOf(
       SarAllocation(
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerStatus = "ENDED",
-        startDate = LocalDate.of(2020, 1, 1),
+        startDate = LocalDate.of(2020, 1, 2),
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
+        createdDate = LocalDate.of(2020, 1, 1),
       ),
       SarAllocation(
         allocationId = 2,
@@ -60,6 +62,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activityId = 1,
         activitySummary = "Maths Level 1",
         payBand = "Pay band 1 (lowest)",
+        createdDate = LocalDate.of(2022, 10, 10),
       ),
     )
   }
@@ -150,6 +153,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activityId = 2,
         activitySummary = "Activity Summary WL",
         payBand = "Pay band 1 (lowest)",
+        createdDate = LocalDate.of(2022, 10, 10),
       ),
     )
 

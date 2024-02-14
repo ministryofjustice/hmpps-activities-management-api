@@ -33,6 +33,7 @@ class SubjectAccessRequestServiceTest {
     activityId = 2,
     activitySummary = "Activity Summary",
     payBand = "Pay band 1",
+    createdDate = TimeSource.yesterday(),
   )
 
   private val sarWaitingList = SarWaitingList(
@@ -50,16 +51,19 @@ class SubjectAccessRequestServiceTest {
 
   @Test
   fun `should return null when no content found`() {
-    whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.today())) doReturn emptyList()
+    whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.today().plusDays(1))) doReturn emptyList()
+    whenever(repository.findWaitingListsBy("12345", TimeSource.today(), TimeSource.today().plusDays(1))) doReturn emptyList()
 
     service.getContentFor("12345", null, null) isEqualTo null
 
-    verify(repository).findAllocationsBy("12345", TimeSource.today(), TimeSource.today())
+    verify(repository).findAllocationsBy("12345", TimeSource.today(), TimeSource.today().plusDays(1))
+    verify(repository).findWaitingListsBy("12345", TimeSource.today(), TimeSource.today().plusDays(1))
   }
 
   @Test
   fun `should return content when allocations found`() {
-    whenever(repository.findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(sarAllocation)
+    whenever(repository.findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarAllocation)
+    whenever(repository.findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn emptyList()
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
       prisonerNumber = sarAllocation.prisonerNumber,
@@ -69,12 +73,13 @@ class SubjectAccessRequestServiceTest {
       waitingListApplications = emptyList(),
     )
 
-    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
+    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
+    verify(repository).findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
   }
 
   @Test
   fun `should return content when waiting lists found`() {
-    whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.tomorrow())) doReturn emptyList()
+    whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.tomorrow().plusDays(1))) doReturn emptyList()
     whenever(repository.findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarWaitingList)
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
@@ -85,12 +90,13 @@ class SubjectAccessRequestServiceTest {
       waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
     )
 
-    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
+    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
+    verify(repository).findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
   }
 
   @Test
   fun `should return content when allocation and waiting lists found`() {
-    whenever(repository.findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(sarAllocation)
+    whenever(repository.findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarAllocation)
     whenever(repository.findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))) doReturn listOf(sarWaitingList)
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
@@ -101,6 +107,7 @@ class SubjectAccessRequestServiceTest {
       waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
     )
 
-    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
+    verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
+    verify(repository).findWaitingListsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow().plusDays(1))
   }
 }

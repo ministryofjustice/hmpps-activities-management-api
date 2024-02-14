@@ -20,4 +20,5 @@ data class SarAllocation(
   val activityId: Long,
   val activitySummary: String,
   val payBand: String?,
+  val createdDate: LocalDate,
 )
