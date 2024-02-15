@@ -12,7 +12,3 @@ CREATE TABLE planned_suspension (
   updated_by              varchar(100) NOT NULL,
   updated_at              timestamp    NOT NULL
 );
-
--- ==================================================================
--- Alter the view to also take planned_suspension into account
--- ==================================================================
