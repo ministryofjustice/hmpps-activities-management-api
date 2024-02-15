@@ -280,7 +280,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     with(attendanceRepository.getReferenceById(2L)) {
       // This attendance is suspended because the session starts after the suspension
       status(AttendanceStatus.COMPLETED) isBool true
-      attendanceReason isNotEqualTo  null
+      attendanceReason isNotEqualTo null
       attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
       issuePayment isEqualTo false
     }
@@ -313,13 +313,13 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     with(allocationRepository.getReferenceById(1L)) {
       status(PrisonerStatus.ACTIVE) isBool true
-      plannedSuspension() isEqualTo  null
+      plannedSuspension() isEqualTo null
     }
 
     with(attendanceRepository.getReferenceById(1L)) {
       // This attendance is un-changed because the session started before the suspension ended
       status(AttendanceStatus.COMPLETED) isBool true
-      attendanceReason isNotEqualTo  null
+      attendanceReason isNotEqualTo null
       attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
       issuePayment isEqualTo false
     }
