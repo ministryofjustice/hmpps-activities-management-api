@@ -14,3 +14,4 @@ fun LocalDate.toIsoDate(): String = this.format(DateTimeFormatter.ISO_DATE)
 
 fun Int.daysAgo(): LocalDate = require(this > 0) { "Days ago must be positive" }.let { LocalDate.now().minusDays(this.toLong()) }
 fun Int.weeksAgo(): LocalDate = require(this > 0) { "Weeks ago must be positive" }.let { LocalDate.now().minusWeeks(this.toLong()) }
+fun Int.daysFromNow(): LocalDate = require(this > 0) { "Days from now must be positive" }.let { LocalDate.now().plusDays(this.toLong()) }

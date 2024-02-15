@@ -210,7 +210,7 @@ class AllocationsService(
         "Suspension end date must be on or after the start date: ${plannedSuspension.startDate().toIsoDate()}"
       }
       require(allocation.plannedEndDate() == null || suspendUntil.onOrBefore(allocation.plannedEndDate()!!)) {
-        "Suspension end date must be on or before the allocation end date: ${allocation.endDate!!.toIsoDate()}"
+        "Suspension end date must be on or before the allocation end date: ${allocation.plannedEndDate()!!.toIsoDate()}"
       }
 
       plannedSuspension.endOn(suspendUntil, byWhom)
