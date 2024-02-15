@@ -16,7 +16,6 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.afterOrNull
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
@@ -125,7 +124,7 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
-  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate().afterOrNull(LocalDate.now()) }
+  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfter(LocalDate.now()) ?: true }
 
   fun isCurrentlySuspended() = plannedSuspension()?.hasStarted() == true
 
