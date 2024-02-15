@@ -50,8 +50,8 @@ class OffenderReceivedEventHandler(
             allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
               .resetAutoSuspendedAllocations(event)
               .resetFutureSuspendedAttendances()
-          }.let { activeAllocations ->
-            activeAllocations.forEach {
+          }.let { resetAllocations ->
+            resetAllocations.forEach {
               outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
             }.also { log.info("Sending allocation amended events.") }
           }
@@ -82,7 +82,9 @@ class OffenderReceivedEventHandler(
       }
 
   private fun List<Allocation>.resetFutureSuspendedAttendances() =
-    filter { it.status(PrisonerStatus.ACTIVE) }.onEach {
-      attendanceSuspensionService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
+    onEach {
+      if (it.status(PrisonerStatus.ACTIVE)) {
+        attendanceSuspensionService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
+      }
     }
 }
