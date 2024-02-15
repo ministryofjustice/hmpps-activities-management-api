@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
@@ -12,6 +13,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -29,7 +31,7 @@ import java.time.LocalDate
 
 class OffenderMergedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
-  private val prisonerSearchApiClient: PrisonApiApplicationClient = mock()
+  private val prisonerApiClient: PrisonApiApplicationClient = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -41,17 +43,20 @@ class OffenderMergedEventHandlerTest {
   // Define old and new prisoner numbers in the merge
   private val oldNumber = "A1111AA"
   private val newNumber = "B2222BB"
+  private val oldBookingId = 111111L
+  private val newBookingId = 999999L
 
   private val prisonerSearchResult = InmateDetailFixture.instance(
     agencyId = MOORLAND_PRISON_CODE,
     offenderNo = newNumber,
     firstName = "Stephen",
     lastName = "Macdonald",
+    bookingId = newBookingId,
   )
 
   private val handler = OffenderMergedEventHandler(
     rolloutPrisonRepository,
-    prisonerSearchApiClient,
+    prisonerApiClient,
     allocationRepository,
     attendanceRepository,
     waitingListRepository,
@@ -66,7 +71,7 @@ class OffenderMergedEventHandlerTest {
   fun beforeTests() {
     reset(
       rolloutPrisonRepository,
-      prisonerSearchApiClient,
+      prisonerApiClient,
       allocationRepository,
       attendanceRepository,
       waitingListRepository,
@@ -83,8 +88,14 @@ class OffenderMergedEventHandlerTest {
         )
     }
 
-    prisonerSearchApiClient.stub {
+    prisonerApiClient.stub {
       on { getPrisonerDetailsLite(newNumber) } doReturn prisonerSearchResult
+    }
+
+    val allocation: Allocation = mock()
+
+    allocationRepository.stub {
+      on { findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, newNumber) } doReturn listOf(allocation)
     }
   }
 
@@ -94,29 +105,49 @@ class OffenderMergedEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(prisonerSearchApiClient).getPrisonerDetailsLite(newNumber)
+    verify(prisonerApiClient).getPrisonerDetailsLite(newNumber)
     verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
 
+    verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, newNumber)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
-    verify(allocationRepository).mergeOffender(oldNumber, newNumber)
+
+    inOrder(allocationRepository) {
+      verify(allocationRepository).mergePrisonerToNewBookingId(newNumber, newBookingId)
+      verify(allocationRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber, newBookingId)
+    }
 
     verify(attendanceRepository).findByPrisonerNumber(oldNumber)
-    verify(attendanceRepository).mergeOffender(oldNumber, newNumber)
+    verify(attendanceRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber)
 
+    verify(waitingListRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, newNumber)
     verify(waitingListRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
-    verify(waitingListRepository).mergeOffender(oldNumber, newNumber)
+
+    inOrder(waitingListRepository) {
+      verify(waitingListRepository).mergePrisonerToNewBookingId(newNumber, newBookingId)
+      verify(waitingListRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber, newBookingId)
+    }
 
     verify(auditRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
-    verify(auditRepository).mergeOffender(oldNumber, newNumber)
+    verify(auditRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber)
 
+    verify(eventReviewRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, newNumber)
     verify(eventReviewRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
-    verify(eventReviewRepository).mergeOffender(oldNumber, newNumber)
 
+    inOrder(eventReviewRepository) {
+      verify(eventReviewRepository).mergePrisonerToNewBookingId(newNumber, newBookingId)
+      verify(eventReviewRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber, newBookingId)
+    }
+
+    verify(appointmentAttendeeRepository).findByPrisonerNumber(newNumber)
     verify(appointmentAttendeeRepository).findByPrisonerNumber(oldNumber)
-    verify(appointmentAttendeeRepository).mergeOffender(oldNumber, newNumber)
+
+    inOrder(appointmentAttendeeRepository) {
+      verify(appointmentAttendeeRepository).mergePrisonerToNewBookingId(newNumber, newBookingId)
+      verify(appointmentAttendeeRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber, newBookingId)
+    }
 
     verify(auditRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
-    verify(auditRepository).mergeOffender(oldNumber, newNumber)
+    verify(auditRepository).mergeOldPrisonerNumberToNew(oldNumber, newNumber)
     verify(auditRepository).save(any())
   }
 
@@ -134,7 +165,7 @@ class OffenderMergedEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(prisonerSearchApiClient).getPrisonerDetailsLite(newNumber)
+    verify(prisonerApiClient).getPrisonerDetailsLite(newNumber)
     verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(
       allocationRepository,

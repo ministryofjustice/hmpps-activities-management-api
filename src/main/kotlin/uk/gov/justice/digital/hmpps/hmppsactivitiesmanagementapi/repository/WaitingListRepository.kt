@@ -24,7 +24,11 @@ interface WaitingListRepository : JpaRepository<WaitingList, Long>, JpaSpecifica
   fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<WaitingList>
   fun findByActivityAndStatusIn(activity: Activity, statuses: Set<WaitingListStatus>): List<WaitingList>
 
-  @Query(value = "UPDATE WaitingList w SET w.prisonerNumber = :newNumber WHERE w.prisonerNumber = :oldNumber")
+  @Query(value = "UPDATE WaitingList w SET w.prisonerNumber = :newNumber, w.bookingId = coalesce(:newBookingId, w.bookingId) WHERE w.prisonerNumber = :oldNumber")
   @Modifying
-  fun mergeOffender(oldNumber: String, newNumber: String)
+  fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String, newBookingId: Long?)
+
+  @Query(value = "UPDATE WaitingList w SET w.bookingId = coalesce(:newBookingId, w.bookingId) WHERE w.prisonerNumber = :prisonerNumber")
+  @Modifying
+  fun mergePrisonerToNewBookingId(prisonerNumber: String, newBookingId: Long?)
 }
