@@ -109,29 +109,6 @@ class LocalDateExtTest {
     }
   }
 
-  @Nested
-  @DisplayName("afterOrNull")
-  inner class AfterOrNull {
-    @Test
-    fun `returns false if date is on`() {
-      val date = LocalDate.of(2022, 1, 1)
-      date.afterOrNull(date) isBool false
-    }
-
-    @Test
-    fun `returns true if date is after`() {
-      val date = LocalDate.of(2022, 1, 1)
-      val dayBefore = date.minusDays(1)
-      date.afterOrNull(dayBefore) isBool true
-    }
-
-    @Test
-    fun `returns true if date is null`() {
-      val date = null
-      date.afterOrNull(LocalDate.now()) isBool true
-    }
-  }
-
   @Test
   fun `days ago`() {
     (1..10).forEach { it.daysAgo() isEqualTo LocalDate.now().minusDays(it.toLong()) }
