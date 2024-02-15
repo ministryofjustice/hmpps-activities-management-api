@@ -34,9 +34,11 @@ class ManageAllocationsJobTest {
     job.execute(withActivate = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_START_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_END_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(JobType.ALLOCATE)
+    verifyJobsCalled(JobType.ALLOCATE, JobType.START_SUSPENSIONS, JobType.END_SUSPENSIONS)
   }
 
   @Test
@@ -69,11 +71,13 @@ class ManageAllocationsJobTest {
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, twoDaysAgo)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, twoDaysAgo)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_START_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_END_TODAY)
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_ENDING)
+    verifyJobsCalled(JobType.ALLOCATE, JobType.START_SUSPENSIONS, JobType.END_SUSPENSIONS, JobType.DEALLOCATE_ENDING)
   }
 
   @Test
@@ -81,10 +85,12 @@ class ManageAllocationsJobTest {
     job.execute(withActivate = true, withDeallocateExpiring = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_START_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_END_TODAY)
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_EXPIRING)
+    verifyJobsCalled(JobType.ALLOCATE, JobType.START_SUSPENSIONS, JobType.END_SUSPENSIONS, JobType.DEALLOCATE_EXPIRING)
   }
 
   @Test
@@ -108,12 +114,14 @@ class ManageAllocationsJobTest {
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, twoDaysAgo)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, twoDaysAgo)
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_START_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.SUSPENSION_END_TODAY)
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_ENDING, JobType.DEALLOCATE_EXPIRING)
+    verifyJobsCalled(JobType.ALLOCATE, JobType.START_SUSPENSIONS, JobType.END_SUSPENSIONS, JobType.DEALLOCATE_ENDING, JobType.DEALLOCATE_EXPIRING)
   }
 
   private fun verifyJobsCalled(vararg jobTypes: JobType) {
