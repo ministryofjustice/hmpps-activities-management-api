@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: deallocate-allocations
+  name: deallocate-allocations-ending
 spec:
-  schedule:  "{{ .Values.cron.allocationsDeallocate }}"
+  schedule:  "{{ .Values.cron.allocationsDeallocateEnding }}"
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 43200
@@ -17,9 +17,9 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-            - name: deallocate-allocations-job
+            - name: deallocate-allocations-ending-job
               image: ghcr.io/ministryofjustice/hmpps-devops-tools
               args:
                 - /bin/sh
                 - -c
-                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/manage-allocations?withDeallocate=true
+                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/manage-allocations?withDeallocateEnding=true

@@ -16,11 +16,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonRe
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
@@ -29,7 +29,6 @@ import java.time.LocalDateTime
 @Service
 class ManageAllocationsService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
-  private val activityRepository: ActivityRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationRepository: AllocationRepository,
   private val prisonRegimeRepository: PrisonRegimeRepository,
@@ -51,11 +50,6 @@ class ManageAllocationsService(
         processAllocationsDueToStartOnOrBeforeToday()
       }
 
-      AllocationOperation.ENDING_TODAY -> {
-        log.info("Ending allocations due to end today.")
-        allocationsDueToEnd().deallocate()
-      }
-
       AllocationOperation.EXPIRING_TODAY -> {
         log.info("Expiring allocations due to expire today.")
         deallocateAllocationsDueToExpire()
@@ -63,8 +57,45 @@ class ManageAllocationsService(
     }
   }
 
+  /**
+   * Caution to be used when using the current date. Allocations should be ended at the end of the day.
+   */
+  fun endAllocationsDueToEnd(prisonCode: String, date: LocalDate) {
+    require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
+      "Supplied prison $prisonCode is not rolled out."
+    }
+
+    transactionHandler.newSpringTransaction {
+      activityScheduleRepository.getActivitySchedulesWithFilteredInstances(prisonCode, date).flatMap { schedule ->
+        if (schedule.endsOn(date)) {
+          declineWaitingListsFor(schedule)
+          schedule.deallocateActiveAllocationsNow()
+        } else {
+          schedule.deallocateAllocationsEndingOn(date)
+        }.also { allocationIds -> allocationIds.ifNotEmpty { activityScheduleRepository.saveAndFlush(schedule) } }
+      }.let(::sendAllocationsAmendedEvents)
+    }
+  }
+
+  private fun declineWaitingListsFor(schedule: ActivitySchedule) {
+    waitingListService.declinePendingOrApprovedApplications(
+      schedule.activity.activityId,
+      "Activity ended",
+      ServiceName.SERVICE_NAME.value,
+    )
+  }
+
+  private fun ActivitySchedule.deallocateActiveAllocationsNow() =
+    allocations(excludeEnded = true).onEach(Allocation::deallocateNow).map(Allocation::allocationId)
+
+  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) =
+    allocations(true)
+      .filter { activeAllocation -> activeAllocation.endsOn(date) }
+      .onEach(Allocation::deallocateNow)
+      .map(Allocation::allocationId)
+
   /*
-   * We consider pending allocations before today in the event we need to (re)run due to something out of our control
+   * We can consider pending allocations before today in the event we need to (re)run due to something out of our control
    * e.g. a job fails to run due to a cloud platform issue.
    */
   private fun processAllocationsDueToStartOnOrBeforeToday() {
@@ -109,30 +140,11 @@ class ManageAllocationsService(
   private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
     flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
 
-  private fun allocationsDueToEnd(): Map<ActivitySchedule, List<Allocation>> =
-    LocalDate.now().let { today ->
-      forEachRolledOutPrison()
-        .flatMap { prison ->
-          activityRepository.getAllForPrisonAndDate(prison.code, today).flatMap { activity ->
-            if (activity.ends(today)) {
-              waitingListService.declinePendingOrApprovedApplications(
-                activity.activityId,
-                "Activity ended",
-                ServiceName.SERVICE_NAME.value,
-              )
-              activity.schedules().flatMap { it.allocations().filterNot(Allocation::isEnded) }
-            } else {
-              activity.schedules().flatMap { it.allocations().ending(today) }
-            }
-          }
-        }.groupBy { it.activitySchedule }
-    }
-
   private fun forEachRolledOutPrison() =
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.filterNotNull()
 
   private fun List<Allocation>.ending(date: LocalDate) =
-    filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.ends(date) }
+    filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.endsOn(date) }
 
   private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
@@ -240,7 +252,6 @@ class ManageAllocationsService(
 }
 
 enum class AllocationOperation {
-  ENDING_TODAY,
   EXPIRING_TODAY,
   STARTING_TODAY,
 }

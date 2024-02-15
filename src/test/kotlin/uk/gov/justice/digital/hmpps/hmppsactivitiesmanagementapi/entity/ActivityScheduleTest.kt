@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
@@ -1196,12 +1197,39 @@ class ActivityScheduleTest {
       activity = activityEntity(),
       noSlots = true,
     ).apply {
-      this.addSlot(1, LocalTime.of(8, 0) to LocalTime.of(12, 0), DayOfWeek.values().toSet())
+      this.addSlot(1, LocalTime.of(8, 0) to LocalTime.of(12, 0), DayOfWeek.entries.toSet())
     }
 
     assertThatThrownBy {
       schedule.updateSlots(emptyMap())
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Must have at least 1 active slot across the schedule")
+  }
+
+  @Test
+  fun `check schedule ends`() {
+    with(activitySchedule(activityEntity(startDate = yesterday, endDate = yesterday))) {
+      endsOn(yesterday) isBool true
+      endsOn(today) isBool false
+      endsOn(tomorrow) isBool false
+    }
+
+    with(activitySchedule(activityEntity(endDate = today))) {
+      endsOn(yesterday) isBool false
+      endsOn(today) isBool true
+      endsOn(tomorrow) isBool false
+    }
+
+    with(activitySchedule(activityEntity(endDate = tomorrow))) {
+      endsOn(yesterday) isBool false
+      endsOn(today) isBool false
+      endsOn(tomorrow) isBool true
+    }
+
+    with(activitySchedule(activityEntity(endDate = null))) {
+      endsOn(yesterday) isBool false
+      endsOn(today) isBool false
+      endsOn(tomorrow) isBool false
+    }
   }
 }
