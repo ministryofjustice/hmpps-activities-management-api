@@ -9,10 +9,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Role
 import java.time.LocalDate
+import java.time.LocalTime
 
 class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
@@ -75,7 +77,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -95,7 +97,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -115,7 +117,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -126,7 +128,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
       SarWaitingList(
         waitingListId = 3,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -140,7 +142,69 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
-  fun `should return one allocation and two waiting list application for a subject access request`() {
+  fun `should return 3 appointments for a subject access request (Attended, Not attended and Unknown Attendance)`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 8), LocalDate.of(2024, 10, 10))
+
+    response.appointments containsExactlyInAnyOrder listOf(
+      SarAppointment(
+        appointmentId = 1,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        categoryCode = "EDUC",
+        startDate = LocalDate.of(2022, 10, 12),
+        startTime = LocalTime.of(9, 30),
+        endTime = LocalTime.of(11, 45),
+        extraInformation = "Prayer session",
+        attended = "Unmarked",
+        createdDate = LocalDate.of(2022, 10, 11),
+      ),
+      SarAppointment(
+        appointmentId = 2,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        categoryCode = "EDUC",
+        startDate = LocalDate.of(2022, 10, 13),
+        startTime = LocalTime.of(14, 0),
+        endTime = LocalTime.of(15, 30),
+        extraInformation = null,
+        attended = "Yes",
+        createdDate = LocalDate.of(2022, 10, 8),
+      ),
+      SarAppointment(
+        appointmentId = 3,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        categoryCode = "EDUC",
+        startDate = LocalDate.of(2022, 10, 14),
+        startTime = LocalTime.of(6, 0),
+        endTime = LocalTime.of(8, 30),
+        extraInformation = null,
+        attended = "No",
+        createdDate = LocalDate.of(2022, 10, 9),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one appointment for a same day date boundary for a subject access request`() {
+    val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
+
+    response.appointments containsExactly listOf(
+      SarAppointment(
+        appointmentId = 1,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        categoryCode = "EDUC",
+        startDate = LocalDate.of(2022, 10, 12),
+        startTime = LocalTime.of(9, 30),
+        endTime = LocalTime.of(11, 45),
+        extraInformation = "Prayer session",
+        attended = "Unmarked",
+        createdDate = LocalDate.of(2022, 10, 11),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one allocation, two waiting list applications and an appointment for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
 
     response.allocations containsExactly listOf(
@@ -160,7 +224,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
     response.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -171,7 +235,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
       SarWaitingList(
         waitingListId = 3,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
@@ -179,6 +243,20 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         statusDate = LocalDate.of(2022, 11, 12),
         comments = "added to the waiting list",
         createdDate = LocalDate.of(2022, 10, 12),
+      ),
+    )
+
+    response.appointments containsExactly listOf(
+      SarAppointment(
+        appointmentId = 1,
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        categoryCode = "EDUC",
+        startDate = LocalDate.of(2022, 10, 12),
+        startTime = LocalTime.of(9, 30),
+        endTime = LocalTime.of(11, 45),
+        extraInformation = "Prayer session",
+        attended = "Unmarked",
+        createdDate = LocalDate.of(2022, 10, 11),
       ),
     )
   }

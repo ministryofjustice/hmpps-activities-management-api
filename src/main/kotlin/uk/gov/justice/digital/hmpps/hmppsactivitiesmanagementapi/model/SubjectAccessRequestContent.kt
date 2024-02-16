@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
 
 data class SubjectAccessRequestContent(
@@ -23,6 +25,9 @@ data class SubjectAccessRequestContent(
 
   @Schema(description = "Waiting list applications for a prisoner")
   val waitingListApplications: List<SarWaitingList>,
+
+  @Schema(description = "All of the appointments for the prisoner for the period")
+  val appointments: List<SarAppointment>,
 )
 
 data class SarAllocation(
@@ -111,5 +116,50 @@ data class SarWaitingList(
     waitingList.statusDate,
     waitingList.comments,
     waitingList.createdDate,
+  )
+}
+
+data class SarAppointment(
+  @Schema(description = "The internally-generated ID for this appointment", example = "123456")
+  val appointmentId: Long,
+
+  @Schema(description = "The prison code where this appointment takes place", example = "PVI")
+  val prisonCode: String,
+
+  @Schema(description = "The category code of the appointment", example = "CHAP")
+  val categoryCode: String,
+
+  @Schema(description = "The start date of the appointment", example = "2022-01-01")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val startDate: LocalDate,
+
+  @Schema(description = "The end time of the appointment", example = "12:30")
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
+
+  @Schema(description = "The end time of the appointment, can be null", example = "10:15")
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime?,
+
+  @Schema(description = "Any extra information about the appointment, can be null", example = "Discuss God")
+  val extraInformation: String?,
+
+  @Schema(description = "The attendance of the appointment", allowableValues = ["Yes", "No", "Unmarked"], example = "Yes")
+  val attended: String,
+
+  @Schema(description = "The date the appointment entry was created", example = "2022-01-01")
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val createdDate: LocalDate,
+) {
+  constructor(appointment: EntitySarAppointment) : this(
+    appointment.appointmentId,
+    appointment.prisonCode,
+    appointment.categoryCode,
+    appointment.startDate,
+    appointment.startTime,
+    appointment.endTime,
+    appointment.extraInformation,
+    appointment.attended,
+    appointment.createdDate,
   )
 }
