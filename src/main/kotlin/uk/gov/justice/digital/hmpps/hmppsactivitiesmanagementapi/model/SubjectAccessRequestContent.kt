@@ -133,7 +133,7 @@ data class SarAppointment(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
-  @Schema(description = "The end time of the appointment", example = "12:30")
+  @Schema(description = "The start time of the appointment", example = "12:30")
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime,
 
