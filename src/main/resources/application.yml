@@ -123,6 +123,8 @@ prison:
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS}
+  deallocate-allocations-ending:
+    days-start: 3
 
 online:
   create-scheduled-instances:

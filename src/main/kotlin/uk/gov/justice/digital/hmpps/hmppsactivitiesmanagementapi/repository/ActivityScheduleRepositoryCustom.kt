@@ -16,8 +16,6 @@ interface ActivityScheduleRepositoryCustom {
     earliestSessionDate: LocalDate? = null,
     allocationsActiveOnDate: LocalDate? = null,
   ): ActivitySchedule?
-
-  fun getActivitySchedulesWithFilteredInstances(prisonCode: String, earliestSessionDate: LocalDate): List<ActivitySchedule>
 }
 
 class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
@@ -57,26 +55,5 @@ class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
       query.singleResult
     }.onFailure { log.error("ActivitySchedule by ID with filters ${it.message}") }
       .getOrNull()
-  }
-
-  @Override
-  override fun getActivitySchedulesWithFilteredInstances(
-    prisonCode: String,
-    earliestSessionDate: LocalDate,
-  ): List<ActivitySchedule> {
-    val session = entityManager.unwrap(Session::class.java)
-
-    val hql = "SELECT s from ActivitySchedule s where s.activity.prisonCode = :prisonCode"
-    val query: TypedQuery<ActivitySchedule> = entityManager.createQuery(hql, ActivitySchedule::class.java)
-    query.setParameter("prisonCode", prisonCode)
-
-    session
-      .enableFilter(SESSION_DATE_FILTER)
-      .setParameter("earliestSessionDate", earliestSessionDate)
-
-    return runCatching {
-      query.resultList.toList()
-    }.onFailure { log.error("ActivitySchedule by ID with filters ${it.message}") }
-      .getOrDefault(emptyList())
   }
 }
