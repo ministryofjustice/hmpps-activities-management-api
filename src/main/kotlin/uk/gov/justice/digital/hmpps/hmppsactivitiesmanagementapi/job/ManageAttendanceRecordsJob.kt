@@ -16,7 +16,7 @@ import java.time.LocalDate
  */
 @Component
 class ManageAttendanceRecordsJob(
-  private val roleOutPrisonService: RolloutPrisonService,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val manageAttendancesService: ManageAttendancesService,
   private val jobRunner: SafeJobRunner,
 ) {
@@ -46,7 +46,7 @@ class ManageAttendanceRecordsJob(
 
   private fun getRolledOutPrisonsForActivities(mayBePrisonCode: String?) =
     (
-      mayBePrisonCode?.let { listOf(roleOutPrisonService.getByPrisonCode(it)) }
-        ?: roleOutPrisonService.getRolloutPrisons()
-      ).filter(RolloutPrisonPlan::activitiesRolledOut).map(RolloutPrisonPlan::prisonCode)
+      mayBePrisonCode?.let { listOf(rolloutPrisonService.getByPrisonCode(it)) }
+        ?: rolloutPrisonService.getRolloutPrisons()
+      ).filter { it.activitiesRolledOut }.map(RolloutPrisonPlan::prisonCode)
 }

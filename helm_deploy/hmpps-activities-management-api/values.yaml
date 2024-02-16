@@ -115,7 +115,8 @@ generic-prometheus-alerts:
   targetApplication: hmpps-activities-management-api
 
 cron:
-  allocationsDeallocate: "0 22 * * *"
+  allocationsDeallocateEnding: "0 1 * * *"
+  allocationsDeallocateExpiring: "0 22 * * *"
   allocationsActivate: "0 2 * * *"
   appointmentAttendees: "30 2 * * *"
   createScheduledInstances: "0 3 * * *"

@@ -1,58 +1,114 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 
 class ManageAllocationsJobTest {
+  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
+    on { findAll() } doReturn listOf(rolloutPrison(PENTONVILLE_PRISON_CODE), rolloutPrison(MOORLAND_PRISON_CODE))
+  }
   private val deallocationService: ManageAllocationsService = mock()
   private val jobRepository: JobRepository = mock()
   private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
-  private val job = ManageAllocationsJob(deallocationService, safeJobRunner)
-  private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
+  private val job = ManageAllocationsJob(rolloutPrisonRepository, deallocationService, safeJobRunner)
+  private val yesterday = 1.daysAgo()
 
   @Test
   fun `activate allocation operation triggered`() {
     job.execute(withActivate = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
-    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
+    verifyNoMoreInteractions(deallocationService)
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ALLOCATE)
+    verifyJobsCalled(JobType.ALLOCATE)
   }
 
   @Test
-  fun `deallocate allocation operation triggered`() {
-    job.execute(withDeallocate = true)
+  fun `deallocate allocation due to end operation triggered`() {
+    job.execute(withDeallocateEnding = true)
 
-    verify(deallocationService).allocations(AllocationOperation.ENDING_TODAY)
+    verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
+    verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsCalled(JobType.DEALLOCATE_ENDING)
+  }
+
+  @Test
+  fun `deallocate allocation due to expire operation triggered`() {
+    job.execute(withDeallocateExpiring = true)
+
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
-    verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
+    verifyNoMoreInteractions(deallocationService)
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
-    assertThat(jobDefinitionCaptor.secondValue.jobType).isEqualTo(JobType.DEALLOCATE_EXPIRING)
+    verifyJobsCalled(JobType.DEALLOCATE_EXPIRING)
   }
 
   @Test
-  fun `activate and deallocate allocation operations triggered`() {
-    job.execute(withActivate = true, withDeallocate = true)
+  fun `activate and deallocate allocation due to end operations triggered`() {
+    job.execute(withActivate = true, withDeallocateEnding = true)
 
     verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
-    verify(deallocationService).allocations(AllocationOperation.ENDING_TODAY)
-    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
-    verify(safeJobRunner, times(3)).runJob(jobDefinitionCaptor.capture())
+    verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
+    verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
+    verifyNoMoreInteractions(deallocationService)
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.ALLOCATE)
-    assertThat(jobDefinitionCaptor.secondValue.jobType).isEqualTo(JobType.DEALLOCATE_ENDING)
-    assertThat(jobDefinitionCaptor.thirdValue.jobType).isEqualTo(JobType.DEALLOCATE_EXPIRING)
+    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_ENDING)
+  }
+
+  @Test
+  fun `activate and deallocate allocation due to expire operations triggered`() {
+    job.execute(withActivate = true, withDeallocateExpiring = true)
+
+    verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_EXPIRING)
+  }
+
+  @Test
+  fun `deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
+    job.execute(withDeallocateEnding = true, withDeallocateExpiring = true)
+
+    verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
+    verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
+    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsCalled(JobType.DEALLOCATE_ENDING, JobType.DEALLOCATE_EXPIRING)
+  }
+
+  @Test
+  fun `activate, deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
+    job.execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true)
+
+    verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
+    verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
+    verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsCalled(JobType.ALLOCATE, JobType.DEALLOCATE_ENDING, JobType.DEALLOCATE_EXPIRING)
+  }
+
+  private fun verifyJobsCalled(vararg jobTypes: JobType) {
+    jobTypes.forEach { verify(safeJobRunner).runJob(argThat { this.jobType == it }) }
+    verifyNoMoreInteractions(safeJobRunner)
   }
 }

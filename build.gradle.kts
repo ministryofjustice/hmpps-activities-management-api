@@ -57,6 +57,7 @@ dependencies {
   testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.2.4")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
+  testImplementation("org.awaitility:awaitility-kotlin")
 }
 
 kotlin {

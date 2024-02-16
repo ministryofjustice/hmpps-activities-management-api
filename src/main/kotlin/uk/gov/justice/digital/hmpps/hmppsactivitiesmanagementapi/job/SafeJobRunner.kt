@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.system.measureTimeMillis
 
 @Component
 class SafeJobRunner(private val jobRepository: JobRepository, private val monitoringService: MonitoringService) {
@@ -29,20 +30,23 @@ class SafeJobRunner(private val jobRepository: JobRepository, private val monito
     val success = AtomicBoolean(true)
 
     jobDefinitions.forEach { job ->
-      if (success.get()) {
-        runSafe(job)
-          .onFailure {
-            success.set(false)
+      val elapsed = measureTimeMillis {
+        if (success.get()) {
+          runSafe(job)
+            .onFailure {
+              success.set(false)
 
-            log.warn("Failure occurred running job ${job.jobType}")
+              log.warn("JOB: Failure occurred running job ${job.jobType}")
+            }
+        } else {
+          log.warn("JOB: Ignoring job ${job.jobType} due to failure in a dependent job.")
+
+          jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now())).also { failedJob ->
+            monitoringService.capture("Dependant job '${failedJob.jobType}' for job id '${failedJob.jobId}' failed")
           }
-      } else {
-        log.warn("Ignoring job ${job.jobType} due to failure in a dependent job.")
-
-        jobRepository.saveAndFlush(Job.failed(job.jobType, LocalDateTime.now())).also { failedJob ->
-          monitoringService.capture("Dependant job '${failedJob.jobType}' for job id '${failedJob.jobId}' failed")
         }
       }
+      log.info("JOB: Elapsed time for job ${job.jobType} ${elapsed}ms")
     }
   }
 

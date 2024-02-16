@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -26,8 +28,8 @@ class DailyActivityMetricsJobIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isCreated
 
-    Thread.sleep(5000)
-
-    verify(telemetryClient, times(81)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
+    await untilAsserted {
+      verify(telemetryClient, times(81)).trackEvent(eq(TelemetryEvent.ACTIVITIES_DAILY_STATS.value), any(), any())
+    }
   }
 }
