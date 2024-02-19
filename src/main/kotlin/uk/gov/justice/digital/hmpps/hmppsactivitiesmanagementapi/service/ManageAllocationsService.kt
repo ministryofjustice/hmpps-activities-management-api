@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -27,6 +28,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
+@Transactional
 class ManageAllocationsService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
@@ -55,6 +57,18 @@ class ManageAllocationsService(
         deallocateAllocationsDueToExpire()
       }
     }
+  }
+
+  fun suspendAllocationsDueToBeSuspended(prisonCode: String) {
+    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.ACTIVE)
+      .filter { it.isCurrentlySuspended() }
+      .suspend()
+  }
+
+  fun unsuspendAllocationsDueToBeUnsuspended(prisonCode: String) {
+    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.SUSPENDED)
+      .filterNot { it.isCurrentlySuspended() }
+      .unsuspend()
   }
 
   /**
@@ -123,7 +137,7 @@ class ManageAllocationsService(
               .map { (allocation, _) -> allocation }
               .also {
                 log.info("Activated ${it.filter { a -> a.status(PrisonerStatus.ACTIVE) }.size} pending allocation(s) at prison ${prison.code}.")
-                log.info("Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.code}.")
+                log.info("Auto-Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.code}.")
               }.map(Allocation::allocationId)
           }.let(::sendAllocationsAmendedEvents)
         }
@@ -238,6 +252,36 @@ class ManageAllocationsService(
       )
     }
   }
+
+  private fun List<Allocation>.suspend() =
+    continueToRunOnFailure(
+      block = {
+        transactionHandler.newSpringTransaction {
+          onEach { allocation ->
+            run {
+              allocation.activatePlannedSuspension()
+              allocationRepository.saveAndFlush(allocation)
+            }
+          }.map(Allocation::allocationId)
+        }.let(::sendAllocationsAmendedEvents)
+      },
+      failure = "An error occurred while suspending allocations due to be suspended today",
+    )
+
+  private fun List<Allocation>.unsuspend() =
+    continueToRunOnFailure(
+      block = {
+        transactionHandler.newSpringTransaction {
+          onEach { allocation ->
+            run {
+              allocation.reactivateSuspension()
+              allocationRepository.saveAndFlush(allocation)
+            }
+          }.map(Allocation::allocationId)
+        }.let(::sendAllocationsAmendedEvents)
+      },
+      failure = "An error occurred while suspending allocations due to be suspended today",
+    )
 
   private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) =
     allocationIds.forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it) }

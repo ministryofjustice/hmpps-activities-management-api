@@ -511,10 +511,20 @@ class MigrateActivityService(
         endDate = request.endDate,
         exclusions = request.exclusions?.consolidateMatchingSlots(),
         allocatedBy = MIGRATION_USER,
-      )
-
-      if (request.suspendedFlag) {
-        log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+      ).apply {
+        if (request.suspendedFlag) {
+          // TODO: Uncomment the below code when the user has a way to un-suspend via the UI
+          log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+//          addPlannedSuspension(
+//            PlannedSuspension(
+//              allocation = this,
+//              plannedStartDate = startDate,
+//              plannedReason = "Migrated as suspended",
+//              plannedBy = MIGRATION_USER,
+//              updatedBy = MIGRATION_USER,
+//            ),
+//          )
+        }
       }
 
       val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)

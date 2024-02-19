@@ -21,6 +21,10 @@ internal infix fun <T> T.isEqualTo(value: T) {
   assertThat(this).isEqualTo(value)
 }
 
+internal infix fun <T> T.isNotEqualTo(value: T) {
+  assertThat(this).isNotEqualTo(value)
+}
+
 internal infix fun <T> Collection<T>.hasSize(size: Int) {
   assertThat(this).hasSize(size)
 }

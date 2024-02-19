@@ -98,6 +98,10 @@ data class Allocation(
   @Fetch(FetchMode.SUBSELECT)
   private val exclusions: MutableSet<Exclusion> = mutableSetOf()
 
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val plannedSuspensions: MutableSet<PlannedSuspension> = mutableSetOf()
+
   var deallocatedTime: LocalDateTime? = null
     private set
 
@@ -119,6 +123,16 @@ data class Allocation(
 
   var suspendedReason: String? = null
     private set
+
+  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfter(LocalDate.now()) ?: true }
+
+  fun isCurrentlySuspended() = plannedSuspension()?.hasStarted() == true
+
+  fun addPlannedSuspension(suspension: PlannedSuspension) = run {
+    require(suspension.allocation == this) { "Cannot add this suspension associated to the allocation with id ${suspension.allocation.allocationId} to allocation with id $allocationId" }
+    require(plannedSuspension() == null) { "Cannot add this planned suspension to allocation with id $allocationId because another planned suspension already exists" }
+    plannedSuspensions.add(suspension)
+  }
 
   fun exclusions(filter: ExclusionsFilter) = filter.filtered(exclusions)
 
@@ -172,6 +186,8 @@ data class Allocation(
         }
       }
     }
+
+  fun plannedEndDate() = plannedDeallocation?.plannedDate ?: endDate
 
   private fun maybeEndDate() =
     when {
@@ -235,7 +251,7 @@ data class Allocation(
       bookingId = bookingId,
       prisonPayBand = payBand?.toModel(),
       startDate = startDate,
-      endDate = plannedDeallocation?.plannedDate ?: endDate,
+      endDate = plannedEndDate(),
       allocatedTime = allocatedTime,
       allocatedBy = allocatedBy,
       activitySummary = activitySummary(),
@@ -263,7 +279,7 @@ data class Allocation(
 
   fun activate() =
     this.apply {
-      failWithMessageIfAllocationsIsNot("You can only activate pending allocations", PrisonerStatus.PENDING)
+      failWithMessageIfAllocationIsNotStatus("You can only activate pending allocations", PrisonerStatus.PENDING)
 
       prisonerStatus = PrisonerStatus.ACTIVE
     }
@@ -273,7 +289,7 @@ data class Allocation(
    */
   fun autoSuspend(dateTime: LocalDateTime, reason: String) =
     this.apply {
-      failWithMessageIfAllocationsIsNot("You can only auto-suspend active and pending allocations", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+      failWithMessageIfAllocationIsNotStatus("You can only auto-suspend active, pending or suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING, PrisonerStatus.SUSPENDED)
 
       prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
       suspendedTime = dateTime
@@ -281,20 +297,23 @@ data class Allocation(
       suspendedBy = ServiceName.SERVICE_NAME.value
     }
 
-  fun userSuspend(dateTime: LocalDateTime, reason: String, byWhom: String) =
+  fun activatePlannedSuspension() =
     this.apply {
-      failWithMessageIfAllocationsIsNot("You can only suspend active allocations", PrisonerStatus.ACTIVE)
+      val plannedSuspension = plannedSuspension()
+      require(plannedSuspension != null && plannedSuspension.hasStarted()) { "Failed to activate planned suspension for allocation with id $allocationId - no suspensions planned at this time" }
+      failWithMessageIfAllocationIsNotStatus("You can only suspend active or auto-suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.AUTO_SUSPENDED)
 
       prisonerStatus = PrisonerStatus.SUSPENDED
-      suspendedTime = dateTime
-      suspendedReason = reason
-      suspendedBy = byWhom
+      suspendedTime = LocalDateTime.now()
+      suspendedReason = plannedSuspension.plannedReason()
+      suspendedBy = plannedSuspension.plannedBy()
     }
 
-  fun reactivateAutoSuspensions() =
+  fun reactivateSuspension() =
     this.apply {
-      failWithMessageIfAllocationsIsNot(
-        "You can only reactivate auto-suspended allocations",
+      failWithMessageIfAllocationIsNotStatus(
+        "You can only reactivate suspended or auto-suspended allocations",
+        PrisonerStatus.SUSPENDED,
         PrisonerStatus.AUTO_SUSPENDED,
       )
       prisonerStatus = PrisonerStatus.ACTIVE
@@ -303,7 +322,7 @@ data class Allocation(
       suspendedBy = null
     }
 
-  private fun failWithMessageIfAllocationsIsNot(failureMessage: String, vararg statuses: PrisonerStatus) {
+  private fun failWithMessageIfAllocationIsNotStatus(failureMessage: String, vararg statuses: PrisonerStatus) {
     if (status(*statuses).not()) {
       throw IllegalStateException(failureMessage)
     }

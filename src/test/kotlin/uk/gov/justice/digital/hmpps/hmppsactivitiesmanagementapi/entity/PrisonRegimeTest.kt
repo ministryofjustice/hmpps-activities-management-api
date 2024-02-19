@@ -33,14 +33,14 @@ class PrisonRegimeTest {
 
   @Test
   fun `user suspended allocation has not expired`() {
-    val userSuspendedAllocation = allocation().userSuspend(LocalDateTime.now(), "reason", "by test")
+    val userSuspendedAllocation = allocation(withPlannedSuspensions = true).activatePlannedSuspension()
 
     assertThat(regime.hasExpired(userSuspendedAllocation)).isFalse
   }
 
   @Test
   fun `user suspended allocation 5 days old has not expired`() {
-    val userSuspendedAllocation = allocation().userSuspend(LocalDateTime.now().minusDays(fiveDaysToExpiry.toLong()), "reason", "by test")
+    val userSuspendedAllocation = allocation(withPlannedSuspensions = true).activatePlannedSuspension()
 
     assertThat(regime.hasExpired(userSuspendedAllocation)).isFalse
   }

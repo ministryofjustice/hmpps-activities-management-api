@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.PENDING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
@@ -280,6 +281,47 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisoner("PAST") isStatus AUTO_SUSPENDED
       prisoner("TODAY") isStatus AUTO_SUSPENDED
       prisoner("FUTURE") isStatus PENDING
+    }
+  }
+
+  @Sql("classpath:test_data/seed-allocations-with-planned-suspension.sql")
+  @Test
+  fun `active and pending allocations on or before today are suspended when they have a planned suspension`() {
+    listOf("TODAY").map { prisonerNumber ->
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        prisonId = "PVI",
+      )
+    }.also { prisoners -> prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("TODAY"), prisoners) }
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("PAST") isStatus ACTIVE
+      prisoner("TODAY") isStatus PENDING
+      prisoner("FUTURE") isStatus PENDING
+    }
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus SUSPENDED
+      prisoner("TODAY") isStatus SUSPENDED
+      prisoner("FUTURE") isStatus PENDING
+    }
+  }
+
+  @Sql("classpath:test_data/seed-allocation-with-planned-suspension-ending-today.sql")
+  @Test
+  fun `suspended allocations which are planned to be un-suspended today are set to ACTIVE`() {
+    with(allocationRepository.findAll()) {
+      size isEqualTo 1
+      prisoner("G4508UU") isStatus SUSPENDED
+    }
+
+    webTestClient.manageAllocations(withActivate = true)
+
+    with(allocationRepository.findAll()) {
+      prisoner("G4508UU") isStatus ACTIVE
     }
   }
 

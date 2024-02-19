@@ -145,6 +145,8 @@ data class ScheduledInstance(
   fun internalLocationDescription() = activitySchedule.internalLocationDescription
 
   fun dateTime() = sessionDate.atTime(startTime)
+
+  fun isFuture(dateTime: LocalDateTime) = sessionDate.atTime(startTime).isAfter(dateTime)
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

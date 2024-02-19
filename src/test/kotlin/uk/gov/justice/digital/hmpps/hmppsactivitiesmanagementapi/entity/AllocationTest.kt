@@ -142,7 +142,7 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only auto-suspend active and pending allocations")
+      .hasMessage("You can only auto-suspend active, pending or suspended allocations")
   }
 
   @Test
@@ -153,7 +153,7 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only auto-suspend active and pending allocations")
+      .hasMessage("You can only auto-suspend active, pending or suspended allocations")
   }
 
   @Test
@@ -162,7 +162,7 @@ class AllocationTest {
       .apply { autoSuspend(today.atStartOfDay(), "Temporarily released from prison") }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.AUTO_SUSPENDED) }
 
-    allocation.reactivateAutoSuspensions()
+    allocation.reactivateSuspension()
 
     with(allocation) {
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
@@ -173,23 +173,12 @@ class AllocationTest {
   }
 
   @Test
-  fun `check cannot unsuspend a manual user suspended allocation`() {
-    val allocation = allocation()
-      .apply { userSuspend(today.atStartOfDay(), "User suspension", "A user") }
-      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED) }
-
-    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
-      .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate auto-suspended allocations")
-  }
-
-  @Test
   fun `check cannot unsuspend an active allocation`() {
     val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
-    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
+    assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
   }
 
   @Test
@@ -197,9 +186,9 @@ class AllocationTest {
     val allocation = allocation().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
       .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ENDED) }
 
-    assertThatThrownBy { allocation.reactivateAutoSuspensions() }
+    assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
   }
 
   @Test
@@ -774,5 +763,55 @@ class AllocationTest {
         payBand = lowPayBand
       }
     }.isInstanceOf(IllegalArgumentException::class.java).hasMessage("Pay band must not be provided for unpaid activity ID '2'")
+  }
+
+  @Test
+  fun `plannedSuspension - fetches the latest planned suspension`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true)
+    allocation.plannedSuspension()!!.endDate() isEqualTo null
+  }
+
+  @Test
+  fun `addPlannedSuspension - throws error if the given planned suspension does not belong to the allocation`() {
+    val allocation1 = allocation(startDate = TimeSource.yesterday())
+    val allocation2 = allocation(startDate = TimeSource.yesterday())
+
+    val plannedSuspension = PlannedSuspension(
+      allocation = allocation1,
+      plannedStartDate = allocation1.startDate,
+      plannedReason = "Planned reason",
+      plannedBy = "Test",
+    )
+
+    assertThatThrownBy { allocation2.addPlannedSuspension(plannedSuspension) }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot add this suspension associated to the allocation with id 0 to allocation with id 0")
+  }
+
+  @Test
+  fun `isCurrentlySuspended - returns true when a planned suspension is active`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true)
+    allocation.isCurrentlySuspended() isBool true
+  }
+
+  @Test
+  fun `isCurrentlySuspended - returns false when a planned suspension is not active`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = LocalDate.now().plusWeeks(1),
+          plannedReason = "Planned reason",
+          plannedBy = "Test",
+        ),
+      )
+    }
+    allocation.isCurrentlySuspended() isBool false
+  }
+
+  @Test
+  fun `isCurrentlySuspended - returns false when a suspension is not planned`() {
+    val allocation = allocation(startDate = TimeSource.yesterday())
+    allocation.isCurrentlySuspended() isBool false
   }
 }

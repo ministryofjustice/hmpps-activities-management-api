@@ -28,6 +28,7 @@ truncate table event_review restart identity;
 truncate table attendance_history restart identity;
 truncate table waiting_list restart identity;
 truncate table local_audit restart identity;
+truncate table planned_suspension restart identity;
 
 --Appointments
 truncate table appointment_attendee restart identity;

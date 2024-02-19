@@ -425,6 +425,51 @@ class ManageAllocationsServiceTest {
     verify(allocationRepository, never()).saveAndFlush(pendingAllocation)
   }
 
+  @Test
+  fun `active allocations with a suspension due to start today are suspended`() {
+    val prison = rolloutPrison().also {
+      whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it)
+    }
+
+    val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
+
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE),
+    ) doReturn listOf(activeAllocation)
+
+    activeAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+
+    service.suspendAllocationsDueToBeSuspended(prison.code)
+
+    activeAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
+
+    verify(allocationRepository).saveAndFlush(activeAllocation)
+  }
+
+  @Test
+  fun `suspended allocations with a suspension due to end today are activated`() {
+    val prison = rolloutPrison().also {
+      whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it)
+    }
+
+    val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
+      activatePlannedSuspension()
+      plannedSuspension()!!.endNow("TEST")
+    }
+
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED),
+    ) doReturn listOf(suspendedAllocation)
+
+    suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
+
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
+
+    suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+
+    verify(allocationRepository).saveAndFlush(suspendedAllocation)
+  }
+
   private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner =
     PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
 

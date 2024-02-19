@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -22,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Transac
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class PrisonerAllocationHandlerTest {
@@ -129,7 +129,8 @@ class PrisonerAllocationHandlerTest {
 
   @Test
   fun `only future attendances are removed on release`() {
-    listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456")).also {
+    val allocation = allocation().copy(allocationId = 1, prisonerNumber = "123456")
+    listOf(allocation).also {
       whenever(
         allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
           MOORLAND_PRISON_CODE,
@@ -139,33 +140,24 @@ class PrisonerAllocationHandlerTest {
       ) doReturn it
     }
 
-    val todaysHistoricScheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().minusMinutes(1))
-    val todaysHistoricAttendance = attendanceFor(todaysHistoricScheduledInstance)
+    val pastScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn false }
+    val pastAttendance = attendanceFor(pastScheduledInstance)
 
-    val todaysFuturescheduledInstance = scheduledInstanceOn(TimeSource.today(), LocalTime.now().plusMinutes(1))
-    val todaysFutureAttendance = attendanceFor(todaysFuturescheduledInstance)
-
-    val tomorrowsScheduledInstance = scheduledInstanceOn(TimeSource.tomorrow(), LocalTime.now().plusMinutes(1))
-    val tomorrowsFutureAttendance = attendanceFor(tomorrowsScheduledInstance)
+    val futureScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn true }
+    val futureAttendance = attendanceFor(futureScheduledInstance)
 
     whenever(
-      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = MOORLAND_PRISON_CODE,
+      attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
         sessionDate = LocalDate.now(),
+        activityScheduleId = allocation.activitySchedule.activityScheduleId,
         prisonerNumber = "123456",
       ),
-    ) doReturn listOf(todaysHistoricAttendance, todaysFutureAttendance, tomorrowsFutureAttendance)
+    ) doReturn listOf(pastAttendance, futureAttendance)
 
     handler.deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
 
-    verify(todaysHistoricScheduledInstance, never()).remove(todaysHistoricAttendance)
-    verify(todaysFuturescheduledInstance).remove(todaysFutureAttendance)
-    verify(tomorrowsScheduledInstance).remove(tomorrowsFutureAttendance)
-  }
-
-  private fun scheduledInstanceOn(date: LocalDate, time: LocalTime): ScheduledInstance = mock {
-    on { sessionDate } doReturn date
-    on { startTime } doReturn time
+    verify(pastScheduledInstance, never()).remove(pastAttendance)
+    verify(futureScheduledInstance).remove(futureAttendance)
   }
 
   private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {
