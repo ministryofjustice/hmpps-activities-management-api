@@ -9,6 +9,6 @@ CREATE TABLE planned_suspension (
   planned_end_date        date,
   planned_by              varchar(100) NOT NULL,
   planned_at              timestamp    NOT NULL,
-  updated_by              varchar(100) NOT NULL,
-  updated_at              timestamp    NOT NULL
+  updated_by              varchar(100),
+  updated_at              timestamp
 );

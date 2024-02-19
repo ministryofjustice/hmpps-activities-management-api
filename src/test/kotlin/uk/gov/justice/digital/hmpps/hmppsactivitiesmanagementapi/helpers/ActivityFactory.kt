@@ -311,7 +311,6 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
           plannedStartDate = this.startDate,
           plannedReason = "Planned reason",
           plannedBy = "Test",
-          updatedBy = "Test",
         ),
       )
     }
@@ -376,7 +375,7 @@ internal fun prisonPayBandsLowMediumHigh(prisonCode: String = MOORLAND_PRISON_CO
   ),
 )
 
-internal fun attendance() = schedule().instances().first().attendances.first()
+internal fun attendance(attendanceId: Long = 1) = schedule().instances().first().attendances.first().copy(attendanceId)
 
 internal fun attendanceList() = listOf(
   AllAttendance(

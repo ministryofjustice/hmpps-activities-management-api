@@ -781,7 +781,6 @@ class AllocationTest {
       plannedStartDate = allocation1.startDate,
       plannedReason = "Planned reason",
       plannedBy = "Test",
-      updatedBy = "Test",
     )
 
     assertThatThrownBy { allocation2.addPlannedSuspension(plannedSuspension) }
@@ -804,7 +803,6 @@ class AllocationTest {
           plannedStartDate = LocalDate.now().plusWeeks(1),
           plannedReason = "Planned reason",
           plannedBy = "Test",
-          updatedBy = "Test",
         ),
       )
     }

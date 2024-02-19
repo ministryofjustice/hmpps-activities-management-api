@@ -36,7 +36,7 @@ class AllocationsService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
-  private val attendanceSuspensionService: AttendanceSuspensionService,
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -57,12 +57,17 @@ class AllocationsService(
   }
 
   @Transactional
-  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String) =
+  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     transactionHandler.newSpringTransaction {
-      val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
-        ?: throw EntityNotFoundException("Allocation $allocationId not found at $prisonCode.")
+      val allocation =
+        allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
+          ?: throw EntityNotFoundException("Allocation $allocationId not found at $prisonCode.")
 
-      require(allocation.status(PrisonerStatus.ENDED).not()) { "Ended allocations cannot be updated" }
+      require(
+        allocation.status(PrisonerStatus.ENDED).not(),
+      ) { "Ended allocations cannot be updated" }
+
+      val updatedAttendanceIds = mutableSetOf<Long>()
 
       applyStartDateUpdate(request, allocation)
       applyEndDateUpdate(request, allocation, updatedBy)
@@ -70,15 +75,21 @@ class AllocationsService(
       applyPayBandUpdate(request, allocation)
       applyReasonCode(request, allocation, updatedBy)
       applyExclusionsUpdate(request, allocation)
-      applySuspendUpdate(request, allocation, updatedBy)
+      applySuspendUpdate(request, allocation, updatedBy).let { updatedAttendanceIds.addAll(it) }
 
       allocationRepository.saveAndFlush(allocation)
 
-      allocation.toModel()
-    }.also {
-      log.info("Sending allocation amended event for allocation ${it.id}")
-      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.id)
+      allocation.toModel() to updatedAttendanceIds
+    }.let { (allocation, updatedAttendanceIds) ->
+      log.info("Sending allocation amended event for allocation ${allocation.id}")
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.id)
+      updatedAttendanceIds.forEach {
+        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it)
+      }
+
+      return allocation
     }
+  }
 
   private fun applyReasonCode(
     request: AllocationUpdateRequest,
@@ -180,21 +191,20 @@ class AllocationsService(
     request: AllocationUpdateRequest,
     allocation: Allocation,
     byWhom: String,
-  ) {
+  ): Set<Long> {
     request.suspendFrom?.let { suspendFrom ->
       requireNotNull(request.suspensionReason) { "Suspension reason must be provided when suspensionFrom date is provided" }
       require(suspendFrom.between(allocation.startDate, allocation.endDate)) { "Allocation ${allocation.allocationId}: Suspension start date must be between the allocation start and end dates" }
 
       val plannedSuspension = allocation.plannedSuspension()
       if (plannedSuspension == null || plannedSuspension.hasStarted()) {
-        plannedSuspension?.endNow()
+        plannedSuspension?.endNow(byWhom)
         allocation.addPlannedSuspension(
           PlannedSuspension(
             allocation = allocation,
             plannedStartDate = suspendFrom,
             plannedReason = request.suspensionReason,
             plannedBy = byWhom,
-            updatedBy = byWhom,
           ),
         )
       } else {
@@ -216,14 +226,18 @@ class AllocationsService(
       plannedSuspension.endOn(suspendUntil, byWhom)
     }
 
-    allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let {
-      it.activatePlannedSuspension()
-      attendanceSuspensionService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), it)
+    val updatedAttendanceIds = mutableSetOf<Long>()
+
+    allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
+      alloc.activatePlannedSuspension()
+      attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
     }
-    allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let {
-      it.reactivateSuspension()
-      attendanceSuspensionService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
+    allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
+      alloc.reactivateSuspension()
+      attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
     }
+
+    return updatedAttendanceIds
   }
 
   private fun String?.toDeallocationReason() =

@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.Ser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
@@ -37,7 +37,7 @@ class ActivitiesChangedEventHandler(
   private val transactionHandler: TransactionHandler,
   private val waitingListService: WaitingListService,
   private val outboundEventsService: OutboundEventsService,
-  private val attendanceSuspensionService: AttendanceSuspensionService,
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
 ) : EventHandler<ActivitiesChangedEvent> {
 
   companion object {
@@ -86,10 +86,13 @@ class ActivitiesChangedEventHandler(
         )
           .excludingFuturePendingAllocations()
           .autoSuspendPrisonersAllocations(now, event)
+          .map { it to attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(now, it) }
       }.let { suspendedAllocations ->
         suspendedAllocations.forEach {
-          attendanceSuspensionService.suspendFutureAttendancesForAllocation(now, it)
-          outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+          outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
+          it.second.forEach { attendance ->
+            outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+          }
         }.also { log.info("Sending allocation amended events.") }
       }
     }

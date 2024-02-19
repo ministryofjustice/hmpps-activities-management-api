@@ -26,29 +26,30 @@ data class PlannedSuspension(
   private var plannedReason: String,
   private var plannedBy: String,
   private var plannedAt: LocalDateTime = LocalDateTime.now(),
-  private var updatedBy: String,
-  private var updatedAt: LocalDateTime = LocalDateTime.now(),
   private var plannedEndDate: LocalDate? = null,
 ) {
+  private var updatedBy: String? = null
+  private var updatedAt: LocalDateTime? = null
 
-  fun allocation() = allocation
   fun startDate() = plannedStartDate
   fun endDate() = plannedEndDate
   fun plannedReason() = plannedReason
   fun plannedBy() = plannedBy
 
   fun hasStarted() = plannedStartDate.onOrBefore(LocalDate.now())
-  fun endOn(date: LocalDate, byWhom: String) = run {
+  fun endOn(date: LocalDate, byWhom: String) = apply {
     plannedEndDate = date
     updatedBy = byWhom
     updatedAt = LocalDateTime.now()
   }
-  fun endNow() = run { plannedEndDate = LocalDate.now() }
-  fun plan(reason: String, startDate: LocalDate, byWhom: String) = run {
+  fun endNow(byWhom: String) {
+    plannedEndDate = LocalDate.now()
+    updatedAt = LocalDateTime.now()
+    updatedBy = byWhom
+  }
+  fun plan(reason: String, startDate: LocalDate, byWhom: String) = apply {
     plannedReason = reason
     plannedStartDate = startDate
-    plannedBy = byWhom
-    plannedAt = LocalDateTime.now()
     updatedBy = byWhom
     updatedAt = LocalDateTime.now()
   }

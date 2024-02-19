@@ -247,7 +247,6 @@ class ManageAttendancesServiceTest {
           plannedStartDate = this.startDate,
           plannedReason = "Planned reason",
           plannedBy = "Test",
-          updatedBy = "Test",
         ),
       )
     }.activatePlannedSuspension()
@@ -351,7 +350,6 @@ class ManageAttendancesServiceTest {
           plannedStartDate = this.startDate,
           plannedReason = "Planned reason",
           plannedBy = "Test",
-          updatedBy = "Test",
         ),
       )
     }.activatePlannedSuspension()

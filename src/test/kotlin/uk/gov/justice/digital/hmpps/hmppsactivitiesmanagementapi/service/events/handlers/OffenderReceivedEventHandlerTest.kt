@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -33,11 +33,11 @@ class OffenderReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
-  private val attendanceSuspensionService: AttendanceSuspensionService = mock()
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceSuspensionService, TransactionHandler(), outboundEventsService)
+    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceSuspensionDomainService, TransactionHandler(), outboundEventsService)
 
   @BeforeEach
   fun beforeTests() {
@@ -84,7 +84,6 @@ class OffenderReceivedEventHandlerTest {
             plannedStartDate = this.startDate,
             plannedReason = "Planned reason",
             plannedBy = "Test",
-            updatedBy = "Test",
           ),
         )
       }.autoSuspend(now, "Auto Reason")
@@ -96,7 +95,6 @@ class OffenderReceivedEventHandlerTest {
             plannedStartDate = this.startDate,
             plannedReason = "Planned reason",
             plannedBy = "Test",
-            updatedBy = "Test",
           ),
         )
       }.activatePlannedSuspension()
@@ -139,6 +137,6 @@ class OffenderReceivedEventHandlerTest {
 
     handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
-    verify(attendanceSuspensionService).resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))
   }
 }

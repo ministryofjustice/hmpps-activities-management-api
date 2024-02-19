@@ -439,7 +439,7 @@ class ManageAllocationsServiceTest {
 
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
 
-    service.allocations(AllocationOperation.SUSPENSION_START_TODAY)
+    service.suspendAllocationsDueToBeSuspended(prison.code)
 
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
 
@@ -454,7 +454,7 @@ class ManageAllocationsServiceTest {
 
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
       activatePlannedSuspension()
-      plannedSuspension()!!.endNow()
+      plannedSuspension()!!.endNow("TEST")
     }
 
     whenever(
@@ -463,7 +463,7 @@ class ManageAllocationsServiceTest {
 
     suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
 
-    service.allocations(AllocationOperation.SUSPENSION_END_TODAY)
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
 
     suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
 

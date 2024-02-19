@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
@@ -47,7 +47,7 @@ class ActivitiesChangedEventHandlerTest {
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val attendanceSuspensionService: AttendanceSuspensionService = mock()
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
     rolloutPrisonRepository,
@@ -57,7 +57,7 @@ class ActivitiesChangedEventHandlerTest {
     TransactionHandler(),
     waitingListService,
     outboundEventsService,
-    attendanceSuspensionService,
+    attendanceSuspensionDomainService,
   )
 
   @BeforeEach
@@ -142,7 +142,7 @@ class ActivitiesChangedEventHandlerTest {
 
     handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
-    verify(attendanceSuspensionService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
   }
 
   @Test

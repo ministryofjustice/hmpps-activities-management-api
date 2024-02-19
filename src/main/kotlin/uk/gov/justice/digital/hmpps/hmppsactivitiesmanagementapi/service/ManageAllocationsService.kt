@@ -56,17 +56,19 @@ class ManageAllocationsService(
         log.info("Expiring allocations due to expire today.")
         deallocateAllocationsDueToExpire()
       }
-
-      AllocationOperation.SUSPENSION_START_TODAY -> {
-        log.info("Suspending allocations due to be suspended from today.")
-        allocationsDueToBeSuspended().suspend()
-      }
-
-      AllocationOperation.SUSPENSION_END_TODAY -> {
-        log.info("Un-suspending allocations due to be un-suspended today.")
-        allocationsDueToBeUnsuspended().unsuspend()
-      }
     }
+  }
+
+  fun suspendAllocationsDueToBeSuspended(prisonCode: String) {
+    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.ACTIVE)
+      .filter { it.isCurrentlySuspended() }
+      .suspend()
+  }
+
+  fun unsuspendAllocationsDueToBeUnsuspended(prisonCode: String) {
+    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.SUSPENDED)
+      .filterNot { it.isCurrentlySuspended() }
+      .unsuspend()
   }
 
   /**
@@ -151,16 +153,6 @@ class ManageAllocationsService(
 
   private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
     flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
-
-  private fun allocationsDueToBeSuspended(): List<Allocation> =
-    forEachRolledOutPrison()
-      .flatMap { prison -> allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE) }
-      .filter { it.isCurrentlySuspended() }
-
-  private fun allocationsDueToBeUnsuspended(): List<Allocation> =
-    forEachRolledOutPrison()
-      .flatMap { prison -> allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED) }
-      .filterNot { it.isCurrentlySuspended() }
 
   private fun forEachRolledOutPrison() =
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.filterNotNull()
@@ -306,6 +298,4 @@ class ManageAllocationsService(
 enum class AllocationOperation {
   EXPIRING_TODAY,
   STARTING_TODAY,
-  SUSPENSION_START_TODAY,
-  SUSPENSION_END_TODAY,
 }

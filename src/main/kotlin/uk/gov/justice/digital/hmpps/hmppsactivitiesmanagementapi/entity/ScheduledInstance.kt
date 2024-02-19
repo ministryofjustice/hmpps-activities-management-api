@@ -146,8 +146,7 @@ data class ScheduledInstance(
 
   fun dateTime() = sessionDate.atTime(startTime)
 
-  fun isFuture(dateTime: LocalDateTime) = sessionDate == dateTime.toLocalDate() &&
-    startTime.isAfter(dateTime.toLocalTime()) || sessionDate.isAfter(dateTime.toLocalDate())
+  fun isFuture(dateTime: LocalDateTime) = sessionDate.atTime(startTime).isAfter(dateTime)
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

@@ -49,6 +49,7 @@ import java.time.LocalDateTime
   properties = [
     "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
   ],
 )
 class AllocationIntegrationTest : IntegrationTestBase() {
@@ -288,13 +289,13 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
     with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
       occurredAt isCloseTo TimeSource.now()
     }
     verifyNoMoreInteractions(eventsPublisher)
@@ -333,13 +334,13 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.attendance-amended"
-      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
     with(eventCaptor.secondValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      additionalInformation isEqualTo PrisonerAttendanceInformation(2)
       occurredAt isCloseTo TimeSource.now()
     }
     verifyNoMoreInteractions(eventsPublisher)

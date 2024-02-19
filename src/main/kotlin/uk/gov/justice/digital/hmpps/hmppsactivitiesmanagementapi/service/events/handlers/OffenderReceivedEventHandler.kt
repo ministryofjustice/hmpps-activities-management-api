@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -31,7 +31,7 @@ class OffenderReceivedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val allocationRepository: AllocationRepository,
   private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
-  private val attendanceSuspensionService: AttendanceSuspensionService,
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
 ) : EventHandler<OffenderReceivedEvent> {
@@ -52,7 +52,10 @@ class OffenderReceivedEventHandler(
               .resetFutureSuspendedAttendances()
           }.let { resetAllocations ->
             resetAllocations.forEach {
-              outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.allocationId)
+              outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
+              it.second.forEach { attendance ->
+                outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+              }
             }.also { log.info("Sending allocation amended events.") }
           }
         } else {
@@ -82,9 +85,11 @@ class OffenderReceivedEventHandler(
       }
 
   private fun List<Allocation>.resetFutureSuspendedAttendances() =
-    onEach {
+    map {
       if (it.status(PrisonerStatus.ACTIVE)) {
-        attendanceSuspensionService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
+        it to attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
+      } else {
+        it to emptyList()
       }
     }
 }
