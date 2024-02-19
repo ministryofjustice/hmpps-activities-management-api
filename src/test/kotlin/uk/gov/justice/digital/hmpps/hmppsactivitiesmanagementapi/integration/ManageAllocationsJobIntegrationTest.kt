@@ -53,6 +53,7 @@ import java.time.LocalDateTime
   properties = [
     "feature.audit.service.local.enabled=true",
     "feature.audit.service.hmpps.enabled=true",
+    "jobs.deallocate-allocations-ending.days-start=2",
   ],
 )
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
@@ -115,6 +116,29 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-12.sql")
   @Test
   fun `deallocate offenders for activity with no end date`() {
+    whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      onEach { it isStatus ACTIVE }
+    }
+
+    webTestClient.manageAllocations(withDeallocateEnding = true)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("A11111A") isStatus ACTIVE
+      prisoner("A22222A") isDeallocatedWithReason ENDED
+      prisoner("A33333A") isStatus ACTIVE
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-28.sql")
+  @Test
+  fun `do not deallocate offenders for activity if allocated end date is before job window`() {
     whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
 
     with(allocationRepository.findAll()) {

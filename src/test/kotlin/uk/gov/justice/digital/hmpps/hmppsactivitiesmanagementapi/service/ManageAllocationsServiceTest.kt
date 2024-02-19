@@ -73,7 +73,7 @@ class ManageAllocationsServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
     whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
 
     service.endAllocationsDueToEnd(prison.code, LocalDate.now())
 
@@ -88,7 +88,7 @@ class ManageAllocationsServiceTest {
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
 
     whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
 
     service.endAllocationsDueToEnd(prison.code, LocalDate.now())
 
@@ -107,7 +107,7 @@ class ManageAllocationsServiceTest {
     allocation.deallocateOn(today, DeallocationReason.OTHER, "by test")
 
     whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
 
     service.endAllocationsDueToEnd(prison.code, LocalDate.now())
 
@@ -123,7 +123,7 @@ class ManageAllocationsServiceTest {
     val allocation = schedule.allocations().first().apply { endDate = today }.also { it.verifyIsActive() }
 
     whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
 
     service.endAllocationsDueToEnd(prison.code, LocalDate.now())
 
@@ -140,7 +140,7 @@ class ManageAllocationsServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
     whenever(rolloutPrisonRepo.findByCode(prison.code)) doReturn prison
-    whenever(activityScheduleRepo.getActivitySchedulesWithFilteredInstances(prison.code, LocalDate.now())) doReturn listOf(schedule)
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
 
     service.endAllocationsDueToEnd(prison.code, LocalDate.now())
 

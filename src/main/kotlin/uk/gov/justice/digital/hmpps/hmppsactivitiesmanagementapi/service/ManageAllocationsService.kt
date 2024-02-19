@@ -66,7 +66,7 @@ class ManageAllocationsService(
     }
 
     transactionHandler.newSpringTransaction {
-      activityScheduleRepository.getActivitySchedulesWithFilteredInstances(prisonCode, date).flatMap { schedule ->
+      activityScheduleRepository.findAllByActivityPrisonCode(prisonCode).flatMap { schedule ->
         if (schedule.endsOn(date)) {
           declineWaitingListsFor(schedule)
           schedule.deallocateActiveAllocationsNow()
