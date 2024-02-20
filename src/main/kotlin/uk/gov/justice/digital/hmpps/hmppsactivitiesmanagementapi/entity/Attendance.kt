@@ -154,6 +154,7 @@ data class Attendance(
     newCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
+    require(!scheduledInstance.cancelled || reason?.code == AttendanceReasonEnum.CANCELLED) { "Attendance record for prisoner '$prisonerNumber' cannot be marked as the session is cancelled" }
     require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
 
     // This check is required because attendances can be created in a suspended or cancelled state as well as waiting.

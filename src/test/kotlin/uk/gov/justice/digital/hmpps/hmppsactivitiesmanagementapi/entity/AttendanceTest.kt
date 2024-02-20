@@ -251,6 +251,32 @@ class AttendanceTest {
   }
 
   @Test
+  fun `marking attendance should fail if session is cancelled`() {
+    val cancelledInstance = instance.copy(cancelled = true)
+    val attendance = Attendance(
+      scheduledInstance = cancelledInstance,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      status = AttendanceStatus.COMPLETED,
+    )
+
+    assertThatThrownBy {
+      attendance.mark(
+        principalName = "New user",
+        reason = attendanceReason(AttendanceReasonEnum.ATTENDED),
+        newStatus = AttendanceStatus.COMPLETED,
+        newComment = null,
+        newIssuePayment = null,
+        newIncentiveLevelWarningIssued = null,
+        newCaseNoteId = null,
+        newOtherAbsenceReason = null,
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance record for prisoner 'A1234AA' cannot be marked as the session is cancelled")
+  }
+
+  @Test
   fun `can complete attendance without payment`() {
     val attendance = with(Attendance(scheduledInstance = instance, prisonerNumber = "123456")) {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
