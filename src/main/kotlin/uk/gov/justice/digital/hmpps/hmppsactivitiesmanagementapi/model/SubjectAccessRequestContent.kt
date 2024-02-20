@@ -7,6 +7,7 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.custom.AttendanceSummary as EntitySarAttendanceSummary
 
 data class SubjectAccessRequestContent(
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
@@ -22,6 +23,9 @@ data class SubjectAccessRequestContent(
 
   @Schema(description = "All of the allocations for the prisoner for the period")
   val allocations: List<SarAllocation>,
+
+  @Schema(description = "All of the attendances for the prisoner for the period")
+  val attendanceSummary: List<SarAttendanceSummary>,
 
   @Schema(description = "Waiting list applications for a prisoner")
   val waitingListApplications: List<SarWaitingList>,
@@ -71,6 +75,19 @@ data class SarAllocation(
     allocation.activitySummary,
     allocation.payBand,
     allocation.createdDate,
+  )
+}
+
+data class SarAttendanceSummary(
+  @Schema(description = "The summary reason for a recorded prisoner attendance", example = "ATTENDED")
+  val attendanceReasonCode: String,
+
+  @Schema(description = "A count of attendance for a given reason", example = "PVI")
+  val count: Long,
+) {
+  constructor(attendance: EntitySarAttendanceSummary) : this(
+    attendance.attendanceReasonCode,
+    attendance.count,
   )
 }
 
