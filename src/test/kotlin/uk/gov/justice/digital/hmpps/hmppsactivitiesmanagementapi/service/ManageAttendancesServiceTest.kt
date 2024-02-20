@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -239,7 +240,16 @@ class ManageAttendancesServiceTest {
   fun `attendance is created and marked suspended and unpaid when an allocation is suspended`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    allocation.userSuspend(today.atStartOfDay(), "reason", "user")
+    allocation.apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = this.startDate,
+          plannedReason = "Planned reason",
+          plannedBy = "Test",
+        ),
+      )
+    }.activatePlannedSuspension()
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
     whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
@@ -333,7 +343,16 @@ class ManageAttendancesServiceTest {
   fun `attendance is created as suspended and unpaid when a session is cancelled and allocation is suspended`() {
     instance.activitySchedule.activity.attendanceRequired = true
 
-    allocation.userSuspend(today.atStartOfDay(), "reason", "user")
+    allocation.apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = this.startDate,
+          plannedReason = "Planned reason",
+          plannedBy = "Test",
+        ),
+      )
+    }.activatePlannedSuspension()
 
     instance.cancelSessionAndAttendances(
       reason = "Cancel test",

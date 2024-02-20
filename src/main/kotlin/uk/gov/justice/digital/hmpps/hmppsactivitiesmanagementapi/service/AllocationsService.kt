@@ -6,9 +6,13 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -21,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -31,6 +36,7 @@ class AllocationsService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -51,12 +57,17 @@ class AllocationsService(
   }
 
   @Transactional
-  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String) =
+  fun updateAllocation(allocationId: Long, request: AllocationUpdateRequest, prisonCode: String, updatedBy: String): ModelAllocation {
     transactionHandler.newSpringTransaction {
-      val allocation = allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
-        ?: throw EntityNotFoundException("Allocation $allocationId not found.")
+      val allocation =
+        allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)
+          ?: throw EntityNotFoundException("Allocation $allocationId not found at $prisonCode.")
 
-      require(allocation.status(PrisonerStatus.ENDED).not()) { "Ended allocations cannot be updated" }
+      require(
+        allocation.status(PrisonerStatus.ENDED).not(),
+      ) { "Ended allocations cannot be updated" }
+
+      val updatedAttendanceIds = mutableSetOf<Long>()
 
       applyStartDateUpdate(request, allocation)
       applyEndDateUpdate(request, allocation, updatedBy)
@@ -64,14 +75,21 @@ class AllocationsService(
       applyPayBandUpdate(request, allocation)
       applyReasonCode(request, allocation, updatedBy)
       applyExclusionsUpdate(request, allocation)
+      applySuspendUpdate(request, allocation, updatedBy).let { updatedAttendanceIds.addAll(it) }
 
       allocationRepository.saveAndFlush(allocation)
 
-      allocation.toModel()
-    }.also {
-      log.info("Sending allocation amended event for allocation ${it.id}")
-      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.id)
+      allocation.toModel() to updatedAttendanceIds
+    }.let { (allocation, updatedAttendanceIds) ->
+      log.info("Sending allocation amended event for allocation ${allocation.id}")
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.id)
+      updatedAttendanceIds.forEach {
+        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it)
+      }
+
+      return allocation
     }
+  }
 
   private fun applyReasonCode(
     request: AllocationUpdateRequest,
@@ -167,6 +185,59 @@ class AllocationsService(
     request.payBandId?.apply {
       allocation.payBand = prisonPayBandRepository.findOrThrowIllegalArgument(this)
     }
+  }
+
+  private fun applySuspendUpdate(
+    request: AllocationUpdateRequest,
+    allocation: Allocation,
+    byWhom: String,
+  ): Set<Long> {
+    request.suspendFrom?.let { suspendFrom ->
+      requireNotNull(request.suspensionReason) { "Suspension reason must be provided when suspensionFrom date is provided" }
+      require(suspendFrom.between(allocation.startDate, allocation.endDate)) { "Allocation ${allocation.allocationId}: Suspension start date must be between the allocation start and end dates" }
+
+      val plannedSuspension = allocation.plannedSuspension()
+      if (plannedSuspension == null || plannedSuspension.hasStarted()) {
+        plannedSuspension?.endNow(byWhom)
+        allocation.addPlannedSuspension(
+          PlannedSuspension(
+            allocation = allocation,
+            plannedStartDate = suspendFrom,
+            plannedReason = request.suspensionReason,
+            plannedBy = byWhom,
+          ),
+        )
+      } else {
+        plannedSuspension.plan(request.suspensionReason, suspendFrom, byWhom)
+      }
+    }
+
+    request.suspendUntil?.let { suspendUntil ->
+      val plannedSuspension = allocation.plannedSuspension()
+        ?: throw IllegalArgumentException("Error setting end date for suspension - there are no planned suspensions to end for allocation with id ${allocation.allocationId}")
+
+      require(suspendUntil.onOrAfter(plannedSuspension.startDate())) {
+        "Suspension end date must be on or after the start date: ${plannedSuspension.startDate().toIsoDate()}"
+      }
+      require(allocation.plannedEndDate() == null || suspendUntil.onOrBefore(allocation.plannedEndDate()!!)) {
+        "Suspension end date must be on or before the allocation end date: ${allocation.plannedEndDate()!!.toIsoDate()}"
+      }
+
+      plannedSuspension.endOn(suspendUntil, byWhom)
+    }
+
+    val updatedAttendanceIds = mutableSetOf<Long>()
+
+    allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
+      alloc.activatePlannedSuspension()
+      attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
+    }
+    allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
+      alloc.reactivateSuspension()
+      attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
+    }
+
+    return updatedAttendanceIds
   }
 
   private fun String?.toDeallocationReason() =

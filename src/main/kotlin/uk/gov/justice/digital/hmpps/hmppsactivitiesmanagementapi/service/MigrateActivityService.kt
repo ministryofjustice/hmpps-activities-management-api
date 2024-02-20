@@ -50,6 +50,7 @@ const val RISLEY_PRISON_CODE = "RSI"
 class MigrateActivityService(
   private val rolloutPrisonService: RolloutPrisonService,
   private val activityRepository: ActivityRepository,
+  private val prisonRegimeService: PrisonRegimeService,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val incentivesApiClient: IncentivesApiClient,
@@ -151,8 +152,10 @@ class MigrateActivityService(
   fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     val activity = buildActivityEntity(request)
+    val prisonRegime = prisonRegimeService.getPrisonTimeSlots(request.prisonCode)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      activity.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
+      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
+      activity.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
     }
     return listOf(activity)
   }
@@ -172,14 +175,16 @@ class MigrateActivityService(
   fun genericSplitActivity(request: ActivityMigrateRequest): List<Activity> {
     // Build the first activity
     val activity1 = buildActivityEntity(request, true, 2, 1)
+    val prisonRegime = prisonRegimeService.getPrisonTimeSlots(request.prisonCode)
 
     // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
+      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity1.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity1.schedules().first().addSlot(2, it.startTime to it.endTime, getRequestDaysOfWeek(it))
+        activity1.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
       }
     }
 
@@ -188,11 +193,12 @@ class MigrateActivityService(
 
     // Add the afternoon sessions to week 1 and the morning sessions to week 2
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
+      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity2.schedules().first().addSlot(1, it.startTime to it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
       }
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity2.schedules().first().addSlot(2, it.startTime to it.endTime, getRequestDaysOfWeek(it))
+        activity2.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
       }
     }
 
@@ -505,10 +511,20 @@ class MigrateActivityService(
         endDate = request.endDate,
         exclusions = request.exclusions?.consolidateMatchingSlots(),
         allocatedBy = MIGRATION_USER,
-      )
-
-      if (request.suspendedFlag) {
-        log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+      ).apply {
+        if (request.suspendedFlag) {
+          // TODO: Uncomment the below code when the user has a way to un-suspend via the UI
+          log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
+//          addPlannedSuspension(
+//            PlannedSuspension(
+//              allocation = this,
+//              plannedStartDate = startDate,
+//              plannedReason = "Migrated as suspended",
+//              plannedBy = MIGRATION_USER,
+//              updatedBy = MIGRATION_USER,
+//            ),
+//          )
+        }
       }
 
       val savedSchedule = activityScheduleRepository.saveAndFlush(schedule)

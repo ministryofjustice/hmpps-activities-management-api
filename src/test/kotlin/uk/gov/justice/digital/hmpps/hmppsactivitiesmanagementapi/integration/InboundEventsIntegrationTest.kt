@@ -24,7 +24,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
@@ -488,7 +490,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatAllocationsAreActiveFor("A11111A")
 
-    // Suspending first so can unspend afterwards.
+    // Suspending first so can unsuspend afterwards.
     service.process(
       activitiesChangedEvent(
         prisonId = PENTONVILLE_PRISON_CODE,
@@ -587,6 +589,47 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 2L)
     verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-received-event-with-planned-suspension.sql")
+  fun `auto-suspended allocation is suspended and future attendances are unchanged when there is a planned suspension on receipt of offender received event`() {
+    // Fixture necessary for the received event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
+
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    with(allocationRepository.getReferenceById(1L)) {
+      status(PrisonerStatus.AUTO_SUSPENDED) isBool true
+    }
+    attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
+      it.status() isEqualTo AttendanceStatus.COMPLETED
+      it.attendanceReason isNotEqualTo null
+      it.attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+    }
+
+    service.process(
+      offenderReceivedFromTemporaryAbsence(
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        prisonerNumber = "A11111A",
+      ),
+    )
+
+    with(allocationRepository.getReferenceById(1L)) {
+      status(PrisonerStatus.SUSPENDED) isBool true
+    }
+
+    // These attendance records have not been modified
+    attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
+      it.status() isEqualTo AttendanceStatus.COMPLETED
+      it.attendanceReason isNotEqualTo null
+      it.attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+    }
+
+    verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
   }
 

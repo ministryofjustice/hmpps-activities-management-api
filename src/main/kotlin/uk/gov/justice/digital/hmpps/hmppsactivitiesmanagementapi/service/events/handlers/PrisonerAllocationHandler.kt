@@ -44,7 +44,7 @@ class PrisonerAllocationHandler(
 
       allocations
         .deallocateAffectedAllocations(reason, prisonCode, prisonerNumber)
-        .removeFutureAttendances(prisonCode)
+        .removeFutureAttendances()
 
       allocationRepository.saveAllAndFlush(allocations)
     }.onEach { endedAllocation ->
@@ -63,21 +63,20 @@ class PrisonerAllocationHandler(
         log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
       }
 
-  private fun List<Allocation>.removeFutureAttendances(prisonCode: String): List<Allocation> {
+  private fun List<Allocation>.removeFutureAttendances(): List<Allocation> {
     val now = LocalDateTime.now()
 
     forEach { allocation ->
-      attendanceRepository.findAttendancesOnOrAfterDateForPrisoner(
-        prisonCode = prisonCode,
+      attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
         sessionDate = LocalDate.now(),
+        activityScheduleId = allocation.activitySchedule.activityScheduleId,
         prisonerNumber = allocation.prisonerNumber,
-      ).filter { attendance ->
-        (attendance.scheduledInstance.sessionDate == now.toLocalDate() && attendance.scheduledInstance.startTime > now.toLocalTime()) ||
-          (attendance.scheduledInstance.sessionDate > now.toLocalDate())
-      }.onEach { futureAttendance ->
-        log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
-        futureAttendance.scheduledInstance.remove(futureAttendance)
-      }
+      )
+        .filter { attendance -> attendance.scheduledInstance.isFuture(now) }
+        .onEach { futureAttendance ->
+          log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
+          futureAttendance.scheduledInstance.remove(futureAttendance)
+        }
     }
 
     return this

@@ -8,23 +8,30 @@ import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.deallocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -46,7 +53,8 @@ class AllocationServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val scheduleRepository: ActivityScheduleRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService)
+  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, attendanceSuspensionDomainService)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -330,7 +338,7 @@ class AllocationServiceTest {
       service.updateAllocation(1, AllocationUpdateRequest(startDate = null), MOORLAND_PRISON_CODE, "user")
     }
       .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Allocation 1 not found.")
+      .hasMessage("Allocation 1 not found at MDI.")
 
     verifyNoInteractions(outboundEventsService)
   }
@@ -522,5 +530,343 @@ class AllocationServiceTest {
       .hasMessage("Updating allocation with id 0: No AM slots in week number 3")
 
     verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension reason must be provided if start date is provided`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate,
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Suspension reason must be provided when suspensionFrom date is provided")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension start date must be between the start and end date of the allocation`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.minusDays(1),
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation 0: Suspension start date must be between the allocation start and end dates")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - a new planned suspension is created if one doesnt exist`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.plannedSuspension()!!) {
+      startDate() isEqualTo allocation.startDate.plusWeeks(1)
+      plannedReason() isEqualTo "reason"
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - a new planned suspension is created if an existing one has already started`() {
+    val allocation = allocation(withPlannedSuspensions = true)
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    val originalSuspension = allocation.plannedSuspension()!!
+    originalSuspension.endDate() isEqualTo null
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    val newSuspension = allocationCaptor.firstValue.plannedSuspension()!!
+
+    originalSuspension.endDate() isEqualTo LocalDate.now()
+    with(newSuspension) {
+      newSuspension isNotEqualTo originalSuspension
+      startDate() isEqualTo allocation.startDate.plusWeeks(1)
+      plannedReason() isEqualTo "reason"
+      endDate() isEqualTo null
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - an existing planned suspension is updated if it hasnt started yet`() {
+    val allocation = allocation().apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = startDate.plusWeeks(1),
+          plannedReason = "Planned reason",
+          plannedBy = "Test",
+        ),
+      )
+    }
+
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate,
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    val originalSuspension = allocation.plannedSuspension()!!
+    originalSuspension.startDate() isEqualTo allocation.startDate.plusWeeks(1)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    val newSuspension = allocationCaptor.firstValue.plannedSuspension()!!
+
+    with(newSuspension) {
+      newSuspension isEqualTo originalSuspension
+      startDate() isEqualTo allocation.startDate
+      plannedReason() isEqualTo "reason"
+      endDate() isEqualTo null
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension start date today immediately suspends the allocation`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate,
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(any(), eq(allocation))).thenReturn(
+      listOf(attendance(1), attendance(2)),
+    )
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.status(PrisonerStatus.SUSPENDED) isBool true
+
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension start date in the future does not immediately suspend the allocation`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.status(PrisonerStatus.ACTIVE) isBool true
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoInteractions(attendanceSuspensionDomainService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension start date in the future resets already suspended allocations`() {
+    val allocation = allocation(withPlannedSuspensions = true).apply { activatePlannedSuspension() }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      suspensionReason = "reason",
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))).thenReturn(
+      listOf(attendance(1), attendance(2)),
+    )
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.status(PrisonerStatus.ACTIVE) isBool true
+
+    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension end date throws error if no suspension to end`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendUntil = allocation.startDate.plusWeeks(1),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Error setting end date for suspension - there are no planned suspensions to end for allocation with id 0")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension end date throws error if end date is before the start date`() {
+    val allocation = allocation(withPlannedSuspensions = true)
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendUntil = allocation.startDate.minusDays(1),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Suspension end date must be on or after the start date: ${allocation.startDate.toIsoDate()}")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension end date throws error if end date is after the allocation end date`() {
+    val allocation = allocation(withPlannedSuspensions = true).apply { endDate = TimeSource.tomorrow() }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendUntil = allocation.plannedEndDate()!!.plusDays(1),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Suspension end date must be on or before the allocation end date: ${allocation.plannedEndDate()!!.toIsoDate()}")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension end date gets set`() {
+    val allocation = allocation(withPlannedSuspensions = true)
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendUntil = allocation.startDate.plusDays(1),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    with(allocationCaptor.firstValue.plannedSuspension()!!) {
+      endDate() isEqualTo allocation.startDate.plusDays(1)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension end date today immediately resets already suspended allocations`() {
+    val allocation = allocation(withPlannedSuspensions = true).apply { activatePlannedSuspension() }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    allocation.status(PrisonerStatus.SUSPENDED) isBool true
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendUntil = LocalDate.now(),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))).thenReturn(
+      listOf(attendance(1), attendance(2)),
+    )
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.status(PrisonerStatus.ACTIVE) isBool true
+
+    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
   }
 }

@@ -27,6 +27,22 @@ class ManageAllocationsJob(
           service.allocations(AllocationOperation.STARTING_TODAY)
         },
       )
+
+      jobRunner.runJob(
+        JobDefinition(jobType = JobType.START_SUSPENSIONS) {
+          getRolledOutPrisonCodes().forEach { prisonCode ->
+            service.suspendAllocationsDueToBeSuspended(prisonCode)
+          }
+        },
+      )
+
+      jobRunner.runJob(
+        JobDefinition(jobType = JobType.END_SUSPENSIONS) {
+          getRolledOutPrisonCodes().forEach { prisonCode ->
+            service.unsuspendAllocationsDueToBeUnsuspended(prisonCode)
+          }
+        },
+      )
     }
 
     if (withDeallocateEnding) {
