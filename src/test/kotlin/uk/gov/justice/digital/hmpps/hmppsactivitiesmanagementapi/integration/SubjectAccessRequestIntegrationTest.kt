@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.contain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Role
@@ -198,6 +199,79 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         extraInformation = "Prayer session",
         attended = "Unmarked",
         createdDate = LocalDate.of(2022, 10, 11),
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one attendance summaries for a subject access request`() {
+    val response = webTestClient.getSarContent("A4745DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 22))
+
+    response.attendanceSummary containsExactly listOf(
+      SarAttendanceSummary(
+        attendanceReasonCode = "ATTENDED",
+        count = 1,
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return two attendance summaries for a subject access request`() {
+    val response = webTestClient.getSarContent("G9372GQ", LocalDate.of(2023, 7, 20), LocalDate.of(2023, 7, 21))
+
+    response.attendanceSummary containsExactlyInAnyOrder listOf(
+      SarAttendanceSummary(
+        attendanceReasonCode = "ATTENDED",
+        count = 1,
+      ),
+      SarAttendanceSummary(
+        attendanceReasonCode = "CANCELLED",
+        count = 1,
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one attendance summaries for a single day query for a subject access request`() {
+    val response = webTestClient.getSarContent("G9372GQ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 21))
+
+    response.attendanceSummary containsExactlyInAnyOrder listOf(
+      SarAttendanceSummary(
+        attendanceReasonCode = "CANCELLED",
+        count = 1,
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should return one of two attendance summaries (one status is WAITING) for a subject access request`() {
+    val response = webTestClient.getSarContent("A4745DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 23))
+
+    response.attendanceSummary containsExactlyInAnyOrder listOf(
+      SarAttendanceSummary(
+        attendanceReasonCode = "ATTENDED",
+        count = 1,
+      ),
+    )
+  }
+
+  @Sql("classpath:test_data/seed-subject-access-request.sql")
+  @Test
+  fun `should two attendance summaries with different counts for a subject access request`() {
+    val response = webTestClient.getSarContent("A4743DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2024, 7, 21))
+
+    response.attendanceSummary containsExactlyInAnyOrder listOf(
+      SarAttendanceSummary(
+        attendanceReasonCode = "SUSPENDED",
+        count = 1,
+      ),
+      SarAttendanceSummary(
+        attendanceReasonCode = "ATTENDED",
+        count = 2,
       ),
     )
   }

@@ -27,10 +27,13 @@ class SarRepository(
   private val allocation: SarAllocationRepository,
   private val waitingList: SarWaitingListRepository,
   private val appointment: SarAppointmentRepository,
+  private val allAttendance: AllAttendanceRepository,
 ) {
   fun findAllocationsBy(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate) = allocation.findByPrisonerNumberAndCreatedDateBetween(prisonerNumber, fromDate, toDate.plusDays(1))
 
   fun findWaitingListsBy(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate) = waitingList.findByPrisonerNumberAndCreatedDateBetween(prisonerNumber, fromDate, toDate.plusDays(1))
 
   fun findAppointmentsBy(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate) = appointment.findByPrisonerNumberAndCreatedDateBetween(prisonerNumber, fromDate, toDate.plusDays(1))
+
+  fun findAttendanceBy(prisonerNumber: String, fromDate: LocalDate, toDate: LocalDate) = allAttendance.findAttendanceBy(prisonerNumber, fromDate, toDate)
 }
