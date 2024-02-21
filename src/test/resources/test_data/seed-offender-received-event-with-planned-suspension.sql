@@ -31,5 +31,5 @@ values (1, 1, 'A11111A', 7, null, current_timestamp, 'Activities Management Serv
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
 values (2, 2, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
 
-insert into planned_suspension(planned_suspension_id, allocation_id, planned_reason, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
-values (1, 1, 'reason', current_date - 2, current_date + 2, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
+values (1, 1, current_date - 2, current_date + 2, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);

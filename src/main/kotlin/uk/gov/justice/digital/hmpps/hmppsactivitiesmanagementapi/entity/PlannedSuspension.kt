@@ -23,18 +23,18 @@ data class PlannedSuspension(
   val allocation: Allocation,
 
   private var plannedStartDate: LocalDate,
-  private var plannedReason: String,
   private var plannedBy: String,
   private var plannedAt: LocalDateTime = LocalDateTime.now(),
   private var plannedEndDate: LocalDate? = null,
+  private var caseNoteId: Long? = null,
 ) {
   private var updatedBy: String? = null
   private var updatedAt: LocalDateTime? = null
 
   fun startDate() = plannedStartDate
   fun endDate() = plannedEndDate
-  fun plannedReason() = plannedReason
   fun plannedBy() = plannedBy
+  fun caseNoteId() = caseNoteId
 
   fun hasStarted() = plannedStartDate.onOrBefore(LocalDate.now())
   fun endOn(date: LocalDate, byWhom: String) = apply {
@@ -47,10 +47,10 @@ data class PlannedSuspension(
     updatedAt = LocalDateTime.now()
     updatedBy = byWhom
   }
-  fun plan(reason: String, startDate: LocalDate, byWhom: String) = apply {
-    plannedReason = reason
+  fun plan(startDate: LocalDate, byWhom: String, caseNoteId: Long?) = apply {
     plannedStartDate = startDate
     updatedBy = byWhom
     updatedAt = LocalDateTime.now()
+    this.caseNoteId = caseNoteId
   }
 }

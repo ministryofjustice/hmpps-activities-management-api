@@ -223,7 +223,7 @@ class ActivityScheduleService(
             var caseNoteId: Long? = null
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
-              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text, request.caseNote.type, subType, "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}").caseNoteId.toLong()
+              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text!!, request.caseNote.type!!, subType, "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}").caseNoteId.toLong()
             }
 
             deallocatePrisonerOn(

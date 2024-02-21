@@ -109,6 +109,15 @@ class LocalDateExtTest {
     }
   }
 
+  @Nested
+  @DisplayName("toMediumFormatStyle")
+  inner class ToMediumFormatStyle {
+    @Test
+    fun `to medium format style`() {
+      LocalDate.of(2024, 1, 1).toMediumFormatStyle() isEqualTo "1 Jan 2024"
+    }
+  }
+
   @Test
   fun `days ago`() {
     (1..10).forEach { it.daysAgo() isEqualTo LocalDate.now().minusDays(it.toLong()) }

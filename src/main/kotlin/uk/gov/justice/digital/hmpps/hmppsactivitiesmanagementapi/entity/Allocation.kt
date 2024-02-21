@@ -305,7 +305,7 @@ data class Allocation(
 
       prisonerStatus = PrisonerStatus.SUSPENDED
       suspendedTime = LocalDateTime.now()
-      suspendedReason = plannedSuspension.plannedReason()
+      suspendedReason = "Planned suspension"
       suspendedBy = plannedSuspension.plannedBy()
     }
 

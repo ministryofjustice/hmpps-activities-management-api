@@ -230,7 +230,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       1,
       AllocationUpdateRequest(
         suspendFrom = 5.daysFromNow(),
-        suspensionReason = "reason",
         suspendUntil = 10.daysFromNow(),
       ),
     )
@@ -239,7 +238,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       status(PrisonerStatus.ACTIVE) isBool true
       plannedSuspension() isNotEqualTo null
       plannedSuspension()!!.startDate() isEqualTo 5.daysFromNow()
-      plannedSuspension()!!.plannedReason() isEqualTo "reason"
       plannedSuspension()!!.endDate() isEqualTo 10.daysFromNow()
     }
 
@@ -260,7 +258,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       1,
       AllocationUpdateRequest(
         suspendFrom = TimeSource.today(),
-        suspensionReason = "reason",
       ),
     )
 
@@ -268,7 +265,6 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       status(PrisonerStatus.SUSPENDED) isBool true
       plannedSuspension() isNotEqualTo null
       plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
-      plannedSuspension()!!.plannedReason() isEqualTo "reason"
       plannedSuspension()!!.endDate() isEqualTo null
     }
 

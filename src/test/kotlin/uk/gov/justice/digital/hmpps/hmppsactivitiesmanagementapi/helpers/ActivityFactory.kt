@@ -309,7 +309,6 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
         PlannedSuspension(
           allocation = this,
           plannedStartDate = this.startDate,
-          plannedReason = "Planned reason",
           plannedBy = "Test",
         ),
       )

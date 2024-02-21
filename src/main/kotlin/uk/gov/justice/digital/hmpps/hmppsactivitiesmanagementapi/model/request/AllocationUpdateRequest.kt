@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.annotation.Nullable
+import jakarta.validation.Valid
 import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.FutureOrPresent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -45,8 +47,10 @@ data class AllocationUpdateRequest(
   @field:FutureOrPresent(message = "Suspension start date must not be in the past")
   val suspendFrom: LocalDate? = null,
 
-  @Schema(description = "The reason for suspension", example = "Negative behaviour")
-  val suspensionReason: String? = null,
+  @Schema(description = "Describes a case note to be added to the prisoner's profile as part of the suspension. Only relevant when suspendFrom is also provided")
+  @field:Valid
+  @field:Nullable
+  val suspensionCaseNote: AddCaseNoteRequest? = null,
 
   @Schema(description = "The date when the prisoner will be suspended from the activity", example = "2023-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
