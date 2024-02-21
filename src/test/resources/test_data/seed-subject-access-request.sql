@@ -58,3 +58,30 @@ insert into appointment_attendee (appointment_attendee_id, appointment_id, priso
 VALUES  (1, 1, '111222', 1, null, null, null),
         (2, 2, '111222', 2, true, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY'),
         (3, 3, '111222', 3, false, '2022-10-12 09:00:00', 'PREV.ATTENDANCE.RECORDED.BY');
+
+--attendance
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid)
+values (3, 'PVI', 3, 1, true, true, false, false, 'H', 'QAtestingKitchenActivity', 'QAtestingKitchenActivity', '2023-07-21', '2024-01-02', 'high', '2023-07-20 10:06:22.993053', 'SEED USER', true),
+       (6, 'PVI', 5, 1, true, false, false, false, 'H', 'Adams Advanced Archery', 'Adams Advanced Archery', '2023-07-21', '5000-10-02', 'high', '2023-07-20 16:05:16.762526', 'SEED USER', true);
+
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, end_date)
+values (3, 3, 'QAtestingKitchenActivity', 14435, 'A3EDU', 'A3 EDUCATION', 150, '2023-07-21', '2024-01-02'),
+       (6, 6, 'Adams Advanced Archery', 14441, 'BWINT1', 'AB WING INTERVIEW 1', 102, '2023-07-21', '5000-10-02');
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
+values (14, 3, '2023-07-21', '09:00:00', '12:00:00', false, null, null, null, null),
+       (15, 3, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null),
+       (16, 3, '2023-07-21', '18:00:00', '20:00:00', false, null, null, null, null),
+       (18, 3, '2023-07-22', '13:00:00', '16:30:00', false, null, null, null, null),
+       (19, 3, '2023-07-22', '18:00:00', '20:00:00', false, null, null, null, null),
+       (71, 6, '2023-07-20', '09:00:00', '12:00:00', true, '2023-07-21 17:37:52.000000', 'SCH_ACTIVITY', 'Staff unavailable', null),
+       (72, 6, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (9, 14, 'A4743DZ', 9, null, '2023-07-21 16:55:34.057591', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (14, 15, 'A4743DZ', 9, null, '2023-07-21 16:56:52.200196', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (19, 16, 'A4743DZ', 7, null, '2023-07-21 16:58:21.231139', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (60, 18, 'A4745DZ', 9, null, '2023-07-24 17:51:29.304927', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (74, 19, 'A4745DZ', 9, null, null, null, 'WAITING', null, null, null),
+       (26, 71, 'G9372GQ', 9, null, '2023-07-21 15:51:39.824964', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (30, 72, 'G9372GQ', 8, null, '2023-07-21 17:37:52.403630', 'MR BLOGS', 'COMPLETED', null, null, null);
