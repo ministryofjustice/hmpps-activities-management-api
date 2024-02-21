@@ -42,8 +42,8 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
     } else {
       log.info("SAR: data found for subject access request for prisoner $prisonerNumber for dates $from to date $to")
 
-      val attendanceSummary: List<SarAttendanceSummary?> =
-        allAttendance.groupingBy { it.attendanceReasonCode }.eachCount().map { it.key?.let { it1 -> ModelSarAttendanceSummary(it1, it.value) } }
+      val attendanceSummary: List<SarAttendanceSummary> =
+        allAttendance.groupingBy { it.attendanceReasonCode }.eachCount().mapNotNull { it.key?.let { it1 -> ModelSarAttendanceSummary(it1, it.value) } }
 
       SubjectAccessRequestContent(
         prisonerNumber = prisonerNumber,

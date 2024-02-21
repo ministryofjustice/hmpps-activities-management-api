@@ -24,7 +24,7 @@ data class SubjectAccessRequestContent(
   val allocations: List<SarAllocation>,
 
   @Schema(description = "All of the attendances for the prisoner for the period")
-  val attendanceSummary: List<SarAttendanceSummary?>,
+  val attendanceSummary: List<SarAttendanceSummary>,
 
   @Schema(description = "Waiting list applications for a prisoner")
   val waitingListApplications: List<SarWaitingList>,
