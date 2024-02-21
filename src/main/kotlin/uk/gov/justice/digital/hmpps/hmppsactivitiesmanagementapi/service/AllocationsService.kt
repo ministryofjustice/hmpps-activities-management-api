@@ -5,10 +5,14 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
@@ -37,6 +41,7 @@ class AllocationsService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
+  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -193,8 +198,20 @@ class AllocationsService(
     byWhom: String,
   ): Set<Long> {
     request.suspendFrom?.let { suspendFrom ->
-      requireNotNull(request.suspensionReason) { "Suspension reason must be provided when suspensionFrom date is provided" }
       require(suspendFrom.between(allocation.startDate, allocation.endDate)) { "Allocation ${allocation.allocationId}: Suspension start date must be between the allocation start and end dates" }
+
+      var caseNoteId: Long? = null
+      if (request.suspensionCaseNote != null) {
+        val subType = if (request.suspensionCaseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
+        caseNoteId = caseNotesApiClient.postCaseNote(
+          allocation.prisonCode(),
+          allocation.prisonerNumber,
+          request.suspensionCaseNote.text!!,
+          request.suspensionCaseNote.type!!,
+          subType,
+          "Suspended from activity from ${suspendFrom.toMediumFormatStyle()} - ${allocation.activitySchedule.description}",
+        ).caseNoteId.toLong()
+      }
 
       val plannedSuspension = allocation.plannedSuspension()
       if (plannedSuspension == null || plannedSuspension.hasStarted()) {
@@ -203,12 +220,12 @@ class AllocationsService(
           PlannedSuspension(
             allocation = allocation,
             plannedStartDate = suspendFrom,
-            plannedReason = request.suspensionReason,
             plannedBy = byWhom,
+            caseNoteId = caseNoteId,
           ),
         )
       } else {
-        plannedSuspension.plan(request.suspensionReason, suspendFrom, byWhom)
+        plannedSuspension.plan(suspendFrom, byWhom, caseNoteId)
       }
     }
 

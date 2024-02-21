@@ -8,13 +8,19 @@ import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -35,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEq
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AddCaseNoteRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -45,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Optional
 
@@ -54,7 +62,25 @@ class AllocationServiceTest {
   private val scheduleRepository: ActivityScheduleRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, attendanceSuspensionDomainService)
+  private val caseNotesApiClient: CaseNotesApiClient = mock<CaseNotesApiClient>().also {
+    whenever(it.postCaseNote(any(), any(), any(), any(), any(), any())) doReturn CaseNote(
+      caseNoteId = "10001",
+      offenderIdentifier = "1",
+      type = "NEG",
+      typeDescription = "Negative Behaviour",
+      subType = "NEG_GEN",
+      subTypeDescription = "General Entry",
+      source = "INST",
+      creationDateTime = LocalDateTime.now(),
+      occurrenceDateTime = LocalDateTime.now(),
+      authorName = "Test",
+      authorUserId = "1",
+      text = "Test case note",
+      eventId = 1,
+      sensitive = false,
+    )
+  }
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, attendanceSuspensionDomainService, caseNotesApiClient)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
 
@@ -533,27 +559,6 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - suspension reason must be provided if start date is provided`() {
-    val allocation = allocation()
-    val allocationId = allocation.allocationId
-    val prisonCode = allocation.activitySchedule.activity.prisonCode
-
-    val updateAllocationRequest = AllocationUpdateRequest(
-      suspendFrom = allocation.startDate,
-    )
-
-    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-
-    assertThatThrownBy {
-      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Suspension reason must be provided when suspensionFrom date is provided")
-
-    verifyNoInteractions(outboundEventsService)
-  }
-
-  @Test
   fun `updateAllocation - suspension start date must be between the start and end date of the allocation`() {
     val allocation = allocation()
     val allocationId = allocation.allocationId
@@ -561,7 +566,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate.minusDays(1),
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -576,14 +580,14 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - a new planned suspension is created if one doesnt exist`() {
+  fun `updateAllocation - a new general case note is posted and associated with the suspension`() {
     val allocation = allocation()
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate.plusWeeks(1),
-      suspensionReason = "reason",
+      suspensionCaseNote = AddCaseNoteRequest(type = CaseNoteType.GEN, text = "test case note"),
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -595,10 +599,81 @@ class AllocationServiceTest {
     assertThat(allocationCaptor.firstValue.plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.plannedSuspension()!!) {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
-      plannedReason() isEqualTo "reason"
+      caseNoteId() isEqualTo 10001
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
+
+    verify(caseNotesApiClient).postCaseNote(
+      prisonCode,
+      allocation.prisonerNumber,
+      "test case note",
+      CaseNoteType.GEN,
+      CaseNoteSubType.HIS,
+      "Suspended from activity from ${allocation.startDate.plusWeeks(1).toMediumFormatStyle()} - schedule description",
+    )
+    verifyNoMoreInteractions(caseNotesApiClient)
+  }
+
+  @Test
+  fun `updateAllocation - a new negative case note is posted and associated with the suspension`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      suspensionCaseNote = AddCaseNoteRequest(type = CaseNoteType.NEG, text = "test case note"),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.plannedSuspension()!!) {
+      startDate() isEqualTo allocation.startDate.plusWeeks(1)
+      caseNoteId() isEqualTo 10001
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    verify(caseNotesApiClient).postCaseNote(
+      prisonCode,
+      allocation.prisonerNumber,
+      "test case note",
+      CaseNoteType.NEG,
+      CaseNoteSubType.NEG_GEN,
+      "Suspended from activity from ${allocation.startDate.plusWeeks(1).toMediumFormatStyle()} - schedule description",
+    )
+    verifyNoMoreInteractions(caseNotesApiClient)
+  }
+
+  @Test
+  fun `updateAllocation - a new planned suspension is created if one doesnt exist`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(1),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.plannedSuspension()!!) {
+      startDate() isEqualTo allocation.startDate.plusWeeks(1)
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+    verifyNoInteractions(caseNotesApiClient)
   }
 
   @Test
@@ -609,7 +684,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate.plusWeeks(1),
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -627,7 +701,6 @@ class AllocationServiceTest {
     with(newSuspension) {
       newSuspension isNotEqualTo originalSuspension
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
-      plannedReason() isEqualTo "reason"
       endDate() isEqualTo null
     }
 
@@ -642,7 +715,6 @@ class AllocationServiceTest {
         PlannedSuspension(
           allocation = this,
           plannedStartDate = startDate.plusWeeks(1),
-          plannedReason = "Planned reason",
           plannedBy = "Test",
         ),
       )
@@ -653,7 +725,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate,
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -669,7 +740,6 @@ class AllocationServiceTest {
     with(newSuspension) {
       newSuspension isEqualTo originalSuspension
       startDate() isEqualTo allocation.startDate
-      plannedReason() isEqualTo "reason"
       endDate() isEqualTo null
     }
 
@@ -685,7 +755,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate,
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -713,7 +782,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate.plusWeeks(1),
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -735,7 +803,6 @@ class AllocationServiceTest {
 
     val updateAllocationRequest = AllocationUpdateRequest(
       suspendFrom = allocation.startDate.plusWeeks(1),
-      suspensionReason = "reason",
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)

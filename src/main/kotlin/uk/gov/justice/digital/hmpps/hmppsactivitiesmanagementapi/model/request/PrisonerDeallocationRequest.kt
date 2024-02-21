@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.annotation.Nullable
+import jakarta.validation.Valid
 import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
@@ -42,5 +44,7 @@ data class PrisonerDeallocationRequest(
   val endDate: LocalDate?,
 
   @Schema(description = "Describes a case note to be added to the prisoner's profile as part of the deallocation.")
-  val caseNote: AddCaseNoteRequest?,
+  @field:Valid
+  @field:Nullable
+  val caseNote: AddCaseNoteRequest? = null,
 )

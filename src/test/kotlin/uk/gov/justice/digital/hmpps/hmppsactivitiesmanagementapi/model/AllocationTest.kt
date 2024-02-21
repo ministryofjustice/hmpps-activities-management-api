@@ -115,7 +115,7 @@ class AllocationTest : ModelTest() {
     with(allocation.toModel()) {
       assertOnCommonModalTransformation(this, allocation)
       suspendedBy isEqualTo "Test"
-      suspendedReason isEqualTo "Planned reason"
+      suspendedReason isEqualTo "Planned suspension"
       suspendedTime isCloseTo now
       assertThat(deallocatedBy).isNull()
       assertThat(deallocatedReason).isNull()

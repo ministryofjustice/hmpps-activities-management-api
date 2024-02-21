@@ -779,7 +779,6 @@ class AllocationTest {
     val plannedSuspension = PlannedSuspension(
       allocation = allocation1,
       plannedStartDate = allocation1.startDate,
-      plannedReason = "Planned reason",
       plannedBy = "Test",
     )
 
@@ -801,7 +800,6 @@ class AllocationTest {
         PlannedSuspension(
           allocation = this,
           plannedStartDate = LocalDate.now().plusWeeks(1),
-          plannedReason = "Planned reason",
           plannedBy = "Test",
         ),
       )

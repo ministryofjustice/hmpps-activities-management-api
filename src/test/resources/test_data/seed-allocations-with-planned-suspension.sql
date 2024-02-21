@@ -22,11 +22,11 @@ values (2, 1, 'FUTURE', 20002, 1, current_date + 1, null, '2022-10-10 09:00:00',
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 1, 'PAST', 30003, 1, current_date - 1, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
-insert into planned_suspension(planned_suspension_id, allocation_id, planned_reason, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
-values (1, 1, 'reason', current_date, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
+values (1, 1, current_date, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
 
-insert into planned_suspension(planned_suspension_id, allocation_id, planned_reason, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
-values (2, 2, 'reason', current_date + 1, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
+values (2, 2, current_date + 1, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
 
-insert into planned_suspension(planned_suspension_id, allocation_id, planned_reason, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
-values (3, 3, 'reason', current_date - 1, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at)
+values (3, 3, current_date - 1, null, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp);

@@ -82,7 +82,6 @@ class OffenderReceivedEventHandlerTest {
           PlannedSuspension(
             allocation = this,
             plannedStartDate = this.startDate,
-            plannedReason = "Planned reason",
             plannedBy = "Test",
           ),
         )
@@ -93,7 +92,6 @@ class OffenderReceivedEventHandlerTest {
           PlannedSuspension(
             allocation = this,
             plannedStartDate = this.startDate,
-            plannedReason = "Planned reason",
             plannedBy = "Test",
           ),
         )

@@ -245,7 +245,6 @@ class ManageAttendancesServiceTest {
         PlannedSuspension(
           allocation = this,
           plannedStartDate = this.startDate,
-          plannedReason = "Planned reason",
           plannedBy = "Test",
         ),
       )
@@ -348,7 +347,6 @@ class ManageAttendancesServiceTest {
         PlannedSuspension(
           allocation = this,
           plannedStartDate = this.startDate,
-          plannedReason = "Planned reason",
           plannedBy = "Test",
         ),
       )
