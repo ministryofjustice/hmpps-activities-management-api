@@ -735,8 +735,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/seed-offender-merged-event.sql")
-  fun `offender merged event replaces old prisoner number with new prisoner number`() {
+  @Sql("classpath:test_data/seed-offender-merged-event-old-and-new-allocations.sql")
+  fun `offender merged event replaces old prisoner and new prisoner records with new prisoner number and booking ID`() {
     val (oldPrisonerNumber, newPrisonerNumber) = "A11111A" to "B11111B"
     val (oldBookingId, newBookingId) = 111111L to 999999L
     val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
@@ -763,5 +763,36 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
     eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
     appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-merged-event-old-allocations.sql")
+  fun `offender merged event replaces old prisoner records with new prisoner number and booking ID`() {
+    val (oldPrisonerNumber, newPrisonerNumber) = "A11111A" to "B11111B"
+    val (oldBookingId, newBookingId) = 111111L to 999999L
+    val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
+    val newPrisonerNumberAndOldBooking = newPrisonerNumber to oldBookingId
+
+    prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999))
+
+    // Check all set to the old prisoner number and booking ID before event is processed
+    allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo oldPrisonerNumber
+    waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
+    auditRepository.findAll().single().prisonerNumber isEqualTo oldPrisonerNumber
+    eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
+    appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
+
+    service.process(offenderMergedEvent(prisonerNumber = newPrisonerNumber, removedPrisonerNumber = oldPrisonerNumber))
+
+    val newPrisonerNumberAndNewBooking = newPrisonerNumber to newBookingId
+
+    // Check all set to the new prisoner number after event is processed
+    allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo newPrisonerNumber
+    waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
+    auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
+    eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+    appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
   }
 }
