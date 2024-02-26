@@ -24,7 +24,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return single allocation for a same day date boundary subject access request`() {
     val response = webTestClient.getSarContent("111111", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 1))
 
-    response.allocations containsExactly listOf(
+    response.content.allocations containsExactly listOf(
       SarAllocation(
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -44,7 +44,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return two allocations for subject access request`() {
     val response = webTestClient.getSarContent("111111", LocalDate.of(2020, 1, 1), LocalDate.of(2023, 1, 1))
 
-    response.allocations containsExactlyInAnyOrder listOf(
+    response.content.allocations containsExactlyInAnyOrder listOf(
       SarAllocation(
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -75,7 +75,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return single waiting list application with a 2 day boundary for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 9), LocalDate.of(2022, 10, 11))
 
-    response.waitingListApplications containsExactly listOf(
+    response.content.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -95,7 +95,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return single waiting list application for a same day date boundary for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 10))
 
-    response.waitingListApplications containsExactly listOf(
+    response.content.waitingListApplications containsExactly listOf(
       SarWaitingList(
         waitingListId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -115,7 +115,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return two waiting list applications for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
 
-    response.waitingListApplications containsExactlyInAnyOrder listOf(
+    response.content.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -146,7 +146,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return 3 appointments for a subject access request (Attended, Not attended and Unknown Attendance)`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 8), LocalDate.of(2024, 10, 10))
 
-    response.appointments containsExactlyInAnyOrder listOf(
+    response.content.appointments containsExactlyInAnyOrder listOf(
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -188,7 +188,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return one appointment for a same day date boundary for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
 
-    response.appointments containsExactly listOf(
+    response.content.appointments containsExactly listOf(
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -208,7 +208,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return one attendance summaries for a subject access request`() {
     val response = webTestClient.getSarContent("A4745DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 22))
 
-    response.attendanceSummary containsExactly listOf(
+    response.content.attendanceSummary containsExactly listOf(
       SarAttendanceSummary(
         attendanceReasonCode = "ATTENDED",
         count = 1,
@@ -221,7 +221,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return two attendance summaries for a subject access request`() {
     val response = webTestClient.getSarContent("G9372GQ", LocalDate.of(2023, 7, 20), LocalDate.of(2023, 7, 21))
 
-    response.attendanceSummary containsExactlyInAnyOrder listOf(
+    response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
         attendanceReasonCode = "ATTENDED",
         count = 1,
@@ -238,7 +238,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return one attendance summaries for a single day query for a subject access request`() {
     val response = webTestClient.getSarContent("G9372GQ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 21))
 
-    response.attendanceSummary containsExactlyInAnyOrder listOf(
+    response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
         attendanceReasonCode = "CANCELLED",
         count = 1,
@@ -251,7 +251,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return one of two attendance summaries (one status is WAITING) for a subject access request`() {
     val response = webTestClient.getSarContent("A4745DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2023, 7, 23))
 
-    response.attendanceSummary containsExactlyInAnyOrder listOf(
+    response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
         attendanceReasonCode = "ATTENDED",
         count = 1,
@@ -264,7 +264,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should two attendance summaries with different counts for a subject access request`() {
     val response = webTestClient.getSarContent("A4743DZ", LocalDate.of(2023, 7, 21), LocalDate.of(2024, 7, 21))
 
-    response.attendanceSummary containsExactlyInAnyOrder listOf(
+    response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
         attendanceReasonCode = "SUSPENDED",
         count = 1,
@@ -281,7 +281,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
   fun `should return one allocation, two waiting list applications and an appointment for a subject access request`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 10), LocalDate.of(2022, 10, 12))
 
-    response.allocations containsExactly listOf(
+    response.content.allocations containsExactly listOf(
       SarAllocation(
         allocationId = 3,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -295,7 +295,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    response.waitingListApplications containsExactlyInAnyOrder listOf(
+    response.content.waitingListApplications containsExactlyInAnyOrder listOf(
       SarWaitingList(
         waitingListId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
@@ -320,7 +320,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    response.appointments containsExactly listOf(
+    response.content.appointments containsExactly listOf(
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,

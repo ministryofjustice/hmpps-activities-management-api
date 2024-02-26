@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
@@ -46,13 +47,15 @@ class SubjectAccessRequestService(private val repository: SarRepository) {
         allAttendance.groupingBy { it.attendanceReasonCode }.eachCount().mapNotNull { it.key?.let { it1 -> ModelSarAttendanceSummary(it1, it.value) } }
 
       SubjectAccessRequestContent(
-        prisonerNumber = prisonerNumber,
-        fromDate = from,
-        toDate = to,
-        allocations = allocations.map(::ModelSarAllocation),
-        attendanceSummary = attendanceSummary,
-        waitingListApplications = waitingLists.map(::ModelSarWaitingList),
-        appointments = appointments.map(::ModelSarAppointment),
+        SubjectAccessRequestData(
+          prisonerNumber = prisonerNumber,
+          fromDate = from,
+          toDate = to,
+          allocations = allocations.map(::ModelSarAllocation),
+          attendanceSummary = attendanceSummary,
+          waitingListApplications = waitingLists.map(::ModelSarWaitingList),
+          appointments = appointments.map(::ModelSarAppointment),
+        ),
       )
     }
   }

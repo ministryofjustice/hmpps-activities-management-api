@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
@@ -127,13 +128,15 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
-      prisonerNumber = sarAllocation.prisonerNumber,
-      fromDate = TimeSource.yesterday(),
-      toDate = TimeSource.tomorrow(),
-      allocations = listOf(sarAllocation).map(::ModelSarAllocation),
-      attendanceSummary = emptyList(),
-      waitingListApplications = emptyList(),
-      appointments = emptyList(),
+      SubjectAccessRequestData(
+        prisonerNumber = sarAllocation.prisonerNumber,
+        fromDate = TimeSource.yesterday(),
+        toDate = TimeSource.tomorrow(),
+        allocations = listOf(sarAllocation).map(::ModelSarAllocation),
+        attendanceSummary = emptyList(),
+        waitingListApplications = emptyList(),
+        appointments = emptyList(),
+      ),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
@@ -150,13 +153,15 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
-      prisonerNumber = "12345",
-      fromDate = TimeSource.yesterday(),
-      toDate = TimeSource.tomorrow(),
-      allocations = emptyList(),
-      attendanceSummary = emptyList(),
-      waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
-      appointments = emptyList(),
+      SubjectAccessRequestData(
+        prisonerNumber = "12345",
+        fromDate = TimeSource.yesterday(),
+        toDate = TimeSource.tomorrow(),
+        allocations = emptyList(),
+        attendanceSummary = emptyList(),
+        waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
+        appointments = emptyList(),
+      ),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
@@ -173,13 +178,15 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
-      prisonerNumber = "12345",
-      fromDate = TimeSource.yesterday(),
-      toDate = TimeSource.tomorrow(),
-      allocations = emptyList(),
-      attendanceSummary = emptyList(),
-      waitingListApplications = emptyList(),
-      appointments = listOf(sarAppointment).map(::ModelSarAppointment),
+      SubjectAccessRequestData(
+        prisonerNumber = "12345",
+        fromDate = TimeSource.yesterday(),
+        toDate = TimeSource.tomorrow(),
+        allocations = emptyList(),
+        attendanceSummary = emptyList(),
+        waitingListApplications = emptyList(),
+        appointments = listOf(sarAppointment).map(::ModelSarAppointment),
+      ),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
@@ -196,13 +203,15 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(allAttendance, allAttendance2)
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
-      prisonerNumber = "12345",
-      fromDate = TimeSource.yesterday(),
-      toDate = TimeSource.tomorrow(),
-      allocations = emptyList(),
-      attendanceSummary = listOf(modelSarAttendanceSummary),
-      waitingListApplications = emptyList(),
-      appointments = emptyList(),
+      SubjectAccessRequestData(
+        prisonerNumber = "12345",
+        fromDate = TimeSource.yesterday(),
+        toDate = TimeSource.tomorrow(),
+        allocations = emptyList(),
+        attendanceSummary = listOf(modelSarAttendanceSummary),
+        waitingListApplications = emptyList(),
+        appointments = emptyList(),
+      ),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
@@ -219,13 +228,15 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(allAttendance, allAttendance2)
 
     service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
-      prisonerNumber = "12345",
-      fromDate = TimeSource.yesterday(),
-      toDate = TimeSource.tomorrow(),
-      allocations = listOf(sarAllocation).map(::ModelSarAllocation),
-      attendanceSummary = listOf(modelSarAttendanceSummary),
-      waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
-      appointments = listOf(sarAppointment).map(::ModelSarAppointment),
+      SubjectAccessRequestData(
+        prisonerNumber = "12345",
+        fromDate = TimeSource.yesterday(),
+        toDate = TimeSource.tomorrow(),
+        allocations = listOf(sarAllocation).map(::ModelSarAllocation),
+        attendanceSummary = listOf(modelSarAttendanceSummary),
+        waitingListApplications = listOf(sarWaitingList).map(::ModelSarWaitingList),
+        appointments = listOf(sarAppointment).map(::ModelSarAppointment),
+      ),
     )
 
     verify(repository).findAllocationsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())
