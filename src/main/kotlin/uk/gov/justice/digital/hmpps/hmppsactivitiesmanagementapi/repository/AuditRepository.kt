@@ -44,5 +44,5 @@ interface AuditRepository : JpaRepository<LocalAuditRecord, Long> {
 
   @Query(value = "UPDATE LocalAuditRecord l SET l.prisonerNumber = :newNumber WHERE l.prisonerNumber = :oldNumber")
   @Modifying
-  fun mergeOffender(oldNumber: String, newNumber: String)
+  fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String)
 }

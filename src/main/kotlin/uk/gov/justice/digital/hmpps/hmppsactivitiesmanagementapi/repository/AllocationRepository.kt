@@ -100,7 +100,11 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
     startDate: LocalDate,
   ): List<Allocation>
 
-  @Query(value = "UPDATE Allocation a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
+  @Query(value = "UPDATE Allocation a SET a.prisonerNumber = :newNumber, a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :oldNumber")
   @Modifying
-  fun mergeOffender(oldNumber: String, newNumber: String)
+  fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String, newBookingId: Long?)
+
+  @Query(value = "UPDATE Allocation a SET a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :prisonerNumber")
+  @Modifying
+  fun mergePrisonerToNewBookingId(prisonerNumber: String, newBookingId: Long?)
 }

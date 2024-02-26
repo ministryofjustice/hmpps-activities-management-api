@@ -11,9 +11,13 @@ import java.time.LocalDate
 interface AppointmentAttendeeRepository : JpaRepository<AppointmentAttendee, Long> {
   fun findByPrisonerNumber(prisonerNumber: String): List<AppointmentAttendee>
 
-  @Query(value = "UPDATE AppointmentAttendee a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
+  @Query(value = "UPDATE AppointmentAttendee a SET a.prisonerNumber = :newNumber, a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :oldNumber")
   @Modifying
-  fun mergeOffender(oldNumber: String, newNumber: String)
+  fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String, newBookingId: Long?)
+
+  @Query(value = "UPDATE AppointmentAttendee a SET a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :prisonerNumber")
+  @Modifying
+  fun mergePrisonerToNewBookingId(prisonerNumber: String, newBookingId: Long?)
 
   @Query(
     """

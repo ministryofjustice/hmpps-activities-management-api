@@ -66,5 +66,5 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
   @Modifying
-  fun mergeOffender(oldNumber: String, newNumber: String)
+  fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String)
 }
