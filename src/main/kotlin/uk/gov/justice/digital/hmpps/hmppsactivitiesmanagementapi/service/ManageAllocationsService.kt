@@ -87,8 +87,8 @@ class ManageAllocationsService(
         } else {
           schedule.deallocateAllocationsEndingOn(date)
         }.also { allocationIds -> allocationIds.ifNotEmpty { activityScheduleRepository.saveAndFlush(schedule) } }
-      }.let(::sendAllocationsAmendedEvents)
-    }
+      }
+    }.let(::sendAllocationsAmendedEvents)
   }
 
   private fun declineWaitingListsFor(schedule: ActivitySchedule) {
