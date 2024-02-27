@@ -369,7 +369,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `create appointment set success`() {
+  fun `create appointment set success for internal location`() {
     val request = appointmentSetCreateRequest(categoryCode = "AC1")
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
@@ -392,7 +392,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
     )
 
     val response = webTestClient.createAppointmentSet(request)!!
-    verifyAppointmentSet(response)
+    verifyAppointmentSet(request, response)
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -409,23 +409,62 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
     verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
   }
 
-  private fun verifyAppointmentSet(response: AppointmentSet) {
+  @Test
+  fun `create appointment set success for in cell`() {
+    val request = appointmentSetCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
+    val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = prisonerNumbers[0],
+          bookingId = 1,
+          prisonId = request.prisonCode,
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = prisonerNumbers[1],
+          bookingId = 2,
+          prisonId = request.prisonCode,
+        ),
+      ),
+    )
+
+    val response = webTestClient.createAppointmentSet(request)!!
+    verifyAppointmentSet(request, response)
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(
+      eventCaptor.allValues.map { it.eventType }.distinct().single(),
+    ).isEqualTo("appointments.appointment-instance.created")
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
+      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
+    )
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
+
+    verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
+  }
+
+  private fun verifyAppointmentSet(request: AppointmentSetCreateRequest, response: AppointmentSet) {
     assertThat(response.id).isNotNull
-    assertThat(response.appointments).hasSize(2)
+    assertThat(response.appointments).hasSize(request.appointments.size)
     assertThat(response.createdBy).isEqualTo("test-client")
     assertThat(response.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
 
-    assertThat(response.appointments[0].attendees[0].prisonerNumber).isEqualTo("A1234BC")
-    assertThat(response.appointments[1].attendees[0].prisonerNumber).isEqualTo("A1234BD")
+    assertThat(response.appointments.map { it.attendees.first().prisonerNumber }).isEqualTo(request.appointments.map { it.prisonerNumber })
 
     response.appointments.forEach {
-      assertThat(it.categoryCode).isEqualTo("AC1")
-      assertThat(it.prisonCode).isEqualTo("TPR")
-      assertThat(it.internalLocationId).isEqualTo(123)
-      assertThat(it.inCell).isFalse()
-      assertThat(it.startDate).isEqualTo(LocalDate.now().plusDays(1))
-      assertThat(it.startTime).isEqualTo(LocalTime.of(13, 0))
-      assertThat(it.endTime).isEqualTo(LocalTime.of(14, 30))
+      assertThat(it.categoryCode).isEqualTo(request.categoryCode)
+      assertThat(it.prisonCode).isEqualTo(request.prisonCode)
+      assertThat(it.internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(it.inCell).isEqualTo(request.inCell)
+      assertThat(it.startDate).isEqualTo(request.startDate)
+      assertThat(it.startTime).isEqualTo(request.appointments.first().startTime)
+      assertThat(it.endTime).isEqualTo(request.appointments.first().endTime)
       assertThat(it.customName).isEqualTo("Appointment description")
     }
   }
