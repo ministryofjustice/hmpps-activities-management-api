@@ -8,6 +8,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -24,7 +25,7 @@ class ManageAllocationsJobTest {
   }
   private val deallocationService: ManageAllocationsService = mock()
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>(), mock<Retryable>()))
   private val job = ManageAllocationsJob(rolloutPrisonRepository, deallocationService, safeJobRunner, 2)
   private val yesterday = 1.daysAgo()
   private val twoDaysAgo = 2.daysAgo()
