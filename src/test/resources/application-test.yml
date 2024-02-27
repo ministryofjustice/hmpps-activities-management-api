@@ -21,7 +21,7 @@ spring:
     password: dummy
 
   flyway:
-    locations: classpath:/migrations/common
+    locations: classpath:/migrations/common,classpath:/migrations/h2
 
   h2:
     console:

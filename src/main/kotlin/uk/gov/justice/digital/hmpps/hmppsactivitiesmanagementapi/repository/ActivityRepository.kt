@@ -35,6 +35,15 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
 
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
+  @Query(
+    value =
+    "select case when count(a) > 0 then true else false end " +
+      "from Activity a " + "where a.prisonCode = :prisonCode " +
+      "and a.summary = :summary " +
+      "and (a.endDate is null or a.endDate > :endDate)",
+  )
+  fun findExistingLiveActivity(prisonCode: String, summary: String, endDate: LocalDate): Boolean
+
   fun findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode: String, activityTier: EventTier, activityCategory: ActivityCategory): List<Activity>
 
   @Query(value = "SELECT ab from ActivityBasic ab WHERE ab.activityId = :activityId")
