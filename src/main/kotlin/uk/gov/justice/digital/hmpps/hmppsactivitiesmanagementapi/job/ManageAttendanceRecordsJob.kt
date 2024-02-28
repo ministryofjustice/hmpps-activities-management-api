@@ -27,8 +27,8 @@ class ManageAttendanceRecordsJob(
 
     val rolledOutPrisonCodes = getRolledOutPrisonsForActivities(mayBePrisonCode)
 
-    jobRunner.runJob(
-      JobDefinition(
+    jobRunner.runJobWithRetry(
+      jobDefinition = JobDefinition(
         JobType.ATTENDANCE_CREATE,
       ) {
         rolledOutPrisonCodes.forEach { prisonCode -> manageAttendancesService.createAttendances(date, prisonCode) }

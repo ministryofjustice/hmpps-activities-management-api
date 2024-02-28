@@ -34,6 +34,10 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:3.1.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
+  // Spring framework retryable dependencies
+  implementation("org.springframework.retry:spring-retry")
+  implementation("org.springframework:spring-aspects")
+
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.32.0")
 
   // OpenAPI

@@ -6,7 +6,6 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
@@ -51,7 +50,7 @@ class ManageAttendanceRecordsJobTest {
 
   private val attendancesService: ManageAttendancesService = mock()
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()) { it() })
   private val job = ManageAttendanceRecordsJob(rollOutPrisonService, attendancesService, safeJobRunner)
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 
@@ -61,7 +60,7 @@ class ManageAttendanceRecordsJobTest {
 
     verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
 
     jobDefinitionCaptor.firstValue.jobType isEqualTo JobType.ATTENDANCE_CREATE
   }
@@ -73,7 +72,7 @@ class ManageAttendanceRecordsJobTest {
     verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
     verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
 
     jobDefinitionCaptor.firstValue.jobType isEqualTo JobType.ATTENDANCE_CREATE
   }
@@ -85,7 +84,8 @@ class ManageAttendanceRecordsJobTest {
     verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
     verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(attendancesService).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-    verify(safeJobRunner, times(2)).runJob(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
+    verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
     jobDefinitionCaptor.firstValue.jobType isEqualTo JobType.ATTENDANCE_CREATE
     jobDefinitionCaptor.secondValue.jobType isEqualTo JobType.ATTENDANCE_EXPIRE
