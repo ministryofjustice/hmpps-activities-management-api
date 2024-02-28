@@ -35,8 +35,8 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
   // Spring framework retryable dependencies
-  implementation("org.springframework.retry:spring-retry:2.0.5")
-  implementation("org.springframework:spring-aspects:6.1.4")
+  implementation("org.springframework.retry:spring-retry")
+  implementation("org.springframework:spring-aspects")
 
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.32.0")
 
