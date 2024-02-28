@@ -56,7 +56,11 @@ class AppointmentUpdateDomainService(
 
       applyPropertyUpdates(request, appointmentSeries, appointmentsToUpdate)
       val removedAttendees = applyRemovePrisonersUpdate(request, appointmentsToUpdate, updated, updatedBy)
-      val addedAttendees = applyAddPrisonersUpdate(request, appointmentsToUpdate, prisonerMap, updated, updatedBy)
+      applyAddPrisonersUpdate(request, appointmentsToUpdate, prisonerMap, updated, updatedBy)
+
+      val originalAttendeeIds = appointmentsToUpdate.flatMap {
+        it.attendees().map { it.appointmentAttendeeId }
+      }.distinct()
 
       appointmentsToUpdate.forEach {
         it.updatedTime = updated
@@ -66,6 +70,12 @@ class AppointmentUpdateDomainService(
       appointmentSeries.updatedBy = updatedBy
 
       val updatedAppointmentSeries = appointmentSeriesRepository.saveAndFlush(appointmentSeries)
+
+      val addedAttendees = updatedAppointmentSeries.appointments()
+        .filter { appointmentIdsToUpdate.contains(it.appointmentId)  }
+        .flatMap { it.attendees() }
+        .distinctBy { it.appointmentAttendeeId }
+        .filterNot { originalAttendeeIds.contains(it.appointmentAttendeeId) }
 
       if (auditEvent) {
         writeAppointmentUpdatedAuditRecord(appointmentId, request, appointmentSeries, updatedAppointmentSeries)
