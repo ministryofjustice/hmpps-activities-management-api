@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.format.FormatterRegistry
@@ -14,7 +15,12 @@ import java.time.LocalDateTime
 
 @Configuration
 @EnableRetry
-class WebMvcConfiguration : WebMvcConfigurer {
+class WebMvcConfiguration(
+  @Value("\${retry.max-attempts:5}") private val retryMaxAttempts: Int,
+  @Value("\${retry.initial-interval:1s}") private val retryInitialInterval: Duration,
+  @Value("\${retry.multiplier:2.0}") private val retryMultiplier: Double,
+  @Value("\${retry.max-interval:16s}") private val retryMaxInterval: Duration,
+) : WebMvcConfigurer {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
@@ -28,14 +34,11 @@ class WebMvcConfiguration : WebMvcConfigurer {
 
   @Bean
   fun retryable(): Retryable {
-    // Attempt 1 - 500ms
-    // Attempt 2 - 1000ms
-    // Attempt 3 - 2000ms
-    // Attempt 4 - 4000ms
+    log.info("RETRY: max-attempts=$retryMaxAttempts, initial-interval=$retryInitialInterval, multiplier=$retryMultiplier, max-interval=$retryMaxInterval")
 
     val template = RetryTemplate.builder()
-      .maxAttempts(4)
-      .exponentialBackoff(Duration.ofMillis(500), 2.0, Duration.ofMillis(4000))
+      .maxAttempts(retryMaxAttempts)
+      .exponentialBackoff(retryInitialInterval, retryMultiplier, retryMaxInterval)
       .build()
 
     return Retryable { block ->
