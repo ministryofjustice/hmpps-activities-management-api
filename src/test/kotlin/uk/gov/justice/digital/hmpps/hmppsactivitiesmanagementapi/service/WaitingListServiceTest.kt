@@ -411,7 +411,6 @@ class WaitingListServiceTest {
       on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
     }
 
-    var prisoner = PrisonerSearchPrisonerFixture.instance()
     prisonerSearchApiClient.stub {
       on { findByPrisonerNumbers(listOf("123456")) } doReturn emptyList()
     }
@@ -472,13 +471,13 @@ class WaitingListServiceTest {
     }
 
     val releaseDate = LocalDate.of(2030, 4, 20)
-    var prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
 
     prisonerSearchApiClient.stub {
       on { findByPrisonerNumbers(listOf("G4793VF")) } doReturn listOf(prisoner)
     }
 
-    var earliestReleaseDate = EarliestReleaseDate(
+    val earliestReleaseDate = EarliestReleaseDate(
       releaseDate = releaseDate,
       isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
       isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
