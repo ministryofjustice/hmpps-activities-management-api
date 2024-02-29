@@ -172,7 +172,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the user that created this appointment
+    The username of the user that created this appointment
     """,
   )
   val createdBy: String,
@@ -200,7 +200,7 @@ data class AppointmentDetails(
   @Schema(
     description =
     """
-    The summary of the user that last edited this appointment.
+    The username of the user that last edited this appointment.
     Will be null if this appointment has not been altered since it was created
     """,
   )
