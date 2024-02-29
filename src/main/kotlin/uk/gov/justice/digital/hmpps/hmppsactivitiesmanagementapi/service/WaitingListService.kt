@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -56,7 +57,17 @@ class WaitingListService(
     scheduleRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-      .let(waitingListRepository::findByActivitySchedule).map(WaitingList::toModel)
+      .let(waitingListRepository::findByActivitySchedule).map(WaitingList::toModel).apply {
+        val prisoners =
+          prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber })
+
+        map {
+          val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
+          if (prisoner != null) {
+            it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
+          }
+        }
+      }
 
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {

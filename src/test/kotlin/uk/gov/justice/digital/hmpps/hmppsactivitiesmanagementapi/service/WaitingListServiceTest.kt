@@ -21,6 +21,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Pri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -409,6 +411,11 @@ class WaitingListServiceTest {
       on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
     }
 
+    var prisoner = PrisonerSearchPrisonerFixture.instance()
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbers(listOf("123456")) } doReturn emptyList()
+    }
+
     with(service.getWaitingListsBySchedule(1L)) {
       assertThat(size).isEqualTo(1)
 
@@ -428,6 +435,78 @@ class WaitingListServiceTest {
         updatedBy isEqualTo "Test"
         updatedTime!! isCloseTo TimeSource.now()
         declinedReason isEqualTo "Needs to attend level one activity first"
+        earliestReleaseDate isEqualTo null
+      }
+    }
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier with earliest release date`() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+    val allocation = schedule.allocations().first()
+
+    val waitingList = WaitingList(
+      waitingListId = 99,
+      prisonCode = PENTONVILLE_PRISON_CODE,
+      activitySchedule = schedule,
+      prisonerNumber = "G4793VF",
+      bookingId = 100L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Fred",
+      comments = "Some random test comments",
+      createdBy = "Bob",
+      initialStatus = WaitingListStatus.DECLINED,
+    ).apply {
+      this.allocation = allocation
+      this.updatedBy = "Test"
+      this.updatedTime = TimeSource.now()
+      this.declinedReason = "Needs to attend level one activity first"
+    }
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
+    }
+
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
+    }
+
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    var prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbers(listOf("G4793VF")) } doReturn listOf(prisoner)
+    }
+
+    var earliestReleaseDate = EarliestReleaseDate(
+      releaseDate = releaseDate,
+      isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
+      isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
+      isImmigrationDetainee = prisoner.legalStatus == Prisoner.LegalStatus.IMMIGRATION_DETAINEE,
+      isRemand = prisoner.legalStatus == Prisoner.LegalStatus.REMAND,
+      isIndeterminateSentence = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE,
+    )
+
+    with(service.getWaitingListsBySchedule(1L)) {
+      assertThat(size).isEqualTo(1)
+
+      with(first()) {
+        id isEqualTo 99
+        scheduleId isEqualTo schedule.activityScheduleId
+        allocationId isEqualTo allocation.allocationId
+        prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+        prisonerNumber isEqualTo "G4793VF"
+        bookingId isEqualTo 100L
+        status isEqualTo WaitingListStatus.DECLINED
+        requestedDate isEqualTo TimeSource.today()
+        requestedBy isEqualTo "Fred"
+        comments isEqualTo "Some random test comments"
+        createdBy isEqualTo "Bob"
+        creationTime isCloseTo TimeSource.now()
+        updatedBy isEqualTo "Test"
+        updatedTime!! isCloseTo TimeSource.now()
+        declinedReason isEqualTo "Needs to attend level one activity first"
+        earliestReleaseDate isEqualTo earliestReleaseDate
       }
     }
   }
