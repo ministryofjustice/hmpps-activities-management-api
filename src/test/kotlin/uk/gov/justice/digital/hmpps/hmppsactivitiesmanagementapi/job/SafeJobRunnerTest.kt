@@ -9,6 +9,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -22,7 +23,8 @@ class SafeJobRunnerTest {
 
   private val jobRepository: JobRepository = mock()
   private val monitoringService: MonitoringService = mock()
-  private val runner = SafeJobRunner(jobRepository, monitoringService)
+  private val retryable: Retryable = mock()
+  private val runner = SafeJobRunner(jobRepository, monitoringService, retryable)
   private val jobEntityCaptor = argumentCaptor<Job>()
 
   @Test

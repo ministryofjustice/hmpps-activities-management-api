@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
@@ -11,14 +12,22 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.measureTimeMillis
 
 @Component
-class SafeJobRunner(private val jobRepository: JobRepository, private val monitoringService: MonitoringService) {
+class SafeJobRunner(
+  private val jobRepository: JobRepository,
+  private val monitoringService: MonitoringService,
+  private val retryable: Retryable,
+) {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
   fun runJob(jobDefinition: JobDefinition) {
-    runSafe(jobDefinition)
+    runSafe(jobDefinition, false)
+  }
+
+  fun runJobWithRetry(jobDefinition: JobDefinition) {
+    runSafe(jobDefinition, true)
   }
 
   /**
@@ -50,11 +59,15 @@ class SafeJobRunner(private val jobRepository: JobRepository, private val monito
     }
   }
 
-  private fun runSafe(jobDefinition: JobDefinition): Result<Unit> {
+  private fun runSafe(jobDefinition: JobDefinition, withRetry: Boolean = false): Result<Unit> {
     val startedAt = LocalDateTime.now()
 
     return runCatching {
-      jobDefinition.block()
+      if (withRetry) {
+        retryable.retry { jobDefinition.block() }
+      } else {
+        jobDefinition.block()
+      }
     }
       .onSuccess { jobRepository.saveAndFlush(Job.successful(jobDefinition.jobType, startedAt)) }
       .onFailure {

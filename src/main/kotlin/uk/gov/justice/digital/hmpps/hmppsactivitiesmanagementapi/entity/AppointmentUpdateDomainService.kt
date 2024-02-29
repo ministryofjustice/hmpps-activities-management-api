@@ -174,10 +174,14 @@ class AppointmentUpdateDomainService(
       if (request.inCell == true) {
         it.internalLocationId = null
         it.inCell = true
+        it.onWing = true
+        it.offWing = false
       } else {
         request.internalLocationId?.apply {
           it.internalLocationId = this
           it.inCell = false
+          it.onWing = false
+          it.offWing = true
         }
       }
     }
