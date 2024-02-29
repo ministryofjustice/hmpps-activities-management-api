@@ -14,7 +14,6 @@ import jakarta.persistence.Table
 import org.springframework.data.domain.AbstractAggregateRoot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
@@ -234,7 +233,6 @@ data class Appointment(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
   ) =
     AppointmentDetails(
       appointmentId,
@@ -244,7 +242,7 @@ data class Appointment(
       sequenceNumber,
       prisonCode,
       referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      attendees().map { it.toSummary(prisonerMap, userMap) },
+      attendees().map { it.toSummary(prisonerMap) },
       referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
       appointmentTier?.toModelEventTier(),
       appointmentOrganiser?.toModelEventOrganiser(),
@@ -261,22 +259,14 @@ data class Appointment(
       isExpired(),
       extraInformation,
       appointmentSeries.createdTime,
-      userMap[appointmentSeries.createdBy].toSummary(appointmentSeries.createdBy),
+      appointmentSeries.createdBy,
       isEdited(),
       updatedTime,
-      if (updatedBy == null) {
-        null
-      } else {
-        userMap[updatedBy].toSummary(updatedBy!!)
-      },
+      updatedBy,
       isCancelled(),
       isDeleted,
       cancelledTime,
-      if (cancelledBy == null) {
-        null
-      } else {
-        userMap[cancelledBy].toSummary(cancelledBy!!)
-      },
+      cancelledBy,
     )
 
   /**
@@ -300,8 +290,7 @@ fun List<Appointment>.toDetails(
   prisonerMap: Map<String, Prisoner>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-  userMap: Map<String, UserDetail>,
-) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }
+) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
 
 data class AppointmentAttendanceMarkedEvent(
   val appointmentId: Long,

@@ -37,7 +37,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
@@ -147,12 +146,6 @@ class AppointmentSetServiceTest {
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
-    whenever(prisonApiClient.getUserDetailsList(entity.usernames())).thenReturn(
-      listOf(
-        userDetail(1, "CREATE.USER", "CREATE", "USER"),
-        userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-      ),
-    )
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
       mapOf(
         "A1234BC" to PrisonerSearchPrisonerFixture.instance(

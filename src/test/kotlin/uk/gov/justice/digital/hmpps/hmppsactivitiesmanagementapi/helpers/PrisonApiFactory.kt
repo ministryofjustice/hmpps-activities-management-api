@@ -6,27 +6,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTime
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
-fun userDetail(
-  id: Long = 1,
-  username: String = "TEST.USER",
-  firstName: String = "TEST",
-  lastName: String = "USER",
-) = UserDetail(
-  staffId = id,
-  username = username,
-  firstName = firstName,
-  lastName = lastName,
-  accountStatus = UserDetail.AccountStatus.ACTIVE,
-  active = true,
-  lockDate = "",
-)
 
 fun userCaseLoads(prisonCode: String) =
   listOf(

@@ -143,10 +143,10 @@ data class AppointmentSeriesDetails(
   @Schema(
     description =
     """
-    The summary of the user that created this appointment series
+    The username of the user that created this appointment series
     """,
   )
-  val createdBy: UserSummary,
+  val createdBy: String,
 
   @Schema(
     description =
@@ -161,11 +161,11 @@ data class AppointmentSeriesDetails(
   @Schema(
     description =
     """
-    The summary of the user that last edited one or more appointments in this series.
+    The username of the user that last edited one or more appointments in this series.
     Will be null if no appointments in the series have been altered since they were created
     """,
   )
-  val updatedBy: UserSummary?,
+  val updatedBy: String?,
 
   @Schema(
     description =

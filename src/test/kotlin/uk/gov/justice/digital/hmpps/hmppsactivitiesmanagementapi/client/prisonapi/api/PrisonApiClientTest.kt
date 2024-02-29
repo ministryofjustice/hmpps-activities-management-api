@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.contain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
@@ -439,17 +438,6 @@ class PrisonApiClientTest {
         activeFlag = "Y",
         listSeq = 6,
         systemDataFlag = "N",
-      ),
-    )
-  }
-
-  @Test
-  fun `getUserDetailsList - success`() {
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
-
-    assertThat(prisonApiClient.getUserDetailsList(listOf("TEST.USER"))).isEqualTo(
-      listOf(
-        userDetail(1, "TEST.USER", "TEST1", "USER1"),
       ),
     )
   }

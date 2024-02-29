@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -27,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -37,7 +35,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
@@ -496,20 +493,6 @@ class TransformFunctionsTest {
   fun `location to appointment location summary mapping`() {
     assertThat(appointmentLocation(1, "TPR").toAppointmentLocationSummary(1, "TPR")).isEqualTo(
       AppointmentLocationSummary(1, "TPR", "Test Appointment Location User Description"),
-    )
-  }
-
-  @Test
-  fun `user detail to summary returns unknown for null user details`() {
-    assertThat((null as UserDetail?).toSummary("TEST.USER")).isEqualTo(
-      UserSummary(-1, "TEST.USER", "UNKNOWN", "UNKNOWN"),
-    )
-  }
-
-  @Test
-  fun `user detail to summary mapping`() {
-    assertThat(userDetail(1, "TEST.USER", "TEST", "USER").toSummary("TEST.USER")).isEqualTo(
-      UserSummary(1, "TEST.USER", "TEST", "USER"),
     )
   }
 

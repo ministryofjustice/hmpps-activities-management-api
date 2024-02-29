@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetAppointment
@@ -222,7 +221,7 @@ fun appointmentSeriesDetails(
   category: AppointmentCategorySummary = appointmentCategorySummary(),
   createdTime: LocalDateTime = LocalDateTime.now(),
   updatedTime: LocalDateTime? = LocalDateTime.now(),
-  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updatedBy: String? = "UPDATE.USER",
 ) = AppointmentSeriesDetails(
   1,
   AppointmentType.INDIVIDUAL,
@@ -240,7 +239,7 @@ fun appointmentSeriesDetails(
   null,
   "Appointment series level comment",
   createdTime,
-  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  "CREATE.USER",
   updatedTime,
   updatedBy,
   appointments = listOf(
@@ -271,9 +270,9 @@ fun appointmentDetails(
   endTime: LocalTime = LocalTime.of(10, 30),
   extraInformation: String = "Appointment level comment",
   createdTime: LocalDateTime = LocalDateTime.now(),
-  createdBy: UserSummary = UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  createdBy: String = "CREATE.USER",
   updatedTime: LocalDateTime? = LocalDateTime.now(),
-  updatedBy: UserSummary? = UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+  updatedBy: String? = "UPDATE.USER",
   appointmentAttendeeId: Long = 1,
 ) = AppointmentDetails(
   appointmentId,
@@ -375,7 +374,7 @@ fun appointmentSetDetails(
     ),
   ),
   createdTime,
-  UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+  "CREATE.USER",
   null,
   null,
 )

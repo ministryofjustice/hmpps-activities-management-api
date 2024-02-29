@@ -55,5 +55,5 @@ data class AppointmentAttendeeSummary(
     """,
     example = "AAA01U",
   )
-  val attendanceRecordedBy: UserSummary?,
+  val attendanceRecordedBy: String?,
 )
