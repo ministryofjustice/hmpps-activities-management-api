@@ -75,7 +75,6 @@ class AppointmentUpdateDomainService(
       val addedAttendees = updatedAppointmentSeries.appointments()
         .filter { appointmentIdsToUpdate.contains(it.appointmentId) }
         .flatMap { it.attendees() }
-        .distinctBy { it.appointmentAttendeeId }
         .filterNot { originalAttendeeIds.contains(it.appointmentAttendeeId) }
 
       if (auditEvent) {
