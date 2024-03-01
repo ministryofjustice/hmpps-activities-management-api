@@ -32,12 +32,12 @@ class UtilityController(
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
-  fun triggerCreateScheduledInstancesJob(
+  fun publishDomainEvent(
     @Valid
     @RequestBody
     publishEventUtilityModel: PublishEventUtilityModel,
   ): String {
-    publishEventUtilityModel.identifiers!!.forEach {
+    publishEventUtilityModel.identifiers!!.toSet().forEach {
       outboundEventsService.send(publishEventUtilityModel.outboundEvent!!, it)
     }
 
