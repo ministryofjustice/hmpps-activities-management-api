@@ -23,6 +23,10 @@ generic-service:
           deny all;
           return 401;
         }
+        location /utility/ {
+          deny all;
+          return 401;
+        }
         location /queue-admin/retry-all-dlqs {
           deny all;
           return 401;
