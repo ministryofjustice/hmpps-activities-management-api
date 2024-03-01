@@ -82,10 +82,10 @@ class AllocationTest {
   }
 
   @Test
-  fun `check default deallocation when deallocate now`() {
+  fun `check default deallocation when deallocate today`() {
     val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
 
-    allocation.deallocateNow()
+    allocation.deallocateNowOn(TimeSource.today())
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
@@ -93,18 +93,35 @@ class AllocationTest {
     assertThat(allocation.deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
     assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
     assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
+    assertThat(allocation.endDate).isEqualTo(TimeSource.today())
   }
 
   @Test
-  fun `check planned deallocation takes precedence when deallocate now`() {
+  fun `check deallocation now with end before today`() {
+    val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
+
+    allocation.deallocateNowOn(TimeSource.yesterday())
+
+    assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
+    assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
+    assertThat(allocation.deallocatedBy).isEqualTo("Activities Management Service")
+    assertThat(allocation.deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
+    assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
+    assertThat(allocation.endDate).isEqualTo(TimeSource.yesterday())
+  }
+
+  @Test
+  fun `check planned deallocation takes precedence when deallocate today`() {
     val allocation = allocation().deallocateOn(LocalDate.now(), DeallocationReason.TRANSFERRED, "by test")
 
-    allocation.deallocateNow()
+    allocation.deallocateNowOn(TimeSource.today())
 
     assertThat(allocation.status(PrisonerStatus.ENDED)).isTrue
     assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.TRANSFERRED)
     assertThat(allocation.deallocatedBy).isEqualTo("by test")
     assertThat(allocation.deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+    assertThat(allocation.endDate).isEqualTo(TimeSource.today())
   }
 
   @Test
@@ -366,7 +383,7 @@ class AllocationTest {
   fun `allocation end date must be on or after the start date unless ended`() {
     val allocation = allocation().copy(prisonerNumber = "123456", startDate = TimeSource.tomorrow()).also { it.endDate isEqualTo null }
 
-    assertDoesNotThrow { allocation.deallocateNow() }
+    assertDoesNotThrow { allocation.deallocateNowOn(TimeSource.today()) }
 
     allocation.startDate isEqualTo TimeSource.tomorrow()
     allocation.endDate isEqualTo TimeSource.today()
@@ -689,7 +706,7 @@ class AllocationTest {
 
   @Test
   fun `allocation deallocated cannot be attended`() {
-    val allocation = allocation().deallocateNow()
+    val allocation = allocation().deallocateNowOn(TimeSource.today())
 
     allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
   }
@@ -811,5 +828,16 @@ class AllocationTest {
   fun `isCurrentlySuspended - returns false when a suspension is not planned`() {
     val allocation = allocation(startDate = TimeSource.yesterday())
     allocation.isCurrentlySuspended() isBool false
+  }
+
+  @Test
+  fun `check cannot deallocated in future`() {
+    val allocation = allocation().apply { endDate = TimeSource.today() }
+
+    assertThatThrownBy {
+      allocation.deallocateNowOn(TimeSource.tomorrow())
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation '0' cannot be deallocated with the future date '2024-03-02'")
   }
 }

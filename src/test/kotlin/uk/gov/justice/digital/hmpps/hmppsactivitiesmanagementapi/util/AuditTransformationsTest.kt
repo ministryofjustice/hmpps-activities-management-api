@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import toPrisonerAddedToWaitingListEvent
 import toPrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
@@ -17,7 +18,7 @@ class AuditTransformationsTest {
 
   @Test
   fun `transform to prisoner deallocated event`() {
-    val allocation = allocation().deallocateNow()
+    val allocation = allocation().deallocateNowOn(TimeSource.today())
 
     with(allocation.toPrisonerDeallocatedEvent()) {
       assertThat(activityId).isEqualTo(allocation.activitySchedule.activity.activityId)
