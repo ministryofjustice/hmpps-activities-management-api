@@ -62,10 +62,8 @@ class WaitingListService(
           prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber })
 
         map {
-          val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
-          if (prisoner != null) {
-            it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
-          }
+          val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber } ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
+          it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
         }
       }
 

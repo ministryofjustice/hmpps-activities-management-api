@@ -5,6 +5,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -381,7 +382,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `get waiting lists by the schedule identifier`() {
+  fun `get waiting lists by the schedule identifier throws exception when no prisoner details`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
 
@@ -415,28 +416,10 @@ class WaitingListServiceTest {
       on { findByPrisonerNumbers(listOf("123456")) } doReturn emptyList()
     }
 
-    with(service.getWaitingListsBySchedule(1L)) {
-      assertThat(size).isEqualTo(1)
-
-      with(first()) {
-        id isEqualTo 99
-        scheduleId isEqualTo schedule.activityScheduleId
-        allocationId isEqualTo allocation.allocationId
-        prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-        prisonerNumber isEqualTo "123456"
-        bookingId isEqualTo 100L
-        status isEqualTo WaitingListStatus.DECLINED
-        requestedDate isEqualTo TimeSource.today()
-        requestedBy isEqualTo "Fred"
-        comments isEqualTo "Some random test comments"
-        createdBy isEqualTo "Bob"
-        creationTime isCloseTo TimeSource.now()
-        updatedBy isEqualTo "Test"
-        updatedTime!! isCloseTo TimeSource.now()
-        declinedReason isEqualTo "Needs to attend level one activity first"
-        earliestReleaseDate isEqualTo null
-      }
+    val exception = assertThrows<NullPointerException> {
+      service.getWaitingListsBySchedule(1L)
     }
+    exception.message isEqualTo "Prisoner 123456 not found for waiting list id 1"
   }
 
   @Test

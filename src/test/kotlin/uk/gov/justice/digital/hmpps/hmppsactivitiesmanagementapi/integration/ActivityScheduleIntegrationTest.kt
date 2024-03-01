@@ -587,7 +587,11 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all waiting lists for Maths`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers()
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A4065DZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+      ),)
 
     webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
   }
