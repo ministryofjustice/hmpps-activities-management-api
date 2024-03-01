@@ -31,9 +31,9 @@ class ResourceServerConfiguration {
           "/swagger-ui/**",
           "/swagger-ui.html",
           "/h2-console/**",
-          // This endpoint is secured in the ingress rather than the app so that it can be called from within the namespace without requiring authentication
+          // The following endpoints are secured in the ingress rather than the app so that they can be called from within the namespace without requiring authentication
           "/job/**",
-          // This endpoint is secured in the ingress rather than the app so that it can be called from within the namespace without requiring authentication
+          "/utility/**",
           "/queue-admin/retry-all-dlqs",
         ).forEach { authorize(it, permitAll) }
         authorize(anyRequest, authenticated)
