@@ -591,7 +591,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       listOf("A4065DZ"),
       listOf(
         PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
-      ),)
+      ),
+    )
 
     webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
   }
