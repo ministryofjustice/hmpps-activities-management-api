@@ -20,8 +20,13 @@ class AttendanceSuspensionDomainService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun suspendFutureAttendancesForAllocation(dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {
-    val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
+  fun suspendFutureAttendancesForAllocation(attendanceReasonToSet: AttendanceReasonEnum, dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {
+    require(attendanceReasonToSet in listOf(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) {
+      "Failed to suspend future attendances for allocation with id ${allocation.allocationId}, because the provided attendance reason " +
+        "$attendanceReasonToSet was not one of: ${AttendanceReasonEnum.SUSPENDED}, ${AttendanceReasonEnum.AUTO_SUSPENDED}"
+    }
+
+    val reason = attendanceReasonRepository.findByCode(attendanceReasonToSet)
     return attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
       dateTime.toLocalDate(),
       allocation.activitySchedule.activityScheduleId,
@@ -31,16 +36,18 @@ class AttendanceSuspensionDomainService(
       .filter { attendance -> attendance.editable() && attendance.scheduledInstance.isFuture(dateTime) }
       .onEach { attendance -> attendance.completeWithoutPayment(reason) }
       .also {
-        log.info("Suspended ${it.size} attendances for allocation with ID ${allocation.allocationId}.")
+        log.info("Suspended ($reason) ${it.size} attendances for allocation with ID ${allocation.allocationId}.")
       }
   }
 
   fun resetFutureSuspendedAttendancesForAllocation(
+    attendanceReasonToReset: AttendanceReasonEnum,
     dateTime: LocalDateTime,
     allocation: Allocation,
   ): List<Attendance> {
     val now = LocalDateTime.now()
     val cancelledReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
+    val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
 
     return attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
       dateTime.toLocalDate(),
@@ -54,6 +61,9 @@ class AttendanceSuspensionDomainService(
         if (attendance.scheduledInstance.cancelled) {
           // If the schedule instance was cancelled (and still is) after the initial suspension then we need to cancel instead of unsuspend
           attendance.cancel(cancelledReason).also { log.info("Cancelled attendance ${attendance.attendanceId}") }
+        } else if (attendanceReasonToReset == AttendanceReasonEnum.AUTO_SUSPENDED && allocation.isCurrentlySuspended()) {
+          // If we are resetting auto suspensions and the prisoner currently has a planned suspension, then we need to set the attendances as suspended
+          attendance.completeWithoutPayment(suspendedReason).also { log.info("Suspended attendance ${attendance.attendanceId}") }
         } else {
           attendance.unsuspend().also { log.info("Unsuspended attendance ${attendance.attendanceId}") }
         }

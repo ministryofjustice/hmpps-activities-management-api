@@ -108,8 +108,12 @@ class ManageAttendancesService(
     if (!attendanceAlreadyExistsFor(instance, allocation)) {
       when {
         // Suspended prisoners produce pre-marked and unpaid suspended attendances
-        allocation.status(PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED) -> {
+        allocation.status(PrisonerStatus.SUSPENDED) -> {
           suspendedAttendance(instance, allocation)
+        }
+
+        allocation.status(PrisonerStatus.AUTO_SUSPENDED) -> {
+          autoSuspendedAttendance(instance, allocation)
         }
 
         // Cancelled instances produce pre-marked cancelled and paid attendances
@@ -136,6 +140,16 @@ class ManageAttendancesService(
     scheduledInstance = instance,
     prisonerNumber = allocation.prisonerNumber,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
+    initialIssuePayment = false,
+    status = AttendanceStatus.COMPLETED,
+    recordedTime = LocalDateTime.now(),
+    recordedBy = ServiceName.SERVICE_NAME.value,
+  )
+
+  private fun autoSuspendedAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
+    scheduledInstance = instance,
+    prisonerNumber = allocation.prisonerNumber,
+    attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.AUTO_SUSPENDED),
     initialIssuePayment = false,
     status = AttendanceStatus.COMPLETED,
     recordedTime = LocalDateTime.now(),

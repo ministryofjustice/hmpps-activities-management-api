@@ -107,7 +107,7 @@ data class ScheduledInstance(
     comment = cancelComment
 
     return attendances
-      .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
+      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
       .onEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
   }
 
@@ -128,7 +128,7 @@ data class ScheduledInstance(
     cancelledTime = null
 
     return attendances
-      .filterNot { it.attendanceReason?.code == AttendanceReasonEnum.SUSPENDED }
+      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
       .onEach(Attendance::uncancel)
   }
 
