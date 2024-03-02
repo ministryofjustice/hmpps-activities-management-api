@@ -93,6 +93,8 @@ data class PrisonerScheduledActivity(
   val cancelled: Boolean = false,
 
   val suspended: Boolean = false,
+
+  val autoSuspended: Boolean = false,
 ) {
   fun toScheduledAttendeeModel() = ScheduledAttendee(
     scheduledInstanceId = scheduledInstanceId,
@@ -100,6 +102,7 @@ data class PrisonerScheduledActivity(
     prisonerNumber = prisonerNumber,
     bookingId = bookingId,
     suspended = suspended,
+    autoSuspended = autoSuspended,
   )
 }
 

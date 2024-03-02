@@ -80,6 +80,9 @@ data class ScheduledEvent(
   @Schema(description = "Set to true if this prisoner is suspended for this event (only applies to activities)", example = "false")
   val suspended: Boolean = false,
 
+  @Schema(description = "Set to true if this prisoner is auto-suspended for this event (only applies to activities)", example = "false")
+  val autoSuspended: Boolean = false,
+
   @Schema(description = "The prisoner number", example = "GF10101")
   val prisonerNumber: String?,
 

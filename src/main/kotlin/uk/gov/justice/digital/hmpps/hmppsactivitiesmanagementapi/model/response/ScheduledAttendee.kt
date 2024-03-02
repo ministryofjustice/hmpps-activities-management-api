@@ -18,4 +18,7 @@ data class ScheduledAttendee(
 
   @Schema(description = "Set to true if this prisoner is suspended from the scheduled event", example = "false")
   val suspended: Boolean = false,
+
+  @Schema(description = "Set to true if this prisoner is auto-suspended from the scheduled event", example = "false")
+  val autoSuspended: Boolean = false,
 )
