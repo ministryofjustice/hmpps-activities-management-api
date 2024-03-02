@@ -8,6 +8,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -838,6 +839,6 @@ class AllocationTest {
       allocation.deallocateNowOn(TimeSource.tomorrow())
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation '0' cannot be deallocated with the future date '2024-03-02'")
+      .hasMessage("Allocation '0' cannot be deallocated with the future date '${TimeSource.tomorrow().toIsoDate()}'")
   }
 }
