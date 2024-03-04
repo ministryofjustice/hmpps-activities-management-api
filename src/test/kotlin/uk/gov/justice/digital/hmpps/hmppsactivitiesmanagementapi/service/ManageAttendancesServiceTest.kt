@@ -190,7 +190,7 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is created and marked suspended and unpaid when allocation is auto suspended`() {
+  fun `attendance is created and marked auto-suspended and unpaid when allocation is auto suspended`() {
     instance.activitySchedule.activity.attendanceRequired = true
     allocation.autoSuspend(today.atStartOfDay(), "reason")
 

@@ -45,6 +45,11 @@ class AttendanceSuspensionDomainService(
     dateTime: LocalDateTime,
     allocation: Allocation,
   ): List<Attendance> {
+    require(attendanceReasonToReset in listOf(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) {
+      "Failed to suspend future attendances for allocation with id ${allocation.allocationId}, because the provided attendance reason " +
+        "$attendanceReasonToReset was not one of: ${AttendanceReasonEnum.SUSPENDED}, ${AttendanceReasonEnum.AUTO_SUSPENDED}"
+    }
+
     val now = LocalDateTime.now()
     val cancelledReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
     val suspendedReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)

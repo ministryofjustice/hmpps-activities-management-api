@@ -328,7 +328,24 @@ class AttendanceTest {
   }
 
   @Test
-  fun `can unsuspend attendance to waiting and history records are created`() {
+  fun `can unsuspend an auto-suspended attendance to waiting and history records are created`() {
+    Attendance(scheduledInstance = instance, prisonerNumber = "123456")
+      .also { assertThat(it.history()).isEmpty() }
+      .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED))
+      .also { assertThat(it.history()).hasSize(1) }
+      .unsuspend()
+      .also {
+        assertThat(it.history()).hasSize(2)
+        assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+        assertThat(it.attendanceReason).isNull()
+        assertThat(it.issuePayment).isNull()
+        assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+        assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+      }
+  }
+
+  @Test
+  fun `can unsuspend a suspended attendance to waiting and history records are created`() {
     Attendance(scheduledInstance = instance, prisonerNumber = "123456")
       .also { assertThat(it.history()).isEmpty() }
       .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED))
