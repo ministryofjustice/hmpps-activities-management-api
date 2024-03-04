@@ -42,7 +42,6 @@ SELECT si.scheduled_instance_id,
        category.code                                                                         AS activity_category,
        act.summary                                                                           AS activity_summary,
        si.cancelled,
-       EXISTS (SELECT 1 WHERE alloc.prisoner_status = 'AUTO_SUSPENDED')                      AS autoSuspended,
        EXISTS (SELECT 1
                FROM planned_suspension ps
                WHERE alloc.allocation_id = ps.allocation_id
@@ -50,7 +49,8 @@ SELECT si.scheduled_instance_id,
                  AND (ps.planned_end_date > si.session_date OR ps.planned_end_date IS NULL)) AS suspended,
        act.in_cell,
        act.on_wing,
-       act.off_wing
+       act.off_wing,
+       EXISTS (SELECT 1 WHERE alloc.prisoner_status = 'AUTO_SUSPENDED')                      AS autoSuspended
 FROM scheduled_instance si
          JOIN activity_schedule schedule
               ON schedule.activity_schedule_id = si.activity_schedule_id AND
