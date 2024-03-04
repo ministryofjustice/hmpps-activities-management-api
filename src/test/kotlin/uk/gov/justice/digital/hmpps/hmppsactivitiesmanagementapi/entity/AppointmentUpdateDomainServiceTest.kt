@@ -277,8 +277,11 @@ class AppointmentUpdateDomainServiceTest {
         auditEvent = false,
       )
 
+      /* then the series will not be updated */
       appointmentSeries.internalLocationId isEqualTo 123
+      /* then the selected appointments will be updated */
       appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L } isBool true
+      /* the remaining appointments will not be updated */
       appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.internalLocationId == 123L } isBool true
 
       response.internalLocationId isEqualTo 123
@@ -309,15 +312,24 @@ class AppointmentUpdateDomainServiceTest {
         auditEvent = false,
       )
 
+      /* then the series will not be updated */
       appointmentSeries.internalLocationId isEqualTo 123
       appointmentSeries.inCell isEqualTo false
+      appointmentSeries.onWing isEqualTo false
+      appointmentSeries.offWing isEqualTo true
+      /* then the selected appointments will be updated */
       with(appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }) {
         this.all { it.internalLocationId == null } isBool true
         this.all { it.inCell } isBool true
+        this.all { it.onWing } isBool true
+        this.all { it.offWing } isBool false
       }
+      /* then the other appointments will not be updated */
       with(appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }) {
         this.all { it.internalLocationId == 123L } isBool true
-        this.all { !it.inCell } isBool true
+        this.all { it.inCell } isBool false
+        this.all { it.onWing } isBool false
+        this.all { it.offWing } isBool true
       }
 
       response.internalLocationId isEqualTo 123

@@ -213,26 +213,30 @@ data class Allocation(
 
   /**
    * This will default to ENDED for the reason unless there is planned deallocation that matches now which overrides it.
+   *
+   * Deallocation date cannot be in the future, this is deallocating/ending the allocation.
    */
-  fun deallocateNow() =
+  fun deallocateNowOn(date: LocalDate) =
     this.apply {
       if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-      val today = LocalDate.now()
+      require(date <= LocalDate.now()) {
+        "Allocation '$allocationId' cannot be deallocated with the future date '$date'"
+      }
 
-      if (plannedDeallocation != null && plannedDeallocation?.plannedDate == today) {
+      if (plannedDeallocation != null && plannedDeallocation?.plannedDate == date) {
         prisonerStatus = PrisonerStatus.ENDED
         deallocatedReason = plannedDeallocation?.plannedReason
         deallocatedBy = plannedDeallocation?.plannedBy
         deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
         deallocationCaseNoteId = plannedDeallocation?.caseNoteId
-        endDate = today
+        endDate = date
       } else {
         prisonerStatus = PrisonerStatus.ENDED
         deallocatedReason = DeallocationReason.ENDED
         deallocatedBy = ServiceName.SERVICE_NAME.value
         deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
-        endDate = today
+        endDate = date
       }
 
       endExclusions(exclusions(ExclusionsFilter.PRESENT))

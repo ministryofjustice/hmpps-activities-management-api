@@ -8,6 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
@@ -20,7 +21,7 @@ import java.time.LocalDateTime
 
 class CancelAppointmentsJobTest {
   private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>()))
+  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>(), mock<Retryable>()))
   private val service: AppointmentCancelDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = CancelAppointmentsJob(safeJobRunner, service)

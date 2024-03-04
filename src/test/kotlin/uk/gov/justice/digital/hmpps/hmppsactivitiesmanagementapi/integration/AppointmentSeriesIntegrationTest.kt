@@ -246,12 +246,47 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `create appointment series single appointment single prisoner success`() {
+  fun `create appointment series single appointment single prisoner success for internal location`() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
 
     prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumbers.first(),
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+
+    assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
+    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+  }
+
+  @Test
+  fun `create appointment series single appointment single prisoner success for in cell`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
+
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(

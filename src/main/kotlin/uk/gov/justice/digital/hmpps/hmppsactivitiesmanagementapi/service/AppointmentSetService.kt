@@ -137,6 +137,8 @@ class AppointmentSetService(
       appointmentTier = tier,
       internalLocationId = if (inCell) null else internalLocationId,
       inCell = inCell,
+      onWing = inCell,
+      offWing = !inCell,
       startDate = startDate!!,
       createdBy = createdBy,
     ).also { appointmentSet ->
