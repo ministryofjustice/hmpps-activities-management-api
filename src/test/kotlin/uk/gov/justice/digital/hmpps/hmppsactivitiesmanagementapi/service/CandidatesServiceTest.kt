@@ -104,7 +104,7 @@ class CandidatesServiceTest {
           allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber),
           allocation().copy(allocationId = 2, prisonerNumber = candidate.prisonerNumber).apply {
             deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString(), 10001)
-            deallocateNow()
+            deallocateNowOn(TimeSource.today())
           },
         ),
       )
@@ -749,7 +749,7 @@ class CandidatesServiceTest {
           bookingId = 1L,
           startDate = TimeSource.tomorrow(),
           allocatedBy = "Test",
-        ).deallocateNow()
+        ).deallocateNowOn(TimeSource.today())
       }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.ENDED }
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))

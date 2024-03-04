@@ -907,7 +907,7 @@ class ActivityScheduleTest {
   @Test
   fun `prisoner is deallocated from schedule when they already have an ended allocation previously`() {
     val schedule = activitySchedule(activity = activityEntity())
-    val originalAllocation = schedule.allocations().first().also { it.deallocateNow() }
+    val originalAllocation = schedule.allocations().first().also { it.deallocateNowOn(TimeSource.today()) }
     val newAllocation = schedule.allocatePrisoner(originalAllocation.prisonerNumber.toPrisonerNumber(), originalAllocation.payBand, originalAllocation.bookingId, allocatedBy = "test")
 
     assertThat(newAllocation.plannedDeallocation).isNull()
@@ -1181,7 +1181,7 @@ class ActivityScheduleTest {
       bookingId = 20002,
       allocatedBy = "BILL",
       endDate = tomorrow.plusDays(1),
-    ).deallocateNow()
+    ).deallocateNowOn(TimeSource.today())
 
     assertThat(schedule.allocations()).hasSize(2)
 
