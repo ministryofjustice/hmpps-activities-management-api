@@ -42,7 +42,7 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
       "and a.summary = :summary " +
       "and (a.endDate is null or a.endDate > :endDate)",
   )
-  fun findExistingLiveActivity(prisonCode: String, summary: String, endDate: LocalDate): Boolean
+  fun existingLiveActivity(prisonCode: String, summary: String, endDate: LocalDate): Boolean
 
   fun findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode: String, activityTier: EventTier, activityCategory: ActivityCategory): List<Activity>
 

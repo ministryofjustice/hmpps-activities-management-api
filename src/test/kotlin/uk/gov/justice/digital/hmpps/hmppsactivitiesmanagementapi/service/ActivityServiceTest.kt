@@ -318,7 +318,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel(educationLevel.code)).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea(studyArea.code)).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.findExistingLiveActivity(MOORLAND_PRISON_CODE, "Dave's Test", TimeSource.today())).thenReturn(true)
+    whenever(activityRepository.existingLiveActivity(MOORLAND_PRISON_CODE, "Dave's Test", TimeSource.today())).thenReturn(true)
 
     val createDuplicateActivityRequest = activityCreateRequest(prisonCode = MOORLAND_PRISON_CODE, educationLevel = educationLevel, studyArea = studyArea).copy(summary = "Dave's Test")
 
@@ -750,7 +750,7 @@ class ActivityServiceTest {
     ).thenReturn(savedActivityEntity)
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-5.json")
 
-    whenever(activityRepository.findExistingLiveActivity(MOORLAND_PRISON_CODE, updateDuplicateActivityRequest.summary!!, TimeSource.today())).thenReturn(true)
+    whenever(activityRepository.existingLiveActivity(MOORLAND_PRISON_CODE, updateDuplicateActivityRequest.summary!!, TimeSource.today())).thenReturn(true)
 
     assertThatThrownBy {
       service().updateActivity(

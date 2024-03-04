@@ -315,7 +315,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
     ).copy(summary = "Maths")
 
-    val createdActivity = webTestClient.createActivity(newActivityWithDuplicateSummary)
+    val createdDuplicateActivity = webTestClient.createActivity(newActivityWithDuplicateSummary)
+
+    with(createdDuplicateActivity!!) {
+      assertThat(summary.isEqualTo("Maths"))
+      assertThat(description.isEqualTo("Test activity"))
+    }
   }
 
   @Test
