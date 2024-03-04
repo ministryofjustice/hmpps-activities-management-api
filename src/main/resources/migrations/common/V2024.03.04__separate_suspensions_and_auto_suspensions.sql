@@ -50,7 +50,7 @@ SELECT si.scheduled_instance_id,
        act.in_cell,
        act.on_wing,
        act.off_wing,
-       EXISTS (SELECT 1 WHERE alloc.prisoner_status = 'AUTO_SUSPENDED')                      AS autoSuspended
+       EXISTS (SELECT 1 WHERE alloc.prisoner_status = 'AUTO_SUSPENDED')                      AS auto_suspended
 FROM scheduled_instance si
          JOIN activity_schedule schedule
               ON schedule.activity_schedule_id = si.activity_schedule_id AND
