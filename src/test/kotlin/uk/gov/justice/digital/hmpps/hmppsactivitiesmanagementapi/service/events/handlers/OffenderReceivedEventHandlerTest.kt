@@ -13,6 +13,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -135,6 +136,6 @@ class OffenderReceivedEventHandlerTest {
 
     handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
-    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(eq(AttendanceReasonEnum.AUTO_SUSPENDED), any(), eq(allocation))
   }
 }

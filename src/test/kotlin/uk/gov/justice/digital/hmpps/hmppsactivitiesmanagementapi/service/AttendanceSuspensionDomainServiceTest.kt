@@ -59,7 +59,7 @@ class AttendanceSuspensionDomainServiceTest {
 
     @Test
     fun `only future attendances are suspended`() {
-      service.suspendFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.suspendFutureAttendancesForAllocation(AttendanceReasonEnum.SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED
@@ -129,7 +129,7 @@ class AttendanceSuspensionDomainServiceTest {
 
     @Test
     fun `future attendances which are suspended get reset`() {
-      service.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 2
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED

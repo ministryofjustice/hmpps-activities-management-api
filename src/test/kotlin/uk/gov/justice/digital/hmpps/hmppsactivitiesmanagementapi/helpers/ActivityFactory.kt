@@ -170,6 +170,7 @@ internal fun attendanceReasons() = mapOf(
   "SUSPENDED" to AttendanceReason(7, AttendanceReasonEnum.SUSPENDED, "Suspended", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
   "CANCELLED" to AttendanceReason(8, AttendanceReasonEnum.CANCELLED, "Cancelled", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
   "ATTENDED" to AttendanceReason(9, AttendanceReasonEnum.ATTENDED, "Attended", true, false, false, false, false, false, false, null, "Maps to ATT in NOMIS"),
+  "AUTO_SUSPENDED" to AttendanceReason(10, AttendanceReasonEnum.AUTO_SUSPENDED, "Temporarily absent", false, false, false, false, false, false, true, null, "Maps to ACCAB in NOMIS"),
 )
 
 internal fun attendanceReason(reason: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED) = attendanceReasons()[reason.name]!!

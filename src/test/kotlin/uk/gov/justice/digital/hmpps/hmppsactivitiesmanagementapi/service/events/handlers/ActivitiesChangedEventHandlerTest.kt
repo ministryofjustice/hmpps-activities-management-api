@@ -14,6 +14,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutPrison
@@ -142,7 +143,7 @@ class ActivitiesChangedEventHandlerTest {
 
     handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE))
 
-    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(eq(AttendanceReasonEnum.AUTO_SUSPENDED), any(), eq(allocation))
   }
 
   @Test
