@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.attendedReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.autoSuspendedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.cancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.clashReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.notRequiredReason
@@ -28,6 +29,7 @@ class AttendanceReasonIntegrationTest : IntegrationTestBase() {
       clashReason,
       otherReason,
       suspendedReason,
+      autoSuspendedReason,
       cancelledReason,
       attendedReason,
     )

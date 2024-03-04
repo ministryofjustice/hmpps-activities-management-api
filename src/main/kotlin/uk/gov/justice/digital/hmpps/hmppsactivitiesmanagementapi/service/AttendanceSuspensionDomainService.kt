@@ -55,7 +55,7 @@ class AttendanceSuspensionDomainService(
       AttendanceStatus.COMPLETED,
       allocation.prisonerNumber,
     )
-      .filter { attendance -> attendance.hasReason(AttendanceReasonEnum.SUSPENDED) }
+      .filter { attendance -> attendance.hasReason(attendanceReasonToReset) }
       .filter { attendance -> attendance.editable() && attendance.scheduledInstance.isFuture(now) }
       .onEach { attendance ->
         if (attendance.scheduledInstance.cancelled) {
