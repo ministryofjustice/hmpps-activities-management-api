@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.ActiveProfiles
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
@@ -69,7 +70,7 @@ class AuditableEntityListenerTest(@Autowired private val listener: AuditableEnti
 
   @Test
   fun `prisoner deallocation audit event raised on update`() {
-    listener.onUpdate(allocation.deallocateNow())
+    listener.onUpdate(allocation.deallocateNowOn(TimeSource.today()))
 
     verify(auditService).logEvent(prisonerDeallocatedCaptor.capture())
     verifyNoMoreInteractions(auditService)

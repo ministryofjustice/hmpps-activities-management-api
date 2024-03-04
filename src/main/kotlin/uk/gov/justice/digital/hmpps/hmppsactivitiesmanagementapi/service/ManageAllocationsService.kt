@@ -83,7 +83,7 @@ class ManageAllocationsService(
       activityScheduleRepository.findAllByActivityPrisonCode(prisonCode).flatMap { schedule ->
         if (schedule.endsOn(date)) {
           declineWaitingListsFor(schedule)
-          schedule.deallocateActiveAllocationsNow()
+          schedule.deallocateAllocationsForScheduleEndingOn(date)
         } else {
           schedule.deallocateAllocationsEndingOn(date)
         }.also { allocationIds -> allocationIds.ifNotEmpty { activityScheduleRepository.saveAndFlush(schedule) } }
@@ -99,13 +99,13 @@ class ManageAllocationsService(
     )
   }
 
-  private fun ActivitySchedule.deallocateActiveAllocationsNow() =
-    allocations(excludeEnded = true).onEach(Allocation::deallocateNow).map(Allocation::allocationId)
+  private fun ActivitySchedule.deallocateAllocationsForScheduleEndingOn(date: LocalDate) =
+    allocations(excludeEnded = true).onEach { allocation -> allocation.deallocateNowOn(date) }.map(Allocation::allocationId)
 
   private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) =
     allocations(true)
       .filter { activeAllocation -> activeAllocation.endsOn(date) }
-      .onEach(Allocation::deallocateNow)
+      .onEach { allocation -> allocation.deallocateNowOn(date) }
       .map(Allocation::allocationId)
 
   /*
@@ -240,7 +240,7 @@ class ManageAllocationsService(
         block = {
           transactionHandler.newSpringTransaction {
             getOrDefault(schedule, emptyList()).onEach { allocation ->
-              reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNow()
+              reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNowOn(LocalDate.now())
             }.ifNotEmpty { deallocations ->
               activityScheduleRepository.saveAndFlush(schedule)
               log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
