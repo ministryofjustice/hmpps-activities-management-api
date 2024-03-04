@@ -587,10 +587,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get all waiting lists for Maths`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A4065DZ"),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "A4065DZ",
+        bookingId = 1,
+        status = "ACTIVE IN",
       ),
     )
 

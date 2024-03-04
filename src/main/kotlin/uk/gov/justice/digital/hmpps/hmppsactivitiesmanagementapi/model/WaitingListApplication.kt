@@ -117,5 +117,5 @@ data class WaitingListApplication(
   val updatedBy: String? = null,
 
   @Schema(description = "The earliest release date of the prisoner")
-  var earliestReleaseDate: EarliestReleaseDate? = null,
+  val earliestReleaseDate: EarliestReleaseDate,
 )
