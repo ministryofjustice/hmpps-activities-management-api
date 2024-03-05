@@ -257,7 +257,7 @@ class TransformFunctionsTest {
   @DisplayName("appointmentInstanceToScheduledEvents")
   inner class AppointmentInstanceToScheduledEvents {
     @Test
-    fun `appointment instance to scheduled event`() {
+    fun `appointment instance, with location, to scheduled event`() {
       val entity = appointmentInstanceEntity()
       val scheduledEvents = transform(entity)
 
@@ -272,6 +272,44 @@ class TransformFunctionsTest {
           internalLocationCode = "LOC123",
           internalLocationUserDescription = "User location desc",
           internalLocationDescription = "User location desc",
+          eventId = null,
+          appointmentSeriesId = entity.appointmentSeriesId,
+          appointmentId = entity.appointmentId,
+          appointmentAttendeeId = entity.appointmentInstanceId,
+          oicHearingId = null,
+          cancelled = entity.isCancelled,
+          suspended = false,
+          categoryCode = entity.categoryCode,
+          categoryDescription = "Test Category",
+          summary = "Test Category",
+          comments = entity.extraInformation,
+          prisonerNumber = entity.prisonerNumber,
+          inCell = entity.inCell,
+          outsidePrison = false,
+          date = entity.appointmentDate,
+          startTime = entity.startTime,
+          endTime = entity.endTime,
+          priority = EventType.APPOINTMENT.defaultPriority,
+        ),
+      )
+    }
+
+    @Test
+    fun `in cell appointment instance to scheduled event`() {
+      val entity = appointmentInstanceEntity(inCell = true)
+      val scheduledEvents = transform(entity)
+
+      assertThat(scheduledEvents.first()).isEqualTo(
+        ModelScheduledEvent(
+          prisonCode = "TPR",
+          eventSource = "SAA",
+          eventType = EventType.APPOINTMENT.name,
+          scheduledInstanceId = null,
+          bookingId = entity.bookingId,
+          internalLocationId = entity.internalLocationId,
+          internalLocationCode = "In cell",
+          internalLocationUserDescription = "In cell",
+          internalLocationDescription = "In cell",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,
           appointmentId = entity.appointmentId,

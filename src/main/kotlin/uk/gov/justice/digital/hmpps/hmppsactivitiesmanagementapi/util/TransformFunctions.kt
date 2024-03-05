@@ -144,6 +144,19 @@ fun transformAppointmentInstanceToScheduledEvents(
   locationsForAppointmentsMap: Map<Long, Location>,
   appointments: List<AppointmentInstance>,
 ) = appointments.map {
+  val locationCode: String
+  val locationDescription: String
+
+  when {
+    it.inCell -> {
+      locationCode = "In cell"
+      locationDescription = "In cell"
+    } else -> {
+      locationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available"
+      locationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available"
+    }
+  }
+
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventSource = "SAA",
@@ -151,9 +164,9 @@ fun transformAppointmentInstanceToScheduledEvents(
     scheduledInstanceId = null,
     bookingId = it.bookingId,
     internalLocationId = it.internalLocationId,
-    internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available",
-    internalLocationUserDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
-    internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
+    internalLocationCode = locationCode,
+    internalLocationUserDescription = locationDescription,
+    internalLocationDescription = locationDescription,
     eventId = null,
     appointmentSeriesId = it.appointmentSeriesId,
     appointmentId = it.appointmentId,
