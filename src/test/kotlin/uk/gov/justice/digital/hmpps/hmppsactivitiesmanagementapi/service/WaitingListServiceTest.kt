@@ -22,7 +22,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -30,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
@@ -39,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Pri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -461,14 +460,7 @@ class WaitingListServiceTest {
       on { findByPrisonerNumbers(listOf("G4793VF")) } doReturn listOf(prisoner)
     }
 
-    val earliestReleaseDate = EarliestReleaseDate(
-      releaseDate = releaseDate,
-      isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
-      isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
-      isImmigrationDetainee = prisoner.legalStatus == Prisoner.LegalStatus.IMMIGRATION_DETAINEE,
-      isRemand = prisoner.legalStatus == Prisoner.LegalStatus.REMAND,
-      isIndeterminateSentence = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE,
-    )
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
 
     with(service.getWaitingListsBySchedule(1L)) {
       assertThat(size).isEqualTo(1)
@@ -489,7 +481,7 @@ class WaitingListServiceTest {
         updatedBy isEqualTo "Test"
         updatedTime!! isCloseTo TimeSource.now()
         declinedReason isEqualTo "Needs to attend level one activity first"
-        earliestReleaseDate isEqualTo earliestReleaseDate
+        earliestReleaseDate.releaseDate isEqualTo earliestReleaseDate.releaseDate
       }
     }
   }
@@ -1227,14 +1219,7 @@ class WaitingListServiceTest {
 
     val releaseDate = LocalDate.of(2030, 4, 20)
     val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
-    val earliestReleaseDate = EarliestReleaseDate(
-      releaseDate = releaseDate,
-      isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
-      isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
-      isImmigrationDetainee = prisoner.legalStatus == Prisoner.LegalStatus.IMMIGRATION_DETAINEE,
-      isRemand = prisoner.legalStatus == Prisoner.LegalStatus.REMAND,
-      isIndeterminateSentence = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE,
-    )
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
 
     prisonerSearchApiClient.stub {
       on { findByPrisonerNumber("123456") } doReturn prisoner
@@ -1262,14 +1247,7 @@ class WaitingListServiceTest {
 
     val releaseDate = LocalDate.of(2030, 4, 20)
     val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
-    val earliestReleaseDate = EarliestReleaseDate(
-      releaseDate = releaseDate,
-      isTariffDate = releaseDate != null && prisoner.tariffDate?.isEqual(releaseDate) ?: false,
-      isConvictedUnsentenced = prisoner.legalStatus == Prisoner.LegalStatus.CONVICTED_UNSENTENCED,
-      isImmigrationDetainee = prisoner.legalStatus == Prisoner.LegalStatus.IMMIGRATION_DETAINEE,
-      isRemand = prisoner.legalStatus == Prisoner.LegalStatus.REMAND,
-      isIndeterminateSentence = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE,
-    )
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
 
     prisonerSearchApiClient.stub {
       on { findByPrisonerNumber("123456") } doReturn prisoner
