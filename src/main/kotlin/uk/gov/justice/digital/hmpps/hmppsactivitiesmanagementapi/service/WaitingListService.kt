@@ -69,7 +69,7 @@ class WaitingListService(
           ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
         it.toModel(determineEarliestReleaseDate(prisoner))
       }
-  }
+    }
 
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
