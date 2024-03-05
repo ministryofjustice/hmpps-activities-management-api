@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrga
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -481,7 +482,7 @@ fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }
 
-fun EntityWaitingList.toModel() = ModelWaitingListApplication(
+fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate) = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
   activityId = activitySchedule.activity.activityId,
@@ -499,4 +500,5 @@ fun EntityWaitingList.toModel() = ModelWaitingListApplication(
   updatedTime = updatedTime,
   updatedBy = updatedBy,
   statusUpdatedTime = statusUpdatedTime,
+  earliestReleaseDate = earliestReleaseDate,
 )

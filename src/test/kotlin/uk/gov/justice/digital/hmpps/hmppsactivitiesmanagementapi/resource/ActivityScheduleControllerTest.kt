@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
@@ -199,7 +200,8 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `200 response when get waiting lists by schedule identifier`() {
-    val waitingList = waitingList().toModel()
+    val earliestReleaseDate = earliestReleaseDate()
+    val waitingList = waitingList().toModel(earliestReleaseDate)
 
     whenever(waitingListService.getWaitingListsBySchedule(1)).thenReturn(listOf(waitingList))
 

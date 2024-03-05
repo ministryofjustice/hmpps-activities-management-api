@@ -5,6 +5,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
@@ -47,9 +49,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.DEFAULT_CASELOAD_PENTONVILLE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeCaseLoad
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 @ExtendWith(FakeCaseLoad::class)
 class WaitingListServiceTest {
@@ -379,7 +382,7 @@ class WaitingListServiceTest {
   }
 
   @Test
-  fun `get waiting lists by the schedule identifier`() {
+  fun `get waiting lists by the schedule identifier throws exception when no prisoner details`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
 
@@ -409,6 +412,56 @@ class WaitingListServiceTest {
       on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
     }
 
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbers(listOf("123456")) } doReturn emptyList()
+    }
+
+    val exception = assertThrows<NullPointerException> {
+      service.getWaitingListsBySchedule(1L)
+    }
+    exception.message isEqualTo "Prisoner 123456 not found for waiting list id 1"
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier with earliest release date`() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+    val allocation = schedule.allocations().first()
+
+    val waitingList = WaitingList(
+      waitingListId = 99,
+      prisonCode = PENTONVILLE_PRISON_CODE,
+      activitySchedule = schedule,
+      prisonerNumber = "G4793VF",
+      bookingId = 100L,
+      applicationDate = TimeSource.today(),
+      requestedBy = "Fred",
+      comments = "Some random test comments",
+      createdBy = "Bob",
+      initialStatus = WaitingListStatus.DECLINED,
+    ).apply {
+      this.allocation = allocation
+      this.updatedBy = "Test"
+      this.updatedTime = TimeSource.now()
+      this.declinedReason = "Needs to attend level one activity first"
+    }
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
+    }
+
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule) } doReturn listOf(waitingList)
+    }
+
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbers(listOf("G4793VF")) } doReturn listOf(prisoner)
+    }
+
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
+
     with(service.getWaitingListsBySchedule(1L)) {
       assertThat(size).isEqualTo(1)
 
@@ -417,7 +470,7 @@ class WaitingListServiceTest {
         scheduleId isEqualTo schedule.activityScheduleId
         allocationId isEqualTo allocation.allocationId
         prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-        prisonerNumber isEqualTo "123456"
+        prisonerNumber isEqualTo "G4793VF"
         bookingId isEqualTo 100L
         status isEqualTo WaitingListStatus.DECLINED
         requestedDate isEqualTo TimeSource.today()
@@ -428,6 +481,7 @@ class WaitingListServiceTest {
         updatedBy isEqualTo "Test"
         updatedTime!! isCloseTo TimeSource.now()
         declinedReason isEqualTo "Needs to attend level one activity first"
+        earliestReleaseDate.releaseDate isEqualTo earliestReleaseDate.releaseDate
       }
     }
   }
@@ -445,9 +499,16 @@ class WaitingListServiceTest {
   fun `get waiting list by id`() {
     val waitingList = waitingList(waitingListId = 99, prisonCode = PENTONVILLE_PRISON_CODE)
 
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     whenever(waitingListRepository.findById(waitingList.waitingListId)) doReturn Optional.of(waitingList)
 
-    service.getWaitingListBy(99) isEqualTo waitingList.toModel()
+    service.getWaitingListBy(99) isEqualTo waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
   @Test
@@ -477,6 +538,13 @@ class WaitingListServiceTest {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     waitingList.applicationDate isEqualTo TimeSource.today()
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
@@ -496,6 +564,11 @@ class WaitingListServiceTest {
   fun `update the application date no-op if the same`() {
     val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, applicationDate = TimeSource.today()).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
     }
 
     waitingList.applicationDate isEqualTo TimeSource.today()
@@ -538,6 +611,11 @@ class WaitingListServiceTest {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     waitingList.requestedBy isEqualTo "Fred"
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
@@ -557,6 +635,11 @@ class WaitingListServiceTest {
   fun `update requested by no-op if the same`() {
     val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, requestedBy = "Fred").also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
     }
 
     waitingList.requestedBy isEqualTo "Fred"
@@ -609,6 +692,11 @@ class WaitingListServiceTest {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     waitingList.comments isEqualTo "Initial comments"
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
@@ -630,6 +718,11 @@ class WaitingListServiceTest {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     waitingList.comments isEqualTo "Initial comments"
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
@@ -649,6 +742,11 @@ class WaitingListServiceTest {
   fun `update status to APPROVED`() {
     val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
     }
 
     waitingList.status isEqualTo WaitingListStatus.PENDING
@@ -680,6 +778,11 @@ class WaitingListServiceTest {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
     }
 
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     waitingList.status isEqualTo WaitingListStatus.PENDING
     waitingList.updatedTime isEqualTo null
     waitingList.updatedBy isEqualTo null
@@ -707,6 +810,11 @@ class WaitingListServiceTest {
   fun `update status no-op if the same`() {
     val waitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, initialStatus = WaitingListStatus.PENDING).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
     }
 
     waitingList.status isEqualTo WaitingListStatus.PENDING
@@ -778,6 +886,11 @@ class WaitingListServiceTest {
       initialStatus = WaitingListStatus.PENDING,
     ).also {
       whenever(waitingListRepository.findById(it.waitingListId)) doReturn Optional.of(it)
+    }
+
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = LocalDate.now())
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
     }
 
     service.updateWaitingList(
@@ -1104,9 +1217,17 @@ class WaitingListServiceTest {
     val pageable: Pageable = PageRequest.of(0, 50, Sort.by("applicationDate"))
     whenever(waitingListRepository.findAll(any(), eq(pageable))).thenReturn(pagedResult)
 
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     val result = service.searchWaitingLists(DEFAULT_CASELOAD_PENTONVILLE, request, 0, 50)
 
-    result isEqualTo pagedResult.map { it.toModel() }
+    result isEqualTo pagedResult.map { it.toModel(earliestReleaseDate) }
   }
 
   @Test
@@ -1124,6 +1245,14 @@ class WaitingListServiceTest {
     val pageable: Pageable = PageRequest.of(0, 50, Sort.by("applicationDate"))
     whenever(waitingListRepository.findAll(any(), eq(pageable))).thenReturn(pagedResult)
 
+    val releaseDate = LocalDate.of(2030, 4, 20)
+    val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
+    val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumber("123456") } doReturn prisoner
+    }
+
     val result = service.searchWaitingLists(DEFAULT_CASELOAD_PENTONVILLE, request, 0, 50)
 
     verify(waitingListSearchSpecification).prisonCodeEquals(DEFAULT_CASELOAD_PENTONVILLE)
@@ -1132,6 +1261,6 @@ class WaitingListServiceTest {
     verify(waitingListSearchSpecification).prisonerNumberIn(listOf("ABC1234"))
     verify(waitingListSearchSpecification).statusIn(listOf(WaitingListStatus.APPROVED))
 
-    result isEqualTo pagedResult.map { it.toModel() }
+    result isEqualTo pagedResult.map { it.toModel(earliestReleaseDate) }
   }
 }

@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
@@ -594,6 +595,8 @@ class TransformFunctionsTest {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
 
+    val earliestReleaseDate = earliestReleaseDate()
+
     with(
       WaitingList(
         waitingListId = 99,
@@ -611,7 +614,7 @@ class TransformFunctionsTest {
         this.updatedBy = "Test"
         this.updatedTime = TimeSource.now()
         this.declinedReason = "Needs to attend level one activity first"
-      }.toModel(),
+      }.toModel(earliestReleaseDate),
     ) {
       id isEqualTo 99
       scheduleId isEqualTo schedule.activityScheduleId
@@ -629,6 +632,7 @@ class TransformFunctionsTest {
       updatedBy isEqualTo "Test"
       updatedTime!! isCloseTo TimeSource.now()
       declinedReason isEqualTo "Needs to attend level one activity first"
+      earliestReleaseDate isEqualTo earliestReleaseDate
     }
   }
 

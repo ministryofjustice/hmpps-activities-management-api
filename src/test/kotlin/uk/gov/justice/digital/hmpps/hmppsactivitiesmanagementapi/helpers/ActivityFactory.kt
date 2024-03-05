@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -444,6 +445,15 @@ internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   saturdayFlag = true
   sundayFlag = true
 }
+
+internal fun earliestReleaseDate() = EarliestReleaseDate(
+  releaseDate = LocalDate.now(),
+  isTariffDate = false,
+  isImmigrationDetainee = false,
+  isRemand = false,
+  isConvictedUnsentenced = false,
+  isIndeterminateSentence = false,
+)
 
 internal fun waitingList(
   waitingListId: Long = 1,
