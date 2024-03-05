@@ -60,12 +60,16 @@ class WaitingListService(
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
-  fun getWaitingListsBySchedule(id: Long) =
-    scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess().let(waitingListRepository::findByActivitySchedule).map {
-      val prisoner = prisonerSearchApiClient.findByPrisonerNumber(it.prisonerNumber) ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
-
-      it.toModel(determineEarliestReleaseDate(prisoner))
-    }
+  fun getWaitingListsBySchedule(id: Long): List<WaitingListApplication> =
+    scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess().let(waitingListRepository::findByActivitySchedule).let { waitingLists ->
+      val prisonerNumbers = waitingLists.map { it.prisonerNumber }
+      val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
+      waitingLists.map {
+        val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
+          ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
+        it.toModel(determineEarliestReleaseDate(prisoner))
+      }
+  }
 
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {

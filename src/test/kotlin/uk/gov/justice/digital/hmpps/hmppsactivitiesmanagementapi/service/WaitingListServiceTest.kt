@@ -458,7 +458,7 @@ class WaitingListServiceTest {
     val prisoner = PrisonerSearchPrisonerFixture.instance().copy(releaseDate = releaseDate)
 
     prisonerSearchApiClient.stub {
-      on { findByPrisonerNumber("G4793VF") } doReturn prisoner
+      on { findByPrisonerNumbers(listOf("G4793VF")) } doReturn listOf(prisoner)
     }
 
     val earliestReleaseDate = EarliestReleaseDate(
