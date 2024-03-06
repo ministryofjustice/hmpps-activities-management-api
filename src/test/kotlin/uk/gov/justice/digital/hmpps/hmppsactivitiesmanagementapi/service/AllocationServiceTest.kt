@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
@@ -759,7 +759,7 @@ class AllocationServiceTest {
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))).thenReturn(
+    whenever(attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(any(), eq(allocation))).thenReturn(
       listOf(attendance(1), attendance(2)),
     )
 
@@ -768,7 +768,7 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.status(PrisonerStatus.SUSPENDED) isBool true
 
-    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
@@ -807,7 +807,7 @@ class AllocationServiceTest {
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))).thenReturn(
+    whenever(attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(any(), eq(allocation))).thenReturn(
       listOf(attendance(1), attendance(2)),
     )
 
@@ -816,7 +816,7 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.status(PrisonerStatus.ACTIVE) isBool true
 
-    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).resetSuspendedFutureAttendancesForAllocation(any(), eq(allocation))
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
@@ -922,7 +922,7 @@ class AllocationServiceTest {
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
-    whenever(attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))).thenReturn(
+    whenever(attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(any(), eq(allocation))).thenReturn(
       listOf(attendance(1), attendance(2)),
     )
 
@@ -931,7 +931,7 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.status(PrisonerStatus.ACTIVE) isBool true
 
-    verify(attendanceSuspensionDomainService).resetFutureSuspendedAttendancesForAllocation(eq(AttendanceReasonEnum.SUSPENDED), any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).resetSuspendedFutureAttendancesForAllocation(any(), eq(allocation))
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)

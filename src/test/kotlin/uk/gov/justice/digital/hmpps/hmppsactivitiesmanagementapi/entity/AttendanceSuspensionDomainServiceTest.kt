@@ -1,6 +1,5 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -9,9 +8,6 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -59,16 +55,8 @@ class AttendanceSuspensionDomainServiceTest {
     }
 
     @Test
-    fun `supplied reason must be either SUSPENDED or AUTO_SUSPENDED`() {
-      assertThatThrownBy {
-        service.suspendFutureAttendancesForAllocation(AttendanceReasonEnum.CLASH, LocalDateTime.now(), allocation())
-      }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Failed to suspend future attendances for allocation with id 0, because the provided attendance reason CLASH was not one of: SUSPENDED, AUTO_SUSPENDED")
-    }
-
-    @Test
     fun `only future attendances are suspended`() {
-      service.suspendFutureAttendancesForAllocation(AttendanceReasonEnum.SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.suspendFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED
@@ -81,14 +69,6 @@ class AttendanceSuspensionDomainServiceTest {
 
   @Nested
   inner class ResetFutureAttendancesForAllocation {
-    @Test
-    fun `supplied reason must be either SUSPENDED or AUTO_SUSPENDED`() {
-      assertThatThrownBy {
-        service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.CLASH, LocalDateTime.now(), allocation())
-      }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Failed to suspend future attendances for allocation with id 0, because the provided attendance reason CLASH was not one of: SUSPENDED, AUTO_SUSPENDED")
-    }
-
     @Test
     fun `future suspended attendances which get reset`() {
       val historicAttendance = Attendance(
@@ -127,7 +107,7 @@ class AttendanceSuspensionDomainServiceTest {
         attendanceRepository.findAttendancesOnOrAfterDateForAllocation(any(), any(), eq(AttendanceStatus.COMPLETED), any()),
       ).thenReturn(listOf(historicAttendance, nonSuspended, suspendedAttendance))
 
-      service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.WAITING
@@ -174,7 +154,7 @@ class AttendanceSuspensionDomainServiceTest {
         attendanceRepository.findAttendancesOnOrAfterDateForAllocation(any(), any(), eq(AttendanceStatus.COMPLETED), any()),
       ).thenReturn(listOf(historicAttendance, nonSuspended, suspendedAttendance))
 
-      service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.AUTO_SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.WAITING
@@ -205,7 +185,7 @@ class AttendanceSuspensionDomainServiceTest {
         attendanceRepository.findAttendancesOnOrAfterDateForAllocation(any(), any(), eq(AttendanceStatus.COMPLETED), any()),
       ).thenReturn(listOf(cancelledAttendance))
 
-      service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.SUSPENDED, LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED
@@ -236,7 +216,7 @@ class AttendanceSuspensionDomainServiceTest {
         attendanceRepository.findAttendancesOnOrAfterDateForAllocation(any(), any(), eq(AttendanceStatus.COMPLETED), any()),
       ).thenReturn(listOf(autoSuspendedAttendance))
 
-      service.resetFutureSuspendedAttendancesForAllocation(AttendanceReasonEnum.AUTO_SUSPENDED, LocalDateTime.now(), allocation(withPlannedSuspensions = true)).let { updatedAttendances ->
+      service.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), allocation(withPlannedSuspensions = true)).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED

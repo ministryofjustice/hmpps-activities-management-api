@@ -159,7 +159,7 @@ class ScheduledInstanceTest {
       assertThat(cancelledTime).isNotNull
       assertThat(comment).isEqualTo("Resume tomorrow")
 
-      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
+      attendances.single { it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
     }
   }
 
@@ -219,7 +219,7 @@ class ScheduledInstanceTest {
       assertThat(cancelledBy).isNull()
       assertThat(cancelledTime).isNull()
 
-      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
+      attendances.single { it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
     }
   }
 
