@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
@@ -23,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import java.time.LocalDate
 
 class PrisonApiMockServer : WireMockServer(8999) {
@@ -375,36 +373,6 @@ class PrisonApiMockServer : WireMockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(userCaseLoads(prisonCode)))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetUserDetailsList(usernames: List<String>) {
-    stubFor(
-      WireMock.post(WireMock.urlEqualTo("/api/users/list"))
-        .withRequestBody(equalToJson(mapper.writeValueAsString(usernames)))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              mapper.writeValueAsString(
-                (usernames.indices).map { userDetail(it + 1L, usernames[it], "TEST${it + 1}", "USER${it + 1}") },
-              ),
-            )
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetUserDetailsList(usernames: List<String>, users: List<UserDetail>) {
-    stubFor(
-      WireMock.post(WireMock.urlEqualTo("/api/users/list"))
-        .withRequestBody(equalToJson(mapper.writeValueAsString(usernames)))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(users))
             .withStatus(200),
         ),
     )

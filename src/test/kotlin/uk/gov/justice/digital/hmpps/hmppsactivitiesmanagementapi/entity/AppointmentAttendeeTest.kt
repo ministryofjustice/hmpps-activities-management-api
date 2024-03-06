@@ -7,10 +7,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.tempRemovalByUserAppointmentAttendeeRemovalReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -65,7 +63,7 @@ class AppointmentAttendeeTest {
         cellLocation = "1-2-3",
       ),
     )
-    assertThat(entity.toSummary(prisonerMap, emptyMap())).isEqualTo(
+    assertThat(entity.toSummary(prisonerMap)).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
         PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
@@ -93,14 +91,13 @@ class AppointmentAttendeeTest {
         cellLocation = "1-2-3",
       ),
     )
-    val userMap = mapOf(entity.attendanceRecordedBy!! to userDetail(1, "ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"))
-    assertThat(entity.toSummary(prisonerMap, userMap)).isEqualTo(
+    assertThat(entity.toSummary(prisonerMap)).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
         PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
         true,
         entity.attendanceRecordedTime,
-        UserSummary(1, "ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"),
+        "ATTENDANCE.RECORDED.BY",
       ),
     )
   }
