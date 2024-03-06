@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -185,7 +184,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   fun `get single appointment series details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
 
     val appointmentDetails = webTestClient.getAppointmentSeriesDetailsById(1)!!
 
@@ -215,7 +213,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         null,
         "Appointment series level comment",
         appointmentDetails.createdTime,
-        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        "TEST.USER",
         null,
         null,
         appointments = listOf(

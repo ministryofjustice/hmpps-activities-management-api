@@ -6,11 +6,11 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -49,7 +49,7 @@ class OffenderReceivedEventHandler(
           transactionHandler.newSpringTransaction {
             allocationRepository.findByPrisonCodeAndPrisonerNumber(event.prisonCode(), event.prisonerNumber())
               .resetAutoSuspendedAllocations(event)
-              .resetFutureSuspendedAttendances()
+              .resetFutureAutoSuspendedAttendances()
           }.let { resetAllocations ->
             resetAllocations.forEach {
               outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
@@ -84,12 +84,6 @@ class OffenderReceivedEventHandler(
         log.info("Reset ${it.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
       }
 
-  private fun List<Allocation>.resetFutureSuspendedAttendances() =
-    map {
-      if (it.status(PrisonerStatus.ACTIVE)) {
-        it to attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), it)
-      } else {
-        it to emptyList()
-      }
-    }
+  private fun List<Allocation>.resetFutureAutoSuspendedAttendances() =
+    map { it to attendanceSuspensionDomainService.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), it) }
 }

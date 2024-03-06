@@ -116,6 +116,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     oicHearingId = null,
     cancelled = it.cancelled,
     suspended = it.suspended,
+    autoSuspended = it.autoSuspended,
     categoryCode = it.activityCategory,
     categoryDescription = it.activityCategory,
     summary = it.scheduleDescription,

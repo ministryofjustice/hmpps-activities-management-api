@@ -63,9 +63,7 @@ class AppointmentSetService(
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointmentSet.prisonCode)
 
-    val userMap = prisonApiClient.getUserDetailsList(appointmentSet.usernames()).associateBy { it.username }
-
-    return appointmentSet.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+    return appointmentSet.toDetails(prisonerMap, referenceCodeMap, locationMap)
   }
 
   fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSetModel {

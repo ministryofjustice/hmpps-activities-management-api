@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import kotlin.reflect.full.declaredMembers
 
 /**
@@ -26,13 +25,6 @@ class PrisonApiTypesTest {
     val classificationField = Assessment::class.declaredMembers.first { it.name == "classification" }
 
     assertThat(classificationField.returnType.isMarkedNullable).isTrue
-  }
-
-  @Test
-  fun `lockDate field on generated User Detail DTO type should be nullable`() {
-    val field = UserDetail::class.declaredMembers.first { it.name == "lockDate" }
-
-    assertThat(field.returnType.isMarkedNullable).isTrue
   }
 
   @Test

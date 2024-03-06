@@ -70,6 +70,7 @@ enum class AttendanceReasonEnum {
   REST,
   CLASH,
   OTHER,
+  AUTO_SUSPENDED,
   SUSPENDED,
   CANCELLED,
   ATTENDED,

@@ -141,6 +141,29 @@ class ScheduledInstanceTest {
   }
 
   @Test
+  fun `cancelling scheduled instance ignores auto-suspended attendances`() {
+    val cancelableInstance = instance.copy()
+      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
+
+    cancelableInstance.cancelSessionAndAttendances(
+      reason = "Staff unavailable",
+      by = "USER1",
+      cancelComment = "Resume tomorrow",
+      cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+    )
+
+    with(cancelableInstance) {
+      assertThat(cancelledReason).isEqualTo("Staff unavailable")
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledTime).isNotNull
+      assertThat(comment).isEqualTo("Resume tomorrow")
+
+      attendances.single { it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
+    }
+  }
+
+  @Test
   fun `cannot cancel scheduled instance that's already cancelled`() {
     assertThatThrownBy {
       instance.copy(cancelled = true).cancelSessionAndAttendances(
@@ -180,6 +203,23 @@ class ScheduledInstanceTest {
       assertThat(cancelledTime).isNull()
 
       attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED) }
+    }
+  }
+
+  @Test
+  fun `uncancelling scheduled instance ignores auto-suspended attendances`() {
+    val cancelledInstance = instance.copy(cancelled = true, cancelledReason = "cancelled reason", cancelledBy = "cancelled by", cancelledTime = LocalDateTime.now())
+      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
+
+    cancelledInstance.uncancelSessionAndAttendances()
+
+    with(cancelledInstance) {
+      assertThat(cancelledReason).isNull()
+      assertThat(cancelled).isFalse
+      assertThat(cancelledBy).isNull()
+      assertThat(cancelledTime).isNull()
+
+      attendances.single { it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
     }
   }
 

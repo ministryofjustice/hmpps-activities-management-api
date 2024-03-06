@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -22,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
@@ -67,14 +65,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         appointmentLocation(123, RISLEY_PRISON_CODE, userDescription = "Education 1"),
       ),
     )
-
-    prisonApiMockServer.stubGetUserDetailsList(
-      listOf("TEST.USER", "PREV.ATTENDANCE.RECORDED.BY"),
-      listOf(
-        userDetail(1, "TEST.USER", "TEST", "USER"),
-        userDetail(2, "PREV.ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER"),
-      ),
-    )
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC", "B2345CD", "C3456DE"),
       listOf(
@@ -87,7 +77,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     val appointmentDetails = webTestClient.getAppointmentDetailsById(2)!!
     val attendeesMap = appointmentDetails.attendees.associateBy { it.id }
 
-    val userSummary = UserSummary(2, "PREV.ATTENDANCE.RECORDED.BY", "ATTENDANCE", "USER")
     with(attendeesMap[4]!!) {
       attended isEqualTo null
       attendanceRecordedTime isEqualTo null
@@ -96,12 +85,12 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     with(attendeesMap[5]!!) {
       attended!! isBool true
       attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
-      attendanceRecordedBy isEqualTo userSummary
+      attendanceRecordedBy isEqualTo "PREV.ATTENDANCE.RECORDED.BY"
     }
     with(attendeesMap[6]!!) {
       attended!! isBool false
       attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
-      attendanceRecordedBy isEqualTo userSummary
+      attendanceRecordedBy isEqualTo "PREV.ATTENDANCE.RECORDED.BY"
     }
   }
 
@@ -112,7 +101,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   fun `get single appointment details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC"),
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
@@ -150,7 +138,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         false,
         "Appointment level comment",
         appointmentDetails.createdTime,
-        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        "TEST.USER",
         false,
         null,
         null,
@@ -171,7 +159,6 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
   fun `get appointment details from an appointment set`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC"),
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
@@ -209,7 +196,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         false,
         "Medical appointment for A1234BC",
         appointmentDetails.createdTime,
-        UserSummary(1, "TEST.USER", "TEST1", "USER1"),
+        "TEST.USER",
         false,
         null,
         null,

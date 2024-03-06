@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -274,7 +273,6 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
   fun `get appointment set details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
-    prisonApiMockServer.stubGetUserDetailsList(listOf("TEST.USER"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC", "B2345CD", "C3456DE"),
       listOf(
@@ -309,7 +307,7 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
 
     val category = AppointmentCategorySummary("AC1", "Appointment Category 1")
     val customName = "Appointment description"
-    val createdBy = UserSummary(1, "TEST.USER", "TEST1", "USER1")
+    val createdBy = "TEST.USER"
     assertThat(details).isEqualTo(
       AppointmentSetDetails(
         6,

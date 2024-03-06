@@ -64,7 +64,8 @@ values (1, 'SICK', 'Sick', false, true, true, false, false, false, true, 1, 'Map
        (6, 'OTHER', 'Other absence reason not listed', false, true, false, false, false, true, true, 6, 'Maps to UNACAB in NOMIS'),
        (7, 'SUSPENDED', 'Suspended', false, false, false, false, false, false, false, null, 'Maps to ACCAB in NOMIS'),
        (8, 'CANCELLED', 'Cancelled', false, false, false, false, false, false, false, null, 'Maps to ACCAB in NOMIS'),
-       (9, 'ATTENDED', 'Attended', true, false, false, false, false, false, false, null, 'Maps to ATT in NOMIS');
+       (9, 'ATTENDED', 'Attended', true, false, false, false, false, false, false, null, 'Maps to ATT in NOMIS'),
+       (10, 'AUTO_SUSPENDED', 'Temporarily absent', false, false, false, false, false, false, false, null, 'Maps to ACCAB in NOMIS');
 
 --
 -- Default prison pay bands

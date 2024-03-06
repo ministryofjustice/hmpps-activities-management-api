@@ -50,10 +50,10 @@ data class AppointmentAttendeeSummary(
   @Schema(
     description =
     """
-    The summary of the user that last recorded attendance. Note that attendance records can be updated and this is the
+    The username of the user that last recorded attendance. Note that attendance records can be updated and this is the
     most recent user that marked attendance. A null value means that the prisoner's attendance has not been recorded yet.
     """,
     example = "AAA01U",
   )
-  val attendanceRecordedBy: UserSummary?,
+  val attendanceRecordedBy: String?,
 )

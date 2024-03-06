@@ -10,11 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode as PrisonApiReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail as PrisonApiUserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary as ModelUserSummary
 
 const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
 
@@ -306,10 +304,3 @@ fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode
 
 fun List<PrisonApiLocation>.toAppointmentLocation() =
   map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
-
-fun PrisonApiUserDetail?.toSummary(username: String) =
-  if (this == null) {
-    ModelUserSummary(-1, username, "UNKNOWN", "UNKNOWN")
-  } else {
-    ModelUserSummary(this.staffId, this.username, this.firstName, this.lastName)
-  }
