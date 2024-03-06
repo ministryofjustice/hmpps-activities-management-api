@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -49,14 +50,26 @@ class WaitingListService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getWaitingListBy(id: Long) =
-    waitingListRepository.findOrThrowNotFound(id).checkCaseloadAccess().toModel()
-
-  fun getWaitingListsBySchedule(id: Long) =
-    scheduleRepository
+  fun getWaitingListBy(id: Long): WaitingListApplication {
+    val waitingList = waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
-      .let(waitingListRepository::findByActivitySchedule).map(WaitingList::toModel)
+
+    val prisoner =
+      prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
+    return waitingList.toModel(determineEarliestReleaseDate(prisoner))
+  }
+
+  fun getWaitingListsBySchedule(id: Long): List<WaitingListApplication> =
+    scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess().let(waitingListRepository::findByActivitySchedule).let { waitingLists ->
+      val prisonerNumbers = waitingLists.map { it.prisonerNumber }
+      val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
+      waitingLists.map {
+        val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
+          ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
+        it.toModel(determineEarliestReleaseDate(prisoner))
+      }
+    }
 
   @Transactional
   fun addPrisoner(prisonCode: String, request: WaitingListApplicationRequest, createdBy: String) {
@@ -108,7 +121,12 @@ class WaitingListService(
     request.activityId?.let { spec = spec.and(waitingListSearchSpecification.activityIdEqual(it)) }
 
     val pageable: Pageable = PageRequest.of(pageNumber, pageSize, Sort.by("applicationDate"))
-    return waitingListRepository.findAll(spec, pageable).map(WaitingList::toModel)
+    return waitingListRepository.findAll(spec, pageable).map {
+      val prisoner =
+        prisonerSearchApiClient.findByPrisonerNumber(it.prisonerNumber) ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found")
+
+      it.toModel(determineEarliestReleaseDate(prisoner))
+    }
   }
 
   fun fetchOpenApplicationsForPrison(prisonCode: String) = waitingListRepository.findByPrisonCodeAndStatusIn(prisonCode, setOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED))
@@ -180,8 +198,8 @@ class WaitingListService(
   }
 
   @Transactional
-  fun updateWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, updatedBy: String) =
-    waitingListRepository
+  fun updateWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, updatedBy: String): WaitingListApplication {
+    val waitingList = waitingListRepository
       .findOrThrowNotFound(id)
       .checkCaseloadAccess()
       .failIfNotUpdatable()
@@ -190,7 +208,11 @@ class WaitingListService(
         updateRequestedBy(request, updatedBy)
         updateComments(request, updatedBy)
         updateStatus(request, updatedBy)
-      }.toModel()
+      }
+    val prisoner =
+      prisonerSearchApiClient.findByPrisonerNumber(waitingList.prisonerNumber) ?: throw NullPointerException("Prisoner ${waitingList.prisonerNumber} not found for waiting list id $id")
+    return waitingList.toModel(determineEarliestReleaseDate(prisoner))
+  }
 
   private fun WaitingList.failIfNotUpdatable() = also {
     require(isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING, WaitingListStatus.DECLINED)) {

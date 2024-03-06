@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -35,7 +36,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
 
   @Test
   fun `200 response when get by ID found`() {
-    val waitingListApplication = waitingList().toModel()
+    val waitingListApplication = waitingList().toModel(earliestReleaseDate())
 
     whenever(waitingListService.getWaitingListBy(waitingListApplication.id)).thenReturn(waitingListApplication)
 
@@ -51,7 +52,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
 
   @Test
   fun `202 response when update waiting list`() {
-    val waitingListApplication = waitingList().toModel()
+    val waitingListApplication = waitingList().toModel(earliestReleaseDate())
 
     whenever(waitingListService.updateWaitingList(waitingListApplication.id, WaitingListApplicationUpdateRequest(), user.name)).thenReturn(waitingListApplication)
 
@@ -67,7 +68,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
   @Test
   fun `200 response when searching waiting list application`() {
     val request = WaitingListSearchRequest()
-    val waitingListApplication = waitingList().toModel()
+    val waitingListApplication = waitingList().toModel(earliestReleaseDate())
     val pagedResult = PageImpl(listOf(waitingListApplication), Pageable.ofSize(1), 1)
 
     whenever(
