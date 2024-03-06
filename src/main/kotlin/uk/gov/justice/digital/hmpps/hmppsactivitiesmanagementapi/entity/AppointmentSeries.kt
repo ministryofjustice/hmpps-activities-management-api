@@ -17,7 +17,6 @@ import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
@@ -146,8 +145,7 @@ data class AppointmentSeries(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
-  ) = appointments(true).toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+  ) = appointments(true).toDetails(prisonerMap, referenceCodeMap, locationMap)
 
   fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
@@ -187,7 +185,6 @@ data class AppointmentSeries(
   fun toDetails(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
   ) =
     AppointmentSeriesDetails(
       appointmentSeriesId,
@@ -210,13 +207,9 @@ data class AppointmentSeries(
       schedule?.toModel(),
       extraInformation,
       createdTime,
-      userMap[createdBy].toSummary(createdBy),
+      createdBy,
       updatedTime,
-      if (updatedBy == null) {
-        null
-      } else {
-        userMap[updatedBy].toSummary(updatedBy!!)
-      },
+      updatedBy,
       appointments(true).toSummary(),
     )
 }

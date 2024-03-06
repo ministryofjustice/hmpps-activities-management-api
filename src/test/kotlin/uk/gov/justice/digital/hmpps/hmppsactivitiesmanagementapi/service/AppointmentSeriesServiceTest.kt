@@ -39,14 +39,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSeriesCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -192,12 +190,6 @@ class AppointmentSeriesServiceTest {
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
-    whenever(prisonApiClient.getUserDetailsList(entity.usernames())).thenReturn(
-      listOf(
-        userDetail(1, "CREATE.USER", "CREATE", "USER"),
-        userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-      ),
-    )
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
       AppointmentSeriesDetails(
         entity.appointmentSeriesId,
@@ -216,9 +208,9 @@ class AppointmentSeriesServiceTest {
         null,
         entity.extraInformation,
         entity.createdTime,
-        UserSummary(1, "CREATE.USER", "CREATE", "USER"),
+        "CREATE.USER",
         entity.updatedTime,
-        UserSummary(2, "UPDATE.USER", "UPDATE", "USER"),
+        "UPDATE.USER",
         appointments = listOf(
           AppointmentSummary(
             appointmentEntity.appointmentId,

@@ -5,6 +5,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -158,6 +159,19 @@ class ActivityScheduleServiceTest {
 
     assertThat(service.getAllocationsBy(1, activeOnly = false, includePrisonerSummary = true))
       .isEqualTo(expectedResponse)
+  }
+
+  @Test
+  fun `getAllocationsBy - no prisoner information throws a null pointer exception`() {
+    val schedule = schedule(PENTONVILLE_PRISON_CODE)
+
+    whenever(repository.getActivityScheduleByIdWithFilters(1)) doReturn schedule
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1111BB"))) doReturn emptyList()
+
+    val exception = assertThrows<NullPointerException> {
+      service.getAllocationsBy(1, activeOnly = false, includePrisonerSummary = true)
+    }
+    exception.message isEqualTo "Prisoner A1234AA not found for allocation id 0"
   }
 
   @Test

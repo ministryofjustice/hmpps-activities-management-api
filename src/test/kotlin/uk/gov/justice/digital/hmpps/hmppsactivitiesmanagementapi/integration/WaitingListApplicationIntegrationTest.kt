@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 
 @TestPropertySource(
@@ -55,6 +56,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-22.sql")
   @Test
   fun `get waiting list application by id`() {
+    stubPrisoners(listOf("ABCDEF"))
     assertThat(webTestClient.getById(1)).isNotNull()
   }
 
@@ -123,6 +125,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-26.sql")
   @Test
   fun `search all waiting list applications`() {
+    stubPrisoners(listOf("ABCD01", "ABCD02", "ABCD03", "ABCD04", "ABCD05"))
+
     val results = webTestClient.searchWaitingLists("MDI", WaitingListSearchRequest())
 
     results["empty"] isEqualTo false
@@ -177,6 +181,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
       status = listOf(WaitingListStatus.PENDING),
     )
 
+    stubPrisoners(listOf("ABCD03", "ABCD04", "ABCD05"))
+
     val results = webTestClient.searchWaitingLists("MDI", request)
 
     results["empty"] isEqualTo false
@@ -190,6 +196,19 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     with(content[1]) {
       this["id"] isEqualTo 5
+    }
+  }
+
+  private fun stubPrisoners(prisonerNumbers: List<String>) {
+    prisonerNumbers.forEach {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = MOORLAND_PRISON_CODE,
+          prisonerNumber = it,
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+      )
     }
   }
 

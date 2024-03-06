@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrga
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -144,6 +145,19 @@ fun transformAppointmentInstanceToScheduledEvents(
   locationsForAppointmentsMap: Map<Long, Location>,
   appointments: List<AppointmentInstance>,
 ) = appointments.map {
+  val locationCode: String
+  val locationDescription: String
+
+  when {
+    it.inCell -> {
+      locationCode = "In cell"
+      locationDescription = "In cell"
+    } else -> {
+      locationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available"
+      locationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available"
+    }
+  }
+
   ModelScheduledEvent(
     prisonCode = prisonCode,
     eventSource = "SAA",
@@ -151,9 +165,9 @@ fun transformAppointmentInstanceToScheduledEvents(
     scheduledInstanceId = null,
     bookingId = it.bookingId,
     internalLocationId = it.internalLocationId,
-    internalLocationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available",
-    internalLocationUserDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
-    internalLocationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available",
+    internalLocationCode = locationCode,
+    internalLocationUserDescription = locationDescription,
+    internalLocationDescription = locationDescription,
     eventId = null,
     appointmentSeriesId = it.appointmentSeriesId,
     appointmentId = it.appointmentId,
@@ -482,7 +496,7 @@ fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }
 
-fun EntityWaitingList.toModel() = ModelWaitingListApplication(
+fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate) = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
   activityId = activitySchedule.activity.activityId,
@@ -500,4 +514,5 @@ fun EntityWaitingList.toModel() = ModelWaitingListApplication(
   updatedTime = updatedTime,
   updatedBy = updatedBy,
   statusUpdatedTime = statusUpdatedTime,
+  earliestReleaseDate = earliestReleaseDate,
 )

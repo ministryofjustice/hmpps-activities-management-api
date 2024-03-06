@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
@@ -349,15 +348,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
 
   fun getStudyArea(studyAreaCode: String): Mono<ReferenceCode> =
     getReferenceCode("STUDY_AREA", studyAreaCode)
-
-  fun getUserDetailsList(usernames: List<String>): List<UserDetail> {
-    return prisonApiWebClient.post()
-      .uri("/api/users/list")
-      .bodyValue(usernames)
-      .retrieve()
-      .bodyToMono(typeReference<List<UserDetail>>())
-      .block() ?: emptyList()
-  }
 
   fun getScheduleReasons(eventType: String): List<ReferenceCode> {
     return prisonApiWebClient.get()

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
@@ -13,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
@@ -97,13 +95,9 @@ class AppointmentSetTest {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
 
-    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)).isEqualTo(
+    assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)).isEqualTo(
       appointmentSetDetails(createdTime = entity.createdTime),
     )
   }
@@ -118,13 +112,9 @@ class AppointmentSetTest {
       ),
     )
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
 
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(appointmentName).isEqualTo("appointment name (test category)")
     }
   }
@@ -139,13 +129,9 @@ class AppointmentSetTest {
       ),
     )
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
 
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(appointmentName).isEqualTo("test category")
     }
   }
@@ -155,11 +141,8 @@ class AppointmentSetTest {
     val entity = appointmentSetEntity()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(category.code).isEqualTo(entity.categoryCode)
       assertThat(category.description).isEqualTo(entity.categoryCode)
     }
@@ -170,30 +153,12 @@ class AppointmentSetTest {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = emptyMap<Long, Location>()
-    val userMap = mapOf(
-      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(internalLocation).isNotNull
       assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
       assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
       assertThat(internalLocation!!.description).isEqualTo("No information available")
-    }
-  }
-
-  @Test
-  fun `entity to details mapping users not found`() {
-    val entity = appointmentSetEntity()
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = emptyMap<String, UserDetail>()
-    val prisonerMap = getPrisonerMap()
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
-      assertThat(createdBy.id).isEqualTo(-1)
-      assertThat(createdBy.username).isEqualTo("CREATE.USER")
-      assertThat(createdBy.firstName).isEqualTo("UNKNOWN")
-      assertThat(createdBy.lastName).isEqualTo("UNKNOWN")
     }
   }
 
@@ -203,11 +168,8 @@ class AppointmentSetTest {
     entity.internalLocationId = 123
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      entity.createdBy to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)) {
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
     }
@@ -218,15 +180,11 @@ class AppointmentSetTest {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
-    val userMap = mapOf(
-      "CREATE.USER" to userDetail(1, "CREATE.USER", "CREATE", "USER"),
-      "UPDATE.USER" to userDetail(2, "UPDATE.USER", "UPDATE", "USER"),
-    )
     val prisonerMap = getPrisonerMap()
 
     entity.appointments().first().apply { this.removeAttendee(this.attendees().first().prisonerNumber, LocalDateTime.now(), prisonerReleasedAppointmentAttendeeRemovalReason(), "OFFENDER_RELEASED_EVENT") }
 
-    entity.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap).appointments hasSize 2
+    entity.toDetails(prisonerMap, referenceCodeMap, locationMap).appointments hasSize 2
   }
 
   @Test

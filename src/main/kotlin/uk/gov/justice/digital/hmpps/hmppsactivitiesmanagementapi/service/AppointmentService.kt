@@ -55,11 +55,7 @@ class AppointmentService(
 
     val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
 
-    val userMap = prisonApiClient.getUserDetailsList(
-      appointment.usernames().union(appointment.attendeeUsernames()).toList(),
-    ).associateBy { it.username }
-
-    return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap, userMap)
+    return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap)
   }
 
   fun updateAppointment(appointmentId: Long, request: AppointmentUpdateRequest, principal: Principal): AppointmentSeriesModel {

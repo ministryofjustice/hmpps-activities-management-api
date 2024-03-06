@@ -13,7 +13,6 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
@@ -22,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
@@ -116,7 +114,6 @@ data class AppointmentSet(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-    userMap: Map<String, UserDetail>,
   ): AppointmentSetDetails {
     return AppointmentSetDetails(
       appointmentSetId,
@@ -131,15 +128,11 @@ data class AppointmentSet(
       },
       inCell,
       startDate,
-      appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap, userMap) }.filterNot { it.attendees.isEmpty() },
+      appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap) }.filterNot { it.attendees.isEmpty() },
       createdTime,
-      userMap[createdBy].toSummary(createdBy),
+      createdBy,
       updatedTime,
-      if (updatedBy == null) {
-        null
-      } else {
-        userMap[updatedBy].toSummary(updatedBy!!)
-      },
+      updatedBy,
     )
   }
 }

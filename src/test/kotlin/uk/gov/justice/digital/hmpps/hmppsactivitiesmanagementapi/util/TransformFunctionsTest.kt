@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.UserDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
@@ -23,11 +22,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -37,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.UserSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.EventPriorities
@@ -256,7 +254,7 @@ class TransformFunctionsTest {
   @DisplayName("appointmentInstanceToScheduledEvents")
   inner class AppointmentInstanceToScheduledEvents {
     @Test
-    fun `appointment instance to scheduled event`() {
+    fun `appointment instance, with location, to scheduled event`() {
       val entity = appointmentInstanceEntity()
       val scheduledEvents = transform(entity)
 
@@ -271,6 +269,44 @@ class TransformFunctionsTest {
           internalLocationCode = "LOC123",
           internalLocationUserDescription = "User location desc",
           internalLocationDescription = "User location desc",
+          eventId = null,
+          appointmentSeriesId = entity.appointmentSeriesId,
+          appointmentId = entity.appointmentId,
+          appointmentAttendeeId = entity.appointmentInstanceId,
+          oicHearingId = null,
+          cancelled = entity.isCancelled,
+          suspended = false,
+          categoryCode = entity.categoryCode,
+          categoryDescription = "Test Category",
+          summary = "Test Category",
+          comments = entity.extraInformation,
+          prisonerNumber = entity.prisonerNumber,
+          inCell = entity.inCell,
+          outsidePrison = false,
+          date = entity.appointmentDate,
+          startTime = entity.startTime,
+          endTime = entity.endTime,
+          priority = EventType.APPOINTMENT.defaultPriority,
+        ),
+      )
+    }
+
+    @Test
+    fun `in cell appointment instance to scheduled event`() {
+      val entity = appointmentInstanceEntity(inCell = true)
+      val scheduledEvents = transform(entity)
+
+      assertThat(scheduledEvents.first()).isEqualTo(
+        ModelScheduledEvent(
+          prisonCode = "TPR",
+          eventSource = "SAA",
+          eventType = EventType.APPOINTMENT.name,
+          scheduledInstanceId = null,
+          bookingId = entity.bookingId,
+          internalLocationId = entity.internalLocationId,
+          internalLocationCode = "In cell",
+          internalLocationUserDescription = "In cell",
+          internalLocationDescription = "In cell",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,
           appointmentId = entity.appointmentId,
@@ -500,20 +536,6 @@ class TransformFunctionsTest {
   }
 
   @Test
-  fun `user detail to summary returns unknown for null user details`() {
-    assertThat((null as UserDetail?).toSummary("TEST.USER")).isEqualTo(
-      UserSummary(-1, "TEST.USER", "UNKNOWN", "UNKNOWN"),
-    )
-  }
-
-  @Test
-  fun `user detail to summary mapping`() {
-    assertThat(userDetail(1, "TEST.USER", "TEST", "USER").toSummary("TEST.USER")).isEqualTo(
-      UserSummary(1, "TEST.USER", "TEST", "USER"),
-    )
-  }
-
-  @Test
   fun `prisoner to summary mapping`() {
     assertThat(
       PrisonerSearchPrisonerFixture.instance(
@@ -594,6 +616,8 @@ class TransformFunctionsTest {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
 
+    val earliestReleaseDate = earliestReleaseDate()
+
     with(
       WaitingList(
         waitingListId = 99,
@@ -611,7 +635,7 @@ class TransformFunctionsTest {
         this.updatedBy = "Test"
         this.updatedTime = TimeSource.now()
         this.declinedReason = "Needs to attend level one activity first"
-      }.toModel(),
+      }.toModel(earliestReleaseDate),
     ) {
       id isEqualTo 99
       scheduleId isEqualTo schedule.activityScheduleId
@@ -629,6 +653,7 @@ class TransformFunctionsTest {
       updatedBy isEqualTo "Test"
       updatedTime!! isCloseTo TimeSource.now()
       declinedReason isEqualTo "Needs to attend level one activity first"
+      earliestReleaseDate isEqualTo earliestReleaseDate
     }
   }
 
