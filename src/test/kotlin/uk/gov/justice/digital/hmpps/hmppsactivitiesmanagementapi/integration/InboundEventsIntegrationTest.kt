@@ -432,7 +432,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-changed-event.sql")
-  fun `two allocations and two future attendance are suspended on receipt of activities changed event for prisoner`() {
+  fun `two allocations and two future attendance are auto-suspended on receipt of activities changed event for prisoner`() {
     stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
@@ -472,7 +472,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Attendance two should be suspended
     attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
+      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.AUTO_SUSPENDED)
       assertThat(it.issuePayment).isFalse()
       assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(10, ChronoUnit.SECONDS))
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
@@ -542,7 +542,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-received-event-cancel-suspensions.sql")
-  fun `two suspended allocations are unsuspended and two future attendance are cancelled for offender received event`() {
+  fun `two auto-suspended allocations are unsuspended and two future attendance are cancelled for offender received event`() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
@@ -562,7 +562,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
-      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.SUSPENDED)
+      assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.AUTO_SUSPENDED)
       assertThat(it.issuePayment).isFalse()
       assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(it.recordedBy).isEqualTo("Activities Management Service")
@@ -601,7 +601,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-received-event-with-planned-suspension.sql")
-  fun `auto-suspended allocation is suspended and future attendances are unchanged when there is a planned suspension on receipt of offender received event`() {
+  fun `auto-suspended allocation is suspended and future attendances are suspended when there is a planned suspension on receipt of offender received event`() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
@@ -613,7 +613,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
       it.status() isEqualTo AttendanceStatus.COMPLETED
       it.attendanceReason isNotEqualTo null
-      it.attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+      it.attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED
     }
 
     service.process(
@@ -627,16 +627,23 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       status(PrisonerStatus.SUSPENDED) isBool true
     }
 
-    // These attendance records have not been modified
-    attendanceRepository.findAllById(listOf(1L, 2L)).onEach {
-      it.status() isEqualTo AttendanceStatus.COMPLETED
-      it.attendanceReason isNotEqualTo null
-      it.attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+    // This past attendance record has not been modified
+    with(attendanceRepository.getReferenceById(1L)) {
+      status() isEqualTo AttendanceStatus.COMPLETED
+      attendanceReason isNotEqualTo null
+      attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED
+    }
+
+    // This future attendance record has been modified
+    with(attendanceRepository.getReferenceById(2L)) {
+      status() isEqualTo AttendanceStatus.COMPLETED
+      attendanceReason isNotEqualTo null
+      attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
     }
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
-    verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
   }
 

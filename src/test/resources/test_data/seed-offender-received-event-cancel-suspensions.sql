@@ -41,10 +41,10 @@ insert into scheduled_instance(activity_schedule_id, session_date, start_time, e
 values (2, current_date, '23:58:00', '23:59:00', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (2, 2, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
+values (2, 2, 'A11111A', 10, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, current_date + 1, '00:01:00', '00:02:00', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (3, 3, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
+values (3, 3, 'A11111A', 10, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);

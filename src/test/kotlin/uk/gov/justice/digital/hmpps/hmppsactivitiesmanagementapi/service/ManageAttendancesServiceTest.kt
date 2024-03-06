@@ -190,12 +190,12 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is created and marked suspended and unpaid when allocation is auto suspended`() {
+  fun `attendance is created and marked auto-suspended and unpaid when allocation is auto suspended`() {
     instance.activitySchedule.activity.attendanceRequired = true
     allocation.autoSuspend(today.atStartOfDay(), "reason")
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
-    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.AUTO_SUSPENDED)).thenReturn(attendanceReasons()["AUTO_SUSPENDED"])
 
     val attendees = instance.attendances.map { it.prisonerNumber }
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
@@ -213,7 +213,7 @@ class ManageAttendancesServiceTest {
             scheduledInstance = instance,
             prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
             status = AttendanceStatus.COMPLETED,
-            attendanceReason = attendanceReasons()["SUSPENDED"],
+            attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
             initialIssuePayment = false,
             recordedTime = LocalDateTime.now(),
             recordedBy = "Activities Management Service",
@@ -226,7 +226,7 @@ class ManageAttendancesServiceTest {
     verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
     with(attendanceListCaptor.firstValue.first()) {
-      assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["AUTO_SUSPENDED"])
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
       assertThat(issuePayment).isFalse
       assertThat(recordedBy).isEqualTo("Activities Management Service")

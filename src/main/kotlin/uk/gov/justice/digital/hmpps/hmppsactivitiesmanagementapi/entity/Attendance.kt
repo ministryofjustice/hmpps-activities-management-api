@@ -131,7 +131,7 @@ data class Attendance(
 
   fun unsuspend() =
     apply {
-      require(hasReason(AttendanceReasonEnum.SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
+      require(hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
       mark(
         principalName = ServiceName.SERVICE_NAME.value,
         reason = null,
@@ -187,7 +187,7 @@ data class Attendance(
         issuePayment = issuePayment,
         caseNoteId = caseNoteId,
         incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-        otherAbsenceReason = if (AttendanceReasonEnum.OTHER == attendanceReason?.code) otherAbsenceReason else null,
+        otherAbsenceReason = if (hasReason(AttendanceReasonEnum.OTHER)) otherAbsenceReason else null,
       ),
     )
   }
@@ -232,7 +232,7 @@ data class Attendance(
       )
   }
 
-  fun hasReason(reason: AttendanceReasonEnum) = attendanceReason?.code == reason
+  fun hasReason(vararg reasons: AttendanceReasonEnum) = reasons.any { attendanceReason?.code == it }
 
   fun isPayable() = scheduledInstance.isPaid()
 }

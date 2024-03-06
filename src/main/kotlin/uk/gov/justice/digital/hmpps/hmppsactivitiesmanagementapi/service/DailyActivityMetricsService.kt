@@ -119,7 +119,7 @@ class DailyActivityMetricsService(
       if (it.attendanceReason?.attended == true) {
         incrementMetric(metricsMap, ATTENDANCE_ATTENDED_COUNT_METRIC_KEY)
       } else {
-        if (it.attendanceReason?.code == AttendanceReasonEnum.REFUSED || it.attendanceReason?.code == AttendanceReasonEnum.OTHER) {
+        if (it.hasReason(AttendanceReasonEnum.REFUSED, AttendanceReasonEnum.OTHER)) {
           incrementMetric(metricsMap, ATTENDANCE_UNACCEPTABLE_ABSENCE_COUNT_METRIC_KEY)
         } else {
           incrementMetric(metricsMap, ATTENDANCE_ACCEPTABLE_ABSENCE_COUNT_METRIC_KEY)

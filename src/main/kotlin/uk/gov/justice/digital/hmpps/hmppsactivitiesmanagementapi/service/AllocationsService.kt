@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
@@ -251,7 +252,7 @@ class AllocationsService(
     }
     allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
       alloc.reactivateSuspension()
-      attendanceSuspensionDomainService.resetFutureSuspendedAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
+      attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
     }
 
     return updatedAttendanceIds

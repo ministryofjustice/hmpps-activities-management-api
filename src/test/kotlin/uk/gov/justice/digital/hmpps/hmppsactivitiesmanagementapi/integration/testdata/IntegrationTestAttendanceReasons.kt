@@ -107,6 +107,21 @@ val suspendedReason =
     displaySequence = null,
     notes = "Maps to ACCAB in NOMIS",
   )
+val autoSuspendedReason =
+  AttendanceReason(
+    id = 10,
+    code = "AUTO_SUSPENDED",
+    description = "Temporarily absent",
+    attended = false,
+    capturePay = false,
+    captureMoreDetail = false,
+    captureCaseNote = false,
+    captureIncentiveLevelWarning = false,
+    captureOtherText = false,
+    displayInAbsence = false,
+    displaySequence = null,
+    notes = "Maps to ACCAB in NOMIS",
+  )
 val cancelledReason =
   AttendanceReason(
     id = 8,
