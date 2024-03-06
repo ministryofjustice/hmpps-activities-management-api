@@ -123,7 +123,7 @@ class ActivityScheduleService(
             prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber })
 
           map {
-            val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }!!
+            val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber } ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for allocation id ${it.id}")
             it.prisonerName = "${prisoner.firstName} ${prisoner.lastName}"
             it.prisonerStatus = prisoner.status
             it.prisonerPrisonCode = prisoner.prisonId
