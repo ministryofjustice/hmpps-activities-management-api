@@ -283,9 +283,11 @@ class ManageAllocationsService(
       failure = "An error occurred while suspending allocations due to be suspended today",
     )
 
-  private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) =
+  private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) {
+    log.info("Sending allocation amended events for allocation IDs ${allocationIds.joinToString(separator = ",")}.")
+
     allocationIds.forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it) }
-      .also { log.info("Sending allocation amended events.") }
+  }
 
   private fun continueToRunOnFailure(block: () -> Unit, failure: String = "") {
     runCatching {
