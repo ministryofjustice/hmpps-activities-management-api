@@ -4,10 +4,9 @@
 
 # hmpps-activities-management-api
 
-This services provide access to the endpoints for the management of prisoner related activities. The main client is the
-[activities management UI](https://github.com/ministryofjustice/hmpps-activities-management) located here.
+This service provides access to the endpoints for the management of prisoner related activities and appointments.
 
-This service requires a postgresql database.
+The main (but not only) client is the Activities Management UI found [here](https://github.com/ministryofjustice/hmpps-activities-management).
 
 ## Building the project
 
@@ -17,10 +16,15 @@ Tools required:
 * Kotlin (Intellij)
 * docker
 * docker-compose
-* AWS cli
-* kubectl
 
-## Install gradle
+Useful tools but not essential:
+
+* KUBECTL not essential for building the project but will be needed for other tasks. Can be installed with `brew`.
+* [k9s](https://k9scli.io/) a terminal based UI to interact with your Kubernetes clusters. Can be installed with `brew`.
+* [jq](https://jqlang.github.io/jq/) a lightweight and flexible command-line JSON processor. Can be installed with `brew`.
+* AWS CLI not essential but useful if running localstack, interrogating queues etc. Can be installed with `brew`.
+
+## Install gradle and build the project
 
 ```
 ./gradlew
@@ -30,56 +34,25 @@ Tools required:
 ./gradlew clean build
 ```
 
-## Environment variables
+## Running the service
 
-The system client id and secret used to retrieve the OAuth 2.0 Access Token needed for service to service API calls can be set as local environment variables.
+There are two key environment variables needed to run the service. The system client id and secret used to retrieve the OAuth 2.0 access token needed for service to service API calls can be set as local environment variables.
 This allows API calls made from this service that do not use the caller's token to successfully authenticate.
-The create scheduled instances and records jobs also require an environment variable to specify the days ahead to create.
 
-The process of adding the environment variables to your local development environment varies based on OS and shell used.
-For zsh, add the following lines to your `.zprofile` file replacing the text in quotes with the dev client id and secret: 
+Add the following to a local `.env` file in the root folder of this project (_you can extract the credentials from the dev k8s project namespace_).
+
+N.B. you must escape any '$' characters with '\\$'
 
 ```
 export SYSTEM_CLIENT_ID="<system.client.id>"
 export SYSTEM_CLIENT_SECRET="<system.client.secret>"
-export SCHEDULE_AHEAD_DAYS=46
 ```
-
-N.B. you must escape any '$' characters with '\\$'
-
-## Service Alerting
-
-The serivce uses [Sentry.IO](https://ministryofjustice.sentry.io/) to raise alerts in Slack and email for job failures. There is a project and team set up in Sentry specifically for this service called `#hmpps-activities-management`. You can log in (and register if need be) with your MoJ github account [here](https://ministryofjustice.sentry.io/).
-
-Rules for alerts can be configured [here](https://ministryofjustice.sentry.io/alerts/rules/).
-
-For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
-
-```
-echo -n '<SENTRY_DSN_GOES_HERE>' | base64
-```
-
-Create a file called sentry.yaml based on the example below and add the base 64 encoded to it:
-
-```
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sentry
-type: Opaque
-data:
-  SENTRY_DSN: <BASE_64_ENCODED_SENTRY_DSN_GOES_HERE>
-```
-
-Apply the secret to each environment with `kubectl` using the file above as required:
-
-```
-kubectl -n hmpps-activities-management-<dev|preprod|prod> apply -f sentry.yaml
-```
-
-## Running the service
 
 Start up the docker dependencies using the docker-compose file in the `hmpps-activities-management-api` service.
+
+```
+docker-compose up --remove-orphans
+```
 
 There is a script to help, which sets local profiles, port and DB connection properties to the
 values required.
@@ -99,21 +72,6 @@ Or, to use default port and properties
 SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
 ```
 
-Ports
-
-| Service                   | Port |  
-|---------------------------|------|
-| activities-management-api | 8080 |
-| activities-management-db  | 5432 |
-| hmpps-auth                | 8090 |
-| prison-api                | 8091 |
-| localstack                | 4566 |
-
-To create a Token (running the local profile):
-```
-curl --location --request POST "http://localhost:8081/auth/oauth/token?grant_type=client_credentials" --header "Authorization: Basic $(echo -n {Client}:{ClientSecret} | base64)"
-```
-
 To simulate AWS SQS/SNS mode you need to have the localstack container running:
 
 ```
@@ -124,24 +82,21 @@ docker-compose -f docker-compose-localstack.yml up
 ./run-localstack.sh
 ```
 
-There are some example scripts in the util_scripts/localstack folder.
+There are some example scripts to simulate messages in the util_scripts/localstack folder.
 
-## Swagger v3
-Visit Scheduler
+## Running tests
+
+Unit
+
 ```
-http://localhost:8080/swagger-ui/index.html
+./gradlew test 
+ ```
+
+Integration
+
 ```
-
-Export Spec
+./gradlew integrationTest
 ```
-http://localhost:8080/v3/api-docs?group=full-api
-```
-
-## Running the unit tests
-
-Unit tests mock all external dependencies and can be run with no dependent containers.
-
-`$ ./gradlew test`
 
 ## Common gradle tasks
 
@@ -198,9 +153,34 @@ To register pre-commit check to run Ktlint format:
 ./gradlew ktlintApplyToIdea addKtlintCheckGitPreCommitHook
 ```
 
-To run integration tests use below command
+## Service Alerting
+
+The service uses [Sentry.IO](https://ministryofjustice.sentry.io/) to raise alerts in Slack and email for job failures. There is a project and team set up in Sentry specifically for this service called `#hmpps-activities-management`. You can log in (and register if need be) with your MoJ github account [here](https://ministryofjustice.sentry.io/).
+
+Rules for alerts can be configured [here](https://ministryofjustice.sentry.io/alerts/rules/).
+
+For Sentry integration to work it requires the environment variable `SENTRY_DSN` to be set up in Kubernettes. This value for this can be found [here](https://ministryofjustice.sentry.io/settings/projects/hmpps-activities-management/keys/).
+
 ```
-./gradlew integrationTest
+echo -n '<SENTRY_DSN_GOES_HERE>' | base64
+```
+
+Create a file called sentry.yaml based on the example below and add the base 64 encoded to it:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sentry
+type: Opaque
+data:
+  SENTRY_DSN: <BASE_64_ENCODED_SENTRY_DSN_GOES_HERE>
+```
+
+Apply the secret to each environment with `kubectl` using the file above as required:
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> apply -f sentry.yaml
 ```
 
 ## Runbook
@@ -209,18 +189,75 @@ To run integration tests use below command
 
 **IMPORTANT: extreme caution should be taken if the job failure in question is in production and probably warrants two developers working together.**
 
-There may be times on overnight job fails to run. To re-run it you can port forward onto a running pod make a `curl` request to the job in question.
+There may be times on overnight job fails to run. To re-run it you can port forward onto a running pod and make a `curl` request to the job in question.
 
 If for example the attendance creation failed it can be re-run as follows:
 
-In a terminal window ...
+In a terminal window port forward to one of the API pods.
 
 ```
-kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-activities-management-api-f6954cfd6-7gb4j 8080:8080
+kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
+```
+Using one of the API pods listed from the command above do the following
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-activities-management-api-<POD_SUFFIX_GOES_HERE> 8080:8080
 ```
 
-In another terminal window ...
+In another terminal window a curl command to run the job (the one below is running attendance creation)
 
 ```
-curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=MDI"
+curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=XYZ"
+```
+
+### Manually raising events
+
+**IMPORTANT: As a rule of thumb once people are out of the prison in question we don't want to publish events for them. If in doubt check with the team responsible for the [sync](https://github.com/ministryofjustice/hmpps-prisoner-to-nomis-update) service.**
+
+There may be times we need to manually raise an event in production e.g. on the back of a bug fix.
+
+In a terminal window port forward to one of the API pods
+
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
+```
+Using one of the API pods listed from the command above do the following
+```
+kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-activities-management-api-<POD_SUFFIX_GOES_HERE> 8080:8080
+```
+
+In another terminal window issue a curl command to publish the event e.g. PRISONER_ALLOCATION_AMENDED
+
+```
+curl --location 'http://localhost:8080/utility/publish-events' \
+--header 'Content-Type: application/json' \
+--data '{
+    "outboundEvent":"<EVENT_TYPE_GOES_HERE>",
+    "identifiers": [
+       1
+    ]
+}'
+```
+
+### Logs
+
+The logs are written to Application Insights and can be queried accordingly.  There is roughly a 5 minute delay before you can see them.
+
+Some simple example Application Insights queries:
+
+```
+traces
+| where cloud_RoleName == 'hmpps-activities-management-api'
+```
+
+```
+traces
+| where cloud_RoleName == 'hmpps-activities-management-api'
+| where message has 'ABC'
+```
+
+```
+union *
+| where operation_Id ==‘<INSERT OPERATION ID HERE>’
+|project timestamp, message, itemType, name, operation_Name, cloud_RoleName, resultCode, customDimensions, duration, url, data, innermostMessage
+|sort by timestamp asc
 ```
