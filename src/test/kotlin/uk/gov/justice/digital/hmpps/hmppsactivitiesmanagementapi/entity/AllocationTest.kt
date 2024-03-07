@@ -259,7 +259,7 @@ class AllocationTest {
   }
 
   @Test
-  fun `can update an exiting planned deallocation`() {
+  fun `can update an existing planned deallocation`() {
     val schedule: ActivitySchedule = mock {
       on { startDate } doReturn yesterday
       on { endDate } doReturn tomorrow.plusWeeks(1)
@@ -694,6 +694,17 @@ class AllocationTest {
   @Test
   fun `allocation ending yesterday cannot be attended today`() {
     val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
+
+    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
+  }
+
+  @Test
+  fun `allocation planned to end yesterday cannot be attended today`() {
+    val allocation = allocation(startDate = TimeSource.yesterday()).apply {
+      deallocateOn(TimeSource.today(), DeallocationReason.DISMISSED, "test")
+      // Cannot add a planned deallocation with yesterday's date so have to override it manually in the test.
+      plannedDeallocation?.plannedDate = TimeSource.yesterday()
+    }
 
     allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
   }

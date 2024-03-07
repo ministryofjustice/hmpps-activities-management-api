@@ -62,6 +62,8 @@ class SafeJobRunner(
   private fun runSafe(jobDefinition: JobDefinition, withRetry: Boolean = false): Result<Unit> {
     val startedAt = LocalDateTime.now()
 
+    log.info("JOB: Running job ${jobDefinition.jobType}")
+
     return runCatching {
       if (withRetry) {
         retryable.retry { jobDefinition.block() }
@@ -71,7 +73,7 @@ class SafeJobRunner(
     }
       .onSuccess { jobRepository.saveAndFlush(Job.successful(jobDefinition.jobType, startedAt)) }
       .onFailure {
-        log.error("Failed to run ${jobDefinition.jobType} job", it)
+        log.error("JOB: Failed to run ${jobDefinition.jobType} job", it)
         jobRepository.saveAndFlush(Job.failed(jobDefinition.jobType, startedAt)).also { failedJob ->
           monitoringService.capture("Job '${failedJob.jobType}' for job id '${failedJob.jobId}' failed")
         }
