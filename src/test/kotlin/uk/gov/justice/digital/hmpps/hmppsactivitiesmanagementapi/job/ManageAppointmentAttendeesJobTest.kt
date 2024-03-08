@@ -6,20 +6,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 
-class ManageAppointmentAttendeesJobTest {
-  private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>(), mock<Retryable>()))
+class ManageAppointmentAttendeesJobTest : JobsTestBase() {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val service: AppointmentAttendeeService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
@@ -28,6 +22,7 @@ class ManageAppointmentAttendeesJobTest {
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
+    mockJobs(JobType.MANAGE_APPOINTMENT_ATTENDEES)
   }
 
   @Test
