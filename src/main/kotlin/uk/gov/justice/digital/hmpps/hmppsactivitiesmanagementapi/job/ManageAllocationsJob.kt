@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.RolloutP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
-import java.time.LocalDate
 
 @Component
 class ManageAllocationsJob(
@@ -50,7 +49,7 @@ class ManageAllocationsJob(
       jobRunner.runJob(
         JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
           val startDate = deallocateDaysStart.daysAgo()
-          val endDate = LocalDate.now()
+          val endDate = 1.daysAgo()
 
           getRolledOutPrisonCodes().forEach { prisonCode ->
             startDate.rangeTo(endDate).forEach { service.endAllocationsDueToEnd(prisonCode, it) }
