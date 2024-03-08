@@ -37,7 +37,7 @@ FROM scheduled_instance si
          JOIN allocation alloc ON alloc.activity_schedule_id = si.activity_schedule_id AND
                                   si.session_date >= alloc.start_date AND
                                   (alloc.end_date IS NULL OR alloc.end_date >= si.session_date) AND
-                                  (alloc.deallocated_time IS NULL OR alloc.deallocated_time >= (si.session_date + si.start_time))
+                                  (alloc.deallocated_time IS NULL OR CAST(alloc.deallocated_time AS TIME) >= si.start_time)
          JOIN activity act ON act.activity_id = schedule.activity_id AND
                               (act.end_date IS NULL OR act.end_date >= si.session_date)
          JOIN activity_category category ON category.activity_category_id = act.activity_category_id
