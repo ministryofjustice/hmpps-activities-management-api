@@ -15,18 +15,5 @@ services:
       DPR_USER: dpr_user
       DPR_PASSWORD: dpr_password
 
-  prison-api:
-    image: quay.io/hmpps/prison-api:latest
-    networks:
-      - hmpps
-    container_name: prison-api
-    ports:
-      - "8091:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-    environment:
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=nomis-hsqldb
-
 networks:
   hmpps:
