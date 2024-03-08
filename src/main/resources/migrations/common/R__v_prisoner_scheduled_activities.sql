@@ -1,7 +1,3 @@
--- =====================================================================================================
--- Update scheduled events view to:
---      - Change to make sure attendance list for sessions in the past are returned
--- =====================================================================================================
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities
 AS
 SELECT si.scheduled_instance_id,
