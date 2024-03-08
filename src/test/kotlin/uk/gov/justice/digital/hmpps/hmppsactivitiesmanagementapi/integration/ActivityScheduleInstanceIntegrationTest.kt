@@ -158,6 +158,15 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/seed-activity-with-session-in-the-past.sql")
+    fun `get scheduled attendees by scheduled instance id - with sessions in the past should appear`() {
+      val attendees = webTestClient.getScheduledAttendeesByInstanceId(43)!!
+      assertThat(attendees).hasSize(2)
+      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G6268GL") }
+      with(attendees[1]) { assertThat(prisonerNumber).isEqualTo("G4206GA") }
+    }
+
+    @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `403 when fetching a schedule by its id for the wrong caseload`() {
       webTestClient.get()
