@@ -277,7 +277,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-1.sql")
-  fun `createActivity - failed duplicate prison code - summary`() {
+  fun `createActivity - should fail to create with existing active activity with same summary`() {
     val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-2.json")
       .copy(startDate = TimeSource.tomorrow())
 
@@ -298,6 +298,28 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(userMessage).isEqualTo("Exception: Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(developerMessage).isEqualTo("Duplicate activity name detected for this prison (PVI): 'Maths'")
       assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-duplicate-activity.sql")
+  fun `createActivity - should create new activity when existing inactive activity has the same summary`() {
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val newActivityWithDuplicateSummary = activityCreateRequest(
+      prisonCode = MOORLAND_PRISON_CODE,
+      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
+      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+    ).copy(summary = "Maths")
+
+    val createdDuplicateActivity = webTestClient.createActivity(newActivityWithDuplicateSummary)
+
+    with(createdDuplicateActivity!!) {
+      assertThat(summary.isEqualTo("Maths"))
+      assertThat(description.isEqualTo("Test activity"))
     }
   }
 

@@ -158,10 +158,10 @@ class ActivityServiceTest {
     locationType = "type",
     internalLocationCode = "code",
     description = "description",
-    agencyId = "MDI",
+    agencyId = MOORLAND_PRISON_CODE,
   )
 
-  private val caseLoad = "MDI"
+  private val caseLoad = MOORLAND_PRISON_CODE
 
   @BeforeEach
   fun setUp() {
@@ -310,15 +310,17 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `createActivity - duplicate`() {
+  fun `should fail to create a duplicate activity`() {
     whenever(activityCategoryRepository.findById(any())).thenReturn(Optional.of(activityCategory()))
     whenever(eventTierRepository.findByCode(any())).thenReturn(eventTier())
     whenever(eventOrganiserRepository.findByCode(any())).thenReturn(eventOrganiser())
     whenever(eligibilityRuleRepository.findById(any())).thenReturn(Optional.of(eligibilityRuleFemale))
     whenever(prisonPayBandRepository.findByPrisonCode(any())).thenReturn(prisonPayBandsLowMediumHigh())
-    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
+    whenever(prisonApiClient.getEducationLevel(educationLevel.code)).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea(studyArea.code)).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.existingLiveActivity(MOORLAND_PRISON_CODE, "Dave's Test", TimeSource.today())).thenReturn(true)
 
-    val createDuplicateActivityRequest = activityCreateRequest()
+    val createDuplicateActivityRequest = activityCreateRequest(prisonCode = MOORLAND_PRISON_CODE, educationLevel = educationLevel, studyArea = studyArea).copy(summary = "Dave's Test")
 
     assertThatThrownBy { service().createActivity(createDuplicateActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
@@ -746,9 +748,9 @@ class ActivityServiceTest {
         LocalDate.now(),
       ),
     ).thenReturn(savedActivityEntity)
-    whenever(activityRepository.existsActivityByPrisonCodeAndSummary(any(), any())).thenReturn(true)
-
     val updateDuplicateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-5.json")
+
+    whenever(activityRepository.existingLiveActivity(MOORLAND_PRISON_CODE, updateDuplicateActivityRequest.summary!!, TimeSource.today())).thenReturn(true)
 
     assertThatThrownBy {
       service().updateActivity(

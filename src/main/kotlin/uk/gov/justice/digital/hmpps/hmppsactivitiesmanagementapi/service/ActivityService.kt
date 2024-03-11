@@ -127,7 +127,8 @@ class ActivityService(
   }
 
   private fun failDuplicateActivity(prisonCode: String, summary: String) {
-    val duplicateActivity = activityRepository.existsActivityByPrisonCodeAndSummary(prisonCode, summary)
+    val duplicateActivity = activityRepository.existingLiveActivity(prisonCode, summary, LocalDate.now())
+
     if (duplicateActivity) {
       throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
     }
