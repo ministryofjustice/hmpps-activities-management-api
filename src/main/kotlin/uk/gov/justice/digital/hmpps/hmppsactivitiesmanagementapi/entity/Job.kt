@@ -45,12 +45,6 @@ data class Job(
     endedAt = LocalDateTime.now()
     successful = false
   }
-
-  companion object {
-    fun successful(jobType: JobType, start: LocalDateTime) = Job(jobType = jobType, startedAt = start).succeeded()
-
-    fun failed(jobType: JobType, start: LocalDateTime) = Job(jobType = jobType, startedAt = start).failed()
-  }
 }
 
 enum class JobType {

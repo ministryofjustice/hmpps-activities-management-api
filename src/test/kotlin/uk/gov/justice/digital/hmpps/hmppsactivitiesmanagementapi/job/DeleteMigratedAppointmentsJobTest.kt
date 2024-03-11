@@ -6,18 +6,12 @@ import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Retryable
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DELETE_MIGRATED_APPOINTMENTS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateAppointmentService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
 import java.time.LocalDate
 
-class DeleteMigratedAppointmentsJobTest {
-  private val jobRepository: JobRepository = mock()
-  private val safeJobRunner = spy(SafeJobRunner(jobRepository, mock<MonitoringService>(), mock<Retryable>()))
+class DeleteMigratedAppointmentsJobTest : JobsTestBase() {
   private val service: MigrateAppointmentService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = DeleteMigratedAppointmentsJob(safeJobRunner, service)
@@ -25,6 +19,7 @@ class DeleteMigratedAppointmentsJobTest {
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
+    mockJobs(DELETE_MIGRATED_APPOINTMENTS)
   }
 
   @Test
@@ -33,7 +28,7 @@ class DeleteMigratedAppointmentsJobTest {
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.DELETE_MIGRATED_APPOINTMENTS)
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(DELETE_MIGRATED_APPOINTMENTS)
   }
 
   @Test
