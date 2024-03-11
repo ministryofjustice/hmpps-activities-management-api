@@ -55,7 +55,6 @@ class ManageAttendancesService(
     var counter = 0
 
     scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
-      .filter { it.attendanceRequired() }
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
         val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.slotTimes()) }
