@@ -13,7 +13,7 @@ class JobTest {
 
   @Test
   fun `successful job`() {
-    val job = Job.successful(JobType.ATTENDANCE_CREATE, start)
+    val job = Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).succeeded()
 
     assertThat(job.jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
     assertThat(job.startedAt).isEqualTo(start)
@@ -23,7 +23,7 @@ class JobTest {
 
   @Test
   fun `failed job`() {
-    val job = Job.failed(JobType.ATTENDANCE_CREATE, start)
+    val job = Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).failed()
 
     assertThat(job.jobType).isEqualTo(JobType.ATTENDANCE_CREATE)
     assertThat(job.startedAt).isEqualTo(start)
@@ -33,12 +33,12 @@ class JobTest {
 
   @Test
   fun `job cannot be changed once successful or failed`() {
-    with(Job.successful(JobType.ATTENDANCE_CREATE, LocalDateTime.now())) {
+    with(Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).succeeded()) {
       assertThatThrownBy { succeeded() }.isInstanceOf(IllegalStateException::class.java)
         .hasMessage("Job is already ended.")
     }
 
-    with(Job.failed(JobType.ATTENDANCE_CREATE, LocalDateTime.now())) {
+    with(Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).failed()) {
       assertThatThrownBy { failed() }.isInstanceOf(IllegalStateException::class.java)
         .hasMessage("Job is already ended.")
     }
