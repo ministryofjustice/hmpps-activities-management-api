@@ -120,6 +120,7 @@ class AllocationTest : ModelTest() {
       assertThat(deallocatedBy).isNull()
       assertThat(deallocatedReason).isNull()
       assertThat(deallocatedTime).isNull()
+      plannedSuspension isEqualTo allocation.plannedSuspension()?.toModel()
     }
   }
 
