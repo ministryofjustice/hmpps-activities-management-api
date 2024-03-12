@@ -91,10 +91,10 @@ class ActivityCreateRequestTest {
 
   @Test
   fun `Activity for tier 2 cannot have a required attendance of false`() {
-    val activityTierOne = activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = false)
+    val activityTierTwo = activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = false)
 
     assertThat(
-      validator.validate(activityTierOne),
+      validator.validate(activityTierTwo),
     ).satisfiesOnlyOnce {
       assertThat(it.propertyPath.toString()).isEqualTo("attendCheck")
       assertThat(it.message).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
@@ -102,8 +102,8 @@ class ActivityCreateRequestTest {
   }
 
   @Test
-  fun `Activity for tier foundation can have a required attendance of false`() {
-    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = false))).isEmpty()
+  fun `Unpaid activity for tier foundation can have a required attendance of false`() {
+    assertThat(validator.validate(activityCreateRequest(paid = false).copy(tierCode = "FOUNDATION", attendanceRequired = false))).isEmpty()
   }
 
   @Test
@@ -111,5 +111,17 @@ class ActivityCreateRequestTest {
     assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_1", attendanceRequired = true))).isEmpty()
     assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = true))).isEmpty()
     assertThat(validator.validate(activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = true))).isEmpty()
+  }
+
+  @Test
+  fun `Activity for foundation tier and not attended must be unpaid`() {
+    val activityTierFoundation = activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = false, paid = true)
+
+    assertThat(
+      validator.validate(activityTierFoundation),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("unpaidFoundation")
+      assertThat(it.message).isEqualTo("Activity with tierCode Foundation and attendance not required must be unpaid")
+    }
   }
 }

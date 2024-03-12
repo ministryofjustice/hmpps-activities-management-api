@@ -148,4 +148,14 @@ data class ActivityCreateRequest(
         EventTierType.valueOf(tierCode) == EventTierType.TIER_1 || EventTierType.valueOf(tierCode) == EventTierType.TIER_2
         ) && attendanceRequired
       )
+
+  @AssertTrue(message = "Activity with tierCode Foundation and attendance not required must be unpaid")
+  private fun isUnpaidFoundation() = tierCode == null ||
+    EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION ||
+    (
+      EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid
+      ) ||
+    (
+      EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired && paid
+      )
 }
