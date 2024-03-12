@@ -13,7 +13,8 @@ class ActivityCreateRequestTest {
 
   @Test
   fun `valid create activity request`() {
-    assertThat(validator.validate(activityCreateRequest())).isEmpty()
+    val ar = activityCreateRequest()
+    assertThat(validator.validate(ar)).isEmpty()
   }
 
   @Test
@@ -74,5 +75,41 @@ class ActivityCreateRequestTest {
       assertThat(it.propertyPath.toString()).isEqualTo("unpaid")
       assertThat(it.message).isEqualTo("Unpaid activity cannot have pay rates associated with it")
     }
+  }
+
+  @Test
+  fun `Activity for tier 1 cannot have a required attendance of false`() {
+    val activityTierOne = activityCreateRequest().copy(tierCode = "TIER_1", attendanceRequired = false)
+
+    assertThat(
+      validator.validate(activityTierOne),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("attendCheck")
+      assertThat(it.message).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+    }
+  }
+
+  @Test
+  fun `Activity for tier 2 cannot have a required attendance of false`() {
+    val activityTierOne = activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = false)
+
+    assertThat(
+      validator.validate(activityTierOne),
+    ).satisfiesOnlyOnce {
+      assertThat(it.propertyPath.toString()).isEqualTo("attendCheck")
+      assertThat(it.message).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+    }
+  }
+
+  @Test
+  fun `Activity for tier foundation can have a required attendance of false`() {
+    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = false))).isEmpty()
+  }
+
+  @Test
+  fun `Activity for tier 1, tier 2 and foundation can have a required attendance of true`() {
+    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_1", attendanceRequired = true))).isEmpty()
+    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = true))).isEmpty()
+    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = true))).isEmpty()
   }
 }

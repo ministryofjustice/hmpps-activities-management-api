@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
@@ -138,4 +139,13 @@ data class ActivityCreateRequest(
 
   @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
   private fun isPaid() = pay.isNotEmpty() || !paid
+
+  @AssertTrue(message = "Activity with tierCode TIER_1 or TIER_2 must be attended")
+  private fun isAttendCheck() = tierCode == null ||
+    EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION ||
+    (
+      (
+        EventTierType.valueOf(tierCode) == EventTierType.TIER_1 || EventTierType.valueOf(tierCode) == EventTierType.TIER_2
+        ) && attendanceRequired
+      )
 }

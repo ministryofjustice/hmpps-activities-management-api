@@ -302,6 +302,32 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `createActivity - failed tier 1 with non attendance`() {
+    val activityCreateRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-10.json")
+      .copy(startDate = TimeSource.tomorrow())
+
+    val error = webTestClient.post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().is4xxClientError
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(400)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("One or more constraint violations occurred")
+      assertThat(developerMessage).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
