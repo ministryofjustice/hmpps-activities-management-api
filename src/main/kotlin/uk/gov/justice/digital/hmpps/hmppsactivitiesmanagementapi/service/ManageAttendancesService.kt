@@ -35,6 +35,7 @@ class ManageAttendancesService(
   private val outboundEventsService: OutboundEventsService,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val transactionHandler: TransactionHandler,
+  private val monitoringService: MonitoringService,
 ) {
 
   companion object {
@@ -84,6 +85,7 @@ class ManageAttendancesService(
           }
             .onSuccess { counter += attendancesForInstance.size }
             .onFailure {
+              monitoringService.capture("Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'", it)
               log.error(
                 "Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'",
                 it,
