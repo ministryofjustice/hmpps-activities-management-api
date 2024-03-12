@@ -3,6 +3,7 @@
   "attendanceRequired": false,
   "summary": "Maths",
   "categoryId": 1,
+  "tierCode": "TIER_2",
   "payPerSession": "H",
   "riskLevel": "high",
   "pay": [

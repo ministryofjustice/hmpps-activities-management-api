@@ -72,6 +72,7 @@ data class ActivityCreateRequest(
   @Schema(description = "The category id for this activity, one of the high-level categories")
   val categoryId: Long?,
 
+  @field:NotEmpty(message = "Tier code must be supplied")
   @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", example = "TIER_1")
   val tierCode: String?,
 
