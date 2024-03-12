@@ -147,7 +147,8 @@ class ManageAttendancesServiceTest {
 
   @Test
   fun `should capture failures in monitoring service for any exceptions when creating attendances`() {
-    doThrow(RuntimeException("Something went wrong")).whenever(attendanceRepository).saveAllAndFlush(anyList())
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(attendanceRepository).saveAllAndFlush(anyList())
 
     instance.activitySchedule.activity.attendanceRequired = true
 
@@ -156,7 +157,7 @@ class ManageAttendancesServiceTest {
 
     service.createAttendances(today, MOORLAND_PRISON_CODE)
 
-    verify(monitoringService).capture("Error occurred saving attendances for prison code 'MDI' and instance id '0'")
+    verify(monitoringService).capture("Error occurred saving attendances for prison code 'MDI' and instance id '0'", exception)
   }
 
   @Test

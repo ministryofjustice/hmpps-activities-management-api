@@ -183,7 +183,8 @@ class ManageAllocationsServiceTest {
 
   @Test
   fun `should capture failures in monitoring service for any exceptions when expiring`() {
-    doThrow(RuntimeException("Something went wrong")).whenever(activityScheduleRepo).saveAndFlush(any())
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(activityScheduleRepo).saveAndFlush(any())
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = TimeSource.tomorrow())
     val schedule = activity.schedules().first()
@@ -201,7 +202,7 @@ class ManageAllocationsServiceTest {
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
-    verify(monitoringService).capture("An error occurred deallocating allocations on activity schedule 1.")
+    verify(monitoringService).capture("An error occurred deallocating allocations on activity schedule 1", exception)
   }
 
   @Test
@@ -474,19 +475,21 @@ class ManageAllocationsServiceTest {
 
   @Test
   fun `should capture failures in monitoring service for any exceptions when suspending`() {
-    doThrow(RuntimeException("Something went wrong")).whenever(allocationRepository).saveAndFlush(any())
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(allocationRepository).saveAndFlush(any())
     val prison = rolloutPrison().also { whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it) }
     val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE)) doReturn listOf(activeAllocation)
 
     service.suspendAllocationsDueToBeSuspended(prison.code)
 
-    verify(monitoringService).capture("An error occurred while suspending allocations due to be suspended today")
+    verify(monitoringService).capture("An error occurred while suspending allocations due to be suspended today", exception)
   }
 
   @Test
   fun `should capture failures in monitoring service for any exceptions when unsuspending`() {
-    doThrow(RuntimeException("Something went wrong")).whenever(allocationRepository).saveAndFlush(any())
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(allocationRepository).saveAndFlush(any())
     val prison = rolloutPrison().also { whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it) }
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
       activatePlannedSuspension()
@@ -496,7 +499,7 @@ class ManageAllocationsServiceTest {
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
 
     service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
-    verify(monitoringService).capture("An error occurred while unsuspending allocations due to be unsuspended today")
+    verify(monitoringService).capture("An error occurred while unsuspending allocations due to be unsuspended today", exception)
   }
 
   @Test

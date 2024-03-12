@@ -224,8 +224,8 @@ class ManageScheduledInstancesServiceTest {
   @Test
   fun `should capture failures in monitoring service for any exceptions when creating schedules`() {
     val failingTransactionHandler: CreateInstanceTransactionHandler = mock()
-
-    doThrow(RuntimeException("Something went wrong")).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any(), any())
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any(), any())
     whenever(activityRepository.getBasicForPrisonBetweenDates(any(), any(), any())) doReturn moorlandBasic
 
     ManageScheduledInstancesService(
@@ -237,9 +237,9 @@ class ManageScheduledInstancesServiceTest {
       7L,
     ).create()
 
-    verify(monitoringService).capture("Failed to schedule instances for MDI A")
-    verify(monitoringService).capture("Failed to schedule instances for MDI B")
-    verify(monitoringService).capture("Failed to schedule instances for MDI C")
+    verify(monitoringService).capture("Failed to schedule instances for MDI A", exception)
+    verify(monitoringService).capture("Failed to schedule instances for MDI B", exception)
+    verify(monitoringService).capture("Failed to schedule instances for MDI C", exception)
   }
 
   private fun ArgumentCaptor<ActivitySchedule>.savedSchedules(expectedNumberOfSavedSchedules: Int) =

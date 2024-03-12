@@ -246,7 +246,7 @@ class ManageAllocationsService(
             }?.map(Allocation::allocationId) ?: emptyList()
           }.let(::sendAllocationsAmendedEvents)
         },
-        failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}.",
+        failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}",
       )
     }
   }
@@ -292,7 +292,7 @@ class ManageAllocationsService(
       block()
     }
       .onFailure {
-        monitoringService.capture(failure)
+        monitoringService.capture(failure, it)
         log.error(failure, it)
       }
   }

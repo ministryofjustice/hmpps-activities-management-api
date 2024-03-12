@@ -85,7 +85,7 @@ class ManageAttendancesService(
           }
             .onSuccess { counter += attendancesForInstance.size }
             .onFailure {
-              monitoringService.capture("Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'")
+              monitoringService.capture("Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'", it)
               log.error(
                 "Error occurred saving attendances for prison code '$prisonCode' and instance id '${instance.scheduledInstanceId}'",
                 it,
