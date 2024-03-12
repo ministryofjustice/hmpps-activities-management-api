@@ -21,6 +21,7 @@ class ManageScheduledInstancesService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val transactionHandler: CreateInstanceTransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val monitoringService: MonitoringService,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
 ) {
   companion object {
@@ -52,7 +53,10 @@ class ManageScheduledInstancesService(
   }
 
   private fun <R> continueToRunOnFailure(block: () -> R?, success: String, failure: String) =
-    runCatching { block() }.onSuccess { log.info(success) }.onFailure { log.error(failure, it) }.getOrNull()
+    runCatching { block() }.onSuccess { log.info(success) }.onFailure {
+      monitoringService.capture(failure)
+      log.error(failure, it)
+    }.getOrNull()
 }
 
 /**

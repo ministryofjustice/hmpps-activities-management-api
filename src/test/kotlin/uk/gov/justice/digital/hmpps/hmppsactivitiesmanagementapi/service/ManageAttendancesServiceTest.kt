@@ -6,8 +6,10 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
@@ -52,6 +54,7 @@ class ManageAttendancesServiceTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
+  private val monitoringService: MonitoringService = mock()
 
   private val rolloutPrison: RolloutPrison = mock {
     on { code } doReturn MOORLAND_PRISON_CODE
@@ -71,6 +74,7 @@ class ManageAttendancesServiceTest {
     outboundEventsService,
     prisonerSearchApiClient,
     TransactionHandler(),
+    monitoringService,
   )
 
   private val today = LocalDate.now()
@@ -139,6 +143,20 @@ class ManageAttendancesServiceTest {
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+  }
+
+  @Test
+  fun `should capture failures in monitoring service for any exceptions when creating attendances`() {
+    doThrow(RuntimeException("Something went wrong")).whenever(attendanceRepository).saveAllAndFlush(anyList())
+
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(any(), any(), any())) doReturn listOf(instance)
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(anyList())) doReturn listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber }
+
+    service.createAttendances(today, MOORLAND_PRISON_CODE)
+
+    verify(monitoringService).capture("Error occurred saving attendances for prison code 'MDI' and instance id '0'")
   }
 
   @Test

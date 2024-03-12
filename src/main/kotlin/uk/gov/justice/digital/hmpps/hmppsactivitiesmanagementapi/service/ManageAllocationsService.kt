@@ -39,6 +39,7 @@ class ManageAllocationsService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val prisonApi: PrisonApiApplicationClient,
+  private val monitoringService: MonitoringService,
 ) {
 
   companion object {
@@ -150,9 +151,6 @@ class ManageAllocationsService(
       PrisonerStatus.PENDING,
       date,
     )
-
-  private fun List<ActivitySchedule>.allocationsDueToStartOnOrBefore(date: LocalDate) =
-    flatMap { it.allocations().filter { allocation -> allocation.startDate <= date } }
 
   private fun forEachRolledOutPrison() =
     rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.filterNotNull()
@@ -280,7 +278,7 @@ class ManageAllocationsService(
           }.map(Allocation::allocationId)
         }.let(::sendAllocationsAmendedEvents)
       },
-      failure = "An error occurred while suspending allocations due to be suspended today",
+      failure = "An error occurred while unsuspending allocations due to be unsuspended today",
     )
 
   private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) {
@@ -293,7 +291,10 @@ class ManageAllocationsService(
     runCatching {
       block()
     }
-      .onFailure { log.error(failure, it) }
+      .onFailure {
+        monitoringService.capture(failure)
+        log.error(failure, it)
+      }
   }
 }
 

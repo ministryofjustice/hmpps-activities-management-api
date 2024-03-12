@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -45,6 +46,7 @@ class ManageAllocationsServiceTest {
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonApi: PrisonApiApplicationClient = mock()
+  private val monitoringService: MonitoringService = mock()
 
   private val service =
     ManageAllocationsService(
@@ -57,6 +59,7 @@ class ManageAllocationsServiceTest {
       TransactionHandler(),
       outboundEventsService,
       prisonApi,
+      monitoringService,
     )
   private val yesterday = LocalDate.now().minusDays(1)
   private val today = yesterday.plusDays(1)
@@ -176,6 +179,29 @@ class ManageAllocationsServiceTest {
     allocation.verifyIsExpired()
 
     verify(activityScheduleRepo).saveAndFlush(schedule)
+  }
+
+  @Test
+  fun `should capture failures in monitoring service for any exceptions when expiring`() {
+    doThrow(RuntimeException("Something went wrong")).whenever(activityScheduleRepo).saveAndFlush(any())
+    val prison = rolloutPrison()
+    val activity = activityEntity(startDate = TimeSource.tomorrow())
+    val schedule = activity.schedules().first()
+    val allocation = schedule.allocations().first().also { it.prisonerStatus isEqualTo PrisonerStatus.PENDING }
+    val prisoner: Prisoner = mock {
+      on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
+      on { prisonerNumber } doReturn allocation.prisonerNumber
+    }
+
+    whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
+    whenever(prisonRegimeRepository.findByPrisonCode(any())) doReturn prisonRegime()
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(allocation)
+    whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
+
+    service.allocations(AllocationOperation.EXPIRING_TODAY)
+
+    verify(monitoringService).capture("An error occurred deallocating allocations on activity schedule 1.")
   }
 
   @Test
@@ -444,6 +470,33 @@ class ManageAllocationsServiceTest {
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
 
     verify(allocationRepository).saveAndFlush(activeAllocation)
+  }
+
+  @Test
+  fun `should capture failures in monitoring service for any exceptions when suspending`() {
+    doThrow(RuntimeException("Something went wrong")).whenever(allocationRepository).saveAndFlush(any())
+    val prison = rolloutPrison().also { whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it) }
+    val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE)) doReturn listOf(activeAllocation)
+
+    service.suspendAllocationsDueToBeSuspended(prison.code)
+
+    verify(monitoringService).capture("An error occurred while suspending allocations due to be suspended today")
+  }
+
+  @Test
+  fun `should capture failures in monitoring service for any exceptions when unsuspending`() {
+    doThrow(RuntimeException("Something went wrong")).whenever(allocationRepository).saveAndFlush(any())
+    val prison = rolloutPrison().also { whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it) }
+    val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
+      activatePlannedSuspension()
+      plannedSuspension()!!.endNow("TEST")
+    }
+
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
+
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
+    verify(monitoringService).capture("An error occurred while unsuspending allocations due to be unsuspended today")
   }
 
   @Test
