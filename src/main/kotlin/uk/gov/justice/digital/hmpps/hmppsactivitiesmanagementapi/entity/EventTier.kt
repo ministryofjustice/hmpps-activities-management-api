@@ -21,6 +21,8 @@ data class EventTier(
   val description: String,
 ) {
   fun isTierTwo() = EventTierType.valueOf(this.code) == EventTierType.TIER_2
+
+  fun isFoundation() = EventTierType.valueOf(this.code) == EventTierType.FOUNDATION
 }
 
 enum class EventTierType {

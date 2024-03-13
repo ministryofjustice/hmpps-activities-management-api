@@ -46,7 +46,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.lang.IllegalStateException
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -554,6 +553,14 @@ class ActivityService(
     activity: Activity,
   ) {
     request.attendanceRequired?.apply {
+      activity.activityTier?.let {
+        val updateNotAllowed = activity.activityTier?.isFoundation() == false &&
+          activity.attendanceRequired && request.attendanceRequired == false
+
+        require(!updateNotAllowed) {
+          "Attendance cannot be from YES to NO for a ${activity.activityTier?.code} activity."
+        }
+      }
       activity.attendanceRequired = this
     }
   }
