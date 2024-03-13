@@ -143,19 +143,11 @@ data class ActivityCreateRequest(
   @AssertTrue(message = "Activity with tierCode TIER_1 or TIER_2 must be attended")
   private fun isAttendCheck() = tierCode == null ||
     EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION ||
-    (
-      (
-        EventTierType.valueOf(tierCode) == EventTierType.TIER_1 || EventTierType.valueOf(tierCode) == EventTierType.TIER_2
-        ) && attendanceRequired
-      )
+    ((EventTierType.valueOf(tierCode) == EventTierType.TIER_1 || EventTierType.valueOf(tierCode) == EventTierType.TIER_2) && attendanceRequired)
 
   @AssertTrue(message = "Activity with tierCode Foundation and attendance not required must be unpaid")
   private fun isUnpaidFoundation() = tierCode == null ||
     EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION ||
-    (
-      EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid
-      ) ||
-    (
-      EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired && paid
-      )
+    (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid) ||
+    (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired && paid)
 }
