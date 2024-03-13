@@ -19,6 +19,7 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
       .block()!!
   }
 
+  @Deprecated(message = "To keep things simpler (and take some pressure off the API) would prefer not to use this and return case note identifiers")
   fun getCaseNote(prisonerNumber: String, caseNoteId: Long): CaseNote {
     return webClient.get()
       .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)

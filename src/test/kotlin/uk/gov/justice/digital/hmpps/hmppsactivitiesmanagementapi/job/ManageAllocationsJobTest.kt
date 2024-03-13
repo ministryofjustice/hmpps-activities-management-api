@@ -40,7 +40,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
   }
 
   @Test
@@ -55,7 +55,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(DEALLOCATE_ENDING)
+    verifyJobsWithRetryCalled(DEALLOCATE_ENDING)
   }
 
   @Test
@@ -67,7 +67,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled(DEALLOCATE_EXPIRING)
   }
 
   @Test
@@ -87,7 +87,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
   }
 
   @Test
@@ -104,7 +104,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
   }
 
   @Test
@@ -120,7 +120,7 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
   }
 
   @Test
@@ -141,6 +141,6 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
   }
 }

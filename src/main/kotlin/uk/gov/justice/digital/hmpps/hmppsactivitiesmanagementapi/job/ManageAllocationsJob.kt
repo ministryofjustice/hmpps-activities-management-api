@@ -22,13 +22,13 @@ class ManageAllocationsJob(
   @Async("asyncExecutor")
   fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false) {
     if (withActivate) {
-      jobRunner.runJob(
+      jobRunner.runJobWithRetry(
         JobDefinition(JobType.ALLOCATE) {
           service.allocations(AllocationOperation.STARTING_TODAY)
         },
       )
 
-      jobRunner.runJob(
+      jobRunner.runJobWithRetry(
         JobDefinition(jobType = JobType.START_SUSPENSIONS) {
           getRolledOutPrisonCodes().forEach { prisonCode ->
             service.suspendAllocationsDueToBeSuspended(prisonCode)
@@ -36,7 +36,7 @@ class ManageAllocationsJob(
         },
       )
 
-      jobRunner.runJob(
+      jobRunner.runJobWithRetry(
         JobDefinition(jobType = JobType.END_SUSPENSIONS) {
           getRolledOutPrisonCodes().forEach { prisonCode ->
             service.unsuspendAllocationsDueToBeUnsuspended(prisonCode)
@@ -46,7 +46,7 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocateEnding) {
-      jobRunner.runJob(
+      jobRunner.runJobWithRetry(
         JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
           val startDate = deallocateDaysStart.daysAgo()
           val endDate = 1.daysAgo()
@@ -59,7 +59,7 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocateExpiring) {
-      jobRunner.runJob(
+      jobRunner.runJobWithRetry(
         JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
           service.allocations(AllocationOperation.EXPIRING_TODAY)
         },
