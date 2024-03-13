@@ -27,8 +27,8 @@ abstract class JobsTestBase {
     }
   }
 
-  fun verifyJobsCalled(vararg jobTypes: JobType) {
-    jobTypes.forEach { verify(safeJobRunner).runJob(argThat { this.jobType == it }) }
+  fun verifyJobsWithRetryCalled(vararg jobTypes: JobType) {
+    jobTypes.forEach { verify(safeJobRunner).runJobWithRetry(argThat { this.jobType == it }) }
     verifyNoMoreInteractions(safeJobRunner)
   }
 }
