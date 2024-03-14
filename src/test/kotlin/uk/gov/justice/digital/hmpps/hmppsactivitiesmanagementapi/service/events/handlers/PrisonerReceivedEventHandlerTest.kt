@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class OffenderReceivedEventHandlerTest {
+class PrisonerReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
@@ -37,7 +37,7 @@ class OffenderReceivedEventHandlerTest {
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    OffenderReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceSuspensionDomainService, TransactionHandler(), outboundEventsService)
+    PrisonerReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceSuspensionDomainService, TransactionHandler(), outboundEventsService)
 
   @BeforeEach
   fun beforeTests() {

@@ -57,6 +57,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -508,6 +509,59 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     service.process(
       offenderReceivedFromTemporaryAbsence(
+        prisonCode = PENTONVILLE_PRISON_CODE,
+        prisonerNumber = "A11111A",
+      ),
+    )
+
+    // Eight events should be raised four for allocation amendments and four for an attendance amendment
+    verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService, times(2)).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService, never()).send(PRISONER_ATTENDANCE_AMENDED, 1L)
+    verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 2L)
+    verify(outboundEventsService, times(2)).send(PRISONER_ATTENDANCE_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    // This attendance record is never modified
+    attendanceRepository.findById(1L).orElseThrow().also {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isNull()
+      assertThat(it.recordedBy).isNull()
+    }
+
+    // These attendance records are modified and now WAITING
+    attendanceRepository.findAllById(listOf(2L, 3L)).onEach {
+      assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(it.attendanceReason).isNull()
+      assertThat(it.issuePayment).isNull()
+      assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-changed-event.sql")
+  fun `two allocations and two future attendance are unsuspended on receipt of prisoner received event`() {
+    // Fixture necessary for the received event handler
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
+
+    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    assertThatAllocationsAreActiveFor("A11111A")
+
+    // Suspending first so can unsuspend afterwards.
+    service.process(
+      activitiesChangedEvent(
+        prisonId = PENTONVILLE_PRISON_CODE,
+        prisonerNumber = "A11111A",
+        action = Action.SUSPEND,
+      ),
+    )
+
+    service.process(
+      prisonerReceivedFromTemporaryAbsence(
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),

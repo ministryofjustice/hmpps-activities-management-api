@@ -12,12 +12,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderMergedEventHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReceivedEventHandler
 
 class InboundEventsServiceTest {
-  private val receivedEventHandler: OffenderReceivedEventHandler = mock()
+  private val receivedEventHandler: PrisonerReceivedEventHandler = mock()
   private val releasedEventHandler: OffenderReleasedEventHandler = mock()
   private val interestingEventHandler: InterestingEventHandler = mock()
   private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
@@ -80,10 +80,17 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound received event is processed by received event handler`() {
+  fun `inbound offender received event is processed by received event handler`() {
     val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     service.process(offenderReceivedEvent)
     verify(receivedEventHandler).handle(offenderReceivedEvent)
+  }
+
+  @Test
+  fun `inbound prisoner received event is processed by received event handler`() {
+    val prisonerReceivedEvent = prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
+    service.process(prisonerReceivedEvent)
+    verify(receivedEventHandler).handle(prisonerReceivedEvent)
   }
 
   @Test
