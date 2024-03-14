@@ -8,6 +8,10 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<OffenderReceivedEvent>(message)
   },
+  PRISONER_RECEIVED("prisoner-offender-search.prisoner.received") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<PrisonerReceivedEvent>(message)
+  },
   OFFENDER_RELEASED("prison-offender-events.prisoner.released") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<OffenderReleasedEvent>(message)
@@ -62,6 +66,12 @@ interface InboundReleaseEvent : InboundEvent {
   fun prisonCode(): String
 }
 
+// This interface can be removed where we are down to one prisoner received event.
+// The interface as it stands allows the use of one event handler for both received events as the logic is identical.
+interface InboundPrisonerReceivedEvent : InboundEvent {
+  fun prisonCode(): String
+}
+
 interface EventOfInterest
 
 // ------------ Offender released from prison events ------------------------------------------
@@ -79,10 +89,17 @@ data class ReleaseInformation(val nomsNumber: String, val reason: String, val pr
 
 // ------------ Offender received into prison events -------------------------------------------
 
-data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation) : InboundEvent {
-  fun prisonCode() = additionalInformation.prisonId
+@Deprecated(message = "Replaced by PrisonerReceivedEvent")
+data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation) : InboundPrisonerReceivedEvent {
+  override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.OFFENDER_RECEIVED.eventType
+}
+
+data class PrisonerReceivedEvent(val additionalInformation: ReceivedInformation) : InboundPrisonerReceivedEvent {
+  override fun prisonCode() = additionalInformation.prisonId
+  override fun prisonerNumber() = additionalInformation.nomsNumber
+  override fun eventType() = InboundEventType.PRISONER_RECEIVED.eventType
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)

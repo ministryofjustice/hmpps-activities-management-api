@@ -36,10 +36,25 @@ fun offenderTransferReleasedEvent(
   ),
 )
 
+@Deprecated(
+  message = "Replaced by prisoner received event",
+  replaceWith = ReplaceWith("prisonerReceivedFromTemporaryAbsence(prisonCode, prisonerNumber)"),
+)
 fun offenderReceivedFromTemporaryAbsence(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
 ) = OffenderReceivedEvent(
+  ReceivedInformation(
+    prisonerNumber,
+    "TEMPORARY_ABSENCE_RETURN",
+    prisonCode,
+  ),
+)
+
+fun prisonerReceivedFromTemporaryAbsence(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+) = PrisonerReceivedEvent(
   ReceivedInformation(
     prisonerNumber,
     "TEMPORARY_ABSENCE_RETURN",

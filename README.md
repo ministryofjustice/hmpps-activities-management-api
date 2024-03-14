@@ -82,6 +82,21 @@ docker-compose -f docker-compose-localstack.yml up
 ./run-localstack.sh
 ```
 
+You might need to set up your AWS config and credentials files:
+
+Sample config file content
+```
+[profile default]
+region = eu-west-2
+```
+
+Sample credentials file content
+```
+[default]
+aws_access_key_id = foo
+aws_secret_access_key = bar
+```
+
 There are some example scripts to simulate messages in the util_scripts/localstack folder.
 
 ## Running tests
