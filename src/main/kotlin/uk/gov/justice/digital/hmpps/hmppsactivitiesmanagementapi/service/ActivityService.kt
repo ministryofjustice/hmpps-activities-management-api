@@ -342,6 +342,10 @@ class ActivityService(
       applyScheduleWeeksUpdate(request, activity)
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
+      if (activity.paid && !activity.attendanceRequired) {
+        throw IllegalStateException("Activity '$activityId' cannot be paid as attendance is not required.")
+      }
+
       val now = LocalDateTime.now()
 
       activity.updatedTime = now
@@ -558,7 +562,7 @@ class ActivityService(
           activity.attendanceRequired && request.attendanceRequired == false
 
         require(!updateNotAllowed) {
-          "Attendance cannot be from YES to NO for a ${activity.activityTier?.code} activity."
+          "Attendance cannot be from YES to NO for a '${activity.activityTier?.code}' activity."
         }
       }
       activity.attendanceRequired = this

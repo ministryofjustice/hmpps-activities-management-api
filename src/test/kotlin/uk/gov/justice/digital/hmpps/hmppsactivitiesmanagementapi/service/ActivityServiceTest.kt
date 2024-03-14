@@ -2146,7 +2146,7 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Attendance cannot be from YES to NO for a TIER_1 activity.")
+      .hasMessage("Attendance cannot be from YES to NO for a 'TIER_1' activity.")
   }
 
   @Test
@@ -2169,6 +2169,124 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Attendance cannot be from YES to NO for a TIER_2 activity.")
+      .hasMessage("Attendance cannot be from YES to NO for a 'TIER_2' activity.")
+  }
+
+  @Test
+  fun `updateActivity - attendance required from YES to NO for unpaid foundation tier is successful`() {
+    val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = true
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+    afterActivityEntity.activityTier = eventTier
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isFalse()
+    }
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid where existing entity set to attendance required is successful`() {
+    val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = true
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+    afterActivityEntity.activityTier = eventTier
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isFalse()
+    }
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid where existing entity not set to attendance required is unsuccessful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    var activityUpdateRequest = ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, activityUpdateRequest, "TEST")
+    }.isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Activity '1' cannot be paid as attendance is not required.")
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid and attendance required where existing entity not set to attendance required is successful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)), attendanceRequired = true), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+      assertThat(paid).isTrue()
+    }
   }
 }
