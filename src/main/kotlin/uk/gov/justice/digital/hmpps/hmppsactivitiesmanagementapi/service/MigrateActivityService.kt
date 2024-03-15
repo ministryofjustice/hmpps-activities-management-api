@@ -362,7 +362,7 @@ class MigrateActivityService(
   fun List<EventTier>.isTierTwo() = this.find { it.code == "TIER_2" }
   fun List<EventTier>.isFoundation() = this.find { it.code == "FOUNDATION" }
 
-  fun mapProgramToTier(programServiceCode: String): EventTier? {
+  fun mapProgramToTier(programServiceCode: String): EventTier {
     val tiers = eventTierRepository.findAll()
     val tier = when {
       // Prison industries

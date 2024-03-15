@@ -159,7 +159,7 @@ class ActivityService(
       val activity = Activity(
         prisonCode = request.prisonCode,
         activityCategory = category,
-        activityTier = tier,
+        activityTier = tier!!,
         attendanceRequired = request.attendanceRequired,
         summary = request.summary,
         description = request.description,
