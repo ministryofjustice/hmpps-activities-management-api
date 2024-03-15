@@ -459,7 +459,7 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
     }
-      .isInstanceOf(IllegalStateException::class.java)
+      .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK must be a Foundation Tier")
   }
 
@@ -2331,7 +2331,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, activityUpdateRequest, "TEST")
-    }.isInstanceOf(IllegalStateException::class.java)
+    }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity '1' cannot be paid as attendance is not required.")
   }
 

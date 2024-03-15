@@ -146,7 +146,7 @@ class ActivityService(
       val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
       val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
 
-      if (category.isNotInWork() && !tier!!.isFoundation()) throw IllegalStateException("Activity category NOT IN WORK must be a Foundation Tier")
+      if (category.isNotInWork() && !tier!!.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
 
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
@@ -347,7 +347,7 @@ class ActivityService(
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
       if (activity.paid && !activity.attendanceRequired) {
-        throw IllegalStateException("Activity '$activityId' cannot be paid as attendance is not required.")
+        throw IllegalArgumentException("Activity '$activityId' cannot be paid as attendance is not required.")
       }
 
       val now = LocalDateTime.now()
