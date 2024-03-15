@@ -416,7 +416,7 @@ internal fun activityCreateRequest(
     tierCode = eventTier().code,
     organiserCode = eventOrganiser().code,
     eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
-    pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)) else emptyList(),
+    pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 12)) else emptyList(),
     riskLevel = "high",
     startDate = TimeSource.tomorrow(),
     endDate = null,

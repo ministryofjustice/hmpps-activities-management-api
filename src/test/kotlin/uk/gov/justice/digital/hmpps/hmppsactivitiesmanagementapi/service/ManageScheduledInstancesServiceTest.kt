@@ -11,6 +11,7 @@ import org.mockito.Captor
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -42,6 +43,7 @@ class ManageScheduledInstancesServiceTest {
   private val telemetryClient: TelemetryClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
   private val outboundEventsService: OutboundEventsService = mock()
+  private val monitoringService: MonitoringService = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -64,7 +66,7 @@ class ManageScheduledInstancesServiceTest {
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest)
 
-  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, outboundEventsService, 7L)
+  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, outboundEventsService, monitoringService, 7L)
 
   private val today = LocalDate.now()
   private val weekFromToday = today.plusWeeks(1)
@@ -217,6 +219,27 @@ class ManageScheduledInstancesServiceTest {
         assertThat(instance.sessionDate).isBetween(today, weekFromToday)
       }
     }
+  }
+
+  @Test
+  fun `should capture failures in monitoring service for any exceptions when creating schedules`() {
+    val failingTransactionHandler: CreateInstanceTransactionHandler = mock()
+    val exception = RuntimeException("Something went wrong")
+    doThrow(exception).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any(), any())
+    whenever(activityRepository.getBasicForPrisonBetweenDates(any(), any(), any())) doReturn moorlandBasic
+
+    ManageScheduledInstancesService(
+      activityRepository,
+      rolloutPrisonRepository,
+      failingTransactionHandler,
+      outboundEventsService,
+      monitoringService,
+      7L,
+    ).create()
+
+    verify(monitoringService).capture("Failed to schedule instances for MDI A", exception)
+    verify(monitoringService).capture("Failed to schedule instances for MDI B", exception)
+    verify(monitoringService).capture("Failed to schedule instances for MDI C", exception)
   }
 
   private fun ArgumentCaptor<ActivitySchedule>.savedSchedules(expectedNumberOfSavedSchedules: Int) =

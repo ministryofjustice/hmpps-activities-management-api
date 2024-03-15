@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedSuspension as ModelPlannedSuspension
 
 @Entity
 @Table(name = "planned_suspension")
@@ -53,4 +54,12 @@ data class PlannedSuspension(
     updatedAt = LocalDateTime.now()
     this.caseNoteId = caseNoteId
   }
+
+  fun toModel() = ModelPlannedSuspension(
+    plannedStartDate = this.plannedStartDate,
+    plannedEndDate = this.plannedEndDate,
+    caseNoteId = this.caseNoteId,
+    plannedBy = this.plannedBy,
+    plannedAt = this.plannedAt,
+  )
 }

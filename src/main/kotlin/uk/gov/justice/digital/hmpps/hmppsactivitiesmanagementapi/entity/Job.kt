@@ -19,7 +19,7 @@ data class Job(
   @Enumerated(EnumType.STRING)
   val jobType: JobType,
 
-  val startedAt: LocalDateTime,
+  val startedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
   var endedAt: LocalDateTime? = null

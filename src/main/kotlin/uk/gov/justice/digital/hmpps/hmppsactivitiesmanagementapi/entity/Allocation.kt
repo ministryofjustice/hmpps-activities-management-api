@@ -272,6 +272,7 @@ data class Allocation(
       suspendedTime = suspendedTime,
       status = prisonerStatus,
       plannedDeallocation = plannedDeallocation?.toModel(),
+      plannedSuspension = plannedSuspension()?.toModel(),
       exclusions = exclusions(ExclusionsFilter.ACTIVE).toSlotModel(),
     )
 

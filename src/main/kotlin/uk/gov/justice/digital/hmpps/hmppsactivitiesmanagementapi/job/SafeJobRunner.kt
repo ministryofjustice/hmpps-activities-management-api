@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MonitoringService
-import java.time.LocalDateTime
+import kotlin.system.measureTimeMillis
 
 @Component
 class SafeJobRunner(
@@ -28,27 +28,29 @@ class SafeJobRunner(
     runSafe(jobDefinition, true)
   }
 
-  private fun runSafe(jobDefinition: JobDefinition, withRetry: Boolean = false): Result<Unit> {
-    val startedAt = LocalDateTime.now()
-
-    val job = jobRepository.saveAndFlush(Job(jobType = jobDefinition.jobType, startedAt = startedAt))
+  private fun runSafe(jobDefinition: JobDefinition, withRetry: Boolean = false) {
+    val job = jobRepository.saveAndFlush(Job(jobType = jobDefinition.jobType))
 
     log.info("JOB: Running job ${jobDefinition.jobType} with job id '${job.jobId}'")
 
-    return runCatching {
-      if (withRetry) {
-        retryable.retry { jobDefinition.block() }
-      } else {
-        jobDefinition.block()
-      }
-    }
-      .onSuccess { jobRepository.saveAndFlush(job.succeeded()) }
-      .onFailure {
-        log.error("JOB: Failed to run job ${jobDefinition.jobType} with job id '${job.jobId}'", it)
-        jobRepository.saveAndFlush(job.failed()).also { failedJob ->
-          monitoringService.capture("Job '${failedJob.jobType}' with job id '${failedJob.jobId}' failed")
+    val elapsed = measureTimeMillis {
+      runCatching {
+        if (withRetry) {
+          retryable.retry { jobDefinition.block() }
+        } else {
+          jobDefinition.block()
         }
       }
+        .onSuccess { jobRepository.saveAndFlush(job.succeeded()) }
+        .onFailure {
+          log.error("JOB: Failed to run job ${jobDefinition.jobType} with job id '${job.jobId}'", it)
+          jobRepository.saveAndFlush(job.failed()).also { failedJob ->
+            monitoringService.capture("Job '${failedJob.jobType}' with job id '${failedJob.jobId}' failed")
+          }
+        }
+    }
+
+    log.info("JOB: Time taken for job ${jobDefinition.jobType} ${elapsed}ms with job id '${job.jobId}'")
   }
 }
 

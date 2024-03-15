@@ -38,7 +38,7 @@ generic-prometheus-alerts:
 # We are overriding the times in development due to core service dependencies being switched off overnight e.g. prisoner search API.
 cron:
   allocationsDeallocateEnding: "30 6 * * *"
-  allocationsDeallocateExpiring: "30 21 * * *"
+  allocationsDeallocateExpiring: "30 20 * * *"
   allocationsActivate: "45 6 * * *"
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
