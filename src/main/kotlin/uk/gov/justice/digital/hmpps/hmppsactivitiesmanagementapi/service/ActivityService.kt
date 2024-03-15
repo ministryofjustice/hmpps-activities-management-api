@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -144,6 +145,9 @@ class ActivityService(
     return transactionHandler.newSpringTransaction {
       val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
       val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
+
+      if (category.isNotInWork() && !tier!!.isFoundation()) throw IllegalStateException("Activity category NOT IN WORK must be a Foundation Tier")
+
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
@@ -396,6 +400,10 @@ class ActivityService(
     activity: Activity,
   ) {
     request.tierCode?.apply {
+      if (activity.activityCategory.isNotInWork() && EventTierType.valueOf(request.tierCode) != EventTierType.FOUNDATION) {
+        throw IllegalArgumentException("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
+      }
+
       activity.activityTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
       if (activity.activityTier?.isTierTwo() != true) {
         activity.organiser = null

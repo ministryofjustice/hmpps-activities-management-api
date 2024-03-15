@@ -43,10 +43,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
@@ -386,6 +388,79 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service().createActivity(createActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `createActivity - category not in work and foundation is success`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-11.json")
+      .copy(startDate = TimeSource.tomorrow())
+
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("FOUNDATION")).thenReturn(foundationTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verify(activityCategoryRepository).findById(8)
+    verify(eventTierRepository).findByCode("FOUNDATION")
+    verify(eligibilityRuleRepository).findById(any())
+
+    with(activityCaptor.firstValue) {
+      assertThat(eligibilityRules()).hasSize(1)
+      assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
+      assertThat(activityCategory).isEqualTo(notInWorkCategory)
+      assertThat(activityTier).isEqualTo(foundationTier())
+    }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
+  }
+
+  @Test
+  fun `createActivity - category not in work and tier 1 is not allowed`() {
+    val activityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), categoryId = 8)
+
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    assertThatThrownBy {
+      service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Activity category NOT IN WORK must be a Foundation Tier")
   }
 
   @Test
@@ -2288,5 +2363,79 @@ class ActivityServiceTest {
       assertThat(attendanceRequired).isTrue()
       assertThat(paid).isTrue()
     }
+  }
+
+  @Test
+  fun `updateActivity - category not in work and foundation tier is success`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("FOUNDATION")).thenReturn(foundationTier())
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "FOUNDATION", categoryId = 8), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+      assertThat(paid).isTrue()
+    }
+  }
+
+  @Test
+  fun `updateActivity - change tier to tier 1 with category not in work is not allowed`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(category = notInWorkCategory)
+    savedActivityEntity.organiser = null
+    savedActivityEntity.activityTier = foundationTier()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier(eventTierId = 1, code = "TIER_1", description = "Tier 1"))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
+  }
+
+  @Test
+  fun `updateActivity - change tier to tier 2 with category not in work is not allowed`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(category = notInWorkCategory)
+    savedActivityEntity.organiser = null
+    savedActivityEntity.activityTier = foundationTier()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier(eventTierId = 2, code = "TIER_2", description = "Tier 2"))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_2"), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
   }
 }
