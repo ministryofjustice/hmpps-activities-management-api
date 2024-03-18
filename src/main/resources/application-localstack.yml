@@ -93,7 +93,7 @@ feature:
         received: true
         activities-changed: true
         appointments-changed: true
-    prison-offender-search:
+    prisoner-offender-search:
       prisoner:
         alerts-updated: true
     activities:
