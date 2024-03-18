@@ -145,9 +145,9 @@ class ActivityService(
 
     return transactionHandler.newSpringTransaction {
       val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-      val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
+      val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(request.tierCode!!)
 
-      if (category.isNotInWork() && !tier!!.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
+      if (category.isNotInWork() && !tier.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
 
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
@@ -160,7 +160,7 @@ class ActivityService(
       val activity = Activity(
         prisonCode = request.prisonCode,
         activityCategory = category,
-        activityTier = tier!!,
+        activityTier = tier,
         attendanceRequired = request.attendanceRequired,
         summary = request.summary,
         description = request.description,
@@ -402,7 +402,7 @@ class ActivityService(
   ) {
     request.tierCode?.apply {
       if (activity.activityCategory.isNotInWork() && EventTierType.valueOf(request.tierCode) != EventTierType.FOUNDATION) {
-        throw IllegalArgumentException("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
+        throw IllegalArgumentException("Activity category NOT IN WORK for activity '${activity.activityId}' must be a Foundation Tier.")
       }
 
       activity.activityTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
@@ -566,12 +566,12 @@ class ActivityService(
     activity: Activity,
   ) {
     request.attendanceRequired?.apply {
-      activity.activityTier?.let {
-        val updateNotAllowed = activity.activityTier?.isFoundation() == false &&
+      activity.activityTier.let { tier ->
+        val updateNotAllowed = !tier.isFoundation() &&
           activity.attendanceRequired && request.attendanceRequired == false
 
         require(!updateNotAllowed) {
-          "Attendance cannot be from YES to NO for a '${activity.activityTier?.code}' activity."
+          "Attendance cannot be from YES to NO for a '${activity.activityTier?.description}' activity."
         }
       }
       activity.attendanceRequired = this

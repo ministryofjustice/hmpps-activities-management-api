@@ -74,7 +74,7 @@ data class ActivityCreateRequest(
   val categoryId: Long?,
 
   @field:NotEmpty(message = "Tier code must be supplied")
-  @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", example = "TIER_1")
+  @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", allowableValues = ["TIER_1", "TIER_2", "FOUNDATION"], example = "TIER_1")
   val tierCode: String?,
 
   @Schema(description = "The organiser code for the organiser of this activity", example = "PRISON_STAFF")
@@ -140,14 +140,15 @@ data class ActivityCreateRequest(
   @AssertTrue(message = "Paid activity must have at least one pay rate associated with it")
   private fun isPaid() = pay.isNotEmpty() || !paid
 
-  @AssertTrue(message = "Activity with tierCode TIER_1 or TIER_2 must be attended")
-  private fun isAttendCheck() = tierCode == null ||
-    EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION ||
-    ((EventTierType.valueOf(tierCode) == EventTierType.TIER_1 || EventTierType.valueOf(tierCode) == EventTierType.TIER_2) && attendanceRequired)
+  @AssertTrue(message = "Activity with tier code Tier 1 or Tier 2 must be attended")
+  private fun isTierOneOrTierTwoAttendedCheck() = tierCode == null ||
+    (EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION && attendanceRequired) ||
+    EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION
 
-  @AssertTrue(message = "Activity with tierCode Foundation and attendance not required must be unpaid")
-  private fun isUnpaidFoundation() = tierCode == null ||
-    EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION ||
-    (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid) ||
-    (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired && paid)
+  @AssertTrue(message = "Activity with tier code Foundation and attendance not required must be unpaid")
+  private fun isUnpaidNotAttendedFoundation() =
+    tierCode == null ||
+      EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION ||
+      (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired) ||
+      (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid)
 }

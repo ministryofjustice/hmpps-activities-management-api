@@ -2223,7 +2223,7 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Attendance cannot be from YES to NO for a 'TIER_1' activity.")
+      .hasMessage("Attendance cannot be from YES to NO for a 'Tier 1' activity.")
   }
 
   @Test
@@ -2246,7 +2246,7 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Attendance cannot be from YES to NO for a 'TIER_2' activity.")
+      .hasMessage("Attendance cannot be from YES to NO for a 'Tier 2' activity.")
   }
 
   @Test
@@ -2416,7 +2416,7 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
+      .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
   }
 
   @Test
@@ -2438,6 +2438,6 @@ class ActivityServiceTest {
     assertThatThrownBy {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_2"), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity category SAA_NOT_IN_WORK can only be for a Foundation Tier.")
+      .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
   }
 }

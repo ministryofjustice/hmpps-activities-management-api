@@ -84,8 +84,8 @@ class ActivityCreateRequestTest {
     assertThat(
       validator.validate(activityTierOne),
     ).satisfiesOnlyOnce {
-      assertThat(it.propertyPath.toString()).isEqualTo("attendCheck")
-      assertThat(it.message).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+      assertThat(it.propertyPath.toString()).isEqualTo("tierOneOrTierTwoAttendedCheck")
+      assertThat(it.message).isEqualTo("Activity with tier code Tier 1 or Tier 2 must be attended")
     }
   }
 
@@ -96,21 +96,27 @@ class ActivityCreateRequestTest {
     assertThat(
       validator.validate(activityTierTwo),
     ).satisfiesOnlyOnce {
-      assertThat(it.propertyPath.toString()).isEqualTo("attendCheck")
-      assertThat(it.message).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+      assertThat(it.propertyPath.toString()).isEqualTo("tierOneOrTierTwoAttendedCheck")
+      assertThat(it.message).isEqualTo("Activity with tier code Tier 1 or Tier 2 must be attended")
     }
   }
 
   @Test
-  fun `Unpaid activity for tier foundation can have a required attendance of false`() {
-    assertThat(validator.validate(activityCreateRequest(paid = false).copy(tierCode = "FOUNDATION", attendanceRequired = false))).isEmpty()
+  fun `Unpaid activity for tier foundation can have a required attendance of true`() {
+    var activityCreateRequest = activityCreateRequest(paid = false).copy(tierCode = "FOUNDATION", attendanceRequired = true, pay = emptyList())
+    assertThat(validator.validate(activityCreateRequest).isEmpty())
   }
 
   @Test
-  fun `Activity for tier 1, tier 2 and foundation can have a required attendance of true`() {
+  fun `Unpaid activity for tier foundation can have a required attendance of false`() {
+    var activityCreateRequest = activityCreateRequest(paid = false).copy(tierCode = "FOUNDATION", attendanceRequired = false, pay = emptyList())
+    assertThat(validator.validate(activityCreateRequest)).isEmpty()
+  }
+
+  @Test
+  fun `Activity for tier 1 and tier 2 can have a required attendance of true`() {
     assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_1", attendanceRequired = true))).isEmpty()
     assertThat(validator.validate(activityCreateRequest().copy(tierCode = "TIER_2", attendanceRequired = true))).isEmpty()
-    assertThat(validator.validate(activityCreateRequest().copy(tierCode = "FOUNDATION", attendanceRequired = true))).isEmpty()
   }
 
   @Test
@@ -120,8 +126,8 @@ class ActivityCreateRequestTest {
     assertThat(
       validator.validate(activityTierFoundation),
     ).satisfiesOnlyOnce {
-      assertThat(it.propertyPath.toString()).isEqualTo("unpaidFoundation")
-      assertThat(it.message).isEqualTo("Activity with tierCode Foundation and attendance not required must be unpaid")
+      assertThat(it.propertyPath.toString()).isEqualTo("unpaidNotAttendedFoundation")
+      assertThat(it.message).isEqualTo("Activity with tier code Foundation and attendance not required must be unpaid")
     }
   }
 }

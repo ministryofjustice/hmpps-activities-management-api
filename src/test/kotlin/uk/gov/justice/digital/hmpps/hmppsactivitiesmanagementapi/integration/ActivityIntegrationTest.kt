@@ -344,7 +344,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(status).isEqualTo(400)
       assertThat(errorCode).isNull()
       assertThat(userMessage).isEqualTo("One or more constraint violations occurred")
-      assertThat(developerMessage).isEqualTo("Activity with tierCode TIER_1 or TIER_2 must be attended")
+      assertThat(developerMessage).isEqualTo("Activity with tier code Tier 1 or Tier 2 must be attended")
       assertThat(moreInfo).isNull()
     }
   }
