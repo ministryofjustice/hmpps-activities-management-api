@@ -115,9 +115,6 @@ fun alertsUpdatedEvent(
   alertsAdded: Set<String> = setOf("A1", "A2"),
   alertsRemoved: Set<String> = setOf("R1", "R2"),
 ) = AlertsUpdatedEvent(
-  personReference = PersonReference(
-    identifiers = listOf(Identifier("NOMS", prisonerNumber)),
-  ),
   additionalInformation = AlertsUpdatedInformation(
     bookingId = bookingId,
     alertsAdded = alertsAdded,
