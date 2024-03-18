@@ -2,6 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 
+@Deprecated(
+  message = "Replaced by prisoner temporary released event",
+  replaceWith = ReplaceWith("prisonerTemporaryReleasedEvent(prisonCode, prisonerNumber, reason)"),
+)
 fun offenderTemporaryReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
@@ -13,6 +17,21 @@ fun offenderTemporaryReleasedEvent(
   ),
 )
 
+fun prisonerTemporaryReleasedEvent(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+) = PrisonerReleasedEvent(
+  ReleaseInformation(
+    prisonerNumber,
+    "TEMPORARY_ABSENCE_RELEASE",
+    prisonCode,
+  ),
+)
+
+@Deprecated(
+  message = "Replaced by prisoner released event",
+  replaceWith = ReplaceWith("prisonerReleasedEvent(prisonCode, prisonerNumber, reason)"),
+)
 fun offenderReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
@@ -25,10 +44,37 @@ fun offenderReleasedEvent(
   ),
 )
 
+fun prisonerReleasedEvent(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+  reason: String = "RELEASED",
+) = PrisonerReleasedEvent(
+  ReleaseInformation(
+    prisonerNumber,
+    reason,
+    prisonCode,
+  ),
+)
+
+@Deprecated(
+  message = "Replaced by prisoner transfer released event",
+  replaceWith = ReplaceWith("prisonerTransferReleasedEvent(prisonCode, prisonerNumber)"),
+)
 fun offenderTransferReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
 ) = OffenderReleasedEvent(
+  ReleaseInformation(
+    prisonerNumber,
+    "TRANSFERRED",
+    prisonCode,
+  ),
+)
+
+fun prisonerTransferReleasedEvent(
+  prisonCode: String = PENTONVILLE_PRISON_CODE,
+  prisonerNumber: String = "XXXXXX",
+) = PrisonerReleasedEvent(
   ReleaseInformation(
     prisonerNumber,
     "TRANSFERRED",

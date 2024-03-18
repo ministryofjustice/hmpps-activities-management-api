@@ -12,13 +12,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderMergedEventHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReceivedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReleasedEventHandler
 
 class InboundEventsServiceTest {
   private val receivedEventHandler: PrisonerReceivedEventHandler = mock()
-  private val releasedEventHandler: OffenderReleasedEventHandler = mock()
+  private val releasedEventHandler: PrisonerReleasedEventHandler = mock()
   private val interestingEventHandler: InterestingEventHandler = mock()
   private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
   private val appointmentsChangedEventHandler: AppointmentChangedEventHandler = mock()
@@ -52,7 +52,7 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound released event is processed by release event handler`() {
+  fun `inbound offender released event is processed by release event handler`() {
     val offenderReleasedEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
     service.process(offenderReleasedEvent)
     verify(releasedEventHandler).handle(offenderReleasedEvent)

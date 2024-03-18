@@ -46,6 +46,7 @@ class FeatureSwitchesTest {
       "feature.event.prison-offender-events.prisoner.merged=true",
       "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
       "feature.event.prisoner-offender-search.prisoner.received=true",
+      "feature.event.prisoner-offender-search.prisoner.released=true",
     ],
   )
   @Nested
