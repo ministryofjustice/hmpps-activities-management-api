@@ -215,7 +215,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     val interestingEvent = eventReviewRepository.findAll().last()
 
-    assertThat(interestingEvent.eventType).isEqualTo("prison-offender-search.prisoner.alerts-updated")
+    assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
     assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
     assertThat(interestingEvent.eventData).isEqualTo("Alerts updated for Harrison, Tim (A11111A)")
   }
@@ -778,7 +778,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     val (oldPrisonerNumber, newPrisonerNumber) = "A11111A" to "B11111B"
     val (oldBookingId, newBookingId) = 111111L to 999999L
     val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
-    val newPrisonerNumberAndOldBooking = newPrisonerNumber to oldBookingId
 
     prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999))
 
