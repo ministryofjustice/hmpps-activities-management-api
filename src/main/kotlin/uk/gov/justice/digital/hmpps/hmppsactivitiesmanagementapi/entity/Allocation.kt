@@ -124,7 +124,7 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
-  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfter(LocalDate.now()) ?: true }
+  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.let { endDate -> endDate.isAfter(LocalDate.now()) && endDate.isAfter(it.startDate()) } ?: true }
 
   fun isCurrentlySuspended() = plannedSuspension()?.hasStarted() == true
 

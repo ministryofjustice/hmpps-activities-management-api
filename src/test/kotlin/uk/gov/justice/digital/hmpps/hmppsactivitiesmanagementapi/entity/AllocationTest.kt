@@ -801,6 +801,15 @@ class AllocationTest {
   }
 
   @Test
+  fun `plannedSuspension - does not return a future suspension if the start and end dates are the same`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow(), withPlannedSuspensions = true).apply {
+      plannedSuspension()!!.endOn(TimeSource.tomorrow(), "Test")
+    }
+
+    allocation.plannedSuspension() isEqualTo null
+  }
+
+  @Test
   fun `addPlannedSuspension - throws error if the given planned suspension does not belong to the allocation`() {
     val allocation1 = allocation(startDate = TimeSource.yesterday())
     val allocation2 = allocation(startDate = TimeSource.yesterday())
