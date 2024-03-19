@@ -59,10 +59,10 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound released event is handled as an interesting event`() {
-    val offenderReleasedEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
-    service.process(offenderReleasedEvent)
-    verify(interestingEventHandler).handle(offenderReleasedEvent)
+  fun `inbound prisoner released event is processed by release event handler`() {
+    val prisonerReleasedEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")
+    service.process(prisonerReleasedEvent)
+    verify(releasedEventHandler).handle(prisonerReleasedEvent)
   }
 
   @Test
