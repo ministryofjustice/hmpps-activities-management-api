@@ -44,7 +44,7 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<AppointmentsChangedEvent>(message)
   },
-  ALERTS_UPDATED("prison-offender-search.prisoner.alerts-updated") {
+  ALERTS_UPDATED("prisoner-offender-search.prisoner.alerts-updated") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<AlertsUpdatedEvent>(message)
   },
@@ -181,12 +181,8 @@ enum class Action {
 
 // ------------ New event contents here -------------------------------------------------------------
 
-data class AlertsUpdatedEvent(
-  val personReference: PersonReference,
-  val additionalInformation: AlertsUpdatedInformation,
-) : InboundEvent, EventOfInterest {
-  override fun prisonerNumber(): String =
-    personReference.identifiers.first { it.type == "NOMS" }.value
+data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformation) : InboundEvent, EventOfInterest {
+  override fun prisonerNumber(): String = additionalInformation.nomsNumber
 
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
 }

@@ -130,7 +130,7 @@ class ActivityService(
     val duplicateActivity = activityRepository.existingLiveActivity(prisonCode, summary, LocalDate.now())
 
     if (duplicateActivity) {
-      throw IllegalArgumentException("Duplicate activity name detected for this prison ($prisonCode): '$summary'")
+      throw IllegalArgumentException("Change the activity name. There is already an activity called '$summary'")
     }
   }
 

@@ -326,7 +326,7 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service().createActivity(createDuplicateActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Duplicate activity name detected for this prison (MDI): '${createDuplicateActivityRequest.summary}'")
+      .hasMessage("Change the activity name. There is already an activity called '${createDuplicateActivityRequest.summary}'")
 
     verify(activityRepository, never()).saveAndFlush(any())
   }
@@ -836,7 +836,7 @@ class ActivityServiceTest {
       )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Duplicate activity name detected for this prison (MDI): 'IT level 2'")
+      .hasMessage("Change the activity name. There is already an activity called 'IT level 2'")
 
     verify(activityRepository, never()).saveAndFlush(any())
   }
