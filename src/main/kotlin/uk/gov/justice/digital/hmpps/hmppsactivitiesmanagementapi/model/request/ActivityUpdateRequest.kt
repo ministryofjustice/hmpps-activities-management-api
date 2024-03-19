@@ -18,7 +18,7 @@ data class ActivityUpdateRequest(
   @Schema(description = "The category id for this activity, one of the high-level categories")
   val categoryId: Long? = null,
 
-  @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", example = "TIER_1")
+  @Schema(description = "The tier code for this activity, as defined by the Future Prison Regime team", allowableValues = ["TIER_1", "TIER_2", "FOUNDATION"], example = "TIER_1")
   val tierCode: String? = null,
 
   @Schema(description = "The organiser code for this activity", example = "PRISON_STAFF")

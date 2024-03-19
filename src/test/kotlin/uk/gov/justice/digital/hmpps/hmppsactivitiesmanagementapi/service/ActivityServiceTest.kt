@@ -228,7 +228,7 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
-      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
@@ -431,7 +431,7 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
-      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
@@ -787,7 +787,7 @@ class ActivityServiceTest {
         assertThat(code).isEqualTo("category code")
         assertThat(description).isEqualTo("category description")
       }
-      with(activityTier!!) {
+      with(activityTier) {
         assertThat(eventTierId).isEqualTo(2)
         assertThat(code).isEqualTo("TIER_2")
         assertThat(description).isEqualTo("Tier 2")

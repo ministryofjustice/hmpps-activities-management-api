@@ -893,7 +893,7 @@ class MigrateActivityServiceTest {
       verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
       with(activityCaptor.firstValue[0]) {
-        assertThat(activityTier?.code).isEqualTo("TIER_2")
+        assertThat(activityTier.code).isEqualTo("TIER_2")
         assertThat(organiser?.code).isEqualTo("OTHER")
       }
     }
@@ -923,7 +923,7 @@ class MigrateActivityServiceTest {
       verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
 
       with(activityCaptor.firstValue[0]) {
-        assertThat(activityTier?.code).isEqualTo("FOUNDATION")
+        assertThat(activityTier.code).isEqualTo("FOUNDATION")
         assertThat(organiser).isNull()
       }
     }
