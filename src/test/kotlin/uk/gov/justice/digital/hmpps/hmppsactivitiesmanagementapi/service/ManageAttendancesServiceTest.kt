@@ -43,7 +43,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import java.lang.IllegalArgumentException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -419,25 +418,39 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
-  fun `attendance is not created when attendance is not required on the activity`() {
+  fun `attendance is created when attendance is not required on the activity`() {
     instance.activitySchedule.activity.attendanceRequired = false
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
-
-    val attendees = instance.attendances.map { it.prisonerNumber }
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+    whenever(attendanceRepository.saveAllAndFlush(anyList()))
       .thenReturn(
-        attendees.map {
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
-        },
+        listOf(
+          Attendance(
+            attendanceId = 1L,
+            scheduledInstance = instance,
+            prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
+            status = AttendanceStatus.WAITING,
+            initialIssuePayment = true,
+            payAmount = 30,
+          ),
+        ),
       )
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
 
     service.createAttendances(today, MOORLAND_PRISON_CODE)
 
-    verify(attendanceRepository, never()).saveAllAndFlush(anyList())
+    verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
 
-    verifyNoInteractions(attendanceRepository)
-    verifyNoInteractions(outboundEventsService)
+    with(attendanceListCaptor.firstValue.first()) {
+      assertThat(attendanceId).isEqualTo(0L) // Not set when called
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(prisonerNumber).isEqualTo(instance.activitySchedule.allocations().first().prisonerNumber)
+      assertThat(payAmount).isEqualTo(30)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
   }
 
   @Test

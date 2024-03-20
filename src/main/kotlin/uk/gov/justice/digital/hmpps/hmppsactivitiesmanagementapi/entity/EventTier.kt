@@ -20,5 +20,13 @@ data class EventTier(
   @Column(nullable = false)
   val description: String,
 ) {
-  fun isTierTwo() = this.code == "TIER_2"
+  fun isTierTwo() = EventTierType.valueOf(this.code) == EventTierType.TIER_2
+
+  fun isFoundation() = EventTierType.valueOf(this.code) == EventTierType.FOUNDATION
+}
+
+enum class EventTierType {
+  TIER_1,
+  TIER_2,
+  FOUNDATION,
 }

@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -46,7 +47,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.lang.IllegalStateException
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -145,7 +145,10 @@ class ActivityService(
 
     return transactionHandler.newSpringTransaction {
       val category = activityCategoryRepository.findOrThrowIllegalArgument(request.categoryId!!)
-      val tier = request.tierCode?.let { eventTierRepository.findByCodeOrThrowIllegalArgument(it) }
+      val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(request.tierCode!!)
+
+      if (category.isNotInWork() && !tier.isFoundation()) throw IllegalArgumentException("Activity category NOT IN WORK must be a Foundation Tier")
+
       val organiser = request.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
       val eligibilityRules = request.eligibilityRuleIds.map { eligibilityRuleRepository.findOrThrowIllegalArgument(it) }
       val prisonPayBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
@@ -344,6 +347,10 @@ class ActivityService(
       applyScheduleWeeksUpdate(request, activity)
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
+      if (activity.paid && !activity.attendanceRequired) {
+        throw IllegalArgumentException("Activity '$activityId' cannot be paid as attendance is not required.")
+      }
+
       val now = LocalDateTime.now()
 
       activity.updatedTime = now
@@ -394,6 +401,10 @@ class ActivityService(
     activity: Activity,
   ) {
     request.tierCode?.apply {
+      if (activity.activityCategory.isNotInWork() && EventTierType.valueOf(request.tierCode) != EventTierType.FOUNDATION) {
+        throw IllegalArgumentException("Activity category NOT IN WORK for activity '${activity.activityId}' must be a Foundation Tier.")
+      }
+
       activity.activityTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
       if (activity.activityTier?.isTierTwo() != true) {
         activity.organiser = null
@@ -555,6 +566,14 @@ class ActivityService(
     activity: Activity,
   ) {
     request.attendanceRequired?.apply {
+      activity.activityTier.let { tier ->
+        val updateNotAllowed = !tier.isFoundation() &&
+          activity.attendanceRequired && request.attendanceRequired == false
+
+        require(!updateNotAllowed) {
+          "Attendance cannot be from YES to NO for a '${activity.activityTier?.description}' activity."
+        }
+      }
       activity.attendanceRequired = this
     }
   }

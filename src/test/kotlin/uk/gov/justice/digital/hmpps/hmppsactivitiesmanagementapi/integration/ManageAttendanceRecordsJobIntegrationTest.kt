@@ -208,7 +208,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-5.sql")
   @Test
-  fun `No attendance records are created for gym induction AM when attendance not required on activity`() {
+  fun `Attendance records should be created for gym induction AM when attendance is not required on the activity`() {
     assertThat(attendanceRepository.count()).isZero
     val activity = activityRepository.findById(5).orElseThrow()
     val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
@@ -231,10 +231,10 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
 
     with(activitySchedulesAfter.findByDescription("Gym induction AM")) {
-      assertThat(instances().first().attendances).isEmpty()
+      assertThat(instances().first().attendances).isNotEmpty()
     }
 
-    assertThat(attendanceRepository.count()).isZero
+    assertThat(attendanceRepository.count()).isEqualTo(2)
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-completed.sql")
