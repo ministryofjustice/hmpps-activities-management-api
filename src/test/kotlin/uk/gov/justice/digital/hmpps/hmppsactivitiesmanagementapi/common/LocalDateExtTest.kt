@@ -62,6 +62,34 @@ class LocalDateExtTest {
   }
 
   @Nested
+  @DisplayName("isAfterDates")
+  inner class IsAfterDates {
+    @Test
+    fun `returns true if test date is after all given dates`() {
+      val date = LocalDate.of(2022, 1, 1)
+      val dayBefore = date.minusDays(1)
+      val weekBefore = date.minusWeeks(1)
+      date.isAfterDates(dayBefore, weekBefore) isBool true
+    }
+
+    @Test
+    fun `returns false if test date is before all given dates`() {
+      val date = LocalDate.of(2022, 1, 1)
+      val dayAfter = date.plusDays(1)
+      val weekAfter = date.plusWeeks(1)
+      date.isAfterDates(dayAfter, weekAfter) isBool false
+    }
+
+    @Test
+    fun `returns false if test date is before some given dates`() {
+      val date = LocalDate.of(2022, 1, 1)
+      val dayBefore = date.minusDays(1)
+      val weekAfter = date.plusWeeks(1)
+      date.isAfterDates(dayBefore, weekAfter) isBool false
+    }
+  }
+
+  @Nested
   @DisplayName("onOrBefore")
   inner class OnOrBefore {
     @Test

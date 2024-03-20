@@ -50,8 +50,9 @@ data class PlannedSuspension(
   }
   fun plan(startDate: LocalDate, byWhom: String, caseNoteId: Long?) = apply {
     plannedStartDate = startDate
-    updatedBy = byWhom
-    updatedAt = LocalDateTime.now()
+    plannedEndDate = null
+    plannedBy = byWhom
+    plannedAt = LocalDateTime.now()
     this.caseNoteId = caseNoteId
   }
 

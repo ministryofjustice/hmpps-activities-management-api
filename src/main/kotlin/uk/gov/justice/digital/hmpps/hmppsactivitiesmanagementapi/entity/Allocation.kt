@@ -18,6 +18,7 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.isAfterDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -124,7 +125,7 @@ data class Allocation(
   var suspendedReason: String? = null
     private set
 
-  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfter(LocalDate.now()) ?: true }
+  fun plannedSuspension() = plannedSuspensions.singleOrNull { it.endDate()?.isAfterDates(LocalDate.now(), it.startDate()) ?: true }
 
   fun isCurrentlySuspended() = plannedSuspension()?.hasStarted() == true
 

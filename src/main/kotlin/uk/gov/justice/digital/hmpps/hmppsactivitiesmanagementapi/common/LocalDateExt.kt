@@ -7,6 +7,7 @@ import java.util.Locale
 operator fun LocalDate.rangeTo(other: LocalDate) = LocalDateRange(this, other)
 
 fun LocalDate.between(from: LocalDate, to: LocalDate?) = this >= from && (to == null || this <= to)
+fun LocalDate.isAfterDates(vararg dates: LocalDate) = dates.all { this.isAfter(it) }
 
 fun LocalDate?.onOrBefore(date: LocalDate) = this != null && this <= date
 fun LocalDate?.onOrAfter(date: LocalDate) = this != null && this >= date
