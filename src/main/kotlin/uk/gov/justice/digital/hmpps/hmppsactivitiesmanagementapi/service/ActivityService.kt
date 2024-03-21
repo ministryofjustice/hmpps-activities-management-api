@@ -406,7 +406,7 @@ class ActivityService(
       }
 
       activity.activityTier = eventTierRepository.findByCodeOrThrowIllegalArgument(this)
-      if (activity.activityTier?.isTierTwo() != true) {
+      if (!activity.activityTier.isTierTwo()) {
         activity.organiser = null
       }
     }
@@ -571,7 +571,7 @@ class ActivityService(
           activity.attendanceRequired && request.attendanceRequired == false
 
         require(!updateNotAllowed) {
-          "Attendance cannot be from YES to NO for a '${activity.activityTier?.description}' activity."
+          "Attendance cannot be from YES to NO for a '${activity.activityTier.description}' activity."
         }
       }
       activity.attendanceRequired = this

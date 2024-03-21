@@ -11,6 +11,14 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Health page reports ok`() {
+    listOf(
+      prisonApiMockServer,
+      prisonerSearchApiMockServer,
+      caseNotesApiMockServer,
+      incentivesApiMockServer,
+      nonAssociationsApiMockServer,
+    ).forEach { it.stubHealthPing(200) }
+
     webTestClient.get()
       .uri("/health")
       .exchange()
@@ -22,6 +30,14 @@ class HealthCheckTest : IntegrationTestBase() {
 
   @Test
   fun `Health info reports version`() {
+    listOf(
+      prisonApiMockServer,
+      prisonerSearchApiMockServer,
+      caseNotesApiMockServer,
+      incentivesApiMockServer,
+      nonAssociationsApiMockServer,
+    ).forEach { it.stubHealthPing(200) }
+
     webTestClient.get().uri("/health")
       .exchange()
       .expectStatus().isOk

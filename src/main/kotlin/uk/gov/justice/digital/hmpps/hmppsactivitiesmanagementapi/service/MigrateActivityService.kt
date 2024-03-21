@@ -236,7 +236,7 @@ class MigrateActivityService(
     ).apply {
       endDate = request.endDate
     }.apply {
-      organiser = if (this.activityTier!!.isTierTwo()) defaultOrganiser else null
+      organiser = if (this.activityTier.isTierTwo()) defaultOrganiser else null
     }.apply {
       addSchedule(
         description = this.summary,
