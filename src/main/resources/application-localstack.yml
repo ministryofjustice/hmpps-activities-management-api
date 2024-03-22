@@ -104,10 +104,7 @@ feature:
     prisoner-offender-search:
       prisoner:
         received: true
-<<<<<<< HEAD
         released: true
-=======
->>>>>>> task/SAA-1628-replace-prisoner-events
         alerts-updated: true
     activities:
       prisoner:
