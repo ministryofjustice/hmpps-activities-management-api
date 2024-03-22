@@ -43,10 +43,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
@@ -78,7 +80,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EligibilityRule as EligibilityRuleEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
@@ -226,7 +228,7 @@ class ActivityServiceTest {
     val metricsPropertiesMap = mapOf(
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
-      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier!!.description,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
@@ -388,6 +390,79 @@ class ActivityServiceTest {
 
     assertThatThrownBy { service().createActivity(createActivityRequest, "SCH_ACTIVITY") }
       .isInstanceOf(CaseloadAccessException::class.java)
+  }
+
+  @Test
+  fun `createActivity - category not in work and foundation is success`() {
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-11.json")
+      .copy(startDate = TimeSource.tomorrow())
+
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("FOUNDATION")).thenReturn(foundationTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verify(activityCategoryRepository).findById(8)
+    verify(eventTierRepository).findByCode("FOUNDATION")
+    verify(eligibilityRuleRepository).findById(any())
+
+    with(activityCaptor.firstValue) {
+      assertThat(eligibilityRules()).hasSize(1)
+      assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
+      assertThat(activityCategory).isEqualTo(notInWorkCategory)
+      assertThat(activityTier).isEqualTo(foundationTier())
+    }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
+  }
+
+  @Test
+  fun `createActivity - category not in work and tier 1 is not allowed`() {
+    val activityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), categoryId = 8)
+
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    assertThatThrownBy {
+      service().createActivity(activityCreateRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity category NOT IN WORK must be a Foundation Tier")
   }
 
   @Test
@@ -712,7 +787,7 @@ class ActivityServiceTest {
         assertThat(code).isEqualTo("category code")
         assertThat(description).isEqualTo("category description")
       }
-      with(activityTier!!) {
+      with(activityTier) {
         assertThat(eventTierId).isEqualTo(2)
         assertThat(code).isEqualTo("TIER_2")
         assertThat(description).isEqualTo("Tier 2")
@@ -2062,5 +2137,307 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true), "SCH_ACTIVITY")
     }.isInstanceOf(IllegalStateException::class.java)
       .hasMessage("Activity '1' must have at least one pay rate.")
+  }
+
+  @Test
+  fun `updateActivity - attendance required from NO to YES for tier 1 is successful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+    savedActivityEntity.attendanceRequired = false
+    val eventTier = eventTier(eventTierId = 1, code = "TIER_1", description = "Tier 1")
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = true
+    afterActivityEntity.activityTier = eventTier
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = true), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+    }
+  }
+
+  @Test
+  fun `updateActivity - attendance required from NO to YES for tier 2 is successful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+    savedActivityEntity.attendanceRequired = false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = true
+    afterActivityEntity.activityTier = eventTier()
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = true), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+    }
+  }
+
+  @Test
+  fun `updateActivity - attendance required from YES to NO for tier 1 is unsuccessful`() {
+    val eventTier = eventTier(eventTierId = 1, code = "TIER_1", description = "Tier 1")
+    val savedActivityEntity: ActivityEntity = activityEntity()
+    savedActivityEntity.attendanceRequired = true
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier)
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance cannot be from YES to NO for a 'Tier 1' activity.")
+  }
+
+  @Test
+  fun `updateActivity - attendance required from YES to NO for tier 2 is unsuccessful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+    savedActivityEntity.attendanceRequired = true
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(activityCategoryRepository.findById(2)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance cannot be from YES to NO for a 'Tier 2' activity.")
+  }
+
+  @Test
+  fun `updateActivity - attendance required from YES to NO for unpaid foundation tier is successful`() {
+    val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = true
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+    afterActivityEntity.activityTier = eventTier
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isFalse()
+    }
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid where existing entity set to attendance required is successful`() {
+    val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = true
+    savedActivityEntity.activityTier = eventTier
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+    afterActivityEntity.activityTier = eventTier
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isFalse()
+    }
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid where existing entity not set to attendance required is unsuccessful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    var activityUpdateRequest = ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, activityUpdateRequest, "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity '1' cannot be paid as attendance is not required.")
+  }
+
+  @Test
+  fun `updateActivity - unpaid to paid and attendance required where existing entity not set to attendance required is successful`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.attendanceRequired = false
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+    afterActivityEntity.attendanceRequired = false
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(paid = true, pay = listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 1)), attendanceRequired = true), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+      assertThat(paid).isTrue()
+    }
+  }
+
+  @Test
+  fun `updateActivity - category not in work and foundation tier is success`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    val afterActivityEntity: ActivityEntity = activityEntity()
+
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(activityCategoryRepository.findById(8)).thenReturn(Optional.of(notInWorkCategory))
+    whenever(eventTierRepository.findByCode("FOUNDATION")).thenReturn(foundationTier())
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "FOUNDATION", categoryId = 8), "TEST")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(attendanceRequired).isTrue()
+      assertThat(paid).isTrue()
+    }
+  }
+
+  @Test
+  fun `updateActivity - change tier to tier 1 with category not in work is not allowed`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(category = notInWorkCategory)
+    savedActivityEntity.organiser = null
+    savedActivityEntity.activityTier = foundationTier()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(eventTierRepository.findByCode("TIER_1")).thenReturn(eventTier(eventTierId = 1, code = "TIER_1", description = "Tier 1"))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_1"), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
+  }
+
+  @Test
+  fun `updateActivity - change tier to tier 2 with category not in work is not allowed`() {
+    val savedActivityEntity: ActivityEntity = activityEntity(category = notInWorkCategory)
+    savedActivityEntity.organiser = null
+    savedActivityEntity.activityTier = foundationTier()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier(eventTierId = 2, code = "TIER_2", description = "Tier 2"))
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_2"), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
   }
 }

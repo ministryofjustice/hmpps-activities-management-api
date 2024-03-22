@@ -1,15 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
 
-class CaseNotesApiMockServer : WireMockServer(8444) {
-
-  private val mapper = ObjectMapper()
+class CaseNotesApiMockServer : MockServer(8444) {
 
   fun stubGetCaseNote(prisonerNumber: String, caseNoteId: Long) {
     stubFor(

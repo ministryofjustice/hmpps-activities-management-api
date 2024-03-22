@@ -1,6 +1,6 @@
 {
   "prisonCode": "MDI",
-  "attendanceRequired": false,
+  "attendanceRequired": true,
   "summary": "IT level 1",
   "description": "A basic IT course",
   "categoryId": 1,

@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
@@ -234,14 +233,11 @@ class AllocationsService(
       val plannedSuspension = allocation.plannedSuspension()
         ?: throw IllegalArgumentException("Error setting end date for suspension - there are no planned suspensions to end for allocation with id ${allocation.allocationId}")
 
-      require(suspendUntil.onOrAfter(plannedSuspension.startDate())) {
-        "Suspension end date must be on or after the start date: ${plannedSuspension.startDate().toIsoDate()}"
-      }
       require(allocation.plannedEndDate() == null || suspendUntil.onOrBefore(allocation.plannedEndDate()!!)) {
         "Suspension end date must be on or before the allocation end date: ${allocation.plannedEndDate()!!.toIsoDate()}"
       }
 
-      plannedSuspension.endOn(suspendUntil, byWhom)
+      plannedSuspension.endOn(maxOf(suspendUntil, plannedSuspension.startDate()), byWhom)
     }
 
     val updatedAttendanceIds = mutableSetOf<Long>()

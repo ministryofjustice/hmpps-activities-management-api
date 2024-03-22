@@ -1,10 +1,11 @@
 {
-  "prisonCode": "PVI",
-  "attendanceRequired": true,
-  "summary": "Maths",
-  "categoryId": 1,
-  "tierCode": "TIER_2",
-  "payPerSession": "H",
+  "prisonCode": "MDI",
+  "attendanceRequired": false,
+  "summary": "IT level 1",
+  "description": "A basic IT course",
+  "categoryId": 8,
+  "tierCode": "FOUNDATION",
+  "eligibilityRuleIds": [1],
   "riskLevel": "high",
   "pay": [
     {
@@ -33,7 +34,7 @@
     }
   ],
   "startDate": "2023-03-31",
-  "locationId": 26962,
+  "locationId": 1,
   "capacity": 20,
   "scheduleWeeks": 1,
   "slots": [

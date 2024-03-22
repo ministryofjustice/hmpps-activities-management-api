@@ -845,7 +845,7 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - suspension end date throws error if end date is before the start date`() {
+  fun `updateAllocation - suspension gets ended if the start date is later than the given suspendUntil late`() {
     val allocation = allocation(withPlannedSuspensions = true)
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
@@ -854,15 +854,20 @@ class AllocationServiceTest {
       suspendUntil = allocation.startDate.minusDays(1),
     )
 
-    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(
+      allocationRepository.findByAllocationIdAndPrisonCode(
+        allocationId,
+        prisonCode,
+      ),
+    ).thenReturn(allocation)
 
-    assertThatThrownBy {
-      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Suspension end date must be on or after the start date: ${allocation.startDate.toIsoDate()}")
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    verifyNoInteractions(outboundEventsService)
+    allocationCaptor.firstValue.plannedSuspension() isEqualTo null
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
   }
 
   @Test

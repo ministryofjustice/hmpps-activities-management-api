@@ -85,7 +85,6 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param tattoos List of parts of the body that have tattoos. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.
  * @param scars List of parts of the body that have scars. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.
  * @param marks List of parts of the body that have marks. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.
- * @param otherMarks List of parts of the body that have other marks. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.
  */
 data class Prisoner(
 
@@ -310,9 +309,6 @@ data class Prisoner(
 
     @Schema(example = "null", description = "List of parts of the body that have marks. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.")
     @get:JsonProperty("marks") val marks: kotlin.collections.List<BodyPartDetail>? = null,
-
-    @Schema(example = "null", description = "List of parts of the body that have other marks. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.")
-    @get:JsonProperty("otherMarks") val otherMarks: kotlin.collections.List<BodyPartDetail>? = null
 ) {
 
     /**

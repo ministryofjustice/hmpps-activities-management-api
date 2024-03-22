@@ -1,16 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
 
-class PrisonerSearchApiMockServer : WireMockServer(8111) {
-  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+class PrisonerSearchApiMockServer : MockServer(8111) {
 
   fun stubGetAllPrisonersInPrison(prisonCode: String) {
     stubFor(

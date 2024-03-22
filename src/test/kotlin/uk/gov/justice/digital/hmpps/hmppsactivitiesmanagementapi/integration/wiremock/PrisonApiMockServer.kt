@@ -1,9 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import org.springframework.http.HttpHeaders
@@ -24,9 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import java.time.LocalDate
 
-class PrisonApiMockServer : WireMockServer(8999) {
-
-  private val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
+class PrisonApiMockServer : MockServer(8999) {
 
   fun stubGetScheduledAppointments(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(

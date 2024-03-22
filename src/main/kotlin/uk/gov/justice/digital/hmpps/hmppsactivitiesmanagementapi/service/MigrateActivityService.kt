@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
@@ -236,7 +237,7 @@ class MigrateActivityService(
     ).apply {
       endDate = request.endDate
     }.apply {
-      organiser = if (this.activityTier!!.isTierTwo()) defaultOrganiser else null
+      organiser = if (this.activityTier.isTierTwo()) defaultOrganiser else null
     }.apply {
       addSchedule(
         description = this.summary,
@@ -362,7 +363,7 @@ class MigrateActivityService(
   fun List<EventTier>.isTierTwo() = this.find { it.code == "TIER_2" }
   fun List<EventTier>.isFoundation() = this.find { it.code == "FOUNDATION" }
 
-  fun mapProgramToTier(programServiceCode: String): EventTier? {
+  fun mapProgramToTier(programServiceCode: String): EventTier {
     val tiers = eventTierRepository.findAll()
     val tier = when {
       // Prison industries
@@ -513,17 +514,14 @@ class MigrateActivityService(
         allocatedBy = MIGRATION_USER,
       ).apply {
         if (request.suspendedFlag) {
-          // TODO: Uncomment the below code when the user has a way to un-suspend via the UI
-          log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING")
-//          addPlannedSuspension(
-//            PlannedSuspension(
-//              allocation = this,
-//              plannedStartDate = startDate,
-//              plannedReason = "Migrated as suspended",
-//              plannedBy = MIGRATION_USER,
-//              updatedBy = MIGRATION_USER,
-//            ),
-//          )
+          log.info("SUSPENDED prisoner ${request.prisonerNumber} being allocated to ${activity.activityId} ${activity.summary} as PENDING with a planned suspension starting immediately")
+          addPlannedSuspension(
+            PlannedSuspension(
+              allocation = this,
+              plannedStartDate = startDate,
+              plannedBy = MIGRATION_USER,
+            ),
+          )
         }
       }
 

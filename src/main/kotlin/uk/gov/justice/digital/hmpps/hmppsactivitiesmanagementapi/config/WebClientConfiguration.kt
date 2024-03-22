@@ -54,6 +54,15 @@ class WebClientConfiguration(
   fun prisonApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(prisonApiUrl).timeout(healthTimeout).build()
 
   @Bean
+  fun caseNotesApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(caseNotesApiUrl).timeout(healthTimeout).build()
+
+  @Bean
+  fun nonAssociationsApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(nonAssociationsApiUrl).timeout(healthTimeout).build()
+
+  @Bean
+  fun incentivesApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(incentivesApiUrl).timeout(healthTimeout).build()
+
+  @Bean
   fun prisonApiUserWebClient(): WebClient {
     val exchangeStrategies = ExchangeStrategies.builder()
       .codecs { configurer: ClientCodecConfigurer -> configurer.defaultCodecs().maxInMemorySize(-1) }
