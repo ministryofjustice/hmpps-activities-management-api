@@ -1025,7 +1025,7 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `A suspended prisoner in NOMIS will be allocated from tomorrow as PENDING`() {
+    fun `A suspended prisoner in NOMIS will be allocated from tomorrow as PENDING with a planned suspension starting immediately`() {
       val request = buildAllocationMigrateRequest().copy(
         suspendedFlag = true,
       )
@@ -1055,6 +1055,7 @@ class MigrateActivityServiceTest {
         with(allocations().last()) {
           assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
           assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(plannedSuspension()!!.startDate()).isEqualTo(LocalDate.now().plusDays(1))
         }
       }
     }
