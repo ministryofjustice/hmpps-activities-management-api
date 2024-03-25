@@ -23,22 +23,22 @@ class CacheConfiguration {
   }
 
   @CacheEvict(value = [PRISON_INCENTIVE_LEVELS_CACHE_NAME])
-  @Scheduled(fixedDelay = TTL_HOURS_PRISONER_INCENTIVE_LEVELS, timeUnit = TimeUnit.HOURS)
+  @Scheduled(fixedDelay = TTL_HOURS_PRISONER_INCENTIVE_LEVELS, timeUnit = TimeUnit.DAYS)
   fun cacheEvictPrisonerIncentiveLevels() {
-    log.info("Evicting cache: $PRISON_INCENTIVE_LEVELS_CACHE_NAME after $TTL_HOURS_PRISONER_INCENTIVE_LEVELS hours")
+    log.info("Evicting cache: $PRISON_INCENTIVE_LEVELS_CACHE_NAME after $TTL_HOURS_PRISONER_INCENTIVE_LEVELS day")
   }
 
   @CacheEvict(value = [BANK_HOLIDAYS_CACHE_NAME])
-  @Scheduled(fixedDelay = TTL_HOURS_BANK_HOLIDAYS, timeUnit = TimeUnit.HOURS)
+  @Scheduled(fixedDelay = TTL_HOURS_BANK_HOLIDAYS, timeUnit = TimeUnit.DAYS)
   fun cacheEvictBankHolidays() {
-    log.info("Evicting cache: $BANK_HOLIDAYS_CACHE_NAME after $TTL_HOURS_BANK_HOLIDAYS hours")
+    log.info("Evicting cache: $BANK_HOLIDAYS_CACHE_NAME after $TTL_HOURS_BANK_HOLIDAYS days")
   }
 
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val BANK_HOLIDAYS_CACHE_NAME: String = "bankHolidays"
     const val PRISON_INCENTIVE_LEVELS_CACHE_NAME: String = "prisonIncentiveLevels"
-    const val TTL_HOURS_PRISONER_INCENTIVE_LEVELS: Long = 24
-    const val TTL_HOURS_BANK_HOLIDAYS: Long = 24 * 7
+    const val TTL_HOURS_PRISONER_INCENTIVE_LEVELS: Long = 1
+    const val TTL_HOURS_BANK_HOLIDAYS: Long = 7
   }
 }
