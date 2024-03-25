@@ -560,13 +560,13 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - suspension start date must be between the start and end date of the allocation`() {
+  fun `updateAllocation - suspension start date must be on or after todays date`() {
     val allocation = allocation()
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
 
     val updateAllocationRequest = AllocationUpdateRequest(
-      suspendFrom = allocation.startDate.minusDays(1),
+      suspendFrom = LocalDate.now().minusDays(1),
     )
 
     whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
@@ -575,7 +575,28 @@ class AllocationServiceTest {
       service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation 0: Suspension start date must be between the allocation start and end dates")
+      .hasMessage("Allocation 0: Suspension start date must be on or after today's date")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspension start date must be on or before the end date of the allocation`() {
+    val allocation = allocation().apply { endDate = LocalDate.now().plusWeeks(1) }
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = allocation.startDate.plusWeeks(2),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation 0: Suspension start date must be on or before the allocation end date ${LocalDate.now().plusWeeks(1).toIsoDate()}")
 
     verifyNoInteractions(outboundEventsService)
   }
@@ -772,6 +793,30 @@ class AllocationServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - suspending a PENDING allocation immediately sets the suspension start date equal to the allocation start date`() {
+    val allocation = allocation(startDate = LocalDate.now().plusDays(1))
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      suspendFrom = LocalDate.now(),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    with(allocationCaptor.firstValue) {
+      status(PrisonerStatus.PENDING) isBool true
+      plannedSuspension()!!.startDate() isEqualTo LocalDate.now().plusDays(1)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
   }
 
