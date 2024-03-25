@@ -8,9 +8,17 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<OffenderReceivedEvent>(message)
   },
+  PRISONER_RECEIVED("prisoner-offender-search.prisoner.received") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<PrisonerReceivedEvent>(message)
+  },
   OFFENDER_RELEASED("prison-offender-events.prisoner.released") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<OffenderReleasedEvent>(message)
+  },
+  PRISONER_RELEASED("prisoner-offender-search.prisoner.released") {
+    override fun toInboundEvent(mapper: ObjectMapper, message: String) =
+      mapper.readValue<PrisonerReleasedEvent>(message)
   },
   OFFENDER_MERGED("prison-offender-events.prisoner.merged") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
@@ -62,27 +70,53 @@ interface InboundReleaseEvent : InboundEvent {
   fun prisonCode(): String
 }
 
+// This interface can be removed where we are down to one prisoner received event.
+// The interface as it stands allows the use of one event handler for both received events as the logic is identical.
+interface InboundPrisonerReceivedEvent : InboundEvent {
+  fun prisonCode(): String
+}
+
+interface InboundPrisonerReleasedEvent : InboundReleaseEvent {
+  fun isTemporary(): Boolean
+  fun isPermanent(): Boolean
+}
+
 interface EventOfInterest
 
 // ------------ Offender released from prison events ------------------------------------------
-
-data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundReleaseEvent {
+@Deprecated(message = "Replaced by PrisonerReleasedEvent")
+data class OffenderReleasedEvent(val additionalInformation: ReleaseInformation) : InboundPrisonerReleasedEvent {
   override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.OFFENDER_RELEASED.eventType
-  fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
+  override fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
 
-  fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
+  override fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
 }
 
 data class ReleaseInformation(val nomsNumber: String, val reason: String, val prisonId: String)
 
 // ------------ Offender received into prison events -------------------------------------------
 
-data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation) : InboundEvent {
-  fun prisonCode() = additionalInformation.prisonId
+@Deprecated(message = "Replaced by PrisonerReceivedEvent")
+data class OffenderReceivedEvent(val additionalInformation: ReceivedInformation) : InboundPrisonerReceivedEvent {
+  override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.OFFENDER_RECEIVED.eventType
+}
+
+data class PrisonerReceivedEvent(val additionalInformation: ReceivedInformation) : InboundPrisonerReceivedEvent {
+  override fun prisonCode() = additionalInformation.prisonId
+  override fun prisonerNumber() = additionalInformation.nomsNumber
+  override fun eventType() = InboundEventType.PRISONER_RECEIVED.eventType
+}
+
+data class PrisonerReleasedEvent(val additionalInformation: ReleaseInformation) : InboundPrisonerReleasedEvent {
+  override fun prisonCode() = additionalInformation.prisonId
+  override fun prisonerNumber() = additionalInformation.nomsNumber
+  override fun eventType() = InboundEventType.PRISONER_RELEASED.eventType
+  override fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
+  override fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)

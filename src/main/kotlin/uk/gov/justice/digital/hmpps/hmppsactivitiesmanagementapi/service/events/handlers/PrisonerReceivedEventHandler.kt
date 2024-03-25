@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReceivedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundPrisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDateTime
@@ -27,21 +27,21 @@ import java.time.LocalDateTime
  */
 @Component
 @Transactional
-class OffenderReceivedEventHandler(
+class PrisonerReceivedEventHandler(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val allocationRepository: AllocationRepository,
   private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
-) : EventHandler<OffenderReceivedEvent> {
+) : EventHandler<InboundPrisonerReceivedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: OffenderReceivedEvent): Outcome {
-    log.debug("Handling offender received event {}", event)
+  override fun handle(event: InboundPrisonerReceivedEvent): Outcome {
+    log.debug("PRISONER RECEIVED: handling prisoner received event {}", event)
 
     if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
       prisonerSearchApiApplicationClient.findByPrisonerNumber(event.prisonerNumber())?.let { prisoner ->
@@ -51,27 +51,27 @@ class OffenderReceivedEventHandler(
               .resetAutoSuspendedAllocations(event)
               .resetFutureAutoSuspendedAttendances()
           }.let { resetAllocations ->
-            resetAllocations.forEach {
-              outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
-              it.second.forEach { attendance ->
+            resetAllocations.forEach { (allocation, attendances) ->
+              outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId)
+              attendances.forEach { attendance ->
                 outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
               }
-            }.also { log.info("Sending allocation amended events.") }
+            }.also { log.info("PRISONER RECEIVED: sending allocation amended events.") }
           }
         } else {
-          log.info("Prisoner ${event.prisonerNumber()} is not active in prison ${event.prisonCode()}")
+          log.info("PRISONER RECEIVED: prisoner ${event.prisonerNumber()} is not active in prison ${event.prisonCode()}")
         }
 
         return Outcome.success()
       }
     }
 
-    log.debug("Ignoring received event for ${event.prisonCode()} - not rolled out.")
+    log.debug("PRISONER RECEIVED: ignoring received event for ${event.prisonCode()} - not rolled out.")
 
     return Outcome.success()
   }
 
-  private fun List<Allocation>.resetAutoSuspendedAllocations(event: OffenderReceivedEvent) =
+  private fun List<Allocation>.resetAutoSuspendedAllocations(event: InboundPrisonerReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
       .onEach {
         if (it.isCurrentlySuspended()) {
@@ -81,7 +81,7 @@ class OffenderReceivedEventHandler(
         }
       }
       .also {
-        log.info("Reset ${it.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
+        log.info("PRISONER RECEIVED: reset ${it.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
       }
 
   private fun List<Allocation>.resetFutureAutoSuspendedAttendances() =

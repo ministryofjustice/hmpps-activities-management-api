@@ -32,7 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-class OffenderReleasedEventHandlerTest {
+class PrisonerReleasedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
     on { findByCode(MOORLAND_PRISON_CODE) } doReturn
       rolloutPrison().copy(
@@ -46,7 +46,7 @@ class OffenderReleasedEventHandlerTest {
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
   private val allocationRepository: AllocationRepository = mock()
 
-  private val handler = OffenderReleasedEventHandler(
+  private val handler = PrisonerReleasedEventHandler(
     rolloutPrisonRepository,
     appointmentAttendeeService,
     waitingListService,

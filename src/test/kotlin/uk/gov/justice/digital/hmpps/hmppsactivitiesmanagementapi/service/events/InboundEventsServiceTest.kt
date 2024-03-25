@@ -12,13 +12,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.AppointmentChangedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.InterestingEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderMergedEventHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReceivedEventHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.OffenderReleasedEventHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.Outcome
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReceivedEventHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.handlers.PrisonerReleasedEventHandler
 
 class InboundEventsServiceTest {
-  private val receivedEventHandler: OffenderReceivedEventHandler = mock()
-  private val releasedEventHandler: OffenderReleasedEventHandler = mock()
+  private val receivedEventHandler: PrisonerReceivedEventHandler = mock()
+  private val releasedEventHandler: PrisonerReleasedEventHandler = mock()
   private val interestingEventHandler: InterestingEventHandler = mock()
   private val activitiesChangedEventHandler: ActivitiesChangedEventHandler = mock()
   private val appointmentsChangedEventHandler: AppointmentChangedEventHandler = mock()
@@ -52,17 +52,17 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound released event is processed by release event handler`() {
+  fun `inbound offender released event is processed by release event handler`() {
     val offenderReleasedEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
     service.process(offenderReleasedEvent)
     verify(releasedEventHandler).handle(offenderReleasedEvent)
   }
 
   @Test
-  fun `inbound released event is handled as an interesting event`() {
-    val offenderReleasedEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
-    service.process(offenderReleasedEvent)
-    verify(interestingEventHandler).handle(offenderReleasedEvent)
+  fun `inbound prisoner released event is processed by release event handler`() {
+    val prisonerReleasedEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")
+    service.process(prisonerReleasedEvent)
+    verify(releasedEventHandler).handle(prisonerReleasedEvent)
   }
 
   @Test
@@ -80,10 +80,17 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound received event is processed by received event handler`() {
+  fun `inbound offender received event is processed by received event handler`() {
     val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     service.process(offenderReceivedEvent)
     verify(receivedEventHandler).handle(offenderReceivedEvent)
+  }
+
+  @Test
+  fun `inbound prisoner received event is processed by received event handler`() {
+    val prisonerReceivedEvent = prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
+    service.process(prisonerReceivedEvent)
+    verify(receivedEventHandler).handle(prisonerReceivedEvent)
   }
 
   @Test
