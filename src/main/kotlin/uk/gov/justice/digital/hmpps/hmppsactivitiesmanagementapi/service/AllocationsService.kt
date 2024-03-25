@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
@@ -198,7 +199,8 @@ class AllocationsService(
     byWhom: String,
   ): Set<Long> {
     request.suspendFrom?.let { suspendFrom ->
-      require(suspendFrom.between(allocation.startDate, allocation.endDate)) { "Allocation ${allocation.allocationId}: Suspension start date must be between the allocation start and end dates" }
+      require(suspendFrom.onOrAfter(LocalDate.now())) { "Allocation ${allocation.allocationId}: Suspension start date must be on or after today's date" }
+      require(allocation.endDate == null || suspendFrom.onOrBefore(allocation.endDate!!)) { "Allocation ${allocation.allocationId}: Suspension start date must be on or before the allocation end date ${allocation.endDate!!.toIsoDate()}" }
 
       var caseNoteId: Long? = null
       if (request.suspensionCaseNote != null) {
@@ -219,7 +221,7 @@ class AllocationsService(
         allocation.addPlannedSuspension(
           PlannedSuspension(
             allocation = allocation,
-            plannedStartDate = suspendFrom,
+            plannedStartDate = maxOf(suspendFrom, allocation.startDate),
             plannedBy = byWhom,
             caseNoteId = caseNoteId,
           ),
