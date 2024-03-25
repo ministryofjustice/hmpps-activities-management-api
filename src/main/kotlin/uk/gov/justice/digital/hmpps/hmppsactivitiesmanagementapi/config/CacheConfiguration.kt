@@ -25,13 +25,13 @@ class CacheConfiguration {
   @CacheEvict(value = [PRISON_INCENTIVE_LEVELS_CACHE_NAME])
   @Scheduled(fixedDelay = TTL_HOURS_PRISONER_INCENTIVE_LEVELS, timeUnit = TimeUnit.HOURS)
   fun cacheEvictPrisonerIncentiveLevels() {
-    log.info("Evicting cache: $PRISON_INCENTIVE_LEVELS_CACHE_NAME")
+    log.info("Evicting cache: $PRISON_INCENTIVE_LEVELS_CACHE_NAME after $TTL_HOURS_PRISONER_INCENTIVE_LEVELS hours" )
   }
 
   @CacheEvict(value = [BANK_HOLIDAYS_CACHE_NAME])
   @Scheduled(fixedDelay = TTL_HOURS_BANK_HOLIDAYS, timeUnit = TimeUnit.HOURS)
   fun cacheEvictBankHolidays() {
-    log.info("Evicting cache: $BANK_HOLIDAYS_CACHE_NAME")
+    log.info("Evicting cache: $BANK_HOLIDAYS_CACHE_NAME after $TTL_HOURS_BANK_HOLIDAYS hours")
   }
 
   companion object {
