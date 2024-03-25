@@ -5,19 +5,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrAfter
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDate
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -30,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
-import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -41,8 +31,6 @@ class AllocationsService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
-  private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
-  private val caseNotesApiClient: CaseNotesApiClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -73,26 +61,19 @@ class AllocationsService(
         allocation.status(PrisonerStatus.ENDED).not(),
       ) { "Ended allocations cannot be updated" }
 
-      val updatedAttendanceIds = mutableSetOf<Long>()
-
       applyStartDateUpdate(request, allocation)
       applyEndDateUpdate(request, allocation, updatedBy)
       applyRemoveEndDateUpdate(request, allocation)
       applyPayBandUpdate(request, allocation)
       applyReasonCode(request, allocation, updatedBy)
       applyExclusionsUpdate(request, allocation)
-      applySuspendUpdate(request, allocation, updatedBy).let { updatedAttendanceIds.addAll(it) }
 
       allocationRepository.saveAndFlush(allocation)
 
-      allocation.toModel() to updatedAttendanceIds
-    }.let { (allocation, updatedAttendanceIds) ->
+      allocation.toModel()
+    }.let { allocation ->
       log.info("Sending allocation amended event for allocation ${allocation.id}")
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.id)
-      updatedAttendanceIds.forEach {
-        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, it)
-      }
-
       return allocation
     }
   }
@@ -191,69 +172,6 @@ class AllocationsService(
     request.payBandId?.apply {
       allocation.payBand = prisonPayBandRepository.findOrThrowIllegalArgument(this)
     }
-  }
-
-  private fun applySuspendUpdate(
-    request: AllocationUpdateRequest,
-    allocation: Allocation,
-    byWhom: String,
-  ): Set<Long> {
-    request.suspendFrom?.let { suspendFrom ->
-      require(suspendFrom.onOrAfter(LocalDate.now())) { "Allocation ${allocation.allocationId}: Suspension start date must be on or after today's date" }
-      require(allocation.endDate == null || suspendFrom.onOrBefore(allocation.endDate!!)) { "Allocation ${allocation.allocationId}: Suspension start date must be on or before the allocation end date ${allocation.endDate!!.toIsoDate()}" }
-
-      var caseNoteId: Long? = null
-      if (request.suspensionCaseNote != null) {
-        val subType = if (request.suspensionCaseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
-        caseNoteId = caseNotesApiClient.postCaseNote(
-          allocation.prisonCode(),
-          allocation.prisonerNumber,
-          request.suspensionCaseNote.text!!,
-          request.suspensionCaseNote.type!!,
-          subType,
-          "Suspended from activity from ${suspendFrom.toMediumFormatStyle()} - ${allocation.activitySchedule.description}",
-        ).caseNoteId.toLong()
-      }
-
-      val plannedSuspension = allocation.plannedSuspension()
-      if (plannedSuspension == null || plannedSuspension.hasStarted()) {
-        plannedSuspension?.endNow(byWhom)
-        allocation.addPlannedSuspension(
-          PlannedSuspension(
-            allocation = allocation,
-            plannedStartDate = maxOf(suspendFrom, allocation.startDate),
-            plannedBy = byWhom,
-            caseNoteId = caseNoteId,
-          ),
-        )
-      } else {
-        plannedSuspension.plan(suspendFrom, byWhom, caseNoteId)
-      }
-    }
-
-    request.suspendUntil?.let { suspendUntil ->
-      val plannedSuspension = allocation.plannedSuspension()
-        ?: throw IllegalArgumentException("Error setting end date for suspension - there are no planned suspensions to end for allocation with id ${allocation.allocationId}")
-
-      require(allocation.plannedEndDate() == null || suspendUntil.onOrBefore(allocation.plannedEndDate()!!)) {
-        "Suspension end date must be on or before the allocation end date: ${allocation.plannedEndDate()!!.toIsoDate()}"
-      }
-
-      plannedSuspension.endOn(maxOf(suspendUntil, plannedSuspension.startDate()), byWhom)
-    }
-
-    val updatedAttendanceIds = mutableSetOf<Long>()
-
-    allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
-      alloc.activatePlannedSuspension()
-      attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
-    }
-    allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
-      alloc.reactivateSuspension()
-      attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), alloc).let { updatedAttendanceIds.addAll(it.map { it.attendanceId }) }
-    }
-
-    return updatedAttendanceIds
   }
 
   private fun String?.toDeallocationReason() =

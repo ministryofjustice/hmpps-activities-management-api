@@ -11,10 +11,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
-import org.springframework.security.authentication.TestingAuthenticationToken
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
@@ -26,8 +22,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSuspensionsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import java.security.Principal
 import java.time.LocalDate
@@ -42,7 +41,10 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
   @MockBean
   private lateinit var waitingListService: WaitingListService
 
-  override fun controller() = AllocationController(allocationsService, waitingListService)
+  @MockBean
+  private lateinit var prisonerSuspensionsService: PrisonerSuspensionsService
+
+  override fun controller() = AllocationController(allocationsService, waitingListService, prisonerSuspensionsService)
 
   @Test
   fun `200 response when get allocation by ID found`() {
@@ -110,12 +112,6 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
     verify(waitingListService).addPrisoner(PENTONVILLE_PRISON_CODE, request, "USERNAME")
   }
 
-  fun createAuthentication(role: String = "ROLE_PRISON"): Authentication {
-    val auth = TestingAuthenticationToken("USER", "password", listOf(SimpleGrantedAuthority(role)))
-    SecurityContextHolder.getContext().authentication = auth
-    return auth
-  }
-
   @Nested
   @DisplayName("Authorization tests")
   inner class AuthorizationTests() {
@@ -150,6 +146,80 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
         mockMvcWithSecurity.patch("/allocations/$PENTONVILLE_PRISON_CODE/allocationId/1") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(updateAllocation)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Suspend allocation")
+    inner class SuspendAllocationTests() {
+      private val request = SuspendPrisonerRequest(
+        prisonerNumber = "ABC123",
+        allocationIds = listOf(1),
+        suspendFrom = LocalDate.now().plusDays(1),
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Suspend allocation (ROLE_ACTIVITY_ADMIN) - 202`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/suspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Suspend allocation (ROLE_ACTIVITY_HUB) - 202`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/suspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Suspend allocation (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/suspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Unsuspend allocation")
+    inner class UnsuspendAllocationTests() {
+      private val request = UnsuspendPrisonerRequest(
+        prisonerNumber = "ABC123",
+        allocationIds = listOf(1),
+        suspendUntil = LocalDate.now().plusDays(1),
+      )
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Unsuspend allocation (ROLE_ACTIVITY_ADMIN) - 202`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/unsuspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Unsuspend allocation (ROLE_ACTIVITY_HUB) - 202`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/unsuspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Unsuspend allocation (ROLE_PRISON) - 403`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/unsuspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(request)
         }.andExpect { status { isForbidden() } }
       }
     }
