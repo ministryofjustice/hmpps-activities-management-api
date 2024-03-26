@@ -15,7 +15,10 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -60,6 +63,7 @@ class MigrateActivityServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val incentivesApiClient: IncentivesApiClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
@@ -106,6 +110,7 @@ class MigrateActivityServiceTest {
     activityScheduleRepository,
     prisonerSearchApiClient,
     incentivesApiClient,
+    prisonApiClient,
     eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
@@ -149,6 +154,17 @@ class MigrateActivityServiceTest {
           prisonIncentiveLevel(levelCode = "STD", levelName = "Standard"),
           prisonIncentiveLevel(levelCode = "ENH", levelName = "Enhanced"),
           prisonIncentiveLevel(levelCode = "EN2", levelName = "Enhanced 2", active = false),
+        ),
+      )
+      whenever(prisonApiClient.getLocation(1)).thenReturn(
+        Mono.just(
+          Location(
+            locationId = 1,
+            internalLocationCode = "011",
+            description = "MDI-1-1-011",
+            locationType = "N/A",
+            agencyId = "RSI",
+          ),
         ),
       )
       whenever(prisonRegimeService.getPrisonTimeSlots(any())).thenReturn(

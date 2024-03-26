@@ -65,6 +65,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
     incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
+    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-id-1.json")
 
     val response = webTestClient.migrateActivity(requestBody, listOf("ROLE_NOMIS_ACTIVITIES"))
       .expectStatus().isOk
@@ -105,6 +106,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     )
 
     incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
+    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-id-1.json")
 
     val response = webTestClient.migrateActivity(
       requestBody,
@@ -161,6 +163,8 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `migrate activity - invalid pay band in rates`() {
+    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-id-1.json")
+
     val nomisPayRates = listOf(
       NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "12", rate = 110),
     )
