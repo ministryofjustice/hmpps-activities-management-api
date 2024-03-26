@@ -7,7 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
@@ -55,6 +55,7 @@ class MigrateActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val incentivesApiClient: IncentivesApiClient,
+  private val prisonApiClient: PrisonApiClient,
   private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -241,15 +242,7 @@ class MigrateActivityService(
     }.apply {
       addSchedule(
         description = this.summary,
-        internalLocation = request.internalLocationId?.let {
-          Location(
-            locationId = it,
-            internalLocationCode = request.internalLocationCode,
-            description = request.internalLocationDescription!!,
-            locationType = "N/A",
-            agencyId = request.prisonCode,
-          )
-        },
+        internalLocation = request.internalLocationId?.let { prisonApiClient.getLocation(it).block() },
         capacity = if (request.capacity == 0) 1 else request.capacity,
         startDate = this.startDate,
         endDate = this.endDate,
