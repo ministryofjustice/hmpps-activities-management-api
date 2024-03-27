@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAlloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Role
 import java.time.LocalDate
 import java.time.LocalTime
@@ -346,3 +346,5 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       .expectBody(SubjectAccessRequestContent::class.java)
       .returnResult().responseBody!!
 }
+
+data class SubjectAccessRequestContent(val content: SubjectAccessRequestData)

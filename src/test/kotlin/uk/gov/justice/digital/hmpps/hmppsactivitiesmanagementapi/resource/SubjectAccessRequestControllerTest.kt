@@ -14,79 +14,78 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SubjectAccessRequestService
+import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
+import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestController
 
-@WebMvcTest(controllers = [SubjectAccessRequestController::class])
-@ContextConfiguration(classes = [SubjectAccessRequestController::class])
+@WebMvcTest(controllers = [HmppsSubjectAccessRequestController::class])
+@ContextConfiguration(classes = [HmppsSubjectAccessRequestController::class, SubjectAccessRequestService::class])
 @WithMockUser(roles = ["SAR_DATA_ACCESS"])
-class SubjectAccessRequestControllerTest : ControllerTestBase<SubjectAccessRequestController>() {
+class SubjectAccessRequestControllerTest : ControllerTestBase<HmppsSubjectAccessRequestController>() {
 
   @MockBean
   private lateinit var service: SubjectAccessRequestService
 
-  private val content: SubjectAccessRequestContent = mock()
+  private val content: HmppsSubjectAccessRequestContent = mock()
 
-  override fun controller() = SubjectAccessRequestController(service)
+  override fun controller() = HmppsSubjectAccessRequestController(service)
 
   @Test
   fun `should return 200 response when prisoner found and no dates provided`() {
-    whenever(service.getContentFor("123456", null, null)) doReturn content
+    whenever(service.getPrisonContentFor("123456", null, null)) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
 
-    verify(service).getContentFor("123456", null, null)
+    verify(service).getPrisonContentFor("123456", null, null)
   }
 
   @Test
   fun `should return 200 response when prisoner found and from date provided`() {
-    whenever(service.getContentFor("123456", TimeSource.today(), null)) doReturn content
+    whenever(service.getPrisonContentFor("123456", TimeSource.today(), null)) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456&fromDate=${TimeSource.today()}")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
 
-    verify(service).getContentFor("123456", TimeSource.today(), null)
+    verify(service).getPrisonContentFor("123456", TimeSource.today(), null)
   }
 
   @Test
   fun `should return 200 response when prisoner found and to date provided`() {
-    whenever(service.getContentFor("123456", null, TimeSource.today())) doReturn content
+    whenever(service.getPrisonContentFor("123456", null, TimeSource.today())) doReturn content
 
     mockMvcWithSecurity.get("/subject-access-request?prn=123456&toDate=${TimeSource.today()}")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
 
-    verify(service).getContentFor("123456", null, TimeSource.today())
+    verify(service).getPrisonContentFor("123456", null, TimeSource.today())
   }
 
   @Test
   fun `should return 204 response when prisoner not found`() {
-    whenever(service.getContentFor("UNKNOWN", null, null)) doReturn null
+    whenever(service.getPrisonContentFor("UNKNOWN", null, null)) doReturn null
 
     mockMvcWithSecurity.get("/subject-access-request?prn=UNKNOWN")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNoContent() } }
 
-    verify(service).getContentFor("UNKNOWN", null, null)
+    verify(service).getPrisonContentFor("UNKNOWN", null, null)
   }
 
   @Test
-  fun `should return 204 response when prisoner number empty`() {
+  fun `should return 400 response when prisoner number empty`() {
     mockMvcWithSecurity.get("/subject-access-request?prn= ")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNoContent() } }
+      .andExpect { status { isBadRequest() } }
 
     verifyNoInteractions(service)
   }
 
   @Test
-  fun `should return 204 response when prisoner number null`() {
+  fun `should return 400 response when prisoner number null`() {
     mockMvcWithSecurity.get("/subject-access-request")
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNoContent() } }
+      .andExpect { status { isBadRequest() } }
 
     verifyNoInteractions(service)
   }
@@ -94,7 +93,6 @@ class SubjectAccessRequestControllerTest : ControllerTestBase<SubjectAccessReque
   @Test
   fun `should return 209 response for unsupported search type`() {
     mockMvcWithSecurity.get("/subject-access-request?crn=123456")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isEqualTo(209) } }
 
     verifyNoInteractions(service)
