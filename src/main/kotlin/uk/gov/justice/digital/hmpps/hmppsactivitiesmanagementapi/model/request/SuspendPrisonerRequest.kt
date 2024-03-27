@@ -31,7 +31,7 @@ data class SuspendPrisonerRequest(
   @field:FutureOrPresent(message = "Suspension start date must not be in the past")
   val suspendFrom: LocalDate? = null,
 
-  @Schema(description = "Describes a case note to be added to the prisoner's profile as part of the suspension. Only relevant when suspendFrom is also provided")
+  @Schema(description = "Describes a case note to be added to the prisoner's profile as part of the suspension.")
   @field:Valid
   @field:Nullable
   val suspensionCaseNote: AddCaseNoteRequest? = null,

@@ -291,6 +291,7 @@ class AllocationController(
       ),
     ],
   )
+  @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun suspend(
     @PathVariable("prisonCode") prisonCode: String,
@@ -336,6 +337,7 @@ class AllocationController(
       ),
     ],
   )
+  @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun unsuspend(
     @PathVariable("prisonCode") prisonCode: String,
