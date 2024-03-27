@@ -26,9 +26,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PRIS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -76,7 +76,7 @@ class PrisonerReleasedEventHandlerTest {
         )
     }
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(prisonerAllocationHandler)
@@ -86,7 +86,7 @@ class PrisonerReleasedEventHandlerTest {
   fun `release event is not processed when no matching prison is found`() {
     rolloutPrisonRepository.stub { on { findByCode(MOORLAND_PRISON_CODE) } doReturn null }
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(prisonerAllocationHandler)
@@ -96,7 +96,7 @@ class PrisonerReleasedEventHandlerTest {
   fun `pending allocations are removed and un-ended allocations are ended on permanent release of inactive out prisoner`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn inActiveOutPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verify(waitingListService).removeOpenApplications(MOORLAND_PRISON_CODE, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
@@ -108,7 +108,7 @@ class PrisonerReleasedEventHandlerTest {
 
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn activeInPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verify(waitingListService).removeOpenApplications(MOORLAND_PRISON_CODE, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
@@ -120,7 +120,7 @@ class PrisonerReleasedEventHandlerTest {
 
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn releasedToHospitalPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
     verify(waitingListService).removeOpenApplications(MOORLAND_PRISON_CODE, "123456", ServiceName.SERVICE_NAME.value)
     verify(prisonerAllocationHandler).deallocate(MOORLAND_PRISON_CODE, "123456", DeallocationReason.RELEASED)
@@ -130,7 +130,7 @@ class PrisonerReleasedEventHandlerTest {
   fun `permanent release of restricted patient removes them from future appointments`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn releasedToHospitalPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(MOORLAND_PRISON_CODE),
@@ -145,7 +145,7 @@ class PrisonerReleasedEventHandlerTest {
   fun `permanent release of inactive out prisoner removes them from future appointments`() {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn inActiveOutPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", "RELEASED_TO_HOSPITAL")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(MOORLAND_PRISON_CODE),
@@ -162,7 +162,7 @@ class PrisonerReleasedEventHandlerTest {
 
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn activeInPrisoner
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verify(appointmentAttendeeService).removePrisonerFromFutureAppointments(
       eq(MOORLAND_PRISON_CODE),
@@ -178,7 +178,7 @@ class PrisonerReleasedEventHandlerTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumber("123456")) doReturn null
 
     assertThatThrownBy {
-      handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+      handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
     }.isInstanceOf(NullPointerException::class.java)
       .hasMessage("Prisoner search lookup failed for prisoner 123456")
   }
@@ -186,7 +186,7 @@ class PrisonerReleasedEventHandlerTest {
   @Test
   fun `allocation is unmodified for unknown release event`() {
     val outcome = handler.handle(
-      OffenderReleasedEvent(
+      PrisonerReleasedEvent(
         ReleaseInformation(
           nomsNumber = "12345",
           reason = "UNKNOWN",
@@ -202,7 +202,7 @@ class PrisonerReleasedEventHandlerTest {
   fun `no interactions when released prisoner has no allocations of interest`() {
     whenever(allocationRepository.existAtPrisonForPrisoner(any(), any(), eq(PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList()))) doReturn false
 
-    handler.handle(offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
+    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
 
     verifyNoInteractions(prisonerSearchApiClient)
     verifyNoInteractions(prisonerAllocationHandler)

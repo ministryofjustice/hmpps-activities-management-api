@@ -15,14 +15,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.CellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundPrisonerReceivedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundPrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import java.time.LocalDateTime
 
 /**
@@ -135,8 +135,8 @@ class InterestingEventHandler(
       is IncentivesInsertedEvent -> "Incentive review created for $prisonerDetails"
       is IncentivesUpdatedEvent -> "Incentive review updated for $prisonerDetails"
       is IncentivesDeletedEvent -> "Incentive review deleted for $prisonerDetails"
-      is InboundPrisonerReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, $prisonerDetails"
-      is InboundPrisonerReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
+      is PrisonerReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, $prisonerDetails"
+      is PrisonerReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
       is OffenderMergedEvent -> "Prisoner ${prisoner.firstName} ${prisoner.lastName} merged from ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
       else -> "Unknown event for $prisonerDetails"
     }

@@ -25,8 +25,6 @@ class FeatureSwitchesTest {
       "feature.event.activities.activity-schedule.created=true",
       "feature.event.activities.prisoner.allocated=true",
       "feature.event.appointments.appointment-instance.created=true",
-      "feature.event.prison-offender-events.prisoner.received=true",
-      "feature.event.prison-offender-events.prisoner.released=true",
       "feature.event.activities.activity-schedule.amended=true",
       "feature.event.activities.scheduled-instance.amended=true",
       "feature.event.activities.prisoner.allocation-amended=true",
@@ -94,7 +92,6 @@ class FeatureSwitchesTest {
     fun `different feature types can be defaulted `() {
       assertThat(featureSwitches.isEnabled(Feature.OUTBOUND_EVENTS_ENABLED, true)).isTrue
       assertThat(featureSwitches.isEnabled(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, true)).isTrue
-      assertThat(featureSwitches.isEnabled(InboundEventType.OFFENDER_RELEASED, true)).isTrue
     }
   }
 }

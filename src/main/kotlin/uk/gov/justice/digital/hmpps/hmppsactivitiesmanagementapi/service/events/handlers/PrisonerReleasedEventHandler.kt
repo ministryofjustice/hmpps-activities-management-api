@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundPrisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import java.time.LocalDateTime
 
 @Component
@@ -30,13 +30,13 @@ class PrisonerReleasedEventHandler(
   private val prisonSearchApiClient: PrisonerSearchApiApplicationClient,
   private val allocationHandler: PrisonerAllocationHandler,
   private val allocationRepository: AllocationRepository,
-) : EventHandler<InboundPrisonerReleasedEvent> {
+) : EventHandler<PrisonerReleasedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: InboundPrisonerReleasedEvent): Outcome {
+  override fun handle(event: PrisonerReleasedEvent): Outcome {
     log.debug("PRISONER RELEASED: Handling prisoner released event {}", event)
 
     if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
@@ -74,14 +74,14 @@ class PrisonerReleasedEventHandler(
     return Outcome.success()
   }
 
-  private fun releasedPrisonerHasAllocationsOfInterestFor(event: InboundPrisonerReleasedEvent) =
+  private fun releasedPrisonerHasAllocationsOfInterestFor(event: PrisonerReleasedEvent) =
     allocationRepository.existAtPrisonForPrisoner(
       event.prisonCode(),
       event.prisonerNumber(),
       PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
     )
 
-  private fun cancelFutureOffenderAppointments(event: InboundPrisonerReleasedEvent) =
+  private fun cancelFutureOffenderAppointments(event: PrisonerReleasedEvent) =
     appointmentAttendeeService.removePrisonerFromFutureAppointments(
       event.prisonCode(),
       event.prisonerNumber(),
@@ -90,11 +90,11 @@ class PrisonerReleasedEventHandler(
       "OFFENDER_RELEASED_EVENT",
     )
 
-  private fun getDetailsForReleasedPrisoner(event: InboundPrisonerReleasedEvent) =
+  private fun getDetailsForReleasedPrisoner(event: PrisonerReleasedEvent) =
     prisonSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
       ?: throw NullPointerException("Prisoner search lookup failed for prisoner ${event.prisonerNumber()}")
 
-  private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: InboundPrisonerReleasedEvent) =
+  private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: PrisonerReleasedEvent) =
     when {
       prisoner.isRestrictedPatient() -> RELEASED.also { log.info("Released restricted patient ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
       prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }

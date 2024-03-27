@@ -31,8 +31,8 @@ class InboundEventsService(
     when (event) {
       is ActivitiesChangedEvent -> activitiesChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
       is AppointmentsChangedEvent -> appointmentsChangedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is InboundPrisonerReceivedEvent -> receivedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
-      is InboundPrisonerReleasedEvent -> releasedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
+      is PrisonerReceivedEvent -> receivedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
+      is PrisonerReleasedEvent -> releasedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
       is OffenderMergedEvent -> mergedEventHandler.handle(event).run { interestingEventHandler.handle(event) }
       is EventOfInterest -> interestingEventHandler.handle(event)
       else -> log.warn("Unsupported event ${event.javaClass.name}")
