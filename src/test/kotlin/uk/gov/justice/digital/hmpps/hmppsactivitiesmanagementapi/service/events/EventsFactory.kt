@@ -2,21 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 
-@Deprecated(
-  message = "Replaced by prisoner temporary released event",
-  replaceWith = ReplaceWith("prisonerTemporaryReleasedEvent(prisonCode, prisonerNumber, reason)"),
-)
-fun offenderTemporaryReleasedEvent(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-) = OffenderReleasedEvent(
-  ReleaseInformation(
-    prisonerNumber,
-    "TEMPORARY_ABSENCE_RELEASE",
-    prisonCode,
-  ),
-)
-
 fun prisonerTemporaryReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
@@ -24,22 +9,6 @@ fun prisonerTemporaryReleasedEvent(
   ReleaseInformation(
     prisonerNumber,
     "TEMPORARY_ABSENCE_RELEASE",
-    prisonCode,
-  ),
-)
-
-@Deprecated(
-  message = "Replaced by prisoner released event",
-  replaceWith = ReplaceWith("prisonerReleasedEvent(prisonCode, prisonerNumber, reason)"),
-)
-fun offenderReleasedEvent(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-  reason: String = "RELEASED",
-) = OffenderReleasedEvent(
-  ReleaseInformation(
-    prisonerNumber,
-    reason,
     prisonCode,
   ),
 )
@@ -56,21 +25,6 @@ fun prisonerReleasedEvent(
   ),
 )
 
-@Deprecated(
-  message = "Replaced by prisoner transfer released event",
-  replaceWith = ReplaceWith("prisonerTransferReleasedEvent(prisonCode, prisonerNumber)"),
-)
-fun offenderTransferReleasedEvent(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-) = OffenderReleasedEvent(
-  ReleaseInformation(
-    prisonerNumber,
-    "TRANSFERRED",
-    prisonCode,
-  ),
-)
-
 fun prisonerTransferReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
@@ -78,21 +32,6 @@ fun prisonerTransferReleasedEvent(
   ReleaseInformation(
     prisonerNumber,
     "TRANSFERRED",
-    prisonCode,
-  ),
-)
-
-@Deprecated(
-  message = "Replaced by prisoner received event",
-  replaceWith = ReplaceWith("prisonerReceivedFromTemporaryAbsence(prisonCode, prisonerNumber)"),
-)
-fun offenderReceivedFromTemporaryAbsence(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-) = OffenderReceivedEvent(
-  ReceivedInformation(
-    prisonerNumber,
-    "TEMPORARY_ABSENCE_RETURN",
     prisonCode,
   ),
 )

@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Roll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -53,7 +53,7 @@ class PrisonerReceivedEventHandlerTest {
 
   @Test
   fun `inbound received event is not handled for an inactive prison`() {
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
+    val inboundEvent = prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     reset(rolloutPrisonRepository)
     rolloutPrisonRepository.stub {
       on { findByCode(MOORLAND_PRISON_CODE) } doReturn
@@ -113,7 +113,7 @@ class PrisonerReceivedEventHandlerTest {
       on { findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, "123456") } doReturn allocations
     }
 
-    val outcome = handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
+    val outcome = handler.handle(prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     assertThat(outcome.isSuccess()).isTrue
     assertThat(autoSuspendedOne.status(PrisonerStatus.ACTIVE)).isTrue
@@ -133,7 +133,7 @@ class PrisonerReceivedEventHandlerTest {
       on { findByPrisonerNumber("123456") } doReturn activeInMoorlandPrisoner.copy(prisonerNumber = "123456")
     }
 
-    handler.handle(offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
+    handler.handle(prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456"))
 
     verify(attendanceSuspensionDomainService).resetAutoSuspendedFutureAttendancesForAllocation(any(), eq(allocation))
   }

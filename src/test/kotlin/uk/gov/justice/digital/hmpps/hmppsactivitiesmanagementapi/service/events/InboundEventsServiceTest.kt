@@ -52,13 +52,6 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound offender released event is processed by release event handler`() {
-    val offenderReleasedEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
-    service.process(offenderReleasedEvent)
-    verify(releasedEventHandler).handle(offenderReleasedEvent)
-  }
-
-  @Test
   fun `inbound prisoner released event is processed by release event handler`() {
     val prisonerReleasedEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")
     service.process(prisonerReleasedEvent)
@@ -80,27 +73,10 @@ class InboundEventsServiceTest {
   }
 
   @Test
-  fun `inbound offender received event is processed by received event handler`() {
-    val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
-    service.process(offenderReceivedEvent)
-    verify(receivedEventHandler).handle(offenderReceivedEvent)
-  }
-
-  @Test
   fun `inbound prisoner received event is processed by received event handler`() {
     val prisonerReceivedEvent = prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
     service.process(prisonerReceivedEvent)
     verify(receivedEventHandler).handle(prisonerReceivedEvent)
-  }
-
-  @Test
-  fun `inbound received event failure is handled as an interesting event`() {
-    val offenderReceivedEvent = offenderReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456").also {
-      whenever(receivedEventHandler.handle(it)).thenReturn(Outcome.failed())
-    }
-    service.process(offenderReceivedEvent)
-    verify(receivedEventHandler).handle(offenderReceivedEvent)
-    verify(interestingEventHandler).handle(offenderReceivedEvent)
   }
 
   @Test

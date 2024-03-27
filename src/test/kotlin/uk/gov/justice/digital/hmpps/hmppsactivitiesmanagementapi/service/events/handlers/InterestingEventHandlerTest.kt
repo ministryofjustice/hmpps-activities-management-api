@@ -33,8 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 
@@ -137,31 +135,6 @@ class InterestingEventHandlerTest {
   }
 
   @Test
-  fun `stores an offender received event when allocations exist`() {
-    mockPrisoner(lastname = "Geldof")
-
-    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456"))
-    mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
-
-    val inboundEvent = offenderReceivedFromTemporaryAbsence(PENTONVILLE_PRISON_CODE, "123456")
-
-    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
-
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
-    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
-    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
-
-    with(eventReviewCaptor.firstValue) {
-      bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner received into prison PVI, Geldof, Bob (123456)"
-      eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.OFFENDER_RECEIVED.eventType
-      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-      prisonerNumber isEqualTo "123456"
-    }
-  }
-
-  @Test
   fun `stores a prisoner received event when allocations exist`() {
     mockPrisoner(lastname = "Geldof")
 
@@ -182,28 +155,6 @@ class InterestingEventHandlerTest {
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_RECEIVED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
-      prisonerNumber isEqualTo "123456"
-    }
-  }
-
-  @Test
-  fun `stores an offender released event`() {
-    // Note prison code is different to that of the event because they have been release to Pentonville
-    mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
-    whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
-    val inboundEvent = offenderReleasedEvent(MOORLAND_PRISON_CODE, "123456")
-
-    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
-
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
-    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
-
-    with(eventReviewCaptor.firstValue) {
-      bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner released from prison MDI, Bobson, Bob (123456)"
-      eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.OFFENDER_RELEASED.eventType
-      prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "123456"
     }
   }

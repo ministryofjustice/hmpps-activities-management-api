@@ -12,9 +12,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundPrisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
 import java.time.LocalDateTime
 
 /**
@@ -34,13 +34,13 @@ class PrisonerReceivedEventHandler(
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
-) : EventHandler<InboundPrisonerReceivedEvent> {
+) : EventHandler<PrisonerReceivedEvent> {
 
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  override fun handle(event: InboundPrisonerReceivedEvent): Outcome {
+  override fun handle(event: PrisonerReceivedEvent): Outcome {
     log.debug("PRISONER RECEIVED: handling prisoner received event {}", event)
 
     if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
@@ -71,7 +71,7 @@ class PrisonerReceivedEventHandler(
     return Outcome.success()
   }
 
-  private fun List<Allocation>.resetAutoSuspendedAllocations(event: InboundPrisonerReceivedEvent) =
+  private fun List<Allocation>.resetAutoSuspendedAllocations(event: PrisonerReceivedEvent) =
     this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
       .onEach {
         if (it.isCurrentlySuspended()) {

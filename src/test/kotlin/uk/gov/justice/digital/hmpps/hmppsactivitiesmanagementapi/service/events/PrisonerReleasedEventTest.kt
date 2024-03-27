@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 
-class OffenderReleasedEventTest {
+class PrisonerReleasedEventTest {
   @Test
   fun `release event is temporary`() {
     releaseEvent("TEMPORARY_ABSENCE_RELEASE").isTemporary() isBool true
@@ -36,5 +36,5 @@ class OffenderReleasedEventTest {
   }
 
   private fun releaseEvent(reason: String) =
-    OffenderReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
+    PrisonerReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
 }

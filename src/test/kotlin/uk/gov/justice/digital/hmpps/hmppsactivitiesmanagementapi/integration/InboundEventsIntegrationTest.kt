@@ -45,19 +45,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReceivedFromTemporaryAbsence
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -128,7 +127,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     // This event falls back to being processed as an interesting event due to the unknown reason for release
     service.process(
-      OffenderReleasedEvent(
+      PrisonerReleasedEvent(
         ReleaseInformation(
           nomsNumber = "A11111A",
           reason = "UNKNOWN",
@@ -153,7 +152,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A11111A")
 
-    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(prisonerReleasedEvent(prisonerNumber = "A11111A"))
 
     assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A11111A")
 
@@ -179,7 +178,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       single { it.allocationId == 6L }.prisonerStatus isEqualTo PrisonerStatus.PENDING
     }
 
-    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(prisonerReleasedEvent(prisonerNumber = "A11111A"))
 
     with(allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }) {
       size isEqualTo 3
@@ -237,7 +236,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
       3L,
     )
 
-    service.process(offenderReleasedEvent(prisonerNumber = "A11111A"))
+    service.process(prisonerReleasedEvent(prisonerNumber = "A11111A"))
 
     assertThatAllocationsAreEndedFor(PENTONVILLE_PRISON_CODE, "A11111A")
 
@@ -335,7 +334,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     assertThat(allocationsMap[211]).hasSize(3)
     assertThat(allocationsMap[212]).hasSize(2)
 
-    service.process(offenderReleasedEvent(prisonerNumber = "A1234BC", prisonCode = "MDI"))
+    service.process(prisonerReleasedEvent(prisonerNumber = "A1234BC", prisonCode = "MDI"))
 
     allocationsMap = appointmentAttendeeSearchRepository.findByAppointmentIds(
       appointmentIds,
@@ -508,7 +507,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     )
 
     service.process(
-      offenderReceivedFromTemporaryAbsence(
+      prisonerReceivedFromTemporaryAbsence(
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),
@@ -623,7 +622,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     service.process(
-      offenderReceivedFromTemporaryAbsence(
+      prisonerReceivedFromTemporaryAbsence(
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),
@@ -671,7 +670,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     }
 
     service.process(
-      offenderReceivedFromTemporaryAbsence(
+      prisonerReceivedFromTemporaryAbsence(
         prisonCode = PENTONVILLE_PRISON_CODE,
         prisonerNumber = "A11111A",
       ),

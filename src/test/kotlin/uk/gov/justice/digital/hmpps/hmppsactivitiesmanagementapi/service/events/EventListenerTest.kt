@@ -24,15 +24,6 @@ class EventListenerTest {
   private val eventListener = InboundEventsListener(objectMapper, inboundEventsService, featureSwitches)
 
   @Test
-  fun `prisoner released event - transferred`() {
-    featureSwitches.stub { on { isEnabled(InboundEventType.OFFENDER_RELEASED) } doReturn true }
-
-    eventListener.onMessage("/messages/prison-offender-events.prisoner.released.json".readRawMessage())
-
-    verify(inboundEventsService).process(offenderTransferReleasedEvent(MOORLAND_PRISON_CODE, "A1244AB"))
-  }
-
-  @Test
   fun `prisoner activities changed event - end`() {
     featureSwitches.stub { on { isEnabled(InboundEventType.ACTIVITIES_CHANGED) } doReturn true }
 
