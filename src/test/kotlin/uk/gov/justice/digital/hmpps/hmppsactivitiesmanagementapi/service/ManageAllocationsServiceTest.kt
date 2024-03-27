@@ -493,7 +493,7 @@ class ManageAllocationsServiceTest {
     val prison = rolloutPrison().also { whenever(rolloutPrisonRepo.findAll()) doReturn listOf(it) }
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
       activatePlannedSuspension()
-      plannedSuspension()!!.endNow("TEST")
+      plannedSuspension()!!.endOn(LocalDate.now(), "TEST")
     }
 
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
@@ -510,7 +510,7 @@ class ManageAllocationsServiceTest {
 
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
       activatePlannedSuspension()
-      plannedSuspension()!!.endNow("TEST")
+      plannedSuspension()!!.endOn(LocalDate.now(), "TEST")
     }
 
     whenever(

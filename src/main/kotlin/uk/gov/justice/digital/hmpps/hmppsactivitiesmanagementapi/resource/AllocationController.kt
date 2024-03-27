@@ -25,8 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSuspensionsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import java.security.Principal
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
@@ -36,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Deallocat
 class AllocationController(
   private val allocationsService: AllocationsService,
   private val waitingListService: WaitingListService,
+  private val prisonerSuspensionsService: PrisonerSuspensionsService,
 ) {
 
   @GetMapping(value = ["/id/{allocationId}"])
@@ -250,6 +254,97 @@ class AllocationController(
     )
     request: WaitingListApplicationRequest,
   ): ResponseEntity<Any> =
-    waitingListService.addPrisoner(prisonCode, request, principal.name)
-      .let { ResponseEntity.noContent().build() }
+    waitingListService.addPrisoner(prisonCode, request, principal.name).let { ResponseEntity.noContent().build() }
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PostMapping(value = ["/{prisonCode}/suspend"])
+  @Operation(
+    summary = "Suspend allocations",
+    description = "Add a suspension start date to a list of allocations, accompanied by an optional case note.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "The suspensions were updated.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Allocation::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  fun suspend(
+    @PathVariable("prisonCode") prisonCode: String,
+    principal: Principal,
+    @Valid
+    @RequestBody
+    @Parameter(description = "The request with the suspension details", required = true)
+    request: SuspendPrisonerRequest,
+  ) = prisonerSuspensionsService.suspend(prisonCode, request, principal.name)
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PostMapping(value = ["/{prisonCode}/unsuspend"])
+  @Operation(
+    summary = "Suspend allocations",
+    description = "Add a suspension end date to a list of allocations",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "The suspensions were updated.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Allocation::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  fun unsuspend(
+    @PathVariable("prisonCode") prisonCode: String,
+    principal: Principal,
+    @Valid
+    @RequestBody
+    @Parameter(description = "The request with the suspension details", required = true)
+    request: UnsuspendPrisonerRequest,
+  ) = prisonerSuspensionsService.unsuspend(prisonCode, request, principal.name)
 }

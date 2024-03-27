@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListApplicationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -224,62 +226,24 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
-  fun `update allocation - add planned suspension for the future`() {
-    webTestClient.updateAllocation(
+  fun `suspend allocations - add planned suspension for the future`() {
+    webTestClient.suspendAllocation(
       PENTONVILLE_PRISON_CODE,
-      1,
-      AllocationUpdateRequest(
+      SuspendPrisonerRequest(
+        prisonerNumber = "A11111A",
+        allocationIds = listOf(1, 4),
         suspendFrom = 5.daysFromNow(),
-        suspendUntil = 10.daysFromNow(),
       ),
+      "PVI",
     )
 
-    with(allocationRepository.getReferenceById(1L)) {
-      status(PrisonerStatus.ACTIVE) isBool true
-      plannedSuspension() isNotEqualTo null
-      plannedSuspension()!!.startDate() isEqualTo 5.daysFromNow()
-      plannedSuspension()!!.endDate() isEqualTo 10.daysFromNow()
-    }
-
-    verify(eventsPublisher).send(eventCaptor.capture())
-
-    with(eventCaptor.firstValue) {
-      eventType isEqualTo "activities.prisoner.allocation-amended"
-      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
-      occurredAt isCloseTo TimeSource.now()
-    }
-  }
-
-  @Sql("classpath:test_data/seed-allocation-for-manual-suspension.sql")
-  @Test
-  fun `update allocation - add planned suspension to start immediately`() {
-    webTestClient.updateAllocation(
-      PENTONVILLE_PRISON_CODE,
-      1,
-      AllocationUpdateRequest(
-        suspendFrom = TimeSource.today(),
-      ),
-    )
-
-    with(allocationRepository.getReferenceById(1L)) {
-      status(PrisonerStatus.SUSPENDED) isBool true
-      plannedSuspension() isNotEqualTo null
-      plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
-      plannedSuspension()!!.endDate() isEqualTo null
-    }
-
-    with(attendanceRepository.getReferenceById(1L)) {
-      // This attendance is un-changed because the session started before the suspension
-      status(AttendanceStatus.WAITING) isBool true
-      attendanceReason isEqualTo null
-      issuePayment isEqualTo null
-    }
-    with(attendanceRepository.getReferenceById(2L)) {
-      // This attendance is suspended because the session starts after the suspension
-      status(AttendanceStatus.COMPLETED) isBool true
-      attendanceReason isNotEqualTo null
-      attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
-      issuePayment isEqualTo false
+    listOf(1L, 4L).forEach {
+      with(allocationRepository.getReferenceById(it)) {
+        status(PrisonerStatus.ACTIVE) isBool true
+        plannedSuspension() isNotEqualTo null
+        plannedSuspension()!!.startDate() isEqualTo 5.daysFromNow()
+        plannedSuspension()!!.endDate() isEqualTo null
+      }
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
@@ -289,68 +253,163 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
+
     with(eventCaptor.secondValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(4)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+  }
+
+  @Sql("classpath:test_data/seed-allocation-for-manual-suspension.sql")
+  @Test
+  fun `suspend allocation - add planned suspension to start immediately`() {
+    webTestClient.suspendAllocation(
+      PENTONVILLE_PRISON_CODE,
+      SuspendPrisonerRequest(
+        prisonerNumber = "A11111A",
+        allocationIds = listOf(1, 2),
+        suspendFrom = TimeSource.today(),
+      ),
+      "PVI",
+    )
+
+    listOf(1L, 2L).forEach {
+      with(allocationRepository.getReferenceById(it)) {
+        status(PrisonerStatus.SUSPENDED) isBool true
+        plannedSuspension() isNotEqualTo null
+        plannedSuspension()!!.startDate() isEqualTo TimeSource.today()
+        plannedSuspension()!!.endDate() isEqualTo null
+      }
+    }
+
+    listOf(1L, 3L).forEach {
+      with(attendanceRepository.getReferenceById(it)) {
+        // These attendances are un-changed because the session started before the suspension
+        status(AttendanceStatus.WAITING) isBool true
+        attendanceReason isEqualTo null
+        issuePayment isEqualTo null
+      }
+    }
+
+    listOf(2L, 4L).forEach {
+      with(attendanceRepository.getReferenceById(it)) {
+        // These attendances are suspended because the session starts after the suspension
+        status(AttendanceStatus.COMPLETED) isBool true
+        attendanceReason isNotEqualTo null
+        attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+        issuePayment isEqualTo false
+      }
+    }
+
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(1)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
+    with(eventCaptor.secondValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
+    with(eventCaptor.thirdValue) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       additionalInformation isEqualTo PrisonerAttendanceInformation(2)
       occurredAt isCloseTo TimeSource.now()
     }
+
+    with(eventCaptor.allValues[3]) {
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
     verifyNoMoreInteractions(eventsPublisher)
   }
 
   @Sql("classpath:test_data/seed-allocation-with-active-suspension.sql")
   @Test
-  fun `update allocation - update planned suspension to end immediately`() {
-    webTestClient.updateAllocation(
+  fun `unsuspend allocation - update planned suspension to end immediately`() {
+    webTestClient.unsuspendAllocation(
       PENTONVILLE_PRISON_CODE,
-      1,
-      AllocationUpdateRequest(
+      UnsuspendPrisonerRequest(
+        prisonerNumber = "A11111A",
+        allocationIds = listOf(1, 2),
         suspendUntil = TimeSource.today(),
       ),
+      "PVI",
     )
 
-    with(allocationRepository.getReferenceById(1L)) {
-      status(PrisonerStatus.ACTIVE) isBool true
-      plannedSuspension() isEqualTo null
+    listOf(1L, 2L).forEach {
+      with(allocationRepository.getReferenceById(it)) {
+        status(PrisonerStatus.ACTIVE) isBool true
+        plannedSuspension() isEqualTo null
+      }
     }
 
-    with(attendanceRepository.getReferenceById(1L)) {
-      // This attendance is un-changed because the session started before the suspension ended
-      status(AttendanceStatus.COMPLETED) isBool true
-      attendanceReason isNotEqualTo null
-      attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
-      issuePayment isEqualTo false
-    }
-    with(attendanceRepository.getReferenceById(2L)) {
-      // This attendance is reset because the session starts after the suspension ended
-      status(AttendanceStatus.WAITING) isBool true
-      attendanceReason isEqualTo null
-      issuePayment isEqualTo null
+    listOf(1L, 3L).forEach {
+      with(attendanceRepository.getReferenceById(it)) {
+        // These attendances are un-changed because the session started before the suspension ended
+        status(AttendanceStatus.COMPLETED) isBool true
+        attendanceReason isNotEqualTo null
+        attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
+        issuePayment isEqualTo false
+      }
     }
 
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+    listOf(2L, 4L).forEach {
+      with(attendanceRepository.getReferenceById(it)) {
+        // These attendances are reset because the session starts after the suspension ended
+        status(AttendanceStatus.WAITING) isBool true
+        attendanceReason isEqualTo null
+        issuePayment isEqualTo null
+      }
+    }
+
+    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       eventType isEqualTo "activities.prisoner.allocation-amended"
       additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
+
     with(eventCaptor.secondValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(2)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
+    with(eventCaptor.thirdValue) {
       eventType isEqualTo "activities.prisoner.attendance-amended"
       additionalInformation isEqualTo PrisonerAttendanceInformation(2)
       occurredAt isCloseTo TimeSource.now()
     }
+
+    with(eventCaptor.allValues[3]) {
+      eventType isEqualTo "activities.prisoner.attendance-amended"
+      additionalInformation isEqualTo PrisonerAttendanceInformation(4)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
     verifyNoMoreInteractions(eventsPublisher)
   }
 
   private fun WebTestClient.updateAllocation(
     prisonCode: String,
     allocationId: Long,
-    application: AllocationUpdateRequest,
+    request: AllocationUpdateRequest,
     caseloadId: String? = CASELOAD_ID,
   ) =
     patch()
       .uri("/allocations/$prisonCode/allocationId/$allocationId")
-      .bodyValue(application)
+      .bodyValue(request)
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
       .header(CASELOAD_ID, caseloadId)
@@ -359,6 +418,34 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Allocation::class.java)
       .returnResult().responseBody!!
+
+  private fun WebTestClient.suspendAllocation(
+    prisonCode: String,
+    request: SuspendPrisonerRequest,
+    caseloadId: String? = CASELOAD_ID,
+  ) =
+    post()
+      .uri("/allocations/$prisonCode/suspend")
+      .bodyValue(request)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, caseloadId)
+      .exchange()
+      .expectStatus().isAccepted
+
+  private fun WebTestClient.unsuspendAllocation(
+    prisonCode: String,
+    request: UnsuspendPrisonerRequest,
+    caseloadId: String? = CASELOAD_ID,
+  ) =
+    post()
+      .uri("/allocations/$prisonCode/unsuspend")
+      .bodyValue(request)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, caseloadId)
+      .exchange()
+      .expectStatus().isAccepted
 
   private fun WebTestClient.waitingListApplication(
     prisonCode: String,
