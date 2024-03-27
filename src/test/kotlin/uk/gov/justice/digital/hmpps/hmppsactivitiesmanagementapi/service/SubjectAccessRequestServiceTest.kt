@@ -87,6 +87,7 @@ class SubjectAccessRequestServiceTest {
     categoryName = "Prison job",
     issuePayment = true,
     recordedTime = TimeSource.now(),
+    attendanceRequired = true,
   )
 
   private val allAttendance2 = AllAttendance(
@@ -103,6 +104,7 @@ class SubjectAccessRequestServiceTest {
     categoryName = "Prison job",
     issuePayment = true,
     recordedTime = TimeSource.now(),
+    attendanceRequired = true,
   )
 
   @Test

@@ -38,6 +38,8 @@ data class AllAttendance(
   val categoryName: String,
 
   val recordedTime: LocalDateTime?,
+
+  val attendanceRequired: Boolean,
 ) {
   fun toModel() =
     AllAttendanceModel(
@@ -54,6 +56,7 @@ data class AllAttendance(
       activitySummary = summary,
       categoryName = categoryName,
       recordedTime = recordedTime,
+      attendanceRequired = attendanceRequired,
     )
 }
 

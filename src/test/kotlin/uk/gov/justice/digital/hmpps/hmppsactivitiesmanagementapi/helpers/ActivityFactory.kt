@@ -393,6 +393,7 @@ internal fun attendanceList() = listOf(
     summary = "Maths Level 1",
     categoryName = "Education",
     recordedTime = null,
+    attendanceRequired = true,
   ),
 )
 
