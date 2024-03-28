@@ -14,9 +14,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestContent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
+import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
+import java.time.LocalDate
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation as ModelSarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAppointment as ModelSarAppointment
@@ -114,12 +115,12 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAllocationsBy("12345", TimeSource.today(), TimeSource.today())) doReturn emptyList()
     whenever(repository.findAttendanceBy("12345", TimeSource.today(), TimeSource.today())) doReturn emptyList()
 
-    service.getContentFor("12345", null, null) isEqualTo null
+    service.getPrisonContentFor("12345", null, null) isEqualTo null
 
-    verify(repository).findAllocationsBy("12345", TimeSource.today(), TimeSource.today())
-    verify(repository).findWaitingListsBy("12345", TimeSource.today(), TimeSource.today())
-    verify(repository).findAppointmentsBy("12345", TimeSource.today(), TimeSource.today())
-    verify(repository).findAttendanceBy("12345", TimeSource.today(), TimeSource.today())
+    verify(repository).findAllocationsBy("12345", LocalDate.EPOCH, TimeSource.today())
+    verify(repository).findWaitingListsBy("12345", LocalDate.EPOCH, TimeSource.today())
+    verify(repository).findAppointmentsBy("12345", LocalDate.EPOCH, TimeSource.today())
+    verify(repository).findAttendanceBy("12345", LocalDate.EPOCH, TimeSource.today())
   }
 
   @Test
@@ -129,7 +130,7 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAppointmentsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
-    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+    service.getPrisonContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo HmppsSubjectAccessRequestContent(
       SubjectAccessRequestData(
         prisonerNumber = sarAllocation.prisonerNumber,
         fromDate = TimeSource.yesterday(),
@@ -154,7 +155,7 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAppointmentsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
-    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+    service.getPrisonContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo HmppsSubjectAccessRequestContent(
       SubjectAccessRequestData(
         prisonerNumber = "12345",
         fromDate = TimeSource.yesterday(),
@@ -179,7 +180,7 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAppointmentsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(sarAppointment)
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
 
-    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+    service.getPrisonContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo HmppsSubjectAccessRequestContent(
       SubjectAccessRequestData(
         prisonerNumber = "12345",
         fromDate = TimeSource.yesterday(),
@@ -204,7 +205,7 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAppointmentsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn emptyList()
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(allAttendance, allAttendance2)
 
-    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+    service.getPrisonContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo HmppsSubjectAccessRequestContent(
       SubjectAccessRequestData(
         prisonerNumber = "12345",
         fromDate = TimeSource.yesterday(),
@@ -229,7 +230,7 @@ class SubjectAccessRequestServiceTest {
     whenever(repository.findAppointmentsBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(sarAppointment)
     whenever(repository.findAttendanceBy("12345", TimeSource.yesterday(), TimeSource.tomorrow())) doReturn listOf(allAttendance, allAttendance2)
 
-    service.getContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo SubjectAccessRequestContent(
+    service.getPrisonContentFor("12345", TimeSource.yesterday(), TimeSource.tomorrow()) isEqualTo HmppsSubjectAccessRequestContent(
       SubjectAccessRequestData(
         prisonerNumber = "12345",
         fromDate = TimeSource.yesterday(),

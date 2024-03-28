@@ -8,8 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAlloc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
 
-data class SubjectAccessRequestContent(val content: SubjectAccessRequestData)
-
 data class SubjectAccessRequestData(
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   val prisonerNumber: String,
