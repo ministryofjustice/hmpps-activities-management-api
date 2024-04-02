@@ -184,13 +184,35 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
   inner class GetActivityScheduleInstances {
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `returns all 20 rows without the time slot`() {
+    fun `returns all 20 rows within the time slot`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
       val scheduledInstances = webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate)
 
       assertThat(scheduledInstances).hasSize(20)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `returns 18 rows within the time slot ignoring cancelled instances`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate, null, false)
+
+      assertThat(scheduledInstances).hasSize(18)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `returns 2 rows within the time slot for only cancelled instances`() {
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      val scheduledInstances = webTestClient.getScheduledInstancesBy(MOORLAND_PRISON_CODE, startDate, endDate, null, true)
+
+      assertThat(scheduledInstances).hasSize(2)
     }
 
     @Test
@@ -509,6 +531,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     startDate: LocalDate,
     endDate: LocalDate,
     timeSlot: TimeSlot? = null,
+    cancelled: Boolean? = null,
   ) =
     get()
       .uri { builder ->
@@ -517,6 +540,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           .queryParam("startDate", startDate)
           .queryParam("endDate", endDate)
           .maybeQueryParam("slot", timeSlot)
+          .maybeQueryParam("cancelled", cancelled)
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)

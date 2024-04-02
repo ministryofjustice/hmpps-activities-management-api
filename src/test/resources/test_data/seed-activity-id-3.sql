@@ -167,10 +167,10 @@ insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, sess
 values (18, 4, '2022-11-03', '13:00:00', '16:30:00', false, null, null);
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (19, 4, '2022-11-04', '13:00:00', '16:30:00', false, null, null);
+values (19, 4, '2022-11-04', '13:00:00', '16:30:00', true, current_timestamp, 'ABC123');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
-values (20, 4, '2022-11-05', '13:00:00', '16:30:00', false, null, null);
+values (20, 4, '2022-11-05', '13:00:00', '16:30:00', true, current_timestamp, 'ABC123');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by)
 values (21, 5, '2022-10-10', '10:00:00', '11:00:00', false, null, null);
