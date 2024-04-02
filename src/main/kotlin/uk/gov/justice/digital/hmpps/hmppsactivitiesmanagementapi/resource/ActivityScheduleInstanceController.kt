@@ -74,11 +74,14 @@ class ActivityScheduleInstanceController(private val scheduledInstanceService: S
     @RequestParam(value = "slot")
     @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
     slot: TimeSlot?,
+    @RequestParam(value = "cancelled")
+    @Parameter(description = "Return cancelled scheduled instances?")
+    cancelled: Boolean?,
   ): List<ActivityScheduleInstance> {
     val dateRange = LocalDateRange(startDate, endDate)
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
-    return scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, slot)
+    return scheduledInstanceService.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, slot, cancelled)
   }
 }

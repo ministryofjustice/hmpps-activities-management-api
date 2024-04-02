@@ -85,38 +85,57 @@ class ScheduledInstanceServiceTest {
   @Nested
   @DisplayName("getActivityScheduleInstancesByDateRange")
   inner class GetActivityScheduleInstancesByDateRange {
+    val prisonCode = "MDI"
+    val startDate = LocalDate.of(2022, 10, 1)
+    val endDate = LocalDate.of(2022, 11, 5)
+    val dateRange = LocalDateRange(startDate, endDate)
+
     @Test
     fun `get instances by date range - success`() {
-      val prisonCode = "MDI"
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-      val dateRange = LocalDateRange(startDate, endDate)
-
-      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null))
         .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
-      val result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null)
+      val result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, null)
 
       assertThat(result).hasSize(1)
     }
 
     @Test
     fun `filtered by time slot`() {
-      val prisonCode = "MDI"
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-      val dateRange = LocalDateRange(startDate, endDate)
-
-      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate))
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null))
         .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
 
-      var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM)
+      var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM, null)
       assertThat(result).hasSize(1)
 
-      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.AM)
+      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.AM, null)
       assertThat(result).isEmpty()
 
-      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.ED)
+      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.ED, null)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `filtered for cancelled instances`() {
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, true))
+        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+
+      var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, true)
+      assertThat(result).hasSize(1)
+
+      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, false)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `filtered for non-cancelled instances`() {
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, false))
+        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+
+      var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, false)
+      assertThat(result).hasSize(1)
+
+      result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, true)
       assertThat(result).isEmpty()
     }
   }

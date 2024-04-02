@@ -57,11 +57,13 @@ class ScheduledInstanceService(
     prisonCode: String,
     dateRange: LocalDateRange,
     slot: TimeSlot?,
+    cancelled: Boolean?,
   ): List<ActivityScheduleInstance> {
     val activities = repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
       prisonCode,
       dateRange.start,
       dateRange.endInclusive,
+      cancelled,
     ).toModel()
 
     return if (slot != null) {

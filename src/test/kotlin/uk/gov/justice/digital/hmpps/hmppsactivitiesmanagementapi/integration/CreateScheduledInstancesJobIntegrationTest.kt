@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
@@ -116,13 +119,27 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
     eventCaptor.allValues hasSize 1
   }
 
+  private fun currentMaxJobId() = jdbcTemplate.queryForObject<Long>("select max(job_id) from job")
+
+  private fun waitForAllNewJobsCompleteSuccessfully(block: () -> Unit) {
+    val oldMaxId = currentMaxJobId()
+
+    block()
+
+    await untilAsserted {
+      assertThat(currentMaxJobId()).isGreaterThan(oldMaxId)
+      assertThat(jdbcTemplate.queryForObject<Boolean>("select not exists(select 1 from job where successful = false)")).isTrue()
+    }
+  }
+
   private fun WebTestClient.createScheduledInstances() {
-    post()
-      .uri("/job/create-scheduled-instances")
-      .accept(MediaType.TEXT_PLAIN)
-      .exchange()
-      .expectStatus().isCreated
-    Thread.sleep(4000)
+    waitForAllNewJobsCompleteSuccessfully {
+      post()
+        .uri("/job/create-scheduled-instances")
+        .accept(MediaType.TEXT_PLAIN)
+        .exchange()
+        .expectStatus().isCreated
+    }
   }
 
   private fun updateSlotsToRunToday() {

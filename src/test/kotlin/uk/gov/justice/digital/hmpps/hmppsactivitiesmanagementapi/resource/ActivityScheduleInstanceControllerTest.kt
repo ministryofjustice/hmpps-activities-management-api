@@ -37,10 +37,11 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         "MDI",
         LocalDateRange(startDate, endDate),
         TimeSlot.AM,
+        true,
       ),
     ).thenReturn(results)
 
-    val response = mockMvc.getPrisonerScheduledInstances("MDI", startDate, endDate, TimeSlot.AM)
+    val response = mockMvc.getPrisonerScheduledInstances("MDI", startDate, endDate, TimeSlot.AM, true)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
@@ -51,6 +52,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
       "MDI",
       LocalDateRange(startDate, endDate),
       TimeSlot.AM,
+      true,
     )
   }
 
@@ -169,6 +171,6 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
       }
   }
 
-  private fun MockMvc.getPrisonerScheduledInstances(prisonCode: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot) =
-    get("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
+  private fun MockMvc.getPrisonerScheduledInstances(prisonCode: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot, cancelled: Boolean) =
+    get("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot&cancelled=$cancelled")
 }
