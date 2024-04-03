@@ -77,7 +77,7 @@ class PrisonController(
   )
   @GetMapping(value = ["/{prisonCode}/activities"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,

@@ -202,7 +202,7 @@ class ActivityController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun getActivityKeyIds(
     @PathVariable("activityId") activityId: Long,
   ) = activityService.getActivityBasicById(activityId)
