@@ -66,7 +66,7 @@ class PrisonerAllocationController(private val allocationsService: AllocationsSe
     ],
   )
   @ResponseStatus(HttpStatus.OK)
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun prisonerAllocations(
     @PathVariable prisonCode: String,
     @RequestBody
