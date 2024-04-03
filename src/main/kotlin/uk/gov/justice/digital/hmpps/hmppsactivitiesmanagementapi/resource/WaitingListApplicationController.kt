@@ -190,7 +190,7 @@ class WaitingListApplicationController(private val waitingListService: WaitingLi
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun searchWaitingLists(
     @PathVariable("prisonCode") prisonCode: String,
     @Valid
