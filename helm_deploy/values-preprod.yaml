@@ -33,3 +33,12 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service-dev
+
+# We are overriding the times in pre-prod due to core service dependencies being switched off overnight e.g. prisoner search API.
+cron:
+  allocationsDeallocateEnding: "30 6 * * *"
+  allocationsDeallocateExpiring: "30 20 * * *"
+  allocationsActivate: "45 6 * * *"
+  appointmentAttendees: "45 6 * * *"
+  createScheduledInstances: "0 7 * * *"
+  attendanceRecords: "15 7 * * *"
