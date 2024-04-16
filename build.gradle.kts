@@ -4,12 +4,12 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.4"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.5"
   kotlin("plugin.spring") version "1.9.23"
   kotlin("plugin.jpa") version "1.9.23"
   jacoco
-  id("org.openapi.generator") version "7.3.0"
-  id("io.sentry.jvm.gradle") version "4.3.0"
+  id("org.openapi.generator") version "7.4.0"
+  id("io.sentry.jvm.gradle") version "4.4.1"
 }
 
 allOpen {
@@ -33,34 +33,34 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:3.1.1")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:3.1.2")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
   // Spring framework retryable dependencies
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.32.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.33.1")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.11.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
-  runtimeOnly("org.postgresql:postgresql:42.7.2")
+  runtimeOnly("org.postgresql:postgresql:42.7.3")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.3.1")
+  testImplementation("org.wiremock:wiremock-standalone:3.5.2")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:3.2.4")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.2.4")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.2.4")
+  testImplementation("net.javacrumbs.json-unit:json-unit:3.2.7")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.2.7")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.2.7")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
@@ -140,7 +140,7 @@ kotlin {
   }
 }
 jacoco {
-  toolVersion = "0.8.9"
+  toolVersion = "0.8.12"
 }
 
 val integrationTest = task<Test>("integrationTest") {
