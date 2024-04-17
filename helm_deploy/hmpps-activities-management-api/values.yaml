@@ -17,7 +17,7 @@ generic-service:
     path: /
     annotations:
       # Secure the endpoints related to k8s jobs from outside the Kubernetes ingress
-      nginx.ingress.kubernetes.io/configuration-snippet: |
+      nginx.ingress.kubernetes.io/server-snippet: |
         server_tokens off;
         location /job/ {
           deny all;
