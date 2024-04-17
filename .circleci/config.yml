@@ -109,10 +109,10 @@ workflows:
       - hmpps/deploy_env:
           name: deploy_preprod
           env: "preprod"
-           jira_update: true
-           jira_env_type: staging
-           pipeline_id: <<pipeline.id>>
-           pipeline_number: <<pipeline.number>>
+          jira_update: true
+          jira_env_type: staging
+          pipeline_id: <<pipeline.id>>
+          pipeline_number: <<pipeline.number>>
           context:
             - hmpps-common-vars
             - hmpps-activities-management-preprod
