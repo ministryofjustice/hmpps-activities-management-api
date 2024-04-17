@@ -58,7 +58,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew integrationTest
+          command: ./gradlew integrationTest --debug
       - save_cache:
           paths:
             - ~/.gradle
