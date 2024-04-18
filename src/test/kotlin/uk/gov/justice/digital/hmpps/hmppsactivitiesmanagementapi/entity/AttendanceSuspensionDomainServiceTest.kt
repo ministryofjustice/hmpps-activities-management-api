@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
+import org.junit.jupiter.api.Assertions.assertTrue
 
 class AttendanceSuspensionDomainServiceTest {
   private val attendanceRepository: AttendanceRepository = mock()
@@ -77,6 +78,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn false
           on { sessionDate } doReturn LocalDate.now().minusDays(1)
+          on { attendanceRequired() } doReturn true
         },
         prisonerNumber = "123456",
       )
@@ -87,6 +89,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["ATTENDED"],
         prisonerNumber = "123456",
@@ -98,6 +101,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["SUSPENDED"],
         prisonerNumber = "123456",
@@ -124,6 +128,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn false
           on { sessionDate } doReturn LocalDate.now().minusDays(1)
+          on { attendanceRequired() } doReturn true
         },
         prisonerNumber = "123456",
       )
@@ -134,6 +139,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["ATTENDED"],
         prisonerNumber = "123456",
@@ -145,6 +151,7 @@ class AttendanceSuspensionDomainServiceTest {
         scheduledInstance = mock {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
         prisonerNumber = "123456",
@@ -176,6 +183,7 @@ class AttendanceSuspensionDomainServiceTest {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
           on { cancelled } doReturn true
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["SUSPENDED"],
         prisonerNumber = "123456",
@@ -207,6 +215,7 @@ class AttendanceSuspensionDomainServiceTest {
           on { isFuture(any()) } doReturn true
           on { sessionDate } doReturn LocalDate.now()
           on { cancelled } doReturn false
+          on { attendanceRequired() } doReturn true
         },
         attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
         prisonerNumber = "123456",
@@ -223,6 +232,27 @@ class AttendanceSuspensionDomainServiceTest {
           attendanceReason isEqualTo attendanceReasons()["SUSPENDED"]
         }
       }
+    }
+
+    @Test
+    fun `future auto-suspended attendances where activity is not editable do not get reset`() {
+      val suspendedAttendance = Attendance(
+        attendanceId = 4,
+        status = AttendanceStatus.COMPLETED,
+        scheduledInstance = mock {
+          on { isFuture(any()) } doReturn true
+          on { sessionDate } doReturn LocalDate.now()
+          on { attendanceRequired() } doReturn false
+        },
+        attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
+        prisonerNumber = "123456",
+      )
+
+      whenever(
+        attendanceRepository.findAttendancesOnOrAfterDateForAllocation(any(), any(), eq(AttendanceStatus.COMPLETED), any()),
+      ).thenReturn(listOf(suspendedAttendance))
+
+      assertTrue(service.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).isEmpty())
     }
   }
 }

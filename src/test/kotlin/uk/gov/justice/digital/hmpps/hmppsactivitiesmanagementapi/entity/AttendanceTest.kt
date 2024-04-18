@@ -200,6 +200,37 @@ class AttendanceTest {
     assertThat(attendance.editable()).isTrue
   }
 
+
+//  instance.activitySchedule.activity.attendanceRequired
+  @Test
+  fun `attendance is editable - Activity attendance required is set to true`() {
+    val activity = activityEntity(attendanceRequired = true)
+    val activitySchedule = activitySchedule(activity = activity)
+    val instanceToday = instance.copy(sessionDate = LocalDate.now(), activitySchedule = activitySchedule)
+    val attendance = Attendance(
+      scheduledInstance = instanceToday,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(10),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+@Test
+  fun `attendance is NOT editable - Activity attendance required is set to false`() {
+    val activity = activityEntity(attendanceRequired = false)
+    val activitySchedule = activitySchedule(activity = activity)
+    val instanceToday = instance.copy(sessionDate = LocalDate.now(), activitySchedule = activitySchedule)
+    val attendance = Attendance(
+      scheduledInstance = instanceToday,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(10),
+    )
+    assertThat(attendance.editable()).isFalse
+  }
+
   @Test
   fun `attendance is NOT editable - WAITING, session was 15 days ago`() {
     val instanceFifteenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(15))
