@@ -70,9 +70,6 @@ data class ScheduledInstanceAttendanceSummary(
 
   @Schema(description = "Attendance summary details for a scheduled instance")
   val attendanceSummary: AttendanceSummaryDetails,
-
-  @Schema(description = "Flag to indicate if attendance is required", example = "false")
-  var attendanceRequired: Boolean,
 ) {
   @Schema(description = "Attendance summary details")
   data class AttendanceSummaryDetails(

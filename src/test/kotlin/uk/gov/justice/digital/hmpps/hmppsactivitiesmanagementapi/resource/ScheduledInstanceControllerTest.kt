@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -17,15 +16,11 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
-import java.time.LocalDate
-import java.time.LocalTime
 
 @WebMvcTest(controllers = [ScheduledInstanceController::class])
 @ContextConfiguration(classes = [ScheduledInstanceController::class])
@@ -190,69 +185,6 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
   }
 
   @Nested
-  @DisplayName("Attendance Summary")
-  inner class AttendanceSummaryTests() {
-    @Test
-    fun `200 response when request succeeds`() {
-      val now = LocalDate.now()
-
-      val summaries = listOf(
-        ScheduledInstanceAttendanceSummary(
-          scheduledInstanceId = 1,
-          activityId = 2,
-          activityScheduleId = 4,
-          summary = "Maths",
-          categoryId = 5,
-          sessionDate = now,
-          startTime = LocalTime.of(9, 0),
-          endTime = LocalTime.of(11, 0),
-          inCell = true,
-          onWing = true,
-          offWing = true,
-          attendanceRequired = true,
-          cancelled = false,
-          attendanceSummary = AttendanceSummaryDetails(
-            allocations = 10,
-          ),
-        ),
-      )
-
-      whenever(scheduledInstanceService.attendanceSummary("RSI", now)).thenReturn(summaries)
-
-      val response = mockMvc.getAttendancesSummary("RSI", now)
-        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { isOk() } }
-        .andReturn().response
-
-      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(summaries))
-
-      verify(scheduledInstanceService).attendanceSummary("RSI", now)
-    }
-
-    @Test
-    fun `400 response bad request exception is thrown`() {
-      whenever(
-        scheduledInstanceService.attendanceSummary(any(), any()),
-      ).thenThrow(IllegalArgumentException("Bad request"))
-
-      val response = mockMvc.getAttendancesSummary("RSI", LocalDate.now())
-        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { isBadRequest() } }
-    }
-
-    @Test
-    fun `404 response not found exception is thrown`() {
-      whenever(
-        scheduledInstanceService.attendanceSummary(any(), any()),
-      ).thenThrow(EntityNotFoundException("not found"))
-
-      val response = mockMvc.getAttendancesSummary("RSI", LocalDate.now())
-        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-        .andExpect { status { isNotFound() } }
-    }
-  }
-
-  @Nested
   @DisplayName("Authorization tests")
   inner class AuthorizationTests() {
     @Nested
@@ -277,7 +209,4 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   private fun MockMvc.getAttendancesByScheduledInstance(instanceId: String) =
     get("/scheduled-instances/$instanceId/attendances")
-
-  private fun MockMvc.getAttendancesSummary(prisonCode: String, date: LocalDate) =
-    get("/scheduled-instances/attendance-summary?prisonCode=$prisonCode&date=$date")
 }

@@ -673,7 +673,6 @@ class TransformFunctionsTest {
       onWing = false,
       offWing = false,
       cancelled = false,
-      attendanceRequired = true,
       allocations = 3,
       attendees = 3,
       notRecorded = 1,
