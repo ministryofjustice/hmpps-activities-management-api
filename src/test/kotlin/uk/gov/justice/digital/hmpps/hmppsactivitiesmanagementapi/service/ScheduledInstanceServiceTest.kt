@@ -331,6 +331,7 @@ class ScheduledInstanceServiceTest {
         attended = 1,
         absences = 1,
         paid = 1,
+        attendanceRequired = true,
       )
 
       whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))
