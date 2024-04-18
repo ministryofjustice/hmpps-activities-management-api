@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.spring") version "1.9.23"
   kotlin("plugin.jpa") version "1.9.23"
   jacoco
-  id("org.openapi.generator") version "7.4.0"
+  id("org.openapi.generator") version "7.5.0"
   id("io.sentry.jvm.gradle") version "4.4.1"
 }
 
@@ -40,7 +40,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:1.33.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.3.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
@@ -53,7 +53,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql:42.7.3")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.5.2")
+  testImplementation("org.wiremock:wiremock-standalone:3.5.3")
   testImplementation("com.h2database:h2")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
