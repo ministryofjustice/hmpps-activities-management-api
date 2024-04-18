@@ -52,6 +52,9 @@ class AppointmentSeriesControllerTest : ControllerTestBase<AppointmentSeriesCont
     val response = mockMvc.getAppointmentSeriesById(-1)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isNotFound() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment Series -1 not found")
 
     verify(appointmentSeriesService).getAppointmentSeriesById(-1)
   }
