@@ -155,9 +155,13 @@ class InterestingEventHandler(
           else -> null
         }
       is PrisonerReleasedEvent ->
-        if (isPermanent()) EventReviewDescription.PERMANENT_RELEASE
-        else if (isTemporary()) EventReviewDescription.TEMPORARY_RELEASE
-        else EventReviewDescription.RELEASED
+        if (isPermanent()) {
+          EventReviewDescription.PERMANENT_RELEASE
+        } else if (isTemporary()) {
+          EventReviewDescription.TEMPORARY_RELEASE
+        } else {
+          EventReviewDescription.RELEASED
+        }
       else -> null
     }
   }
