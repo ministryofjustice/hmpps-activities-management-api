@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -31,4 +33,15 @@ data class EventReview(
   var acknowledgedTime: LocalDateTime? = null,
 
   var acknowledgedBy: String? = null,
+
+  @Enumerated(EnumType.STRING)
+  var eventDescription: EventReviewDescription? = null,
 )
+
+enum class EventReviewDescription {
+  ACTIVITY_SUSPENDED,
+  ACTIVITY_ENDED,
+  RELEASED,
+  PERMANENT_RELEASE,
+  TEMPORARY_RELEASE,
+}

@@ -5,11 +5,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
@@ -88,6 +90,7 @@ class InterestingEventHandler(
             prisonCode = releaseEvent.prisonCode(),
             prisonerNumber = releaseEvent.prisonerNumber(),
             bookingId = prisoner.bookingId?.toInt(),
+            eventDescription = releaseEvent.getEventDesc(),
           ),
         )
         log.debug("Saved interesting event ID ${saved.eventReviewId} - ${releaseEvent.eventType()} - for ${releaseEvent.prisonerNumber()}")
@@ -112,6 +115,7 @@ class InterestingEventHandler(
             prisonCode = prisoner.agencyId,
             prisonerNumber = mergedEvent.prisonerNumber(),
             bookingId = prisoner.bookingId?.toInt(),
+            eventDescription = mergedEvent.getEventDesc(),
           ),
         )
         log.debug("Saved interesting event ID ${saved.eventReviewId} - ${mergedEvent.eventType()} - replaced ${mergedEvent.removedPrisonerNumber()} with ${mergedEvent.prisonerNumber()}")
@@ -139,6 +143,26 @@ class InterestingEventHandler(
       is PrisonerReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
       is OffenderMergedEvent -> "Prisoner ${prisoner.firstName} ${prisoner.lastName} merged from ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
       else -> "Unknown event for $prisonerDetails"
+    }
+  }
+
+  private fun InboundEvent.getEventDesc(): EventReviewDescription? {
+    return when (this) {
+      is ActivitiesChangedEvent ->
+        when (action()) {
+          Action.END -> EventReviewDescription.ACTIVITY_ENDED
+          Action.SUSPEND -> EventReviewDescription.ACTIVITY_SUSPENDED
+          else -> null
+        }
+      is PrisonerReleasedEvent ->
+        if (isPermanent()) {
+          EventReviewDescription.PERMANENT_RELEASE
+        } else if (isTemporary()) {
+          EventReviewDescription.TEMPORARY_RELEASE
+        } else {
+          EventReviewDescription.RELEASED
+        }
+      else -> null
     }
   }
 
