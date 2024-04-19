@@ -475,6 +475,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
     inCell = this.inCell,
     onWing = this.onWing,
     offWing = this.offWing,
+    attendanceRequired = this.attendanceRequired,
     internalLocation = this.internalLocationId?.let {
       InternalLocation(
         this.internalLocationId.toInt(),
