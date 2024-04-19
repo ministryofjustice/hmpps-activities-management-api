@@ -126,7 +126,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include blank event description  when there is no event description set`() {
+  fun `should include blank event description when there is no event description set`() {
     val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -144,7 +144,7 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/event-review-data.sql")
   @Test
-  fun `should include event description of TEMPORARY_DESCRIPTION when there a temporar released prisoner event description set`() {
+  fun `should include event description of TEMPORARY_DESCRIPTION when there a temporary released prisoner event description set`() {
     val result = webTestClient.getEvents(prisonerNumber = "G1234DY")
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
