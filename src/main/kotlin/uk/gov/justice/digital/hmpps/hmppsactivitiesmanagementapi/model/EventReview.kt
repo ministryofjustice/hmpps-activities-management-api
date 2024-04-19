@@ -40,4 +40,38 @@ data class EventReview(
 
   @Schema(description = "The username of the person who acknowledged the event.", example = "U4588F")
   val acknowledgedBy: String? = null,
+
+  @Schema(
+    description = "A simple description of the event acton",
+    example = "ACTIVITY_SUSPENDED",
+  )
+  val eventDescription: EventDescription? = null,
 )
+
+enum class EventDescription {
+  @Schema(
+    description = "A suspended activity",
+  )
+  ACTIVITY_SUSPENDED,
+
+  @Schema(
+    description = "An ended activity",
+  )
+  ACTIVITY_ENDED,
+
+  @Schema(
+    description = "A released prisoner",
+  )
+  @Deprecated(message = "A realeased prisoner. Superseeded by PERMANENT_RELEASE and TEMPORARY_RELEASE")
+  RELEASED,
+
+  @Schema(
+    description = "A permanently released prisoner",
+  )
+  PERMANENT_RELEASE,
+
+  @Schema(
+    description = "A temporarily released prisoner",
+  )
+  TEMPORARY_RELEASE,
+}

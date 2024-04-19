@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTyp
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
@@ -441,6 +442,7 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   eventData = entityEventReview.eventData,
   acknowledgedTime = entityEventReview.acknowledgedTime,
   acknowledgedBy = entityEventReview.acknowledgedBy,
+  eventDescription = enumValues<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
 )
 
 fun List<EventReview>.toModelEventReviewList() = map {

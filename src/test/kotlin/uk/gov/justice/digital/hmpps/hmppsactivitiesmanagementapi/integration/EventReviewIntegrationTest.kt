@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.EventAcknowledgeRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EventReviewSearchResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -120,6 +121,42 @@ class EventReviewIntegrationTest : IntegrationTestBase() {
       assertThat(content.size).isEqualTo(5)
       assertThat(totalPages).isEqualTo(1)
       assertThat(totalElements).isEqualTo(5)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should include blank event description  when there is no event description set`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DX")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content.first().eventDescription).isEqualTo(null)
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(1)
+    }
+  }
+
+  @Sql("classpath:test_data/event-review-data.sql")
+  @Test
+  fun `should include event description of TEMPORARY_DESCRIPTION when there a temporar released prisoner event description set`() {
+    val result = webTestClient.getEvents(prisonerNumber = "G1234DY")
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(EventReviewSearchResults::class.java)
+      .returnResult().responseBody
+
+    assertThat(result).isNotNull
+
+    with(result!!) {
+      assertThat(content.first().eventDescription).isEqualTo(EventDescription.TEMPORARY_RELEASE)
+      assertThat(totalPages).isEqualTo(1)
+      assertThat(totalElements).isEqualTo(1)
     }
   }
 

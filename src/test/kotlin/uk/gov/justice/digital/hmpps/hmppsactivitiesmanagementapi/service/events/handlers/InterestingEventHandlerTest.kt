@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -160,7 +161,7 @@ class InterestingEventHandlerTest {
   }
 
   @Test
-  fun `stores a prisoner released event`() {
+  fun `stores a permanent prisoner released event`() {
     // Note prison code is different to that of the event because they have been release to Pentonville
     mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
     whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
@@ -178,6 +179,30 @@ class InterestingEventHandlerTest {
       eventType isEqualTo InboundEventType.PRISONER_RELEASED.eventType
       prisonCode isEqualTo MOORLAND_PRISON_CODE
       prisonerNumber isEqualTo "123456"
+      eventDescription isEqualTo EventReviewDescription.PERMANENT_RELEASE
+    }
+  }
+
+  @Test
+  fun `stores a temporary prisoner released event`() {
+    // Note prison code is different to that of the event because they have been release to Pentonville
+    mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
+    whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
+    val inboundEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", reason = "TEMPORARY_ABSENCE_RELEASE")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Prisoner released from prison MDI, Bobson, Bob (123456)"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.PRISONER_RELEASED.eventType
+      prisonCode isEqualTo MOORLAND_PRISON_CODE
+      prisonerNumber isEqualTo "123456"
+      eventDescription isEqualTo EventReviewDescription.TEMPORARY_RELEASE
     }
   }
 
@@ -226,6 +251,7 @@ class InterestingEventHandlerTest {
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
+      eventDescription isEqualTo EventReviewDescription.ACTIVITY_ENDED
     }
   }
 
@@ -248,6 +274,7 @@ class InterestingEventHandlerTest {
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
+      eventDescription isEqualTo EventReviewDescription.ACTIVITY_SUSPENDED
     }
   }
 
