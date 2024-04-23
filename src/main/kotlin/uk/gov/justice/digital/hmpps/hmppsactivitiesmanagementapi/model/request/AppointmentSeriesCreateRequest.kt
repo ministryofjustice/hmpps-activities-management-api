@@ -4,14 +4,12 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import jakarta.validation.constraints.AssertTrue
-import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -101,7 +99,6 @@ data class AppointmentSeriesCreateRequest(
   val inCell: Boolean,
 
   @field:NotNull(message = "Start date must be supplied")
-  @field:FutureOrPresent(message = "Start date must not be in the past")
   @Schema(
     description = "The date of the first appointment in the series",
   )
@@ -153,9 +150,9 @@ data class AppointmentSeriesCreateRequest(
   @AssertTrue(message = "Internal location id must be supplied if in cell = false")
   private fun isInternalLocationId() = inCell || internalLocationId != null
 
-  @AssertTrue(message = "Start time must be in the future")
-  private fun isStartTime() = startDate == null || startTime == null || startDate < LocalDate.now() || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()
-
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
+
+  @AssertTrue(message = "Start date must not be more than 5 days ago")
+  private fun isStartDate() = startDate == null || startDate > LocalDate.now().minusDays(6)
 }

@@ -52,21 +52,15 @@ class AppointmentSeriesCreateRequestTest {
   }
 
   @Test
-  fun `start date must not be in the past`() {
-    val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().minusDays(1))
-    assertSingleValidationError(validator.validate(request), "startDate", "Start date must not be in the past")
-  }
-
-  @Test
   fun `start time must be supplied`() {
     val request = appointmentSeriesCreateRequest(startTime = null)
     assertSingleValidationError(validator.validate(request), "startTime", "Start time must be supplied")
   }
 
   @Test
-  fun `start time must be in the future`() {
+  fun `start time can be in the past`() {
     val request = appointmentSeriesCreateRequest(startDate = LocalDate.now(), startTime = LocalTime.now().minusMinutes(1), endTime = LocalTime.now().plusHours(1))
-    assertSingleValidationError(validator.validate(request), "startTime", "Start time must be in the future")
+    assertThat(validator.validate(request)).isEmpty()
   }
 
   @Test
@@ -130,6 +124,24 @@ class AppointmentSeriesCreateRequestTest {
       validator.validate(request),
       "tierCode",
       "Tier code must be supplied",
+    )
+  }
+
+  @Test
+  fun `appointment series can be created 5 days in the past`() {
+    val startDate = LocalDate.now().minusDays(5)
+    val request = appointmentSeriesCreateRequest(startDate = startDate)
+    assertThat(validator.validate(request)).isEmpty()
+  }
+
+  @Test
+  fun `appointment series cannot be created 6 days in the past`() {
+    val startDate = LocalDate.now().minusDays(6)
+    val request = appointmentSeriesCreateRequest(startDate = startDate)
+    assertSingleValidationError(
+      validator.validate(request),
+      "startDate",
+      "Start date must not be more than 5 days ago",
     )
   }
 
