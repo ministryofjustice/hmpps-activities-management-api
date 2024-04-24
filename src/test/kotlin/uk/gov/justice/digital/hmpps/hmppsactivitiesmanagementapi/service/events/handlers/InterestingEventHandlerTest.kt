@@ -33,7 +33,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewUpdatedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.nonAssociationsChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 
@@ -61,7 +65,6 @@ class InterestingEventHandlerTest {
   @Test
   fun `stores an interesting event when active allocations exist`() {
     mockPrisoner()
-
     val activeAllocations =
       listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
@@ -76,7 +79,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Cell move for Bobson, Bob (123456)"
+      eventData isEqualTo "Cell move"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.CELL_MOVE.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -102,7 +105,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 2
-      eventData isEqualTo "Cell move for Bobson, Bob (123456)"
+      eventData isEqualTo "Cell move"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.CELL_MOVE.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -127,7 +130,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Incentive review created for Bobson, Bobby (123456)"
+      eventData isEqualTo "Incentive review created"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -152,7 +155,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner received into prison PVI, Geldof, Bob (123456)"
+      eventData isEqualTo "Prisoner received"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_RECEIVED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -174,7 +177,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner released from prison MDI, Bobson, Bob (123456)"
+      eventData isEqualTo "Prisoner released"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_RELEASED.eventType
       prisonCode isEqualTo MOORLAND_PRISON_CODE
@@ -197,7 +200,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner released from prison MDI, Bobson, Bob (123456)"
+      eventData isEqualTo "Prisoner released"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_RELEASED.eventType
       prisonCode isEqualTo MOORLAND_PRISON_CODE
@@ -220,7 +223,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Prisoner released from prison MDI, Bobson, Bob (123456)"
+      eventData isEqualTo "Prisoner released"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.PRISONER_RELEASED.eventType
       prisonCode isEqualTo MOORLAND_PRISON_CODE
@@ -246,9 +249,130 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Alerts updated for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Alerts updated"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ALERTS_UPDATED.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+    }
+  }
+
+  @Test
+  fun `stores an Non Associations updated event`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+
+    val inboundEvent = nonAssociationsChangedEvent(prisonerNumber = "ABC1234")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
+    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Non-associations changed"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.NON_ASSOCIATIONS.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+    }
+  }
+
+  @Test
+  fun `stores an incentives inserted event`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+
+    val inboundEvent = iepReviewInsertedEvent(prisonerNumber = "ABC1234")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
+    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Incentive review created"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.INCENTIVES_INSERTED.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+    }
+  }
+
+  @Test
+  fun `stores an incentives updated event`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+
+    val inboundEvent = iepReviewUpdatedEvent(prisonerNumber = "ABC1234")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
+    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Incentive review updated"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.INCENTIVES_UPDATED.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+    }
+  }
+
+  @Test
+  fun `stores an incentives deleted event`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val activeAllocations = listOf(allocation().copy(allocationId = 1, prisonerNumber = "ABC1234"))
+    mockAllocations(PENTONVILLE_PRISON_CODE, "ABC1234", activeAllocations)
+
+    val inboundEvent = iepReviewDeletedEvent(prisonerNumber = "ABC1234")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
+    verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Incentive review deleted"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.INCENTIVES_DELETED.eventType
+      prisonCode isEqualTo PENTONVILLE_PRISON_CODE
+      prisonerNumber isEqualTo "ABC1234"
+    }
+  }
+
+  @Test
+  fun `stores an offender merged event`() {
+    mockPrisoner(prisonerNum = "ABC1234")
+
+    val inboundEvent = offenderMergedEvent(prisonerNumber = "ABC1234", removedPrisonerNumber = "DEF9876")
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
+    verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
+
+    with(eventReviewCaptor.firstValue) {
+      bookingId isEqualTo 1
+      eventData isEqualTo "Prisoner merged from 'DEF9876' to 'ABC1234'"
+      eventTime isCloseTo TimeSource.now()
+      eventType isEqualTo InboundEventType.OFFENDER_MERGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "ABC1234"
     }
@@ -269,7 +393,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed 'END' from prison PVI, for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Activities changed"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -292,7 +416,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Activities changed 'SUSPEND' from prison PVI, for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Activities changed"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.ACTIVITIES_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
@@ -315,7 +439,7 @@ class InterestingEventHandlerTest {
 
     with(eventReviewCaptor.firstValue) {
       bookingId isEqualTo 1
-      eventData isEqualTo "Appointments changed 'YES' from prison PVI, for Bobson, Bob (ABC1234)"
+      eventData isEqualTo "Appointments changed 'YES'"
       eventTime isCloseTo TimeSource.now()
       eventType isEqualTo InboundEventType.APPOINTMENTS_CHANGED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
