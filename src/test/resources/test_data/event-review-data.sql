@@ -1,8 +1,8 @@
-insert into event_review (event_review_id, service_identifier, event_type, event_time, prison_code, prisoner_number, booking_id, event_data)
-values (1L, 'myservice', 'event-name', '2023-5-10 10:20:00', 'MDI', 'G1234DD', 1, 'aaaaaaa');
+insert into event_review (event_review_id, service_identifier, event_type, event_time, prison_code, prisoner_number, booking_id, event_data, event_description)
+values (1L, 'myservice', 'event-name', '2023-5-10 10:20:00', 'MDI', 'G1234DX', 1, 'aaaaaaa', null);
 
-insert into event_review (event_review_id, service_identifier, event_type, event_time, prison_code, prisoner_number, booking_id, event_data)
-values (2L, 'myservice', 'event-name', '2023-5-10 10:21:00', 'MDI', 'G1234DD', 1, 'aaaaaaa');
+insert into event_review (event_review_id, service_identifier, event_type, event_time, prison_code, prisoner_number, booking_id, event_data, event_description)
+values (2L, 'myservice', 'event-name', '2023-5-10 10:21:00', 'MDI', 'G1234DY', 1, 'aaaaaaa', 'TEMPORARY_RELEASE');
 
 insert into event_review (event_review_id, service_identifier, event_type, event_time, prison_code, prisoner_number, booking_id, event_data)
 values (3L, 'myservice', 'event-name', '2023-5-10 10:22:00', 'MDI', 'G1234DD', 1, 'aaaaaaa');

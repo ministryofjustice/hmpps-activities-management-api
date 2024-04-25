@@ -444,6 +444,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           inCell = false,
           onWing = false,
           offWing = false,
+          attendanceRequired = true,
           internalLocation = InternalLocation(
             id = 1,
             code = "L1",
@@ -471,6 +472,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           inCell = false,
           onWing = false,
           offWing = false,
+          attendanceRequired = true,
           internalLocation = InternalLocation(
             id = 2,
             code = "L2",
