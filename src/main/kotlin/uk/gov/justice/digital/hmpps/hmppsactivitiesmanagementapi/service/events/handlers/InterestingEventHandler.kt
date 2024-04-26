@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReviewDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -60,7 +59,7 @@ class InterestingEventHandler(
             EventReview(
               eventTime = LocalDateTime.now(),
               eventType = event.eventType(),
-              eventData = event.getEventMessage(prisoner),
+              eventData = event.getEventMessage(),
               prisonCode = prisoner.agencyId,
               prisonerNumber = event.prisonerNumber(),
               bookingId = prisoner.bookingId?.toInt(),
@@ -85,7 +84,7 @@ class InterestingEventHandler(
           EventReview(
             eventTime = LocalDateTime.now(),
             eventType = releaseEvent.eventType(),
-            eventData = releaseEvent.getEventMessage(prisoner),
+            eventData = releaseEvent.getEventMessage(),
             // Release events use the prison code from the release event. The prisoner prison code could be different because they are released!
             prisonCode = releaseEvent.prisonCode(),
             prisonerNumber = releaseEvent.prisonerNumber(),
@@ -111,7 +110,7 @@ class InterestingEventHandler(
           EventReview(
             eventTime = LocalDateTime.now(),
             eventType = mergedEvent.eventType(),
-            eventData = mergedEvent.getEventMessage(prisoner),
+            eventData = mergedEvent.getEventMessage(),
             prisonCode = prisoner.agencyId,
             prisonerNumber = mergedEvent.prisonerNumber(),
             bookingId = prisoner.bookingId?.toInt(),
@@ -127,22 +126,20 @@ class InterestingEventHandler(
     return Outcome.success()
   }
 
-  private fun InboundEvent.getEventMessage(prisoner: InmateDetail): String {
-    val prisonerDetails = "${prisoner.lastName}, ${prisoner.firstName} (${prisoner.offenderNo})"
-
+  private fun InboundEvent.getEventMessage(): String {
     return when (this) {
-      is ActivitiesChangedEvent -> "Activities changed '${action()?.name}' from prison ${this.prisonCode()}, for $prisonerDetails"
-      is AlertsUpdatedEvent -> "Alerts updated for $prisonerDetails"
-      is AppointmentsChangedEvent -> "Appointments changed '${additionalInformation.action}' from prison ${this.prisonCode()}, for $prisonerDetails"
-      is CellMoveEvent -> "Cell move for $prisonerDetails"
-      is NonAssociationsChangedEvent -> "Non-associations for $prisonerDetails"
-      is IncentivesInsertedEvent -> "Incentive review created for $prisonerDetails"
-      is IncentivesUpdatedEvent -> "Incentive review updated for $prisonerDetails"
-      is IncentivesDeletedEvent -> "Incentive review deleted for $prisonerDetails"
-      is PrisonerReceivedEvent -> "Prisoner received into prison ${prisoner.agencyId}, $prisonerDetails"
-      is PrisonerReleasedEvent -> "Prisoner released from prison ${this.prisonCode()}, $prisonerDetails"
-      is OffenderMergedEvent -> "Prisoner ${prisoner.firstName} ${prisoner.lastName} merged from ${this.removedPrisonerNumber()} to ${this.prisonerNumber()}"
-      else -> "Unknown event for $prisonerDetails"
+      is ActivitiesChangedEvent -> "Activities changed"
+      is AlertsUpdatedEvent -> "Alerts updated"
+      is AppointmentsChangedEvent -> "Appointments changed '${additionalInformation.action}'"
+      is CellMoveEvent -> "Cell move"
+      is NonAssociationsChangedEvent -> "Non-associations changed"
+      is IncentivesInsertedEvent -> "Incentive review created"
+      is IncentivesUpdatedEvent -> "Incentive review updated"
+      is IncentivesDeletedEvent -> "Incentive review deleted"
+      is PrisonerReceivedEvent -> "Prisoner received"
+      is PrisonerReleasedEvent -> "Prisoner released"
+      is OffenderMergedEvent -> "Prisoner merged from '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
+      else -> "Unknown event"
     }
   }
 

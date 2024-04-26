@@ -78,6 +78,24 @@ fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? 
     ),
   )
 
+fun iepReviewUpdatedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
+  IncentivesUpdatedEvent(
+    IncentivesInformation(
+      nomsNumber = prisonerNumber,
+      prisonId = prisonId,
+      reason = reason,
+    ),
+  )
+
+fun iepReviewDeletedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
+  IncentivesDeletedEvent(
+    IncentivesInformation(
+      nomsNumber = prisonerNumber,
+      prisonId = prisonId,
+      reason = reason,
+    ),
+  )
+
 fun activitiesChangedEvent(
   prisonerNumber: String,
   action: Action,
@@ -104,6 +122,16 @@ fun alertsUpdatedEvent(
     bookingId = bookingId,
     alertsAdded = alertsAdded,
     alertsRemoved = alertsRemoved,
+    nomsNumber = prisonerNumber,
+  ),
+)
+
+fun nonAssociationsChangedEvent(
+  prisonerNumber: String = "123456",
+  bookingId: Long = 42,
+) = NonAssociationsChangedEvent(
+  additionalInformation = NonAssociationInformation(
+    bookingId = bookingId,
     nomsNumber = prisonerNumber,
   ),
 )
