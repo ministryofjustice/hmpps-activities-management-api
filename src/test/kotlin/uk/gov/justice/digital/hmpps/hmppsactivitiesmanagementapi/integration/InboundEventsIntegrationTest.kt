@@ -217,7 +217,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
     assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
-    assertThat(interestingEvent.eventData).isEqualTo("Alerts updated for Harrison, Tim (A11111A)")
+    assertThat(interestingEvent.eventData).isEqualTo("Alerts updated")
   }
 
   @Test
