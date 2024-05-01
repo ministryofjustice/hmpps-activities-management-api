@@ -57,6 +57,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrga
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as ModelEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstance as ModelScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
@@ -203,6 +204,7 @@ class TransformFunctionsTest {
           slots = listOf(
             ActivityScheduleSlot(
               id = 0,
+              timeSlot = ModelTimeSlot.valueOf(TimeSlot.slot(timestamp.toLocalTime()).toString()),
               weekNumber = 1,
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),

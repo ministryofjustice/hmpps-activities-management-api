@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -79,6 +80,7 @@ class ActivityScheduleTest {
       slots = listOf(
         ActivityScheduleSlot(
           id = 0,
+          timeSlot = TimeSlot.AM,
           weekNumber = 1,
           startTime = LocalTime.of(10, 20),
           endTime = LocalTime.of(11, 20),
@@ -149,6 +151,7 @@ class ActivityScheduleTest {
         slots = listOf(
           ActivityScheduleSlot(
             id = 0,
+            timeSlot = TimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(11, 20),
