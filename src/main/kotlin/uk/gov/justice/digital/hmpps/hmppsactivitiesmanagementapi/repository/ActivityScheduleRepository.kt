@@ -17,7 +17,6 @@ interface ActivityScheduleRepository : JpaRepository<ActivitySchedule, Long>, Ac
   )
   fun findAllByActivityPrisonCodeWithScheduledInstances(prisonCode: String): List<ActivitySchedule>
 
-  @Query("from ActivitySchedule s where s.activity.prisonCode = :prisonCode")
   fun findAllByActivityPrisonCode(prisonCode: String): List<ActivitySchedule>
 
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)
