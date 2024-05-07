@@ -211,11 +211,10 @@ data class Attendance(
 
   /*
    Attendance is editable if:
-   1. It has not been marked, and we are within 14 days of the session date.
-   2. It has been marked, we are within 7 days of the session date and one of the following:
-      (i) It has been marked as unattended, unpaid
-      (ii) It has been marked unattended, paid AND it was marked today
-      (iii) It has been marked attended AND it was marked today
+   1. If no attendance has been recorded AND it is within 14 days of the activity session date.
+   2. If attendance is Not Attended & Unpaid AND it is within 7 days of the activity session date.
+   3. If attendance is Attended AND it is the same day as the attendance was set as Attended.
+   4. If attendance is Not Attended & Paid AND it is the same day as the paid attendance was set.
    */
   fun editable(): Boolean {
     return (
@@ -230,7 +229,7 @@ data class Attendance(
               (
                 this.attendanceReason?.attended == false && this.issuePayment == false
                 ) ||
-                this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay().minusSeconds(1))
+                (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
               )
           )
       )
