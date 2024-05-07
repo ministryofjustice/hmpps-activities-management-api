@@ -210,25 +210,29 @@ data class Attendance(
   }
 
   /*
-   Very simple rules for editable attendance initially. Attendance is editable if :
+   Attendance is editable if:
    1. It has not been marked, and we are within 14 days of the session date.
-   2. It has been marked (paid or unpaid) and today is the date of the session.
-   3. It has been marked with an unpaid reason, and we are within 14 days of the session date.
-   4. It has been marked with a paid reason, it was marked today, and we are within 14 days of the session date.
+   2. It has been marked, we are within 7 days of the session date and one of the following:
+      (i) It has been marked as unattended
+      (ii) It has been marked with an unpaid reason
+      (iii) It has been marked with a paid or unpaid reason AND it was marked today
    */
   fun editable(): Boolean {
     return (
-      this.status() == AttendanceStatus.WAITING &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.issuePayment == false &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.issuePayment == true &&
-        this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
+      (
+        this.status() == AttendanceStatus.WAITING &&
+          this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
+        ) ||
+        (
+          this.status == AttendanceStatus.COMPLETED &&
+            this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
+            (
+              (
+                this.attendanceReason?.attended == false && this.issuePayment == false
+                ) ||
+                this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay().minusSeconds(1))
+              )
+          )
       )
   }
 

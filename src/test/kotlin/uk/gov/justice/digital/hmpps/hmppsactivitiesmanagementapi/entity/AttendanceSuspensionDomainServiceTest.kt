@@ -90,6 +90,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["ATTENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       val suspendedAttendance = Attendance(
@@ -101,6 +102,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["SUSPENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       whenever(
@@ -126,6 +128,7 @@ class AttendanceSuspensionDomainServiceTest {
           on { sessionDate } doReturn LocalDate.now().minusDays(1)
         },
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now().minusDays(1),
       )
 
       val nonSuspended = Attendance(
@@ -137,6 +140,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["ATTENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       val suspendedAttendance = Attendance(
@@ -148,6 +152,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       whenever(
@@ -179,6 +184,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["SUSPENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       whenever(
@@ -210,6 +216,7 @@ class AttendanceSuspensionDomainServiceTest {
         },
         attendanceReason = attendanceReasons()["AUTO_SUSPENDED"],
         prisonerNumber = "123456",
+        recordedTime = LocalDateTime.now(),
       )
 
       whenever(

@@ -31,6 +31,7 @@ class AttendanceTest {
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
       recordedBy = "Old User",
+      recordedTime = LocalDateTime.now(),
     )
 
     attendance.uncancel()
@@ -151,8 +152,8 @@ class AttendanceTest {
   }
 
   @Test
-  fun `attendance is editable - WAITING, session was 10 days ago`() {
-    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(10))
+  fun `attendance is editable - WAITING, session was 13 days ago`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(13))
     val attendance = Attendance(
       scheduledInstance = instanceTenDaysAgo,
       prisonerNumber = "A1234AA",
@@ -183,21 +184,79 @@ class AttendanceTest {
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
       recordedTime = LocalDateTime.now(),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
     )
     assertThat(attendance.editable()).isTrue
   }
 
   @Test
-  fun `attendance is editable - COMPLETED, unpaid, session was 10 days ago`() {
-    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(10))
+  fun `attendance is editable - COMPLETED, unpaid, session was 6 days ago, marked six days ago, not attended`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(6))
     val attendance = Attendance(
       scheduledInstance = instanceTenDaysAgo,
       initialIssuePayment = false,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,
-      recordedTime = LocalDateTime.now().minusDays(10),
+      recordedTime = LocalDateTime.now().minusDays(6),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.SICK),
     )
     assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
+  fun `attendance is editable - COMPLETED, unpaid, session was today, attended`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now())
+    val attendance = Attendance(
+      scheduledInstance = instanceTenDaysAgo,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now(),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
+  fun `attendance is not editable - COMPLETED, paid, session was 1 day ago, marked six days ago, not attended`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(1))
+    val attendance = Attendance(
+      scheduledInstance = instanceTenDaysAgo,
+      initialIssuePayment = true,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(1),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.SICK),
+    )
+    assertThat(attendance.editable()).isFalse()
+  }
+
+  @Test
+  fun `attendance is NOT editable - COMPLETED, unpaid, session was 8 days ago, not attended`() {
+    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(8))
+    val attendance = Attendance(
+      scheduledInstance = instanceTenDaysAgo,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(8),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.SICK),
+    )
+    assertThat(attendance.editable()).isFalse()
+  }
+
+  @Test
+  fun `attendance is NOT editable - COMPLETED, unpaid, session was 6 day ago, recorded 2 days ago, attended`() {
+    val instanceSixDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(6))
+    val attendance = Attendance(
+      scheduledInstance = instanceSixDaysAgo,
+      initialIssuePayment = false,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(2),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
+    )
+    assertThat(attendance.editable()).isFalse()
   }
 
   @Test
@@ -297,7 +356,7 @@ class AttendanceTest {
       attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
       status = AttendanceStatus.COMPLETED,
       comment = "Some Comment",
-      recordedTime = LocalDateTime.now().minusDays(1),
+      recordedTime = LocalDateTime.now(),
     )
 
     attendance.resetAttendance("reset by test")
