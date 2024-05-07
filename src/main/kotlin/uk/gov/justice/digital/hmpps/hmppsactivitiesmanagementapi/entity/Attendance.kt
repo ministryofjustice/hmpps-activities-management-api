@@ -213,9 +213,9 @@ data class Attendance(
    Attendance is editable if:
    1. It has not been marked, and we are within 14 days of the session date.
    2. It has been marked, we are within 7 days of the session date and one of the following:
-      (i) It has been marked as unattended
-      (ii) It has been marked with an unpaid reason
-      (iii) It has been marked with a paid or unpaid reason AND it was marked today
+      (i) It has been marked as unattended, unpaid
+      (ii) It has been marked unattended, paid AND it was marked today
+      (iii) It has been marked attended AND it was marked today
    */
   fun editable(): Boolean {
     return (
