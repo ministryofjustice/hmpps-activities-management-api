@@ -83,7 +83,7 @@ class ActivityScheduleService(
     timeSlot: TimeSlot? = null,
     locationId: Long? = null,
   ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
-    val filteredInstances = repository.findAllByActivityPrisonCode(prisonCode)
+    val filteredInstances = repository.findAllByActivityPrisonCodeWithScheduledInstances(prisonCode)
       .selectSchedulesAtLocation(locationId)
       .selectSchedulesWithActiveActivitiesOn(date)
       .flatMap { it.instances() }
