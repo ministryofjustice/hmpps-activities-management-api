@@ -17,6 +17,9 @@ data class ActivityScheduleSlot(
   @Schema(description = "The internally-generated ID for this activity schedule slot", example = "123456")
   val id: Long,
 
+  @Schema(description = "Activity schedule timeslot")
+  val timeSlot: TimeSlot,
+
   @Schema(description = "The week of the schedule this slot relates to", example = "1")
   val weekNumber: Int,
 
@@ -52,3 +55,20 @@ data class ActivityScheduleSlot(
   @Schema(description = "Indicates whether the schedule slot takes place on a Sunday", example = "false")
   val sundayFlag: Boolean,
 )
+
+enum class TimeSlot {
+  @Schema(
+    description = "Morning",
+  )
+  AM,
+
+  @Schema(
+    description = "Afternoon",
+  )
+  PM,
+
+  @Schema(
+    description = "Evening",
+  )
+  ED,
+}
