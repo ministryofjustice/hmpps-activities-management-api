@@ -43,6 +43,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -421,6 +422,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            timeSlot = TimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
@@ -474,6 +476,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 2L,
+            timeSlot = TimeSlot.PM,
             weekNumber = 1,
             startTime = LocalTime.of(14, 0),
             endTime = LocalTime.of(15, 0),
@@ -529,6 +532,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            timeSlot = TimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
@@ -543,6 +547,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 2L,
+            timeSlot = TimeSlot.PM,
             weekNumber = 1,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
@@ -598,6 +603,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           ActivityScheduleSlot(
             id = 1L,
+            timeSlot = TimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
@@ -612,6 +618,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 2L,
+            timeSlot = TimeSlot.PM,
             weekNumber = 1,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
@@ -626,6 +633,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 3L,
+            timeSlot = TimeSlot.AM,
             weekNumber = 2,
             startTime = LocalTime.of(10, 0),
             endTime = LocalTime.of(11, 0),
@@ -640,6 +648,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           ActivityScheduleSlot(
             id = 4L,
+            timeSlot = TimeSlot.PM,
             weekNumber = 2,
             startTime = LocalTime.of(13, 0),
             endTime = LocalTime.of(14, 0),
