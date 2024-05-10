@@ -34,7 +34,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:3.1.3")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
   // Spring framework retryable dependencies
   implementation("org.springframework.retry:spring-retry")
