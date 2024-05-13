@@ -210,25 +210,28 @@ data class Attendance(
   }
 
   /*
-   Very simple rules for editable attendance initially. Attendance is editable if :
-   1. It has not been marked, and we are within 14 days of the session date.
-   2. It has been marked (paid or unpaid) and today is the date of the session.
-   3. It has been marked with an unpaid reason, and we are within 14 days of the session date.
-   4. It has been marked with a paid reason, it was marked today, and we are within 14 days of the session date.
+   Attendance is editable if:
+   1. If no attendance has been recorded AND it is within 14 days of the activity session date.
+   2. If attendance is Not Attended & Unpaid AND it is within 7 days of the activity session date.
+   3. If attendance is Attended AND it is the same day as the attendance was set as Attended.
+   4. If attendance is Not Attended & Paid AND it is the same day as the paid attendance was set.
    */
   fun editable(): Boolean {
     return (
-      this.status() == AttendanceStatus.WAITING &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.issuePayment == false &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14)) ||
-        this.status == AttendanceStatus.COMPLETED &&
-        this.issuePayment == true &&
-        this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) &&
-        this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
+      (
+        this.status() == AttendanceStatus.WAITING &&
+          this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
+        ) ||
+        (
+          this.status == AttendanceStatus.COMPLETED &&
+            this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
+            (
+              (
+                this.attendanceReason?.attended == false && this.issuePayment == false
+                ) ||
+                (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
+              )
+          )
       )
   }
 
