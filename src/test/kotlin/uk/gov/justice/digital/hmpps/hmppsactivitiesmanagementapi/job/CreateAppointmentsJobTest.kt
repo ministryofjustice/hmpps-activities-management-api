@@ -20,6 +20,7 @@ class CreateAppointmentsJobTest : JobsTestBase() {
   private val startTimeInMs = 123L
   private val categoryDescription = "Category description"
   private val locationDescription = "Location description"
+  private val originalAppointmentId = 567L
 
   @BeforeEach
   fun setUp() {
@@ -29,7 +30,7 @@ class CreateAppointmentsJobTest : JobsTestBase() {
 
   @Test
   fun `job type is create appointments`() {
-    job.execute(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
+    job.execute(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription, originalAppointmentId)
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
@@ -38,8 +39,8 @@ class CreateAppointmentsJobTest : JobsTestBase() {
 
   @Test
   fun `job calls create appointments`() {
-    job.execute(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
+    job.execute(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription, originalAppointmentId)
 
-    verify(appointmentCreateDomainService).createAppointments(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
+    verify(appointmentCreateDomainService).createAppointments(appointmentSeriesId, prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription, originalAppointmentId)
   }
 }

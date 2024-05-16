@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ORIGINAL_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
@@ -57,6 +58,7 @@ class AppointmentCreateDomainService(
     startTimeInMs: Long,
     categoryDescription: String,
     locationDescription: String,
+    originalAppointmentId: Long,
   ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     return createAppointments(
@@ -69,6 +71,7 @@ class AppointmentCreateDomainService(
       startTimeInMs = startTimeInMs,
       trackEvent = true,
       auditEvent = true,
+      originalAppointmentId = originalAppointmentId,
     )
   }
 
@@ -88,6 +91,7 @@ class AppointmentCreateDomainService(
     locationDescription: String = "",
     trackEvent: Boolean = false,
     auditEvent: Boolean = false,
+    originalAppointmentId: Long = 0,
   ): AppointmentSeriesModel {
     require(!isCancelled || appointmentSeries.isMigrated) {
       "Only migrated appointments can be created in a cancelled state"
@@ -137,7 +141,7 @@ class AppointmentCreateDomainService(
     }
 
     return appointmentSeries.toModel().also {
-      if (trackEvent) it.logAppointmentSeriesCreatedMetric(prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription)
+      if (trackEvent) it.logAppointmentSeriesCreatedMetric(prisonNumberBookingIdMap, startTimeInMs, categoryDescription, locationDescription, originalAppointmentId)
       if (auditEvent) it.writeAppointmentCreatedAuditRecord(prisonNumberBookingIdMap)
     }
   }
@@ -147,6 +151,7 @@ class AppointmentCreateDomainService(
     startTimeInMs: Long,
     categoryDescription: String,
     locationDescription: String,
+    originalAppointmentId: Long,
   ) {
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to createdBy,
@@ -166,6 +171,7 @@ class AppointmentCreateDomainService(
       HAS_EXTRA_INFORMATION_PROPERTY_KEY to (extraInformation?.isNotEmpty() == true).toString(),
       EVENT_TIER_PROPERTY_KEY to (tier?.description ?: ""),
       EVENT_ORGANISER_PROPERTY_KEY to (organiser?.description ?: ""),
+      ORIGINAL_ID_PROPERTY_KEY to (if (originalAppointmentId == 0L) "" else originalAppointmentId.toString()),
     )
 
     val metricsMap = mapOf(

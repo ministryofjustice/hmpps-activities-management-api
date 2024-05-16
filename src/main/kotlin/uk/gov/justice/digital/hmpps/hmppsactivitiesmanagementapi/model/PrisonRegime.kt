@@ -37,6 +37,4 @@ data class PrisonRegime(
   @JsonFormat(pattern = "HH:mm")
   val edFinish: LocalTime,
 
-  @Schema(description = "The maximum number of days to expiry", example = "21")
-  val maxDaysToExpiry: Int,
 )
