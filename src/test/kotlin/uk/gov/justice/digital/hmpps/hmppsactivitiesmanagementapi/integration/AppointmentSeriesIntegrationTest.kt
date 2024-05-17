@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyMap
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
@@ -15,6 +18,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -35,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ORIGINAL_ID_PROPERTY_KEY
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -47,12 +52,17 @@ import java.time.temporal.ChronoUnit
 )
 class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   @MockBean
+  private lateinit var telemetryClient: TelemetryClient
+
+  @MockBean
   private lateinit var eventsPublisher: OutboundEventsPublisher
 
   @MockBean
   private lateinit var auditService: AuditService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+
+  private val telemetryCaptor = argumentCaptor<Map<String, String>>()
 
   @Test
   fun `get appointment series authorisation required`() {
@@ -277,6 +287,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     }
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
   }
 
   @Test
@@ -312,6 +328,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     }
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
   }
 
   @Test
@@ -358,6 +380,53 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
+  }
+
+  @Test
+  fun `create appointment series duplicated from an original appointment`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true, originalAppointmentId = 789L)
+
+    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumbers.first(),
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+
+    assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
+    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo "789"
+    }
   }
 
   @Test
@@ -396,6 +465,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
   }
 
   @Test
@@ -440,6 +515,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
   }
 
   @Test
@@ -493,6 +574,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
   }
 
   private fun assertSingleAppointmentSinglePrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {

@@ -143,6 +143,15 @@ data class AppointmentSeriesCreateRequest(
     example = "This appointment will help adjusting to life outside of prison",
   )
   val extraInformation: String? = null,
+
+  @Schema(
+    description =
+    """
+    The id of the original appointment that the new appointment was copied from
+    """,
+    example = "789",
+  )
+  val originalAppointmentId: Long? = 0,
 ) {
   @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
   private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2

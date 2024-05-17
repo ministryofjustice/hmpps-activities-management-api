@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
@@ -30,7 +29,6 @@ class AppointmentSeriesService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val prisonApiClient: PrisonApiClient,
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val createAppointmentsJob: CreateAppointmentsJob,
   private val transactionHandler: TransactionHandler,
@@ -68,6 +66,7 @@ class AppointmentSeriesService(
     val locationDescription = request.locationDescription()
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
+    val originalAppointmentId = request.originalAppointmentId ?: 0
 
     // Determine if this is a create request for a very large appointment series. If it is, this function will only create the first appointment
     val createFirstAppointmentOnly = request.schedule?.numberOfAppointments?.let { it > 1 && it * prisonNumberBookingIdMap.size > maxSyncAppointmentInstanceActions } ?: false
@@ -86,6 +85,7 @@ class AppointmentSeriesService(
           locationDescription = locationDescription,
           trackEvent = !createFirstAppointmentOnly,
           auditEvent = !createFirstAppointmentOnly,
+          originalAppointmentId,
         )
       }
 
@@ -97,6 +97,7 @@ class AppointmentSeriesService(
         startTimeInMs = startTimeInMs,
         categoryDescription = categoryDescription,
         locationDescription = locationDescription,
+        originalAppointmentId,
       )
     }
 

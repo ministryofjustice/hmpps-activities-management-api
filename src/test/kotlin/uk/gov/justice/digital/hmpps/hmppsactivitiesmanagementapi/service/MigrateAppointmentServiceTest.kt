@@ -159,7 +159,7 @@ class MigrateAppointmentServiceTest {
       val appointmentAttendeeModel = mock<AppointmentAttendeeModel>()
       whenever(appointmentModel.attendees).thenReturn(listOf(appointmentAttendeeModel))
       whenever(appointmentAttendeeModel.id).thenReturn(123)
-      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel)
+      whenever(appointmentCreateDomainService.createAppointments(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(appointmentSeriesModel)
 
       val request = appointmentMigrateRequest()
 
