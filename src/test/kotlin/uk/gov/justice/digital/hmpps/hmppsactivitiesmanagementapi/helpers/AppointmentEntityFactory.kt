@@ -46,6 +46,10 @@ internal fun appointmentSeriesEntity(
   frequency: AppointmentFrequency? = null,
   numberOfAppointments: Int = 1,
   isMigrated: Boolean = false,
+  cancelledBy: String? = null,
+  cancelledTime: LocalDateTime? = null,
+  cancellationStartDate: LocalDate? = null,
+  cancellationStartTime: LocalTime? = null,
 ) = AppointmentSeries(
   appointmentSeriesId = appointmentSeriesId,
   appointmentSet = appointmentSet,
@@ -65,6 +69,10 @@ internal fun appointmentSeriesEntity(
   updatedTime = if (updatedBy == null) null else LocalDateTime.now(),
   updatedBy = updatedBy,
   isMigrated = isMigrated,
+  cancelledBy = cancelledBy,
+  cancelledTime = cancelledTime,
+  cancellationStartDate = cancellationStartDate,
+  cancellationStartTime = cancellationStartTime,
 ).apply {
   this.appointmentOrganiser = appointmentOrganiser
   appointmentSet?.addAppointmentSeries(this)
@@ -128,6 +136,7 @@ internal fun appointmentInstanceEntity(
   updatedBy: String? = "UPDATE.USER",
   customName: String? = null,
   categoryCode: String = "TEST",
+  isCancelled: Boolean = false,
 ) =
   AppointmentInstance(
     appointmentInstanceId = appointmentInstanceId,
@@ -152,9 +161,12 @@ internal fun appointmentInstanceEntity(
     extraInformation = "Appointment level comment",
     createdTime = LocalDateTime.now().minusDays(1),
     createdBy = createdBy,
-    isCancelled = false,
+    isCancelled = isCancelled,
     updatedTime = LocalDateTime.now(),
     updatedBy = updatedBy,
+    seriesCancellationStartDate = null,
+    seriesCancellationStartTime = null,
+    seriesFrequency = null,
   )
 
 internal fun appointmentSearchEntity(
