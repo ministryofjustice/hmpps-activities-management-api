@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -93,6 +92,14 @@ data class AppointmentSeries(
   var updatedBy: String? = null,
 
   val isMigrated: Boolean = false,
+
+  var cancelledBy: String? = null,
+
+  var cancelledTime: LocalDateTime? = null,
+
+  var cancellationStartDate: LocalDate? = null,
+
+  var cancellationStartTime: LocalTime? = null,
 ) {
   @OneToOne
   @JoinColumn(name = "appointment_organiser_id")
@@ -139,6 +146,13 @@ data class AppointmentSeries(
       ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
       else -> listOf(appointment)
     }
+  }
+
+  fun cancel(cancelledTime: LocalDateTime = LocalDateTime.now(), cancelledBy: String, cancellationStartDate: LocalDate, cancellationStartTime: LocalTime) {
+    this.cancelledTime = cancelledTime
+    this.cancelledBy = cancelledBy
+    this.cancellationStartDate = cancellationStartDate
+    this.cancellationStartTime = cancellationStartTime
   }
 
   fun appointmentDetails(

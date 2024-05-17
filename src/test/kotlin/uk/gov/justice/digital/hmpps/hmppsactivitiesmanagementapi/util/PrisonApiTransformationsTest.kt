@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.visit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import java.time.LocalDate
 
-class PrisonApiTransformationsKtTest {
+class PrisonApiTransformationsTest {
 
   @Test
   fun `transform offender adjudications to scheduled events with user description`() {
@@ -50,6 +50,9 @@ class PrisonApiTransformationsKtTest {
         startTime = LocalDate.now().atStartOfDay().toLocalTime(),
         endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
         priority = 99,
+        appointmentSeriesCancellationStartDate = null,
+        appointmentSeriesCancellationStartTime = null,
+        appointmentSeriesFrequency = null,
       ),
     )
   }
@@ -83,6 +86,9 @@ class PrisonApiTransformationsKtTest {
         startTime = LocalDate.now().atStartOfDay().toLocalTime(),
         endTime = LocalDate.now().atStartOfDay().toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS),
         priority = 99,
+        appointmentSeriesCancellationStartDate = null,
+        appointmentSeriesCancellationStartTime = null,
+        appointmentSeriesFrequency = null,
       ),
     )
   }
@@ -118,6 +124,9 @@ class PrisonApiTransformationsKtTest {
         startTime = now.toLocalTime(),
         endTime = null,
         priority = 1,
+        appointmentSeriesCancellationStartDate = null,
+        appointmentSeriesCancellationStartTime = null,
+        appointmentSeriesFrequency = null,
       ),
     )
   }
