@@ -49,6 +49,7 @@ object PrisonerSearchPrisonerFixture {
     confirmedReleaseDate: LocalDate? = null,
     alerts: List<PrisonerAlert> = emptyList(),
     legalStatus: Prisoner.LegalStatus? = null,
+    category: String? = "P",
   ) =
     Prisoner(
       prisonerNumber = prisonerNumber,
@@ -76,6 +77,7 @@ object PrisonerSearchPrisonerFixture {
       confirmedReleaseDate = confirmedReleaseDate,
       alerts = alerts,
       legalStatus = legalStatus,
+      category = category,
     )
 
   fun pagedResultWithSurnames(prisonerNumberAndSurnames: List<Pair<String, String>> = listOf("G4793VF" to "Harrison")) =
