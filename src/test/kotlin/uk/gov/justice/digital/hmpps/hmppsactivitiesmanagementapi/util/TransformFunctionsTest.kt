@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -50,7 +49,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
@@ -291,9 +289,6 @@ class TransformFunctionsTest {
           startTime = entity.startTime,
           endTime = entity.endTime,
           priority = EventType.APPOINTMENT.defaultPriority,
-          appointmentSeriesCancellationStartDate = null,
-          appointmentSeriesCancellationStartTime = null,
-          appointmentSeriesFrequency = null,
         ),
       )
     }
@@ -332,54 +327,6 @@ class TransformFunctionsTest {
           startTime = entity.startTime,
           endTime = entity.endTime,
           priority = EventType.APPOINTMENT.defaultPriority,
-          appointmentSeriesCancellationStartDate = null,
-          appointmentSeriesCancellationStartTime = null,
-          appointmentSeriesFrequency = null,
-        ),
-      )
-    }
-
-    @Test
-    fun `appointment instance where the series is cancelled`() {
-      val entity = appointmentInstanceEntity(isCancelled = true)
-      entity.seriesCancellationStartDate = LocalDate.of(2024, 5, 12)
-      entity.seriesCancellationStartTime = LocalTime.of(10, 20)
-      entity.seriesFrequency = AppointmentFrequency.WEEKLY
-
-      val scheduledEvents = transform(entity)
-
-      assertThat(scheduledEvents.first()).isEqualTo(
-        ModelScheduledEvent(
-          prisonCode = "TPR",
-          eventSource = "SAA",
-          eventType = EventType.APPOINTMENT.name,
-          scheduledInstanceId = null,
-          bookingId = entity.bookingId,
-          internalLocationId = entity.internalLocationId,
-          internalLocationCode = "LOC123",
-          internalLocationUserDescription = "User location desc",
-          internalLocationDescription = "User location desc",
-          eventId = null,
-          appointmentSeriesId = entity.appointmentSeriesId,
-          appointmentId = entity.appointmentId,
-          appointmentAttendeeId = entity.appointmentInstanceId,
-          oicHearingId = null,
-          cancelled = true,
-          suspended = false,
-          categoryCode = entity.categoryCode,
-          categoryDescription = "Test Category",
-          summary = "Test Category",
-          comments = entity.extraInformation,
-          prisonerNumber = entity.prisonerNumber,
-          inCell = entity.inCell,
-          outsidePrison = false,
-          date = entity.appointmentDate,
-          startTime = entity.startTime,
-          endTime = entity.endTime,
-          priority = EventType.APPOINTMENT.defaultPriority,
-          appointmentSeriesCancellationStartDate = LocalDate.of(2024, 5, 12),
-          appointmentSeriesCancellationStartTime = LocalTime.of(10, 20),
-          appointmentSeriesFrequency = ModelAppointmentFrequency.WEEKLY,
         ),
       )
     }
@@ -600,6 +547,7 @@ class TransformFunctionsTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "A",
       ).toSummary(),
     ).isEqualTo(
       PrisonerSummary(
@@ -610,6 +558,7 @@ class TransformFunctionsTest {
         "ACTIVE IN",
         "TPR",
         "1-2-3",
+        "A",
       ),
     )
   }
@@ -634,6 +583,7 @@ class TransformFunctionsTest {
         "ACTIVE IN",
         "UNKNOWN",
         "UNKNOWN",
+        "P",
       ),
     )
   }
@@ -649,6 +599,7 @@ class TransformFunctionsTest {
           lastName = "PRISONER",
           prisonId = "TPR",
           cellLocation = "1-2-3",
+          category = "A",
         ),
       ).toSummary(),
     ).isEqualTo(
@@ -661,6 +612,7 @@ class TransformFunctionsTest {
           "ACTIVE IN",
           "TPR",
           "1-2-3",
+          "A",
         ),
       ),
     )

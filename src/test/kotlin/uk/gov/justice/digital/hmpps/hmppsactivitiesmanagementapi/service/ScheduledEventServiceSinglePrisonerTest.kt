@@ -280,9 +280,6 @@ class ScheduledEventServiceSinglePrisonerTest {
     isCancelled = false,
     updatedTime = updated,
     updatedBy = updatedBy,
-    seriesCancellationStartDate = null,
-    seriesCancellationStartTime = null,
-    seriesFrequency = null,
   )
 
   @Nested

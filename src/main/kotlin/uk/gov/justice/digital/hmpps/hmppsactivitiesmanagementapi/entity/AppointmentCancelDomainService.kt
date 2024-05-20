@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
@@ -78,10 +77,6 @@ class AppointmentCancelDomainService(
     transactionHandler.newSpringTransaction {
       appointmentsToCancel.forEach {
         it.cancel(cancelledTime, cancellationReason, cancelledBy)
-      }
-      if (request.applyTo == ApplyTo.ALL_FUTURE_APPOINTMENTS || request.applyTo == ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS) {
-        val firstAppointment = appointmentsToCancel.minWith(Comparator.comparing { it.startDateTime() })
-        appointmentSeries.cancel(cancelledTime, cancelledBy, firstAppointment.startDate, firstAppointment.startTime)
       }
     }.let {
       publishSyncEvent(appointmentsToCancel, cancellationReason)

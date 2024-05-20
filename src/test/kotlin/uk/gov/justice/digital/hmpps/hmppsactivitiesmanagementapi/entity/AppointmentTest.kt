@@ -256,6 +256,7 @@ class AppointmentTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "H",
       ),
     )
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)).isEqualTo(
@@ -284,6 +285,7 @@ class AppointmentTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "H",
       ),
     )
     assertThat(listOf(entity).toDetails(prisonerMap, referenceCodeMap, locationMap)).isEqualTo(

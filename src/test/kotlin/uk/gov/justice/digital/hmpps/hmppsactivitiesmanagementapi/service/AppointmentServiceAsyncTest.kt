@@ -580,12 +580,6 @@ class AppointmentServiceAsyncTest {
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
 
-    // these will be null when the cancelAppointments(...) function is called
-    appointmentSeries.cancelledBy = null
-    appointmentSeries.cancelledTime = null
-    appointmentSeries.cancellationStartTime = null
-    appointmentSeries.cancellationStartDate = null
-
     // Cancel all apply to appointments synchronously and track custom event
     verify(appointmentCancelDomainService).cancelAppointments(
       eq(appointmentSeries),
@@ -755,12 +749,6 @@ class AppointmentServiceAsyncTest {
     )
 
     service.cancelAppointment(appointment.appointmentId, request, principal)
-
-    // these will be null when the cancelAppointments(...) function is called
-    appointmentSeries.cancelledBy = null
-    appointmentSeries.cancelledTime = null
-    appointmentSeries.cancellationStartTime = null
-    appointmentSeries.cancellationStartDate = null
 
     // Delete all apply to appointments synchronously and track custom event
     verify(appointmentCancelDomainService).cancelAppointments(

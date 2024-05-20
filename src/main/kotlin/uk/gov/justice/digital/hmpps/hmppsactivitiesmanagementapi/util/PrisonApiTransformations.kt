@@ -77,9 +77,6 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
 
@@ -119,9 +116,6 @@ fun PrisonApiCourtHearings?.nomisCourtHearingsToScheduledEvents(
     startTime = LocalDateTime.parse(it.dateTime).toLocalTime(),
     endTime = null,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 } ?: emptyList()
 
@@ -164,9 +158,6 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
       LocalDateTime.parse(startTime).toLocalTime().plusHours(ADJUDICATION_HEARING_DURATION_TWO_HOURS)
     },
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
 
@@ -207,9 +198,6 @@ fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
 
@@ -250,9 +238,6 @@ fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
 
@@ -293,9 +278,6 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
     startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
 

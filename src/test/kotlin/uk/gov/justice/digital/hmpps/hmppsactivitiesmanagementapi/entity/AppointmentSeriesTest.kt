@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentRepeatPeriodModel
 
 class AppointmentSeriesTest {
@@ -439,21 +438,5 @@ class AppointmentSeriesTest {
       entity.appointmentOrganiser = EventOrganiser(1, "PRISON_STAFF", "Prison staff")
     }
     exception.message isEqualTo "Cannot add organiser unless appointment series is Tier 2."
-  }
-
-  @Test
-  fun `cancel appointment series`() {
-    val cancelledTime = LocalDateTime.now()
-    val cancelledBy = "CANCELLED_BY_USER"
-    val entity = appointmentSeriesEntity()
-    val cancellationStartDate = LocalDate.of(2024, 5, 12)
-    val cancellationStartTime = LocalTime.of(10, 24)
-
-    entity.cancel(cancelledTime, cancelledBy, cancellationStartDate, cancellationStartTime)
-
-    entity.cancelledTime isEqualTo cancelledTime
-    entity.cancelledBy isEqualTo "CANCELLED_BY_USER"
-    entity.cancellationStartDate isEqualTo LocalDate.of(2024, 5, 12)
-    entity.cancellationStartTime isEqualTo LocalTime.of(10, 24)
   }
 }

@@ -66,13 +66,6 @@ data class AppointmentInstance(
   val updatedBy: String?,
 
   val isCancelled: Boolean,
-
-  var seriesCancellationStartDate: LocalDate?,
-
-  var seriesCancellationStartTime: LocalTime?,
-
-  @Enumerated(EnumType.STRING)
-  var seriesFrequency: AppointmentFrequency?,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,

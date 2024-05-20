@@ -103,7 +103,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
     prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC"),
-      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
+      listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR", category = null)),
     )
 
     val appointmentDetails = webTestClient.getAppointmentDetailsById(2)!!
@@ -120,7 +120,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         attendees = listOf(
           AppointmentAttendeeSummary(
             3,
-            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3"),
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3", "UNKNOWN"),
             null,
             null,
             null,
@@ -178,7 +178,7 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
         attendees = listOf(
           AppointmentAttendeeSummary(
             6,
-            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3"),
+            PrisonerSummary("A1234BC", 456, "Tim", "Harrison", "ACTIVE IN", "TPR", "1-2-3", "P"),
             null,
             null,
             null,

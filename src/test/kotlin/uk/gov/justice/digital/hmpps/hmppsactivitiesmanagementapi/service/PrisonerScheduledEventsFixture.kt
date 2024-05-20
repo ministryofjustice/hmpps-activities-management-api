@@ -94,9 +94,6 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 
   fun activityInstance(
@@ -149,9 +146,6 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 
   fun visitInstance(
@@ -201,9 +195,6 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 
   fun courtHearingInstance(
@@ -248,9 +239,6 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 
   fun adjudicationInstance(
@@ -300,9 +288,6 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 
   fun externalTransferInstance(
@@ -347,8 +332,5 @@ object PrisonerScheduledEventsFixture {
     startTime = startTime,
     endTime = endTime,
     priority = priority,
-    appointmentSeriesCancellationStartDate = null,
-    appointmentSeriesCancellationStartTime = null,
-    appointmentSeriesFrequency = null,
   )
 }
