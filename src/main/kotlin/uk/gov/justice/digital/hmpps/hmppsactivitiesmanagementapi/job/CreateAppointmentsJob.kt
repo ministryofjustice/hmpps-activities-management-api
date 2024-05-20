@@ -39,6 +39,7 @@ class CreateAppointmentsJob(
     startTimeInMs: Long,
     categoryDescription: String,
     locationDescription: String,
+    originalAppointmentId: Long,
   ) {
     jobRunner.runJob(
       JobDefinition(JobType.CREATE_APPOINTMENTS) {
@@ -50,6 +51,7 @@ class CreateAppointmentsJob(
           startTimeInMs,
           categoryDescription,
           locationDescription,
+          originalAppointmentId,
         )
 
         log.info("Created remaining appointments for appointment series with id '$appointmentSeriesId' asynchronously")

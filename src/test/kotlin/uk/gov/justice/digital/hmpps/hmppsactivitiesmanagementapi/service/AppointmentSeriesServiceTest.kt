@@ -23,7 +23,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentAttendee
@@ -66,6 +65,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.IS_REPEAT_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.NUMBER_OF_APPOINTMENTS_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ORIGINAL_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.START_DATE_PROPERTY_KEY
@@ -82,7 +82,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.security.Principal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentFrequencyModel
 
 @ExtendWith(FakeSecurityContext::class)
@@ -94,7 +94,6 @@ class AppointmentSeriesServiceTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, mock(), TransactionHandler(), mock(), telemetryClient, auditService))
@@ -118,7 +117,6 @@ class AppointmentSeriesServiceTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    prisonApiClient,
     appointmentCreateDomainService,
     createAppointmentsJob,
     TransactionHandler(),
@@ -469,6 +467,7 @@ class AppointmentSeriesServiceTest {
         assertThat(this[FREQUENCY_PROPERTY_KEY]).isEqualTo("")
         assertThat(this[NUMBER_OF_APPOINTMENTS_PROPERTY_KEY]).isEqualTo("")
         assertThat(this[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(this[ORIGINAL_ID_PROPERTY_KEY]).isEqualTo("")
       }
 
       with(telemetryMetricsMap.firstValue) {
@@ -580,7 +579,7 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any(), any())
   }
 
   @Test
@@ -610,7 +609,7 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 15
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any(), any())
   }
 
   @Test
@@ -640,13 +639,18 @@ class AppointmentSeriesServiceTest {
       appointments().flatMap { it.attendees() } hasSize 14
     }
 
-    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any())
+    verify(createAppointmentsJob, never()).execute(any(), any(), any(), any(), any(), any())
   }
 
   @Test
   fun `createAppointmentSeries for three prisoners asynchronously when it repeats five times creating fifteen appointment instances`() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
-    val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 5))
+    val request = appointmentSeriesCreateRequest(
+      appointmentType = AppointmentType.GROUP,
+      prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
+      schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 5),
+      originalAppointmentId = 789L,
+    )
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
       .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
@@ -675,6 +679,7 @@ class AppointmentSeriesServiceTest {
         any(),
         eq("Test Category"),
         eq("Test Appointment Location User Description"),
+        eq(789L),
       )
     }
   }
@@ -797,6 +802,32 @@ class AppointmentSeriesServiceTest {
     service.createAppointmentSeries(request, principal)
 
     appointmentSeriesEntityCaptor.firstValue.appointments().single().extraInformation isEqualTo "Extra medical information for 'A1234BC'"
+  }
+
+  @Test
+  fun `original appointment id is null`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, inCell = true)
+
+    service.createAppointmentSeries(request, principal)
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+
+    with(telemetryPropertyMap.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
+  }
+
+  @Test
+  fun `original appointment id is non-null`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, inCell = true, originalAppointmentId = 789L)
+
+    service.createAppointmentSeries(request, principal)
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+
+    with(telemetryPropertyMap.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo "789"
+    }
   }
 
   @Test

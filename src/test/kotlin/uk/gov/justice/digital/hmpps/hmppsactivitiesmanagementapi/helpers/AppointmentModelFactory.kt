@@ -132,6 +132,7 @@ fun appointmentSeriesCreateRequest(
   endTime: LocalTime? = LocalTime.of(14, 30),
   extraInformation: String? = "Appointment level comment",
   schedule: AppointmentSeriesSchedule? = null,
+  originalAppointmentId: Long? = 0L,
 ) =
   AppointmentSeriesCreateRequest(
     appointmentType,
@@ -148,6 +149,7 @@ fun appointmentSeriesCreateRequest(
     endTime,
     schedule,
     extraInformation,
+    originalAppointmentId,
   )
 
 fun appointmentSetCreateRequest(
