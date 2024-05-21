@@ -53,7 +53,7 @@ data class AppointmentSearchRequest(
     The time slot to match with the appointments. Will restrict the search results to appointments that have a start
     time between the times defined by the prison for that time slot when this search parameter is supplied.
     """,
-    example = "PM",
+    example = “[\”AM\”,\”PM\”,\”ED\”]”,
   )
   val timeSlots: List<TimeSlot>? = emptyList(),
 
