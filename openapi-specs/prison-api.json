@@ -23,7 +23,7 @@
       "description": "PreProd"
     },
     {
-      "url": "https://api.prison.service.justice.gov.uk",
+      "url": "https://prison-api.prison.service.justice.gov.uk",
       "description": "Prod"
     },
     {
