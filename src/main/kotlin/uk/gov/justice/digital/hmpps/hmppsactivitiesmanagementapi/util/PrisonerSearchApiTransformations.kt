@@ -16,6 +16,7 @@ fun PrisonerSearchApiPrisoner.toSummary() =
     status,
     prisonId ?: "UNKNOWN",
     cellLocation ?: "UNKNOWN",
+    category,
   )
 
 fun PrisonerSearchApiPrisoner?.toSummary(prisonNumber: String, bookingId: Long) =
@@ -27,6 +28,7 @@ fun PrisonerSearchApiPrisoner?.toSummary(prisonNumber: String, bookingId: Long) 
     "UNKNOWN",
     "UNKNOWN",
     "UNKNOWN",
+    null,
   )
 
 fun List<PrisonerSearchApiPrisoner>.toSummary() = map { it.toSummary() }

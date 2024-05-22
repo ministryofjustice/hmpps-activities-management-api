@@ -61,12 +61,13 @@ class AppointmentAttendeeTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "H",
       ),
     )
     assertThat(entity.toSummary(prisonerMap)).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
-        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3", "H"),
         null,
         null,
         null,
@@ -89,12 +90,13 @@ class AppointmentAttendeeTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "P",
       ),
     )
     assertThat(entity.toSummary(prisonerMap)).isEqualTo(
       AppointmentAttendeeSummary(
         entity.appointmentAttendeeId,
-        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3"),
+        PrisonerSummary("A1234BC", 456, "TEST", "PRISONER", "ACTIVE IN", "TPR", "1-2-3", "P"),
         true,
         entity.attendanceRecordedTime,
         "ATTENDANCE.RECORDED.BY",
