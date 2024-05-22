@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toSummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

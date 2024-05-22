@@ -85,6 +85,7 @@ class AppointmentServiceTest {
           lastName = "PRISONER",
           prisonId = "TPR",
           cellLocation = "1-2-3",
+          category = "H",
         ),
       ),
     )

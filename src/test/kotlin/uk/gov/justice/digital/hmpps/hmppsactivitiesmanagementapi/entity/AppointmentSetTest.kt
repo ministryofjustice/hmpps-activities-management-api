@@ -223,6 +223,7 @@ class AppointmentSetTest {
       lastName = "PRISONER01",
       prisonId = "TPR",
       cellLocation = "1-2-3",
+      category = "A",
     ),
     "B2345CD" to PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "B2345CD",
@@ -231,6 +232,7 @@ class AppointmentSetTest {
       lastName = "PRISONER02",
       prisonId = "TPR",
       cellLocation = "1-2-4",
+      category = "E",
     ),
     "C3456DE" to PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "C3456DE",

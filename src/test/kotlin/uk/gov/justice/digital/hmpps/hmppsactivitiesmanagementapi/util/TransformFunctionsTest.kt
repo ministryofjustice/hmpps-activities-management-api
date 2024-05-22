@@ -600,6 +600,7 @@ class TransformFunctionsTest {
         lastName = "PRISONER",
         prisonId = "TPR",
         cellLocation = "1-2-3",
+        category = "A",
       ).toSummary(),
     ).isEqualTo(
       PrisonerSummary(
@@ -610,6 +611,7 @@ class TransformFunctionsTest {
         "ACTIVE IN",
         "TPR",
         "1-2-3",
+        "A",
       ),
     )
   }
@@ -634,6 +636,7 @@ class TransformFunctionsTest {
         "ACTIVE IN",
         "UNKNOWN",
         "UNKNOWN",
+        "P",
       ),
     )
   }
@@ -649,6 +652,7 @@ class TransformFunctionsTest {
           lastName = "PRISONER",
           prisonId = "TPR",
           cellLocation = "1-2-3",
+          category = "A",
         ),
       ).toSummary(),
     ).isEqualTo(
@@ -661,6 +665,7 @@ class TransformFunctionsTest {
           "ACTIVE IN",
           "TPR",
           "1-2-3",
+          "A",
         ),
       ),
     )
