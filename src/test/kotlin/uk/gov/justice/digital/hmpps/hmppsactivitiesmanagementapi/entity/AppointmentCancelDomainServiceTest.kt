@@ -21,6 +21,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -37,7 +38,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
@@ -236,6 +239,8 @@ class AppointmentCancelDomainServiceTest {
 
     ids.size isEqualTo 4
 
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeries))
+
     service.cancelAppointmentIds(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
@@ -250,6 +255,150 @@ class AppointmentCancelDomainServiceTest {
 
     verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
     verifyNoMoreInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `appointment instance cancelled with ApplyTo THIS_AND_ALL_FUTURE_APPOINTMENTS cancels the series`() {
+    val appointmentSeriesMock: AppointmentSeries = mock()
+    whenever(appointmentSeriesMock.prisonCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.categoryCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.createdTime).thenReturn(LocalDateTime.now())
+    whenever(appointmentSeriesMock.createdBy).thenReturn("TEST")
+
+    var appointmentList = mutableListOf<Appointment>()
+    val iterator = AppointmentSeriesScheduleIterator(LocalDate.now(), AppointmentFrequency.DAILY, 4)
+    iterator.withIndex().forEach {
+      appointmentList.add(appointmentEntity(appointmentSeriesMock, 1 * (it.index + 1L), it.index + 1, it.value, LocalTime.now(), LocalDateTime.now(), "updatedBy", prisonerNumberToBookingIdMap))
+    }
+
+    whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+
+    val appointment = appointmentSeriesMock.appointments()[0]
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
+    val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
+    val startTimeInMs = System.currentTimeMillis()
+
+    ids.size isEqualTo 4
+
+    whenever(appointmentSeriesRepository.findById(appointmentSeriesMock.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeriesMock))
+
+    val now = LocalDateTime.now()
+
+    service.cancelAppointmentIds(
+      appointmentSeriesMock.appointmentSeriesId,
+      appointment.appointmentId,
+      ids,
+      request,
+      now,
+      "CANCEL.USER",
+      4,
+      12,
+      startTimeInMs,
+    )
+
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verifyNoMoreInteractions(outboundEventsService)
+
+    verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
+  }
+
+  @Test
+  fun `appointment instance cancelled with ApplyTo ALL_FUTURE_APPOINTMENTS cancels the series`() {
+    val appointmentSeriesMock: AppointmentSeries = mock()
+    whenever(appointmentSeriesMock.prisonCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.categoryCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.createdTime).thenReturn(LocalDateTime.now())
+    whenever(appointmentSeriesMock.createdBy).thenReturn("TEST")
+
+    var appointmentList = mutableListOf<Appointment>()
+    val iterator = AppointmentSeriesScheduleIterator(LocalDate.now(), AppointmentFrequency.DAILY, 4)
+    iterator.withIndex().forEach {
+      appointmentList.add(appointmentEntity(appointmentSeriesMock, 1 * (it.index + 1L), it.index + 1, it.value, LocalTime.now(), LocalDateTime.now(), "updatedBy", prisonerNumberToBookingIdMap))
+    }
+
+    whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+
+    val appointment = appointmentSeriesMock.appointments()[0]
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
+    val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
+    val startTimeInMs = System.currentTimeMillis()
+
+    ids.size isEqualTo 4
+
+    whenever(appointmentSeriesRepository.findById(appointmentSeriesMock.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeriesMock))
+
+    val now = LocalDateTime.now()
+
+    service.cancelAppointmentIds(
+      appointmentSeriesMock.appointmentSeriesId,
+      appointment.appointmentId,
+      ids,
+      request,
+      now,
+      "CANCEL.USER",
+      4,
+      12,
+      startTimeInMs,
+    )
+
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verifyNoMoreInteractions(outboundEventsService)
+
+    verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
+  }
+
+  @Test
+  fun `appointment instance cancelled with ApplyTo THIS_APPOINTMENT cancels the series`() {
+    val appointmentSeriesMock: AppointmentSeries = mock()
+    whenever(appointmentSeriesMock.prisonCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.categoryCode).thenReturn("ABC")
+    whenever(appointmentSeriesMock.createdTime).thenReturn(LocalDateTime.now())
+    whenever(appointmentSeriesMock.createdBy).thenReturn("TEST")
+
+    var appointmentList = mutableListOf<Appointment>()
+    val iterator = AppointmentSeriesScheduleIterator(LocalDate.now(), AppointmentFrequency.DAILY, 4)
+    iterator.withIndex().forEach {
+      appointmentList.add(appointmentEntity(appointmentSeriesMock, 1 * (it.index + 1L), it.index + 1, it.value, LocalTime.now(), LocalDateTime.now(), "updatedBy", prisonerNumberToBookingIdMap))
+    }
+
+    whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+
+    val appointment = appointmentSeriesMock.appointments()[0]
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")
+
+    val ids = applyToThis.map { it.appointmentId }.toSet()
+    val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.THIS_APPOINTMENT)
+    val startTimeInMs = System.currentTimeMillis()
+
+    ids.size isEqualTo 4
+
+    whenever(appointmentSeriesRepository.findById(appointmentSeriesMock.appointmentSeriesId)).thenReturn(Optional.of(appointmentSeriesMock))
+
+    val now = LocalDateTime.now()
+
+    service.cancelAppointmentIds(
+      appointmentSeriesMock.appointmentSeriesId,
+      appointment.appointmentId,
+      ids,
+      request,
+      now,
+      "CANCEL.USER",
+      4,
+      12,
+      startTimeInMs,
+    )
+
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verifyNoMoreInteractions(outboundEventsService)
+
+    verify(appointmentSeriesMock, times(0)).cancel(any(), any(), any(), any())
   }
 
   @Test

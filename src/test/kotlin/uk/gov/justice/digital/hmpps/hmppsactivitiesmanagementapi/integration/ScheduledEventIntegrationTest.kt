@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -611,6 +612,32 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(courtHearings).hasSize(2)
         assertThat(visits).hasSize(2)
         assertThat(adjudications).hasSize(2)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-appointment-group-series-cancelled.sql")
+    fun `POST - multiple prisoners - cancelled appointment series - 200 success`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G4793VF", "A5193DY")
+      val date = LocalDate.of(2022, 10, 16)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubAdjudicationHearing(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(appointments).hasSize(2)
+        appointments!!.map {
+          assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
+          assertThat(it.eventSource).isEqualTo("SAA")
+          assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
+          assertThat(it.appointmentSeriesCancellationStartDate).isEqualTo(LocalDate.of(2022, 10, 16))
+          assertThat(it.appointmentSeriesCancellationStartTime).isEqualTo(LocalTime.of(11, 30, 0))
+          assertThat(it.appointmentSeriesFrequency).isEqualTo(AppointmentFrequency.DAILY)
+        }
       }
     }
 
