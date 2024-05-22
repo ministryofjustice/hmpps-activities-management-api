@@ -33,6 +33,7 @@
     ],
     "alerts": [],
     "legalStatus": "RECALL",
+    "category": "H",
     "imprisonmentStatus": "FTR_HDC",
     "imprisonmentStatusDescription": "Fixed Term Recall while on HDC",
     "recall": true,
