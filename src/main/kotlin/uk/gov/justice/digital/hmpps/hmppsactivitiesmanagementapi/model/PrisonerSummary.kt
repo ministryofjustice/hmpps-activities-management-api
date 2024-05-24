@@ -50,4 +50,13 @@ data class PrisonerSummary(
     example = "A-1-002",
   )
   val cellLocation: String,
+
+  @Schema(
+    description =
+    """
+    The prisoner's category.
+    """,
+    example = "P",
+  )
+  val category: String?,
 )

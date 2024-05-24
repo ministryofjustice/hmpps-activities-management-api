@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
@@ -132,6 +133,9 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     startTime = it.startTime!!,
     endTime = it.endTime,
     priority = priorities.getOrDefault(EventType.ACTIVITY, it.activityCategory),
+    appointmentSeriesCancellationStartDate = null,
+    appointmentSeriesCancellationStartTime = null,
+    appointmentSeriesFrequency = null,
   )
 }
 
@@ -191,6 +195,9 @@ fun transformAppointmentInstanceToScheduledEvents(
     startTime = it.startTime,
     endTime = it.endTime,
     priority = priorities.getOrDefault(EventType.APPOINTMENT),
+    appointmentSeriesCancellationStartDate = it.seriesCancellationStartDate,
+    appointmentSeriesCancellationStartTime = it.seriesCancellationStartTime,
+    appointmentSeriesFrequency = it.seriesFrequency?.let { it1 -> ModelAppointmentFrequency.valueOf(it1.name) },
   )
 }
 

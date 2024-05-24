@@ -100,4 +100,23 @@ data class ScheduledEvent(
 
   @Schema(description = "The event priority - configurable by prison, or via defaults.")
   val priority: Int,
+
+  @Schema(
+    description = "The start date of the first appointment cancelled in the series",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val appointmentSeriesCancellationStartDate: LocalDate?,
+
+  @Schema(
+    description = "The start time of the first appointment cancelled in the series",
+    example = "10:30",
+  )
+  @JsonFormat(pattern = "HH:mm")
+  val appointmentSeriesCancellationStartTime: LocalTime?,
+
+  @Schema(
+    description = "The appointment series frequency",
+    example = "DAILY",
+  )
+  val appointmentSeriesFrequency: AppointmentFrequency?,
 )

@@ -265,6 +265,9 @@ class ScheduledEventServiceMultiplePrisonersTest {
     isCancelled = false,
     updatedTime = updated,
     updatedBy = updatedBy,
+    seriesCancellationStartDate = null,
+    seriesCancellationStartTime = null,
+    seriesFrequency = null,
   )
 
   private fun appointmentCategoryMap() = mapOf("TEST" to appointmentCategoryReferenceCode("TEST"))
