@@ -16,16 +16,16 @@ spring:
         generate_statistics: false
 
   datasource:
-    url: 'jdbc:h2:mem:activities-db;MODE=PostgreSQL'
+    url: jdbc:postgresql://localhost:5432/activities
     username: activities
-    password: dummy
+    password: activities
+    hikari:
+      minimumIdle: 2
+      maximumPoolSize: 20
+      idleTimeout: 5000
 
   flyway:
     locations: classpath:/migrations/common
-
-  h2:
-    console:
-      enabled: true
 
 server:
   shutdown: immediate
