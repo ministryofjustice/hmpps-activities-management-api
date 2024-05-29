@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppoi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -195,6 +196,54 @@ class AppointmentService(
     }
 
     return cancelledAppointmentSeries
+  }
+
+  fun uncancelAppointment(appointmentId: Long, request: AppointmentUncancelRequest, principal: Principal) {
+    // TODO find out which event to raise in NOMIS
+    val startTimeInMs = System.currentTimeMillis()
+    val now = LocalDateTime.now()
+
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val appointmentSeries = appointment.appointmentSeries
+    // TODO cannot use applytoAppointments due to cancel restriction condition - What about deleted?
+    val appointmentsToUncancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "Uncancel")
+    checkCaseloadAccess(appointmentSeries.prisonCode)
+//
+    val uncancelAppointmentsCount = appointmentsToUncancel.size
+//    val uncancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(uncancelAppointmentsCount)
+//    // Determine if this is a cancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only cancel the first appointment
+//    val cancelFirstAppointmentOnly = cancelAppointmentsCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
+//
+//    val cancelledAppointmentSeries = appointmentCancelDomainService.cancelAppointments(
+//      appointmentSeries,
+//      appointmentId,
+//      if (cancelFirstAppointmentOnly) setOf(appointment) else appointmentsToCancel.toSet(),
+//      request,
+//      now,
+//      principal.name,
+//      cancelAppointmentsCount,
+//      cancelInstancesCount,
+//      startTimeInMs,
+//      !cancelFirstAppointmentOnly,
+//      true,
+//    )
+//
+//    if (cancelFirstAppointmentOnly) {
+//      // The remaining appointments will be updated asynchronously by this job
+//      cancelAppointmentsJob.execute(
+//        appointmentSeries.appointmentSeriesId,
+//        appointmentId,
+//        appointmentsToCancel.filterNot { it.appointmentId == appointmentId }.map { it.appointmentId }.toSet(),
+//        request,
+//        now,
+//        principal.name,
+//        cancelAppointmentsCount,
+//        cancelInstancesCount,
+//        startTimeInMs,
+//      )
+//    }
+//
+//    return cancelledAppointmentSeries
   }
   private fun AppointmentUpdateRequest.failIfCategoryIsVideoLinkAndMissingExtraInfo() {
     // Should fail when category is VLB and extra information is mandatory

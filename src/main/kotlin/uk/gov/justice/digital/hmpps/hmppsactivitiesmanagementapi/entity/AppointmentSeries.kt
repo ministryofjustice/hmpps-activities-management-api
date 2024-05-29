@@ -126,6 +126,7 @@ data class AppointmentSeries(
 
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
+  // CREATE NEW APPLY TO APPOINTMENTS FOR UNCANCELLED SCENARIO // CANNOT APPLY DUE TO IS CANCELLED REQUIRE
   fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String): List<Appointment> {
     require(!appointment.isExpired()) {
       "Cannot $action a past appointment"
@@ -147,7 +148,16 @@ data class AppointmentSeries(
       else -> listOf(appointment)
     }
   }
+  // TODO UNCANCELLED FUNCTION - NULL FIELDS AND CHECK UPDATED BY DATE / TIME
 
+  fun uncancel(updatedTime: LocalDateTime?, updatedBy: String?) {
+    this.cancelledTime = null
+    this.cancelledBy = null
+    this.cancellationStartDate = null
+    this.cancellationStartTime = null
+    this.updatedTime = updatedTime
+    this.updatedBy = updatedBy
+  }
   fun cancel(cancelledTime: LocalDateTime = LocalDateTime.now(), cancelledBy: String, cancellationStartDate: LocalDate, cancellationStartTime: LocalTime) {
     this.cancelledTime = cancelledTime
     this.cancelledBy = cancelledBy

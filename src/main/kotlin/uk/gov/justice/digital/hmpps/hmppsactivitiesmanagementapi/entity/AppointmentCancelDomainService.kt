@@ -60,6 +60,61 @@ class AppointmentCancelDomainService(
     )
   }
 
+  // TODO UNCANCELLED FUNCTION
+  fun uncancelAppointments(
+    appointmentSeries: AppointmentSeries,
+    appointmentId: Long,
+    appointmentsToCancel: Set<Appointment>,
+    request: AppointmentCancelRequest,
+    cancelledTime: LocalDateTime,
+    cancelledBy: String,
+    cancelAppointmentsCount: Int,
+    cancelInstancesCount: Int,
+    startTimeInMs: Long,
+    trackEvent: Boolean,
+    auditEvent: Boolean,
+  ): AppointmentSeriesModel {
+    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+
+    transactionHandler.newSpringTransaction {
+      appointmentsToCancel.forEach {
+        it.cancel(cancelledTime, cancellationReason, cancelledBy)
+      }
+      if (request.applyTo == ApplyTo.ALL_FUTURE_APPOINTMENTS || request.applyTo == ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS) {
+        val firstAppointment = appointmentsToCancel.minWith(Comparator.comparing { it.startDateTime() })
+        appointmentSeries.cancel(cancelledTime, cancelledBy, firstAppointment.startDate, firstAppointment.startTime)
+      }
+    }.let {
+      publishSyncEvent(appointmentsToCancel, cancellationReason)
+
+      if (trackEvent) {
+        sendTelemetryEvent(
+          cancellationReason,
+          request,
+          cancelledBy,
+          appointmentSeries,
+          appointmentId,
+          cancelAppointmentsCount,
+          cancelInstancesCount,
+          startTimeInMs,
+        )
+      }
+
+      if (auditEvent) {
+        writeAuditEvent(
+          appointmentId,
+          request,
+          appointmentSeries,
+          cancelledTime,
+          cancelledBy,
+          cancellationReason.isDelete,
+        )
+      }
+
+      return appointmentSeries.toModel()
+    }
+  }
+
   fun cancelAppointments(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
