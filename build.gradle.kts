@@ -54,7 +54,8 @@ dependencies {
 
   // Test dependencies
   testImplementation("org.wiremock:wiremock-standalone:3.5.4")
-  testImplementation("com.h2database:h2")
+  testImplementation("org.springframework.boot:spring-boot-testcontainers")
+  testImplementation("org.testcontainers:postgresql")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.5")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
   testImplementation("org.mockito:mockito-inline:5.2.0")

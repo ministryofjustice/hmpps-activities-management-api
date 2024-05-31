@@ -32,7 +32,7 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (1, 1, 'A11111A', 111111, 1, '2022-10-10', '2022-10-10', '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ENDED');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (2, 1, 'B11111B', 111111, 1, current_date, null, current_timestamp - 1, 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (2, 1, 'B11111B', 111111, 1, current_date, null, current_timestamp - interval '1 hour', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
 values (1, current_date, '00:01:00', '00:02:00', false, null, null, null, null);

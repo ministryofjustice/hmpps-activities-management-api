@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -108,18 +109,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     )
 
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
-      .also { assertThat(it).hasSize(2) }
 
-    response[0].let {
-      assertThat(it.prisonerName).isEqualTo("Joe Harrison")
-      assertThat(it.cellLocation).isEqualTo("1-2-3")
-      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now()))
-    }
-    response[1].let {
-      assertThat(it.prisonerName).isEqualTo("Tim Harrison")
-      assertThat(it.cellLocation).isEqualTo("1-2-3")
-      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now().plusDays(1)))
-    }
+    // response will be in random order
+    assertThat(response)
+      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate)
+      .containsOnly(
+        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1))),
+        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now())),
+      )
   }
 
   @Sql(

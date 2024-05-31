@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
@@ -10,13 +10,13 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.test.context.ActiveProfiles
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AuditableEntityListener
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.ActivityCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.PrisonerDeallocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -26,10 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@ActiveProfiles("test")
 @ExtendWith(FakeSecurityContext::class)
-class AuditableEntityListenerTest(@Autowired private val listener: AuditableEntityListener) {
+class AuditableEntityListenerTest(@Autowired private val listener: AuditableEntityListener) : IntegrationTestBase() {
 
   @MockBean
   private lateinit var auditService: AuditService

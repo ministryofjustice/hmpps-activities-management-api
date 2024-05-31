@@ -13,12 +13,15 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDO
 import org.springframework.http.HttpHeaders
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.PostgresContainer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
@@ -58,6 +61,17 @@ abstract class IntegrationTestBase {
     internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
     internal val caseNotesApiMockServer = CaseNotesApiMockServer()
     internal val incentivesApiMockServer = IncentivesApiMockServer()
+    internal val db = PostgresContainer.instance
+
+    @JvmStatic
+    @DynamicPropertySource
+    fun properties(registry: DynamicPropertyRegistry) {
+      db?.run {
+        registry.add("spring.datasource.url", db::getJdbcUrl)
+        registry.add("spring.datasource.username", db::getUsername)
+        registry.add("spring.datasource.password", db::getPassword)
+      }
+    }
 
     @BeforeAll
     @JvmStatic
