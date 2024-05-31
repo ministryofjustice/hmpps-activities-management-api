@@ -151,7 +151,7 @@ val integrationTest = task<Test>("integrationTest") {
   group = "verification"
   shouldRunAfter("test")
   // required for jjwt 0.12 - see https://github.com/jwtk/jjwt/issues/849
-  jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED", "-Dssssspring.test.context.cache.maxSize=8")
+  jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED")
 }
 
 tasks.named<Test>("integrationTest") {
