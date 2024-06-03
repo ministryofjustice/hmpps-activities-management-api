@@ -5,7 +5,7 @@ ENV BUILD_NUMBER ${BUILD_NUMBER:-1_0_0}
 
 WORKDIR /app
 ADD . .
-RUN ./gradlew --no-daemon assemble
+RUN ./gradlew -Dorg.gradle.jvmargs="-Xmx2g" --no-daemon assemble
 
 # Grab AWS RDS Root cert
 RUN apt-get update && apt-get install -y curl
