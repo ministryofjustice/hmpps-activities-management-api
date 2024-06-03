@@ -1,4 +1,5 @@
 --Common
+truncate table job restart identity cascade;
 truncate table event_tier restart identity cascade;
 truncate table event_organiser restart identity cascade;
 --

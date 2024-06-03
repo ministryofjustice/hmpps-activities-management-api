@@ -32,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -65,8 +64,6 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class AppointmentIntegrationTest : IntegrationTestBase() {
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   @MockBean
   private lateinit var auditService: AuditService

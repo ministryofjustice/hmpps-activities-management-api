@@ -22,7 +22,7 @@ spring:
     hikari:
       minimumIdle: 2
       maximumPoolSize: 20
-      idleTimeout: 5000
+      idleTimeout: 2000
 
   flyway:
     locations: classpath:/migrations/common
