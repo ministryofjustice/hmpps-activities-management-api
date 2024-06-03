@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.App
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -64,52 +65,51 @@ class AppointmentCancelDomainService(
   fun uncancelAppointments(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
-    appointmentsToCancel: Set<Appointment>,
-    request: AppointmentCancelRequest,
-    cancelledTime: LocalDateTime,
-    cancelledBy: String,
-    cancelAppointmentsCount: Int,
-    cancelInstancesCount: Int,
+    appointmentsToUncancel: Set<Appointment>,
+    request: AppointmentUncancelRequest,
+    updatedTime: LocalDateTime,
+    updatedBy: String,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
     startTimeInMs: Long,
     trackEvent: Boolean,
     auditEvent: Boolean,
   ): AppointmentSeriesModel {
-    val cancellationReason = appointmentCancellationReasonRepository.findOrThrowNotFound(request.cancellationReasonId)
+//    val cancellationReason = appointmentsToUncancel.first().cancellationReason!!
 
     transactionHandler.newSpringTransaction {
-      appointmentsToCancel.forEach {
-        it.cancel(cancelledTime, cancellationReason, cancelledBy)
+      appointmentsToUncancel.forEach {
+        it.uncancel()
       }
       if (request.applyTo == ApplyTo.ALL_FUTURE_APPOINTMENTS || request.applyTo == ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS) {
-        val firstAppointment = appointmentsToCancel.minWith(Comparator.comparing { it.startDateTime() })
-        appointmentSeries.cancel(cancelledTime, cancelledBy, firstAppointment.startDate, firstAppointment.startTime)
+        appointmentSeries.uncancel(updatedTime, updatedBy)
       }
     }.let {
-      publishSyncEvent(appointmentsToCancel, cancellationReason)
+//      FIXME publishSyncEvent(appointmentsToUncancel, cancellationReason)
 
-      if (trackEvent) {
-        sendTelemetryEvent(
-          cancellationReason,
-          request,
-          cancelledBy,
-          appointmentSeries,
-          appointmentId,
-          cancelAppointmentsCount,
-          cancelInstancesCount,
-          startTimeInMs,
-        )
-      }
-
-      if (auditEvent) {
-        writeAuditEvent(
-          appointmentId,
-          request,
-          appointmentSeries,
-          cancelledTime,
-          cancelledBy,
-          cancellationReason.isDelete,
-        )
-      }
+//      if (trackEvent) {
+//        sendTelemetryEvent(
+//          cancellationReason,
+//          request,
+//          cancelledBy,
+//          appointmentSeries,
+//          appointmentId,
+//          cancelAppointmentsCount,
+//          cancelInstancesCount,
+//          startTimeInMs,
+//        )
+//      }
+//
+//      if (auditEvent) {
+//        writeAuditEvent(
+//          appointmentId,
+//          request,
+//          appointmentSeries,
+//          cancelledTime,
+//          cancelledBy,
+//          cancellationReason.isDelete,
+//        )
+//      }
 
       return appointmentSeries.toModel()
     }

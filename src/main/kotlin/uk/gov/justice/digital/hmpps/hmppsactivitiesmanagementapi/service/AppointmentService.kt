@@ -67,7 +67,7 @@ class AppointmentService(
 
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
-    val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update")
+    val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update", false)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     if (request.categoryCode != null) {
@@ -158,7 +158,7 @@ class AppointmentService(
 
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
-    val appointmentsToCancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "cancel")
+    val appointmentsToCancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "cancel", false)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val cancelAppointmentsCount = appointmentsToCancel.size
@@ -198,7 +198,7 @@ class AppointmentService(
     return cancelledAppointmentSeries
   }
 
-  fun uncancelAppointment(appointmentId: Long, request: AppointmentUncancelRequest, principal: Principal) {
+  fun uncancelAppointment(appointmentId: Long, request: AppointmentUncancelRequest, principal: Principal): AppointmentSeriesModel {
     // TODO find out which event to raise in NOMIS
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
@@ -206,27 +206,27 @@ class AppointmentService(
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
     // TODO cannot use applytoAppointments due to cancel restriction condition - What about deleted?
-    val appointmentsToUncancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "Uncancel")
+    val appointmentsToUncancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "Uncancel", true)
     checkCaseloadAccess(appointmentSeries.prisonCode)
-//
+
     val uncancelAppointmentsCount = appointmentsToUncancel.size
-//    val uncancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(uncancelAppointmentsCount)
+    val uncancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(appointmentsToUncancel)
 //    // Determine if this is a cancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only cancel the first appointment
-//    val cancelFirstAppointmentOnly = cancelAppointmentsCount > 1 && cancelInstancesCount > maxSyncAppointmentInstanceActions
+    val cancelFirstAppointmentOnly = uncancelAppointmentsCount > 1 && uncancelInstancesCount > maxSyncAppointmentInstanceActions
 //
-//    val cancelledAppointmentSeries = appointmentCancelDomainService.cancelAppointments(
-//      appointmentSeries,
-//      appointmentId,
-//      if (cancelFirstAppointmentOnly) setOf(appointment) else appointmentsToCancel.toSet(),
-//      request,
-//      now,
-//      principal.name,
-//      cancelAppointmentsCount,
-//      cancelInstancesCount,
-//      startTimeInMs,
-//      !cancelFirstAppointmentOnly,
-//      true,
-//    )
+    val uncancelledAppointmentSeries = appointmentCancelDomainService.uncancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      if (cancelFirstAppointmentOnly) setOf(appointment) else appointmentsToUncancel.toSet(),
+      request,
+      now,
+      principal.name,
+      uncancelAppointmentsCount,
+      uncancelInstancesCount,
+      startTimeInMs,
+      !cancelFirstAppointmentOnly,
+      true,
+    )
 //
 //    if (cancelFirstAppointmentOnly) {
 //      // The remaining appointments will be updated asynchronously by this job
@@ -243,7 +243,7 @@ class AppointmentService(
 //      )
 //    }
 //
-//    return cancelledAppointmentSeries
+    return uncancelledAppointmentSeries
   }
   private fun AppointmentUpdateRequest.failIfCategoryIsVideoLinkAndMissingExtraInfo() {
     // Should fail when category is VLB and extra information is mandatory

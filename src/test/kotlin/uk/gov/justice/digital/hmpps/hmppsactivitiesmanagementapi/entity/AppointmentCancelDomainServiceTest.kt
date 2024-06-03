@@ -41,7 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecuri
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentCancelDomainServiceTest {
@@ -68,9 +68,9 @@ class AppointmentCancelDomainServiceTest {
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "", false)
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false)
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)
 
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentCreatedInErrorReason()
@@ -231,7 +231,7 @@ class AppointmentCancelDomainServiceTest {
       frequency = AppointmentFrequency.DAILY,
     )
     val appointment = appointmentSeries.appointments()[0]
-    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false)
 
     val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId)
@@ -272,10 +272,10 @@ class AppointmentCancelDomainServiceTest {
     }
 
     whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
-    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any(), any())).thenReturn(appointmentList)
 
     val appointment = appointmentSeriesMock.appointments()[0]
-    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false)
 
     val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS)
@@ -320,10 +320,10 @@ class AppointmentCancelDomainServiceTest {
     }
 
     whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
-    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any(), any())).thenReturn(appointmentList)
 
     val appointment = appointmentSeriesMock.appointments()[0]
-    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)
 
     val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
@@ -368,10 +368,10 @@ class AppointmentCancelDomainServiceTest {
     }
 
     whenever(appointmentSeriesMock.appointments()).thenReturn(appointmentList)
-    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any())).thenReturn(appointmentList)
+    whenever(appointmentSeriesMock.applyToAppointments(any(), any(), any(), any())).thenReturn(appointmentList)
 
     val appointment = appointmentSeriesMock.appointments()[0]
-    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")
+    val applyToThis = appointmentSeriesMock.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "", false)
 
     val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentCancelledReason.appointmentCancellationReasonId, applyTo = ApplyTo.THIS_APPOINTMENT)
@@ -409,7 +409,7 @@ class AppointmentCancelDomainServiceTest {
       frequency = AppointmentFrequency.DAILY,
     )
     val appointment = appointmentSeries.appointments()[0]
-    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")
+    val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false)
 
     val ids = applyToThis.map { it.appointmentId }.toSet()
     val request = AppointmentCancelRequest(cancellationReasonId = appointmentDeletedReason.appointmentCancellationReasonId)

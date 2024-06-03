@@ -141,7 +141,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.startDate = LocalDate.now().minusDays(3)
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "update") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "update", false) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot update a past appointment")
   }
 
@@ -153,7 +153,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.cancelledTime = LocalDateTime.now()
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "modify") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "modify", false) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot modify a cancelled appointment")
   }
 
@@ -165,7 +165,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.isDeleted = true
-    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "cancel") }.isInstanceOf(IllegalArgumentException::class.java)
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "cancel", false) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot cancel a deleted appointment")
   }
 
@@ -176,7 +176,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "", false)) {
       assertThat(size).isEqualTo(1)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L))
     }
@@ -189,7 +189,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
@@ -202,7 +202,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(3)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L, 3L))
     }
@@ -215,7 +215,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].startDate = LocalDate.now().minusDays(3) }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -228,7 +228,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].cancelledTime = LocalDateTime.now() }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -241,7 +241,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].isDeleted = true }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -255,7 +255,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(2L, 3L))
     }
@@ -268,7 +268,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].cancelledTime = LocalDateTime.now() }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
@@ -281,7 +281,7 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     ).apply { appointments()[2].isDeleted = true }
     val appointment = entity.appointments()[1]
-    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "")) {
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false)) {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }

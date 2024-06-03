@@ -124,16 +124,22 @@ data class AppointmentSeries(
 
   fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
+  fun cancelledAppointments() = appointments().filter { it.isCancelled() }.toList()
+
+  fun cancelledAppointmentsAfter(startDateTime: LocalDateTime) = cancelledAppointments().filter { it.startDateTime() > startDateTime }.toList()
+
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
   // CREATE NEW APPLY TO APPOINTMENTS FOR UNCANCELLED SCENARIO // CANNOT APPLY DUE TO IS CANCELLED REQUIRE
-  fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String): List<Appointment> {
+  fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String, cancelled: Boolean): List<Appointment> {
     require(!appointment.isExpired()) {
       "Cannot $action a past appointment"
     }
 
-    require(!appointment.isCancelled()) {
-      "Cannot $action a cancelled appointment"
+    if (!cancelled) {
+      require(!appointment.isCancelled()) {
+        "Cannot $action a cancelled appointment"
+      }
     }
 
     require(!appointment.isDeleted) {
@@ -141,9 +147,17 @@ data class AppointmentSeries(
     }
 
     return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> listOf(appointment).union(
-        scheduledAppointmentsAfter(appointment.startDateTime()),
-      ).toList()
+      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> {
+        if (cancelled) {
+          listOf(appointment).union(
+            cancelledAppointmentsAfter(appointment.startDateTime()),
+          ).toList()
+        } else {
+          listOf(appointment).union(
+            scheduledAppointmentsAfter(appointment.startDateTime()),
+          ).toList()
+        }
+      }
       ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
       else -> listOf(appointment)
     }
