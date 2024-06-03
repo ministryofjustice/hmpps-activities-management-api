@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@8
+  hmpps: ministryofjustice/hmpps@9
   codecov: codecov/codecov@3.2.4
 
 parameters:
@@ -95,6 +95,7 @@ workflows:
             branches:
               only:
                 - main
+                - renovate-uk.gov.justice.hmpps.gradle-spring-boot-6.x
       - hmpps/deploy_env:
           name: deploy_dev
           env: "dev"
