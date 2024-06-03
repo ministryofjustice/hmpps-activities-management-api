@@ -2,13 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
@@ -42,10 +42,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import java.time.LocalDate
@@ -62,12 +60,6 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
-
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
@@ -108,18 +100,14 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     )
 
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
-      .also { assertThat(it).hasSize(2) }
 
-    response[0].let {
-      assertThat(it.prisonerName).isEqualTo("Joe Harrison")
-      assertThat(it.cellLocation).isEqualTo("1-2-3")
-      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now()))
-    }
-    response[1].let {
-      assertThat(it.prisonerName).isEqualTo("Tim Harrison")
-      assertThat(it.cellLocation).isEqualTo("1-2-3")
-      assertThat(it.earliestReleaseDate).isEqualTo(EarliestReleaseDate(LocalDate.now().plusDays(1)))
-    }
+    // response will be in random order
+    assertThat(response)
+      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate)
+      .containsOnly(
+        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1))),
+        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now())),
+      )
   }
 
   @Sql(

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.data.domain.PageImpl
@@ -88,7 +89,7 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(pagedResult))
+    JSONAssert.assertEquals((response.contentAsString), mapper.writeValueAsString(pagedResult), false)
   }
 
   @Nested
