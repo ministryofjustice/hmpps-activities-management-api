@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
@@ -37,6 +38,7 @@ class AppointmentServiceUpdateTest {
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
+  private val uncancelAppointmentsJob: UncancelAppointmentsJob = mock()
 
   private val service = AppointmentService(
     appointmentRepository,
@@ -48,6 +50,7 @@ class AppointmentServiceUpdateTest {
     appointmentCancelDomainService,
     updateAppointmentsJob,
     cancelAppointmentsJob,
+    uncancelAppointmentsJob,
     maxSyncAppointmentInstanceActions = 14,
   )
 

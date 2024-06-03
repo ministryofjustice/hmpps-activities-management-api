@@ -104,14 +104,10 @@ data class Appointment(
     this.isDeleted = cancellationReason.isDelete
   }
 
-  // TODO ADD UNCANCEL FUN TO UPDATE APPOINTMENT
-
   fun uncancel() {
     this.cancelledTime = null
     this.cancellationReason = null
     this.cancelledBy = null
-    // FIXME NOT SURE IF THIS IS REQUIRED AS ALREADY SET TO FALSE????
-//    this.isDeleted = cancellationReason?.isDelete
   }
 
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)

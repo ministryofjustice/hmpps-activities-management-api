@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -42,6 +43,7 @@ class AppointmentServiceTest {
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
+  private val uncancelAppointmentsJob: UncancelAppointmentsJob = mock()
   private lateinit var principal: Principal
 
   private val service = AppointmentService(
@@ -54,6 +56,7 @@ class AppointmentServiceTest {
     appointmentCancelDomainService,
     updateAppointmentsJob,
     cancelAppointmentsJob,
+    uncancelAppointmentsJob,
   )
 
   @BeforeEach

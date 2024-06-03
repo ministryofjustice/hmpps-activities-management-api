@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentUncancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
@@ -61,7 +62,34 @@ class AppointmentCancelDomainService(
     )
   }
 
-  // TODO UNCANCELLED FUNCTION
+  fun uncancelAppointmentIds(
+    appointmentSeriesId: Long,
+    appointmentId: Long,
+    appointmentIdsToUncancel: Set<Long>,
+    request: AppointmentUncancelRequest,
+    cancelledTime: LocalDateTime,
+    cancelledBy: String,
+    cancelAppointmentsCount: Int,
+    cancelInstancesCount: Int,
+    startTimeInMs: Long,
+  ): AppointmentSeriesModel {
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+    val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToUncancel.contains(it.appointmentId) }
+    return uncancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      appointmentsToCancel.toSet(),
+      request,
+      cancelledTime,
+      cancelledBy,
+      cancelAppointmentsCount,
+      cancelInstancesCount,
+      startTimeInMs,
+      trackEvent = true,
+      auditEvent = false,
+    )
+  }
+
   fun uncancelAppointments(
     appointmentSeries: AppointmentSeries,
     appointmentId: Long,
@@ -75,8 +103,6 @@ class AppointmentCancelDomainService(
     trackEvent: Boolean,
     auditEvent: Boolean,
   ): AppointmentSeriesModel {
-//    val cancellationReason = appointmentsToUncancel.first().cancellationReason!!
-
     transactionHandler.newSpringTransaction {
       appointmentsToUncancel.forEach {
         it.uncancel()
@@ -85,31 +111,29 @@ class AppointmentCancelDomainService(
         appointmentSeries.uncancel(updatedTime, updatedBy)
       }
     }.let {
-//      FIXME publishSyncEvent(appointmentsToUncancel, cancellationReason)
+      publishUncancelSyncEvent(appointmentsToUncancel)
 
-//      if (trackEvent) {
-//        sendTelemetryEvent(
-//          cancellationReason,
-//          request,
-//          cancelledBy,
-//          appointmentSeries,
-//          appointmentId,
-//          cancelAppointmentsCount,
-//          cancelInstancesCount,
-//          startTimeInMs,
-//        )
-//      }
-//
-//      if (auditEvent) {
-//        writeAuditEvent(
-//          appointmentId,
-//          request,
-//          appointmentSeries,
-//          cancelledTime,
-//          cancelledBy,
-//          cancellationReason.isDelete,
-//        )
-//      }
+      if (trackEvent) {
+        sendTelemetryUncancelEvent(
+          request,
+          updatedBy,
+          appointmentSeries,
+          appointmentId,
+          uncancelAppointmentsCount,
+          uncancelInstancesCount,
+          startTimeInMs,
+        )
+      }
+
+      if (auditEvent) {
+        writeAppointmentUncancelledAuditEvent(
+          appointmentId,
+          request,
+          appointmentSeries,
+          updatedTime,
+          updatedBy,
+        )
+      }
 
       return appointmentSeries.toModel()
     }
@@ -190,6 +214,17 @@ class AppointmentCancelDomainService(
     }
   }
 
+  private fun publishUncancelSyncEvent(
+    appointmentsToUncancel: Set<Appointment>,
+  ) {
+    appointmentsToUncancel.forEach {
+      it.attendees().forEach {
+          attendee ->
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, attendee.appointmentAttendeeId)
+      }
+    }
+  }
+
   private fun sendTelemetryEvent(
     cancellationReason: AppointmentCancellationReason,
     request: AppointmentCancelRequest,
@@ -214,6 +249,29 @@ class AppointmentCancelDomainService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
     telemetryClient.trackEvent(customEventName, telemetryPropertiesMap, telemetryMetricsMap)
+  }
+
+  private fun sendTelemetryUncancelEvent(
+    request: AppointmentUncancelRequest,
+    updatedBy: String,
+    appointmentSeries: AppointmentSeries,
+    appointmentId: Long,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
+    startTimeInMs: Long,
+  ) {
+    val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
+      updatedBy,
+      appointmentSeries.prisonCode,
+      appointmentSeries.appointmentSeriesId,
+      appointmentId,
+    )
+    val telemetryMetricsMap = mapOf(
+      APPOINTMENT_COUNT_METRIC_KEY to uncancelAppointmentsCount.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to uncancelInstancesCount.toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_UNCANCELLED.value, telemetryPropertiesMap, telemetryMetricsMap)
   }
 
   private fun writeAuditEvent(
@@ -264,6 +322,25 @@ class AppointmentCancelDomainService(
         applyTo = request.applyTo,
         createdAt = cancelledTime,
         createdBy = cancelledBy,
+      ),
+    )
+  }
+
+  private fun writeAppointmentUncancelledAuditEvent(
+    appointmentId: Long,
+    request: AppointmentUncancelRequest,
+    appointmentSeries: AppointmentSeries,
+    updatedTime: LocalDateTime,
+    updatedBy: String,
+  ) {
+    auditService.logEvent(
+      AppointmentUncancelledEvent(
+        appointmentSeriesId = appointmentSeries.appointmentSeriesId,
+        appointmentId = appointmentId,
+        prisonCode = appointmentSeries.prisonCode,
+        applyTo = request.applyTo,
+        createdAt = updatedTime,
+        createdBy = updatedBy,
       ),
     )
   }

@@ -140,6 +140,10 @@ data class AppointmentSeries(
       require(!appointment.isCancelled()) {
         "Cannot $action a cancelled appointment"
       }
+    } else {
+      require(appointment.isCancelled()) {
+        "Cannot $action a not cancelled appointment"
+      }
     }
 
     require(!appointment.isDeleted) {
@@ -162,7 +166,6 @@ data class AppointmentSeries(
       else -> listOf(appointment)
     }
   }
-  // TODO UNCANCELLED FUNCTION - NULL FIELDS AND CHECK UPDATED BY DATE / TIME
 
   fun uncancel(updatedTime: LocalDateTime?, updatedBy: String?) {
     this.cancelledTime = null
