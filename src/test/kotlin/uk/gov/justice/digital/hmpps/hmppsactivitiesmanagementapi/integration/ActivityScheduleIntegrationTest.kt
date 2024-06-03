@@ -9,7 +9,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
@@ -43,10 +42,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import java.time.LocalDate
@@ -63,12 +60,6 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
-
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()

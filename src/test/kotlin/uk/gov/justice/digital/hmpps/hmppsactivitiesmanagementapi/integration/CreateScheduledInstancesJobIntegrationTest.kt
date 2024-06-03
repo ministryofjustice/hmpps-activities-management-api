@@ -1,13 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
-import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
 import org.springframework.test.context.TestPropertySource
@@ -16,7 +12,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
 import java.time.DayOfWeek
@@ -29,8 +24,6 @@ import java.time.LocalDate
   ],
 )
 class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -42,7 +35,7 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
     updateSlotsToRunToday()
     updateToRunOnBankHolidays(true)
 
-    webTestClient.createScheduledInstances()
+    waitForJobs({ webTestClient.createScheduledInstances() })
 
     val scheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date >= '$today'",
@@ -72,7 +65,7 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
     updateSlotsToRunToday()
     updateToRunOnBankHolidays(false)
 
-    webTestClient.createScheduledInstances()
+    waitForJobs({ webTestClient.createScheduledInstances() })
 
     val scheduledInstances = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '$today'",
@@ -95,7 +88,7 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
     jdbcTemplate.update("update scheduled_instance set session_date = '$dayBeforeYesterday' where session_date = '2022-10-10'")
     jdbcTemplate.update("update scheduled_instance set session_date = '$yesterday' where session_date = '2022-10-11'")
 
-    webTestClient.createScheduledInstances()
+    waitForJobs({ webTestClient.createScheduledInstances() })
 
     val createdForToday = jdbcTemplate.queryForObject<Long>(
       "select count(*) from scheduled_instance where session_date = '$today'",
@@ -119,27 +112,12 @@ class CreateScheduledInstancesJobIntegrationTest : IntegrationTestBase() {
     eventCaptor.allValues hasSize 1
   }
 
-  private fun currentMaxJobId() = jdbcTemplate.queryForObject<Long>("select max(job_id) from job")
-
-  private fun waitForAllNewJobsCompleteSuccessfully(block: () -> Unit) {
-    val oldMaxId = currentMaxJobId()
-
-    block()
-
-    await untilAsserted {
-      assertThat(currentMaxJobId()).isGreaterThan(oldMaxId)
-      assertThat(jdbcTemplate.queryForObject<Boolean>("select not exists(select 1 from job where successful = false)")).isTrue()
-    }
-  }
-
   private fun WebTestClient.createScheduledInstances() {
-    waitForAllNewJobsCompleteSuccessfully {
-      post()
-        .uri("/job/create-scheduled-instances")
-        .accept(MediaType.TEXT_PLAIN)
-        .exchange()
-        .expectStatus().isCreated
-    }
+    post()
+      .uri("/job/create-scheduled-instances")
+      .accept(MediaType.TEXT_PLAIN)
+      .exchange()
+      .expectStatus().isCreated
   }
 
   private fun updateSlotsToRunToday() {

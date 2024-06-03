@@ -55,10 +55,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_HUB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.BankHolidayService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
@@ -78,15 +76,8 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class ActivityIntegrationTest : IntegrationTestBase() {
-
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
-
   @MockBean
   private lateinit var bankHolidayService: BankHolidayService
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 

@@ -4,9 +4,9 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "5.15.6"
-  kotlin("plugin.spring") version "1.9.24"
-  kotlin("plugin.jpa") version "1.9.24"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.0"
+  kotlin("plugin.spring") version "2.0.0"
+  kotlin("plugin.jpa") version "2.0.0"
   jacoco
   id("org.openapi.generator") version "7.5.0"
   id("io.sentry.jvm.gradle") version "4.5.1"
@@ -25,7 +25,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:0.2.4")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.0")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -50,7 +50,8 @@ dependencies {
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
-  runtimeOnly("org.postgresql:postgresql:42.7.3")
+  runtimeOnly("org.flywaydb:flyway-database-postgresql")
+  runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
   testImplementation("org.wiremock:wiremock-standalone:3.5.4")
@@ -65,6 +66,7 @@ dependencies {
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
+  testImplementation("org.skyscreamer:jsonassert")
 }
 
 kotlin {
@@ -149,7 +151,7 @@ val integrationTest = task<Test>("integrationTest") {
   group = "verification"
   shouldRunAfter("test")
   // required for jjwt 0.12 - see https://github.com/jwtk/jjwt/issues/849
-  jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED")
+  jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED", "-Dssssspring.test.context.cache.maxSize=8")
 }
 
 tasks.named<Test>("integrationTest") {

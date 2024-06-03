@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
-import org.awaitility.kotlin.await
-import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -44,7 +42,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -66,9 +63,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -98,23 +92,21 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
     }
 
-    webTestClient.manageAllocations(withDeallocateEnding = true)
+    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    await untilAsserted {
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
 
-      with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
-        size isEqualTo 3
-        onEach { it isDeallocatedWithReason ENDED }
-      }
+    with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
+      size isEqualTo 3
+      onEach { it isDeallocatedWithReason ENDED }
+    }
 
-      with(waitingListRepository.findAll()) {
-        onEach { it isStatus DECLINED }
-        onEach { it.declinedReason isEqualTo "Activity ended" }
-      }
+    with(waitingListRepository.findAll()) {
+      onEach { it isStatus DECLINED }
+      onEach { it.declinedReason isEqualTo "Activity ended" }
     }
   }
 
@@ -128,24 +120,23 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       onEach { it isStatus ACTIVE }
     }
 
-    webTestClient.manageAllocations(withDeallocateEnding = true)
+    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    await untilAsserted {
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-      verifyNoMoreInteractions(outboundEventsService)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
 
-      with(allocationRepository.findAll()) {
-        size isEqualTo 3
-        prisoner("A11111A") isStatus ACTIVE
-        prisoner("A22222A") isDeallocatedWithReason ENDED
-        prisoner("A33333A") isStatus ACTIVE
-      }
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("A11111A") isStatus ACTIVE
+      prisoner("A22222A") isDeallocatedWithReason ENDED
+      prisoner("A33333A") isStatus ACTIVE
     }
   }
 
   @Sql("classpath:test_data/seed-activity-id-28.sql")
   @Test
   fun `do not deallocate offenders for activity if allocated end date is before job window`() {
+    // FIORST
     whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
 
     with(allocationRepository.findAll()) {
@@ -153,18 +144,16 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       onEach { it isStatus ACTIVE }
     }
 
-    webTestClient.manageAllocations(withDeallocateEnding = true)
+    waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
-    await untilAsserted {
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-      verifyNoMoreInteractions(outboundEventsService)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
 
-      with(allocationRepository.findAll()) {
-        size isEqualTo 3
-        prisoner("A11111A") isStatus ACTIVE
-        prisoner("A22222A") isDeallocatedWithReason ENDED
-        prisoner("A33333A") isStatus ACTIVE
-      }
+    with(allocationRepository.findAll()) {
+      size isEqualTo 3
+      prisoner("A11111A") isStatus ACTIVE
+      prisoner("A22222A") isDeallocatedWithReason ENDED
+      prisoner("A33333A") isStatus ACTIVE
     }
   }
 
@@ -190,17 +179,15 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
     }
 
-    webTestClient.manageAllocations(withDeallocateExpiring = true)
+    waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
 
-    await untilAsserted {
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
-      verifyNoMoreInteractions(outboundEventsService)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
+    verifyNoMoreInteractions(outboundEventsService)
 
-      val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
+    val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
 
-      expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
-    }
+    expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
   }
 
   @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
@@ -225,19 +212,17 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
     )
 
-    webTestClient.manageAllocations(withDeallocateExpiring = true)
+    waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
 
-    await untilAsserted {
-      with(waitingListRepository.findAll().prisoner("A11111A")) {
-        status isStatus REMOVED
-        updatedTime isCloseTo LocalDateTime.now()
-        updatedBy isEqualTo "Activities Management Service"
-      }
-
-      verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
-
-      hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
+    with(waitingListRepository.findAll().prisoner("A11111A")) {
+      status isStatus REMOVED
+      updatedTime isCloseTo LocalDateTime.now()
+      updatedBy isEqualTo "Activities Management Service"
     }
+
+    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+
+    hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
@@ -257,18 +242,16 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisoner("FUTURE") isStatus PENDING
     }
 
-    webTestClient.manageAllocations(withActivate = true)
+    waitForJobs({ webTestClient.manageAllocations(withActivate = true) }, 3)
 
-    await untilAsserted {
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
-      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
-      verifyNoMoreInteractions(outboundEventsService)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 3L)
+    verifyNoMoreInteractions(outboundEventsService)
 
-      with(allocationRepository.findAll()) {
-        prisoner("PAST") isStatus ACTIVE
-        prisoner("TODAY") isStatus ACTIVE
-        prisoner("FUTURE") isStatus PENDING
-      }
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus ACTIVE
+      prisoner("TODAY") isStatus ACTIVE
+      prisoner("FUTURE") isStatus PENDING
     }
   }
 
@@ -289,14 +272,12 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisoner("FUTURE") isStatus PENDING
     }
 
-    webTestClient.manageAllocations(withActivate = true)
+    waitForJobs({ webTestClient.manageAllocations(withActivate = true) }, 3)
 
-    await untilAsserted {
-      with(allocationRepository.findAll()) {
-        prisoner("PAST") isStatus AUTO_SUSPENDED
-        prisoner("TODAY") isStatus AUTO_SUSPENDED
-        prisoner("FUTURE") isStatus PENDING
-      }
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus AUTO_SUSPENDED
+      prisoner("TODAY") isStatus AUTO_SUSPENDED
+      prisoner("FUTURE") isStatus PENDING
     }
   }
 
@@ -317,14 +298,12 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisoner("FUTURE") isStatus PENDING
     }
 
-    webTestClient.manageAllocations(withActivate = true)
+    waitForJobs({ webTestClient.manageAllocations(withActivate = true) }, 3)
 
-    await untilAsserted {
-      with(allocationRepository.findAll()) {
-        prisoner("PAST") isStatus SUSPENDED
-        prisoner("TODAY") isStatus SUSPENDED
-        prisoner("FUTURE") isStatus PENDING
-      }
+    with(allocationRepository.findAll()) {
+      prisoner("PAST") isStatus SUSPENDED
+      prisoner("TODAY") isStatus SUSPENDED
+      prisoner("FUTURE") isStatus PENDING
     }
   }
 
@@ -336,12 +315,10 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisoner("G4508UU") isStatus SUSPENDED
     }
 
-    webTestClient.manageAllocations(withActivate = true)
+    waitForJobs({ webTestClient.manageAllocations(withActivate = true) }, 3)
 
-    await untilAsserted {
-      with(allocationRepository.findAll()) {
-        prisoner("G4508UU") isStatus ACTIVE
-      }
+    with(allocationRepository.findAll()) {
+      prisoner("G4508UU") isStatus ACTIVE
     }
   }
 
@@ -371,7 +348,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     deallocatedTime isCloseTo TimeSource.now()
   }
 
-  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false) {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, numJobs: Int = 1) {
     post()
       .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
       .accept(MediaType.TEXT_PLAIN)
