@@ -272,9 +272,6 @@ class AppointmentServiceUncancelTest {
       private val appointments = appointmentSeries.appointments()
       private val appointment = appointments[2]
 
-      // private val softDeleteCancellationReason = AppointmentCancellationReason(1L, "Created in error", true)
-      // private val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
-
       @BeforeEach
       fun setUp() {
         whenever(principal.name).thenReturn("TEST.USER")
