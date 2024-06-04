@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -32,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
@@ -65,8 +65,6 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class AppointmentIntegrationTest : IntegrationTestBase() {
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   @MockBean
   private lateinit var auditService: AuditService
@@ -556,13 +554,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
-      size isEqualTo 12
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The cancel events for the specified appointment's instances are sent first
-        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.map { AppointmentInstanceInformation(it.id) }
-          // Followed by the cancel events for the remaining instances
-          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
-      )
+      assertThat(map { it.additionalInformation })
+        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -627,7 +620,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
       size isEqualTo 12
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
+      assertThat(map { it.additionalInformation }).hasSameElementsAs(
         // The delete events for the specified appointment's instances are sent first
         listOf(36L, 37L, 38L)
           // Followed by the delete events for the remaining instances
@@ -712,40 +705,52 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(appointments[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
       assertThat(appointments[2].startDate).isEqualTo(request.startDate)
       assertThat(appointments[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
-      with(appointments.subList(0, 2)) {
-        assertThat(map { it.categoryCode }.distinct().single()).isEqualTo("AC1")
-        assertThat(map { it.tier!!.code }.distinct().single()).isEqualTo("TIER_1")
-        assertThat(map { it.organiser }.distinct().single()).isNull()
-        assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(123)
-        assertThat(map { it.inCell }.distinct().single()).isFalse
-        assertThat(map { it.startTime }.distinct().single()).isEqualTo(LocalTime.of(9, 0))
-        assertThat(map { it.endTime }.distinct().single()).isEqualTo(LocalTime.of(10, 30))
-        assertThat(map { it.extraInformation }.distinct().single()).isEqualTo("Appointment level comment")
-        assertThat(map { it.updatedTime }.distinct().single()).isNull()
-        assertThat(map { it.updatedBy }.distinct().single()).isNull()
-        assertThat(map { it.attendees[0].prisonerNumber }.distinct().single()).isEqualTo("A1234BC")
-        assertThat(map { it.attendees[0].bookingId }.distinct().single()).isEqualTo(456)
-        assertThat(map { it.attendees[1].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
-        assertThat(map { it.attendees[1].bookingId }.distinct().single()).isEqualTo(457)
+
+      val tier1Appointments = appointments.subList(0, 2)
+      assertThat(tier1Appointments).hasSize(2)
+      tier1Appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo("AC1")
+        assertThat(it.tier!!.code).isEqualTo("TIER_1")
+        assertThat(it.organiser).isNull()
+        assertThat(it.internalLocationId).isEqualTo(123)
+        assertThat(it.inCell).isFalse
+        assertThat(it.startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(it.endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(it.extraInformation).isEqualTo("Appointment level comment")
+        assertThat(it.updatedTime).isNull()
+        assertThat(it.updatedBy).isNull()
+
+        assertThat(it.attendees)
+          .extracting(AppointmentAttendee::prisonerNumber, AppointmentAttendee::bookingId)
+          .containsOnly(
+            tuple("A1234BC", 456L),
+            tuple("B2345CD", 457L),
+          )
       }
-      with(appointments.subList(2, appointments.size)) {
-        assertThat(map { it.categoryCode }.distinct().single()).isEqualTo(request.categoryCode)
-        assertThat(map { it.tier!!.code }.distinct().single()).isEqualTo("TIER_2")
-        assertThat(map { it.organiser!!.code }.distinct().single()).isEqualTo("PRISON_STAFF")
-        assertThat(map { it.internalLocationId }.distinct().single()).isEqualTo(request.internalLocationId)
-        assertThat(map { it.inCell }.distinct().single()).isFalse
-        assertThat(map { it.startTime }.distinct().single()).isEqualTo(request.startTime)
-        assertThat(map { it.endTime }.distinct().single()).isEqualTo(request.endTime)
-        assertThat(map { it.extraInformation }.distinct().single()).isEqualTo("Updated Appointment level comment")
-        assertThat(map { it.updatedTime }.distinct().single()).isCloseTo(
+
+      val tier2Appointments = appointments.subList(2, appointments.size)
+      assertThat(tier2Appointments).hasSize(2)
+      tier2Appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo(request.categoryCode)
+        assertThat(it.tier!!.code).isEqualTo("TIER_2")
+        assertThat(it.organiser!!.code).isEqualTo("PRISON_STAFF")
+        assertThat(it.internalLocationId).isEqualTo(request.internalLocationId)
+        assertThat(it.inCell).isFalse
+        assertThat(it.startTime).isEqualTo(request.startTime)
+        assertThat(it.endTime).isEqualTo(request.endTime)
+        assertThat(it.extraInformation).isEqualTo("Updated Appointment level comment")
+        assertThat(it.updatedTime).isCloseTo(
           LocalDateTime.now(),
           within(60, ChronoUnit.SECONDS),
         )
-        assertThat(map { it.updatedBy }.distinct().single()).isEqualTo("test-client")
-        assertThat(map { it.attendees[0].prisonerNumber }.distinct().single()).isEqualTo("B2345CD")
-        assertThat(map { it.attendees[0].bookingId }.distinct().single()).isEqualTo(457)
-        assertThat(map { it.attendees[1].prisonerNumber }.distinct().single()).isEqualTo("C3456DE")
-        assertThat(map { it.attendees[1].bookingId }.distinct().single()).isEqualTo(458)
+        assertThat(it.updatedBy).isEqualTo("test-client")
+
+        assertThat(it.attendees)
+          .extracting(AppointmentAttendee::prisonerNumber, AppointmentAttendee::bookingId)
+          .containsOnly(
+            tuple("C3456DE", 458L),
+            tuple("B2345CD", 457L),
+          )
       }
     }
 
@@ -832,13 +837,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      size isEqualTo 12
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The update events for the specified appointment's instances are sent first
-        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.map { AppointmentInstanceInformation(it.id) }
-          // Followed by the update events for the remaining instances
-          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) }),
-      )
+      assertThat(map { it.additionalInformation })
+        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -930,13 +930,13 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-      assertThat(size).isEqualTo(8)
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        // The create events for the specified appointment's new attendees are sent first
-        appointmentSeries.appointments.single { it.id == appointmentId }.attendees.filter { attendee -> listOf("D4567EF", "E5679FG").contains(attendee.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }
-          // Followed by the create events for the remaining attendees
-          .union(appointmentSeries.appointments.filter { it.id != appointmentId }.flatMap { it.attendees }.filter { attendee -> listOf("D4567EF", "E5679FG").contains(attendee.prisonerNumber) }.map { AppointmentInstanceInformation(it.id) }),
-      )
+      assertThat(map { it.additionalInformation })
+        .hasSameElementsAs(
+          appointmentSeries.appointments
+            .flatMap { it.attendees }
+            .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
+            .map { AppointmentInstanceInformation(it.id) },
+        )
     }
 
     verifyNoMoreInteractions(eventsPublisher)

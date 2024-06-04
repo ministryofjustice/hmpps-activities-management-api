@@ -1,19 +1,18 @@
-package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
+package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.IntegrationTestBase
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@ActiveProfiles("test")
-class FeatureSwitchesTest {
+class FeatureSwitchesTest : IntegrationTestBase() {
 
   @TestPropertySource(
     properties = [

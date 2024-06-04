@@ -36,7 +36,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InmateDetailFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandInmate
@@ -99,9 +98,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var auditRepository: AuditRepository
-
-  @MockBean
-  private lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 

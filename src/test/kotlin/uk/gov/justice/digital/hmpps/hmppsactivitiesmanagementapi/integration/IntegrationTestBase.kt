@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.until
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
@@ -10,15 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.queryForObject
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.PostgresContainer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
@@ -26,6 +33,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wir
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import java.util.Optional
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
@@ -51,6 +60,12 @@ abstract class IntegrationTestBase {
   @Autowired
   lateinit var mapper: ObjectMapper
 
+  @MockBean
+  protected lateinit var eventsPublisher: OutboundEventsPublisher
+
+  @MockBean
+  protected lateinit var hmppsAuditApiClient: HmppsAuditApiClient
+
   companion object {
     @JvmField
     internal val prisonApiMockServer = PrisonApiMockServer()
@@ -58,6 +73,17 @@ abstract class IntegrationTestBase {
     internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
     internal val caseNotesApiMockServer = CaseNotesApiMockServer()
     internal val incentivesApiMockServer = IncentivesApiMockServer()
+    internal val db = PostgresContainer.instance
+
+    @JvmStatic
+    @DynamicPropertySource
+    fun properties(registry: DynamicPropertyRegistry) {
+      db?.run {
+        registry.add("spring.datasource.url", db::getJdbcUrl)
+        registry.add("spring.datasource.username", db::getUsername)
+        registry.add("spring.datasource.password", db::getPassword)
+      }
+    }
 
     @BeforeAll
     @JvmStatic
@@ -111,5 +137,13 @@ abstract class IntegrationTestBase {
 
   internal fun stubPrisonerForInterestingEvent(prisonerNumber: String) {
     prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber)
+  }
+
+  internal fun waitForJobs(block: () -> Unit, numJobs: Int = 1) {
+    block()
+
+    await until {
+      numJobs == jdbcTemplate.queryForObject<Int>("select count(*) from job where successful = true")
+    }
   }
 }

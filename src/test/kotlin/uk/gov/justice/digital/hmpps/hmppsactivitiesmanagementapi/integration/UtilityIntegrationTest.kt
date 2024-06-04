@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -12,7 +11,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 
@@ -22,9 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
   ],
 )
 class UtilityIntegrationTest : IntegrationTestBase() {
-
-  @MockBean
-  private lateinit var eventsPublisher: OutboundEventsPublisher
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
