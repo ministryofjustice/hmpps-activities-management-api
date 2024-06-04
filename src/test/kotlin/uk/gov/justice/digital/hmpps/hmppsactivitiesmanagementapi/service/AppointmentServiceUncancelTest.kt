@@ -325,7 +325,7 @@ class AppointmentServiceUncancelTest {
       }
 
       @Test
-      fun `cancel appointment with a reason that triggers a soft delete and that applies to all future appointments`() {
+      fun `uncancel appointment with a reason that applies to all future appointments`() {
         val request = AppointmentUncancelRequest(ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
         service.uncancelAppointment(appointment.appointmentId, request, principal)
