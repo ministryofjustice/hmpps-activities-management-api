@@ -573,13 +573,12 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(appointmentSeries.appointments) {
       forEach {
-        if(it.id == 3L || it.id == 6L) {
+        if (it.id == 3L || it.id == 6L) {
           assertThat(it.isCancelled()).isTrue()
         } else {
           assertThat(it.isCancelled()).isFalse()
         }
       }
-
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
@@ -596,7 +595,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
   }
-
 
   @Sql(
     "classpath:test_data/seed-appointment-cancelled-id-1.sql",
