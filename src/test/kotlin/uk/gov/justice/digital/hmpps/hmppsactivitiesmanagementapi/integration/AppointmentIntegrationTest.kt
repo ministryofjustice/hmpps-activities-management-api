@@ -26,8 +26,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentUncancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
@@ -62,6 +64,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.updated=true",
     "feature.event.appointments.appointment-instance.deleted=true",
     "feature.event.appointments.appointment-instance.cancelled=true",
+    "feature.event.appointments.appointment-instance.uncancelled=true",
   ],
 )
 class AppointmentIntegrationTest : IntegrationTestBase() {
@@ -521,6 +524,94 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     }
 
     verify(auditService).logEvent(any<AppointmentCancelledEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-cancelled-id-1.sql",
+  )
+  @Test
+  fun `uncancel a single appointment`() {
+    val request = AppointmentUncancelRequest(
+      applyTo = ApplyTo.THIS_APPOINTMENT,
+    )
+
+    val appointmentSeries = webTestClient.uncancelAppointment(3, request)
+      .expectBody(AppointmentSeries::class.java)
+      .returnResult().responseBody
+
+    val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+
+    assertThat(appointmentSeries.appointments.first().isCancelled()).isFalse()
+
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.uncancelled")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-cancelled-id-1.sql",
+  )
+  @Test
+  fun `uncancel a group appointment`() {
+    val request = AppointmentUncancelRequest(
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
+    )
+
+    val appointmentSeries = webTestClient.uncancelAppointment(4, request)
+      .expectBody(AppointmentSeries::class.java)
+      .returnResult().responseBody
+
+    assertThat(appointmentSeries.appointments.first().isCancelled()).isTrue()
+
+    with(appointmentSeries.appointments) {
+      forEach {
+        if(it.id == 3L || it.id == 6L) {
+          assertThat(it.isCancelled()).isTrue()
+        } else {
+          assertThat(it.isCancelled()).isFalse()
+        }
+      }
+
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
+
+    with(eventCaptor.allValues) {
+      forEach {
+        assertThat(it.eventType).isEqualTo("appointments.appointment-instance.uncancelled")
+        assertThat(it.additionalInformation).isIn(AppointmentInstanceInformation(4L), AppointmentInstanceInformation(5L))
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(it.description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
+      }
+    }
+
+    verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
+  }
+
+
+  @Sql(
+    "classpath:test_data/seed-appointment-cancelled-id-1.sql",
+  )
+  @Test
+  fun `400 - uncancel an appointment 6 days ago`() {
+    val request = AppointmentUncancelRequest(
+      applyTo = ApplyTo.THIS_APPOINTMENT,
+    )
+
+    val response = webTestClient.uncancelAppointment(6, request)!!
+
+    response
+      .expectStatus().isBadRequest
+      .expectBody().jsonPath("developerMessage").isEqualTo("Cannot uncancel a past appointment")
   }
 
   @Sql(
@@ -1023,4 +1114,14 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
+
+  private fun WebTestClient.uncancelAppointment(
+    id: Long,
+    request: AppointmentUncancelRequest,
+  ) =
+    put()
+      .uri("/appointments/$id/uncancel")
+      .bodyValue(request)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
 }
