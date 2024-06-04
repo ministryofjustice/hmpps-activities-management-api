@@ -105,7 +105,7 @@ class AppointmentCancelDomainService(
   ): AppointmentSeriesModel {
     transactionHandler.newSpringTransaction {
       appointmentsToUncancel.forEach {
-        it.uncancel()
+        it.uncancel(updatedBy, updatedTime)
       }
       if (request.applyTo == ApplyTo.ALL_FUTURE_APPOINTMENTS || request.applyTo == ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS) {
         appointmentSeries.uncancel(updatedTime, updatedBy)
@@ -196,6 +196,10 @@ class AppointmentCancelDomainService(
   fun getCancelInstancesCount(
     appointmentsToCancel: Collection<Appointment>,
   ) = appointmentsToCancel.flatMap { it.attendees() }.size
+
+  fun getUncancelInstancesCount(
+    appointmentsToUncancel: Collection<Appointment>,
+  ) = appointmentsToUncancel.flatMap { it.attendees() }.size
 
   private fun publishSyncEvent(
     appointmentsToCancel: Set<Appointment>,

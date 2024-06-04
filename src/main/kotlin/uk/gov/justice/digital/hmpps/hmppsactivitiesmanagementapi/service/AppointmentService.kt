@@ -211,7 +211,7 @@ class AppointmentService(
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val uncancelAppointmentsCount = appointmentsToUncancel.size
-    val uncancelInstancesCount = appointmentCancelDomainService.getCancelInstancesCount(appointmentsToUncancel)
+    val uncancelInstancesCount = appointmentCancelDomainService.getUncancelInstancesCount(appointmentsToUncancel)
     // Determine if this is an uncancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only uncancel the first appointment
     val uncancelFirstAppointmentOnly = uncancelAppointmentsCount > 1 && uncancelInstancesCount > maxSyncAppointmentInstanceActions
 

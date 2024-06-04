@@ -104,7 +104,9 @@ data class Appointment(
     this.isDeleted = cancellationReason.isDelete
   }
 
-  fun uncancel() {
+  fun uncancel(updateBy: String, updateTime: LocalDateTime = LocalDateTime.now()) {
+    this.updatedBy = updateBy
+    this.updatedTime = updateTime
     this.cancelledTime = null
     this.cancellationReason = null
     this.cancelledBy = null

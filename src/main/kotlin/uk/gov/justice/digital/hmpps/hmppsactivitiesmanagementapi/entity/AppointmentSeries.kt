@@ -124,13 +124,12 @@ data class AppointmentSeries(
 
   fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
-  fun cancelledAppointments() = appointments().filter { it.isCancelled() }.toList()
+  fun cancelledAppointments() = appointments().filter { it.isCancelled() && !it.isExpired() }.toList()
 
   fun cancelledAppointmentsAfter(startDateTime: LocalDateTime) = cancelledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
-  // CREATE NEW APPLY TO APPOINTMENTS FOR UNCANCELLED SCENARIO // CANNOT APPLY DUE TO IS CANCELLED REQUIRE
   fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String, cancelled: Boolean): List<Appointment> {
     require(!appointment.isExpired()) {
       "Cannot $action a past appointment"
@@ -162,7 +161,13 @@ data class AppointmentSeries(
           ).toList()
         }
       }
-      ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
+      ApplyTo.ALL_FUTURE_APPOINTMENTS -> {
+        if (cancelled) {
+          cancelledAppointments()
+        } else {
+          scheduledAppointments()
+        }
+      }
       else -> listOf(appointment)
     }
   }
