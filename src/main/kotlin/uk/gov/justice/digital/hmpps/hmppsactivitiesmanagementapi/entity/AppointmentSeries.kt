@@ -131,7 +131,7 @@ data class AppointmentSeries(
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
   fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String, cancelled: Boolean): List<Appointment> {
-    require(!appointment.isEditable()) {
+    require(appointment.isEditable()) {
       "Cannot $action an appointment more than 5 days ago"
     }
 
