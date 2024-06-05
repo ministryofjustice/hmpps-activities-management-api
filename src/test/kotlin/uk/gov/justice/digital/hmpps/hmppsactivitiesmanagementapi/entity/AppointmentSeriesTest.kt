@@ -7,6 +7,7 @@ import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -140,9 +141,9 @@ class AppointmentSeriesTest {
       numberOfAppointments = 3,
     )
     val appointment = entity.appointments()[1]
-    appointment.startDate = LocalDate.now().minusDays(3)
+    appointment.startDate = LocalDate.now().minusDays(6)
     assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "update", false) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Cannot update a past appointment")
+      .hasMessage("Cannot update an appointment more than 5 days ago")
   }
 
   @Test
@@ -285,6 +286,37 @@ class AppointmentSeriesTest {
       assertThat(size).isEqualTo(2)
       assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L, 2L))
     }
+  }
+
+  @Test
+  fun `should allow cancelling of an appointment more than five days ago`() {
+    val entity = appointmentSeriesEntity(
+      frequency = AppointmentFrequency.DAILY,
+      numberOfAppointments = 1,
+    ).apply { appointments()[0].cancelledTime = LocalDateTime.now() }
+    val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L)
+    val cancellationReason = AppointmentCancellationReason(2L, "Cancelled", false)
+    val appointment = appointmentEntity(entity, 1L, 1, LocalDate.now().minusDays(5), LocalTime.now(), LocalDateTime.now(), "updatedBy", prisonerNumberToBookingIdMap, cancellationReason, cancelledBy = "Cancelled user", cancelledTime = LocalDateTime.now().minusDays(3))
+
+    with(entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "uncancel", true)) {
+      assertThat(size).isEqualTo(1)
+      assertThat(this.map { it.appointmentId }).isEqualTo(listOf(1L))
+    }
+  }
+
+  @Test
+  fun `should not allow cancelling of an appointment more than five days ago`() {
+    val entity = appointmentSeriesEntity(
+      frequency = AppointmentFrequency.WEEKLY,
+      numberOfAppointments = 3,
+    ).apply { appointments()[2].cancelledTime = LocalDateTime.now() }
+    val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L)
+    val appointment = appointmentEntity(entity, 1L, 1, LocalDate.now().minusDays(6), LocalTime.now(), LocalDateTime.now(), "updatedBy", prisonerNumberToBookingIdMap)
+
+    assertThatThrownBy {
+      entity.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "uncancel", true)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot uncancel an appointment more than 5 days ago")
   }
 
   @Test

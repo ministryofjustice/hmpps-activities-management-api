@@ -609,7 +609,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     response
       .expectStatus().isBadRequest
-      .expectBody().jsonPath("developerMessage").isEqualTo("Cannot uncancel a past appointment")
+      .expectBody().jsonPath("developerMessage").isEqualTo("Cannot uncancel an appointment more than 5 days ago")
   }
 
   @Sql(

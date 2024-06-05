@@ -195,6 +195,8 @@ data class Appointment(
 
   fun isExpired() = startDateTime() < LocalDateTime.now()
 
+  fun isEditable() = startDateTime() < LocalDateTime.now().minusDays(6)
+
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
 
   fun attendeeUsernames() = attendees().flatMap { it.usernames() }.distinct()

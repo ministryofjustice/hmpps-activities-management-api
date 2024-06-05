@@ -146,12 +146,12 @@ class AppointmentServiceCancelTest {
     }
 
     @Test
-    fun `cancel appointment throws illegal argument exception when appointment is in the past`() {
+    fun `cancel appointment throws illegal argument exception when appointment is more than five days old`() {
       val request = AppointmentCancelRequest(1, ApplyTo.THIS_APPOINTMENT)
 
       val appointmentSeries = appointmentSeriesEntity(
         appointmentSeriesId = 2,
-        startDate = LocalDate.now(),
+        startDate = LocalDate.now().minusDays(6),
         startTime = LocalTime.now().minusMinutes(1),
         endTime = LocalTime.now().plusHours(1),
       )
@@ -168,7 +168,7 @@ class AppointmentServiceCancelTest {
           principal,
         )
       }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Cannot cancel a past appointment")
+        .hasMessage("Cannot cancel an appointment more than 5 days ago")
 
       verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }

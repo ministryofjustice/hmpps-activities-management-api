@@ -201,7 +201,6 @@ class AppointmentService(
   }
 
   fun uncancelAppointment(appointmentId: Long, request: AppointmentUncancelRequest, principal: Principal): AppointmentSeriesModel {
-    // TODO find out which event to raise in NOMIS
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()
 

@@ -146,12 +146,12 @@ class AppointmentServiceUncancelTest {
     }
 
     @Test
-    fun `uncancel appointment throws illegal argument exception when appointment is in the past`() {
+    fun `uncancel appointment throws illegal argument exception when appointment is more than five days old`() {
       val request = AppointmentUncancelRequest(ApplyTo.THIS_APPOINTMENT)
 
       val appointmentSeries = appointmentSeriesEntity(
         appointmentSeriesId = 2,
-        startDate = LocalDate.now(),
+        startDate = LocalDate.now().minusDays(6),
         startTime = LocalTime.now().minusMinutes(1),
         endTime = LocalTime.now().plusHours(1),
       )
@@ -168,7 +168,7 @@ class AppointmentServiceUncancelTest {
           principal,
         )
       }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Cannot uncancel a past appointment")
+        .hasMessage("Cannot uncancel an appointment more than 5 days ago")
 
       verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }
@@ -184,8 +184,6 @@ class AppointmentServiceUncancelTest {
 
       verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }
-
-    // TODO should this be here????  java.lang.IllegalArgumentException: Cannot uncancel a not cancelled appointment
 
     @Nested
     @DisplayName("uncancel individual appointment")
