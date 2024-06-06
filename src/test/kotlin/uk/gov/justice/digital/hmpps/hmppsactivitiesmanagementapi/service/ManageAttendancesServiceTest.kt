@@ -351,6 +351,8 @@ class ManageAttendancesServiceTest {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
       assertThat(payAmount).isEqualTo(30)
       assertThat(issuePayment).isTrue
+      assertThat(comment).isEqualTo("Cancel test")
+      assertThat(recordedBy).isEqualTo("user")
       assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
     }
 

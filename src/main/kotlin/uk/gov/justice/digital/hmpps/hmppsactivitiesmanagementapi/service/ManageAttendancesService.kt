@@ -163,8 +163,9 @@ class ManageAttendancesService(
     initialIssuePayment = instance.isPaid(),
     status = AttendanceStatus.COMPLETED,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
-    recordedTime = LocalDateTime.now(),
-    recordedBy = ServiceName.SERVICE_NAME.value,
+    comment = instance.cancelledReason,
+    recordedTime = instance.cancelledTime,
+    recordedBy = instance.cancelledBy,
   )
 
   private fun waitingAttendance(instance: ScheduledInstance, allocation: Allocation) = Attendance(
