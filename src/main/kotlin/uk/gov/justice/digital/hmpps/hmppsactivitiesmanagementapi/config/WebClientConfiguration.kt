@@ -40,6 +40,7 @@ class WebClientConfiguration(
   @Value("\${incentives.api.url}") private val incentivesApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
+  @Value("\${prison.api.timeout:10s}") private val shorterTimeout: Duration,
   private val webClientBuilder: WebClient.Builder,
 ) {
 
@@ -178,7 +179,7 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId("prisoner-search-api")
     return builder.baseUrl(rootUri)
-      .timeout(apiTimeout)
+      .timeout(shorterTimeout)
       .apply(oauth2Client.oauth2Configuration())
       .build()
   }
