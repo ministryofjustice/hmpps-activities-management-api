@@ -118,7 +118,7 @@ data class Prisoner(
     @Schema(example = "Egyptian", description = "Nationality")
     @get:JsonProperty("nationality") val nationality: kotlin.String? = null,
 
-    @Schema(example = "ACTIVE IN", required = true, description = "Status of the prisoner")
+    @Schema(example = "ACTIVE IN", description = "Status of the prisoner")
     @get:JsonProperty("status", required = true) val status: kotlin.String? = null,
 
     @Schema(example = "Robbery", description = "Most serious offence for this sentence")
