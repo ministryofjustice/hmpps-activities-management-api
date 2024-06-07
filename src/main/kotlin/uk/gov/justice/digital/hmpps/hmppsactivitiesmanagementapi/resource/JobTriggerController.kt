@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
 import java.time.LocalDate
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
@@ -29,6 +31,7 @@ class JobTriggerController(
   private val manageAllocationsJob: ManageAllocationsJob,
   private val activityMetricsJob: ActivityMetricsJob,
   private val appointmentMetricsJob: AppointmentMetricsJob,
+  private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -116,5 +119,32 @@ class JobTriggerController(
     appointmentMetricsJob.execute()
 
     return "Appointments metrics job triggered"
+  }
+
+  @PostMapping(value = ["/purposeful-activity-reports"])
+  @Operation(
+    summary = "Trigger the job to generate purposeful activity reports and upload to s3",
+    description = """
+      Generates 3 csv reports which are uploaded to an s3 bucket for prison performance reporting team to process for
+      purposeful activity generation purposes and to display on the prison regime dashboard in the performance hub.
+
+      Report 1) Details of attended purposeful-activity activities
+      Report 2) Details of attended purposeful-activity appointments
+      Report 3) Prison rollout table
+
+      Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
+      """,
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerPurposefulActivityReportsJob(
+    @RequestParam(value = "weekOffset", required = false, defaultValue = "1")
+    @Parameter(description = "Report is calculated for the week up to the prior saturday. increase offset to generate reports for weeks prior to that")
+    weekOffset: Int,
+  ): String {
+    runBlocking {
+      purposefulActivityReportsJob.execute(weekOffset)
+    }
+    return "Purposeful Activity Reports job triggered"
   }
 }

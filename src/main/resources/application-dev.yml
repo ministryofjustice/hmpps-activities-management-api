@@ -4,3 +4,8 @@
 spring:
   flyway:
     locations: classpath:/migrations/common,classpath:/migrations/dev
+
+aws:
+  s3:
+    ap:
+      bucket: moj-reg-dev

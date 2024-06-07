@@ -141,3 +141,9 @@ hmpps:
 springdoc:
   swagger-ui:
     tags-sorter: alpha
+
+aws:
+  s3:
+    ap:
+      region: eu-west-2
+      bucket: moj-reg-prod
