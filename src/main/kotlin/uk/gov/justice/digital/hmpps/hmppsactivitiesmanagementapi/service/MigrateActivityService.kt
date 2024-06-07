@@ -469,7 +469,7 @@ class MigrateActivityService(
       }
 
       val prisoner = prisonerResults.first()
-      if (prisoner.prisonId != request.prisonCode || prisoner.status.contains("INACTIVE")) {
+      if (prisoner.prisonId != request.prisonCode || prisoner.status?.contains("INACTIVE") == true) {
         logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Prisoner not in ${request.prisonCode} or INACTIVE")
       }
 
