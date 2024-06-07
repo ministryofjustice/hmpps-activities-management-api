@@ -74,11 +74,11 @@ class AppointmentCancelDomainService(
     startTimeInMs: Long,
   ): AppointmentSeriesModel {
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
-    val appointmentsToCancel = appointmentSeries.appointments().filter { appointmentIdsToUncancel.contains(it.appointmentId) }
+    val appointmentsToUncancel = appointmentSeries.appointments().filter { appointmentIdsToUncancel.contains(it.appointmentId) }
     return uncancelAppointments(
       appointmentSeries,
       appointmentId,
-      appointmentsToCancel.toSet(),
+      appointmentsToUncancel.toSet(),
       request,
       updatedTime,
       updatedBy,
