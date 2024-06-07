@@ -1,12 +1,27 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.PrisonerDetailSearchCriteria
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import java.time.LocalDate
 
 val activeInMoorlandInmate = InmateDetailFixture.instance(agencyId = MOORLAND_PRISON_CODE)
 val activeInPentonvilleInmate = InmateDetailFixture.instance(agencyId = PENTONVILLE_PRISON_CODE)
+
+fun InmateDetail.convert(): Prisoner {
+  return Prisoner(
+    prisonerNumber = this.offenderNo!!,
+    dateOfBirth = this.dateOfBirth!!,
+    firstName = this.firstName!!,
+    lastName = this.lastName!!,
+    gender = PrisonerDetailSearchCriteria.Gender.M.name,
+    status = "",
+    bookingId = this.bookingId?.toString(),
+    prisonId = this.agencyId,
+  )
+}
 
 object InmateDetailFixture {
   fun instance(

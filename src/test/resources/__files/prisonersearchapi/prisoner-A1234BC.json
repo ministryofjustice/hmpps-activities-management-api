@@ -1,0 +1,50 @@
+{
+  "prisonerNumber": "A1234BC",
+  "pncNumber": "99/58816L",
+  "pncNumberCanonicalShort": "99/58816L",
+  "pncNumberCanonicalLong": "1999/58816L",
+  "croNumber": "45815/99U",
+  "bookingId": "1200993",
+  "bookNumber": "38458A",
+  "firstName": "JANE",
+  "middleNames": "STACY",
+  "lastName": "DOE",
+  "dateOfBirth": "1986-06-27",
+  "gender": "Female",
+  "ethnicity": "White: Eng./Welsh/Scot./N.Irish/British",
+  "youthOffender": false,
+  "status": "ACTIVE OUT",
+  "lastMovementTypeCode": "TAP",
+  "lastMovementReasonCode": "C3",
+  "inOutStatus": "OUT",
+  "prisonId": "PVI",
+  "prisonName": "Pentonville",
+  "cellLocation": "2-1-007",
+  "aliases": [
+    {
+      "firstName": "EGVANING",
+      "middleNames": "ROCHICA",
+      "lastName": "VANERY",
+      "dateOfBirth": "1986-07-31",
+      "gender": "Male",
+      "ethnicity": "White: Gypsy or Irish Traveller"
+    }
+  ],
+  "alerts": [],
+  "legalStatus": "RECALL",
+  "imprisonmentStatus": "FTR_HDC",
+  "imprisonmentStatusDescription": "Fixed Term Recall while on HDC",
+  "recall": true,
+  "indeterminateSentence": false,
+  "receptionDate": "2020-07-20",
+  "locationDescription": "Moorland (HMP & YOI)",
+  "restrictedPatient": false,
+  "currentIncentive": {
+    "level": {
+      "code": "STD",
+      "description": "Standard"
+    },
+    "dateTime": "2020-07-20T10:36:53",
+    "nextReviewDate": "2021-07-20"
+  }
+}
