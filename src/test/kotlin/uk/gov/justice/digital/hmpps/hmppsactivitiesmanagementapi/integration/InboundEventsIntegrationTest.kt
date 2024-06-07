@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvilleInmate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.convert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
@@ -221,8 +222,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `permanent release of prisoner removes any future attendances at time of event being raised`() {
     // Fixture necessary for the release event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A11111A"))
-
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
 
@@ -489,8 +488,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
-
     assertThatAllocationsAreActiveFor("A11111A")
 
     // Suspending first so can unsuspend afterwards.
@@ -542,8 +539,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
-
     assertThatAllocationsAreActiveFor("A11111A")
 
     // Suspending first so can unsuspend afterwards.
@@ -594,8 +589,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `two auto-suspended allocations are unsuspended and two future attendance are cancelled for offender received event`() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
-
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
 
     allocationRepository.findAll().filter { it.prisonerNumber == "A11111A" }.onEach {
       assertThat(it.status(PrisonerStatus.AUTO_SUSPENDED)).isTrue
@@ -654,8 +647,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Fixture necessary for the received event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvillePrisoner.copy(prisonerNumber = "A11111A"))
 
-    stubPrisonerForInterestingEvent(activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
-
     with(allocationRepository.getReferenceById(1L)) {
       status(PrisonerStatus.AUTO_SUSPENDED) isBool true
     }
@@ -702,8 +693,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     // Fixture necessary for the activities changed event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A22222A"))
 
-    stubPrisonerForInterestingEvent(InmateDetailFixture.instance(offenderNo = "A22222A"))
-
     assertThatAllocationsAreActiveFor("A22222A")
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(
@@ -736,8 +725,6 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
   fun `allocations are ended and future attendances are removed for activities changed event set to END on temporary release`() {
     // Fixture necessary for the activities changed event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInMoorlandPrisoner.copy(prisonerNumber = "A22222A"))
-
-    stubPrisonerForInterestingEvent(activeInMoorlandInmate.copy(offenderNo = "A22222A"))
 
     assertThatAllocationsAreActiveFor("A22222A")
 
@@ -799,6 +786,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     val newPrisonerNumberAndOldBooking = newPrisonerNumber to oldBookingId
 
     prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999).convert())
 
     // Check all set to the old prisoner number and booking ID before event is processed
     allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking, newPrisonerNumberAndOldBooking)
@@ -829,6 +817,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
 
     prisonApiMockServer.stubGetPrisonerDetails(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInPentonvilleInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999).convert())
 
     // Check all set to the old prisoner number and booking ID before event is processed
     allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)

@@ -132,11 +132,11 @@ abstract class IntegrationTestBase {
     this.queryParamIfPresent(name, Optional.ofNullable(type))
 
   internal fun stubPrisonerForInterestingEvent(prisoner: InmateDetail) {
-    prisonApiMockServer.stubGetPrisonerDetails(prisoner)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner.offenderNo!!)
   }
 
   internal fun stubPrisonerForInterestingEvent(prisonerNumber: String) {
-    prisonApiMockServer.stubGetPrisonerDetails(prisonerNumber = prisonerNumber)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisonerNumber)
   }
 
   internal fun waitForJobs(block: () -> Unit, numJobs: Int = 1) {
