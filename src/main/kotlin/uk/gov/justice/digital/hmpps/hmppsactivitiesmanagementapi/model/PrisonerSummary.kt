@@ -31,7 +31,7 @@ data class PrisonerSummary(
     description = "The prisoner's status at their current prison",
     example = "ACTIVE IN",
   )
-  val status: String,
+  val status: String?,
 
   @Schema(
     description =
