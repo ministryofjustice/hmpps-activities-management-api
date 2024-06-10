@@ -79,6 +79,24 @@ class AppointmentTest {
   }
 
   @Test
+  fun `editable when start date time is 5 days past`() {
+    val entity = appointmentSeriesEntity().appointments().first().apply {
+      startDate = LocalDate.now().minusDays(5)
+      startTime = LocalTime.now()
+    }
+    entity.isEditable() isBool true
+  }
+
+  @Test
+  fun `not editable when start date time is 6 days past`() {
+    val entity = appointmentSeriesEntity().appointments().first().apply {
+      startDate = LocalDate.now().minusDays(6)
+      startTime = LocalTime.now()
+    }
+    entity.isEditable() isBool false
+  }
+
+  @Test
   fun `scheduled when start date time is in the future, not cancelled or deleted`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
       startDate = LocalDate.now()

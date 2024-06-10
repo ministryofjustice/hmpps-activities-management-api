@@ -48,6 +48,7 @@ internal fun appointmentSeriesEntity(
   isMigrated: Boolean = false,
   cancelledBy: String? = null,
   cancelledTime: LocalDateTime? = null,
+  cancellationReason: AppointmentCancellationReason? = null,
   cancellationStartDate: LocalDate? = null,
   cancellationStartTime: LocalTime? = null,
 ) = AppointmentSeries(
@@ -86,36 +87,50 @@ internal fun appointmentSeriesEntity(
   }
 
   this.scheduleIterator().withIndex().forEach {
-    this.addAppointment(appointmentEntity(this, appointmentSeriesId * (it.index + 1L), it.index + 1, it.value, this.startTime, updatedTime, updatedBy, prisonerNumberToBookingIdMap))
+    this.addAppointment(appointmentEntity(this, appointmentSeriesId * (it.index + 1L), it.index + 1, it.value, this.startTime, updatedTime, updatedBy, prisonerNumberToBookingIdMap, cancellationReason, cancelledBy, cancelledTime))
   }
 }
 
-fun appointmentEntity(appointmentSeries: AppointmentSeries, appointmentId: Long = 1, sequenceNumber: Int, startDate: LocalDate = LocalDate.now().plusDays(1), startTime: LocalTime = appointmentSeries.startTime, updatedTime: LocalDateTime? = LocalDateTime.now(), updatedBy: String? = "UPDATE.USER", prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456)) =
-  Appointment(
-    appointmentId = appointmentId,
-    appointmentSeries = appointmentSeries,
-    sequenceNumber = sequenceNumber,
-    prisonCode = appointmentSeries.prisonCode,
-    categoryCode = appointmentSeries.categoryCode,
-    customName = appointmentSeries.customName,
-    appointmentTier = appointmentSeries.appointmentTier,
-    internalLocationId = appointmentSeries.internalLocationId,
-    inCell = appointmentSeries.inCell,
-    startDate = startDate,
-    startTime = startTime,
-    endTime = appointmentSeries.endTime,
-    extraInformation = "Appointment level comment",
-    createdTime = appointmentSeries.createdTime,
-    createdBy = appointmentSeries.createdBy,
-    updatedTime = updatedTime,
-    updatedBy = updatedBy,
-  ).apply {
-    appointmentOrganiser = appointmentSeries.appointmentOrganiser
-    prisonerNumberToBookingIdMap.map {
-      val appointmentAttendeeId = prisonerNumberToBookingIdMap.size * (appointmentId - 1) + this.attendees().size + 1
-      this.addAttendee(appointmentAttendeeEntity(this, appointmentAttendeeId, it.key, it.value))
-    }
+fun appointmentEntity(
+  appointmentSeries: AppointmentSeries,
+  appointmentId: Long = 1,
+  sequenceNumber: Int,
+  startDate: LocalDate = LocalDate.now().plusDays(1),
+  startTime: LocalTime = appointmentSeries.startTime,
+  updatedTime: LocalDateTime? = LocalDateTime.now(),
+  updatedBy: String? = "UPDATE.USER",
+  prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456),
+  cancellationReason: AppointmentCancellationReason? = null,
+  cancelledBy: String? = null,
+  cancelledTime: LocalDateTime? = null,
+) = Appointment(
+  appointmentId = appointmentId,
+  appointmentSeries = appointmentSeries,
+  sequenceNumber = sequenceNumber,
+  prisonCode = appointmentSeries.prisonCode,
+  categoryCode = appointmentSeries.categoryCode,
+  customName = appointmentSeries.customName,
+  appointmentTier = appointmentSeries.appointmentTier,
+  internalLocationId = appointmentSeries.internalLocationId,
+  inCell = appointmentSeries.inCell,
+  startDate = startDate,
+  startTime = startTime,
+  endTime = appointmentSeries.endTime,
+  extraInformation = "Appointment level comment",
+  createdTime = appointmentSeries.createdTime,
+  createdBy = appointmentSeries.createdBy,
+  updatedTime = updatedTime,
+  updatedBy = updatedBy,
+).apply {
+  this.cancellationReason = cancellationReason
+  this.cancelledBy = cancelledBy
+  this.cancelledTime = cancelledTime
+  appointmentOrganiser = appointmentSeries.appointmentOrganiser
+  prisonerNumberToBookingIdMap.map {
+    val appointmentAttendeeId = prisonerNumberToBookingIdMap.size * (appointmentId - 1) + this.attendees().size + 1
+    this.addAttendee(appointmentAttendeeEntity(this, appointmentAttendeeId, it.key, it.value))
   }
+}
 
 private fun appointmentAttendeeEntity(appointment: Appointment, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
   AppointmentAttendee(

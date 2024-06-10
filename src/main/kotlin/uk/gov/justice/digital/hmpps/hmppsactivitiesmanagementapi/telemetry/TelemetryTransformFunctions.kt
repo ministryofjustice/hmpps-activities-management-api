@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -131,6 +132,20 @@ fun AppointmentUpdateRequest.toTelemetryMetricsMap(appointmentCount: Int, appoin
   )
 
 fun AppointmentCancelRequest.toTelemetryPropertiesMap(
+  user: String,
+  prisonCode: String,
+  appointmentSeriesId: Long,
+  appointmentId: Long,
+) =
+  mutableMapOf(
+    USER_PROPERTY_KEY to user,
+    PRISON_CODE_PROPERTY_KEY to prisonCode,
+    APPOINTMENT_SERIES_ID_PROPERTY_KEY to appointmentSeriesId.toString(),
+    APPOINTMENT_ID_PROPERTY_KEY to appointmentId.toString(),
+    APPLY_TO_PROPERTY_KEY to this.applyTo.toString(),
+  )
+
+fun AppointmentUncancelRequest.toTelemetryPropertiesMap(
   user: String,
   prisonCode: String,
   appointmentSeriesId: Long,

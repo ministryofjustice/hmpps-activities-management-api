@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
@@ -91,6 +92,7 @@ class AppointmentServiceAsyncTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
+  private val uncancelAppointmentsJob: UncancelAppointmentsJob = mock()
 
   private var updated = argumentCaptor<LocalDateTime>()
   private var cancelled = argumentCaptor<LocalDateTime>()
@@ -106,6 +108,7 @@ class AppointmentServiceAsyncTest {
     appointmentCancelDomainService,
     updateAppointmentsJob,
     cancelAppointmentsJob,
+    uncancelAppointmentsJob,
     maxSyncAppointmentInstanceActions = 14,
   )
 

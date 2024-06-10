@@ -99,6 +99,14 @@ enum class OutboundEvent(val eventType: String) {
         description = "An appointment instance has been cancelled in the activities management service",
       )
   },
+  APPOINTMENT_INSTANCE_UNCANCELLED("appointments.appointment-instance.uncancelled") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "An appointment instance has been uncancelled in the activities management service",
+      )
+  },
   ;
 
   abstract fun event(additionalInformation: AdditionalInformation): OutboundHMPPSDomainEvent

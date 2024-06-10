@@ -33,6 +33,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.appointments.appointment-instance.updated=true",
       "feature.event.appointments.appointment-instance.deleted=true",
       "feature.event.appointments.appointment-instance.cancelled=true",
+      "feature.event.appointments.appointment-instance.uncancelled=true",
       "feature.event.incentives.iep-review.inserted=true",
       "feature.event.incentives.iep-review.updated=true",
       "feature.event.incentives.iep-review.deleted=true",

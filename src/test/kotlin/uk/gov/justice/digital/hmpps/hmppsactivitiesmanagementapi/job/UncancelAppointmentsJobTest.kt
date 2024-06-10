@@ -7,39 +7,37 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import java.time.LocalDateTime
 
-class UpdateAppointmentsJobTest : JobsTestBase() {
-  private val service: AppointmentUpdateDomainService = mock()
+class UncancelAppointmentsJobTest : JobsTestBase() {
+  private val service: AppointmentCancelDomainService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val job = UpdateAppointmentsJob(safeJobRunner, service)
+  private val job = UncancelAppointmentsJob(safeJobRunner, service)
 
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
-  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
+  private val appointmentSeries = appointmentSeriesEntity(prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4, cancelledBy = "CANCEL.USER", cancelledTime = LocalDateTime.now())
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false).toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", true).toSet()
 
   @BeforeEach
   fun setUp() {
     MockitoAnnotations.openMocks(this)
-    mockJobs(JobType.UPDATE_APPOINTMENTS)
+    mockJobs(JobType.UNCANCEL_APPOINTMENTS)
   }
 
   @Test
-  fun `job type is update appointments`() {
+  fun `job type is uncancel appointments`() {
     job.execute(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
       applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }.map { it.appointmentId }.toSet(),
-      AppointmentUpdateRequest(internalLocationId = 456),
-      emptyMap(),
+      AppointmentUncancelRequest(),
       LocalDateTime.now(),
       "TEST.USER",
       3,
@@ -49,48 +47,40 @@ class UpdateAppointmentsJobTest : JobsTestBase() {
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
-    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.UPDATE_APPOINTMENTS)
+    assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(JobType.UNCANCEL_APPOINTMENTS)
   }
 
   @Test
-  fun `job calls update appointment ids`() {
-    val appointmentIdsToUpdate =
+  fun `job calls uncancel appointment ids`() {
+    val appointmentIdsToCancel =
       applyToThisAndAllFuture.filterNot { it.appointmentId == appointment.appointmentId }
         .map { it.appointmentId }.toSet()
-    val request = AppointmentUpdateRequest(internalLocationId = 456, addPrisonerNumbers = listOf("D4567EF", "E5679FG"))
-    val prisonerMap = mapOf(
-      "D4567EF" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "D4567EF", bookingId = 459, prisonId = "TPR"),
-      "E5679FG" to PrisonerSearchPrisonerFixture.instance(prisonerNumber = "E5679FG", bookingId = 460, prisonId = "TPR"),
-    )
-    val updated = LocalDateTime.now()
+    val request = AppointmentUncancelRequest()
+    val cancelled = LocalDateTime.now()
     val startTimeInMs = System.currentTimeMillis()
 
     job.execute(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
-      appointmentIdsToUpdate,
+      appointmentIdsToCancel,
       request,
-      prisonerMap,
-      updated,
+      cancelled,
       "TEST.USER",
       3,
       9,
       startTimeInMs,
     )
 
-    verify(service).updateAppointments(
+    verify(service).uncancelAppointmentIds(
       appointmentSeries.appointmentSeriesId,
       appointment.appointmentId,
-      appointmentIdsToUpdate,
+      appointmentIdsToCancel,
       request,
-      prisonerMap,
-      updated,
+      cancelled,
       "TEST.USER",
       3,
       9,
       startTimeInMs,
-      true,
-      false,
     )
   }
 }

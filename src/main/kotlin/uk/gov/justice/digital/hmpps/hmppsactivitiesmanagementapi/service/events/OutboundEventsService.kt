@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_CREATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_UPDATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
@@ -39,6 +40,7 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
         APPOINTMENT_INSTANCE_UPDATED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_DELETED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
         APPOINTMENT_INSTANCE_CANCELLED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
+        APPOINTMENT_INSTANCE_UNCANCELLED -> publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))
       }
     } else {
       log.warn("Outbound event type $outboundEvent feature is currently disabled.")

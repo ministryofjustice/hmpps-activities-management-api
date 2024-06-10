@@ -9,9 +9,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -33,6 +35,7 @@ class AppointmentService(
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val updateAppointmentsJob: UpdateAppointmentsJob,
   private val cancelAppointmentsJob: CancelAppointmentsJob,
+  private val uncancelAppointmentsJob: UncancelAppointmentsJob,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
@@ -66,7 +69,7 @@ class AppointmentService(
 
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
-    val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update")
+    val appointmentsToUpdate = appointmentSeries.applyToAppointments(appointment, request.applyTo, "update", false)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     if (request.categoryCode != null) {
@@ -157,7 +160,7 @@ class AppointmentService(
 
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
     val appointmentSeries = appointment.appointmentSeries
-    val appointmentsToCancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "cancel")
+    val appointmentsToCancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "cancel", false)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     val cancelAppointmentsCount = appointmentsToCancel.size
@@ -195,6 +198,52 @@ class AppointmentService(
     }
 
     return cancelledAppointmentSeries
+  }
+
+  fun uncancelAppointment(appointmentId: Long, request: AppointmentUncancelRequest, principal: Principal): AppointmentSeriesModel {
+    val startTimeInMs = System.currentTimeMillis()
+    val now = LocalDateTime.now()
+
+    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
+    val appointmentSeries = appointment.appointmentSeries
+    val appointmentsToUncancel = appointmentSeries.applyToAppointments(appointment, request.applyTo, "uncancel", true)
+    checkCaseloadAccess(appointmentSeries.prisonCode)
+
+    val uncancelAppointmentsCount = appointmentsToUncancel.size
+    val uncancelInstancesCount = appointmentCancelDomainService.getUncancelInstancesCount(appointmentsToUncancel)
+    // Determine if this is an uncancel request that will affect more than one appointment and a very large number of appointment instances. If it is, only uncancel the first appointment
+    val uncancelFirstAppointmentOnly = uncancelAppointmentsCount > 1 && uncancelInstancesCount > maxSyncAppointmentInstanceActions
+
+    val uncancelledAppointmentSeries = appointmentCancelDomainService.uncancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      if (uncancelFirstAppointmentOnly) setOf(appointment) else appointmentsToUncancel.toSet(),
+      request,
+      now,
+      principal.name,
+      uncancelAppointmentsCount,
+      uncancelInstancesCount,
+      startTimeInMs,
+      !uncancelFirstAppointmentOnly,
+      true,
+    )
+
+    if (uncancelFirstAppointmentOnly) {
+      // The remaining appointments will be updated asynchronously by this job
+      uncancelAppointmentsJob.execute(
+        appointmentSeries.appointmentSeriesId,
+        appointmentId,
+        appointmentsToUncancel.filterNot { it.appointmentId == appointmentId }.map { it.appointmentId }.toSet(),
+        request,
+        now,
+        principal.name,
+        uncancelAppointmentsCount,
+        uncancelInstancesCount,
+        startTimeInMs,
+      )
+    }
+
+    return uncancelledAppointmentSeries
   }
   private fun AppointmentUpdateRequest.failIfCategoryIsVideoLinkAndMissingExtraInfo() {
     // Should fail when category is VLB and extra information is mandatory

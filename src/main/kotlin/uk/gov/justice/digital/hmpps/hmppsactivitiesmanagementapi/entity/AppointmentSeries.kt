@@ -124,15 +124,25 @@ data class AppointmentSeries(
 
   fun scheduledAppointments() = appointments().filter { it.isScheduled() }.toList()
 
+  fun cancelledAppointments() = appointments().filter { it.isCancelled() && !it.isExpired() }.toList()
+
+  fun cancelledAppointmentsAfter(startDateTime: LocalDateTime) = cancelledAppointments().filter { it.startDateTime() > startDateTime }.toList()
+
   fun scheduledAppointmentsAfter(startDateTime: LocalDateTime) = scheduledAppointments().filter { it.startDateTime() > startDateTime }.toList()
 
-  fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String): List<Appointment> {
-    require(!appointment.isExpired()) {
-      "Cannot $action a past appointment"
+  fun applyToAppointments(appointment: Appointment, applyTo: ApplyTo, action: String, cancelled: Boolean): List<Appointment> {
+    require(appointment.isEditable()) {
+      "Cannot $action an appointment more than 5 days ago"
     }
 
-    require(!appointment.isCancelled()) {
-      "Cannot $action a cancelled appointment"
+    if (!cancelled) {
+      require(!appointment.isCancelled()) {
+        "Cannot $action a cancelled appointment"
+      }
+    } else {
+      require(appointment.isCancelled()) {
+        "Cannot $action an uncancelled appointment"
+      }
     }
 
     require(!appointment.isDeleted) {
@@ -140,14 +150,36 @@ data class AppointmentSeries(
     }
 
     return when (applyTo) {
-      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> listOf(appointment).union(
-        scheduledAppointmentsAfter(appointment.startDateTime()),
-      ).toList()
-      ApplyTo.ALL_FUTURE_APPOINTMENTS -> scheduledAppointments()
+      ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS -> {
+        if (cancelled) {
+          listOf(appointment).union(
+            cancelledAppointmentsAfter(appointment.startDateTime()),
+          ).toList()
+        } else {
+          listOf(appointment).union(
+            scheduledAppointmentsAfter(appointment.startDateTime()),
+          ).toList()
+        }
+      }
+      ApplyTo.ALL_FUTURE_APPOINTMENTS -> {
+        if (cancelled) {
+          cancelledAppointments()
+        } else {
+          scheduledAppointments()
+        }
+      }
       else -> listOf(appointment)
     }
   }
 
+  fun uncancel(updatedTime: LocalDateTime?, updatedBy: String?) {
+    this.cancelledTime = null
+    this.cancelledBy = null
+    this.cancellationStartDate = null
+    this.cancellationStartTime = null
+    this.updatedTime = updatedTime
+    this.updatedBy = updatedBy
+  }
   fun cancel(cancelledTime: LocalDateTime = LocalDateTime.now(), cancelledBy: String, cancellationStartDate: LocalDate, cancellationStartTime: LocalTime) {
     this.cancelledTime = cancelledTime
     this.cancelledBy = cancelledBy

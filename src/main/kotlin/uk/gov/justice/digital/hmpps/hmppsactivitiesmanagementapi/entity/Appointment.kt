@@ -104,6 +104,14 @@ data class Appointment(
     this.isDeleted = cancellationReason.isDelete
   }
 
+  fun uncancel(updateBy: String, updateTime: LocalDateTime = LocalDateTime.now()) {
+    this.updatedBy = updateBy
+    this.updatedTime = updateTime
+    this.cancelledTime = null
+    this.cancellationReason = null
+    this.cancelledBy = null
+  }
+
   @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private val attendees: MutableList<AppointmentAttendee> = mutableListOf()
 
@@ -186,6 +194,8 @@ data class Appointment(
   fun isCancelled() = cancelledTime != null && !isDeleted
 
   fun isExpired() = startDateTime() < LocalDateTime.now()
+
+  fun isEditable() = startDateTime() > LocalDateTime.now().minusDays(6)
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
 

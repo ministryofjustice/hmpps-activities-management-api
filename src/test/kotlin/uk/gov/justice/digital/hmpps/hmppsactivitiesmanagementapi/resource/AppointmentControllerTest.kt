@@ -23,8 +23,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
@@ -177,6 +180,67 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
+  fun `202 response when cancel appointment is called`() {
+    val request = AppointmentCancelRequest(
+      cancellationReasonId = 1,
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
+    )
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.cancelAppointment(1, request, mockPrincipal)
+      .andExpect { status { isAccepted() } }
+      .andReturn().response
+  }
+
+  @Test
+  fun `404 not found response when cancel appointment is called with invalid id`() {
+    val request = AppointmentCancelRequest(cancellationReasonId = 1)
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentService.cancelAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+
+    val response = mockMvc.cancelAppointment(-1, request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isNotFound() } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
+
+    verify(appointmentService).cancelAppointment(-1, request, mockPrincipal)
+  }
+
+  @Test
+  fun `202 response when un-cancel appointment is called`() {
+    val request = AppointmentUncancelRequest(
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
+    )
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.uncancelAppointment(1, request, mockPrincipal)
+      .andExpect { status { isAccepted() } }
+      .andReturn().response
+  }
+
+  @Test
+  fun `404 not found response when un-cancel appointment is called with invalid id`() {
+    val request = AppointmentUncancelRequest()
+    val mockPrincipal: Principal = mock()
+
+    whenever(appointmentService.uncancelAppointment(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
+
+    val response = mockMvc.uncancelAppointment(-1, request, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isNotFound() } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).contains("Appointment -1 not found")
+
+    verify(appointmentService).uncancelAppointment(-1, request, mockPrincipal)
+  }
+
+  @Test
   fun `200 response when appointment attendance summaries found`() {
     val date = LocalDate.now()
     val mockPrincipal: Principal = mock()
@@ -316,6 +380,24 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
     patch("/appointments/{appointmentId}", id) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
+      )
+    }
+
+  private fun MockMvc.cancelAppointment(id: Long, request: AppointmentCancelRequest, principal: Principal) =
+    put("/appointments/{appointmentId}/cancel", id) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
+      )
+    }
+
+  private fun MockMvc.uncancelAppointment(id: Long, request: AppointmentUncancelRequest, principal: Principal) =
+    put("/appointments/{appointmentId}/uncancel", id) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(

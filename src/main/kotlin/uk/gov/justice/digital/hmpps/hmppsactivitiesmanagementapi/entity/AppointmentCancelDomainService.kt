@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentUncancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -58,6 +60,83 @@ class AppointmentCancelDomainService(
       trackEvent = true,
       auditEvent = false,
     )
+  }
+
+  fun uncancelAppointmentIds(
+    appointmentSeriesId: Long,
+    appointmentId: Long,
+    appointmentIdsToUncancel: Set<Long>,
+    request: AppointmentUncancelRequest,
+    updatedTime: LocalDateTime,
+    updatedBy: String,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
+    startTimeInMs: Long,
+  ): AppointmentSeriesModel {
+    val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
+    val appointmentsToUncancel = appointmentSeries.appointments().filter { appointmentIdsToUncancel.contains(it.appointmentId) }
+    return uncancelAppointments(
+      appointmentSeries,
+      appointmentId,
+      appointmentsToUncancel.toSet(),
+      request,
+      updatedTime,
+      updatedBy,
+      uncancelAppointmentsCount,
+      uncancelInstancesCount,
+      startTimeInMs,
+      trackEvent = true,
+      auditEvent = false,
+    )
+  }
+
+  fun uncancelAppointments(
+    appointmentSeries: AppointmentSeries,
+    appointmentId: Long,
+    appointmentsToUncancel: Set<Appointment>,
+    request: AppointmentUncancelRequest,
+    updatedTime: LocalDateTime,
+    updatedBy: String,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
+    startTimeInMs: Long,
+    trackEvent: Boolean,
+    auditEvent: Boolean,
+  ): AppointmentSeriesModel {
+    transactionHandler.newSpringTransaction {
+      appointmentsToUncancel.forEach {
+        it.uncancel(updatedBy, updatedTime)
+      }
+      if (request.applyTo == ApplyTo.ALL_FUTURE_APPOINTMENTS || request.applyTo == ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS) {
+        appointmentSeries.uncancel(updatedTime, updatedBy)
+      }
+    }.let {
+      publishUncancelSyncEvent(appointmentsToUncancel)
+
+      if (trackEvent) {
+        sendTelemetryUncancelEvent(
+          request,
+          updatedBy,
+          appointmentSeries,
+          appointmentId,
+          uncancelAppointmentsCount,
+          uncancelInstancesCount,
+          startTimeInMs,
+        )
+      }
+
+      if (auditEvent) {
+        writeAppointmentUncancelledAuditEvent(
+          appointmentId,
+          request,
+          appointmentSeries,
+          updatedTime,
+          updatedBy,
+        )
+      }
+
+      return appointmentSeries.toModel()
+    }
   }
 
   fun cancelAppointments(
@@ -118,6 +197,10 @@ class AppointmentCancelDomainService(
     appointmentsToCancel: Collection<Appointment>,
   ) = appointmentsToCancel.flatMap { it.attendees() }.size
 
+  fun getUncancelInstancesCount(
+    appointmentsToUncancel: Collection<Appointment>,
+  ) = appointmentsToUncancel.flatMap { it.attendees() }.size
+
   private fun publishSyncEvent(
     appointmentsToCancel: Set<Appointment>,
     cancellationReason: AppointmentCancellationReason,
@@ -131,6 +214,17 @@ class AppointmentCancelDomainService(
       it.attendees().forEach {
           attendee ->
         outboundEventsService.send(syncEvent, attendee.appointmentAttendeeId)
+      }
+    }
+  }
+
+  private fun publishUncancelSyncEvent(
+    appointmentsToUncancel: Set<Appointment>,
+  ) {
+    appointmentsToUncancel.forEach {
+      it.attendees().forEach {
+          attendee ->
+        outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, attendee.appointmentAttendeeId)
       }
     }
   }
@@ -159,6 +253,29 @@ class AppointmentCancelDomainService(
       EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
     )
     telemetryClient.trackEvent(customEventName, telemetryPropertiesMap, telemetryMetricsMap)
+  }
+
+  private fun sendTelemetryUncancelEvent(
+    request: AppointmentUncancelRequest,
+    updatedBy: String,
+    appointmentSeries: AppointmentSeries,
+    appointmentId: Long,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
+    startTimeInMs: Long,
+  ) {
+    val telemetryPropertiesMap = request.toTelemetryPropertiesMap(
+      updatedBy,
+      appointmentSeries.prisonCode,
+      appointmentSeries.appointmentSeriesId,
+      appointmentId,
+    )
+    val telemetryMetricsMap = mapOf(
+      APPOINTMENT_COUNT_METRIC_KEY to uncancelAppointmentsCount.toDouble(),
+      APPOINTMENT_INSTANCE_COUNT_METRIC_KEY to uncancelInstancesCount.toDouble(),
+      EVENT_TIME_MS_METRIC_KEY to (System.currentTimeMillis() - startTimeInMs).toDouble(),
+    )
+    telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_UNCANCELLED.value, telemetryPropertiesMap, telemetryMetricsMap)
   }
 
   private fun writeAuditEvent(
@@ -209,6 +326,25 @@ class AppointmentCancelDomainService(
         applyTo = request.applyTo,
         createdAt = cancelledTime,
         createdBy = cancelledBy,
+      ),
+    )
+  }
+
+  private fun writeAppointmentUncancelledAuditEvent(
+    appointmentId: Long,
+    request: AppointmentUncancelRequest,
+    appointmentSeries: AppointmentSeries,
+    updatedTime: LocalDateTime,
+    updatedBy: String,
+  ) {
+    auditService.logEvent(
+      AppointmentUncancelledEvent(
+        appointmentSeriesId = appointmentSeries.appointmentSeriesId,
+        appointmentId = appointmentId,
+        prisonCode = appointmentSeries.prisonCode,
+        applyTo = request.applyTo,
+        createdAt = updatedTime,
+        createdBy = updatedBy,
       ),
     )
   }

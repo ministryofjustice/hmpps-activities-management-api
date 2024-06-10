@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
@@ -403,6 +404,73 @@ class AppointmentController(
     request: AppointmentCancelRequest,
     principal: Principal,
   ) = appointmentService.cancelAppointment(appointmentId, request, principal)
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PutMapping(value = ["/{appointmentId}/uncancel"])
+  @Operation(
+    summary = "Uncancel an appointment or series of appointments",
+    description =
+    """
+    Uncancel an appointment or series of appointments based on the applyTo property.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "The appointment or series of appointments was uncancelled.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentSeries::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The appointment for this id was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun uncancelAppointment(
+    @PathVariable("appointmentId") appointmentId: Long,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The uncancel request with the uncancellation details and how to apply the uncancellation",
+      required = true,
+    )
+    request: AppointmentUncancelRequest,
+    principal: Principal,
+  ) = appointmentService.uncancelAppointment(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PostMapping(value = ["/{prisonCode}/search"])

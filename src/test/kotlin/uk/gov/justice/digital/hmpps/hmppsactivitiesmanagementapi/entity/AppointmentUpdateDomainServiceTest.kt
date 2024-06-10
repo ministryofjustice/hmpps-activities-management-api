@@ -48,7 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentUpdateDomainServiceTest {
@@ -78,9 +78,9 @@ class AppointmentUpdateDomainServiceTest {
   private val prisonerNumberToBookingIdMap = mapOf("A1234BC" to 1L, "B2345CD" to 2L, "C3456DE" to 3L)
   private val appointmentSeries = appointmentSeriesEntity(updatedBy = null, prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap, frequency = AppointmentFrequency.DAILY, numberOfAppointments = 4)
   private val appointment = appointmentSeries.appointments()[1]
-  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "").toSet()
-  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "").toSet()
-  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "").toSet()
+  private val applyToThis = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "", false).toSet()
+  private val applyToThisAndAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS, "", false).toSet()
+  private val applyToAllFuture = appointmentSeries.applyToAppointments(appointment, ApplyTo.ALL_FUTURE_APPOINTMENTS, "", false).toSet()
   private val updatedBy = "TEST.USER"
   private val permanentRemovalByUserAppointmentAttendeeRemovalReason = permanentRemovalByUserAppointmentAttendeeRemovalReason()
 
