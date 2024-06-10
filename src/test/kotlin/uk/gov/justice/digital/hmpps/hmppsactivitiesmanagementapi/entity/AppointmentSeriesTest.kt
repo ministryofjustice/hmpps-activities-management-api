@@ -166,7 +166,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "uncancel", true) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Cannot uncancel a not cancelled appointment")
+      .hasMessage("Cannot uncancel an uncancelled appointment")
   }
 
   @Test

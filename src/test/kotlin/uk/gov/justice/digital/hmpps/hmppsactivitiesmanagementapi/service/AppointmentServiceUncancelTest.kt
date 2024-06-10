@@ -168,7 +168,7 @@ class AppointmentServiceUncancelTest {
           principal,
         )
       }.isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("Cannot uncancel a not cancelled appointment")
+        .hasMessage("Cannot uncancel an uncancelled appointment")
 
       verify(appointmentSeriesRepository, never()).saveAndFlush(any())
     }

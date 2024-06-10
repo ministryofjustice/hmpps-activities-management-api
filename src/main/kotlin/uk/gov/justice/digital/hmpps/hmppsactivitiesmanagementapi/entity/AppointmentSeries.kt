@@ -141,7 +141,7 @@ data class AppointmentSeries(
       }
     } else {
       require(appointment.isCancelled()) {
-        "Cannot $action a not cancelled appointment"
+        "Cannot $action an uncancelled appointment"
       }
     }
 
