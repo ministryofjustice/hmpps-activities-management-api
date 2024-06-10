@@ -146,6 +146,34 @@ class AppointmentServiceUncancelTest {
     }
 
     @Test
+    fun `uncancel appointment throws illegal argument exception when appointment is not cancelled`() {
+      val request = AppointmentUncancelRequest(ApplyTo.THIS_APPOINTMENT)
+
+      val appointmentSeries = appointmentSeriesEntity(
+        appointmentSeriesId = 2,
+        startDate = LocalDate.now(),
+        startTime = LocalTime.now(),
+        endTime = LocalTime.now().plusHours(1),
+      )
+      val appointment = appointmentSeries.appointments().first()
+
+      whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
+        Optional.of(appointment),
+      )
+
+      assertThatThrownBy {
+        service.uncancelAppointment(
+          appointment.appointmentId,
+          request,
+          principal,
+        )
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot uncancel a not cancelled appointment")
+
+      verify(appointmentSeriesRepository, never()).saveAndFlush(any())
+    }
+
+    @Test
     fun `uncancel appointment throws illegal argument exception when appointment is more than five days old`() {
       val request = AppointmentUncancelRequest(ApplyTo.THIS_APPOINTMENT)
 

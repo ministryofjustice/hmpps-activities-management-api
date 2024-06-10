@@ -159,6 +159,17 @@ class AppointmentSeriesTest {
   }
 
   @Test
+  fun `apply to cannot uncancel a not cancelled appointment`() {
+    val entity = appointmentSeriesEntity(
+      frequency = AppointmentFrequency.WEEKLY,
+      numberOfAppointments = 3,
+    )
+    val appointment = entity.appointments()[1]
+    assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "uncancel", true) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Cannot uncancel a not cancelled appointment")
+  }
+
+  @Test
   fun `apply to cannot action deleted appointment`() {
     val entity = appointmentSeriesEntity(
       frequency = AppointmentFrequency.WEEKLY,
