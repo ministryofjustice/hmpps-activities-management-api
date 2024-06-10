@@ -541,9 +541,17 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    assertThat(appointmentSeries.appointments.first().isCancelled()).isFalse()
+    assertThat(appointmentSeries.appointments).hasSize(4)
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    with(appointmentSeries.appointments) {
+      single { it.id == 3L }.isCancelled() isEqualTo false
+      filter { it.id != 3L }
+        .forEach {
+          it.isCancelled() isEqualTo true
+        }
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
@@ -560,7 +568,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-cancelled-id-1.sql",
   )
   @Test
-  fun `uncancel a group appointment`() {
+  fun `uncancel a group appointment - THIS_AND_ALL_FUTURE_APPOINTMENTS`() {
     val request = AppointmentUncancelRequest(
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
     )
@@ -569,25 +577,65 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
-    assertThat(appointmentSeries.appointments.first().isCancelled()).isTrue()
+    assertThat(appointmentSeries.appointments).hasSize(4)
 
     with(appointmentSeries.appointments) {
-      forEach {
-        if (it.id == 3L || it.id == 6L) {
-          assertThat(it.isCancelled()).isTrue()
-        } else {
-          assertThat(it.isCancelled()).isFalse()
+      single { it.id == 3L }.isCancelled() isEqualTo true
+      single { it.id == 6L }.isCancelled() isEqualTo true
+      filterNot { it.id == 3L || it.id == 6L }
+        .forEach {
+          it.isCancelled() isEqualTo false
         }
-      }
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.allValues) {
+      single { it.additionalInformation == AppointmentInstanceInformation(4L) }
+      single { it.additionalInformation.equals(AppointmentInstanceInformation(5L)) }
       forEach {
         assertThat(it.eventType).isEqualTo("appointments.appointment-instance.uncancelled")
-        assertThat(it.additionalInformation).isIn(AppointmentInstanceInformation(4L), AppointmentInstanceInformation(5L))
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(it.description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
+      }
+    }
+
+    verify(auditService).logEvent(any<AppointmentUncancelledEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-cancelled-id-1.sql",
+  )
+  @Test
+  fun `uncancel a group appointment - ALL_FUTURE_APPOINTMENTS`() {
+    val request = AppointmentUncancelRequest(
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
+    )
+
+    val appointmentSeries = webTestClient.uncancelAppointment(4, request)
+      .expectBody(AppointmentSeries::class.java)
+      .returnResult().responseBody
+
+    assertThat(appointmentSeries.appointments).hasSize(4)
+
+    with(appointmentSeries.appointments) {
+      single { it.id == 6L }.isCancelled() isEqualTo true
+      filterNot { it.id == 6L }
+        .forEach {
+          it.isCancelled() isEqualTo false
+        }
+    }
+
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
+
+    with(eventCaptor.allValues) {
+      single { it.additionalInformation == AppointmentInstanceInformation(3L) }
+      single { it.additionalInformation == AppointmentInstanceInformation(4L) }
+      single { it.additionalInformation == AppointmentInstanceInformation(5L) }
+      forEach {
+        assertThat(it.eventType).isEqualTo("appointments.appointment-instance.uncancelled")
         assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(it.description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
       }

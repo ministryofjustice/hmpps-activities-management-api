@@ -42,8 +42,8 @@ class UncancelAppointmentsJob(
     request: AppointmentUncancelRequest,
     updatedTime: LocalDateTime,
     updatedBy: String,
-    cancelAppointmentsCount: Int,
-    cancelInstancesCount: Int,
+    uncancelAppointmentsCount: Int,
+    uncancelInstancesCount: Int,
     startTimeInMs: Long,
   ) {
     jobRunner.runJob(
@@ -57,8 +57,8 @@ class UncancelAppointmentsJob(
             request,
             updatedTime,
             updatedBy,
-            cancelAppointmentsCount,
-            cancelInstancesCount,
+            uncancelAppointmentsCount,
+            uncancelInstancesCount,
             startTimeInMs,
           )
         }
