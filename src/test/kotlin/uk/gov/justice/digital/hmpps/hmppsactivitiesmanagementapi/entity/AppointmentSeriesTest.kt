@@ -142,6 +142,7 @@ class AppointmentSeriesTest {
     )
     val appointment = entity.appointments()[1]
     appointment.startDate = LocalDate.now().minusDays(6)
+    appointment.startTime = LocalTime.now().minusHours(1)
     assertThatThrownBy { entity.applyToAppointments(appointment, ApplyTo.THIS_APPOINTMENT, "update", false) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot update an appointment more than 5 days ago")
   }
