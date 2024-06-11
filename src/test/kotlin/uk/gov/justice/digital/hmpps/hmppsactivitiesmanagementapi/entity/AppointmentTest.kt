@@ -61,12 +61,21 @@ class AppointmentTest {
   }
 
   @Test
-  fun `expired when start date time is in the past`() {
+  fun `expired when start date time is the end of yesterday`() {
     val entity = appointmentSeriesEntity().appointments().first().apply {
-      startDate = LocalDate.now()
-      startTime = LocalTime.now().minusMinutes(1)
+      startDate = LocalDate.now().minusDays(1)
+      startTime = LocalTime.MAX
     }
     entity.isExpired() isBool true
+  }
+
+  @Test
+  fun `not expired when start date time is the beginning of today`() {
+    val entity = appointmentSeriesEntity().appointments().first().apply {
+      startDate = LocalDate.now()
+      startTime = LocalTime.MIN
+    }
+    entity.isExpired() isBool false
   }
 
   @Test
