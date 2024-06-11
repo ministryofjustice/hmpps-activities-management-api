@@ -152,10 +152,10 @@ class AttendanceTest {
   }
 
   @Test
-  fun `attendance is editable - WAITING, session was 13 days ago`() {
-    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(13))
+  fun `attendance is editable - WAITING, session was 6 days ago`() {
+    val instanceSixDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(6))
     val attendance = Attendance(
-      scheduledInstance = instanceTenDaysAgo,
+      scheduledInstance = instanceSixDaysAgo,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.WAITING,
     )
@@ -260,10 +260,10 @@ class AttendanceTest {
   }
 
   @Test
-  fun `attendance is NOT editable - WAITING, session was 15 days ago`() {
-    val instanceFifteenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(15))
+  fun `attendance is NOT editable - WAITING, session was 7 days ago`() {
+    val instanceSevenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(7))
     val attendance = Attendance(
-      scheduledInstance = instanceFifteenDaysAgo,
+      scheduledInstance = instanceSevenDaysAgo,
       initialIssuePayment = false,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.WAITING,

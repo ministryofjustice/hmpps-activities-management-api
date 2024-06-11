@@ -218,18 +218,17 @@ data class Attendance(
    */
   fun editable(): Boolean {
     return (
-      (
-        this.status() == AttendanceStatus.WAITING &&
-          this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(14))
-        ) ||
+      this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
         (
-          this.status == AttendanceStatus.COMPLETED &&
-            this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
+          this.status() == AttendanceStatus.WAITING ||
             (
-              (
-                this.attendanceReason?.attended == false && this.issuePayment == false
-                ) ||
-                (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
+              this.status == AttendanceStatus.COMPLETED &&
+                (
+                  (
+                    this.attendanceReason?.attended == false && this.issuePayment == false
+                    ) ||
+                    (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
+                  )
               )
           )
       )
