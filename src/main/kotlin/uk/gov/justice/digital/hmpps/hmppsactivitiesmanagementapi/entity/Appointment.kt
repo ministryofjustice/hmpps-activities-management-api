@@ -187,13 +187,13 @@ data class Appointment(
 
   fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
 
-  fun isScheduled() = !isExpired() && !isCancelled() && !isDeleted
+  fun isScheduled() = startDateTime() >= LocalDateTime.now() && !isCancelled() && !isDeleted
 
   fun isEdited() = updatedTime != null
 
   fun isCancelled() = cancelledTime != null && !isDeleted
 
-  fun isExpired() = startDateTime() < LocalDateTime.now()
+  fun isExpired() = startDateTime() < LocalDate.now().atStartOfDay()
 
   fun isEditable() = startDateTime() > LocalDateTime.now().minusDays(6)
 
