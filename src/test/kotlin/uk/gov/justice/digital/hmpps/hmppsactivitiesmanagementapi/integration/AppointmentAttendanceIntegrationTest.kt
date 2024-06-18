@@ -14,6 +14,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -114,6 +115,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
           AppointmentAttendeeSearchResult(8, "E5678FG", 5),
           AppointmentAttendeeSearchResult(9, "F6789GH", 6),
         ),
+        EventTierType.TIER_1,
       ),
       // Single appointments, ids 9-11
       // No attendance marked
@@ -133,6 +135,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         listOf(
           AppointmentAttendeeSearchResult(17, "A1234BC", 1),
         ),
+        EventTierType.TIER_1,
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -149,6 +152,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         listOf(AppointmentAttendeeSearchResult(18, "B2345CD", 2)),
+        EventTierType.TIER_1,
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -165,6 +169,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         listOf(AppointmentAttendeeSearchResult(19, "C3456DE", 3)),
+        EventTierType.TIER_1,
       ),
       // Appointment set, returned as single appointments with ids 12-14
       AppointmentAttendanceSummary(
@@ -181,6 +186,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         1,
         listOf(AppointmentAttendeeSearchResult(20, "A1234BC", 1)),
+        EventTierType.TIER_1,
       ),
       // Attended
       AppointmentAttendanceSummary(
@@ -197,6 +203,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         0,
         0,
         listOf(AppointmentAttendeeSearchResult(21, "B2345CD", 2)),
+        EventTierType.TIER_1,
       ),
       // Non-attended
       AppointmentAttendanceSummary(
@@ -213,6 +220,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         1,
         0,
         listOf(AppointmentAttendeeSearchResult(22, "C3456DE", 3)),
+        EventTierType.TIER_1,
       ),
     )
 
@@ -268,6 +276,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
           AppointmentAttendeeSearchResult(2, "B2345CD", 2),
           AppointmentAttendeeSearchResult(3, "C3456DE", 3),
         ),
+        EventTierType.TIER_1,
       ),
       // Single appointments, id 4, cancelled appointment
       AppointmentAttendanceSummary(
@@ -286,6 +295,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         listOf(
           AppointmentAttendeeSearchResult(13, "A1234BC", 1),
         ),
+        EventTierType.TIER_1,
       ),
     )
 

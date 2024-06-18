@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import java.time.LocalDate
 import java.time.LocalTime
@@ -68,4 +69,7 @@ data class AppointmentAttendanceSummary(
     """,
   )
   val attendees: List<AppointmentAttendeeSearchResult>,
+
+  @Schema(description = "optional event tier")
+  val eventTierType: EventTierType? = null,
 )

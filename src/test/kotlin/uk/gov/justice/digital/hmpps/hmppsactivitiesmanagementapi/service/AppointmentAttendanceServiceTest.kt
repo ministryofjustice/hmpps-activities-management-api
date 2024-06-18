@@ -60,29 +60,60 @@ class AppointmentAttendanceServiceTest {
   @Nested
   @DisplayName("get appointment attendance summaries")
   inner class GetAppointmentAttendanceSummaries {
+
+    private val date = LocalDate.now()
+    private val entity = appointmentAttendanceSummaryEntity()
+
+    @BeforeEach
+    fun `init`() {
+      val appointmentSearch = appointmentSearchEntity(appointmentId = 1)
+      val referenceCodeMap = mapOf(
+        entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"),
+        "TEST_CAT" to appointmentCategoryReferenceCode("TEST_CAT", "appointment"),
+      )
+      val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, entity.prisonCode, userDescription = "Chapel"))
+
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(MOORLAND_PRISON_CODE, date)).thenReturn(listOf(entity))
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
+      whenever(locationService.getLocationsForAppointmentsMap(any())).thenReturn(locationMap)
+      whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(1))).thenReturn(appointmentSearch.attendees)
+    }
+
     @Test
     fun `throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
-      assertThatThrownBy { service.getAppointmentAttendanceSummaries(MOORLAND_PRISON_CODE, LocalDate.now()) }
+      assertThatThrownBy { service.getAppointmentAttendanceSummaries(prisonCode = MOORLAND_PRISON_CODE, date = LocalDate.now()) }
         .isInstanceOf(CaseloadAccessException::class.java)
       verify(appointmentRepository, never()).saveAndFlush(any())
     }
 
     @Test
     fun `returns appointment attendance summaries`() {
-      val date = LocalDate.now()
-      val entity = appointmentAttendanceSummaryEntity()
-      val appointmentSearch = appointmentSearchEntity(appointmentId = 1)
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(MOORLAND_PRISON_CODE, date)).thenReturn(listOf(entity))
-      val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"))
-      val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, entity.prisonCode, userDescription = "Chapel"))
-      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
-      whenever(locationService.getLocationsForAppointmentsMap(MOORLAND_PRISON_CODE)).thenReturn(locationMap)
-      whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(1))).thenReturn(appointmentSearch.attendees)
-
       val summaries = service.getAppointmentAttendanceSummaries(MOORLAND_PRISON_CODE, date)
 
       assertThat(summaries).isEqualTo(listOf(appointmentAttendanceSummaryModel()))
+    }
+
+    @Test
+    fun `filters values by custom name`() {
+      addCaseloadIdToRequestHeader("RAN")
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate("RAN", date)).thenReturn(
+        listOf(entity, appointmentAttendanceSummaryEntity(customName = "custom")),
+      )
+
+      val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), customName = "custom")
+      assertThat(summaries.all { it.appointmentName.contains("custom") }).isTrue()
+    }
+
+    @Test
+    fun `filters values by appointment name`() {
+      addCaseloadIdToRequestHeader("RAN")
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate("RAN", date)).thenReturn(
+        listOf(entity, appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
+      )
+
+      val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), appointmentName = "appointment")
+      assertThat(summaries.all { it.appointmentName.contains("appointment") }).isTrue()
     }
   }
 
