@@ -266,7 +266,16 @@ class AppointmentController(
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "Date of appointments (required). Format YYYY-MM-DD")
     date: LocalDate,
-  ) = appointmentAttendanceService.getAppointmentAttendanceSummaries(prisonCode, date)
+    @Parameter(description = "appointment name")
+    @RequestParam(value = "appointmentName", required = false) appointmentName: String? = null,
+    @Parameter(description = "appointment custom name")
+    @RequestParam(value = "customName", required = false) customName: String? = null,
+  ) = appointmentAttendanceService.getAppointmentAttendanceSummaries(
+    prisonCode = prisonCode,
+    date = date,
+    appointmentName = appointmentName,
+    customName = customName,
+  )
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentId}/attendance"])
