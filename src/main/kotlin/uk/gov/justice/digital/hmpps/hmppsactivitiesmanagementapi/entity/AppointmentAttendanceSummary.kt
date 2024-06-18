@@ -48,6 +48,8 @@ data class AppointmentAttendanceSummary(
   val nonAttendedCount: Long,
 
   val notRecordedCount: Long,
+
+  val eventTier: String?,
 ) {
   fun toModel(
     attendees: List<AppointmentAttendeeSearch>,
@@ -56,22 +58,23 @@ data class AppointmentAttendanceSummary(
   ) =
     AppointmentAttendanceSummaryModel(
       id = appointmentId,
-      prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      if (inCell) {
+      prisonCode = prisonCode,
+      appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+      internalLocation = if (inCell) {
         null
       } else {
         locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
       },
-      startDate,
-      startTime,
-      endTime,
-      isCancelled,
-      attendeeCount,
-      attendedCount,
-      nonAttendedCount,
-      notRecordedCount,
-      attendees.toResult(),
+      startDate = startDate,
+      startTime = startTime,
+      endTime = endTime,
+      isCancelled = isCancelled,
+      attendeeCount = attendeeCount,
+      attendedCount = attendedCount,
+      nonAttendedCount = nonAttendedCount,
+      notRecordedCount = notRecordedCount,
+      attendees = attendees.toResult(),
+      eventTierType = if (eventTier != null) EventTierType.valueOf(eventTier) else null,
     )
 }
 
@@ -79,4 +82,6 @@ fun List<AppointmentAttendanceSummary>.toModel(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
+  appointmentName: String? = null,
 ) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
+  .filter { appointmentName == null || it.appointmentName.contains(appointmentName) }

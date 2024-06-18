@@ -331,12 +331,12 @@ internal fun prisonerPermanentTransferAppointmentAttendeeRemovalReason() =
     true,
   )
 
-internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false) =
+internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false, customName: String = "Friday Prayers", categoryCode: String = "CHAP") =
   AppointmentAttendanceSummary(
     1,
     RISLEY_PRISON_CODE,
-    "CHAP",
-    "Friday Prayers",
+    categoryCode,
+    customName,
     123,
     inCell,
     false,
@@ -349,6 +349,7 @@ internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false) =
     3,
     2,
     1,
+    null,
   )
 
 private fun appointmentAttendeeSearchEntity(appointmentSearch: AppointmentSearch, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =

@@ -24,19 +24,23 @@ class AppointmentAttendanceService(
   private val locationService: LocationService,
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
 ) {
-  fun getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate): List<AppointmentAttendanceSummary> {
+  fun getAppointmentAttendanceSummaries(
+    prisonCode: String,
+    date: LocalDate,
+    appointmentName: String? = null,
+    customName: String? = null,
+  ): List<AppointmentAttendanceSummary> {
     checkCaseloadAccess(prisonCode)
 
     val summaries = appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(prisonCode, date)
-
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
-
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
-
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(summaries.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
-    return summaries.toModel(attendeeMap, referenceCodeMap, locationMap)
+    return summaries.filter {
+      customName == null || customName == it.customName
+    }.toModel(attendeeMap, referenceCodeMap, locationMap, appointmentName)
   }
 
   fun markAttendance(appointmentId: Long, request: AppointmentAttendanceRequest, principal: Principal): Appointment {
