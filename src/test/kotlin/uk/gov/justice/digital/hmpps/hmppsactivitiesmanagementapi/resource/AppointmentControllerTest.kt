@@ -3,7 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -11,12 +13,16 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
@@ -32,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceStatus
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -372,6 +379,38 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+  }
+
+  @Nested
+  inner class AppointmentAttendanceByStatus {
+
+    @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
+    @Test
+    fun `verify calls service with all filters`() {
+      mockMvc.perform(
+        MockMvcRequestBuilders.get("/appointments/MDI/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now()}&customName=custom&prisonerNumber=AE123&eventTier=${EventTierType.TIER_1}&categoryCode=CAT")
+          .header("Content-Type", "application/json"),
+      ).andExpect(MockMvcResultMatchers.status().isOk)
+
+      verify(appointmentAttendanceService, atLeastOnce()).getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        status = AttendanceStatus.ATTENDED,
+        date = LocalDate.now(),
+        categoryCode = "CAT",
+        customName = "custom",
+        prisonerNumber = "AE123",
+        eventTier = EventTierType.TIER_1,
+      )
+    }
+
+    @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_RANDOM"])
+    @Test
+    fun `verify security exception with invalid roles`() {
+      mockMvcWithSecurity.perform(
+        MockMvcRequestBuilders.get("/appointments/MDI/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now()}")
+          .header("Content-Type", "application/json"),
+      ).andExpect(MockMvcResultMatchers.status().isForbidden)
+    }
   }
 
   private fun MockMvc.getAppointmentById(id: Long) = get("/appointments/{appointmentId}", id)

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceStatus
 import java.security.Principal
 import java.time.LocalDate
 
@@ -275,6 +277,81 @@ class AppointmentController(
     date = date,
     categoryCode = categoryCode,
     customName = customName,
+  )
+
+  @GetMapping(
+    value = ["{prisonCode}/{status}/attendance"],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary =
+    """
+    Get a list of appointments scheduled to take place on the specified date by status
+    """,
+    description =
+    """
+    Returns appointments scheduled to take place on the specified date by status
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled appointments found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentAttendanceSummary::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentAttendanceByStatus(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code") prisonCode: String,
+    @PathVariable("status")
+    @Parameter(description = "attendance status") status: AttendanceStatus,
+    @RequestParam(value = "date")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Date of appointments. Format YYYY-MM-DD") date: LocalDate,
+    @Parameter(description = "appointment category code")
+    @RequestParam(value = "categoryCode", required = false) categoryCode: String? = null,
+    @Parameter(description = "appointment custom name")
+    @RequestParam(value = "customName", required = false) customName: String? = null,
+    @RequestParam(value = "prisonerNumber", required = false) prisonerNumber: String? = null,
+    @RequestParam(value = "eventTier", required = false) eventTier: EventTierType? = null,
+  ) = appointmentAttendanceService.getAppointmentAttendanceByStatus(
+    prisonCode = prisonCode,
+    status = status,
+    date = date,
+    prisonerNumber = prisonerNumber,
+    categoryCode = categoryCode,
+    customName = customName,
+    eventTier = eventTier,
   )
 
   @ResponseStatus(HttpStatus.ACCEPTED)
