@@ -176,13 +176,14 @@ data class Activity(
     rate: Int?,
     pieceRate: Int?,
     pieceRateItems: Int?,
+    startDate: LocalDate?,
   ) {
     require(paid) {
       "Unpaid activity '$summary' cannot have pay rates added to it"
     }
 
-    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode }) {
-      "The pay band and incentive level combination must be unique for each pay rate"
+    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode && it.startDate == startDate }) {
+      "The pay band, incentive level and start date combination must be unique for each pay rate"
     }
 
     activityPay.add(
@@ -194,6 +195,7 @@ data class Activity(
         rate = rate,
         pieceRate = pieceRate,
         pieceRateItems = pieceRateItems,
+        startDate = startDate,
       ),
     )
   }

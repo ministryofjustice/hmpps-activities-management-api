@@ -199,7 +199,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(activity.pay) {
       this.single { it.startDate == null }
-      this.single { it.startDate == LocalDate.now().plusDays(25)}
+      this.single { it.startDate == LocalDate.now().plusDays(25) }
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
