@@ -68,7 +68,7 @@ interface AppointmentAndAttendee {
   fun getStartDate(): LocalDate
   fun getStartTime(): LocalTime
   fun getEndTime(): LocalTime
-  fun getEventTier(): String
+  fun getEventTier(): String?
   fun getCategoryCode(): String
   fun getCustomName(): String?
   fun getAttended(): Boolean?
