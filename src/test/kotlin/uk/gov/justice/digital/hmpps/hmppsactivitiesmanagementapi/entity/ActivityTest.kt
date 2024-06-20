@@ -362,6 +362,7 @@ class ActivityTest {
       rate = 30,
       pieceRate = 40,
       pieceRateItems = 50,
+      startDate = null,
     )
 
     activity.addPay(
@@ -371,6 +372,7 @@ class ActivityTest {
       rate = 40,
       pieceRate = 50,
       pieceRateItems = 60,
+      startDate = null,
     )
 
     assertThat(activity.activityPay()).containsExactlyInAnyOrder(
@@ -396,6 +398,53 @@ class ActivityTest {
   }
 
   @Test
+  fun `can add pay bands to paid activity with a pay band and iep combinations to activity`() {
+    val activity = activityEntity(noPayBands = true, paid = true).also { assertThat(it.activityPay()).isEmpty() }
+
+    activity.addPay(
+      incentiveNomisCode = "STD",
+      incentiveLevel = "Standard",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+      startDate = null,
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "STD",
+      incentiveLevel = "Standard",
+      payBand = mediumPayBand,
+      rate = 50,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now(),
+    )
+
+    assertThat(activity.activityPay()).containsExactlyInAnyOrder(
+      ActivityPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+        activity = activity,
+      ),
+      ActivityPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = mediumPayBand,
+        rate = 40,
+        pieceRate = 50,
+        pieceRateItems = 60,
+        activity = activity,
+        startDate = LocalDate.now(),
+      ),
+    )
+  }
+
+  @Test
   fun `cannot add pay bands to unpaid activity`() {
     val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
 
@@ -407,13 +456,14 @@ class ActivityTest {
         rate = 30,
         pieceRate = 40,
         pieceRateItems = 50,
+        startDate = null,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Unpaid activity 'Maths' cannot have pay rates added to it")
   }
 
   @Test
-  fun `cannot add duplicate pay band and iep combinations to activity`() {
+  fun `cannot add duplicate pay band, start date and iep combinations to activity`() {
     val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
 
     activity.addPay(
@@ -423,6 +473,7 @@ class ActivityTest {
       rate = 30,
       pieceRate = 40,
       pieceRateItems = 50,
+      startDate = null,
     )
 
     val exception = assertThrows<IllegalArgumentException> {
@@ -433,10 +484,10 @@ class ActivityTest {
         rate = 40,
         pieceRate = 50,
         pieceRateItems = 60,
+        startDate = null,
       )
     }
-
-    assertThat(exception.message).isEqualTo("The pay band and incentive level combination must be unique for each pay rate")
+    assertThat(exception.message).isEqualTo("The pay band, incentive level and start date combination must be unique for each pay rate")
   }
 
   @Test

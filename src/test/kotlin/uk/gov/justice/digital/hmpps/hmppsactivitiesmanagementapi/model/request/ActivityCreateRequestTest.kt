@@ -6,14 +6,39 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
+import java.time.LocalDate
 
-class ActivityCreateRequestTest {
+class ActivityCreateRequestTest : ValidatorBase<ActivityCreateRequest>() {
 
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
   fun `valid create activity request`() {
     val ar = activityCreateRequest()
+    assertThat(validator.validate(ar)).isEmpty()
+  }
+
+  @Test
+  fun `valid create activity request with a pay rate effective from date`() {
+    val apr = activityPayCreateRequest(startDate = LocalDate.now().plusDays(2))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))
+    assertThat(validator.validate(ar)).isEmpty()
+  }
+
+  @Test
+  fun `valid create activity request with a pay rate effective from date of 30 days`() {
+    val apr = activityPayCreateRequest(startDate = LocalDate.now().plusDays(30))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))
+    assertThat(validator.validate(ar)).isEmpty()
+  }
+
+  @Test
+  fun `Valid activity with same incentive level, payband and different effective pay from date`() {
+    val apr1 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(5))
+    val apr2 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(25))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr1, apr2))
+
     assertThat(validator.validate(ar)).isEmpty()
   }
 
@@ -63,6 +88,31 @@ class ActivityCreateRequestTest {
       assertThat(it.propertyPath.toString()).isEqualTo("paid")
       assertThat(it.message).isEqualTo("Paid activity must have at least one pay rate associated with it")
     }
+  }
+
+  @Test
+  fun `Paid activity with an effective pay from date must be in the future`() {
+    val apr = activityPayCreateRequest(startDate = LocalDate.now().minusDays(2))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))
+
+    ar failsWithSingle ModelError("pay[0].startDate", "Activity pay rate effective date must be in the future")
+  }
+
+  @Test
+  fun `Paid activity with an effective pay from date must be a maximum of 30 days in the future`() {
+    val apr = activityPayCreateRequest(startDate = LocalDate.now().plusDays(31))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))
+
+    ar failsWithSingle ModelError("maximumFuturePayDate", "Activity pay rate effective date must not be more than 30 days in the future")
+  }
+
+  @Test
+  fun `Paid activity with an effective pay from date must be unique`() {
+    val apr1 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(25))
+    val apr2 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(25))
+    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr1, apr2))
+
+    ar failsWithSingle ModelError("duplicateFuturePayDate", "Activity pay rate effective date must be unique for a given incentive level and pay band")
   }
 
   @Test

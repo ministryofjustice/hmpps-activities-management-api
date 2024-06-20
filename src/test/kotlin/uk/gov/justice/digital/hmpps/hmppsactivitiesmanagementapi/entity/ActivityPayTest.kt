@@ -3,12 +3,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as PrisonPayBandModel
 
 class ActivityPayTest {
   @Test
   fun `entity is converted to model`() {
     val activity = activityEntity()
+
+    val payStartDate = LocalDate.now()
+
     val activityPayEntity = ActivityPay(
       1,
       activity,
@@ -25,6 +29,7 @@ class ActivityPayTest {
       rate = 100,
       pieceRate = 150,
       pieceRateItems = 1,
+      startDate = payStartDate,
     )
 
     with(activityPayEntity.toModel()) {
@@ -44,6 +49,7 @@ class ActivityPayTest {
       assertThat(rate).isEqualTo(100)
       assertThat(pieceRate).isEqualTo(150)
       assertThat(pieceRateItems).isEqualTo(1)
+      assertThat(payStartDate).isEqualTo(payStartDate)
     }
   }
 

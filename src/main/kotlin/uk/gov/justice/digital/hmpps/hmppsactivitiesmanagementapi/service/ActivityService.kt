@@ -185,6 +185,7 @@ class ActivityService(
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
+            startDate = it.startDate,
           )
         }
         request.minimumEducationLevel.forEach {
@@ -628,6 +629,7 @@ class ActivityService(
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
+            startDate = it.startDate,
           )
         }
       }
