@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -8,13 +9,16 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
@@ -22,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAndAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
@@ -31,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
@@ -45,6 +51,7 @@ class AppointmentAttendanceServiceTest {
 
   private val principal: Principal = mock()
   private val username = "ATTENDANCE.RECORDED.BY"
+  private val entity = appointmentAttendanceSummaryEntity()
 
   @BeforeEach
   fun setUp() {
@@ -62,7 +69,6 @@ class AppointmentAttendanceServiceTest {
   inner class GetAppointmentAttendanceSummaries {
 
     private val date = LocalDate.now()
-    private val entity = appointmentAttendanceSummaryEntity()
 
     @BeforeEach
     fun `init`() {
@@ -170,6 +176,141 @@ class AppointmentAttendanceServiceTest {
       verify(entity).markPrisonerAttendance(eq(request.attendedPrisonNumbers), eq(request.nonAttendedPrisonNumbers), any<LocalDateTime>(), eq(username))
       verify(appointmentRepository).saveAndFlush(entity)
       assertThat(appointment).isInstanceOf(AppointmentModel::class.java)
+    }
+  }
+
+  @Nested
+  inner class AppointmentAttendanceByStatus {
+
+    private val now = LocalTime.now()
+
+    inner class TestData(val toTest: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) : AppointmentAndAttendee {
+      override fun getPrisonerNumber(): String = "prisoner"
+
+      override fun getBookingId(): Long = 1
+
+      override fun getAppointmentId(): Long = 2
+
+      override fun getAppointmentAttendeeId(): Long = 3
+
+      override fun getStartDate(): LocalDate = LocalDate.now()
+
+      override fun getStartTime(): LocalTime = now
+
+      override fun getEndTime(): LocalTime = now.plusHours(1)
+
+      override fun getEventTier(): String = tier.name
+
+      override fun getCategoryCode(): String = "CAT"
+
+      override fun getCustomName(): String? = "custom"
+
+      override fun getAttended(): Boolean? = toTest
+    }
+
+    private val filterTests = listOf(
+      TestData(tier = EventTierType.TIER_2),
+      TestData(true),
+      TestData(false),
+    )
+
+    @BeforeEach
+    fun `init`() {
+      val referenceCodeMap = mapOf(
+        entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"),
+        "TEST_CAT" to appointmentCategoryReferenceCode("TEST_CAT", "appointment"),
+      )
+      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
+    }
+
+    @Test
+    fun `throws exception if status is EVENT_TIER and no EventTierType supplied`() {
+      assertThrows<ValidationException> {
+        service.getAppointmentAttendanceByStatus(
+          prisonCode = "MDI",
+          date = LocalDate.now(),
+          status = AttendanceStatus.EVENT_TIER,
+        )
+      }
+    }
+
+    @Test
+    fun `verify maps all fields`() {
+      val testData = TestData(true)
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+        .thenReturn(listOf(testData))
+
+      val response = service.getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+        status = AttendanceStatus.ATTENDED,
+      ).first()
+
+      assertThat(response.appointmentId).isEqualTo(testData.getAppointmentId())
+      assertThat(response.appointmentAttendeeId).isEqualTo(testData.getAppointmentAttendeeId())
+      assertThat(response.bookingId).isEqualTo(testData.getBookingId())
+      assertThat(response.prisonerNumber).isEqualTo(testData.getPrisonerNumber())
+      assertThat(response.startDate).isEqualTo(testData.getStartDate())
+      assertThat(response.startTime).isEqualTo(testData.getStartTime())
+      assertThat(response.endTime).isEqualTo(testData.getEndTime())
+      assertThat(response.appointmentName).isEqualTo("custom (CAT)")
+    }
+
+    @Test
+    fun `filter ATTENDED`() {
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+        .thenReturn(filterTests)
+
+      val response = service.getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+        status = AttendanceStatus.ATTENDED,
+      )
+
+      assertThat(response.size).isEqualTo(1)
+    }
+
+    @Test
+    fun `filter NOT ATTENDED`() {
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+        .thenReturn(filterTests)
+
+      val response = service.getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+        status = AttendanceStatus.NOT_ATTENDED,
+      )
+
+      assertThat(response.size).isEqualTo(1)
+    }
+
+    @Test
+    fun `filter NOT RECORDED`() {
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+        .thenReturn(filterTests)
+
+      val response = service.getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+        status = AttendanceStatus.NOT_RECORDED,
+      )
+
+      assertThat(response.size).isEqualTo(1)
+    }
+
+    @Test
+    fun `filter EVENT TIER`() {
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+        .thenReturn(filterTests)
+
+      val response = service.getAppointmentAttendanceByStatus(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+        status = AttendanceStatus.EVENT_TIER,
+        eventTier = EventTierType.TIER_2,
+      )
+
+      assertThat(response.size).isEqualTo(1)
     }
   }
 }

@@ -4,6 +4,8 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
@@ -25,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -82,6 +85,38 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
         appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
       ),
     )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-by-status.sql",
+  )
+  @EnumSource(AttendanceStatus::class)
+  @ParameterizedTest
+  fun `get appointment attendance by status`(status: AttendanceStatus) {
+    stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+    val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}" else ""
+    webTestClient.get()
+      .uri("/appointments/$RISLEY_PRISON_CODE/${status.name}/attendance?date=${LocalDate.now().minusDays(1)}$incLudeEventTier")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(if (status == AttendanceStatus.EVENT_TIER) 3 else 1)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-by-status.sql",
+  )
+  @Test
+  fun `get appointment attendance by prisoner, custom name and category code`() {
+    stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+    webTestClient.get()
+      .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=custom&categoryCode=EDUC")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(1)
   }
 
   @Sql(
