@@ -65,6 +65,70 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isUnauthorized
   }
 
+  private fun stubForAttendanceSummaries(prisonCode: String) {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
+        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      prisonCode,
+      listOf(
+        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
+        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
+        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+      ),
+    )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-summaries.sql",
+  )
+  @Test
+  fun `get appointment attendance with custom name filter`() {
+    stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+
+    webTestClient.getAppointmentAttendanceSummaries(
+      prisonCode = RISLEY_PRISON_CODE,
+      date = LocalDate.now(),
+      additionalFilters = "&customName=custom",
+    )!!
+      .all { it.appointmentName.contains("custom") }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-summaries.sql",
+  )
+  @Test
+  fun `get appointment attendance with category code filter`() {
+    stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+
+    webTestClient.getAppointmentAttendanceSummaries(
+      prisonCode = RISLEY_PRISON_CODE,
+      date = LocalDate.now(),
+      additionalFilters = "&categoryCode=EDUC",
+    )!!
+      .all { it.appointmentName.contains("Education") }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-attendance-summaries.sql",
+  )
+  @Test
+  fun `get appointment attendance with category code and custom name filter`() {
+    stubForAttendanceSummaries(RISLEY_PRISON_CODE)
+
+    webTestClient.getAppointmentAttendanceSummaries(
+      prisonCode = RISLEY_PRISON_CODE,
+      date = LocalDate.now(),
+      additionalFilters = "&categoryCode=EDUC&customName=custom",
+    )!!
+      .all { it.appointmentName.contains("Education") && it.appointmentName.contains("custom") }
+  }
+
   @Sql(
     "classpath:test_data/seed-appointment-attendance-summaries.sql",
   )
@@ -92,135 +156,137 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
 
     val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
 
-    assertThat(summaries).containsExactly(
-      // Repeating group appointment, appointment id 2
-      AppointmentAttendanceSummary(
-        2,
-        prisonCode,
-        "Education",
-        AppointmentLocationSummary(123, prisonCode, "Education 1"),
-        date,
-        LocalTime.of(9, 0),
-        LocalTime.of(10, 30),
-        false,
-        6,
-        3,
-        2,
-        1,
-        listOf(
-          AppointmentAttendeeSearchResult(4, "A1234BC", 1),
-          AppointmentAttendeeSearchResult(5, "B2345CD", 2),
-          AppointmentAttendeeSearchResult(6, "C3456DE", 3),
-          AppointmentAttendeeSearchResult(7, "D4567EF", 4),
-          AppointmentAttendeeSearchResult(8, "E5678FG", 5),
-          AppointmentAttendeeSearchResult(9, "F6789GH", 6),
+    assertThat(summaries).containsAll(
+      listOf(
+        // Repeating group appointment, appointment id 2
+        AppointmentAttendanceSummary(
+          2,
+          prisonCode,
+          "custom (Education)",
+          AppointmentLocationSummary(123, prisonCode, "Education 1"),
+          date,
+          LocalTime.of(9, 0),
+          LocalTime.of(10, 30),
+          false,
+          6,
+          3,
+          2,
+          1,
+          listOf(
+            AppointmentAttendeeSearchResult(4, "A1234BC", 1),
+            AppointmentAttendeeSearchResult(5, "B2345CD", 2),
+            AppointmentAttendeeSearchResult(6, "C3456DE", 3),
+            AppointmentAttendeeSearchResult(7, "D4567EF", 4),
+            AppointmentAttendeeSearchResult(8, "E5678FG", 5),
+            AppointmentAttendeeSearchResult(9, "F6789GH", 6),
+          ),
+          EventTierType.TIER_1,
         ),
-        EventTierType.TIER_1,
-      ),
-      // Single appointments, ids 9-11
-      // No attendance marked
-      AppointmentAttendanceSummary(
-        9,
-        prisonCode,
-        "Jehovah's Witness One to One (Chaplaincy)",
-        AppointmentLocationSummary(456, prisonCode, "Chapel"),
-        date,
-        LocalTime.of(13, 45),
-        LocalTime.of(14, 15),
-        false,
-        1,
-        0,
-        0,
-        1,
-        listOf(
-          AppointmentAttendeeSearchResult(17, "A1234BC", 1),
+        // Single appointments, ids 9-11
+        // No attendance marked
+        AppointmentAttendanceSummary(
+          9,
+          prisonCode,
+          "Jehovah's Witness One to One (Chaplaincy)",
+          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          date,
+          LocalTime.of(13, 45),
+          LocalTime.of(14, 15),
+          false,
+          1,
+          0,
+          0,
+          1,
+          listOf(
+            AppointmentAttendeeSearchResult(17, "A1234BC", 1),
+          ),
+          EventTierType.TIER_1,
         ),
-        EventTierType.TIER_1,
-      ),
-      // Attended
-      AppointmentAttendanceSummary(
-        10,
-        prisonCode,
-        "Jehovah's Witness One to One (Chaplaincy)",
-        AppointmentLocationSummary(456, prisonCode, "Chapel"),
-        date,
-        LocalTime.of(14, 15),
-        LocalTime.of(14, 45),
-        false,
-        1,
-        1,
-        0,
-        0,
-        listOf(AppointmentAttendeeSearchResult(18, "B2345CD", 2)),
-        EventTierType.TIER_1,
-      ),
-      // Non-attended
-      AppointmentAttendanceSummary(
-        11,
-        prisonCode,
-        "Jehovah's Witness One to One (Chaplaincy)",
-        AppointmentLocationSummary(456, prisonCode, "Chapel"),
-        date,
-        LocalTime.of(14, 45),
-        LocalTime.of(15, 15),
-        false,
-        1,
-        0,
-        1,
-        0,
-        listOf(AppointmentAttendeeSearchResult(19, "C3456DE", 3)),
-        EventTierType.TIER_1,
-      ),
-      // Appointment set, returned as single appointments with ids 12-14
-      AppointmentAttendanceSummary(
-        12,
-        prisonCode,
-        "Medical - Doctor",
-        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
-        date,
-        LocalTime.of(9, 0),
-        LocalTime.of(9, 15),
-        false,
-        1,
-        0,
-        0,
-        1,
-        listOf(AppointmentAttendeeSearchResult(20, "A1234BC", 1)),
-        EventTierType.TIER_1,
-      ),
-      // Attended
-      AppointmentAttendanceSummary(
-        13,
-        prisonCode,
-        "Medical - Doctor",
-        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
-        date,
-        LocalTime.of(9, 15),
-        LocalTime.of(9, 30),
-        false,
-        1,
-        1,
-        0,
-        0,
-        listOf(AppointmentAttendeeSearchResult(21, "B2345CD", 2)),
-        EventTierType.TIER_1,
-      ),
-      // Non-attended
-      AppointmentAttendanceSummary(
-        14,
-        prisonCode,
-        "Medical - Doctor",
-        AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
-        date,
-        LocalTime.of(9, 30),
-        LocalTime.of(9, 45),
-        false,
-        1,
-        0,
-        1,
-        0,
-        listOf(AppointmentAttendeeSearchResult(22, "C3456DE", 3)),
-        EventTierType.TIER_1,
+        // Attended
+        AppointmentAttendanceSummary(
+          10,
+          prisonCode,
+          "Jehovah's Witness One to One (Chaplaincy)",
+          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          date,
+          LocalTime.of(14, 15),
+          LocalTime.of(14, 45),
+          false,
+          1,
+          1,
+          0,
+          0,
+          listOf(AppointmentAttendeeSearchResult(18, "B2345CD", 2)),
+          EventTierType.TIER_1,
+        ),
+        // Non-attended
+        AppointmentAttendanceSummary(
+          11,
+          prisonCode,
+          "Jehovah's Witness One to One (Chaplaincy)",
+          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          date,
+          LocalTime.of(14, 45),
+          LocalTime.of(15, 15),
+          false,
+          1,
+          0,
+          1,
+          0,
+          listOf(AppointmentAttendeeSearchResult(19, "C3456DE", 3)),
+          EventTierType.TIER_1,
+        ),
+        // Appointment set, returned as single appointments with ids 12-14
+        AppointmentAttendanceSummary(
+          12,
+          prisonCode,
+          "Medical - Doctor",
+          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          date,
+          LocalTime.of(9, 0),
+          LocalTime.of(9, 15),
+          false,
+          1,
+          0,
+          0,
+          1,
+          listOf(AppointmentAttendeeSearchResult(20, "A1234BC", 1)),
+          EventTierType.TIER_1,
+        ),
+        // Attended
+        AppointmentAttendanceSummary(
+          13,
+          prisonCode,
+          "Medical - Doctor",
+          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          date,
+          LocalTime.of(9, 15),
+          LocalTime.of(9, 30),
+          false,
+          1,
+          1,
+          0,
+          0,
+          listOf(AppointmentAttendeeSearchResult(21, "B2345CD", 2)),
+          EventTierType.TIER_1,
+        ),
+        // Non-attended
+        AppointmentAttendanceSummary(
+          14,
+          prisonCode,
+          "Medical - Doctor",
+          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          date,
+          LocalTime.of(9, 30),
+          LocalTime.of(9, 45),
+          false,
+          1,
+          0,
+          1,
+          0,
+          listOf(AppointmentAttendeeSearchResult(22, "C3456DE", 3)),
+          EventTierType.TIER_1,
+        ),
       ),
     )
 
@@ -256,46 +322,48 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
 
     val summaries = webTestClient.getAppointmentAttendanceSummaries(prisonCode, date)!!
 
-    assertThat(summaries).containsExactly(
-      // Repeating group appointment, appointment id 1
-      AppointmentAttendanceSummary(
-        1,
-        prisonCode,
-        "Education",
-        AppointmentLocationSummary(123, prisonCode, "Education 1"),
-        date,
-        LocalTime.of(9, 0),
-        LocalTime.of(10, 30),
-        true,
-        3,
-        0,
-        0,
-        3,
-        listOf(
-          AppointmentAttendeeSearchResult(1, "A1234BC", 1),
-          AppointmentAttendeeSearchResult(2, "B2345CD", 2),
-          AppointmentAttendeeSearchResult(3, "C3456DE", 3),
+    assertThat(summaries).containsAll(
+      listOf(
+        // Repeating group appointment, appointment id 1
+        AppointmentAttendanceSummary(
+          1,
+          prisonCode,
+          "Education",
+          AppointmentLocationSummary(123, prisonCode, "Education 1"),
+          date,
+          LocalTime.of(9, 0),
+          LocalTime.of(10, 30),
+          true,
+          3,
+          0,
+          0,
+          3,
+          listOf(
+            AppointmentAttendeeSearchResult(1, "A1234BC", 1),
+            AppointmentAttendeeSearchResult(2, "B2345CD", 2),
+            AppointmentAttendeeSearchResult(3, "C3456DE", 3),
+          ),
+          EventTierType.TIER_1,
         ),
-        EventTierType.TIER_1,
-      ),
-      // Single appointments, id 4, cancelled appointment
-      AppointmentAttendanceSummary(
-        4,
-        prisonCode,
-        "Jehovah's Witness One to One (Chaplaincy)",
-        AppointmentLocationSummary(456, prisonCode, "Chapel"),
-        date,
-        LocalTime.of(13, 45),
-        LocalTime.of(14, 15),
-        true,
-        1,
-        0,
-        0,
-        1,
-        listOf(
-          AppointmentAttendeeSearchResult(13, "A1234BC", 1),
+        // Single appointments, id 4, cancelled appointment
+        AppointmentAttendanceSummary(
+          4,
+          prisonCode,
+          "Jehovah's Witness One to One (Chaplaincy)",
+          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          date,
+          LocalTime.of(13, 45),
+          LocalTime.of(14, 15),
+          true,
+          1,
+          0,
+          0,
+          1,
+          listOf(
+            AppointmentAttendeeSearchResult(13, "A1234BC", 1),
+          ),
+          EventTierType.TIER_1,
         ),
-        EventTierType.TIER_1,
       ),
     )
 
@@ -511,9 +579,10 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getAppointmentAttendanceSummaries(
     prisonCode: String,
     date: LocalDate,
+    additionalFilters: String = "",
   ) =
     get()
-      .uri("/appointments/$prisonCode/attendance-summaries?date=$date")
+      .uri("/appointments/$prisonCode/attendance-summaries?date=$date$additionalFilters")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk

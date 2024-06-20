@@ -15,6 +15,13 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+private enum class QueryMode {
+  ALL,
+  BY_CATEGORY_CODE,
+  BY_CUSTOM_NAME,
+  BY_CATEGORY_CODE_AND_CUSTOM_NAME,
+}
+
 @Service
 @Transactional
 class AppointmentAttendanceService(
@@ -27,20 +34,28 @@ class AppointmentAttendanceService(
   fun getAppointmentAttendanceSummaries(
     prisonCode: String,
     date: LocalDate,
-    appointmentName: String? = null,
+    categoryCode: String? = null,
     customName: String? = null,
   ): List<AppointmentAttendanceSummary> {
     checkCaseloadAccess(prisonCode)
 
-    val summaries = appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(prisonCode, date)
+    val summaries = when (
+      getQueryMode(
+        categoryCode = categoryCode,
+        customName = customName,
+      )
+    ) {
+      QueryMode.ALL -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(prisonCode, date)
+      QueryMode.BY_CATEGORY_CODE -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCode(prisonCode, date, categoryCode!!)
+      QueryMode.BY_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomName(prisonCode, date, customName!!)
+      QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomName(prisonCode, date, categoryCode!!, customName!!)
+    }
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(summaries.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
-    return summaries.filter {
-      customName == null || customName == it.customName
-    }.toModel(attendeeMap, referenceCodeMap, locationMap, appointmentName)
+    return summaries.toModel(attendeeMap, referenceCodeMap, locationMap)
   }
 
   fun markAttendance(appointmentId: Long, request: AppointmentAttendanceRequest, principal: Principal): Appointment {
@@ -53,5 +68,12 @@ class AppointmentAttendanceService(
     appointment.markPrisonerAttendance(request.attendedPrisonNumbers, request.nonAttendedPrisonNumbers, attendanceRecordedTime, attendanceRecordedBy)
 
     return appointmentRepository.saveAndFlush(appointment).toModel()
+  }
+
+  private fun getQueryMode(categoryCode: String?, customName: String?): QueryMode {
+    if (categoryCode == null && customName == null) return QueryMode.ALL
+    if (categoryCode != null && customName != null) return QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME
+    if (categoryCode != null) return QueryMode.BY_CATEGORY_CODE
+    return QueryMode.BY_CUSTOM_NAME
   }
 }

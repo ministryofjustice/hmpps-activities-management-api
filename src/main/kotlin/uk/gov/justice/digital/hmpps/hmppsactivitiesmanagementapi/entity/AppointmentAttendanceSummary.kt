@@ -82,6 +82,4 @@ fun List<AppointmentAttendanceSummary>.toModel(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-  appointmentName: String? = null,
 ) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
-  .filter { appointmentName == null || it.appointmentName.contains(appointmentName) }

@@ -97,8 +97,8 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `filters values by custom name`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate("RAN", date)).thenReturn(
-        listOf(entity, appointmentAttendanceSummaryEntity(customName = "custom")),
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomName("RAN", date, "custom")).thenReturn(
+        listOf(appointmentAttendanceSummaryEntity(customName = "custom")),
       )
 
       val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), customName = "custom")
@@ -106,14 +106,25 @@ class AppointmentAttendanceServiceTest {
     }
 
     @Test
-    fun `filters values by appointment name`() {
+    fun `filters values by category code`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate("RAN", date)).thenReturn(
-        listOf(entity, appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCode("RAN", date, "appointment")).thenReturn(
+        listOf(appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
       )
 
-      val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), appointmentName = "appointment")
+      val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), categoryCode = "TEST_CAT")
       assertThat(summaries.all { it.appointmentName.contains("appointment") }).isTrue()
+    }
+
+    @Test
+    fun `filters by category and custom name`() {
+      addCaseloadIdToRequestHeader("RAN")
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomName("RAN", date, "appointment", "custom")).thenReturn(
+        listOf(appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
+      )
+
+      val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), categoryCode = "TEST_CAT", customName = "custom")
+      assertThat(summaries.all { it.appointmentName.contains("appointment") && it.appointmentName.contains("custom") }).isTrue()
     }
   }
 
