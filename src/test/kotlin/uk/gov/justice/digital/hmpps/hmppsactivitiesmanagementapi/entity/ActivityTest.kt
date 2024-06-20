@@ -601,6 +601,76 @@ class ActivityTest {
     )
   }
 
+  @Test //FIXME implement logic
+  fun `can fetch activity pay for a particular band and incentive code when there are multiple historic pays`() {
+    val activity = activityEntity()
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 33,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(10),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 34,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    val currentPay = activity.activityPayFor(lowPayBand, "BAS")
+
+    assertThat(currentPay!!.rate).isEqualTo(34)
+    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+  }
+
+  @Test //FIXME implement logic
+  fun `can fetch activity pay for a particular band and incentive code when there are multiple historic and future pays`() {
+    val activity = activityEntity()
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 65,
+      pieceRate = 65,
+      pieceRateItems = 65,
+      startDate = LocalDate.now().plusDays(1),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 75,
+      pieceRate = 75,
+      pieceRateItems = 75,
+      startDate = LocalDate.now().plusDays(6),
+    )
+
+    val currentPay = activity.activityPayFor(lowPayBand, "BAS")
+
+    assertThat(currentPay!!.rate).isEqualTo(35)
+    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+  }
+
   @Test
   fun `can add minimum education levels to activity`() {
     val activity =

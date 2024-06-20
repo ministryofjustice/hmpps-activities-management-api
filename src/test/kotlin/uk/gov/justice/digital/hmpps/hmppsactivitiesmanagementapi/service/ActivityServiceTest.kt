@@ -1141,6 +1141,99 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update pay with multiple pay rates for the same incentive level and pay band`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      pieceRate = 150,
+      pieceRateItems =10,
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      pieceRate = 150,
+      pieceRateItems =10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val updateActivityRequest: ActivityUpdateRequest =
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(2)
+    }
+
+    with(activityCaptor.firstValue.activityPay()) {
+      single { it.startDate == null }
+      single { it.startDate == java.time.LocalDate.now().plusDays(25) }
+    }
+  }
+
+  @Test
+  fun `updateActivity - update pay with multiple pay rates for the same incentive level, pay band and start date fails`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      pieceRate = 150,
+      pieceRateItems =10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      pieceRate = 150,
+      pieceRateItems =10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val updateActivityRequest: ActivityUpdateRequest =
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
+  }
+
+  @Test //FIXME understand implication of replacePayBandAllocationBeforePayRemoval for multiple pay bands and differing start dates
   fun `updateActivity - update pay band where someone is allocated to it`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
     val activityEntity: ActivityEntity = activityEntity()
@@ -1170,6 +1263,8 @@ class ActivityServiceTest {
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
+
+  //FIXME add test for multiple pays with same paybands, incentive level and different start date
 
   @Test
   fun `updateActivity - update start date fails if new date not in future`() {

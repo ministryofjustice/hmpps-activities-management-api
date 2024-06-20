@@ -423,13 +423,17 @@ internal fun activityPayCreateRequest(
   incentiveNomisCode: String = "123",
   incentiveLevel: String = "level",
   payBandId: Long = 12,
-  rate: Int = 150,
+  rate: Int? = null,
+  pieceRate: Int? = null,
+  pieceRateItems: Int? =10,
   startDate: LocalDate? = null,
 ) = ActivityPayCreateRequest(
   incentiveNomisCode = incentiveNomisCode,
   incentiveLevel = incentiveLevel,
   payBandId = payBandId,
   rate = rate,
+  pieceRate = pieceRate,
+  pieceRateItems = pieceRateItems,
   startDate = startDate,
 )
 
