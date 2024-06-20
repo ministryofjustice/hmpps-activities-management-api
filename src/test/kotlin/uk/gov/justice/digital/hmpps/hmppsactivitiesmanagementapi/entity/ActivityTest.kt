@@ -601,7 +601,7 @@ class ActivityTest {
     )
   }
 
-  @Test //FIXME implement logic
+  @Test // FIXME implement logic
   fun `can fetch activity pay for a particular band and incentive code when there are multiple historic pays`() {
     val activity = activityEntity()
 
@@ -631,7 +631,7 @@ class ActivityTest {
     assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
   }
 
-  @Test //FIXME implement logic
+  @Test // FIXME implement logic
   fun `can fetch activity pay for a particular band and incentive code when there are multiple historic and future pays`() {
     val activity = activityEntity()
 

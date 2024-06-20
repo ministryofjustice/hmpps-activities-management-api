@@ -1148,7 +1148,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 125,
       pieceRate = 150,
-      pieceRateItems =10,
+      pieceRateItems = 10,
     )
 
     val apr2 = activityPayCreateRequest(
@@ -1157,7 +1157,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 150,
       pieceRate = 150,
-      pieceRateItems =10,
+      pieceRateItems = 10,
       startDate = LocalDate.now().plusDays(25),
     )
 
@@ -1198,7 +1198,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 125,
       pieceRate = 150,
-      pieceRateItems =10,
+      pieceRateItems = 10,
       startDate = LocalDate.now().plusDays(25),
     )
 
@@ -1208,7 +1208,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 150,
       pieceRate = 150,
-      pieceRateItems =10,
+      pieceRateItems = 10,
       startDate = LocalDate.now().plusDays(25),
     )
 
@@ -1233,7 +1233,7 @@ class ActivityServiceTest {
       .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
   }
 
-  @Test //FIXME understand implication of replacePayBandAllocationBeforePayRemoval for multiple pay bands and differing start dates
+  @Test // FIXME understand implication of replacePayBandAllocationBeforePayRemoval for multiple pay bands and differing start dates
   fun `updateActivity - update pay band where someone is allocated to it`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
     val activityEntity: ActivityEntity = activityEntity()
@@ -1264,7 +1264,7 @@ class ActivityServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
-  //FIXME add test for multiple pays with same paybands, incentive level and different start date
+  // FIXME add test for multiple pays with same paybands, incentive level and different start date
 
   @Test
   fun `updateActivity - update start date fails if new date not in future`() {
