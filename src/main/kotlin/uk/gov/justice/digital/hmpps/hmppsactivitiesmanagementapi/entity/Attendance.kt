@@ -211,10 +211,11 @@ data class Attendance(
 
   /*
    Attendance is editable if:
-   1. If no attendance has been recorded AND it is within 14 days of the activity session date.
+   1. If no attendance has been recorded AND it is within 7 days of the activity session date.
    2. If attendance is Not Attended & Unpaid AND it is within 7 days of the activity session date.
    3. If attendance is Attended AND it is the same day as the attendance was set as Attended.
    4. If attendance is Not Attended & Paid AND it is the same day as the paid attendance was set.
+   5. If the session is Cancelled session use the session date not the recorded time
    */
   fun editable(): Boolean {
     return (
@@ -227,7 +228,10 @@ data class Attendance(
                   (
                     this.attendanceReason?.attended == false && this.issuePayment == false
                     ) ||
-                    (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
+                    (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay())) ||
+                    // attendance records are created on the day.
+                    // For a cancelled attendance records we need to consider the session date, not the recorded time to allow uncancelling on the day
+                    (this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED)
                   )
               )
           )
