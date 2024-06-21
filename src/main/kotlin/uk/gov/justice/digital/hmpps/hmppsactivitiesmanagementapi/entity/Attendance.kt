@@ -228,7 +228,7 @@ data class Attendance(
       return true
     }
 
-    if(this.status != AttendanceStatus.COMPLETED) {
+    if (this.status != AttendanceStatus.COMPLETED) {
       return false
     }
 
