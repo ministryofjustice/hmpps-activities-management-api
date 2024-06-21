@@ -218,17 +218,32 @@ data class Attendance(
    5. If the session is 'cancelled' check the 'session date' is today. For a cancelled session, when the attendance record is created on the day the 'recorded time' is set to the session cancellation time
    */
   fun editable(): Boolean {
-    return (
-      this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) && (
-        this.status == AttendanceStatus.WAITING || (
-          this.status == AttendanceStatus.COMPLETED && (
-            (this.attendanceReason?.attended == false && this.issuePayment == false) ||
-              this.recordedTime!!.toLocalDate() == LocalDate.now() ||
-              (this.scheduledInstance.sessionDate == LocalDate.now() && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED)
-            )
-          )
-        )
-      )
+    val today = LocalDate.now()
+
+    if (!this.scheduledInstance.sessionDate.isAfter(today.minusDays(7))) {
+      return false
+    }
+
+    if (this.status == AttendanceStatus.WAITING) {
+      return true
+    }
+
+    if(this.status != AttendanceStatus.COMPLETED) {
+      return false
+    }
+
+    if (this.attendanceReason?.attended == false && this.issuePayment == false) {
+      return true
+    }
+
+    if (this.scheduledInstance.sessionDate == today && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED) {
+      return true
+    }
+
+    if (this.recordedTime!!.toLocalDate() == today) {
+      return true
+    }
+    return false
   }
 
   fun hasReason(vararg reasons: AttendanceReasonEnum) = reasons.any { attendanceReason?.code == it }
