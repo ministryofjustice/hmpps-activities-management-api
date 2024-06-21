@@ -298,6 +298,41 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     }
 
     @Test
+    @Sql("classpath:test_data/seed-activity-id-29.sql")
+    fun `scheduled instance is uncancelled when session is cancelled in the past`() {
+      val response = webTestClient.uncancelScheduledInstance(122405, "CAN1234", "Mr Cancel")
+      response.expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(122405)!!) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+
+        with(attendances.first()) {
+          assertThat(attendanceReason).isNull()
+          assertThat(status).isEqualTo("WAITING")
+          assertThat(comment).isNull()
+          assertThat(recordedBy).isNull()
+          assertThat(editable).isTrue
+        }
+      }
+
+      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(122405))
+        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(eventCaptor.secondValue) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        additionalInformation isEqualTo PrisonerAttendanceInformation(680879)
+        occurredAt isCloseTo TimeSource.now()
+      }
+    }
+
+    @Test
     @Sql("classpath:test_data/seed-activity-id-14.sql")
     fun `scheduled instance is not cancelled`() {
       val response = webTestClient.uncancelScheduledInstance(1, "CAN1234", "Mr Cancel")
