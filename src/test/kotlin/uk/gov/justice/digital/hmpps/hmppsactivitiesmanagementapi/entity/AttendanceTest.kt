@@ -192,7 +192,7 @@ class AttendanceTest {
 
   @Test
   fun `attendance is editable - COMPLETED, paid, session today, cancelled 5 days ago`() {
-    val instanceToday = instance.copy(sessionDate = LocalDate.now(), startTime = LocalTime.of(1, 0), endTime = LocalTime.of(1,30))
+    val instanceToday = instance.copy(sessionDate = LocalDate.now(), startTime = LocalTime.of(1, 0), endTime = LocalTime.of(1, 30))
     val attendance = Attendance(
       scheduledInstance = instanceToday,
       initialIssuePayment = true,
