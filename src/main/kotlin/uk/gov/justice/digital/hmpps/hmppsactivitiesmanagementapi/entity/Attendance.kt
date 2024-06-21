@@ -219,22 +219,17 @@ data class Attendance(
    */
   fun editable(): Boolean {
     return (
-      this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
-        (
-          this.status() == AttendanceStatus.WAITING ||
-            (
-              this.status == AttendanceStatus.COMPLETED &&
-                (
-                  (
-                    this.attendanceReason?.attended == false && this.issuePayment == false
-                    ) ||
-                    (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay())) ||
-                    // attendance records are created on the day.
-                    // For a cancelled attendance records we need to consider the session date, not the recorded time to allow uncancelling on the day
-                    (this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED)
-                  )
-              )
+      this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) && (
+        this.status() == AttendanceStatus.WAITING || (
+          this.status == AttendanceStatus.COMPLETED && (
+            this.attendanceReason?.attended == false && this.issuePayment == false ||
+              this.recordedTime!!.toLocalDate().isEqual(LocalDate.now()) ||
+              // attendance records are created on the day.
+              // For a cancelled attendance records we need to consider the session date, not the recorded time to allow uncancelling on the day
+              (this.scheduledInstance.sessionDate.isEqual(LocalDate.now()) && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED)
+            )
           )
+        )
       )
   }
 
