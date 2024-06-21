@@ -224,10 +224,11 @@ data class Attendance(
           this.status == AttendanceStatus.COMPLETED && (
             (this.attendanceReason?.attended == false && this.issuePayment == false) ||
               this.recordedTime!!.toLocalDate() == LocalDate.now() ||
-              (this.scheduledInstance.sessionDate == LocalDate.now() && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED))
+              (this.scheduledInstance.sessionDate == LocalDate.now() && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED)
             )
           )
         )
+      )
   }
 
   fun hasReason(vararg reasons: AttendanceReasonEnum) = reasons.any { attendanceReason?.code == it }
