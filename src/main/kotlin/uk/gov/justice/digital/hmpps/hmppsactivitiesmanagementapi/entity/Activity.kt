@@ -124,8 +124,20 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
-  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String) =
-    activityPay().firstOrNull { it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode }
+  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? {
+    val payMatchingPayBandAndIncentive = activityPay().filter { it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode }
+
+    if (payMatchingPayBandAndIncentive.size > 1) {
+      var startDate: LocalDate? = null
+      payMatchingPayBandAndIncentive.forEach { payMatch ->
+        if (payMatch?.startDate != null && payMatch.startDate <= LocalDate.now() && (startDate == null || payMatch.startDate > startDate)) {
+          startDate = payMatch.startDate
+        }
+      }
+      return activityPay().firstOrNull { it.startDate == startDate }
+    }
+    return payMatchingPayBandAndIncentive.firstOrNull()
+  }
 
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
