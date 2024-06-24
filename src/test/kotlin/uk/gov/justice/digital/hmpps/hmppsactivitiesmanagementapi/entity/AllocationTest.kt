@@ -336,6 +336,55 @@ class AllocationTest {
   }
 
   @Test
+  fun `is able to get allocation pay with multiple activity pays`() {
+    val allocation = allocation()
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(5),
+    )
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 50,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 55,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now().plusDays(4),
+    )
+
+    val allocationPay = allocation.allocationPay("BAS")
+
+    assertThat(allocationPay).isEqualTo(
+      ActivityPay(
+        activity = allocation.activitySchedule.activity,
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 50,
+        pieceRate = 50,
+        pieceRateItems = 60,
+      ),
+    )
+  }
+
+  @Test
   fun `planned deallocation is updated when new end date is before planned`() {
     val allocation = allocation().apply {
       endDate = null
