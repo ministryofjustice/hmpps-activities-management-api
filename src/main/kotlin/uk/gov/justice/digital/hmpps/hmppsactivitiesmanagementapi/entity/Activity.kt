@@ -18,6 +18,7 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -124,20 +125,14 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
-  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? {
-    val payMatchingPayBandAndIncentive = activityPay().filter { it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode }
-
-    if (payMatchingPayBandAndIncentive.size > 1) {
-      var startDate: LocalDate? = null
-      payMatchingPayBandAndIncentive.forEach { payMatch ->
-        if (payMatch?.startDate != null && payMatch.startDate <= LocalDate.now() && (startDate == null || payMatch.startDate > startDate)) {
-          startDate = payMatch.startDate
-        }
+  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? =
+    activityPay()
+      .filter {
+        it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode &&
+          (it.startDate.onOrBefore(LocalDate.now()) || it.startDate == null)
       }
-      return activityPay().firstOrNull { it.startDate == startDate }
-    }
-    return payMatchingPayBandAndIncentive.firstOrNull()
-  }
+      .sortedBy { it.startDate }
+      .lastOrNull()
 
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
