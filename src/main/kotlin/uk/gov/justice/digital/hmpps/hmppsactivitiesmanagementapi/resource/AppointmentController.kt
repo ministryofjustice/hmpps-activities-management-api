@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeByStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
@@ -302,7 +303,7 @@ class AppointmentController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = AppointmentAttendanceSummary::class),
+            schema = Schema(implementation = AppointmentAttendeeByStatus::class),
           ),
         ],
       ),
@@ -344,7 +345,7 @@ class AppointmentController(
     @RequestParam(value = "customName", required = false) customName: String? = null,
     @RequestParam(value = "prisonerNumber", required = false) prisonerNumber: String? = null,
     @RequestParam(value = "eventTier", required = false) eventTier: EventTierType? = null,
-  ) = appointmentAttendanceService.getAppointmentAttendanceByStatus(
+  ): List<AppointmentAttendeeByStatus> = appointmentAttendanceService.getAppointmentAttendanceByStatus(
     prisonCode = prisonCode,
     status = status,
     date = date,
