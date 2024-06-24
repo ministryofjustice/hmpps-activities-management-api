@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 class AttendanceTest {
@@ -190,6 +191,20 @@ class AttendanceTest {
   }
 
   @Test
+  fun `attendance is editable - COMPLETED, paid, session today, cancelled 5 days ago`() {
+    val instanceToday = instance.copy(sessionDate = LocalDate.now(), startTime = LocalTime.of(1, 0), endTime = LocalTime.of(1, 30))
+    val attendance = Attendance(
+      scheduledInstance = instanceToday,
+      initialIssuePayment = true,
+      prisonerNumber = "A1234AA",
+      status = AttendanceStatus.COMPLETED,
+      recordedTime = LocalDateTime.now().minusDays(5),
+      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+    )
+    assertThat(attendance.editable()).isTrue
+  }
+
+  @Test
   fun `attendance is editable - COMPLETED, unpaid, session was 6 days ago, marked six days ago, not attended`() {
     val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(6))
     val attendance = Attendance(
@@ -218,10 +233,10 @@ class AttendanceTest {
   }
 
   @Test
-  fun `attendance is not editable - COMPLETED, paid, session was 1 day ago, marked six days ago, not attended`() {
-    val instanceTenDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(1))
+  fun `attendance is not editable - COMPLETED, paid, session was 1 day ago, marked 1 day ago, not attended`() {
+    val instanceOneDaysAgo = instance.copy(sessionDate = LocalDate.now().minusDays(1))
     val attendance = Attendance(
-      scheduledInstance = instanceTenDaysAgo,
+      scheduledInstance = instanceOneDaysAgo,
       initialIssuePayment = true,
       prisonerNumber = "A1234AA",
       status = AttendanceStatus.COMPLETED,

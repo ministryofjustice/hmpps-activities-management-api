@@ -211,27 +211,39 @@ data class Attendance(
 
   /*
    Attendance is editable if:
-   1. If no attendance has been recorded AND it is within 14 days of the activity session date.
-   2. If attendance is Not Attended & Unpaid AND it is within 7 days of the activity session date.
-   3. If attendance is Attended AND it is the same day as the attendance was set as Attended.
-   4. If attendance is Not Attended & Paid AND it is the same day as the paid attendance was set.
+   1. If no attendance has been recorded, and it is within 7 days of the activity session date.
+   2. If attendance is set to 'not attended', 'unpaid', and it is within 7 days of the activity 'session date'.
+   3. If attendance is set to 'attended', and it is still the same day that the attendance was marked.
+   4. If attendance is set to 'not attended', 'paid', and it is the same day that the attendance was marked.
+   5. If the session is 'cancelled' check the 'session date' is today. For a cancelled session, when the attendance record is created on the day the 'recorded time' is set to the session cancellation time
    */
   fun editable(): Boolean {
-    return (
-      this.scheduledInstance.sessionDate.isAfter(LocalDate.now().minusDays(7)) &&
-        (
-          this.status() == AttendanceStatus.WAITING ||
-            (
-              this.status == AttendanceStatus.COMPLETED &&
-                (
-                  (
-                    this.attendanceReason?.attended == false && this.issuePayment == false
-                    ) ||
-                    (this.recordedTime!!.isAfter(LocalDate.now().atStartOfDay()) || this.recordedTime!!.isEqual(LocalDate.now().atStartOfDay()))
-                  )
-              )
-          )
-      )
+    val today = LocalDate.now()
+
+    if (!this.scheduledInstance.sessionDate.isAfter(today.minusDays(7))) {
+      return false
+    }
+
+    if (this.status == AttendanceStatus.WAITING) {
+      return true
+    }
+
+    if (this.status != AttendanceStatus.COMPLETED) {
+      return false
+    }
+
+    if (this.attendanceReason?.attended == false && this.issuePayment == false) {
+      return true
+    }
+
+    if (this.scheduledInstance.sessionDate == today && this.attendanceReason?.code == AttendanceReasonEnum.CANCELLED) {
+      return true
+    }
+
+    if (this.recordedTime!!.toLocalDate() == today) {
+      return true
+    }
+    return false
   }
 
   fun hasReason(vararg reasons: AttendanceReasonEnum) = reasons.any { attendanceReason?.code == it }
