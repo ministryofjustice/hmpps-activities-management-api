@@ -1,0 +1,64 @@
+{
+    "configurations": [
+        {
+            "type": "spring-boot",
+            "name": "Spring-boot configuration",
+            "mainClass": "",
+            "module": "",
+            
+        },
+        {
+            "name": "Build hmpps-activities-management-api",
+            "type": "gradle",
+            "workingDir": "$PROJECT_DIR$",
+            "tasks": [":classes"],
+            "initScripts": {
+                "flmapper": "ext.mapPath = { path -> null }",
+                "Build hmpps-activities-management-api": "System.setProperty('org.gradle.java.compile-classpath-packaging', 'true')"
+            }
+        },
+        {
+            "name": "HmppsActivitiesManagementApi with local db",
+            "type": "spring-boot",
+            "workingDir": "$PROJECT_DIR$",
+            "dependsOn": ["Build hmpps-activities-management-api"],
+            "mainClass": "uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.HmppsActivitiesManagementApiKt",
+            "module": "hmpps-activities-management-api.main",
+            "options": ["-XX:TieredStopAtLevel=1", "-Dspring.output.ansi.enabled=always", "-Dcom.sun.management.jmxremote", "-Dspring.jmx.enabled=true", "-Dspring.liveBeansView.mbeanDomain", "-Dspring.application.admin.enabled=true", "-Dmanagement.endpoints.jmx.exposure.include=*", "-Dfile.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8"],
+            "activeProfiles": ["stdout","local"],
+            "environment": {
+                "SCHEDULE_AHEAD_DAYS" : "46",
+                "DB_SERVER" : "localhost",
+                "SYSTEM_CLIENT_ID" : "activities-management-api-admin-1",
+                "SYSTEM_CLIENT_SECRET" : "Tfnh3T&fHAX(zL1<T(2e9Z&yEe7t6XOzUJ73*YF5=M8nhq$cbd+*2Y!hs*ZO",
+                "DB_NAME" : "activities-management-db",
+                "DB_USER" : "activities-management",
+                "DB_PASS" : "activities-management",
+                "DB_SSL_MODE" : "prefer",
+                "DPR_USER" : "dpr_user",
+                "DPR_PASSWORD" : "dpr_password"
+            },
+        },
+        {
+            "name": "HmppsActivitiesManagementApi with cloud platform DEV db",
+            "type": "spring-boot",
+            "workingDir": "$PROJECT_DIR$",
+            "dependsOn": ["Build hmpps-activities-management-api"],
+            "mainClass": "uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.HmppsActivitiesManagementApiKt",
+            "module": "hmpps-activities-management-api.main",
+            "options": ["-XX:TieredStopAtLevel=1", "-Dspring.output.ansi.enabled=always", "-Dcom.sun.management.jmxremote", "-Dspring.jmx.enabled=true", "-Dspring.liveBeansView.mbeanDomain", "-Dspring.application.admin.enabled=true", "-Dmanagement.endpoints.jmx.exposure.include=*", "-Dfile.encoding=UTF-8", "-Dsun.stdout.encoding=UTF-8", "-Dsun.stderr.encoding=UTF-8"],"activeProfiles": ["stdout","local"],
+            "environment": {
+                "SCHEDULE_AHEAD_DAYS" : "46",
+                "DB_SERVER" : "localhost",
+                "SYSTEM_CLIENT_ID" : "activities-management-api-admin-1",
+                "SYSTEM_CLIENT_SECRET" : "Tfnh3T&fHAX(zL1<T(2e9Z&yEe7t6XOzUJ73*YF5=M8nhq$cbd+*2Y!hs*ZO",
+                "DB_NAME" : "activities-management-db",
+                "DB_USER" : "cphu5ulxPN",
+                "DB_PASS" : "dont know where we got it from in DBeaver....maybe its unwise to do it? could knock dev DB out of sync with main branch",
+                "DB_SSL_MODE" : "prefer",
+                "DPR_USER" : "dpr_user",
+                "DPR_PASSWORD" : "dpr_password"
+            },
+        }
+    ]
+}
