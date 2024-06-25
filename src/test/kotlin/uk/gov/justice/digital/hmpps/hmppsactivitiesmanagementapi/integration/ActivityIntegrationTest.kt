@@ -1104,6 +1104,56 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity pay - pay band with start date - is successful`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
+      ),
+    )
+
+    val newPay = ActivityUpdateRequest(
+      paid = true,
+      attendanceRequired = true,
+      pay = listOf(
+        ActivityPayCreateRequest(
+          incentiveNomisCode = "BAS",
+          incentiveLevel = "Basic",
+          payBandId = 1,
+          rate = 67,
+          startDate = LocalDate.now().plusDays(2),
+        ),
+      ),
+    )
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newPay)) {
+      assertThat(pay).hasSize(1)
+
+      with(pay) {
+        this.single { it.startDate == LocalDate.now().plusDays(2) }
+      }
+
+      with(schedules.first()) {
+        assertThat(allocations).hasSize(3)
+        assertThat(allocations[0].prisonPayBand?.id).isEqualTo(1)
+        assertThat(allocations[1].prisonPayBand?.id).isEqualTo(2)
+        assertThat(allocations[2].prisonPayBand?.id).isEqualTo(2)
+      }
+    }
+
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-activity-update-slot.sql")
   fun `updateActivity slot and instances - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
