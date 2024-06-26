@@ -109,6 +109,8 @@ class AttendancesService(
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
+            activitySummary = it.getActivitySummary(),
+            scheduledInstanceId = it.getScheduledInstanceId()
           )
         },
       )

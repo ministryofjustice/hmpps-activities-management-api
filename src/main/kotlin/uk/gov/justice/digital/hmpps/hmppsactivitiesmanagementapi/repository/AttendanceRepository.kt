@@ -82,6 +82,8 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
        acts.internal_location_description,
        ts.time_slot,
        ts.name AS category_name,
+       ts.summary as activity_summary,
+       si.scheduled_instance_id,
        attr.code AS attendance_reason_code
       FROM scheduled_instance si
       JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
@@ -111,4 +113,6 @@ interface SuspendedPrisonerAttendance {
   fun getOffWing(): Boolean
   fun getOnWing(): Boolean
   fun getInternalLocation(): String?
+  fun getScheduledInstanceId(): Long
+  fun getActivitySummary(): String
 }

@@ -31,4 +31,8 @@ data class SuspendedPrisonerActivityAttendance(
   val categoryName: String,
   @Schema(description = "attendance reason code")
   val attendanceReasonCode: String,
-)
+  @Schema(description = "The id of the particular session instance for this attendance record", example = "1")
+  val scheduledInstanceId: Long,
+  @Schema(description = "The title of the activity for this attendance record", example = "Math Level 1")
+  val activitySummary: String,
+  )
