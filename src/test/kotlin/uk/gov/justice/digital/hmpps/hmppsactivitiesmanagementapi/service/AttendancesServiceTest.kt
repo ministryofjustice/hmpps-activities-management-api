@@ -108,7 +108,7 @@ class AttendancesServiceTest {
         date = LocalDate.now(),
       ).first()
 
-      assertThat(response.prisonerNumber).isEqualTo("AE12345")
+      assertThat(response.prisonerNumber).isEqualTo("prisoner")
       assertThat(response.attendance.first().startTime).isEqualTo(localTime)
       assertThat(response.attendance.first().endTime).isEqualTo(localTime.plusHours(1))
       assertThat(response.attendance.first().categoryName).isEqualTo("CAT")

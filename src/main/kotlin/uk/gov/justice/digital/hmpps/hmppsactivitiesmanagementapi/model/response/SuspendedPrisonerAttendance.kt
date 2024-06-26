@@ -31,5 +31,4 @@ data class SuspendedPrisonerActivityAttendance(
   val categoryName: String,
   @Schema(description = "attendance reason code")
   val attendanceReasonCode: String,
-
 )
