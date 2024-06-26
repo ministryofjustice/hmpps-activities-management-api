@@ -95,7 +95,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   fun `get appointment attendance by status`(status: AttendanceStatus) {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
     val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}" else ""
-    val organiserCode = if(status == AttendanceStatus.EVENT_TIER) "&organiserCode=PRISON_STAFF" else ""
+    val organiserCode = if (status == AttendanceStatus.EVENT_TIER) "&organiserCode=PRISON_STAFF" else ""
     webTestClient.get()
       .uri("/appointments/$RISLEY_PRISON_CODE/${status.name}/attendance?date=${LocalDate.now().minusDays(1)}$incLudeEventTier$organiserCode")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
