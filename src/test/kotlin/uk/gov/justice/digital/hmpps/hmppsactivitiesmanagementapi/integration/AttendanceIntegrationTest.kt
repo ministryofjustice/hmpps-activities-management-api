@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -174,6 +175,30 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   fun `get attendance list for specified date`() {
     val attendanceList = webTestClient.getAllAttendanceByDate(MOORLAND_PRISON_CODE, LocalDate.of(2022, 10, 10))!!
     assertThat(attendanceList.size).isEqualTo(9)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-suspended-attendance.sql",
+  )
+  @Test
+  fun `get suspended prisoner activity attendance`() {
+    webTestClient.get()
+      .uri("/attendances/$RISLEY_PRISON_CODE/suspended?date=${LocalDate.now()}")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(1)
+      .jsonPath("$.[0].prisonerNumber").isEqualTo("A11111A")
+      .jsonPath("$.[0].attendance[0].timeSlot").isEqualTo("AM")
+      .jsonPath("$.[0].attendance[0].inCell").isEqualTo(false)
+      .jsonPath("$.[0].attendance[0].onWing").isEqualTo(false)
+      .jsonPath("$.[0].attendance[0].offWing").isEqualTo(false)
+      .jsonPath("$.[0].attendance[0].categoryName").isEqualTo("Education")
+      .jsonPath("$.[0].attendance[0].startTime").isEqualTo("09:00:00")
+      .jsonPath("$.[0].attendance[0].endTime").isEqualTo("11:00:00")
+      .jsonPath("$.[0].attendance[0].internalLocation").isEmpty
+      .jsonPath("$.[0].attendance[0].attendanceReasonCode").isEqualTo("SUSPENDED")
   }
 
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =

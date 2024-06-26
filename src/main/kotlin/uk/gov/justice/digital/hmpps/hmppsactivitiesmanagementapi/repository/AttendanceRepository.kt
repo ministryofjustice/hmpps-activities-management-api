@@ -3,11 +3,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 import java.time.LocalDate
+import java.time.LocalTime
 
 interface AttendanceRepository : JpaRepository<Attendance, Long> {
   fun existsAttendanceByScheduledInstanceAndPrisonerNumber(scheduledInstance: ScheduledInstance, prisonerNumber: String): Boolean
@@ -67,4 +69,46 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
   @Modifying
   fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String)
+
+  @Query(
+    value = """
+      SELECT 
+       att.prisoner_number,
+       si.start_time,
+       si.end_time,
+       a.in_cell,
+       a.off_wing,
+       a.on_wing,
+       acts.internal_location_description,
+       ts.time_slot,
+       ts.name AS category_name,
+       attr.code AS attendance_reason_code
+      FROM scheduled_instance si
+      JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
+      JOIN activity a ON a.activity_id = acts.activity_id
+      JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id  
+      JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
+      JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
+      WHERE a.prison_code = :prisonCode AND si.session_date = :date
+       AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
+      """,
+    nativeQuery = true,
+  )
+  fun getSuspendedPrisonerAttendance(
+    @Param("prisonCode") prisonCode: String,
+    @Param("date") date: LocalDate,
+  ): List<SuspendedPrisonerAttendance>
+}
+
+interface SuspendedPrisonerAttendance {
+  fun getPrisonerNumber(): String
+  fun getStartTime(): LocalTime
+  fun getEndTime(): LocalTime
+  fun getCategoryName(): String
+  fun getAttendanceReasonCode(): String
+  fun getTimeSlot(): String
+  fun getInCell(): Boolean
+  fun getOffWing(): Boolean
+  fun getOnWing(): Boolean
+  fun getInternalLocation(): String?
 }
