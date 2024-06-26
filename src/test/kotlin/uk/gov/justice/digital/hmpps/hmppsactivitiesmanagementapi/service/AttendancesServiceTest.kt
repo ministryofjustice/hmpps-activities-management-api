@@ -4,6 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -35,12 +36,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllA
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -69,6 +72,54 @@ class AttendancesServiceTest {
   private val activitySchedule = activity.schedules().first()
   private val instance = activitySchedule.instances().first()
   private val attendance = instance.attendances.first()
+
+  @Nested
+  inner class SuspendedPrisonerAttendanceTest {
+    val localTime = LocalTime.now()
+
+    inner class TestData : SuspendedPrisonerAttendance {
+      override fun getPrisonerNumber(): String = "prisoner"
+      override fun getStartTime(): LocalTime = localTime
+      override fun getEndTime(): LocalTime = localTime.plusHours(1)
+      override fun getCategoryName(): String = "CAT"
+      override fun getAttendanceReasonCode(): String = "REASON"
+      override fun getTimeSlot(): String = "TIME"
+      override fun getInCell(): Boolean = false
+      override fun getOffWing(): Boolean = false
+      override fun getOnWing(): Boolean = false
+      override fun getInternalLocation(): String? = "desc"
+    }
+
+    @Test
+    fun `maps fields for UI correctly`() {
+      whenever(
+        attendanceRepository.getSuspendedPrisonerAttendance(
+          prisonCode = "MDI",
+          date = LocalDate.now(),
+        ),
+      ).thenReturn(
+        listOf(
+          TestData(),
+        ),
+      )
+
+      val response = service.getSuspendedPrisonerAttendance(
+        prisonCode = "MDI",
+        date = LocalDate.now(),
+      ).first()
+
+      assertThat(response.prisonerNumber).isEqualTo("AE12345")
+      assertThat(response.attendance.first().startTime).isEqualTo(localTime)
+      assertThat(response.attendance.first().endTime).isEqualTo(localTime.plusHours(1))
+      assertThat(response.attendance.first().categoryName).isEqualTo("CAT")
+      assertThat(response.attendance.first().attendanceReasonCode).isEqualTo("REASON")
+      assertThat(response.attendance.first().timeSlot).isEqualTo("TIME")
+      assertThat(response.attendance.first().inCell).isFalse()
+      assertThat(response.attendance.first().onWing).isFalse()
+      assertThat(response.attendance.first().offWing).isFalse()
+      assertThat(response.attendance.first().internalLocation).isEqualTo("desc")
+    }
+  }
 
   @Test
   fun `mark attendance record`() {
