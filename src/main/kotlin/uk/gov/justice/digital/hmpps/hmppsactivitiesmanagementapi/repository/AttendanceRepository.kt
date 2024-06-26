@@ -103,7 +103,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
     @Param("reason") reason: String?,
-    @Param("categories") categories: List<String>? = null,
+    @Param("categories") categories: List<String>?,
   ): List<SuspendedPrisonerAttendance>
 }
 
