@@ -183,7 +183,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get suspended prisoner activity attendance`() {
     webTestClient.get()
-      .uri("/attendances/$RISLEY_PRISON_CODE/suspended?date=${LocalDate.now()}&reason=SUSPENDED&categories=SAA_EDUCATION")
+      .uri("/attendances/$RISLEY_PRISON_CODE/suspended?date=${LocalDate.now()}&reason=SUSPENDED&categories=SAA_EDUCATION,SAA_INDUCTION")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
