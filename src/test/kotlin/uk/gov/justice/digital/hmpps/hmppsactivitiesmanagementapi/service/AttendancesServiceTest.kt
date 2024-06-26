@@ -88,7 +88,7 @@ class AttendancesServiceTest {
       override fun getOffWing(): Boolean = false
       override fun getOnWing(): Boolean = false
       override fun getInternalLocation(): String? = "desc"
-      override fun getScheduledInstanceId(): Long =1
+      override fun getScheduledInstanceId(): Long = 1
       override fun getActivitySummary(): String = "summary"
     }
 
@@ -98,6 +98,8 @@ class AttendancesServiceTest {
         attendanceRepository.getSuspendedPrisonerAttendance(
           prisonCode = "MDI",
           date = LocalDate.now(),
+          reason = null,
+          categories = null,
         ),
       ).thenReturn(
         listOf(

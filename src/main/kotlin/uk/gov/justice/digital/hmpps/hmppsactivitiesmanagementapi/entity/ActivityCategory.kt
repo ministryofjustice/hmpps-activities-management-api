@@ -7,6 +7,17 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
+enum class ActivityCategoryCode {
+  SAA_EDUCATION,
+  SAA_INDUSTRIES,
+  SAA_PRISON_JOBS,
+  SAA_GYM_SPORTS_FITNESS,
+  SAA_INDUCTION,
+  SAA_INTERVENTIONS,
+  SAA_FAITH_SPIRITUALITY,
+  SAA_NOT_IN_WORKSAA_OTHER,
+}
+
 @Entity
 @Table(name = "activity_category")
 data class ActivityCategory(

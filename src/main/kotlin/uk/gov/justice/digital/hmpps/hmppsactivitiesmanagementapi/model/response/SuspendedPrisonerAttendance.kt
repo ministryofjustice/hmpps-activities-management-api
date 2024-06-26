@@ -35,4 +35,4 @@ data class SuspendedPrisonerActivityAttendance(
   val scheduledInstanceId: Long,
   @Schema(description = "The title of the activity for this attendance record", example = "Math Level 1")
   val activitySummary: String,
-  )
+)
