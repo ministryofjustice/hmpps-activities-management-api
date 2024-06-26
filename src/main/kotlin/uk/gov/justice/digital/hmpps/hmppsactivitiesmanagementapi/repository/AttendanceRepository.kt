@@ -91,7 +91,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id  
       JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
       JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
-      LEFT JOIN activity_categories ac ON ac.name = ts.name 
+      LEFT JOIN activity_category ac ON ac.name = ts.name 
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
        AND (:reason IS NULL OR attr.code = :reason)
