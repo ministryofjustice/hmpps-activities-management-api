@@ -48,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
@@ -237,6 +238,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -715,6 +718,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -748,6 +753,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)

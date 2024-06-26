@@ -36,20 +36,30 @@ class PrisonerAllocationHandler(
     prisonerNumber: String,
   ) {
     transactionHandler.newSpringTransaction {
+      val updatedAttendanceIds = mutableSetOf<Long>()
       val allocations = allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
         prisonCode,
         prisonerNumber,
         *PrisonerStatus.allExcuding(PrisonerStatus.ENDED),
       )
 
-      allocations
-        .deallocateAffectedAllocations(reason, prisonCode, prisonerNumber)
-        .removeFutureAttendances()
+      allocations.deallocateAffectedAllocations(reason, prisonCode, prisonerNumber)
+        .removeFutureAttendances().let { updatedAttendanceIds.addAll(it) }
 
       allocationRepository.saveAllAndFlush(allocations)
-    }.onEach { endedAllocation ->
-      log.info("Sending prisoner allocation amended event for ended allocation ${endedAllocation.allocationId}")
-      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, endedAllocation.allocationId)
+      allocations to updatedAttendanceIds
+    }.let { (allocations, updatedAttendanceIds) ->
+      allocations.forEach {
+          endedAllocation ->
+        log.info("Sending prisoner allocation amended event for ended allocation ${endedAllocation.allocationId}")
+        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, endedAllocation.allocationId)
+      }
+      updatedAttendanceIds.forEach {
+          attendanceId ->
+        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, attendanceId)
+      }.also {
+        log.info("Sending attendance delete events")
+      }
     }
   }
 
@@ -63,7 +73,8 @@ class PrisonerAllocationHandler(
         log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
       }
 
-  private fun List<Allocation>.removeFutureAttendances(): List<Allocation> {
+  private fun List<Allocation>.removeFutureAttendances(): Set<Long> {
+    val updatedAttendanceIds = mutableSetOf<Long>()
     val now = LocalDateTime.now()
 
     forEach { allocation ->
@@ -76,9 +87,10 @@ class PrisonerAllocationHandler(
         .onEach { futureAttendance ->
           log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
           futureAttendance.scheduledInstance.remove(futureAttendance)
+          updatedAttendanceIds.add(futureAttendance.attendanceId)
         }
     }
 
-    return this
+    return updatedAttendanceIds
   }
 }
