@@ -1233,7 +1233,7 @@ class ActivityServiceTest {
       .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
   }
 
-  @Test // FIXME understand implication of replacePayBandAllocationBeforePayRemoval for multiple pay bands and differing start dates
+  @Test
   fun `updateActivity - update pay band where someone is allocated to it`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
     val activityEntity: ActivityEntity = activityEntity()
@@ -1260,11 +1260,40 @@ class ActivityServiceTest {
       assertThat(activityPay()).hasSize(1)
       assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
-
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
-  // FIXME add test for multiple pays with same paybands, incentive level and different start date
+  @Test
+  fun `updateActivity - update pay band where there is multiple pays for the same incentive level and nomic code and someone is allocated to it`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-7.json")
+    val activityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
+    val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(2)
+      assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.last().payBandId)
+    }
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+  }
 
   @Test
   fun `updateActivity - update start date fails if new date not in future`() {
