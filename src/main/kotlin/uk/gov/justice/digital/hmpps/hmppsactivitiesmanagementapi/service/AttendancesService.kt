@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerActivityAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -85,6 +87,32 @@ class AttendancesService(
 
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
+
+  fun getSuspendedPrisonerAttendance(
+    prisonCode: String,
+    date: LocalDate,
+  ): List<SuspendedPrisonerAttendance> =
+    attendanceRepository.getSuspendedPrisonerAttendance(
+      prisonCode = prisonCode,
+      date = date,
+    ).groupBy { it.getPrisonerNumber() }.map { attendance ->
+      SuspendedPrisonerAttendance(
+        prisonerNumber = attendance.key,
+        attendance = attendance.value.map {
+          SuspendedPrisonerActivityAttendance(
+            startTime = it.getStartTime(),
+            endTime = it.getEndTime(),
+            timeSlot = it.getTimeSlot(),
+            categoryName = it.getCategoryName(),
+            attendanceReasonCode = it.getAttendanceReasonCode(),
+            internalLocation = it.getInternalLocation(),
+            inCell = it.getInCell(),
+            offWing = it.getOffWing(),
+            onWing = it.getOnWing(),
+          )
+        },
+      )
+    }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? =
     caseNote?.let {
