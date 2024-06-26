@@ -78,6 +78,7 @@ class AppointmentAttendanceService(
     customName: String? = null,
     prisonerNumber: String? = null,
     eventTier: EventTierType? = null,
+    organiserCode: String? = null,
   ): List<AppointmentAttendeeByStatus> {
     if (status == AttendanceStatus.EVENT_TIER) eventTier ?: throw ValidationException("event tier filter is required")
 
@@ -89,6 +90,7 @@ class AppointmentAttendanceService(
       customName = customName,
       prisonerNumber = prisonerNumber,
       isCancelled = status == AttendanceStatus.CANCELLED,
+      organiserCode = organiserCode,
     ).filter {
       when (status) {
         AttendanceStatus.ATTENDED -> it.getAttended() == true

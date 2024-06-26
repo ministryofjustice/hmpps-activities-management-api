@@ -345,6 +345,7 @@ class AppointmentController(
     @RequestParam(value = "customName", required = false) customName: String? = null,
     @RequestParam(value = "prisonerNumber", required = false) prisonerNumber: String? = null,
     @RequestParam(value = "eventTier", required = false) eventTier: EventTierType? = null,
+    @RequestParam(value = "organiserCode", required = false) organiserCode: String? = null,
   ): List<AppointmentAttendeeByStatus> = appointmentAttendanceService.getAppointmentAttendanceByStatus(
     prisonCode = prisonCode,
     status = status,
@@ -353,6 +354,7 @@ class AppointmentController(
     categoryCode = categoryCode,
     customName = customName,
     eventTier = eventTier,
+    organiserCode = organiserCode,
   )
 
   @ResponseStatus(HttpStatus.ACCEPTED)

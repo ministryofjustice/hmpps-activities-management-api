@@ -39,13 +39,16 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
       a.custom_name,
       aa.attended
       FROM appointment a
+      JOIN appointment_series aps ON aps.appointment_series_id = a.appointment_series_id
       JOIN appointment_attendee aa ON aa.appointment_id = a.appointment_id
-      LEFT JOIN event_tier et on et.event_tier_id = a.appointment_tier_id
+      LEFT JOIN event_tier et ON et.event_tier_id = a.appointment_tier_id
+      LEFT JOIN event_organiser eo ON eo.event_organiser_id = aps.appointment_organiser_id
       WHERE a.start_date = :date
         AND a.prison_code = :prisonCode
         AND (:categoryCode IS NULL OR a.category_code = :categoryCode)
         AND (:customName IS NULL OR a.custom_name = :customName)
         AND (:prisonerNumber IS NULL OR aa.prisoner_number = :prisonerNumber)
+        AND (:organiserCode IS NULL OR eo.code = :organiserCode)
         AND ((NOT :isCancelled AND a.cancellation_reason_id IS NULL) OR (:isCancelled AND a.cancellation_reason_id IS NOT NULL))
     """,
     nativeQuery = true,
@@ -57,6 +60,7 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
     @Param("customName") customName: String?,
     @Param("prisonerNumber") prisonerNumber: String?,
     @Param("isCancelled") isCancelled: Boolean,
+    @Param("organiserCode") organiserCode: String?,
   ): List<AppointmentAndAttendee>
 }
 
