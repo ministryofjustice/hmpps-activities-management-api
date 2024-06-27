@@ -6,7 +6,7 @@
 .idea/
 .gradle/
 build/
-
+.fleet/
 # CMake
 cmake-build-debug/
 
@@ -36,6 +36,9 @@ fabric.properties
 
 # Log file
 *.log
+
+# env file
+.env
 
 # BlueJ files
 *.ctxt
