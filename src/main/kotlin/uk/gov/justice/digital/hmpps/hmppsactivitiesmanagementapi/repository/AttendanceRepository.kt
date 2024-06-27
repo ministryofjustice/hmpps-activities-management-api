@@ -95,7 +95,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
        AND (:reason IS NULL OR attr.code = :reason)
-       AND (:categories IS NULL OR ac.code in :categories)
+       AND (ac.code in :categories)
       """,
     nativeQuery = true,
   )
@@ -103,7 +103,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
     @Param("reason") reason: String?,
-    @Param("categories") categories: List<String>?,
+    @Param("categories") categories: List<String>,
   ): List<SuspendedPrisonerAttendance>
 }
 

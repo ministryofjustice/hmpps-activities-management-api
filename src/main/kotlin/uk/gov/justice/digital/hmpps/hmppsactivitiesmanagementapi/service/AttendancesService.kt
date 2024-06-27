@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -98,7 +99,7 @@ class AttendancesService(
       prisonCode = prisonCode,
       date = date,
       reason = reason,
-      categories = categories,
+      categories = categories ?: ActivityCategoryCode.entries.map { it.name },
     ).groupBy { it.getPrisonerNumber() }.map { attendance ->
       SuspendedPrisonerAttendance(
         prisonerNumber = attendance.key,
