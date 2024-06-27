@@ -141,10 +141,10 @@ class PrisonerAllocationHandlerTest {
       ) doReturn it
     }
 
-    val pastScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn false }
+    val pastScheduledInstance = mock<ScheduledInstance> { on { isEndFuture(any()) } doReturn false }
     val pastAttendance = attendanceFor(pastScheduledInstance)
 
-    val futureScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn true }
+    val futureScheduledInstance = mock<ScheduledInstance> { on { isEndFuture(any()) } doReturn true }
     val futureAttendance = attendanceFor(futureScheduledInstance)
 
     whenever(

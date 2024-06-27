@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class ScheduledInstanceTest {
 
@@ -257,5 +258,27 @@ class ScheduledInstanceTest {
     val unpaidSession = activityEntity(paid = false, noPayBands = true).schedules().first()
 
     unpaidSession.isPaid() isBool false
+  }
+
+  @Test
+  fun `is future scheduled instance`() {
+    val now = LocalTime.now()
+
+    val scheduledInstance = instance.copy(sessionDate = today, startTime = now.plusMinutes(1), endTime = now.plusMinutes(30))
+    assertThat(scheduledInstance.isFuture(LocalDateTime.now())).isTrue()
+
+    val scheduledInstance2 = instance.copy(sessionDate = today, startTime = now.minusMinutes(1), endTime = now.plusMinutes(30))
+    assertThat(scheduledInstance2.isFuture(LocalDateTime.now())).isFalse()
+  }
+
+  @Test
+  fun `is future end scheduled instance`() {
+    val now = LocalTime.now()
+
+    val scheduledInstance = instance.copy(sessionDate = today, startTime = now.minusMinutes(30), endTime = now.plusMinutes(1))
+    assertThat(scheduledInstance.isEndFuture(LocalDateTime.now())).isTrue()
+
+    val scheduledInstance2 = instance.copy(sessionDate = today, startTime = now.minusMinutes(30), endTime = now.minusMinutes(1))
+    assertThat(scheduledInstance2.isFuture(LocalDateTime.now())).isFalse()
   }
 }
