@@ -90,12 +90,12 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       JOIN activity a ON a.activity_id = acts.activity_id
       JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id  
       JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
-      JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
+      LEFT JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
       LEFT JOIN activity_category ac ON ac.name = ts.name 
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
        AND (:reason IS NULL OR attr.code = :reason)
-       AND (:categories IS NULL OR ac.code in :categories)
+       AND (ac.code in :categories)
       """,
     nativeQuery = true,
   )
@@ -103,7 +103,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
     @Param("reason") reason: String?,
-    @Param("categories") categories: List<String>?,
+    @Param("categories") categories: List<String>,
   ): List<SuspendedPrisonerAttendance>
 }
 
@@ -112,7 +112,7 @@ interface SuspendedPrisonerAttendance {
   fun getStartTime(): LocalTime
   fun getEndTime(): LocalTime
   fun getCategoryName(): String
-  fun getAttendanceReasonCode(): String
+  fun getAttendanceReasonCode(): String?
   fun getTimeSlot(): String
   fun getInCell(): Boolean
   fun getOffWing(): Boolean

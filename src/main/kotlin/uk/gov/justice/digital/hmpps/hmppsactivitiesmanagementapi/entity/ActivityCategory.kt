@@ -16,6 +16,7 @@ enum class ActivityCategoryCode {
   SAA_INTERVENTIONS,
   SAA_FAITH_SPIRITUALITY,
   SAA_NOT_IN_WORKSAA_OTHER,
+  SAA_OTHER,
 }
 
 @Entity
