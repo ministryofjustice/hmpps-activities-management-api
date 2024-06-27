@@ -237,7 +237,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `verify maps all fields`() {
       val testData = TestData(true)
-      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull()))
         .thenReturn(listOf(testData))
 
       val response = service.getAppointmentAttendanceByStatus(
@@ -258,7 +258,7 @@ class AppointmentAttendanceServiceTest {
 
     @Test
     fun `filter ATTENDED`() {
-      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull()))
         .thenReturn(filterTests)
 
       val response = service.getAppointmentAttendanceByStatus(
@@ -272,7 +272,7 @@ class AppointmentAttendanceServiceTest {
 
     @Test
     fun `filter NOT ATTENDED`() {
-      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull()))
         .thenReturn(filterTests)
 
       val response = service.getAppointmentAttendanceByStatus(
@@ -286,7 +286,7 @@ class AppointmentAttendanceServiceTest {
 
     @Test
     fun `filter NOT RECORDED`() {
-      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull()))
         .thenReturn(filterTests)
 
       val response = service.getAppointmentAttendanceByStatus(
@@ -300,7 +300,7 @@ class AppointmentAttendanceServiceTest {
 
     @Test
     fun `filter EVENT TIER`() {
-      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any()))
+      whenever(appointmentRepository.getAppointmentsWithAttendees(any(), any(), anyOrNull(), anyOrNull(), anyOrNull(), any(), anyOrNull()))
         .thenReturn(filterTests)
 
       val response = service.getAppointmentAttendanceByStatus(
