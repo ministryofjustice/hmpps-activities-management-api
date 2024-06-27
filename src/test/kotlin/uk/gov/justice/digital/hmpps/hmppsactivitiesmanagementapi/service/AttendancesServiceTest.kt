@@ -88,6 +88,8 @@ class AttendancesServiceTest {
       override fun getOffWing(): Boolean = false
       override fun getOnWing(): Boolean = false
       override fun getInternalLocation(): String? = "desc"
+      override fun getScheduledInstanceId(): Long = 1
+      override fun getActivitySummary(): String = "summary"
     }
 
     @Test
@@ -96,6 +98,8 @@ class AttendancesServiceTest {
         attendanceRepository.getSuspendedPrisonerAttendance(
           prisonCode = "MDI",
           date = LocalDate.now(),
+          reason = null,
+          categories = null,
         ),
       ).thenReturn(
         listOf(
@@ -118,6 +122,8 @@ class AttendancesServiceTest {
       assertThat(response.attendance.first().onWing).isFalse()
       assertThat(response.attendance.first().offWing).isFalse()
       assertThat(response.attendance.first().internalLocation).isEqualTo("desc")
+      assertThat(response.attendance.first().scheduledInstanceId).isEqualTo(1)
+      assertThat(response.attendance.first().activitySummary).isEqualTo("summary")
     }
   }
 

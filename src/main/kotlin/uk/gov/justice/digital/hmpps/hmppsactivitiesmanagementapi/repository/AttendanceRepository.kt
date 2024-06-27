@@ -82,6 +82,8 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
        acts.internal_location_description,
        ts.time_slot,
        ts.name AS category_name,
+       ts.summary as activity_summary,
+       si.scheduled_instance_id,
        attr.code AS attendance_reason_code
       FROM scheduled_instance si
       JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
@@ -89,14 +91,19 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id  
       JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
       JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
+      LEFT JOIN activity_category ac ON ac.name = ts.name 
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
+       AND (:reason IS NULL OR attr.code = :reason)
+       AND (:categories IS NULL OR ac.code in :categories)
       """,
     nativeQuery = true,
   )
   fun getSuspendedPrisonerAttendance(
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
+    @Param("reason") reason: String?,
+    @Param("categories") categories: List<String>?,
   ): List<SuspendedPrisonerAttendance>
 }
 
@@ -111,4 +118,6 @@ interface SuspendedPrisonerAttendance {
   fun getOffWing(): Boolean
   fun getOnWing(): Boolean
   fun getInternalLocation(): String?
+  fun getScheduledInstanceId(): Long
+  fun getActivitySummary(): String
 }

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -202,8 +203,12 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "date of query (required). Format YYYY-MM-DD.")
     date: LocalDate,
+    @RequestParam("reason", required = false) reason: String? = null,
+    @RequestParam("categories", required = false) categories: List<ActivityCategoryCode>? = null,
   ): List<SuspendedPrisonerAttendance> = attendancesService.getSuspendedPrisonerAttendance(
     prisonCode = prisonCode,
     date = date,
+    reason = reason,
+    categories = categories?.map { it.name },
   )
 }

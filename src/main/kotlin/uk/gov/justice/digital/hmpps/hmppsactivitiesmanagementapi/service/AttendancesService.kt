@@ -91,10 +91,14 @@ class AttendancesService(
   fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
+    reason: String? = null,
+    categories: List<String>? = null,
   ): List<SuspendedPrisonerAttendance> =
     attendanceRepository.getSuspendedPrisonerAttendance(
       prisonCode = prisonCode,
       date = date,
+      reason = reason,
+      categories = categories,
     ).groupBy { it.getPrisonerNumber() }.map { attendance ->
       SuspendedPrisonerAttendance(
         prisonerNumber = attendance.key,
@@ -109,6 +113,8 @@ class AttendancesService(
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
+            activitySummary = it.getActivitySummary(),
+            scheduledInstanceId = it.getScheduledInstanceId(),
           )
         },
       )
