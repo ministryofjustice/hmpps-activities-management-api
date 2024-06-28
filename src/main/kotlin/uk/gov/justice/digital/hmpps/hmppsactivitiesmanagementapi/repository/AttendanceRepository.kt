@@ -107,7 +107,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
        ts.code as attendance_reason_code,
        ts.summary as activity_summary,
        ts.scheduled_instance_id
-       FROM v_activity_time_slot
+       FROM v_activity_time_slot ts
        WHERE ts.code in :categories
        AND ts.prison_code = :prisonCode
        AND ts.session_date = :date
