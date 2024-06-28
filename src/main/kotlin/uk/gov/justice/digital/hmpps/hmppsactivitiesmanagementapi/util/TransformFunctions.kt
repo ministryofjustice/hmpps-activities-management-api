@@ -310,6 +310,7 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
     rate = it.rate,
     pieceRate = it.pieceRate,
     pieceRateItems = it.pieceRateItems,
+    startDate = it.startDate,
   )
 }
 

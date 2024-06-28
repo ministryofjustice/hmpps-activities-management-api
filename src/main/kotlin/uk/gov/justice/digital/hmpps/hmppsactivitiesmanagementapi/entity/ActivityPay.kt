@@ -11,6 +11,7 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
+import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 
 @Entity
@@ -37,6 +38,8 @@ data class ActivityPay(
   var pieceRate: Int? = null,
 
   var pieceRateItems: Int? = null,
+
+  val startDate: LocalDate? = null,
 ) {
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -61,6 +64,7 @@ data class ActivityPay(
     rate = rate,
     pieceRate = pieceRate,
     pieceRateItems = pieceRateItems,
+    startDate = startDate,
   )
 
   fun toModelLite() = ActivityPayLite(

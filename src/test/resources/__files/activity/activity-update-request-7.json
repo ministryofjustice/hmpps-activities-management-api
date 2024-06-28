@@ -1,0 +1,21 @@
+{
+  "pay": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 2,
+      "rate": 150,
+      "pieceRate": 150,
+      "pieceRateItems": 10
+    },
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 2,
+      "rate": 150,
+      "pieceRate": 150,
+      "pieceRateItems": 10,
+      "startDate": "2024-06-25"
+    }
+  ]
+}
