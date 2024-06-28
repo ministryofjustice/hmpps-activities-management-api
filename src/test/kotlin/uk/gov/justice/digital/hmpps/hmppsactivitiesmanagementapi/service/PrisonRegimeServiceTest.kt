@@ -8,16 +8,18 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventPriority
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventPriority
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventPriorityRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonPayBand as EntityPrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
 class PrisonRegimeServiceTest {
@@ -164,14 +166,14 @@ class PrisonRegimeServiceTest {
         ),
       )
 
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.EDUCATION)).isEqualTo(1)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.PRISON_JOBS)).isEqualTo(2)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.GYM_SPORTS_FITNESS)).isEqualTo(3)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUCTION)).isEqualTo(4)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INDUSTRIES)).isEqualTo(5)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.INTERVENTIONS)).isEqualTo(6)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.EDUCATION)).isEqualTo(1)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.PRISON_JOBS)).isEqualTo(2)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.GYM_SPORTS_FITNESS)).isEqualTo(3)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.INDUCTION)).isEqualTo(4)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.INDUSTRIES)).isEqualTo(5)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.INTERVENTIONS)).isEqualTo(6)
       assertThat(getOrDefault(EventType.APPOINTMENT)).isEqualTo(7)
-      assertThat(getOrDefault(EventType.ACTIVITY, EventCategory.OTHER)).isEqualTo(8)
+      assertThat(getOrDefault(EventType.ACTIVITY, uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory.OTHER)).isEqualTo(8)
       assertThat(getOrDefault(EventType.VISIT)).isEqualTo(9)
       assertThat(getOrDefault(EventType.ADJUDICATION_HEARING)).isEqualTo(10)
       assertThat(getOrDefault(EventType.COURT_HEARING)).isEqualTo(11)

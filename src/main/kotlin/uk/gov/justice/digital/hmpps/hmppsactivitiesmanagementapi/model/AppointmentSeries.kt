@@ -2,7 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

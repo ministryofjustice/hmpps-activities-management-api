@@ -19,6 +19,7 @@ import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.isAfterDates
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.DayOfWeek
 import java.time.LocalDate

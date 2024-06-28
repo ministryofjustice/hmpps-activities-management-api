@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

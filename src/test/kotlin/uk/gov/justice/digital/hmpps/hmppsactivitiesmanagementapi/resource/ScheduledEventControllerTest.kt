@@ -22,9 +22,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.interna
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [ScheduledEventController::class])

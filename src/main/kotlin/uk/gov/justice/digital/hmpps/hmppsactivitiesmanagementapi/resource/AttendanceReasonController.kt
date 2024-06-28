@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceReasonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 
 @RestController
 @RequestMapping("/attendance-reasons", produces = [MediaType.APPLICATION_JSON_VALUE])
