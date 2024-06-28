@@ -423,6 +423,30 @@ class WaitingListServiceTest {
   }
 
   @Test
+  fun `get waiting lists by the schedule identifier ignores prisoners who have status of REMOVED`() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+
+    val removedWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "AAAAAAA", initialStatus = WaitingListStatus.REMOVED)
+    val validWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "CCCCCC", initialStatus = WaitingListStatus.PENDING)
+
+    val validPrisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = validWaitingList.prisonerNumber)
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
+    }
+
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule) } doReturn listOf(removedWaitingList, validWaitingList)
+    }
+
+    prisonerSearchApiClient.stub {
+      on { findByPrisonerNumbers(listOf("CCCCCC")) } doReturn listOf(validPrisoner)
+    }
+
+    service.getWaitingListsBySchedule(1L) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner)))
+  }
+
+  @Test
   fun `get waiting lists by the schedule identifier with earliest release date`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
