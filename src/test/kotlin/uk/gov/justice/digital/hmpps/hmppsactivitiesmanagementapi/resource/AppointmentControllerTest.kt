@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
@@ -35,10 +35,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentAttendanceService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentSearchService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime

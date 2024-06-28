@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee

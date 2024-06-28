@@ -15,7 +15,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityCategoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
 
 @WebMvcTest(controllers = [ActivityCategoryController::class])
 @ContextConfiguration(classes = [ActivityCategoryController::class])

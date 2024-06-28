@@ -8,6 +8,13 @@ import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendanceMarkedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
@@ -28,7 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AppointmentFrequency as AppointmentRepeatPeriodEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency as AppointmentRepeatPeriodEntity
 
 class AppointmentTest {
   @Test

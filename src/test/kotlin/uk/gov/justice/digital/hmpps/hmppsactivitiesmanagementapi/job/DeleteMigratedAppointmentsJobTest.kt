@@ -8,7 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DELETE_MIGRATED_APPOINTMENTS
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateAppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.MigrateAppointmentService
 import java.time.LocalDate
 
 class DeleteMigratedAppointmentsJobTest : JobsTestBase() {

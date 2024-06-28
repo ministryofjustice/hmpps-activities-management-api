@@ -5,6 +5,8 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -92,7 +94,13 @@ class AttendanceTest {
 
   @Test
   fun `cancel attendance fails if already cancelled`() {
-    val attendance = Attendance(scheduledInstance = instance, prisonerNumber = "123456", attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED))
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "123456",
+      attendanceReason = attendanceReason(
+        AttendanceReasonEnum.CANCELLED,
+      ),
+    )
 
     assertThatThrownBy {
       attendance.cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
