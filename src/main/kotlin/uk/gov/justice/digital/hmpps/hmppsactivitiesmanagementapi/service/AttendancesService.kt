@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -91,10 +92,14 @@ class AttendancesService(
   fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
+    reason: String? = null,
+    categories: List<String>? = null,
   ): List<SuspendedPrisonerAttendance> =
     attendanceRepository.getSuspendedPrisonerAttendance(
       prisonCode = prisonCode,
       date = date,
+      reason = reason,
+      categories = categories ?: ActivityCategoryCode.entries.map { it.name },
     ).groupBy { it.getPrisonerNumber() }.map { attendance ->
       SuspendedPrisonerAttendance(
         prisonerNumber = attendance.key,
@@ -109,6 +114,8 @@ class AttendancesService(
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
+            activitySummary = it.getActivitySummary(),
+            scheduledInstanceId = it.getScheduledInstanceId(),
           )
         },
       )

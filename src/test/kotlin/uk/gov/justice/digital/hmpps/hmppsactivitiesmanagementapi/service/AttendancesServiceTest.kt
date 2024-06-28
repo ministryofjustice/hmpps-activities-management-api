@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
@@ -88,6 +89,8 @@ class AttendancesServiceTest {
       override fun getOffWing(): Boolean = false
       override fun getOnWing(): Boolean = false
       override fun getInternalLocation(): String? = "desc"
+      override fun getScheduledInstanceId(): Long = 1
+      override fun getActivitySummary(): String = "summary"
     }
 
     @Test
@@ -96,6 +99,8 @@ class AttendancesServiceTest {
         attendanceRepository.getSuspendedPrisonerAttendance(
           prisonCode = "MDI",
           date = LocalDate.now(),
+          reason = null,
+          categories = ActivityCategoryCode.entries.map { it.name },
         ),
       ).thenReturn(
         listOf(
@@ -118,6 +123,8 @@ class AttendancesServiceTest {
       assertThat(response.attendance.first().onWing).isFalse()
       assertThat(response.attendance.first().offWing).isFalse()
       assertThat(response.attendance.first().internalLocation).isEqualTo("desc")
+      assertThat(response.attendance.first().scheduledInstanceId).isEqualTo(1)
+      assertThat(response.attendance.first().activitySummary).isEqualTo("summary")
     }
   }
 

@@ -199,6 +199,8 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .jsonPath("$.[0].attendance[0].endTime").isEqualTo("11:00:00")
       .jsonPath("$.[0].attendance[0].internalLocation").isEmpty
       .jsonPath("$.[0].attendance[0].attendanceReasonCode").isEqualTo("SUSPENDED")
+      .jsonPath("$.[0].attendance[0].scheduledInstanceId").isEqualTo(1)
+      .jsonPath("$.[0].attendance[0].activitySummary").isEqualTo("Maths")
   }
 
   private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =
