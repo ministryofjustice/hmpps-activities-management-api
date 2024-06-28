@@ -80,22 +80,16 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
        a.off_wing,
        a.on_wing,
        acts.internal_location_description,
-       ts.time_slot,
-       ts.name AS category_name,
-       ts.summary as activity_summary,
        si.scheduled_instance_id,
        attr.code AS attendance_reason_code
       FROM scheduled_instance si
       JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
       JOIN activity a ON a.activity_id = acts.activity_id
-      JOIN v_activity_time_slot ts ON si.scheduled_instance_id = ts.scheduled_instance_id  
       JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
       JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
-      LEFT JOIN activity_category ac ON ac.name = ts.name 
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
        AND (:reason IS NULL OR attr.code = :reason)
-       AND (ac.code in :categories)
       """,
     nativeQuery = true,
   )
@@ -103,21 +97,45 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
     @Param("reason") reason: String?,
-    @Param("categories") categories: List<String>,
   ): List<SuspendedPrisonerAttendance>
+
+  @Query(
+    value = """
+      SELECT 
+       ts.time_slot
+       ts.name as category_name,
+       ts.code as attendance_reason_code,
+       ts.summary as activity_summary,
+       ts.scheduled_instance_id
+       FROM v_activity_time_slot
+       WHERE ts.code in :categories
+       AND ts.prison_code = :prisonCode
+       AND ts.session_date = :date
+      """,
+    nativeQuery = true,
+  )
+  fun getActivityTimeSlot(
+    @Param("prisonCode") prisonCode: String,
+    @Param("date") date: LocalDate,
+    @Param("categories") categories: List<String>,
+  ): List<ActivityTimeSlot>
 }
 
 interface SuspendedPrisonerAttendance {
   fun getPrisonerNumber(): String
   fun getStartTime(): LocalTime
   fun getEndTime(): LocalTime
-  fun getCategoryName(): String
-  fun getAttendanceReasonCode(): String
-  fun getTimeSlot(): String
   fun getInCell(): Boolean
   fun getOffWing(): Boolean
   fun getOnWing(): Boolean
   fun getInternalLocation(): String?
   fun getScheduledInstanceId(): Long
+}
+
+interface ActivityTimeSlot {
+  fun getCategoryName(): String
+  fun getScheduledInstanceId(): Long
+  fun getTimeSlot(): String
   fun getActivitySummary(): String
+  fun getAttendanceReasonCode(): String
 }

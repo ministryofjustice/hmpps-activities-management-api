@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -89,37 +91,53 @@ class AttendancesService(
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
-  fun getSuspendedPrisonerAttendance(
+  suspend fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
     reason: String? = null,
     categories: List<String>? = null,
-  ): List<SuspendedPrisonerAttendance> =
-    attendanceRepository.getSuspendedPrisonerAttendance(
-      prisonCode = prisonCode,
-      date = date,
-      reason = reason,
-      categories = categories ?: ActivityCategoryCode.entries.map { it.name },
-    ).groupBy { it.getPrisonerNumber() }.map { attendance ->
+  ): List<SuspendedPrisonerAttendance> = coroutineScope {
+    val attendance = async {
+      attendanceRepository.getSuspendedPrisonerAttendance(
+        prisonCode = prisonCode,
+        date = date,
+        reason = reason,
+      )
+    }.await()
+
+    val timeSlots = async {
+      attendanceRepository.getActivityTimeSlot(
+        prisonCode = prisonCode,
+        date = date,
+        categories = categories ?: ActivityCategoryCode.entries.map { it.name },
+      )
+    }.await()
+
+    val scheduledInstanceIds = timeSlots.map { it.getScheduledInstanceId() }
+
+    attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
       SuspendedPrisonerAttendance(
-        prisonerNumber = attendance.key,
-        attendance = attendance.value.map {
+        prisonerNumber = prisoner.key,
+        attendance = prisoner.value.map {
+          val timeSlot = timeSlots.first { ts -> ts.getScheduledInstanceId() == it.getScheduledInstanceId() }
+
           SuspendedPrisonerActivityAttendance(
             startTime = it.getStartTime(),
             endTime = it.getEndTime(),
-            timeSlot = it.getTimeSlot(),
-            categoryName = it.getCategoryName(),
-            attendanceReasonCode = it.getAttendanceReasonCode(),
+            timeSlot = timeSlot.getTimeSlot(),
+            categoryName = timeSlot.getCategoryName(),
+            attendanceReasonCode = timeSlot.getAttendanceReasonCode(),
             internalLocation = it.getInternalLocation(),
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
-            activitySummary = it.getActivitySummary(),
+            activitySummary = timeSlot.getActivitySummary(),
             scheduledInstanceId = it.getScheduledInstanceId(),
           )
         },
       )
     }
+  }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? =
     caseNote?.let {
