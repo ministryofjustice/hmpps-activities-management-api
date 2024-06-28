@@ -82,13 +82,13 @@ class AttendancesServiceTest {
 
     inner class TestTimeSlot : ActivityTimeSlot {
       override fun getCategoryName(): String = "CAT"
-      override fun getAttendanceReasonCode(): String = "REASON"
       override fun getTimeSlot(): String = "TIME"
       override fun getActivitySummary(): String = "summary"
       override fun getScheduledInstanceId(): Long = 1
     }
 
     inner class TestData : SuspendedPrisonerAttendance {
+      override fun getAttendanceReasonCode(): String = "REASON"
       override fun getPrisonerNumber(): String = "prisoner"
       override fun getStartTime(): LocalTime = localTime
       override fun getEndTime(): LocalTime = localTime.plusHours(1)

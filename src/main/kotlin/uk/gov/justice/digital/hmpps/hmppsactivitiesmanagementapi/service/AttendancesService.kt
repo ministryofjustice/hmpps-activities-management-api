@@ -126,7 +126,7 @@ class AttendancesService(
             endTime = it.getEndTime(),
             timeSlot = timeSlot.getTimeSlot(),
             categoryName = timeSlot.getCategoryName(),
-            attendanceReasonCode = timeSlot.getAttendanceReasonCode(),
+            attendanceReasonCode = it.getAttendanceReasonCode(),
             internalLocation = it.getInternalLocation(),
             inCell = it.getInCell(),
             offWing = it.getOffWing(),

@@ -102,15 +102,14 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
   @Query(
     value = """
       SELECT 
-       ts.time_slot
-       ts.name as category_name,
-       ts.code as attendance_reason_code,
-       ts.summary as activity_summary,
-       ts.scheduled_instance_id
-       FROM v_activity_time_slot ts
-       WHERE ts.code in :categories
-       AND ts.prison_code = :prisonCode
-       AND ts.session_date = :date
+       time_slot,
+       name as category_name,
+       summary as activity_summary,
+       scheduled_instance_id
+       FROM v_activity_time_slot
+       WHERE code in :categories
+       AND prison_code = :prisonCode
+       AND session_date = :date
       """,
     nativeQuery = true,
   )
@@ -130,6 +129,7 @@ interface SuspendedPrisonerAttendance {
   fun getOnWing(): Boolean
   fun getInternalLocation(): String?
   fun getScheduledInstanceId(): Long
+  fun getAttendanceReasonCode(): String
 }
 
 interface ActivityTimeSlot {
@@ -137,5 +137,4 @@ interface ActivityTimeSlot {
   fun getScheduledInstanceId(): Long
   fun getTimeSlot(): String
   fun getActivitySummary(): String
-  fun getAttendanceReasonCode(): String
 }
