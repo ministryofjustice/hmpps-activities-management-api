@@ -43,7 +43,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.5.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
@@ -54,7 +54,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.7.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.8.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
