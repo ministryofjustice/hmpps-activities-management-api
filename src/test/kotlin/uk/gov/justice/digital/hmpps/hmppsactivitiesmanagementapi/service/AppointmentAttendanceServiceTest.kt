@@ -107,7 +107,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `filters values by custom name`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomName("RAN", date, "custom")).thenReturn(
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomNameIgnoreCase("RAN", date, "custom")).thenReturn(
         listOf(appointmentAttendanceSummaryEntity(customName = "custom")),
       )
 
@@ -129,7 +129,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `filters by category and custom name`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomName("RAN", date, "appointment", "custom")).thenReturn(
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomNameIgnoreCase("RAN", date, "appointment", "custom")).thenReturn(
         listOf(appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
       )
 

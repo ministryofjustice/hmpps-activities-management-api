@@ -112,7 +112,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   fun `get appointment attendance by prisoner, custom name and category code`() {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
     webTestClient.get()
-      .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=custom&categoryCode=EDUC")
+      .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=CusTom&categoryCode=EDUC")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
@@ -130,7 +130,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
     webTestClient.getAppointmentAttendanceSummaries(
       prisonCode = RISLEY_PRISON_CODE,
       date = LocalDate.now(),
-      additionalFilters = "&customName=custom",
+      additionalFilters = "&customName=CuStom",
     )!!
       .all { it.appointmentName.contains("custom") }
   }
