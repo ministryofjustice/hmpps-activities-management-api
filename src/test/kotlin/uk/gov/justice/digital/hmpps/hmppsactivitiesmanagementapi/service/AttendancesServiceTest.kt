@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -18,12 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -33,11 +34,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityTimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SuspendedPrisonerAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -78,29 +80,40 @@ class AttendancesServiceTest {
   inner class SuspendedPrisonerAttendanceTest {
     val localTime = LocalTime.now()
 
+    inner class TestTimeSlot : ActivityTimeSlot {
+      override fun getCategoryName(): String = "CAT"
+      override fun getTimeSlot(): String = "TIME"
+      override fun getActivitySummary(): String = "summary"
+      override fun getScheduledInstanceId(): Long = 1
+    }
+
     inner class TestData : SuspendedPrisonerAttendance {
+      override fun getAttendanceReasonCode(): String = "REASON"
       override fun getPrisonerNumber(): String = "prisoner"
       override fun getStartTime(): LocalTime = localTime
       override fun getEndTime(): LocalTime = localTime.plusHours(1)
-      override fun getCategoryName(): String = "CAT"
-      override fun getAttendanceReasonCode(): String = "REASON"
-      override fun getTimeSlot(): String = "TIME"
       override fun getInCell(): Boolean = false
       override fun getOffWing(): Boolean = false
       override fun getOnWing(): Boolean = false
       override fun getInternalLocation(): String? = "desc"
       override fun getScheduledInstanceId(): Long = 1
-      override fun getActivitySummary(): String = "summary"
     }
 
     @Test
-    fun `maps fields for UI correctly`() {
+    fun `maps fields for UI correctly`(): Unit = runBlocking {
+      whenever(
+        attendanceRepository.getActivityTimeSlot(
+          prisonCode = "MDI",
+          date = LocalDate.now(),
+          categories = ActivityCategoryCode.entries.map { it.name },
+        ),
+      ).thenReturn(listOf(TestTimeSlot()))
+
       whenever(
         attendanceRepository.getSuspendedPrisonerAttendance(
           prisonCode = "MDI",
           date = LocalDate.now(),
           reason = null,
-          categories = ActivityCategoryCode.entries.map { it.name },
         ),
       ).thenReturn(
         listOf(

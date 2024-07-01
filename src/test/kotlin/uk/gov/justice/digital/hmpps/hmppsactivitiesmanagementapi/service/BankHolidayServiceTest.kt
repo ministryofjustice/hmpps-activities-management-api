@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.bankholi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.bankholidayapi.model.BankHoliday
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.bankholidayapi.model.BankHolidays
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.bankholidayapi.model.RegionBankHolidays
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
 import java.time.LocalDate
 
 class BankHolidayServiceTest {

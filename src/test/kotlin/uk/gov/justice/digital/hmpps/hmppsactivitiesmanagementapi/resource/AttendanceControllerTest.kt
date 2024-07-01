@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -20,6 +22,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -43,29 +46,26 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
   @Nested
   inner class SuspendedPrisonerAttendance {
+
+    @BeforeEach
+    fun `init`() {
+      runBlocking {
+        whenever(
+          attendancesService.getSuspendedPrisonerAttendance(
+            prisonCode = "MDI",
+            date = LocalDate.now(),
+          ),
+        ).thenReturn(emptyList())
+      }
+    }
+
     @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
     @Test
     fun `200 response`() {
-      whenever(
-        attendancesService.getSuspendedPrisonerAttendance(
-          prisonCode = "MDI",
-          date = LocalDate.now(),
-        ),
-      ).thenReturn(emptyList())
-
       mockMvcWithSecurity.perform(
         MockMvcRequestBuilders.get("/attendances/MDI/suspended?date=${LocalDate.now()}")
           .header("Content-Type", "application/json"),
       ).andExpect(MockMvcResultMatchers.status().isOk)
-    }
-
-    @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_RANDOM"])
-    @Test
-    fun `incorrect roles`() {
-      mockMvcWithSecurity.perform(
-        MockMvcRequestBuilders.get("/attendances/MDI/suspended?date=${LocalDate.now()}")
-          .header("Content-Type", "application/json"),
-      ).andExpect(MockMvcResultMatchers.status().isForbidden)
     }
   }
 

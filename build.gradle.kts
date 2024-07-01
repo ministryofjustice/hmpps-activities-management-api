@@ -43,7 +43,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.5.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
@@ -54,15 +54,15 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.7.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.8.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:3.2.7")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.2.7")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.2.7")
+  testImplementation("net.javacrumbs.json-unit:json-unit:3.3.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.3.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.3.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
