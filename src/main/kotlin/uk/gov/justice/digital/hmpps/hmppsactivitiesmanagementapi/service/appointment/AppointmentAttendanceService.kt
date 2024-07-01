@@ -62,8 +62,8 @@ class AppointmentAttendanceService(
     ) {
       QueryMode.ALL -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(prisonCode, date)
       QueryMode.BY_CATEGORY_CODE -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCode(prisonCode, date, categoryCode!!)
-      QueryMode.BY_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomName(prisonCode, date, customName!!)
-      QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomName(prisonCode, date, categoryCode!!, customName!!)
+      QueryMode.BY_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomNameIgnoreCase(prisonCode, date, customName!!)
+      QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomNameIgnoreCase(prisonCode, date, categoryCode!!, customName!!)
     }
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
     val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
