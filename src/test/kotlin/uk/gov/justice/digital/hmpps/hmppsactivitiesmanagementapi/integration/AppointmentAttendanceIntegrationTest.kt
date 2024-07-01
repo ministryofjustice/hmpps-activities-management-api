@@ -94,7 +94,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   @ParameterizedTest
   fun `get appointment attendance by status`(status: AttendanceStatus) {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
-    val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}" else ""
+    val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}&customName=CuStom" else ""
     val organiserCode = if (status == AttendanceStatus.EVENT_TIER) "&organiserCode=PRISON_STAFF" else ""
     webTestClient.get()
       .uri("/appointments/$RISLEY_PRISON_CODE/${status.name}/attendance?date=${LocalDate.now().minusDays(1)}$incLudeEventTier$organiserCode")
@@ -130,7 +130,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
     webTestClient.getAppointmentAttendanceSummaries(
       prisonCode = RISLEY_PRISON_CODE,
       date = LocalDate.now(),
-      additionalFilters = "&customName=custom",
+      additionalFilters = "&customName=CuStom",
     )!!
       .all { it.appointmentName.contains("custom") }
   }
