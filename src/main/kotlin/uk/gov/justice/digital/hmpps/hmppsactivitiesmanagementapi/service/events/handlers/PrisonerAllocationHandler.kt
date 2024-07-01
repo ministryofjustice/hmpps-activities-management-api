@@ -57,7 +57,7 @@ class PrisonerAllocationHandler(
       updatedAttendanceIds.forEach {
           attendanceId ->
         outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, attendanceId)
-        log.info("Sending prisoner attendance deleted event for attendance ${attendanceId}")
+        log.info("Sending prisoner attendance deleted event for attendance $attendanceId")
       }
     }
   }
