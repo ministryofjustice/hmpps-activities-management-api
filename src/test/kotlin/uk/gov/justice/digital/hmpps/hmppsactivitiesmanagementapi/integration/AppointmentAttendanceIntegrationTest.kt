@@ -94,7 +94,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   @ParameterizedTest
   fun `get appointment attendance by status`(status: AttendanceStatus) {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
-    val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}&customName=CuStom" else ""
+    val incLudeEventTier = if (status == AttendanceStatus.EVENT_TIER) "&eventTier=${EventTierType.TIER_1}" else ""
     val organiserCode = if (status == AttendanceStatus.EVENT_TIER) "&organiserCode=PRISON_STAFF" else ""
     webTestClient.get()
       .uri("/appointments/$RISLEY_PRISON_CODE/${status.name}/attendance?date=${LocalDate.now().minusDays(1)}$incLudeEventTier$organiserCode")
@@ -112,7 +112,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
   fun `get appointment attendance by prisoner, custom name and category code`() {
     stubForAttendanceSummaries(RISLEY_PRISON_CODE)
     webTestClient.get()
-      .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=custom&categoryCode=EDUC")
+      .uri("/appointments/$RISLEY_PRISON_CODE/${AttendanceStatus.ATTENDED}/attendance?date=${LocalDate.now().minusDays(1)}&prisonerNumber=B2345CD&customName=CusTom&categoryCode=EDUC")
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
       .expectStatus().isOk
