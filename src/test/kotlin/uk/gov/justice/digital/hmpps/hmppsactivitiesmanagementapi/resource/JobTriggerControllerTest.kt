@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
 import java.time.LocalDate
 
 @WebMvcTest(controllers = [JobTriggerController::class])
@@ -39,8 +40,11 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @MockBean
   private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
 
+  @MockBean
+  private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
+
   override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob)
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
