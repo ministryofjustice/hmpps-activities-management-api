@@ -306,20 +306,20 @@ class ActivityScheduleController(
     @RequestParam(
       value = "suitableIncentiveLevel",
       required = false,
-    ) suitableIncentiveLevel: List<String>?,
-    @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevel: List<String>?,
+    ) suitableIncentiveLevels: List<String>?,
+    @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevels: List<String>?,
     @RequestParam(value = "suitableForEmployed", required = false) suitableForEmployed: Boolean?,
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
   ): Page<ActivityCandidate> =
     candidatesService.getActivityCandidates(
-      scheduleId,
-      suitableIncentiveLevel,
-      suitableRiskLevel,
-      suitableForEmployed,
-      search,
-      pageable,
+      scheduleId = scheduleId,
+      suitableIncentiveLevels = suitableIncentiveLevels,
+      suitableRiskLevels = suitableRiskLevels,
+      suitableForEmployed = suitableForEmployed,
+      search = search,
+      pageable = pageable,
     )
 
   @GetMapping(value = ["/{scheduleId}/suitability"])

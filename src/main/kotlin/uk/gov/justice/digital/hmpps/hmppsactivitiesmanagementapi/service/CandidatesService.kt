@@ -105,7 +105,7 @@ class CandidatesService(
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
     suitableForEmployed: Boolean?,
-    searchString: String?,
+    search: String?,
     pageable: Pageable,
   ): Page<ActivityCandidate> = coroutineScope {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
@@ -126,7 +126,7 @@ class CandidatesService(
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
-        .filter { filterBySearchString(it, searchString) }
+        .filter { filterBySearchString(it, search) }
         .toList()
     }.await()
 
@@ -136,7 +136,11 @@ class CandidatesService(
 
     prisoners = prisoners
       .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
-      .filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
+      .filter {
+        filterByEmployment(
+          prisoner = it, prisonerAllocations = prisonerAllocations, suitableForEmployed = suitableForEmployed,
+        )
+      }
 
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
@@ -192,13 +196,13 @@ class CandidatesService(
   private fun filterByEmployment(
     prisoner: Prisoner,
     prisonerAllocations: List<CandidateAllocation>,
-    inWork: Boolean?,
+    suitableForEmployed: Boolean?,
   ): Boolean {
     val employmentAllocations = prisonerAllocations.filter {
       it.getPrisonerNumber() == prisoner.prisonerNumber && it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name
     }
 
-    return inWork == null || employmentAllocations.isNotEmpty() == inWork
+    return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
   }
 
   private fun filterBySearchString(
