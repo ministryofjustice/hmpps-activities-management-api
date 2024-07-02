@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -140,10 +141,10 @@ class PrisonerAllocationHandlerTest {
       ) doReturn it
     }
 
-    val pastScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn false }
+    val pastScheduledInstance = mock<ScheduledInstance> { on { isEndFuture(any()) } doReturn false }
     val pastAttendance = attendanceFor(pastScheduledInstance)
 
-    val futureScheduledInstance = mock<ScheduledInstance> { on { isFuture(any()) } doReturn true }
+    val futureScheduledInstance = mock<ScheduledInstance> { on { isEndFuture(any()) } doReturn true }
     val futureAttendance = attendanceFor(futureScheduledInstance)
 
     whenever(
@@ -158,6 +159,9 @@ class PrisonerAllocationHandlerTest {
 
     verify(pastScheduledInstance, never()).remove(pastAttendance)
     verify(futureScheduledInstance).remove(futureAttendance)
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, futureAttendance.attendanceId)
   }
 
   private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {
