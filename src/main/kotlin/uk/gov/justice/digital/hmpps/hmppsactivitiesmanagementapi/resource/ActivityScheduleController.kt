@@ -301,7 +301,7 @@ class ActivityScheduleController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
-  fun candidates(
+  suspend fun candidates(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(
       value = "suitableIncentiveLevel",

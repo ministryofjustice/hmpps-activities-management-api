@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -98,39 +100,48 @@ class CandidatesService(
     )
   }
 
-  fun getActivityCandidates(
+  suspend fun getActivityCandidates(
     scheduleId: Long,
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
     suitableForEmployed: Boolean?,
     searchString: String?,
     pageable: Pageable,
-  ): Page<ActivityCandidate> {
+  ): Page<ActivityCandidate> = coroutineScope {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     checkCaseloadAccess(schedule.activity.prisonCode)
 
     val prisonCode = schedule.activity.prisonCode
 
-    val waitingList = waitingListRepository.findByActivitySchedule(schedule)
-      .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
+    val waitingList = async {
+      waitingListRepository.findByActivitySchedule(schedule)
+        .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
+    }.await()
 
-    var prisoners =
+    var prisoners = async {
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
+        .asSequence()
         .filter { (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
         .filter { filterBySearchString(it, searchString) }
-        .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
+        .toList()
+    }.await()
 
-    val prisonerAllocations = allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
-    prisoners = prisoners.filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
+    val prisonerAllocations = async {
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
+    }.await()
+
+    prisoners = prisoners
+      .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
+      .filter { filterByEmployment(it, prisonerAllocations, suitableForEmployed) }
 
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
 
-    return PageImpl(
+    PageImpl(
       prisoners
         .sortedBy { it.lastName }
         .subList(start.coerceAtMost(end), end)

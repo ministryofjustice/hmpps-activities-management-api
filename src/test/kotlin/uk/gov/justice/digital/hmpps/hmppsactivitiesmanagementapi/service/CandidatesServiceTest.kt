@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -606,7 +607,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `fetch list of suitable candidates`() {
+    fun `fetch list of suitable candidates`(): Unit = runBlocking {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison", "A1234BI" to "Allen"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
@@ -643,7 +644,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`() {
+    fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`(): Unit = runBlocking {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = notInWorkCategory)
@@ -681,7 +682,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`() {
+    fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`(): Unit = runBlocking {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = notInWorkCategory)
@@ -719,7 +720,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates with PENDING waiting list are filtered out`() {
+    fun `Candidates with PENDING waiting list are filtered out`(): Unit = runBlocking {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.PENDING))
@@ -739,7 +740,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates with APPROVED waiting list are filtered out`() {
+    fun `Candidates with APPROVED waiting list are filtered out`(): Unit = runBlocking {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.APPROVED))
@@ -759,7 +760,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates ENDED other allocations are filtered out`() {
+    fun `Candidates ENDED other allocations are filtered out`(): Unit = runBlocking {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -785,7 +786,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates PENDING other allocations are not filtered out`() {
+    fun `Candidates PENDING other allocations are not filtered out`(): Unit = runBlocking {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -816,7 +817,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates SUSPENDED other allocations are not filtered out`() {
+    fun `Candidates SUSPENDED other allocations are not filtered out`(): Unit = runBlocking {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -847,7 +848,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Candidates ACTIVE other allocations are not filtered out`() {
+    fun `Candidates ACTIVE other allocations are not filtered out`(): Unit = runBlocking {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
