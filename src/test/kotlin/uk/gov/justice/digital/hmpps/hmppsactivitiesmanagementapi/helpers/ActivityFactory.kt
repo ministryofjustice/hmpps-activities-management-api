@@ -38,6 +38,7 @@ import java.time.LocalTime
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
+const val LIVERPOOL_PRISON_CODE = "LPI"
 const val MOORLAND_PRISON_CODE = "MDI"
 const val PENTONVILLE_PRISON_CODE = "PVI"
 const val RISLEY_PRISON_CODE = "RSI"
