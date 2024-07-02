@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -20,6 +21,23 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   )
   @EntityGraph(attributePaths = ["activitySchedule.activity.activityPay"], type = EntityGraph.EntityGraphType.LOAD)
   fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonerNumbers: List<String>): List<Allocation>
+
+  @Query(
+    value = """
+      SELECT 
+       a2.allocation_id,
+       a2.prisoner_number,
+       ac.code
+      FROM activity a
+      JOIN activity_category ac ON ac.activity_category_id = a.activity_category_id
+      JOIN allocation a2 ON a2.activity_schedule_id = a.activity_id
+      WHERE a.prison_code = :prisonCode AND a2.prisoner_status != 'ENDED'
+    """,
+    nativeQuery = true,
+  )
+  fun getCandidateAllocations(
+    @Param("prisonCode") prisonCode: String,
+  ): List<CandidateAllocation>
 
   @Query(
     value =
@@ -107,4 +125,12 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   @Query(value = "UPDATE Allocation a SET a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :prisonerNumber")
   @Modifying
   fun mergePrisonerToNewBookingId(prisonerNumber: String, newBookingId: Long?)
+
+  fun findByAllocationIdIn(ids: List<Long>): List<Allocation>
+}
+
+interface CandidateAllocation {
+  fun getAllocationId(): Long
+  fun getPrisonerNumber(): String
+  fun getCode(): String
 }
