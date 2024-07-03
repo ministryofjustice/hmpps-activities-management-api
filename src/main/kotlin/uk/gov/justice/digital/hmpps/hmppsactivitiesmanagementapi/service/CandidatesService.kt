@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -125,12 +127,9 @@ class CandidatesService(
         .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
         .toList()
 
-    val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
-      prisonCode,
-      prisoners.map { it.prisonerNumber },
-    )
-      .filterNot { it.status(PrisonerStatus.ENDED) }
-      .groupBy { it.prisonerNumber }
+    val prisonerAllocations =
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
+      .groupBy { it.getPrisonerNumber() }
 
     prisoners = prisoners.filter {
       filterByEmployment(
@@ -147,7 +146,9 @@ class CandidatesService(
         .sortedBy { it.lastName }
         .subList(start.coerceAtMost(end), end)
         .map { prisoner ->
-          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.toModel() }
+          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
+            allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
+          }
 
           ActivityCandidate(
             name = "${prisoner.firstName} ${prisoner.lastName}",
@@ -188,11 +189,12 @@ class CandidatesService(
   }
 
   private fun filterByEmployment(
-    prisonerAllocations: List<Allocation>,
+    prisonerAllocations: List<CandidateAllocation>,
     suitableForEmployed: Boolean?,
   ): Boolean {
     val employmentAllocations = prisonerAllocations.filter {
-      !it.activitySchedule.activity.isUnemployment()
+     // !it.activitySchedule.activity.isUnemployment()
+      it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name
     }
 
     return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
