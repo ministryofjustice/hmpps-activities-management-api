@@ -18,9 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -129,7 +127,7 @@ class CandidatesService(
 
     val prisonerAllocations =
       allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
-      .groupBy { it.getPrisonerNumber() }
+        .groupBy { it.getPrisonerNumber() }
 
     prisoners = prisoners.filter {
       filterByEmployment(
@@ -193,7 +191,7 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
   ): Boolean {
     val employmentAllocations = prisonerAllocations.filter {
-     // !it.activitySchedule.activity.isUnemployment()
+      // !it.activitySchedule.activity.isUnemployment()
       it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name
     }
 

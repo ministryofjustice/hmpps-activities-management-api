@@ -602,7 +602,8 @@ class CandidatesServiceTest {
         candidateAllocations.map {
           TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
         },
-      ) }
+      )
+    }
 
     @Test
     fun `fetch list of suitable candidates`() {
