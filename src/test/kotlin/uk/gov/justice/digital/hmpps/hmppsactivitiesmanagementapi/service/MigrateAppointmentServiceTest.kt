@@ -139,7 +139,7 @@ class MigrateAppointmentServiceTest {
 
       service.migrateAppointment(request)
 
-      verify(outboundEventsService, times(0)).send(any(), any())
+      verify(outboundEventsService, times(0)).send(any(), any(), any())
     }
 
     @Test
