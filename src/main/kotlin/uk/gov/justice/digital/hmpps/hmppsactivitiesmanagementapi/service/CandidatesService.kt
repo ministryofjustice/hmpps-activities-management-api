@@ -173,7 +173,6 @@ class CandidatesService(
     search: String?,
   ): List<Prisoner> =
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
-      .asSequence()
       .filter {
         it.isActiveAtPrison(prisonCode) &&
           it.legalStatus != Prisoner.LegalStatus.DEAD &&
@@ -188,7 +187,6 @@ class CandidatesService(
             suitableForEmployed = suitableForEmployed,
           )
       }
-      .toList()
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
     val riskAssessmentCodes = listOf("RLO", "RME", "RHI")
