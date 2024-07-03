@@ -117,7 +117,7 @@ class CandidatesService(
       .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
 
     val prisonerAllocations =
-      allocationRepository.getCandidateAllocations(prisonCode = prisonCode, activityScheduleId = scheduleId)
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
         .groupBy { it.getPrisonerNumber() }
 
     val firstPhase = System.currentTimeMillis()
@@ -125,6 +125,7 @@ class CandidatesService(
 
     val prisoners = getPrisonerCandidates(
       prisonCode = prisonCode,
+      activityScheduleId = scheduleId,
       waitingList = waitingList,
       prisonerAllocations = prisonerAllocations,
       suitableForEmployed = suitableForEmployed,
@@ -162,6 +163,7 @@ class CandidatesService(
 
   private fun getPrisonerCandidates(
     prisonCode: String,
+    activityScheduleId: Long,
     waitingList: List<WaitingList>,
     prisonerAllocations: Map<String, List<CandidateAllocation>>,
     suitableIncentiveLevels: List<String>?,
@@ -178,6 +180,7 @@ class CandidatesService(
           filterByRiskLevel(it, suitableRiskLevels) &&
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
           filterBySearchString(it, search) &&
+          prisonerAllocation.none { p -> p.getActivityScheduleId() == activityScheduleId } &&
           waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
           filterByEmployment(
             prisonerAllocations = prisonerAllocation,
