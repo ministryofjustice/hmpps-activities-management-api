@@ -1,16 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
@@ -54,7 +51,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
@@ -69,7 +65,6 @@ class CandidatesServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
-  private val pageable = Pageable.ofSize(20).withPage(0)
 
   private val service = CandidatesService(
     prisonApiClient,
@@ -575,15 +570,6 @@ class CandidatesServiceTest {
 
   @Nested
   inner class GetActivityCandidates {
-    inner class TestCandidate(val t_id: Long, val t_prisonerNumber: String, val t_code: String) : CandidateAllocation {
-
-      override fun getAllocationId(): Long = t_id
-
-      override fun getPrisonerNumber(): String = t_prisonerNumber
-
-      override fun getCode(): String = t_code
-    }
-
     private fun candidatesSetup(
       activity: Activity,
       candidates: PagedPrisoner,
@@ -598,16 +584,16 @@ class CandidatesServiceTest {
       whenever(waitingListRepository.findByActivitySchedule(schedule)).thenReturn(waitingList)
       whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode)).thenReturn(Mono.just(candidates))
 
-      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(candidateAllocations)
-      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
-        candidateAllocations.map {
-          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
-        },
-      )
+      whenever(
+        allocationRepository.findByPrisonCodeAndPrisonerNumbers(
+          schedule.activity.prisonCode,
+          candidates.content.map { it.prisonerNumber },
+        ),
+      ).thenReturn(candidateAllocations)
     }
 
     @Test
-    fun `fetch list of suitable candidates`(): Unit = runBlocking {
+    fun `fetch list of suitable candidates`() {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison", "A1234BI" to "Allen"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
@@ -620,10 +606,9 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
-      assertThat(candidates.content).isEqualTo(
+      assertThat(candidates).isEqualTo(
         listOf(
           ActivityCandidate(
             name = "Tim Allen",
@@ -644,7 +629,7 @@ class CandidatesServiceTest {
     }
 
     @Test
-    fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`(): Unit = runBlocking {
+    fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`() {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = notInWorkCategory)
@@ -675,14 +660,13 @@ class CandidatesServiceTest {
         null,
         false,
         null,
-        pageable,
       )
 
-      candidates.map { it.prisonerNumber }.content containsExactly listOf("A1234BC", "C3456DE")
+      candidates.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")
     }
 
     @Test
-    fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`(): Unit = runBlocking {
+    fun `Employment filter should filter candidates with allocations that are not for 'not in work' activities when inWork == true`() {
       val activity = activityEntity()
 
       val notInWorkActivity = activityEntity(category = notInWorkCategory)
@@ -713,14 +697,13 @@ class CandidatesServiceTest {
         null,
         true,
         null,
-        pageable,
       )
 
-      candidates.map { it.prisonerNumber }.content containsExactly listOf("B2345CD")
+      candidates.map { it.prisonerNumber } containsExactly listOf("B2345CD")
     }
 
     @Test
-    fun `Candidates with PENDING waiting list are filtered out`(): Unit = runBlocking {
+    fun `Candidates with PENDING waiting list are filtered out`() {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.PENDING))
@@ -733,14 +716,13 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
       assertThat(candidates).isEmpty()
     }
 
     @Test
-    fun `Candidates with APPROVED waiting list are filtered out`(): Unit = runBlocking {
+    fun `Candidates with APPROVED waiting list are filtered out`() {
       val activity = activityEntity()
       val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.APPROVED))
@@ -753,14 +735,13 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
       assertThat(candidates).isEmpty()
     }
 
     @Test
-    fun `Candidates ENDED other allocations are filtered out`(): Unit = runBlocking {
+    fun `Candidates ENDED other allocations are filtered out`() {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -773,20 +754,21 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
         null,
         null,
         null,
-        pageable,
       )
 
       candidates.single().otherAllocations.isEmpty() isBool true
     }
 
     @Test
-    fun `Candidates PENDING other allocations are not filtered out`(): Unit = runBlocking {
+    fun `Candidates PENDING other allocations are not filtered out`() {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -799,10 +781,7 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
-      }
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
@@ -810,14 +789,13 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
-      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
 
     @Test
-    fun `Candidates SUSPENDED other allocations are not filtered out`(): Unit = runBlocking {
+    fun `Candidates SUSPENDED other allocations are not filtered out`() {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -830,10 +808,7 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
-      }
+      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
@@ -841,14 +816,13 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
-      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
 
     @Test
-    fun `Candidates ACTIVE other allocations are not filtered out`(): Unit = runBlocking {
+    fun `Candidates ACTIVE other allocations are not filtered out`() {
       val schedule = activitySchedule(activityEntity(), noAllocations = true).apply {
         allocatePrisoner(
           prisonerNumber = "A1234BC".toPrisonerNumber(),
@@ -862,10 +836,6 @@ class CandidatesServiceTest {
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
       whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
-      }
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
@@ -873,10 +843,9 @@ class CandidatesServiceTest {
         null,
         null,
         null,
-        pageable,
       )
 
-      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
   }
 }
