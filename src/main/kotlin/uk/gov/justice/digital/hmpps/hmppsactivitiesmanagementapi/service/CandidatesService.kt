@@ -167,17 +167,17 @@ class CandidatesService(
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
       .content
       .asSequence()
-      .filter { (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
-      .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
-      .filter { filterByRiskLevel(it, suitableRiskLevels) }
-      .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
-      .filter { filterBySearchString(it, search) }
-      .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
       .filter {
-        filterByEmployment(
-          prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
-          suitableForEmployed = suitableForEmployed,
-        )
+        (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null &&
+          schedule.allocations(true).none { a -> a.prisonerNumber == it.prisonerNumber } &&
+          filterByRiskLevel(it, suitableRiskLevels) &&
+          filterByIncentiveLevel(it, suitableIncentiveLevels) &&
+          filterBySearchString(it, search) &&
+          waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
+          filterByEmployment(
+            prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
+            suitableForEmployed = suitableForEmployed,
+          )
       }
       .toList()
 
