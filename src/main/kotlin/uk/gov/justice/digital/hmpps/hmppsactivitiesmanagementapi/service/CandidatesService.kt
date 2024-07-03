@@ -164,11 +164,10 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
     search: String?,
   ): List<Prisoner> =
-    prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
-      .content
+    prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
       .asSequence()
       .filter {
-        (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null &&
+        it.isActiveAtPrison(prisonCode) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null &&
           schedule.allocations(true).none { a -> a.prisonerNumber == it.prisonerNumber } &&
           filterByRiskLevel(it, suitableRiskLevels) &&
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
