@@ -46,6 +46,7 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
       WHERE a.start_date = :date
         AND a.prison_code = :prisonCode
         AND aa.removal_reason_id IS NULL
+        AND NOT a.is_deleted
         AND (:categoryCode IS NULL OR a.category_code = :categoryCode)
         AND (:customName IS NULL OR LOWER(a.custom_name) = LOWER(:customName))
         AND (:prisonerNumber IS NULL OR aa.prisoner_number = :prisonerNumber)
