@@ -38,7 +38,7 @@ insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, at
 values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (2, current_date, '23:58:00', '23:59:00', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
+values (2, current_date, current_time - interval '1 hour', current_time + interval '1 hour', true, current_timestamp, 'cancelled by some user', 'tutor sick', null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (2, 2, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
