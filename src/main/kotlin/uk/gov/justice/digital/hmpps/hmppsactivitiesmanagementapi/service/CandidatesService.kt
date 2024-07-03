@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -118,7 +117,7 @@ class CandidatesService(
       .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
 
     val prisonerAllocations =
-      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode, activityScheduleId = scheduleId)
         .groupBy { it.getPrisonerNumber() }
 
     val firstPhase = System.currentTimeMillis()
@@ -126,7 +125,6 @@ class CandidatesService(
 
     val prisoners = getPrisonerCandidates(
       prisonCode = prisonCode,
-      schedule = schedule,
       waitingList = waitingList,
       prisonerAllocations = prisonerAllocations,
       suitableForEmployed = suitableForEmployed,
@@ -164,7 +162,6 @@ class CandidatesService(
 
   private fun getPrisonerCandidates(
     prisonCode: String,
-    schedule: ActivitySchedule,
     waitingList: List<WaitingList>,
     prisonerAllocations: Map<String, List<CandidateAllocation>>,
     suitableIncentiveLevels: List<String>?,
@@ -174,16 +171,16 @@ class CandidatesService(
   ): List<Prisoner> =
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
       .filter {
+        val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
         it.isActiveAtPrison(prisonCode) &&
           it.legalStatus != Prisoner.LegalStatus.DEAD &&
           it.currentIncentive != null &&
           filterByRiskLevel(it, suitableRiskLevels) &&
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
           filterBySearchString(it, search) &&
-          schedule.allocations(true).none { a -> a.prisonerNumber == it.prisonerNumber } &&
           waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
           filterByEmployment(
-            prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
+            prisonerAllocations = prisonerAllocation,
             suitableForEmployed = suitableForEmployed,
           )
       }

@@ -575,11 +575,8 @@ class CandidatesServiceTest {
   @Nested
   inner class GetActivityCandidates {
     inner class TestCandidate(val t_id: Long, val t_prisonerNumber: String, val t_code: String) : CandidateAllocation {
-
       override fun getAllocationId(): Long = t_id
-
       override fun getPrisonerNumber(): String = t_prisonerNumber
-
       override fun getCode(): String = t_code
     }
 
@@ -598,7 +595,7 @@ class CandidatesServiceTest {
       whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode)).thenReturn(Mono.just(candidates))
 
       whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(candidateAllocations)
-      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+      whenever(allocationRepository.getCandidateAllocations(any(), any())).thenReturn(
         candidateAllocations.map {
           TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
         },
@@ -801,7 +798,7 @@ class CandidatesServiceTest {
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
       whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
+      whenever(allocationRepository.getCandidateAllocations(any(), any())) doReturn schedule.allocations().map {
         TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
       }
 
@@ -832,7 +829,7 @@ class CandidatesServiceTest {
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
       whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
+      whenever(allocationRepository.getCandidateAllocations(any(), any())) doReturn schedule.allocations().map {
         TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
       }
       val candidates = service.getActivityCandidates(
@@ -862,7 +859,7 @@ class CandidatesServiceTest {
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
       whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
+      whenever(allocationRepository.getCandidateAllocations(any(), any())) doReturn schedule.allocations().map {
         TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code)
       }
       val candidates = service.getActivityCandidates(

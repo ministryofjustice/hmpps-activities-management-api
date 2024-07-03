@@ -41,11 +41,13 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       JOIN activity_category ac ON ac.activity_category_id = a.activity_category_id
       JOIN allocation a2 ON a2.activity_schedule_id = a.activity_id
       WHERE a.prison_code = :prisonCode AND a2.prisoner_status != 'ENDED'
+       AND a2.activity_schedule_id != :activityScheduleId
     """,
     nativeQuery = true,
   )
   fun getCandidateAllocations(
     @Param("prisonCode") prisonCode: String,
+    @Param("activityScheduleId") activityScheduleId: Long,
   ): List<CandidateAllocation>
 
   @Query(
