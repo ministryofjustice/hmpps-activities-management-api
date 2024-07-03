@@ -9,6 +9,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAppointmentAttendeesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentJobController
 
 @WebMvcTest(controllers = [AppointmentJobController::class])
 @ContextConfiguration(classes = [AppointmentJobController::class])

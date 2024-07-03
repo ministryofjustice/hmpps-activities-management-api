@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -9,19 +11,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerActivityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
@@ -89,37 +93,53 @@ class AttendancesService(
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
-  fun getSuspendedPrisonerAttendance(
+  suspend fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
     reason: String? = null,
     categories: List<String>? = null,
-  ): List<SuspendedPrisonerAttendance> =
-    attendanceRepository.getSuspendedPrisonerAttendance(
-      prisonCode = prisonCode,
-      date = date,
-      reason = reason,
-      categories = categories ?: ActivityCategoryCode.entries.map { it.name },
-    ).groupBy { it.getPrisonerNumber() }.map { attendance ->
+  ): List<SuspendedPrisonerAttendance> = coroutineScope {
+    val attendance = async {
+      attendanceRepository.getSuspendedPrisonerAttendance(
+        prisonCode = prisonCode,
+        date = date,
+        reason = reason,
+      )
+    }.await()
+
+    val timeSlots = async {
+      attendanceRepository.getActivityTimeSlot(
+        prisonCode = prisonCode,
+        date = date,
+        categories = categories ?: ActivityCategoryCode.entries.map { it.name },
+      )
+    }.await()
+
+    val scheduledInstanceIds = timeSlots.map { it.getScheduledInstanceId() }
+
+    attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
       SuspendedPrisonerAttendance(
-        prisonerNumber = attendance.key,
-        attendance = attendance.value.map {
+        prisonerNumber = prisoner.key,
+        attendance = prisoner.value.map {
+          val timeSlot = timeSlots.first { ts -> ts.getScheduledInstanceId() == it.getScheduledInstanceId() }
+
           SuspendedPrisonerActivityAttendance(
             startTime = it.getStartTime(),
             endTime = it.getEndTime(),
-            timeSlot = it.getTimeSlot(),
-            categoryName = it.getCategoryName(),
+            timeSlot = timeSlot.getTimeSlot(),
+            categoryName = timeSlot.getCategoryName(),
             attendanceReasonCode = it.getAttendanceReasonCode(),
             internalLocation = it.getInternalLocation(),
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
-            activitySummary = it.getActivitySummary(),
+            activitySummary = timeSlot.getActivitySummary(),
             scheduledInstanceId = it.getScheduledInstanceId(),
           )
         },
       )
     }
+  }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? =
     caseNote?.let {

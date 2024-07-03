@@ -13,6 +13,8 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -147,6 +149,8 @@ data class ScheduledInstance(
   fun dateTime() = sessionDate.atTime(startTime)
 
   fun isFuture(dateTime: LocalDateTime) = sessionDate.atTime(startTime).isAfter(dateTime)
+
+  fun isEndFuture(dateTime: LocalDateTime) = sessionDate.atTime(endTime).isAfter(dateTime)
 }
 
 fun List<ScheduledInstance>.toModel() = map { it.toModel() }

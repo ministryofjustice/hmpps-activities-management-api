@@ -4,7 +4,9 @@ SELECT scheduled_instance.scheduled_instance_id,
        activity.prison_code,
        activity.activity_id,
        activity.summary,
-       activity_category.name
+       activity_category.name,
+       activity_category.code,
+       scheduled_instance.session_date
 FROM activity,
      activity_schedule,
      prison_regime,
@@ -21,7 +23,9 @@ SELECT scheduled_instance.scheduled_instance_id,
        activity.prison_code,
        activity.activity_id,
        activity.summary,
-       activity_category.name
+       activity_category.name,
+       activity_category.code,
+       scheduled_instance.session_date
 FROM activity,
      activity_schedule,
      prison_regime,
@@ -39,7 +43,9 @@ SELECT scheduled_instance.scheduled_instance_id,
        activity.prison_code,
        activity.activity_id,
        activity.summary,
-       activity_category.name
+       activity_category.name,
+       activity_category.code,
+       scheduled_instance.session_date
 FROM activity,
      activity_schedule,
      prison_regime,

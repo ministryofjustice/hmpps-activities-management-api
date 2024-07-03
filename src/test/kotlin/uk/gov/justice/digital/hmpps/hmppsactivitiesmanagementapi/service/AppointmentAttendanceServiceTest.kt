@@ -17,8 +17,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventTierType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
@@ -26,10 +26,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAndAttendee
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendanceSummaryRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAndAttendee
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendanceSummaryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -103,7 +107,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `filters values by custom name`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomName("RAN", date, "custom")).thenReturn(
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomNameIgnoreCase("RAN", date, "custom")).thenReturn(
         listOf(appointmentAttendanceSummaryEntity(customName = "custom")),
       )
 
@@ -125,7 +129,7 @@ class AppointmentAttendanceServiceTest {
     @Test
     fun `filters by category and custom name`() {
       addCaseloadIdToRequestHeader("RAN")
-      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomName("RAN", date, "appointment", "custom")).thenReturn(
+      whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomNameIgnoreCase("RAN", date, "appointment", "custom")).thenReturn(
         listOf(appointmentAttendanceSummaryEntity(categoryCode = "TEST_CAT")),
       )
 
@@ -184,7 +188,8 @@ class AppointmentAttendanceServiceTest {
 
     private val now = LocalTime.now()
 
-    inner class TestData(val toTest: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) : AppointmentAndAttendee {
+    inner class TestData(val didTheyAttend: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) :
+      AppointmentAndAttendee {
       override fun getPrisonerNumber(): String = "prisoner"
 
       override fun getBookingId(): Long = 1
@@ -203,15 +208,17 @@ class AppointmentAttendanceServiceTest {
 
       override fun getCategoryCode(): String = "CAT"
 
-      override fun getCustomName(): String? = "custom"
+      override fun getCustomName(): String = "custom"
 
-      override fun getAttended(): Boolean? = toTest
+      override fun getAttended(): Boolean? = didTheyAttend
     }
 
     private val filterTests = listOf(
-      TestData(tier = EventTierType.TIER_2),
+      TestData(didTheyAttend = true, tier = EventTierType.TIER_2),
       TestData(true),
+      TestData(),
       TestData(false),
+      TestData(didTheyAttend = false, tier = EventTierType.TIER_2),
     )
 
     @BeforeEach
@@ -267,7 +274,7 @@ class AppointmentAttendanceServiceTest {
         status = AttendanceStatus.ATTENDED,
       )
 
-      assertThat(response.size).isEqualTo(1)
+      assertThat(response.size).isEqualTo(2)
     }
 
     @Test
@@ -281,7 +288,7 @@ class AppointmentAttendanceServiceTest {
         status = AttendanceStatus.NOT_ATTENDED,
       )
 
-      assertThat(response.size).isEqualTo(1)
+      assertThat(response.size).isEqualTo(2)
     }
 
     @Test

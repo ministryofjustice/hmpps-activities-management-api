@@ -10,13 +10,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.isActivitiesRolledOutAt
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import java.time.LocalDateTime
@@ -24,7 +22,6 @@ import java.time.LocalDateTime
 @Component
 @Transactional(readOnly = true)
 class OffenderMergedEventHandler(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val prisonApi: PrisonApiApplicationClient,
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
@@ -52,19 +49,15 @@ class OffenderMergedEventHandler(
 
     prisonApi.getPrisonerDetailsLite(newNumber).let { prisoner ->
       prisoner.agencyId?.let { prisonCode ->
-        if (rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
-          transactionHandler.newSpringTransaction {
-            processMergeEvent(
-              OffenderMergeDetails(
-                prisonCode = prisonCode,
-                oldNumber = oldNumber,
-                newNumber = newNumber,
-                newBookingId = prisoner.bookingId,
-              ),
-            )
-          }
-        } else {
-          log.info("MERGE: $prisonCode is not rolled out on activities and appointments - ignoring merge for new prisoner number $newNumber")
+        transactionHandler.newSpringTransaction {
+          processMergeEvent(
+            OffenderMergeDetails(
+              prisonCode = prisonCode,
+              oldNumber = oldNumber,
+              newNumber = newNumber,
+              newBookingId = prisoner.bookingId,
+            ),
+          )
         }
       }
     }

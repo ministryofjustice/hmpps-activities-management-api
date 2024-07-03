@@ -15,11 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -29,15 +29,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentAttendeeSearchRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InmateDetailFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInLiverpoolInmate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandInmate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvilleInmate
@@ -48,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
@@ -237,6 +239,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -715,6 +719,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -748,6 +754,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -779,7 +787,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-merged-event-old-and-new-allocations.sql")
-  fun `offender merged event replaces old prisoner and new prisoner records with new prisoner number and booking ID`() {
+  fun `offender merged event replaces old prisoner and new prisoner records with new prisoner number and booking ID for rolled out prison`() {
     val (oldPrisonerNumber, newPrisonerNumber) = "A11111A" to "B11111B"
     val (oldBookingId, newBookingId) = 111111L to 999999L
     val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
@@ -806,6 +814,39 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
     auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
     eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+    appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-offender-merged-event-old-and-new-allocations.sql")
+  fun `offender merged event replaces old prisoner and new prisoner records with new prisoner number and booking ID for non-rolled out prison`() {
+    val (oldPrisonerNumber, newPrisonerNumber) = "A11111A" to "B11111B"
+    val (oldBookingId, newBookingId) = 111111L to 999999L
+    val oldPrisonNumberAndOldBooking = oldPrisonerNumber to oldBookingId
+    val newPrisonerNumberAndOldBooking = newPrisonerNumber to oldBookingId
+
+    prisonApiMockServer.stubGetPrisonerDetails(activeInLiverpoolInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInLiverpoolInmate.copy(offenderNo = newPrisonerNumber, bookingId = 999999).convert())
+
+    // Check all set to the old prisoner number and booking ID before event is processed
+    allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking, newPrisonerNumberAndOldBooking)
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo oldPrisonerNumber
+    waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking, newPrisonerNumberAndOldBooking)
+    auditRepository.findAll().single().prisonerNumber isEqualTo oldPrisonerNumber
+    eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
+    appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking, newPrisonerNumberAndOldBooking)
+
+    service.process(offenderMergedEvent(prisonerNumber = newPrisonerNumber, removedPrisonerNumber = oldPrisonerNumber))
+
+    val newPrisonerNumberAndNewBooking = newPrisonerNumber to newBookingId
+
+    // Check all set to the new prisoner number after event is processed
+    allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+    attendanceRepository.findAll().single().prisonerNumber isEqualTo newPrisonerNumber
+    waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+    auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
+    // New event will not be logged by InterestingEventHandler as it is not for rolled out prison
+    eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
     appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
   }
 
