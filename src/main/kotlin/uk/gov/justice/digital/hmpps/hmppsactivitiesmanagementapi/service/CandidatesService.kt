@@ -109,16 +109,19 @@ class CandidatesService(
     pageable: Pageable,
   ): Page<ActivityCandidate> = coroutineScope {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
-    checkCaseloadAccess(schedule.activity.prisonCode)
-
     val prisonCode = schedule.activity.prisonCode
+    checkCaseloadAccess(prisonCode)
 
     val waitingList = async {
       waitingListRepository.findByActivitySchedule(schedule)
         .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
     }.await()
 
-    var prisoners = async {
+    val prisonerAllocations = async {
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode).groupBy { it.getPrisonerNumber() }
+    }.await()
+
+    val prisoners = async {
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
         .asSequence()
@@ -129,16 +132,10 @@ class CandidatesService(
         .filter { filterBySearchString(it, search) }
         .toList()
     }.await()
-
-    val prisonerAllocations = async {
-      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
-    }.await()
-
-    prisoners = prisoners
       .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
       .filter {
         filterByEmployment(
-          prisoner = it, prisonerAllocations = prisonerAllocations, suitableForEmployed = suitableForEmployed,
+          prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(), suitableForEmployed = suitableForEmployed,
         )
       }
 
@@ -150,15 +147,15 @@ class CandidatesService(
         .sortedBy { it.lastName }
         .subList(start.coerceAtMost(end), end)
         .map { prisoner ->
-          val ids = prisonerAllocations.filter { it.getPrisonerNumber() == prisoner.prisonerNumber }.map { it.getAllocationId() }
-          val thisPersonsAllocations = allocationRepository.findByAllocationIdIn(ids).toModelPrisonerAllocations()
-            .flatMap { it.allocations }
+          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
+            allocationRepository.findByAllocationIdIn(ids).toModelPrisonerAllocations().flatMap { it.allocations }
+          }
 
           ActivityCandidate(
             name = "${prisoner.firstName} ${prisoner.lastName}",
             prisonerNumber = prisoner.prisonerNumber,
             cellLocation = prisoner.cellLocation,
-            otherAllocations = thisPersonsAllocations,
+            otherAllocations = thisPersonsAllocations ?: emptyList(),
             earliestReleaseDate = determineEarliestReleaseDate(prisoner),
           )
         },
@@ -193,12 +190,11 @@ class CandidatesService(
   }
 
   private fun filterByEmployment(
-    prisoner: Prisoner,
     prisonerAllocations: List<CandidateAllocation>,
     suitableForEmployed: Boolean?,
   ): Boolean {
     val employmentAllocations = prisonerAllocations.filter {
-      it.getPrisonerNumber() == prisoner.prisonerNumber && it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name
+      it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name
     }
 
     return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
