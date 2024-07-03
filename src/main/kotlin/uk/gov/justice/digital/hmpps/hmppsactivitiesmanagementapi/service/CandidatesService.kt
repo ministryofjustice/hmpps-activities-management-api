@@ -152,7 +152,6 @@ class CandidatesService(
         .map { prisoner ->
           val ids = prisonerAllocations.filter { it.getPrisonerNumber() == prisoner.prisonerNumber }.map { it.getAllocationId() }
           val thisPersonsAllocations = allocationRepository.findByAllocationIdIn(ids).toModelPrisonerAllocations()
-            .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
             .flatMap { it.allocations }
 
           ActivityCandidate(
