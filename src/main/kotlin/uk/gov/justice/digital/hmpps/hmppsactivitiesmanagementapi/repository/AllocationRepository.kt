@@ -35,7 +35,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   @Query(
     value = """
       SELECT 
-       a2.activity_schedule_id
+       a2.activity_schedule_id,
        a2.allocation_id,
        a2.prisoner_number,
        ac.code
