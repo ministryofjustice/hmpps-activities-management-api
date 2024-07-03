@@ -45,6 +45,7 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
       LEFT JOIN event_organiser eo ON eo.event_organiser_id = aps.appointment_organiser_id
       WHERE a.start_date = :date
         AND a.prison_code = :prisonCode
+        AND aa.removal_reason_id IS NULL
         AND (:categoryCode IS NULL OR a.category_code = :categoryCode)
         AND (:customName IS NULL OR LOWER(a.custom_name) = LOWER(:customName))
         AND (:prisonerNumber IS NULL OR aa.prisoner_number = :prisonerNumber)
