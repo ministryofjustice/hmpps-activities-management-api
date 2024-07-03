@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
@@ -65,6 +66,7 @@ class CandidatesServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
+  private val pageable = Pageable.ofSize(20).withPage(0)
 
   private val service = CandidatesService(
     prisonApiClient,
@@ -606,9 +608,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      assertThat(candidates).isEqualTo(
+      assertThat(candidates.content).isEqualTo(
         listOf(
           ActivityCandidate(
             name = "Tim Allen",
@@ -660,9 +663,10 @@ class CandidatesServiceTest {
         null,
         false,
         null,
+        pageable,
       )
 
-      candidates.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")
+      candidates.content.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")
     }
 
     @Test
@@ -697,9 +701,10 @@ class CandidatesServiceTest {
         null,
         true,
         null,
+        pageable,
       )
 
-      candidates.map { it.prisonerNumber } containsExactly listOf("B2345CD")
+      candidates.content.map { it.prisonerNumber } containsExactly listOf("B2345CD")
     }
 
     @Test
@@ -716,9 +721,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      assertThat(candidates).isEmpty()
+      assertThat(candidates.content).isEmpty()
     }
 
     @Test
@@ -735,9 +741,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      assertThat(candidates).isEmpty()
+      assertThat(candidates.content).isEmpty()
     }
 
     @Test
@@ -762,9 +769,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      candidates.single().otherAllocations.isEmpty() isBool true
+      candidates.content.single().otherAllocations.isEmpty() isBool true
     }
 
     @Test
@@ -789,9 +797,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
 
     @Test
@@ -816,9 +825,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
 
     @Test
@@ -843,9 +853,10 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        pageable,
       )
 
-      candidates.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
+      candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
   }
 }
