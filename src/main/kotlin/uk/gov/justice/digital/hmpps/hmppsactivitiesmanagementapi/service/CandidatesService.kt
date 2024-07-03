@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -107,6 +109,7 @@ class CandidatesService(
     search: String?,
     pageable: Pageable,
   ): Page<ActivityCandidate> {
+    val startMs = System.currentTimeMillis()
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     val prisonCode = schedule.activity.prisonCode
     checkCaseloadAccess(prisonCode)
@@ -118,6 +121,9 @@ class CandidatesService(
       allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
         .groupBy { it.getPrisonerNumber() }
 
+    val firstPhase = System.currentTimeMillis()
+    log.info("it took ${firstPhase - startMs} for first phase")
+
     val prisoners = getPrisonerCandidates(
       prisonCode = prisonCode,
       schedule = schedule,
@@ -128,6 +134,8 @@ class CandidatesService(
       suitableIncentiveLevels = suitableIncentiveLevels,
       search = search,
     )
+
+    log.info("it took ${System.currentTimeMillis() - firstPhase} for prisoners")
 
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
@@ -167,11 +175,13 @@ class CandidatesService(
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
       .asSequence()
       .filter {
-        it.isActiveAtPrison(prisonCode) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null &&
-          schedule.allocations(true).none { a -> a.prisonerNumber == it.prisonerNumber } &&
+        it.isActiveAtPrison(prisonCode) &&
+          it.legalStatus != Prisoner.LegalStatus.DEAD &&
+          it.currentIncentive != null &&
           filterByRiskLevel(it, suitableRiskLevels) &&
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
           filterBySearchString(it, search) &&
+          schedule.allocations(true).none { a -> a.prisonerNumber == it.prisonerNumber } &&
           waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
           filterByEmployment(
             prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
@@ -307,6 +317,7 @@ class CandidatesService(
   }
 
   companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val WORKPLACE_RISK_LEVEL_LOW = "RLO"
     const val WORKPLACE_RISK_LEVEL_MEDIUM = "RME"
     const val WORKPLACE_RISK_LEVEL_HIGH = "RHI"
