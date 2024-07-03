@@ -135,7 +135,8 @@ class CandidatesService(
       .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
       .filter {
         filterByEmployment(
-          prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(), suitableForEmployed = suitableForEmployed,
+          prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
+          suitableForEmployed = suitableForEmployed,
         )
       }
 
