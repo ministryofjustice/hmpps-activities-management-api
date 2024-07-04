@@ -134,15 +134,16 @@ class CandidatesService(
       search = search,
     )
 
+    val prisonerCount = prisoners.count()
     log.info("it took ${System.currentTimeMillis() - firstPhase} for prisoners")
 
     val start = pageable.offset.toInt()
-    val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
+    val end = (start + pageable.pageSize).coerceAtMost(prisonerCount)
 
     return PageImpl(
       prisoners
         .sortedBy { it.lastName }
-        .subList(start.coerceAtMost(end), end)
+        .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
         .map { prisoner ->
           val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
             allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
@@ -155,9 +156,9 @@ class CandidatesService(
             otherAllocations = thisPersonsAllocations ?: emptyList(),
             earliestReleaseDate = determineEarliestReleaseDate(prisoner),
           )
-        },
+        }.toList(),
       pageable,
-      prisoners.size.toLong(),
+      prisonerCount.toLong(),
     )
   }
 
@@ -170,8 +171,9 @@ class CandidatesService(
     suitableRiskLevels: List<String>?,
     suitableForEmployed: Boolean?,
     search: String?,
-  ): List<Prisoner> =
+  ): Sequence<Prisoner> =
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
+      .asSequence()
       .filter {
         val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
         it.isActiveAtPrison(prisonCode) &&
@@ -180,8 +182,8 @@ class CandidatesService(
           filterByRiskLevel(it, suitableRiskLevels) &&
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
           filterBySearchString(it, search) &&
-          prisonerAllocation.none { p -> p.getActivityScheduleId() == activityScheduleId } &&
-          waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
+          !prisonerAllocation.any { p -> p.getActivityScheduleId() == activityScheduleId } &&
+          !waitingList.any { w -> w.prisonerNumber == it.prisonerNumber } &&
           filterByEmployment(
             prisonerAllocations = prisonerAllocation,
             suitableForEmployed = suitableForEmployed,
@@ -217,9 +219,10 @@ class CandidatesService(
     prisonerAllocations: List<CandidateAllocation>,
     suitableForEmployed: Boolean?,
   ): Boolean {
+    suitableForEmployed ?: return true
     val employmentAllocations = prisonerAllocations.filter { it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name }
 
-    return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
+    return employmentAllocations.isNotEmpty() == suitableForEmployed
   }
 
   private fun filterBySearchString(
