@@ -353,7 +353,7 @@ class AttendancesServiceTest {
       .hasMessage("Attendance record for prisoner 'D4444DD' can no longer be modified")
 
     verify(attendanceRepository, never()).saveAllAndFlush(any<List<Attendance>>())
-    verify(outboundEventsService, never()).send(any(), any())
+    verify(outboundEventsService, never()).send(any(), any(), any())
   }
 
   @Test

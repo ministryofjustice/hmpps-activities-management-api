@@ -25,7 +25,7 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun send(outboundEvent: OutboundEvent, identifier: Long) {
+  fun send(outboundEvent: OutboundEvent, identifier: Long, secondIdentifier: Long? = null) {
     if (featureSwitches.isEnabled(outboundEvent)) {
       log.info("Sending outbound event $outboundEvent for identifier $identifier")
       when (outboundEvent) {
@@ -38,8 +38,11 @@ class OutboundEventsService(private val publisher: OutboundEventsPublisher, priv
         PRISONER_ALLOCATED, PRISONER_ALLOCATION_AMENDED -> {
           publisher.send(outboundEvent.event(PrisonerAllocatedInformation(identifier)))
         }
-        PRISONER_ATTENDANCE_CREATED, PRISONER_ATTENDANCE_AMENDED, PRISONER_ATTENDANCE_DELETED, PRISONER_ATTENDANCE_EXPIRED -> {
+        PRISONER_ATTENDANCE_CREATED, PRISONER_ATTENDANCE_AMENDED, PRISONER_ATTENDANCE_EXPIRED -> {
           publisher.send(outboundEvent.event(PrisonerAttendanceInformation(identifier)))
+        }
+        PRISONER_ATTENDANCE_DELETED -> {
+          publisher.send(outboundEvent.event(PrisonerAttendanceDeleteInformation(identifier, secondIdentifier!!)))
         }
         APPOINTMENT_INSTANCE_CREATED, APPOINTMENT_INSTANCE_UPDATED, APPOINTMENT_INSTANCE_DELETED, APPOINTMENT_INSTANCE_CANCELLED, APPOINTMENT_INSTANCE_UNCANCELLED -> {
           publisher.send(outboundEvent.event(AppointmentInstanceInformation(identifier)))

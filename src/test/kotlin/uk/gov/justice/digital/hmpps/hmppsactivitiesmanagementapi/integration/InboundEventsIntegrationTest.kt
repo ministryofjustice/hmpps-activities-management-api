@@ -239,8 +239,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10021, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -719,8 +719,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10099, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
@@ -754,8 +754,8 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 1L)
     verify(outboundEventsService).send(PRISONER_ALLOCATION_AMENDED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 2L)
-    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 3L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10099L, 2L)
+    verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10001, 3L)
     verifyNoMoreInteractions(outboundEventsService)
 
     assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)

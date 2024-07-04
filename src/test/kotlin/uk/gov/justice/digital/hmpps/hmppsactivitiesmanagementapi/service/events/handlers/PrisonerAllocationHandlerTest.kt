@@ -161,7 +161,7 @@ class PrisonerAllocationHandlerTest {
     verify(futureScheduledInstance).remove(futureAttendance)
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, futureAttendance.attendanceId)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, allocation.bookingId, futureAttendance.scheduledInstance.scheduledInstanceId)
   }
 
   private fun attendanceFor(instance: ScheduledInstance): Attendance = mock {

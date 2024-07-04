@@ -134,4 +134,5 @@ data class ScheduleCreatedInformation(val activityScheduleId: Long) : Additional
 data class ScheduledInstanceInformation(val scheduledInstanceId: Long) : AdditionalInformation
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
+data class PrisonerAttendanceDeleteInformation(val bookingId: Long, val scheduledInstanceId: Long) : AdditionalInformation
 data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation
