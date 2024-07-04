@@ -4,6 +4,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as AllAttendanceModel
@@ -40,6 +41,8 @@ data class AllAttendance(
   val recordedTime: LocalDateTime?,
 
   val attendanceRequired: Boolean,
+
+  val eventTier: String?,
 ) {
   fun toModel() =
     AllAttendanceModel(
@@ -57,6 +60,7 @@ data class AllAttendance(
       categoryName = categoryName,
       recordedTime = recordedTime,
       attendanceRequired = attendanceRequired,
+      eventTier = eventTier?.let { EventTierType.valueOf(it) },
     )
 }
 

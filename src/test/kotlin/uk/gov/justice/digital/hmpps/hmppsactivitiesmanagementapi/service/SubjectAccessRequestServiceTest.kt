@@ -89,6 +89,7 @@ class SubjectAccessRequestServiceTest {
     issuePayment = true,
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
+    eventTier = null,
   )
 
   private val allAttendance2 = AllAttendance(
@@ -106,6 +107,7 @@ class SubjectAccessRequestServiceTest {
     issuePayment = true,
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
+    eventTier = null,
   )
 
   @Test
