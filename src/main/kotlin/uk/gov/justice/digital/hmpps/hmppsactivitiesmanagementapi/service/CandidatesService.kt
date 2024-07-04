@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
@@ -34,7 +37,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonerAllocations
 import java.time.LocalDate
 
 @Service
@@ -99,9 +101,10 @@ class CandidatesService(
     scheduleId: Long,
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
-    inWork: Boolean?,
-    searchString: String?,
-  ): List<ActivityCandidate> {
+    suitableForEmployed: Boolean?,
+    search: String?,
+    pageable: Pageable,
+  ): Page<ActivityCandidate> {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     checkCaseloadAccess(schedule.activity.prisonCode)
 
@@ -113,36 +116,50 @@ class CandidatesService(
     var prisoners =
       prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
         .content
+        .asSequence()
         .filter { (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
         .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
         .filter { filterByRiskLevel(it, suitableRiskLevels) }
         .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
-        .filter { filterBySearchString(it, searchString) }
+        .filter { filterBySearchString(it, search) }
         .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
+        .toList()
 
     val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
       prisonCode,
       prisoners.map { it.prisonerNumber },
     )
       .filterNot { it.status(PrisonerStatus.ENDED) }
+      .groupBy { it.prisonerNumber }
 
-    prisoners = prisoners.filter { filterByEmployment(it, prisonerAllocations, inWork) }
+    prisoners = prisoners.filter {
+      filterByEmployment(
+        prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
+        suitableForEmployed = suitableForEmployed,
+      )
+    }
 
-    return prisoners
-      .sortedBy { it.lastName }
-      .map { prisoner ->
-        val thisPersonsAllocations = prisonerAllocations.toModelPrisonerAllocations()
-          .filter { a -> prisoner.prisonerNumber == a.prisonerNumber }
-          .flatMap { it.allocations }
+    val start = pageable.offset.toInt()
+    val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
 
-        ActivityCandidate(
-          name = "${prisoner.firstName} ${prisoner.lastName}",
-          prisonerNumber = prisoner.prisonerNumber,
-          cellLocation = prisoner.cellLocation,
-          otherAllocations = thisPersonsAllocations,
-          earliestReleaseDate = determineEarliestReleaseDate(prisoner),
-        )
-      }
+    return PageImpl(
+      prisoners
+        .sortedBy { it.lastName }
+        .subList(start.coerceAtMost(end), end)
+        .map { prisoner ->
+          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.toModel() }
+
+          ActivityCandidate(
+            name = "${prisoner.firstName} ${prisoner.lastName}",
+            prisonerNumber = prisoner.prisonerNumber,
+            cellLocation = prisoner.cellLocation,
+            otherAllocations = thisPersonsAllocations ?: emptyList(),
+            earliestReleaseDate = determineEarliestReleaseDate(prisoner),
+          )
+        },
+      pageable,
+      prisoners.size.toLong(),
+    )
   }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
@@ -171,15 +188,14 @@ class CandidatesService(
   }
 
   private fun filterByEmployment(
-    prisoner: Prisoner,
     prisonerAllocations: List<Allocation>,
-    inWork: Boolean?,
+    suitableForEmployed: Boolean?,
   ): Boolean {
     val employmentAllocations = prisonerAllocations.filter {
-      it.prisonerNumber == prisoner.prisonerNumber && !it.activitySchedule.activity.isUnemployment()
+      !it.activitySchedule.activity.isUnemployment()
     }
 
-    return inWork == null || employmentAllocations.isNotEmpty() == inWork
+    return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
   }
 
   private fun filterBySearchString(

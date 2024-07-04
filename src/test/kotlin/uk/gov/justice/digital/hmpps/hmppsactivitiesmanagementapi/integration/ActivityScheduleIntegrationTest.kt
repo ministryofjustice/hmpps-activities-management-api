@@ -460,13 +460,13 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql(
-    "classpath:test_data/seed-activity-id-1.sql",
+    "classpath:test_data/seed-candidates.sql",
   )
   fun `should be able to fetch a paged list of candidates for an activity`() {
     prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
     prisonApiMockServer.stubGetEducationLevels()
 
-    val response = webTestClient.getCandidates(1, 2, 5)
+    val response = webTestClient.getCandidates(1, 0, 5)
       .expectStatus().isOk
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
