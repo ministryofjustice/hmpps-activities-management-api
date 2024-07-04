@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -18,10 +20,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerAlert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityMinimumEducationLevel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
@@ -33,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -105,39 +108,33 @@ class CandidatesService(
     search: String?,
     pageable: Pageable,
   ): Page<ActivityCandidate> {
+    val startMs = System.currentTimeMillis()
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
-    checkCaseloadAccess(schedule.activity.prisonCode)
-
     val prisonCode = schedule.activity.prisonCode
+    checkCaseloadAccess(prisonCode)
 
     val waitingList = waitingListRepository.findByActivitySchedule(schedule)
       .filter { it.isStatus(WaitingListStatus.APPROVED, WaitingListStatus.PENDING) }
 
-    var prisoners =
-      prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!
-        .content
-        .asSequence()
-        .filter { (it.isActiveAtPrison(prisonCode)) && it.legalStatus != Prisoner.LegalStatus.DEAD && it.currentIncentive != null }
-        .filter { p -> !schedule.allocations(true).map { it.prisonerNumber }.contains(p.prisonerNumber) }
-        .filter { filterByRiskLevel(it, suitableRiskLevels) }
-        .filter { filterByIncentiveLevel(it, suitableIncentiveLevels) }
-        .filter { filterBySearchString(it, search) }
-        .filter { waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } }
-        .toList()
+    val prisonerAllocations =
+      allocationRepository.getCandidateAllocations(prisonCode = prisonCode)
+        .groupBy { it.getPrisonerNumber() }
 
-    val prisonerAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumbers(
-      prisonCode,
-      prisoners.map { it.prisonerNumber },
+    val firstPhase = System.currentTimeMillis()
+    log.info("it took ${firstPhase - startMs} for first phase")
+
+    val prisoners = getPrisonerCandidates(
+      prisonCode = prisonCode,
+      activityScheduleId = scheduleId,
+      waitingList = waitingList,
+      prisonerAllocations = prisonerAllocations,
+      suitableForEmployed = suitableForEmployed,
+      suitableRiskLevels = suitableRiskLevels,
+      suitableIncentiveLevels = suitableIncentiveLevels,
+      search = search,
     )
-      .filterNot { it.status(PrisonerStatus.ENDED) }
-      .groupBy { it.prisonerNumber }
 
-    prisoners = prisoners.filter {
-      filterByEmployment(
-        prisonerAllocations = prisonerAllocations[it.prisonerNumber] ?: emptyList(),
-        suitableForEmployed = suitableForEmployed,
-      )
-    }
+    log.info("it took ${System.currentTimeMillis() - firstPhase} for prisoners")
 
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisoners.size)
@@ -147,7 +144,9 @@ class CandidatesService(
         .sortedBy { it.lastName }
         .subList(start.coerceAtMost(end), end)
         .map { prisoner ->
-          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.toModel() }
+          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
+            allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
+          }
 
           ActivityCandidate(
             name = "${prisoner.firstName} ${prisoner.lastName}",
@@ -161,6 +160,33 @@ class CandidatesService(
       prisoners.size.toLong(),
     )
   }
+
+  private fun getPrisonerCandidates(
+    prisonCode: String,
+    activityScheduleId: Long,
+    waitingList: List<WaitingList>,
+    prisonerAllocations: Map<String, List<CandidateAllocation>>,
+    suitableIncentiveLevels: List<String>?,
+    suitableRiskLevels: List<String>?,
+    suitableForEmployed: Boolean?,
+    search: String?,
+  ): List<Prisoner> =
+    prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
+      .filter {
+        val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
+        it.isActiveAtPrison(prisonCode) &&
+          it.legalStatus != Prisoner.LegalStatus.DEAD &&
+          it.currentIncentive != null &&
+          filterByRiskLevel(it, suitableRiskLevels) &&
+          filterByIncentiveLevel(it, suitableIncentiveLevels) &&
+          filterBySearchString(it, search) &&
+          prisonerAllocation.none { p -> p.getActivityScheduleId() == activityScheduleId } &&
+          waitingList.none { w -> w.prisonerNumber == it.prisonerNumber } &&
+          filterByEmployment(
+            prisonerAllocations = prisonerAllocation,
+            suitableForEmployed = suitableForEmployed,
+          )
+      }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
     val riskAssessmentCodes = listOf("RLO", "RME", "RHI")
@@ -188,12 +214,10 @@ class CandidatesService(
   }
 
   private fun filterByEmployment(
-    prisonerAllocations: List<Allocation>,
+    prisonerAllocations: List<CandidateAllocation>,
     suitableForEmployed: Boolean?,
   ): Boolean {
-    val employmentAllocations = prisonerAllocations.filter {
-      !it.activitySchedule.activity.isUnemployment()
-    }
+    val employmentAllocations = prisonerAllocations.filter { it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name }
 
     return suitableForEmployed == null || employmentAllocations.isNotEmpty() == suitableForEmployed
   }
@@ -291,6 +315,7 @@ class CandidatesService(
   }
 
   companion object {
+    val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val WORKPLACE_RISK_LEVEL_LOW = "RLO"
     const val WORKPLACE_RISK_LEVEL_MEDIUM = "RME"
     const val WORKPLACE_RISK_LEVEL_HIGH = "RHI"

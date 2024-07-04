@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Pageable
@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import java.time.LocalDate
@@ -572,6 +573,16 @@ class CandidatesServiceTest {
 
   @Nested
   inner class GetActivityCandidates {
+    inner class TestCandidate(val t_id: Long, val t_prisonerNumber: String, val t_code: String, val schedId: Long) : CandidateAllocation {
+      override fun getActivityScheduleId(): Long = schedId
+
+      override fun getAllocationId(): Long = t_id
+
+      override fun getPrisonerNumber(): String = t_prisonerNumber
+
+      override fun getCode(): String = t_code
+    }
+
     private fun candidatesSetup(
       activity: Activity,
       candidates: PagedPrisoner,
@@ -586,12 +597,12 @@ class CandidatesServiceTest {
       whenever(waitingListRepository.findByActivitySchedule(schedule)).thenReturn(waitingList)
       whenever(prisonerSearchApiClient.getAllPrisonersInPrison(schedule.activity.prisonCode)).thenReturn(Mono.just(candidates))
 
-      whenever(
-        allocationRepository.findByPrisonCodeAndPrisonerNumbers(
-          schedule.activity.prisonCode,
-          candidates.content.map { it.prisonerNumber },
-        ),
-      ).thenReturn(candidateAllocations)
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(candidateAllocations)
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        candidateAllocations.map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
     }
 
     @Test
@@ -761,8 +772,6 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
-
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
@@ -788,8 +797,12 @@ class CandidatesServiceTest {
       }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.PENDING }
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
-
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
@@ -816,9 +829,12 @@ class CandidatesServiceTest {
       }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED }
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
-
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
-
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
@@ -845,7 +861,12 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
