@@ -41,7 +41,8 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
        ac.code
       FROM activity a
       JOIN activity_category ac ON ac.activity_category_id = a.activity_category_id
-      JOIN allocation a2 ON a2.activity_schedule_id = a.activity_id
+      JOIN activity_schedule sched ON sched.activity_id = a.activity_id
+      JOIN allocation a2 ON a2.activity_schedule_id = sched.activity_schedule_id
       WHERE a.prison_code = :prisonCode AND a2.prisoner_status != 'ENDED'
     """,
     nativeQuery = true,
