@@ -6,7 +6,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Pageable
@@ -601,7 +600,7 @@ class CandidatesServiceTest {
       whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(candidateAllocations)
       whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
         candidateAllocations.map {
-          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, it.activitySchedule.activityScheduleId)
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
         },
       )
     }
@@ -773,8 +772,6 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByPrisonCodeAndPrisonerNumbers(schedule.activity.prisonCode, listOf("A1234BC"))) doReturn schedule.allocations()
-
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
@@ -800,11 +797,12 @@ class CandidatesServiceTest {
       }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.PENDING }
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
-
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, it.activitySchedule.activityScheduleId)
-      }
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
@@ -831,11 +829,12 @@ class CandidatesServiceTest {
       }.also { it.allocations().single().prisonerStatus isEqualTo PrisonerStatus.AUTO_SUSPENDED }
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
-
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, it.activitySchedule.activityScheduleId)
-      }
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
@@ -862,10 +861,13 @@ class CandidatesServiceTest {
 
       candidatesSetup(schedule.activity, PrisonerSearchPrisonerFixture.pagedResult(prisonerNumbers = listOf("A1234BC")))
 
-      whenever(allocationRepository.findByAllocationIdIn(any())) doReturn schedule.allocations()
-      whenever(allocationRepository.getCandidateAllocations(any())) doReturn schedule.allocations().map {
-        TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, it.activitySchedule.activityScheduleId)
-      }
+      whenever(allocationRepository.findByAllocationIdIn(any())).thenReturn(schedule.allocations())
+      whenever(allocationRepository.getCandidateAllocations(any())).thenReturn(
+        schedule.allocations().map {
+          TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
+        },
+      )
+
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
