@@ -143,7 +143,7 @@ class CandidatesService(
     return PageImpl(
       prisoners
         .sortedBy { it.lastName }
-        .filterIndexed { index, _ ->  index >= start.coerceAtMost(end) && index < end }
+        .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
         .map { prisoner ->
           val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
             allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
@@ -222,7 +222,7 @@ class CandidatesService(
     suitableForEmployed ?: return true
     val employmentAllocations = prisonerAllocations.filter { it.getCode() != ActivityCategoryCode.SAA_NOT_IN_WORK.name }
 
-    return  employmentAllocations.isNotEmpty() == suitableForEmployed
+    return employmentAllocations.isNotEmpty() == suitableForEmployed
   }
 
   private fun filterBySearchString(
