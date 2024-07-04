@@ -8,8 +8,8 @@ plugins {
   kotlin("plugin.spring") version "2.0.0"
   kotlin("plugin.jpa") version "2.0.0"
   jacoco
-  id("org.openapi.generator") version "7.6.0"
-  id("io.sentry.jvm.gradle") version "4.8.0"
+  id("org.openapi.generator") version "7.7.0"
+  id("io.sentry.jvm.gradle") version "4.9.0"
 }
 
 allOpen {
@@ -60,9 +60,9 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:3.3.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.3.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.3.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:3.4.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:3.4.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.4.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")

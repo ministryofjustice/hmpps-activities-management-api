@@ -14,6 +14,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+typealias BookingIdScheduledInstanceId = Pair<Long, Long>
+
 @Component
 class PrisonerAllocationHandler(
   private val allocationRepository: AllocationRepository,
@@ -36,7 +38,7 @@ class PrisonerAllocationHandler(
     prisonerNumber: String,
   ) {
     transactionHandler.newSpringTransaction {
-      val updatedAttendanceIds = mutableSetOf<Long>()
+      val updatedAttendances = mutableSetOf<BookingIdScheduledInstanceId>()
       val allocations = allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
         prisonCode,
         prisonerNumber,
@@ -44,20 +46,20 @@ class PrisonerAllocationHandler(
       )
 
       allocations.deallocateAffectedAllocations(reason, prisonCode, prisonerNumber)
-        .removeFutureAttendances().let { updatedAttendanceIds.addAll(it) }
+        .removeFutureAttendances().let { updatedAttendances.addAll(it) }
 
       allocationRepository.saveAllAndFlush(allocations)
-      allocations to updatedAttendanceIds
-    }.let { (allocations, updatedAttendanceIds) ->
+      allocations to updatedAttendances
+    }.let { (allocations, updatedAttendances) ->
       allocations.forEach {
           endedAllocation ->
         log.info("Sending prisoner allocation amended event for ended allocation ${endedAllocation.allocationId}")
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, endedAllocation.allocationId)
       }
-      updatedAttendanceIds.forEach {
-          attendanceId ->
-        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, attendanceId)
-        log.info("Sending prisoner attendance deleted event for attendance $attendanceId")
+      updatedAttendances.forEach {
+          updatedAttendance ->
+        outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, updatedAttendance.first, updatedAttendance.second)
+        log.info("Sending prisoner attendance deleted event for bookingId ${updatedAttendance.first} and scheduledInstance ${updatedAttendance.second}")
       }
     }
   }
@@ -72,8 +74,8 @@ class PrisonerAllocationHandler(
         log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
       }
 
-  private fun List<Allocation>.removeFutureAttendances(): Set<Long> {
-    val updatedAttendanceIds = mutableSetOf<Long>()
+  private fun List<Allocation>.removeFutureAttendances(): Set<BookingIdScheduledInstanceId> {
+    val updatedAttendanceIds = mutableSetOf<BookingIdScheduledInstanceId>()
     val now = LocalDateTime.now()
 
     forEach { allocation ->
@@ -86,7 +88,7 @@ class PrisonerAllocationHandler(
         .onEach { futureAttendance ->
           log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
           futureAttendance.scheduledInstance.remove(futureAttendance)
-          updatedAttendanceIds.add(futureAttendance.attendanceId)
+          updatedAttendanceIds.add(BookingIdScheduledInstanceId(allocation.bookingId, futureAttendance.scheduledInstance.scheduledInstanceId))
         }
     }
 

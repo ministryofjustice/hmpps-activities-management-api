@@ -215,7 +215,7 @@ class AppointmentCreateDomainServiceTest {
 
     service.createAppointments(appointmentSeries, mapOf("A1234BC" to 1L, "A2345BC" to 2L, "A3456BC" to 3L))
 
-    verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any())
+    verify(outboundEventsService, times(6)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CREATED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
   }
 

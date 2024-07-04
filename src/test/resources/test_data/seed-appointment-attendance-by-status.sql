@@ -7,11 +7,13 @@ VALUES (1, 'GROUP', 'RSI', 'EDUC', 1, 123, false, now()::date - 1, '09:00', '10:
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted, custom_name)
 VALUES  (1, 1, 1, 'RSI', 'EDUC', 2, 123, false, now()::date - 1, '09:00', '10:30', (now()::date - 2)::timestamp, 'TEST.USER', (now()::date - 1)::timestamp, 2, 'CANCEL.USER', false, null),
-        (2, 1, 3, 'RSI', 'EDUC', 1, 123, false, now()::date - 1, '09:00', '10:30', (now()::date - 2)::timestamp, 'TEST.USER', null, null, null, false, 'custom');
+        (2, 1, 3, 'RSI', 'EDUC', 1, 123, false, now()::date - 1, '09:00', '10:30', (now()::date - 2)::timestamp, 'TEST.USER', null, null, null, false, 'custom'),
+        (3, 1, 3, 'RSI', 'EDUC', 1, 123, false, now()::date - 1, '09:00', '10:30', (now()::date - 2)::timestamp, 'TEST.USER', null, null, null, true, 'custom');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attended, removal_reason_id)
 VALUES  (1, 2, 'A1234BC', 1, null, null),
         (2, 2, 'B2345CD', 2, true, null),
         (4, 1, 'B2346CD', 4, null, null),
         (3, 2, 'C3456DE', 3, false, null),
+        (6, 3, 'C3456DE', 3, false, null),
         (5, 2, 'B2346CD', 5, null, 1);
