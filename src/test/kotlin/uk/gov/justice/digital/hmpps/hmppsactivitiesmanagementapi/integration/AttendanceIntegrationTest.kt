@@ -14,6 +14,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
@@ -175,6 +176,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   fun `get attendance list for specified date`() {
     val attendanceList = webTestClient.getAllAttendanceByDate(MOORLAND_PRISON_CODE, LocalDate.of(2022, 10, 10))!!
     assertThat(attendanceList.size).isEqualTo(9)
+    assertThat(attendanceList.any { it.eventTier == EventTierType.TIER_1 }).isTrue()
   }
 
   @Sql(

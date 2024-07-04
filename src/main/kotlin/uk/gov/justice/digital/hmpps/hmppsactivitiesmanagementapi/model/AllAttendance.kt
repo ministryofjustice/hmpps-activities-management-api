@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -61,4 +62,7 @@ data class AllAttendance(
 
   @Schema(description = "Is attendance required?", example = "true")
   val attendanceRequired: Boolean,
+
+  @Schema(description = "event tier")
+  val eventTier: EventTierType?,
 )
