@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -57,7 +58,7 @@ class AttendancesService(
     log.info("Attendance marking in progress")
 
     val markedAttendanceIds = transactionHandler.newSpringTransaction {
-      val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
+      val attendanceUpdatesById = attendances.associateBy { it.id }
       val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
       attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
@@ -166,12 +167,15 @@ class AttendancesService(
   fun getAttendanceById(id: Long) =
     transform(attendanceRepository.findOrThrowNotFound(id), caseNotesApiClient)
 
-  fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendance> =
-    allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
-}
+  fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTier: EventTierType? = null): List<ModelAllAttendance> {
+    eventTier ?: return allAttendanceRepository.findByPrisonCodeAndSessionDate(
+      prisonCode = prisonCode, sessionDate = sessionDate,
+    ).toModel()
 
-internal object AttendanceUpdateRequestValidator {
-  fun validate(request: AttendanceUpdateRequest) {
-    // TODO introduce validation of attendance update
+    return allAttendanceRepository.findByPrisonCodeAndSessionDateAndEventTier(
+      prisonCode = prisonCode,
+      sessionDate = sessionDate,
+      eventTier = eventTier.name,
+    ).toModel()
   }
 }

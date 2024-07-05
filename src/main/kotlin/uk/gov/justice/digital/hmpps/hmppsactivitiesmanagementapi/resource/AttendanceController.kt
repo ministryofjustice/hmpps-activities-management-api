@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -132,7 +133,12 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   fun getAttendanceByDate(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("sessionDate") sessionDate: LocalDate,
-  ): List<AllAttendance> = attendancesService.getAllAttendanceByDate(prisonCode, sessionDate)
+    @RequestParam("eventTier", required = false) eventTier: EventTierType? = null,
+  ): List<AllAttendance> = attendancesService.getAllAttendanceByDate(
+    prisonCode = prisonCode,
+    sessionDate = sessionDate,
+    eventTier = eventTier,
+  )
 
   @PutMapping
   @ResponseBody
