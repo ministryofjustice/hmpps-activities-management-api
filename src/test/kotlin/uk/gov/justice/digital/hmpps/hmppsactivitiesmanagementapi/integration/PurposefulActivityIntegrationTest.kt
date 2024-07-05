@@ -6,24 +6,14 @@ import aws.sdk.kotlin.services.s3.model.PutObjectResponse
 import io.mockk.coEvery
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
-import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import org.springframework.test.web.reactive.server.WebTestClient
 
 class PurposefulActivityIntegrationTest : IntegrationTestBase() {
   private val amazonS3: S3Client = mockk(relaxed = true)
 
-  @Sql(
-    "classpath:test_data/seed-purposeful-activity-appts.sql",
-    "classpath:test_data/seed-purposeful-activity-activities.sql",
-  )
-  @Test
-  fun `Purposeful Activity Report successfully uploads reports`() {
-    val putObjectResponse = mockk<PutObjectResponse>()
-
-    coEvery { amazonS3.putObject(any<PutObjectRequest>()) } returns putObjectResponse
-
-    webTestClient.post()
+  private fun WebTestClient.executePurposefulActivityReportJob() {
+    post()
       .uri("/job/purposeful-activity-reports")
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
@@ -32,20 +22,23 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
 
   @Sql(
     "classpath:test_data/seed-purposeful-activity-appts.sql",
+    "classpath:test_data/seed-purposeful-activity-activities.sql",
   )
   @Test
-  fun `Purposeful Activity Report throws Exception because activity data not returned`() {
+  fun `Purposeful Activity Report is successfully run and uploaded to s3`() {
+    waitForJobs({ webTestClient.executePurposefulActivityReportJob() })
+  }
+
+  @Sql(
+    "classpath:test_data/seed-purposeful-activity-appts.sql",
+  )
+  @Test
+  fun `Purposeful Activity Report job fails because activity data missing`() {
     val putObjectResponse = mockk<PutObjectResponse>()
 
     coEvery { amazonS3.putObject(any<PutObjectRequest>()) } returns putObjectResponse
 
-    webTestClient.post()
-      .uri("/job/purposeful-activity-reports")
-      .headers(setAuthorisation(roles = listOf()))
-      .exchange()
-      .expectStatus().is4xxClientError
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ErrorResponse::class.java)
-      .returnResult().responseBody
+    // The failure will mean there's zero completed jobs in the job table, so expect 0
+    waitForJobs({ webTestClient.executePurposefulActivityReportJob() }, 0)
   }
 }

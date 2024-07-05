@@ -46,7 +46,12 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
   // AWS
-  implementation("aws.sdk.kotlin:s3:1.2.34")
+  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
+    version {
+      strictly("5.0.0-alpha.14")
+    }
+  }
+  implementation("aws.sdk.kotlin:s3:1.2.46")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
@@ -60,6 +65,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.8.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
+  testImplementation("org.testcontainers:localstack:1.19.8")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
@@ -128,6 +134,16 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("listrepos") {
+  doLast {
+    println("Repositories:")
+    project.repositories.map { it as MavenArtifactRepository }
+      .forEach {
+        println("Name: ${it.name}; url: ${it.url}")
+      }
+  }
 }
 
 tasks.register("copyPreCommitHook", Copy::class) {

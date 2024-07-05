@@ -20,8 +20,6 @@ class S3Service(
       body = ByteStream.fromBytes(report)
     }
 
-    s3ClientAnalyticalPlatform.use { s3 ->
-      s3.putObject(request)
-    }
+    s3ClientAnalyticalPlatform.putObject(request)
   }
 }

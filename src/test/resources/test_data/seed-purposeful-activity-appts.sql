@@ -4,7 +4,7 @@
 -- Appointment with id 2 starting today has two attendees with attendance and non-attendance marked.
 -- Appointment with id 3 starting tomorrow has no attendance marked.
 -- =====================================================================================
-
+DROP TABLE IF EXISTS temp_earliest_date;
 -- Calculate earliest_date separately
 CREATE TEMP TABLE temp_earliest_date AS
 SELECT (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + 1 * 7 + 7))::timestamp AS earliest_date;
