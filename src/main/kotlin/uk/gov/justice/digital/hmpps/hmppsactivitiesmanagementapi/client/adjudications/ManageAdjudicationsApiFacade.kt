@@ -20,7 +20,7 @@ data class HearingsResponse(
 )
 
 @Component
-class ManageAdjudicationsApiClient(@Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient) {
+class ManageAdjudicationsApiFacade(@Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient) {
 
   fun getHearings(agencyId: String, startDate: LocalDate, endDate: LocalDate, prisoners: Set<String>): List<HearingsResponse> = TODO("implement me")
 }
