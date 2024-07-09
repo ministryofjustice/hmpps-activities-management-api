@@ -14,6 +14,7 @@ generic-service:
     CASE_NOTES_API_URL: https://dev.offender-case-notes.service.justice.gov.uk
     NON_ASSOCIATIONS_API_URL: https://non-associations-api-dev.hmpps.service.justice.gov.uk
     INCENTIVES_API_URL: https://incentives-api-dev.hmpps.service.justice.gov.uk
+    MANAGE_ADJUDICATIONS_API_URL: https://manage-adjudications-api-dev.hmpps.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SPRING_PROFILES_ACTIVE: dev
     SCHEDULE_AHEAD_DAYS: 14
@@ -21,6 +22,7 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     SENTRY_ENVIRONMENT: development
+    HEARINGS_ADJUDICATION_SERVICE: false
 
   resources:
     requests:
