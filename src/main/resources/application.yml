@@ -143,4 +143,4 @@ springdoc:
     tags-sorter: alpha
 
 hearings:
-  source-of-truth: ${HEARINGS_ADJUDICATION_SERVICE:false}
+  adjudications-source-of-truth: ${HEARINGS_ADJUDICATION_SERVICE:false}
