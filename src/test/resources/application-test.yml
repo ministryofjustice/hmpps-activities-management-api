@@ -80,4 +80,4 @@ manage:
      url: http://localhost:8777
 
 hearings:
-  adjudications-source-of-truth: false
+  adjudications-source-of-truth: true

@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudic
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
+import org.springframework.web.util.UriBuilder
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -20,7 +22,25 @@ data class HearingsResponse(
 )
 
 @Component
-class ManageAdjudicationsApiFacade(@Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient) {
+class ManageAdjudicationsApiFacade(
+  @Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient,
+) {
 
-  suspend fun getAdjudicationHearings(agencyId: String, startDate: LocalDate, endDate: LocalDate, prisoners: Set<String>): List<HearingsResponse> = TODO("implement me")
+  suspend fun getAdjudicationHearings(
+    agencyId: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    prisoners: Set<String>,
+  ): List<HearingsResponse> =
+    manageAdjudicationsApiWebClient.post()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/reported-adjudications/hearings/$agencyId")
+          .queryParam("startDate", startDate)
+          .queryParam("endDate", endDate)
+          .build()
+      }
+      .bodyValue(prisoners.toList())
+      .retrieve()
+      .awaitBody()
 }

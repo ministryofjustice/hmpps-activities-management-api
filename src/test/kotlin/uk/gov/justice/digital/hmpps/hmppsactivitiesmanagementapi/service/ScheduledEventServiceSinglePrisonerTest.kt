@@ -19,6 +19,8 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
@@ -58,7 +60,7 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
-    manageAdjudicationsAsTruth = false,
+    manageAdjudicationsAsTruth = true,
     prisonApiClient = prisonApiClient,
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
@@ -185,6 +187,23 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber))
         }
       } doReturn adjudications
+
+      on {
+        runBlocking {
+          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.endInclusive, setOf(prisonerNumber))
+        }
+      } doReturn adjudications.map {
+        HearingsResponse(
+          prisonerNumber = it.offenderNo,
+          hearing = Hearing(
+            id = it.hearingId,
+            locationId = it.internalLocationId,
+            dateTimeOfHearing = LocalDateTime.parse(it.startTime!!),
+            agencyId = it.agencyId,
+            oicHearingType = it.hearingType!!,
+          ),
+        )
+      }
 
       on {
         runBlocking {

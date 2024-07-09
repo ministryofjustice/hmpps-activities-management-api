@@ -69,17 +69,28 @@ class AdjudicationsHearingAdapter(
         startDate = dateRange.start,
         endDate = dateRange.endInclusive,
         prisoners = prisonerNumbers,
-      ).map {
-        OffenderAdjudicationHearing(
-          offenderNo = it.prisonerNumber,
-          hearingId = it.hearing.id!!,
-          agencyId = agencyId,
-          hearingType = it.hearing.oicHearingType,
-          internalLocationId = it.hearing.locationId,
-          internalLocationDescription = "TODO",
-          startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
-        )
-      }
+      )
+        .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
+        .map {
+          OffenderAdjudicationHearing(
+            offenderNo = it.prisonerNumber,
+            hearingId = it.hearing.id!!,
+            agencyId = agencyId,
+            hearingType = when (it.hearing.oicHearingType) {
+              "GOV_ADULT" -> "Governor's Hearing Adult"
+              "GOV_YOI" -> "Governor's Hearing YOI"
+              "INAD_ADULT" -> "Independent Adjudicator Hearing Adult"
+              "INAD_YOI" -> "Independent Adjudicator Hearing YOI"
+              // adjudications does not support OicHearingType.GOV, however the existing tests do not use the correct codes
+              else -> "Governor's Hearing Adult"
+            },
+            internalLocationId = it.hearing.locationId,
+            // this is a default, and generally exist for each prison as part of base setup in nomis,
+            // the existing code will use the locationId in first instance to determine the description
+            internalLocationDescription = "Adjudication room",
+            startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
+          )
+        }
       false -> prisonApiClient.getOffenderAdjudications(
         agencyId = agencyId,
         dateRange = dateRange,
