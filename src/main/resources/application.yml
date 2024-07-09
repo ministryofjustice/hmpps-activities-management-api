@@ -141,3 +141,6 @@ hmpps:
 springdoc:
   swagger-ui:
     tags-sorter: alpha
+
+hearings:
+  source-of-truth: ${HEARINGS_ADJUDICATION_SERVICE:false}

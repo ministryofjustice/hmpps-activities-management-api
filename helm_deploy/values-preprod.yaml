@@ -14,12 +14,14 @@ generic-service:
     CASE_NOTES_API_URL: https://preprod.offender-case-notes.service.justice.gov.uk
     NON_ASSOCIATIONS_API_URL: https://non-associations-api-preprod.hmpps.service.justice.gov.uk
     INCENTIVES_API_URL: https://incentives-api-preprod.hmpps.service.justice.gov.uk
+    MANAGE_ADJUDICATIONS_API_URL: https://manage-adjudications-api-preprod.hmpps.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.dev.json
     SCHEDULE_AHEAD_DAYS: 14
     SCHEDULE_AHEAD_DAYS_ONLINE: 14
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     SENTRY_ENVIRONMENT: preproduction
+    HEARINGS_ADJUDICATION_SERVICE: false
 
   resources:
     requests:

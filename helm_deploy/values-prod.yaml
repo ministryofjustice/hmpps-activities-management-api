@@ -13,10 +13,12 @@ generic-service:
     CASE_NOTES_API_URL: https://offender-case-notes.service.justice.gov.uk
     NON_ASSOCIATIONS_API_URL: https://non-associations-api.hmpps.service.justice.gov.uk
     INCENTIVES_API_URL: https://incentives-api.hmpps.service.justice.gov.uk
+    MANAGE_ADJUDICATIONS_API_URL: https://manage-adjudications-api.hmpps.service.justice.gov.uk
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
     SENTRY_ENVIRONMENT: production
+    HEARINGS_ADJUDICATION_SERVICE: false
 
   resources:
     requests:
