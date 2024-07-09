@@ -6,7 +6,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -17,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
@@ -44,6 +48,48 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 
 typealias BookingIdPrisonerNo = Pair<Long, String>
 
+@Component
+class AdjudicationsHearingAdapter(
+  @Value("\${hearings.adjudications-source-of-truth}") private val manageAdjudicationsAsTruth: Boolean,
+  private val prisonApiClient: PrisonApiClient,
+  private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
+) {
+
+  suspend fun getAdjudicationHearings(
+    agencyId: String,
+    dateRange: LocalDateRange,
+    prisonerNumbers: Set<String>,
+    timeSlot: TimeSlot? = null,
+  ): List<OffenderAdjudicationHearing> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
+
+    return when (manageAdjudicationsAsTruth) {
+      true -> manageAdjudicationsApiFacade.getAdjudicationHearings(
+        agencyId = agencyId,
+        startDate = dateRange.start,
+        endDate = dateRange.endInclusive,
+        prisoners = prisonerNumbers,
+      ).map {
+        OffenderAdjudicationHearing(
+          offenderNo = it.prisonerNumber,
+          hearingId = it.hearing.id!!,
+          agencyId = agencyId,
+          hearingType = it.hearing.oicHearingType,
+          internalLocationId = it.hearing.locationId,
+          internalLocationDescription = "TODO",
+          startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
+        )
+      }
+      false -> prisonApiClient.getOffenderAdjudications(
+        agencyId = agencyId,
+        dateRange = dateRange,
+        prisonerNumbers = prisonerNumbers,
+        timeSlot = timeSlot,
+      )
+    }
+  }
+}
+
 @Service
 class ScheduledEventService(
   private val prisonApiClient: PrisonApiClient,
@@ -52,6 +98,7 @@ class ScheduledEventService(
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
+  private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
 ) {
   /**
    *  Get scheduled events for a single prisoner, between two dates and with an optional time slot.
@@ -196,7 +243,11 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      prisonApiClient.getOffenderAdjudications(prisonRolledOut.code, dateRange, setOf(prisoner.second))
+      adjudicationsHearingAdapter.getAdjudicationHearings(
+        agencyId = prisonRolledOut.code,
+        dateRange = dateRange,
+        prisonerNumbers = setOf(prisoner.second),
+      )
     }
 
     SinglePrisonerSchedules(
@@ -385,11 +436,11 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      prisonApiClient.getOffenderAdjudications(
-        rolloutPrison.code,
-        date.rangeTo(date.plusDays(1)),
-        prisonerNumbers,
-        timeSlot,
+      adjudicationsHearingAdapter.getAdjudicationHearings(
+        agencyId = rolloutPrison.code,
+        dateRange = date.rangeTo(date.plusDays(1)),
+        prisonerNumbers = prisonerNumbers,
+        timeSlot = timeSlot,
       )
     }
 

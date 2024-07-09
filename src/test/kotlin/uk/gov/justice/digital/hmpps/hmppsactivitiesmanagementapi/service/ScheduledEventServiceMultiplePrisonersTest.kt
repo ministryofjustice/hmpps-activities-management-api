@@ -15,6 +15,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -49,6 +50,12 @@ class ScheduledEventServiceMultiplePrisonersTest {
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
+  private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
+  private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
+    manageAdjudicationsAsTruth = false,
+    prisonApiClient = prisonApiClient,
+    manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+  )
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -57,6 +64,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     prisonerScheduledActivityRepository,
     appointmentInstanceRepository,
     prisonRegimeService,
+    adjudicationsHearingAdapter,
   )
 
   @BeforeEach

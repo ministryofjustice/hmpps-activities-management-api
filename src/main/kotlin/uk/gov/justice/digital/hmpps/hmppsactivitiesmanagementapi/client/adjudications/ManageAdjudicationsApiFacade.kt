@@ -22,5 +22,5 @@ data class HearingsResponse(
 @Component
 class ManageAdjudicationsApiFacade(@Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient) {
 
-  fun getHearings(agencyId: String, startDate: LocalDate, endDate: LocalDate, prisoners: Set<String>): List<HearingsResponse> = TODO("implement me")
+  suspend fun getAdjudicationHearings(agencyId: String, startDate: LocalDate, endDate: LocalDate, prisoners: Set<String>): List<HearingsResponse> = TODO("implement me")
 }
