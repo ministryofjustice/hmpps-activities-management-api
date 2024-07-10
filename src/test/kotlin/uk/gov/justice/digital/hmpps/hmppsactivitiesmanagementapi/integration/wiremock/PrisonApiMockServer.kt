@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
@@ -430,6 +429,7 @@ class PrisonApiMockServer : MockServer(8999) {
     dateRange: LocalDateRange,
     prisonerNumbers: List<String>,
     timeSlot: TimeSlot? = null,
+    body: String,
   ) {
     stubFor(
       WireMock.post(
@@ -441,22 +441,7 @@ class PrisonApiMockServer : MockServer(8999) {
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBody(
-              mapper.writeValueAsString(
-                prisonerNumbers.mapIndexed { hearingId, offenderNo ->
-                  adjudicationHearing(
-                    prisonCode = prisonCode,
-                    offenderNo = offenderNo,
-                    hearingId = hearingId.plus(1).toLong(),
-                    hearingType = "Governors Hearing Adult",
-                    startTime = dateRange.start.atTime(10, 30, 0),
-                    eventStatus = "SCH",
-                    internalLocationId = 1L,
-                    internalLocationDescription = "Governors office",
-                  )
-                },
-              ),
-            )
+            .withBody(body)
             .withStatus(200),
         ),
     )

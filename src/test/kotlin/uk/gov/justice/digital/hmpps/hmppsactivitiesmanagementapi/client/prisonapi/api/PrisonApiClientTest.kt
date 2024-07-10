@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -495,72 +494,6 @@ class PrisonApiClientTest {
         appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
       ),
     )
-  }
-
-  @Test
-  fun `getOffenderAdjudications - success`(): Unit = runBlocking {
-    val prisonCode = "MDI"
-    val prisonerNumbers = listOf("B4793VX")
-    val fromDate = LocalDate.now()
-    val toDate = fromDate.plusDays(1)
-
-    prisonApiMockServer.stubAdjudicationHearing(
-      prisonCode,
-      fromDate.rangeTo(toDate),
-      prisonerNumbers.toList(),
-      TimeSlot.AM,
-    )
-
-    val adjudications = prisonApiClient.getOffenderAdjudications(
-      prisonCode,
-      fromDate.rangeTo(toDate),
-      prisonerNumbers.toSet(),
-      TimeSlot.AM,
-    )
-
-    assertThat(adjudications).hasSize(1)
-
-    with(adjudications.first()) {
-      assertThat(agencyId).isEqualTo("MDI")
-      assertThat(offenderNo).isEqualTo("B4793VX")
-      assertThat(hearingId).isEqualTo(1)
-    }
-  }
-
-  @Test
-  fun `getOffenderAdjudications - empty prisoner list shouldn't call API`(): Unit = runBlocking {
-    val prisonCode = "MDI"
-    val prisonerNumbers = emptySet<String>()
-    val fromDate = LocalDate.now()
-    val toDate = fromDate.plusDays(1)
-    val timeslot = TimeSlot.AM
-
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(
-        0,
-        postRequestedFor(
-          urlEqualTo(
-            "/api/offenders/adjudication-hearings?agencyId=$prisonCode&fromDate=$fromDate&toDate=$toDate&timeSlot=$timeslot",
-          ),
-        ),
-      )
-
-    prisonApiMockServer.stubAdjudicationHearing(
-      prisonCode,
-      fromDate.rangeTo(toDate),
-      prisonerNumbers.toList(),
-      timeslot,
-    )
-
-    val adjudications = prisonApiClient.getOffenderAdjudications(
-      prisonCode,
-      fromDate.rangeTo(toDate),
-      prisonerNumbers.toSet(),
-      TimeSlot.AM,
-    )
-
-    assertThat(adjudications).hasSize(0)
-    prisonApiMockServer.verifyNoClientRequests()
   }
 
   @Test
