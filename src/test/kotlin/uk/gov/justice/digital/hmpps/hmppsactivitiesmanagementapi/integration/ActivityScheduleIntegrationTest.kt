@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOf
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -561,6 +562,58 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         assertThat(plannedBy).isEqualTo("test-client")
         assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
+    assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-30.sql",
+  )
+  fun `allocation followed by a deallocation of the same prisoner before the activity schedule has started`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.tomorrow(),
+      ),
+    ).expectStatus().isNoContent
+
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("G4793VF"),
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
+        endDate = TimeSource.today(),
+        caseNote = null,
+      ),
+    ).expectStatus().isNoContent
+
+    repository.findById(1).orElseThrow().also {
+      with(it.allocations().first()) {
+        assertThat(deallocatedBy).isEqualTo("test-client")
+        assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+        assertThat(startDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(endDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+        assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
       }
     }
 

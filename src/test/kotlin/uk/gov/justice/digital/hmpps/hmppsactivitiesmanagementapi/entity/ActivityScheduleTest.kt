@@ -930,6 +930,28 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `prisoner is deallocated from schedule when the schedule is yet to start`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = tomorrow))
+    val originalAllocation = schedule.allocations().first()
+
+    assertThat(originalAllocation.plannedDeallocation).isNull()
+
+    schedule.deallocatePrisonerOn(
+      originalAllocation.prisonerNumber,
+      today,
+      DeallocationReason.WITHDRAWN_STAFF,
+      "by test",
+    )
+
+    with(originalAllocation) {
+      assertThat(deallocatedBy).isEqualTo("by test")
+      assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(endDate).isEqualTo(startDate)
+    }
+  }
+
+  @Test
   fun `prisoner is not deallocated from inactive schedule`() {
     val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
 
@@ -944,7 +966,7 @@ class ActivityScheduleTest {
         "by test",
       )
     }.isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("Schedule ${schedule.activityScheduleId} is not active on the planned deallocated date ${TimeSource.tomorrow()}.")
+      .hasMessage("Schedule ${schedule.activityScheduleId} is not active or in the future on the planned deallocated date ${TimeSource.tomorrow()}.")
   }
 
   @Test
