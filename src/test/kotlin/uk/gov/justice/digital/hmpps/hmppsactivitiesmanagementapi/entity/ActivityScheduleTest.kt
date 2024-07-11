@@ -954,14 +954,15 @@ class ActivityScheduleTest {
 
     assertThat(originalAllocation.plannedDeallocation).isNull()
 
-    schedule.deallocatePrisonerOn(
+    val newAllocation = schedule.deallocatePrisonerOn(
       originalAllocation.prisonerNumber,
       today,
       DeallocationReason.WITHDRAWN_STAFF,
       "by test",
     )
 
-    with(originalAllocation) {
+    with(newAllocation) {
+      assertThat(allocationId).isEqualTo(originalAllocation.allocationId)
       assertThat(deallocatedBy).isEqualTo("by test")
       assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
       assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
