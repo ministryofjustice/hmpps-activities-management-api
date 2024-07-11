@@ -39,6 +39,12 @@ spring:
             client-secret: ${system.client.secret}
             authorization-grant-type: client_credentials
             scope: read
+          manage-adjudications-api:
+            provider: hmpps-auth
+            client-id: ${system.client.id}
+            client-secret: ${system.client.secret}
+            authorization-grant-type: client_credentials
+            scope: read
           non-associations-api:
             provider: hmpps-auth
             client-id: ${system.client.id}

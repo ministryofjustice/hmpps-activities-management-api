@@ -241,7 +241,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
     prisonerNumbers: Set<String>,
     timeSlot: TimeSlot? = null,
   ): List<OffenderAdjudicationHearing> {
-    if (prisonerNumbers.isEmpty()) return emptyList()
     return prisonApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder

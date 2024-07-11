@@ -8,7 +8,6 @@ import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.AdditionalAnswers
@@ -111,7 +110,6 @@ class AppointmentSeriesServiceTest {
 
   private val prisonCode = "TPR"
   private val categoryCode = "CHAP"
-  private val vlbCategoryCode = "VLB"
   private val internalLocationId = 1L
 
   private val service = AppointmentSeriesService(
@@ -832,38 +830,5 @@ class AppointmentSeriesServiceTest {
     with(telemetryPropertyMap.firstValue) {
       this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo "789"
     }
-  }
-
-  @Test
-  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should throw exception when category is VLB and extraInformation is empty`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = vlbCategoryCode, extraInformation = "")
-
-    assertThrows<IllegalArgumentException> {
-      service.createAppointmentSeries(request, principal)
-    }
-  }
-
-  @Test
-  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should not throw exception when category is not VLB and extraInformation is empty`() {
-    addCaseloadIdToRequestHeader(prisonCode)
-    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = internalLocationId, extraInformation = "")
-
-    assertDoesNotThrow {
-      service.createAppointmentSeries(request, principal)
-    }
-  }
-
-  @Test
-  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should not throw exception when category is VLB and extraInformation is not empty`() {
-    addCaseloadIdToRequestHeader(prisonCode)
-    val request = appointmentSeriesCreateRequest(categoryCode = vlbCategoryCode, internalLocationId = internalLocationId, inCell = true, extraInformation = "Extra information - Video Link of Session Court")
-
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(vlbCategoryCode to appointmentCategoryReferenceCode(categoryCode, "Video Link Booking")))
-
-    assertDoesNotThrow {
-      service.createAppointmentSeries(request, principal)
-    }
-    appointmentSeriesEntityCaptor.firstValue.appointments().single().extraInformation isEqualTo "Extra information - Video Link of Session Court"
   }
 }
