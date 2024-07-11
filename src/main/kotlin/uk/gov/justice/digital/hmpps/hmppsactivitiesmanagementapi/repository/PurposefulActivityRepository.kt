@@ -9,8 +9,9 @@ import org.springframework.stereotype.Repository
 interface PurposefulActivityRepositoryCustom {
   fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>?
 
-  @Override
   fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>?
+
+  fun getPurposefulActivityPrisonRolloutReport(): MutableList<Any?>?
 }
 
 @Repository
@@ -22,12 +23,11 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
     private val log = LoggerFactory.getLogger(PurposefulActivityRepositoryImpl::class.java)
   }
 
-  private val activitiesPreparedStatement = """
-    PREPARE get_purposeful_activity_activities_for_prior_two_weeks (integer) AS
+  private val activitiesQuery = """
     WITH date_range AS (
         SELECT
-            (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + $1 * 7 + 7))::timestamp AS start_date,
-            ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + $1 * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
+            (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7 + 7))::timestamp AS start_date,
+            ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
     )
     select
     act.activity_id as "activity.activity_id",
@@ -56,6 +56,13 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
     asch.start_date as "activity_schedule.start_date",
     asch.end_date as "activity_schedule.end_date",
     asch.updated_time as "activity_schedule.updated_time",
+    si.scheduled_instance_id as "scheduled_instance.scheduled_instance_id",
+    si.session_date as "scheduled_instance.session_date",
+    si.start_time as "scheduled_instance.start_time",
+    si.end_time as "scheduled_instance.end_time",
+    si.cancelled as "scheduled_instance.cancelled",
+    si.cancelled_time as "scheduled_instance.cancelled_time",
+    si.cancelled_reason as "scheduled_instance.cancelled_reason",
     allo.allocation_id as "allocation.allocation_id",
     allo.allocated_time as "allocation.allocated_time",
     allo.deallocated_time as "allocation.deallocated_time",
@@ -92,12 +99,11 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
   
   """
 
-  private val appointmentsPreparedStatement = """
-    PREPARE get_purposeful_activity_appointments_for_prior_two_weeks (integer) AS
+  private val appointmentsQuery = """
       WITH date_range AS (
           SELECT
-              (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE($1, 1) * 7 + 7))::timestamp AS start_date,
-              ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE($1, 1) * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
+              (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7 + 7))::timestamp AS start_date,
+              ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
       )
       SELECT
       a.appointment_id as "appointment.appointment_id",
@@ -144,18 +150,24 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
 
     """
 
+  private val rolloutPrisonQuery = """
+    select
+    rollout_prison.rollout_prison_id as "rollout_prison.rollout_prison_id",
+    rollout_prison.code as "rollout_prison.code",
+    rollout_prison.description as "rollout_prison.description",
+    rollout_prison.activities_to_be_rolled_out as "rollout_prison.activities_to_be_rolled_out",
+    rollout_prison.activities_rollout_date as "rollout_prison.activities_rollout_date",
+    rollout_prison.appointments_to_be_rolled_out as "rollout_prison.appointments_to_be_rolled_out",
+    rollout_prison.appointments_rollout_date as "rollout_prison.appointments_rollout_date"
+    from rollout_prison rollout_prison
+  """
+
   @Transactional
   @Override
   override fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>? {
-    val executeReportSql = "EXECUTE get_purposeful_activity_activities_for_prior_two_weeks($weekOffset)"
-
-    entityManager.createNativeQuery(activitiesPreparedStatement).executeUpdate()
-
-    entityManager.createNativeQuery(executeReportSql).resultList
-    val results = entityManager.createNativeQuery(executeReportSql).resultList
-
-    val deallocateSql = "DEALLOCATE get_purposeful_activity_activities_for_prior_two_weeks"
-    entityManager.createNativeQuery(deallocateSql).executeUpdate()
+    val results = entityManager.createNativeQuery(
+      activitiesQuery.replace(":weekOffset", weekOffset.toString()),
+    ).resultList
 
     return results
   }
@@ -163,15 +175,17 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
   @Transactional
   @Override
   override fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>? {
-    val executeReportSql = "EXECUTE get_purposeful_activity_appointments_for_prior_two_weeks($weekOffset)"
+    val results = entityManager.createNativeQuery(
+      appointmentsQuery.replace(":weekOffset", weekOffset.toString()),
+    ).resultList
 
-    entityManager.createNativeQuery(appointmentsPreparedStatement).executeUpdate()
+    return results
+  }
 
-    entityManager.createNativeQuery(executeReportSql).resultList
-    val results = entityManager.createNativeQuery(executeReportSql).resultList
-
-    val deallocateSql = "DEALLOCATE get_purposeful_activity_appointments_for_prior_two_weeks"
-    entityManager.createNativeQuery(deallocateSql).executeUpdate()
+  @Transactional
+  @Override
+  override fun getPurposefulActivityPrisonRolloutReport(): MutableList<Any?>? {
+    val results = entityManager.createNativeQuery(rolloutPrisonQuery).resultList
 
     return results
   }

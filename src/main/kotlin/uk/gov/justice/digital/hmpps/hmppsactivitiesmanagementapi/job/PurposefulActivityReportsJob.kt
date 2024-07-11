@@ -5,6 +5,10 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepositoryCustom
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.S3Service
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 
 @Component
 class PurposefulActivityReportsJob(
@@ -16,19 +20,10 @@ class PurposefulActivityReportsJob(
   suspend fun execute(weekOffset: Int) {
     jobRunner.runJob(
       JobDefinition(JobType.PURPOSEFUL_ACTIVITY_REPORTS) {
-        // execute prepared statements
-        var activityData = reportRepo.getPurposefulActivityActivitiesReport(1)
-        var appointmentData = reportRepo.getPurposefulActivityAppointmentsReport(1)
-
-        // convert to csv
-        var csvActivitiesReport = getResultsAsCsvByteStream(activityData)
-        var csvAppointmentsReport = getResultsAsCsvByteStream(appointmentData)
-
-        // upload to s3 bucket
-        runBlocking {
-          s3Service.pushReportToAnalyticalPlatformS3(csvActivitiesReport)
-          s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport)
-        }
+        // execute report sql for each data type
+        val activityData = reportRepo.getPurposefulActivityActivitiesReport(1)
+        val appointmentData = reportRepo.getPurposefulActivityAppointmentsReport(1)
+        val rolloutData = reportRepo.getPurposefulActivityPrisonRolloutReport()
 
         if (activityData.isNullOrEmpty()) {
           throw RuntimeException("Purposeful Activity Report data failed to find any relevant activity data")
@@ -36,6 +31,27 @@ class PurposefulActivityReportsJob(
 
         if (appointmentData.isNullOrEmpty()) {
           throw RuntimeException("Purposeful Activity Report data failed to find any relevant appointment data")
+        }
+
+        if (rolloutData.isNullOrEmpty()) {
+          throw RuntimeException("Purposeful Activity Report data failed to find any prison rollout data")
+        }
+
+        // convert to csv
+        val csvActivitiesReport = getResultsAsCsvByteStream(activityData)
+        val csvAppointmentsReport = getResultsAsCsvByteStream(appointmentData)
+        val csvRolloutReport = getResultsAsCsvByteStream(rolloutData)
+
+        val reportDate = getNthPreviousSunday(weekOffset)
+        val csvActivitiesFileName = "activities_$reportDate.csv"
+        val csvAppointmentsFileName = "appointments_$reportDate.csv"
+        val csvRolloutFileName = "rollout_prisons_$reportDate.csv"
+
+        // upload to s3 bucket
+        runBlocking {
+          s3Service.pushReportToAnalyticalPlatformS3(csvActivitiesReport, "activities", csvActivitiesFileName)
+          s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport, "appointments", csvAppointmentsFileName)
+          s3Service.pushReportToAnalyticalPlatformS3(csvRolloutReport, "rollout_prison", csvRolloutFileName)
         }
       },
     )
@@ -49,5 +65,20 @@ class PurposefulActivityReportsJob(
         append(item.toString()) // Convert each item to string
       }
     }.toByteArray()
+  }
+
+  private fun getNthPreviousSunday(n: Int): String {
+    // Get the current date
+    val today = LocalDate.now()
+
+    // Calculate the previous Sunday
+    val previousSunday = today.with(TemporalAdjusters.previous(DayOfWeek.SUNDAY))
+
+    // Subtract (n-1) weeks from the previous Sunday
+    val nthPreviousSunday = previousSunday.minusWeeks(n.toLong() - 1)
+
+    // Format the date to "yyyyMMdd"
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+    return nthPreviousSunday.format(formatter)
   }
 }

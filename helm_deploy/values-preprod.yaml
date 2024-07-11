@@ -20,6 +20,8 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     SENTRY_ENVIRONMENT: preproduction
+    AWS_S3_AP_BUCKET: moj-reg-preprod
+    AWS_S3_AP_PROJECT: hmpps-activities-management-preprod
 
   resources:
     requests:
