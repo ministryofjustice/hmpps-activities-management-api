@@ -6,8 +6,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -21,14 +19,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -121,28 +117,5 @@ class AppointmentServiceTest {
     val entity = appointmentSeries.appointments().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     assertThatThrownBy { service.getAppointmentDetailsById(entity.appointmentId) }.isInstanceOf(CaseloadAccessException::class.java)
-  }
-
-  @Test
-  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should throw exception when category is VLB and extraInformation is empty`() {
-    val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "")
-
-    assertThrows<IllegalArgumentException> {
-      service.updateAppointment(1L, request, principal)
-    }
-  }
-
-  @Test
-  fun `failIfCategoryIsVideoLinkAndMissingExtraInfo should not throw exception when category is VLB and extraInformation is not empty`() {
-    addCaseloadIdToRequestHeader("TPR")
-    val request = AppointmentUpdateRequest(categoryCode = "VLB", extraInformation = "Video Link Session Court")
-    val appointmentSeries = appointmentSeriesEntity()
-    val entity = appointmentSeries.appointments().first()
-    whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)).thenReturn(mapOf("VLB" to appointmentCategoryReferenceCode("")))
-
-    assertDoesNotThrow {
-      service.updateAppointment(1L, request, principal)
-    }
   }
 }

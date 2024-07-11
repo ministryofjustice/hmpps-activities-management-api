@@ -123,6 +123,7 @@ abstract class IntegrationTestBase {
       nonAssociationsApiMockServer.resetAll()
       caseNotesApiMockServer.resetAll()
       incentivesApiMockServer.resetAll()
+      manageAdjudicationsApiMockServer.resetAll()
     }
   }
 
