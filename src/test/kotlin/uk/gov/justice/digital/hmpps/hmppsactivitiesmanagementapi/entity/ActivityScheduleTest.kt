@@ -703,6 +703,24 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `check an activity that starts tomorrow is in the future`() {
+    val scheduleWithEndDate = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = tomorrow,
+      scheduleWeeks = 1,
+    ).apply {
+      endDate = tomorrow.plusDays(3)
+    }
+
+    with(scheduleWithEndDate) {
+      assertThat(isFuture(today)).isTrue
+      assertThat(isFuture(tomorrow)).isFalse
+    }
+  }
+
+  @Test
   fun `can add scheduled instance to a schedule`() {
     val scheduleWithSlot = ActivitySchedule(
       activity = activityEntity(),
