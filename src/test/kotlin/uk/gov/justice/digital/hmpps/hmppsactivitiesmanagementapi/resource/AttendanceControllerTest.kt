@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -49,14 +48,12 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
 
     @BeforeEach
     fun `init`() {
-      runBlocking {
-        whenever(
-          attendancesService.getSuspendedPrisonerAttendance(
-            prisonCode = "MDI",
-            date = LocalDate.now(),
-          ),
-        ).thenReturn(emptyList())
-      }
+      whenever(
+        attendancesService.getSuspendedPrisonerAttendance(
+          prisonCode = "MDI",
+          date = LocalDate.now(),
+        ),
+      ).thenReturn(emptyList())
     }
 
     @WithMockUser(username = "ITAG_USER", authorities = ["ROLE_PRISON"])
