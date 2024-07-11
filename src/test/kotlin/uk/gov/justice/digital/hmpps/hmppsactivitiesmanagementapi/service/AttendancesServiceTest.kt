@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -101,7 +100,7 @@ class AttendancesServiceTest {
     }
 
     @Test
-    fun `maps fields for UI correctly`(): Unit = runBlocking {
+    fun `maps fields for UI correctly`() {
       whenever(
         attendanceRepository.getActivityTimeSlot(
           prisonCode = "MDI",
