@@ -21,6 +21,21 @@ data class HearingsResponse(
   val hearing: Hearing,
 )
 
+data class HearingSummaryResponse(
+  val hearings: List<HearingSummaryDto>,
+)
+
+data class HearingSummaryDto(
+  val id: Long? = null,
+  val dateTimeOfHearing: LocalDateTime,
+  val dateTimeOfDiscovery: LocalDateTime,
+  val chargeNumber: String,
+  val prisonerNumber: String,
+  val oicHearingType: String,
+  val status: String,
+  val locationId: Long,
+)
+
 @Component
 class ManageAdjudicationsApiFacade(
   @Qualifier("manageAdjudicationsApiWebClient") private val manageAdjudicationsApiWebClient: WebClient,
@@ -43,4 +58,15 @@ class ManageAdjudicationsApiFacade(
       .bodyValue(prisoners.toList())
       .retrieve()
       .awaitBody()
+
+  suspend fun getAdjudicationHearingsForDate(agencyId: String, date: LocalDate): HearingSummaryResponse =
+    manageAdjudicationsApiWebClient.get()
+      .uri { uriBuilder: UriBuilder ->
+        uriBuilder
+          .path("/reported-adjudications/hearings")
+          .queryParam("hearingDate", date)
+          .build()
+      }
+      .header("Active-Caseload", agencyId)
+      .retrieve().awaitBody()
 }

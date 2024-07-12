@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -17,6 +18,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
@@ -53,6 +55,7 @@ class InternalLocationServiceTest {
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
+  private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter = mock()
 
   val service = InternalLocationService(
     appointmentAttendeeSearchRepository,
@@ -63,6 +66,7 @@ class InternalLocationServiceTest {
     prisonerScheduledActivityRepository,
     prisonRegimeService,
     referenceCodeService,
+    adjudicationsHearingAdapter,
   )
 
   private val prisonCode: String = "MDI"
@@ -218,6 +222,14 @@ class InternalLocationServiceTest {
       on {
         getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED)
       } doReturn LocalTimeRange(timeSlotEd.first, timeSlotEd.second)
+    }
+
+    adjudicationsHearingAdapter.stub {
+      on {
+        runBlocking {
+          getAdjudicationsByLocation(any(), any(), anyOrNull())
+        }
+      } doReturn emptyMap()
     }
   }
 

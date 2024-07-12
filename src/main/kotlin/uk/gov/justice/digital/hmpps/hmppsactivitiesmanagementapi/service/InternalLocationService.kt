@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerVisitsToScheduledEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisAdjudicationsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
 import java.time.LocalDate
@@ -39,6 +41,7 @@ class InternalLocationService(
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val prisonRegimeService: PrisonRegimeService,
   private val referenceCodeService: ReferenceCodeService,
+  private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -72,10 +75,12 @@ class InternalLocationService(
       val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeRange)
       val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
       val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
+      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(agencyId = prisonCode, date = date, timeSlot = timeSlot)
 
       val internalLocationIds = locationActivitiesMap.keys
         .union(locationAppointmentsMap.keys)
         .union(locationVisitsMap.keys)
+        .union(adjudicationHearingsMap.keys)
 
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
 
@@ -168,6 +173,12 @@ class InternalLocationService(
         )
       }
 
+      val adjudicationHearings = adjudicationsHearingAdapter.getAdjudicationsByLocation(
+        agencyId = prisonCode,
+        date = date,
+        timeSlot = timeSlot,
+      ).filter { internalLocationIds.contains(it.key) }.flatMap { it.value }
+
       val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(
         prisonCode,
         eventPriorities,
@@ -185,7 +196,14 @@ class InternalLocationService(
           prisonCode,
           eventPriorities.getOrDefault(EventType.VISIT),
         ),
-      ).filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
+      ).union(
+        adjudicationHearings.nomisAdjudicationsToScheduledEvents(
+          prisonCode = prisonCode,
+          priority = eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
+          prisonLocations = emptyMap(),
+        ),
+      )
+        .filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
 
       internalLocationsMap.map {
         InternalLocationEvents(

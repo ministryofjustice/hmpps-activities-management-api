@@ -6,10 +6,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -20,7 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
@@ -47,59 +44,6 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
 typealias BookingIdPrisonerNo = Pair<Long, String>
-
-@Component
-class AdjudicationsHearingAdapter(
-  @Value("\${hearings.adjudications-source-of-truth}") private val manageAdjudicationsAsTruth: Boolean,
-  private val prisonApiClient: PrisonApiClient,
-  private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
-) {
-
-  suspend fun getAdjudicationHearings(
-    agencyId: String,
-    dateRange: LocalDateRange,
-    prisonerNumbers: Set<String>,
-    timeSlot: TimeSlot? = null,
-  ): List<OffenderAdjudicationHearing> {
-    if (prisonerNumbers.isEmpty()) return emptyList()
-
-    return when (manageAdjudicationsAsTruth) {
-      true -> manageAdjudicationsApiFacade.getAdjudicationHearings(
-        agencyId = agencyId,
-        startDate = dateRange.start,
-        endDate = dateRange.endInclusive,
-        prisoners = prisonerNumbers,
-      )
-        .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
-        .map {
-          OffenderAdjudicationHearing(
-            offenderNo = it.prisonerNumber,
-            hearingId = it.hearing.id!!,
-            agencyId = agencyId,
-            hearingType = when (it.hearing.oicHearingType) {
-              "GOV_ADULT" -> "Governor's Hearing Adult"
-              "GOV_YOI" -> "Governor's Hearing YOI"
-              "INAD_ADULT" -> "Independent Adjudicator Hearing Adult"
-              "INAD_YOI" -> "Independent Adjudicator Hearing YOI"
-              // adjudications does not support OicHearingType.GOV, however the existing tests do not use the correct codes
-              else -> "Governor's Hearing Adult"
-            },
-            internalLocationId = it.hearing.locationId,
-            // this is a default, and generally exist for each prison as part of base setup in nomis,
-            // the existing code will use the locationId in first instance to determine the description
-            internalLocationDescription = "Adjudication room",
-            startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
-          )
-        }
-      false -> prisonApiClient.getOffenderAdjudications(
-        agencyId = agencyId,
-        dateRange = dateRange,
-        prisonerNumbers = prisonerNumbers,
-        timeSlot = timeSlot,
-      )
-    }
-  }
-}
 
 @Service
 class ScheduledEventService(
