@@ -17,6 +17,7 @@ class HealthCheckTest : IntegrationTestBase() {
       caseNotesApiMockServer,
       incentivesApiMockServer,
       nonAssociationsApiMockServer,
+      manageAdjudicationsApiMockServer,
     ).forEach { it.stubHealthPing(200) }
 
     webTestClient.get()
@@ -36,6 +37,7 @@ class HealthCheckTest : IntegrationTestBase() {
       caseNotesApiMockServer,
       incentivesApiMockServer,
       nonAssociationsApiMockServer,
+      manageAdjudicationsApiMockServer,
     ).forEach { it.stubHealthPing(200) }
 
     webTestClient.get().uri("/health")

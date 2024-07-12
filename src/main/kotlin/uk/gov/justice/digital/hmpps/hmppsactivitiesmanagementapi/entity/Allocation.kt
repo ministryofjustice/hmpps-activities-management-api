@@ -214,6 +214,20 @@ data class Allocation(
       removeExclusions(exclusions(ExclusionsFilter.FUTURE))
     }
 
+  fun deallocateBeforeStart(reason: DeallocationReason, by: String) =
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = reason
+      deallocatedBy = by
+      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+      endDate = startDate
+
+      endExclusions(exclusions(ExclusionsFilter.PRESENT))
+      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    }
+
   /**
    * This will default to ENDED for the reason unless there is planned deallocation that matches now which overrides it.
    *

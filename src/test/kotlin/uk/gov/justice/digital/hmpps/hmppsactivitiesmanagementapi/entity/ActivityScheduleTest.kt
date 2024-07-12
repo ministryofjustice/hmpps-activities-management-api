@@ -703,6 +703,24 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `check an activity that starts tomorrow is in the future`() {
+    val scheduleWithEndDate = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = tomorrow,
+      scheduleWeeks = 1,
+    ).apply {
+      endDate = tomorrow.plusDays(3)
+    }
+
+    with(scheduleWithEndDate) {
+      assertThat(isFuture(today)).isTrue
+      assertThat(isFuture(tomorrow)).isFalse
+    }
+  }
+
+  @Test
   fun `can add scheduled instance to a schedule`() {
     val scheduleWithSlot = ActivitySchedule(
       activity = activityEntity(),
@@ -930,6 +948,29 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `prisoner is deallocated from schedule when the schedule is yet to start`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = tomorrow))
+    val originalAllocation = schedule.allocations().first()
+
+    assertThat(originalAllocation.plannedDeallocation).isNull()
+
+    val newAllocation = schedule.deallocatePrisonerOn(
+      originalAllocation.prisonerNumber,
+      today,
+      DeallocationReason.WITHDRAWN_STAFF,
+      "by test",
+    )
+
+    with(newAllocation) {
+      assertThat(allocationId).isEqualTo(originalAllocation.allocationId)
+      assertThat(deallocatedBy).isEqualTo("by test")
+      assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(endDate).isEqualTo(startDate)
+    }
+  }
+
+  @Test
   fun `prisoner is not deallocated from inactive schedule`() {
     val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
 
@@ -944,7 +985,7 @@ class ActivityScheduleTest {
         "by test",
       )
     }.isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("Schedule ${schedule.activityScheduleId} is not active on the planned deallocated date ${TimeSource.tomorrow()}.")
+      .hasMessage("Schedule ${schedule.activityScheduleId} is not active or in the future on the planned deallocated date ${TimeSource.tomorrow()}.")
   }
 
   @Test

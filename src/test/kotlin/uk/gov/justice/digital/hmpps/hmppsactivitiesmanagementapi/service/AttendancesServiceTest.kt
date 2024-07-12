@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -25,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -100,7 +100,7 @@ class AttendancesServiceTest {
     }
 
     @Test
-    fun `maps fields for UI correctly`(): Unit = runBlocking {
+    fun `maps fields for UI correctly`() {
       whenever(
         attendanceRepository.getActivityTimeSlot(
           prisonCode = "MDI",
@@ -454,6 +454,14 @@ class AttendancesServiceTest {
       attendanceList(),
     )
     assertThat(service.getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now()).first()).isInstanceOf(ModelAllAttendance::class.java)
+  }
+
+  @Test
+  fun `retrieve daily attendance list with event tier`() {
+    whenever(allAttendanceRepository.findByPrisonCodeAndSessionDateAndEventTier(PENTONVILLE_PRISON_CODE, LocalDate.now(), EventTierType.TIER_2.name)).thenReturn(
+      attendanceList(),
+    )
+    assertThat(service.getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now(), EventTierType.TIER_2).first()).isInstanceOf(ModelAllAttendance::class.java)
   }
 
   @Test

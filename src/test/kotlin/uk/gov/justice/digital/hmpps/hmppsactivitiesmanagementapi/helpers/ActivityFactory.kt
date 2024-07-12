@@ -417,6 +417,7 @@ fun attendanceList(): List<AllAttendance> = listOf(
     categoryName = "Education",
     recordedTime = null,
     attendanceRequired = true,
+    eventTier = null,
   ),
 )
 
