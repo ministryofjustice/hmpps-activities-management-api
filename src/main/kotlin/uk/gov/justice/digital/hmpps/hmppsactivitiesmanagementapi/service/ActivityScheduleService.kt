@@ -220,6 +220,7 @@ class ActivityScheduleService(
         request.prisonerNumbers!!.distinct()
           .map { prisonerNumber ->
             val deallocationReason = request.reasonCode!!.toDeallocationReason()
+            val endDate = request.endDate!!
             var caseNoteId: Long? = null
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
@@ -228,7 +229,7 @@ class ActivityScheduleService(
 
             deallocatePrisonerOn(
               prisonerNumber,
-              request.endDate!!,
+              endDate,
               deallocationReason,
               deallocatedBy,
               caseNoteId,
