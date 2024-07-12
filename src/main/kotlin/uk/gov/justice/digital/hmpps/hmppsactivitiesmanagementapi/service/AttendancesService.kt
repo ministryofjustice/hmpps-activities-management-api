@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -94,31 +92,29 @@ class AttendancesService(
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
-  suspend fun getSuspendedPrisonerAttendance(
+  fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
     reason: String? = null,
     categories: List<String>? = null,
-  ): List<SuspendedPrisonerAttendance> = coroutineScope {
-    val attendance = async {
+  ): List<SuspendedPrisonerAttendance> {
+    val attendance =
       attendanceRepository.getSuspendedPrisonerAttendance(
         prisonCode = prisonCode,
         date = date,
         reason = reason,
       )
-    }.await()
 
-    val timeSlots = async {
+    val timeSlots =
       attendanceRepository.getActivityTimeSlot(
         prisonCode = prisonCode,
         date = date,
         categories = categories ?: ActivityCategoryCode.entries.map { it.name },
       )
-    }.await()
 
     val scheduledInstanceIds = timeSlots.map { it.getScheduledInstanceId() }
 
-    attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
+    return attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
       SuspendedPrisonerAttendance(
         prisonerNumber = prisoner.key,
         attendance = prisoner.value.map {

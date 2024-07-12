@@ -201,7 +201,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  suspend fun getAttendanceForSuspendedPrisoners(
+  fun getAttendanceForSuspendedPrisoners(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
     prisonCode: String,
