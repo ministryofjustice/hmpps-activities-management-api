@@ -20,9 +20,11 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
@@ -44,6 +46,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class InternalLocationServiceTest {
@@ -115,6 +118,12 @@ class InternalLocationServiceTest {
     locationId = 5L,
     description = "SOCIAL VISITS",
     userDescription = "Social Visits",
+  )
+
+  private val adjudicationLocation = internalLocation(
+    locationId = 1000L,
+    description = "ADJU",
+    userDescription = "ADJU",
   )
 
   private val education1Appointment = appointmentSearchEntity(
@@ -190,6 +199,22 @@ class InternalLocationServiceTest {
     date = LocalDate.now(),
   )
 
+  private val adjudicationHearing = OffenderAdjudicationHearing(
+    internalLocationId = education2Location.locationId,
+    agencyId = "",
+    hearingId = 1,
+    offenderNo = "",
+    startTime = LocalDateTime.now().toIsoDateTime(),
+  )
+
+  private val adjudicationHearingForEvent = OffenderAdjudicationHearing(
+    internalLocationId = education1Location.locationId,
+    agencyId = "",
+    hearingId = 1,
+    offenderNo = "",
+    startTime = LocalDateTime.now().toIsoDateTime(),
+  )
+
   @BeforeEach
   fun setUp() {
     prisonApiClient.stub {
@@ -197,7 +222,13 @@ class InternalLocationServiceTest {
         runBlocking {
           getEventLocationsAsync(prisonCode)
         }
-      } doReturn listOf(education1Location, education2Location, noUserDescriptionLocation, socialVisitsLocation)
+      } doReturn listOf(
+        education1Location,
+        education2Location,
+        noUserDescriptionLocation,
+        socialVisitsLocation,
+        adjudicationLocation,
+      )
 
       on {
         runBlocking {
@@ -229,7 +260,9 @@ class InternalLocationServiceTest {
         runBlocking {
           getAdjudicationsByLocation(any(), any(), anyOrNull())
         }
-      } doReturn emptyMap()
+      } doReturn mapOf(
+        adjudicationLocation.locationId to listOf(adjudicationHearing),
+      )
     }
   }
 
@@ -256,10 +289,11 @@ class InternalLocationServiceTest {
       service.getInternalLocationsMapByIds(
         prisonCode,
         setOf(
-          inactiveEducation1Location.locationId,
+          inactiveEducation1Location.locationId, adjudicationLocation.locationId,
         ),
       ) isEqualTo mapOf(
         inactiveEducation1Location.locationId to inactiveEducation1Location,
+        adjudicationLocation.locationId to adjudicationLocation,
       )
     }
 
@@ -312,6 +346,9 @@ class InternalLocationServiceTest {
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(listOf(education1LocationSummary, education2LocationSummary, socialVisitsLocationSummary))
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+        mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
+      )
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -336,6 +373,12 @@ class InternalLocationServiceTest {
           socialVisitsLocation.description,
           socialVisitsLocation.userDescription!!,
         ),
+        InternalLocationEventsSummary(
+          adjudicationLocation.locationId,
+          prisonCode,
+          adjudicationLocation.description,
+          adjudicationLocation.userDescription!!,
+        ),
       )
 
       verify(appointmentSearchSpecification).prisonCodeEquals(prisonCode)
@@ -355,7 +398,11 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(inactiveEducation1Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noUserDescriptionLocationAppointment))
-      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.PM)).thenReturn(listOf(socialVisitsLocationSummary))
+      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.PM)).thenReturn(
+        listOf(
+          socialVisitsLocationSummary,
+        ),
+      )
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -380,6 +427,12 @@ class InternalLocationServiceTest {
           socialVisitsLocation.description,
           socialVisitsLocation.userDescription!!,
         ),
+        InternalLocationEventsSummary(
+          adjudicationLocation.locationId,
+          prisonCode,
+          adjudicationLocation.description,
+          adjudicationLocation.userDescription!!,
+        ),
       )
 
       verify(appointmentSearchSpecification).prisonCodeEquals(prisonCode)
@@ -400,6 +453,7 @@ class InternalLocationServiceTest {
       ).thenReturn(listOf(noLocationActivity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noLocationAppointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(emptyMap())
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -450,6 +504,9 @@ class InternalLocationServiceTest {
           null,
         ),
       ).thenReturn(listOf(education1Visit))
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+        mapOf(adjudicationHearingForEvent.internalLocationId to listOf(adjudicationHearingForEvent)),
+      )
 
       val result = service.getInternalLocationEvents(
         prisonCode,
@@ -466,10 +523,11 @@ class InternalLocationServiceTest {
           code isEqualTo education1Location.description
           description isEqualTo education1Location.userDescription
           with(events) {
-            size isEqualTo 3
+            size isEqualTo 4
             this.single { it.scheduledInstanceId == education1Activity.scheduledInstanceId }.eventType isEqualTo "ACTIVITY"
             this.single { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }.eventType isEqualTo "APPOINTMENT"
             this.single { it.eventId == education1Visit.eventId }.eventType isEqualTo "VISIT"
+            this.any { it.eventType == EventType.ADJUDICATION_HEARING.name } isEqualTo true
           }
         }
       }
