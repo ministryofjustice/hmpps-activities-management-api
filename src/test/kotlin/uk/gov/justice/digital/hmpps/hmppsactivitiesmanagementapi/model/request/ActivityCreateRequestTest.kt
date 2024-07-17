@@ -91,14 +91,6 @@ class ActivityCreateRequestTest : ValidatorBase<ActivityCreateRequest>() {
   }
 
   @Test
-  fun `Paid activity with an effective pay from date must be in the future`() {
-    val apr = activityPayCreateRequest(startDate = LocalDate.now().minusDays(2))
-    val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))
-
-    ar failsWithSingle ModelError("pay[0].startDate", "Activity pay rate effective date must be in the future")
-  }
-
-  @Test
   fun `Paid activity with an effective pay from date must be a maximum of 30 days in the future`() {
     val apr = activityPayCreateRequest(startDate = LocalDate.now().plusDays(31))
     val ar = activityCreateRequest(paid = true).copy(pay = listOf(apr))

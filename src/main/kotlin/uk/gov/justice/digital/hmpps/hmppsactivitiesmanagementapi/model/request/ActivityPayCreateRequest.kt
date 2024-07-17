@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
@@ -38,7 +37,6 @@ data class ActivityPayCreateRequest(
   @Schema(description = "Where payment is related to the number of items produced in a batch of a product, this is the batch size that attract 1 x pieceRate", example = "10")
   val pieceRateItems: Int? = null,
 
-  @field:Future(message = "Activity pay rate effective date must be in the future")
   @Schema(
     description = "The effective start date for this pay rate",
     example = "2022-12-23",
