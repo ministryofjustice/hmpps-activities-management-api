@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudic
 
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import java.time.LocalDate
@@ -36,7 +35,7 @@ class AdjudicationsHearingAdapter(
 
   suspend fun getAdjudicationHearings(
     agencyId: String,
-    dateRange: LocalDateRange,
+    date: LocalDate,
     prisonerNumbers: Set<String>,
     timeSlot: TimeSlot? = null,
   ): List<OffenderAdjudicationHearing> {
@@ -44,8 +43,8 @@ class AdjudicationsHearingAdapter(
 
     return manageAdjudicationsApiFacade.getAdjudicationHearings(
       agencyId = agencyId,
-      startDate = dateRange.start,
-      endDate = dateRange.endInclusive,
+      startDate = date,
+      endDate = date,
       prisoners = prisonerNumbers,
     )
       .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
