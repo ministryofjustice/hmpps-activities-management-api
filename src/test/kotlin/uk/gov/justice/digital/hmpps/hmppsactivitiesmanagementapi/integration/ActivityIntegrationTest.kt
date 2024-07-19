@@ -405,7 +405,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           capacity = 20,
-          allocated = 4,
+          allocated = 5,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
           paid = true,
@@ -459,7 +459,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           capacity = 20,
-          allocated = 4,
+          allocated = 5,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
           paid = true,
@@ -709,7 +709,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
-      assertThat(allocations).hasSize(2)
+      assertThat(allocations).hasSize(3)
       assertThat(internalLocation?.id).isEqualTo(2)
       assertThat(internalLocation?.code).isEqualTo("L2")
       assertThat(internalLocation?.description).isEqualTo("Location 2")

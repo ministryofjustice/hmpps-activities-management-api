@@ -7,9 +7,11 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
@@ -25,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
@@ -80,6 +83,7 @@ class ActivityScheduleServiceTest {
   private val auditCaptor = argumentCaptor<PrisonerAllocatedEvent>()
   private val telemetryClient: TelemetryClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
+  private val manageAttendancesService: ManageAttendancesService = mock()
   private val service =
     ActivityScheduleService(
       repository,
@@ -91,6 +95,7 @@ class ActivityScheduleServiceTest {
       telemetryClient,
       TransactionHandler(),
       outboundEventsService,
+      manageAttendancesService,
     )
 
   private val caseLoad = PENTONVILLE_PRISON_CODE
@@ -457,11 +462,26 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
-  fun `allocate throws exception for start date not in future`() {
+  fun `allocate throws exception for start date in the past`() {
     val schedule = activitySchedule(activityEntity())
 
-    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
-    whenever(prisonPayBandRepository.findByPrisonCode(caseLoad)) doReturn prisonPayBandsLowMediumHigh(caseLoad)
+    assertThatThrownBy {
+      service.allocatePrisoner(
+        schedule.activityScheduleId,
+        PrisonerAllocationRequest(
+          "123456",
+          1,
+          TimeSource.yesterday(),
+        ),
+        "by test",
+      )
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date must not be in the past")
+  }
+
+  @Test
+  fun `schedule instance id should be provided if allocation starts today`() {
+    val schedule = activitySchedule(activityEntity())
 
     assertThatThrownBy {
       service.allocatePrisoner(
@@ -474,7 +494,7 @@ class ActivityScheduleServiceTest {
         "by test",
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation start date must be in the future")
+      .hasMessage("The next session must be provided when allocation start date is today")
   }
 
   @Test
@@ -596,12 +616,19 @@ class ActivityScheduleServiceTest {
     whenever(repository.saveAndFlush(any())) doReturn schedule
     whenever(waitingListRepository.findByPrisonCodeAndPrisonerNumberAndActivitySchedule(any(), any(), any())) doReturn emptyList()
 
+    val attendance1: Attendance = mock()
+    val attendance2: Attendance = mock()
+    val newAttendances: List<Attendance> = listOf(attendance1, attendance2)
+    whenever(manageAttendancesService.createAnyAttendancesForToday(eq(123L), any())) doReturn newAttendances
+    whenever(manageAttendancesService.saveAttendances(newAttendances, schedule)) doReturn newAttendances
+
     service.allocatePrisoner(
       schedule.activityScheduleId,
       PrisonerAllocationRequest(
         "654321",
         1,
         TimeSource.tomorrow(),
+        scheduleInstanceId = 123L,
       ),
       "by test",
     )
@@ -610,6 +637,12 @@ class ActivityScheduleServiceTest {
 
     verify(auditService).logEvent(any())
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
+    inOrder(manageAttendancesService) {
+      verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), any())
+      verify(manageAttendancesService).saveAttendances(newAttendances, schedule)
+      verify(manageAttendancesService).sendCreatedEvent(attendance1)
+      verify(manageAttendancesService).sendCreatedEvent(attendance2)
+    }
   }
 
   @Test

@@ -1089,6 +1089,7 @@ class MigrateActivityServiceTest {
       // The expected allocation - required so final check succeeds
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
+        startDate = LocalDate.now().plusDays(1),
         payBand = lowPayBand,
         bookingId = 1,
         allocatedBy = MIGRATION_USER,
@@ -1123,6 +1124,7 @@ class MigrateActivityServiceTest {
       // The expected allocation - required so final check succeeds
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
+        startDate = LocalDate.now().plusDays(1),
         payBand = lowPayBand,
         bookingId = 1,
         allocatedBy = MIGRATION_USER,

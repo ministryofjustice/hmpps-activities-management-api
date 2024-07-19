@@ -243,7 +243,7 @@ internal fun activitySchedule(
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
         ).apply {
-          this.updateExclusion(slot, daysOfWeek)
+          this.updateExclusion(slot, daysOfWeek, LocalDate.now().plusDays(1))
         }
       }
     }
@@ -475,6 +475,7 @@ internal fun waitingList(
         allocatePrisoner(
           prisonerNumber = prisonerNumber.toPrisonerNumber(),
           bookingId = 10001,
+          startDate = LocalDate.now().plusDays(1),
           payBand = lowPayBand,
           allocatedBy = "Mr Blogs",
         )

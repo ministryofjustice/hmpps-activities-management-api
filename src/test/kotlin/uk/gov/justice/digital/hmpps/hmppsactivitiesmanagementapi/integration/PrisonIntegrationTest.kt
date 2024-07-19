@@ -58,7 +58,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         ),
         category = educationCategory,
         capacity = 20,
-        allocated = 4,
+        allocated = 5,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
         paid = true,
@@ -78,7 +78,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         activityName = "Maths Level 1",
         category = educationCategory,
         capacity = 10,
-        allocated = 4,
+        allocated = 5,
         waitlisted = 1,
         createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
         activityState = ActivityState.LIVE,
@@ -180,7 +180,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
     }
 
     val afternoonSchedule = with(schedules.single { it.description == "Maths PM" }) {
-      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A")
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A1234BC")
       instances hasSize 1
       this
     }
@@ -225,7 +225,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10), TimeSlot.PM)!!
 
     val schedule = with(schedules.single { it.description == "Maths PM" }) {
-      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A")
+      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A1234BC")
       instances hasSize 1
       this
     }
