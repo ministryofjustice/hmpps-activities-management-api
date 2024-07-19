@@ -12,7 +12,6 @@ import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -21,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.IntegrationTestBase.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
@@ -70,7 +68,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // No transfers - not today
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, startDate, endDate)
@@ -102,7 +100,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
 
       // No transfers - not today
 
@@ -155,7 +153,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // No transfers - not today
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, startDate, endDate)
@@ -179,7 +177,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, yesterday, yesterday)
       prisonApiMockServer.stubGetCourtHearings(bookingId, yesterday, yesterday)
-      adjudicationsMock(prisonCode, yesterday.rangeTo(yesterday), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, yesterday, listOf(prisonerNumber))
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, yesterday, yesterday)
 
@@ -202,7 +200,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(prisonerNumber)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, tomorrow, tomorrow)
       prisonApiMockServer.stubGetCourtHearings(bookingId, tomorrow, tomorrow)
-      adjudicationsMock(prisonCode, tomorrow.rangeTo(tomorrow), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, tomorrow, listOf(prisonerNumber))
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, tomorrow, tomorrow)
 
@@ -228,7 +226,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // No transfers - not today
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, startDate, endDate)
@@ -275,7 +273,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // No transfers - not today
 
       val errorResponse = webTestClient.get()
@@ -320,7 +318,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // No transfers - not today
 
       val errorResponse = webTestClient.get()
@@ -365,7 +363,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // Not transfers - not today
 
       val errorResponse = webTestClient.get()
@@ -410,7 +408,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetCourtHearings(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // Not transfers - not today
 
       val errorResponse = webTestClient.get()
@@ -455,7 +453,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointments(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledActivities(bookingId, startDate, endDate)
       prisonApiMockServer.stubGetScheduledVisits(bookingId, startDate, endDate)
-      adjudicationsMock(prisonCode, startDate.rangeTo(endDate), listOf(prisonerNumber))
+      adjudicationsMock(prisonCode, startDate, listOf(prisonerNumber))
       // Not transfers - not today
 
       val errorResponse = webTestClient.get()
@@ -515,7 +513,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -546,7 +544,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -598,7 +596,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -630,7 +628,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -657,7 +655,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -678,7 +676,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -699,7 +697,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -720,7 +718,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date.rangeTo(date.plusDays(1)), prisonerNumbers)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
 
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
@@ -860,13 +858,13 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
   private fun adjudicationsMock(
     agencyId: String,
-    dateRange: LocalDateRange,
+    date: LocalDate,
     prisonerNumbers: List<String>,
   ) {
     manageAdjudicationsApiMockServer.stubHearings(
       agencyId = agencyId,
-      startDate = dateRange.start,
-      endDate = dateRange.endInclusive,
+      startDate = date,
+      endDate = date,
       prisoners = prisonerNumbers,
       body = mapper.writeValueAsString(
         prisonerNumbers.mapIndexed { hearingId, offenderNo ->
@@ -875,7 +873,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
             hearing = Hearing(
               id = hearingId.plus(1).toLong(),
               oicHearingType = "GOV_ADULT",
-              dateTimeOfHearing = dateRange.start.atTime(10, 30, 0),
+              dateTimeOfHearing = date.atTime(10, 30, 0),
               locationId = 1L,
               agencyId = agencyId,
             ),

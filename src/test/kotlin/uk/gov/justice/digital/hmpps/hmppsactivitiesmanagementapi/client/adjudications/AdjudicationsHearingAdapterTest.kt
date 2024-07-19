@@ -66,7 +66,7 @@ class AdjudicationsHearingAdapterTest {
     fun `empty prisoners list skips call to facade`(mode: Boolean): Unit = runBlocking {
       val response = adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = "MDI",
-        dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+        date = LocalDate.now(),
         prisonerNumbers = emptySet(),
       )
       assertThat(response.isEmpty()).isTrue()
@@ -79,7 +79,7 @@ class AdjudicationsHearingAdapterTest {
       val hearings =
         adjudicationsHearingAdapter.getAdjudicationHearings(
           agencyId = "MDI",
-          dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+          date = LocalDate.now(),
           prisonerNumbers = setOf("AE12345"),
           timeSlot = TimeSlot.AM,
         )
@@ -92,7 +92,7 @@ class AdjudicationsHearingAdapterTest {
     fun `fields mapped correctly`(): Unit = runBlocking {
       val hearings = adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = "MDI",
-        dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+        date = LocalDate.now(),
         prisonerNumbers = setOf("AE12345"),
       )
 

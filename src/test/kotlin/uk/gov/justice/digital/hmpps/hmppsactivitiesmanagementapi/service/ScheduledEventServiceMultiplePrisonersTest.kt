@@ -172,7 +172,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           manageAdjudicationsApiFacade.getAdjudicationHearings(
             prisonCode,
             date,
-            date.plusDays(1),
+            date,
             prisonerNumbers,
           )
         }
