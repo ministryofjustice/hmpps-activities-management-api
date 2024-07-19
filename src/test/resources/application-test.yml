@@ -78,6 +78,3 @@ manage:
  adjudications:
    api:
      url: http://localhost:8777
-
-hearings:
-  adjudications-source-of-truth: false
