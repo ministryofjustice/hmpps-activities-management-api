@@ -183,7 +183,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
       on {
         runBlocking {
-          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.endInclusive, setOf(prisonerNumber))
+          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.start, setOf(prisonerNumber))
         }
       } doReturn adjudications.map {
         HearingsResponse(
