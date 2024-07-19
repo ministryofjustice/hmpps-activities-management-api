@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -11,8 +9,6 @@ import java.time.LocalDate
 
 @Component
 class AdjudicationsHearingAdapter(
-  @Value("\${hearings.adjudications-source-of-truth}") private val manageAdjudicationsAsTruth: Boolean,
-  private val prisonApiClient: PrisonApiClient,
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
 ) {
 
@@ -21,26 +17,22 @@ class AdjudicationsHearingAdapter(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): Map<Long, List<OffenderAdjudicationHearing>> =
-    if (manageAdjudicationsAsTruth) {
-      manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
-        agencyId = agencyId,
-        date = date,
-      ).hearings.filter { timeSlot == null || TimeSlot.slot(it.dateTimeOfHearing.toLocalTime()) == timeSlot }
-        .map {
-          OffenderAdjudicationHearing(
-            offenderNo = it.prisonerNumber,
-            hearingId = it.id!!,
-            agencyId = agencyId,
-            hearingType = it.oicHearingType.mapOicHearingType(),
-            internalLocationId = it.locationId,
-            internalLocationDescription = "Adjudication room",
-            startTime = it.dateTimeOfHearing.toIsoDateTime(),
-          )
-        }
-        .groupBy { it.internalLocationId }
-    } else {
-      emptyMap()
-    }
+    manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
+      agencyId = agencyId,
+      date = date,
+    ).hearings.filter { timeSlot == null || TimeSlot.slot(it.dateTimeOfHearing.toLocalTime()) == timeSlot }
+      .map {
+        OffenderAdjudicationHearing(
+          offenderNo = it.prisonerNumber,
+          hearingId = it.id!!,
+          agencyId = agencyId,
+          hearingType = it.oicHearingType.mapOicHearingType(),
+          internalLocationId = it.locationId,
+          internalLocationDescription = "Adjudication room",
+          startTime = it.dateTimeOfHearing.toIsoDateTime(),
+        )
+      }
+      .groupBy { it.internalLocationId }
 
   suspend fun getAdjudicationHearings(
     agencyId: String,
@@ -50,34 +42,26 @@ class AdjudicationsHearingAdapter(
   ): List<OffenderAdjudicationHearing> {
     if (prisonerNumbers.isEmpty()) return emptyList()
 
-    return when (manageAdjudicationsAsTruth) {
-      true -> manageAdjudicationsApiFacade.getAdjudicationHearings(
-        agencyId = agencyId,
-        startDate = dateRange.start,
-        endDate = dateRange.endInclusive,
-        prisoners = prisonerNumbers,
-      )
-        .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
-        .map {
-          OffenderAdjudicationHearing(
-            offenderNo = it.prisonerNumber,
-            hearingId = it.hearing.id!!,
-            agencyId = agencyId,
-            hearingType = it.hearing.oicHearingType.mapOicHearingType(),
-            internalLocationId = it.hearing.locationId,
-            // this is a default, and generally exist for each prison as part of base setup in nomis,
-            // the existing code will use the locationId in first instance to determine the description
-            internalLocationDescription = "Adjudication room",
-            startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
-          )
-        }
-      false -> prisonApiClient.getOffenderAdjudications(
-        agencyId = agencyId,
-        dateRange = dateRange,
-        prisonerNumbers = prisonerNumbers,
-        timeSlot = timeSlot,
-      )
-    }
+    return manageAdjudicationsApiFacade.getAdjudicationHearings(
+      agencyId = agencyId,
+      startDate = dateRange.start,
+      endDate = dateRange.endInclusive,
+      prisoners = prisonerNumbers,
+    )
+      .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
+      .map {
+        OffenderAdjudicationHearing(
+          offenderNo = it.prisonerNumber,
+          hearingId = it.hearing.id!!,
+          agencyId = agencyId,
+          hearingType = it.hearing.oicHearingType.mapOicHearingType(),
+          internalLocationId = it.hearing.locationId,
+          // this is a default, and generally exist for each prison as part of base setup in nomis,
+          // the existing code will use the locationId in first instance to determine the description
+          internalLocationDescription = "Adjudication room",
+          startTime = it.hearing.dateTimeOfHearing.toIsoDateTime(),
+        )
+      }
   }
 
   companion object {

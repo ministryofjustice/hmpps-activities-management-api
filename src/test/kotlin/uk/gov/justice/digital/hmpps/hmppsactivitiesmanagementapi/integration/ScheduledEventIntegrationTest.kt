@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -17,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
@@ -31,9 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonA
 import java.time.LocalDate
 import java.time.LocalTime
 
-class ScheduledEventIntegrationTest(
-  @Value("\${hearings.adjudications-source-of-truth}") private val manageAdjudicationsAsTruth: Boolean,
-) : IntegrationTestBase() {
+class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setupAppointmentStubs() {
@@ -865,49 +861,26 @@ class ScheduledEventIntegrationTest(
     agencyId: String,
     dateRange: LocalDateRange,
     prisonerNumbers: List<String>,
-    timeSlot: TimeSlot? = null,
   ) {
-    when (manageAdjudicationsAsTruth) {
-      true -> manageAdjudicationsApiMockServer.stubHearings(
-        agencyId = agencyId,
-        startDate = dateRange.start,
-        endDate = dateRange.endInclusive,
-        prisoners = prisonerNumbers,
-        body = mapper.writeValueAsString(
-          prisonerNumbers.mapIndexed { hearingId, offenderNo ->
-            HearingsResponse(
-              prisonerNumber = offenderNo,
-              hearing = Hearing(
-                id = hearingId.plus(1).toLong(),
-                oicHearingType = "GOV_ADULT",
-                dateTimeOfHearing = dateRange.start.atTime(10, 30, 0),
-                locationId = 1L,
-                agencyId = agencyId,
-              ),
-            )
-          },
-        ),
-      )
-      false -> prisonApiMockServer.stubAdjudicationHearing(
-        prisonCode = agencyId,
-        dateRange = dateRange,
-        prisonerNumbers = prisonerNumbers,
-        timeSlot = timeSlot,
-        body = mapper.writeValueAsString(
-          prisonerNumbers.mapIndexed { hearingId, offenderNo ->
-            adjudicationHearing(
-              prisonCode = agencyId,
-              offenderNo = offenderNo,
-              hearingId = hearingId.plus(1).toLong(),
-              hearingType = "Governors Hearing Adult",
-              startTime = dateRange.start.atTime(10, 30, 0),
-              eventStatus = "SCH",
-              internalLocationId = 1L,
-              internalLocationDescription = "Governors office",
-            )
-          },
-        ),
-      )
-    }
+    manageAdjudicationsApiMockServer.stubHearings(
+      agencyId = agencyId,
+      startDate = dateRange.start,
+      endDate = dateRange.endInclusive,
+      prisoners = prisonerNumbers,
+      body = mapper.writeValueAsString(
+        prisonerNumbers.mapIndexed { hearingId, offenderNo ->
+          HearingsResponse(
+            prisonerNumber = offenderNo,
+            hearing = Hearing(
+              id = hearingId.plus(1).toLong(),
+              oicHearingType = "GOV_ADULT",
+              dateTimeOfHearing = dateRange.start.atTime(10, 30, 0),
+              locationId = 1L,
+              agencyId = agencyId,
+            ),
+          )
+        },
+      ),
+    )
   }
 }
