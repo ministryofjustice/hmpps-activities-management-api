@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -419,29 +418,6 @@ class PrisonApiMockServer : MockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(appointmentCategories))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubAdjudicationHearing(
-    prisonCode: String,
-    dateRange: LocalDateRange,
-    prisonerNumbers: List<String>,
-    timeSlot: TimeSlot? = null,
-    body: String,
-  ) {
-    stubFor(
-      WireMock.post(
-        WireMock.urlEqualTo(
-          "/api/offenders/adjudication-hearings?agencyId=$prisonCode&fromDate=${dateRange.start}&toDate=${dateRange.endInclusive}${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
-        ),
-      )
-        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(body)
             .withStatus(200),
         ),
     )
