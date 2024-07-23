@@ -1,6 +1,6 @@
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities
 AS
-SELECT si.scheduled_instance_id,
+SELECT DISTINCT si.scheduled_instance_id,
        alloc.allocation_id,
        act.prison_code,
        si.session_date,
@@ -38,7 +38,7 @@ FROM scheduled_instance si
                               (act.end_date IS NULL OR act.end_date >= si.session_date)
          JOIN activity_category category ON category.activity_category_id = act.activity_category_id
          LEFT JOIN exclusion ex ON alloc.allocation_id = ex.allocation_id AND
-                                   ex.start_date <= si.session_date AND
+                                   ex.start_date < si.session_date AND
                                    (ex.end_date >= si.session_date OR ex.end_date IS NULL) AND
                                    ex.slot_start_time = si.start_time AND
                                    ex.slot_end_time = si.end_time AND
