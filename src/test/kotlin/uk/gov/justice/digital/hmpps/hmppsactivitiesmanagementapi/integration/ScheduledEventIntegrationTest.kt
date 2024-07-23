@@ -196,7 +196,7 @@ class ScheduledEventIntegrationTest(
     @Test
     @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
     fun `GET single prisoner - scheduled events with exclusions are not returned - future date`() {
-      val tomorrow = LocalDate.now().plusDays(1)
+      val tomorrow = LocalDate.now().plusDays(2)
 
       val prisonCode = "MDI"
       val prisonerNumber = "A5193DY"
@@ -697,7 +697,7 @@ class ScheduledEventIntegrationTest(
     fun `POST - multiple prisoners - scheduled events with exclusions are not returned - future date`() {
       val prisonCode = "MDI"
       val prisonerNumbers = listOf("A5193DY")
-      val date = LocalDate.now().plusDays(1)
+      val date = LocalDate.now().plusDays(2)
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)

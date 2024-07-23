@@ -1,5 +1,5 @@
 CREATE OR REPLACE VIEW v_scheduled_instance_attendance_summary AS
-SELECT
+SELECT DISTINCT
     si.scheduled_instance_id,
     act.activity_id,
     acts.activity_schedule_id,
