@@ -1,10 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
+import java.time.LocalDate
 
 @Schema(description = "Describes the pay rates and bands to be created for an activity")
 data class ActivityPayCreateRequest(
@@ -34,4 +36,12 @@ data class ActivityPayCreateRequest(
   @field:Positive(message = "The piece rate items must be a positive integer")
   @Schema(description = "Where payment is related to the number of items produced in a batch of a product, this is the batch size that attract 1 x pieceRate", example = "10")
   val pieceRateItems: Int? = null,
+
+  @Schema(
+    description = "The effective start date for this pay rate",
+    example = "2022-12-23",
+  )
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  val startDate: LocalDate? = null,
+
 )

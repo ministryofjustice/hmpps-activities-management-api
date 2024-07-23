@@ -109,7 +109,7 @@ class MigrateActivityService(
             val iep = prisonIncentiveLevels.find { iep -> iep.levelCode == it.incentiveLevel && iep.active }
               ?: logAndThrowValidationException("Failed to migrate activity ${request.description}. Activity incentive level ${it.incentiveLevel} is not active in this prison")
 
-            activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null)
+            activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null, null)
           }
         }
       }

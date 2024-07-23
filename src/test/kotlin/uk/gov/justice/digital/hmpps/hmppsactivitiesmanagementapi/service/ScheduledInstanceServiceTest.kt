@@ -241,6 +241,7 @@ class ScheduledInstanceServiceTest {
         rate = 50,
         pieceRate = 60,
         pieceRateItems = 70,
+        startDate = null,
       )
       schedule.apply {
         this.allocatePrisoner(

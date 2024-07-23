@@ -18,6 +18,7 @@ import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
@@ -129,8 +130,14 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
-  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String) =
-    activityPay().firstOrNull { it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode }
+  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? =
+    activityPay()
+      .filter {
+        it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode &&
+          (it.startDate.onOrBefore(LocalDate.now()) || it.startDate == null)
+      }
+      .sortedBy { it.startDate }
+      .lastOrNull()
 
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
@@ -181,13 +188,14 @@ data class Activity(
     rate: Int?,
     pieceRate: Int?,
     pieceRateItems: Int?,
+    startDate: LocalDate?,
   ) {
     require(paid) {
       "Unpaid activity '$summary' cannot have pay rates added to it"
     }
 
-    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode }) {
-      "The pay band and incentive level combination must be unique for each pay rate"
+    require(activityPay().none { it.payBand == payBand && it.incentiveNomisCode == incentiveNomisCode && it.startDate == startDate }) {
+      "The pay band, incentive level and start date combination must be unique for each pay rate"
     }
 
     activityPay.add(
@@ -199,6 +207,7 @@ data class Activity(
         rate = rate,
         pieceRate = pieceRate,
         pieceRateItems = pieceRateItems,
+        startDate = startDate,
       ),
     )
   }

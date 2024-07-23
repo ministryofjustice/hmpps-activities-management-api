@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReasons
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
@@ -140,6 +141,52 @@ class ManageAttendancesServiceTest {
       assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
       assertThat(prisonerNumber).isEqualTo(instance.activitySchedule.allocations().first().prisonerNumber)
       assertThat(payAmount).isEqualTo(30)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+  }
+
+  @Test
+  fun `attendance is created and waiting to be marked for an active allocation where there is multiple pays`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    instance.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(5),
+    )
+
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
+    whenever(attendanceRepository.saveAllAndFlush(anyList()))
+      .thenReturn(
+        listOf(
+          Attendance(
+            attendanceId = 1L,
+            scheduledInstance = instance,
+            prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
+            status = AttendanceStatus.WAITING,
+            initialIssuePayment = true,
+            payAmount = 35,
+          ),
+        ),
+      )
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
+
+    service.createAttendances(today, MOORLAND_PRISON_CODE)
+
+    verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
+
+    with(attendanceListCaptor.firstValue.first()) {
+      assertThat(attendanceId).isEqualTo(0L) // Not set when called
+      assertThat(status()).isEqualTo(AttendanceStatus.WAITING)
+      assertThat(prisonerNumber).isEqualTo(instance.activitySchedule.allocations().first().prisonerNumber)
+      assertThat(payAmount).isEqualTo(35)
     }
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
@@ -350,6 +397,64 @@ class ManageAttendancesServiceTest {
     with(attendanceListCaptor.firstValue.first()) {
       assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
       assertThat(payAmount).isEqualTo(30)
+      assertThat(issuePayment).isTrue
+      assertThat(comment).isEqualTo("Cancel test")
+      assertThat(recordedBy).isEqualTo("user")
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+  }
+
+  @Test
+  fun `attendance is created and marked cancelled and paid when the scheduled instance is cancelled and there are multiple pays`() {
+    instance.activitySchedule.activity.attendanceRequired = true
+
+    instance.cancelSessionAndAttendances(
+      reason = "Cancel test",
+      by = "user",
+      cancelComment = "comment",
+      attendanceReason(AttendanceReasonEnum.CANCELLED),
+    )
+
+    instance.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(5),
+    )
+
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(attendanceReasons()["CANCELLED"])
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
+
+    whenever(attendanceRepository.saveAllAndFlush(anyList()))
+      .thenReturn(
+        listOf(
+          Attendance(
+            attendanceId = 1L,
+            scheduledInstance = instance,
+            prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
+            status = AttendanceStatus.COMPLETED,
+            attendanceReason = attendanceReasons()["CANCELLED"],
+            initialIssuePayment = true,
+            payAmount = 35,
+          ),
+        ),
+      )
+
+    service.createAttendances(today, MOORLAND_PRISON_CODE)
+
+    verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
+
+    with(attendanceListCaptor.firstValue.first()) {
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["CANCELLED"])
+      assertThat(payAmount).isEqualTo(35)
       assertThat(issuePayment).isTrue
       assertThat(comment).isEqualTo("Cancel test")
       assertThat(recordedBy).isEqualTo("user")
