@@ -200,7 +200,7 @@ class ScheduledEventService(
     val adjudications = async {
       adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = prisonRolledOut.code,
-        dateRange = dateRange,
+        date = dateRange.start,
         prisonerNumbers = setOf(prisoner.second),
       )
     }
@@ -393,7 +393,7 @@ class ScheduledEventService(
     val adjudications = async {
       adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = rolloutPrison.code,
-        dateRange = date.rangeTo(date.plusDays(1)),
+        date = date,
         prisonerNumbers = prisonerNumbers,
         timeSlot = timeSlot,
       )

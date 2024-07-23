@@ -61,8 +61,6 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
-    manageAdjudicationsAsTruth = false,
-    prisonApiClient = prisonApiClient,
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
 
@@ -185,13 +183,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
       on {
         runBlocking {
-          prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber))
-        }
-      } doReturn adjudications
-
-      on {
-        runBlocking {
-          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.endInclusive, setOf(prisonerNumber))
+          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.start, setOf(prisonerNumber))
         }
       } doReturn adjudications.map {
         HearingsResponse(

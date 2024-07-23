@@ -58,6 +58,11 @@ incentives:
     url: https://incentives-api-dev.hmpps.service.justice.gov.uk
     timeout: 10s
 
+manage.adjudications:
+  api:
+    url: https://manage-adjudications-api-dev.hmpps.service.justice.gov.uk
+    timeout: 10s
+
 jobs:
   create-scheduled-instances:
     days-in-advance: ${SCHEDULE_AHEAD_DAYS:14}
