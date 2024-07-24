@@ -151,4 +151,12 @@ data class ActivityCreateRequest(
       EventTierType.valueOf(tierCode) != EventTierType.FOUNDATION ||
       (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && attendanceRequired) ||
       (EventTierType.valueOf(tierCode) == EventTierType.FOUNDATION && !attendanceRequired && !paid)
+
+  @AssertTrue(message = "Activity pay rate effective date must not be more than 30 days in the future")
+  private fun isMaximumFuturePayDate() =
+    !paid || (pay.isNotEmpty() && !pay.any { it -> it.startDate?.isAfter(LocalDate.now().plusDays(30)) == true })
+
+  @AssertTrue(message = "Activity pay rate effective date must be unique for a given incentive level and pay band")
+  private fun isDuplicateFuturePayDate() =
+    !paid || (pay.isNotEmpty() && pay.groupingBy { it.incentiveLevel + it.startDate + it.payBandId }.eachCount().filter { it.value > 1 }.isEmpty())
 }
