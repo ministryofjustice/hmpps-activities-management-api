@@ -11,13 +11,13 @@ class PrisonerAllocationRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
-  fun `start date must be in the future`() {
+  fun `start date must not be in the past`() {
     val request = PrisonerAllocationRequest(
       prisonerNumber = "G4793VF",
       payBandId = 11,
-      startDate = TimeSource.today(),
+      startDate = TimeSource.yesterday(),
     )
-    assertSingleValidationError(validator.validate(request), "startDate", "Start date must be in the future")
+    assertSingleValidationError(validator.validate(request), "startDate", "Start date must not be in the past")
   }
 
   private fun assertSingleValidationError(validate: MutableSet<ConstraintViolation<PrisonerAllocationRequest>>, propertyName: String, message: String) {

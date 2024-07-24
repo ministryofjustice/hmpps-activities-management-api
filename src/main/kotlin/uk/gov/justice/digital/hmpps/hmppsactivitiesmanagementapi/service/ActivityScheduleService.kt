@@ -56,6 +56,7 @@ class ActivityScheduleService(
   private val telemetryClient: TelemetryClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val manageAttendancesService: ManageAttendancesService,
 ) {
 
   companion object {
@@ -144,7 +145,11 @@ class ActivityScheduleService(
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
-    require(request.startDate!! > LocalDate.now()) { "Allocation start date must be in the future" }
+    val today = LocalDate.now()
+
+    require(request.startDate!! >= today) { "Allocation start date must not be in the past" }
+
+    if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
 
     transactionHandler.newSpringTransaction {
       val schedule = repository.findOrThrowNotFound(scheduleId).also {
@@ -201,14 +206,24 @@ class ActivityScheduleService(
           }
           .singleOrNull()?.allocated(allocation)
 
+        // if allocation is for instance(s) later today then need to create attendance records
+        val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+
         repository.saveAndFlush(schedule)
+
+        val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, schedule)
+
         auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
         logAllocationEvent(allocation, maybeWaitingList)
         log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
 
-        allocation.allocationId
+        allocation.allocationId to savedAttendances
       }
-    }.also { allocationId -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId) }
+    }.also { (allocation, newAttendances) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocation)
+
+      newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it) }
+    }
   }
 
   @Transactional

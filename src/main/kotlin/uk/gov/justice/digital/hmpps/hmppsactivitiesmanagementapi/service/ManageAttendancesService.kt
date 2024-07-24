@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
@@ -55,6 +57,7 @@ class ManageAttendancesService(
 
     var counter = 0
 
+    // Schedules instance for AM might be created if next session was PM. Need thinking
     scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
@@ -74,12 +77,10 @@ class ManageAttendancesService(
           runCatching {
             // Save the attendances for this session within a new sub-transaction
             transactionHandler.newSpringTransaction {
-              log.info("Committing ${attendancesForInstance.size} attendances for ${instance.activitySchedule.description}")
-              attendanceRepository.saveAllAndFlush(attendancesForInstance)
-            }.onEach { saved ->
+              saveAttendances(attendancesForInstance, instance.activitySchedule)
+            }.onEach { savedAttendance ->
               // Send a sync event for each committed attendance row
-              log.info("Sending sync event for attendance ID ${saved.attendanceId} ${saved.prisonerNumber} ${saved.scheduledInstance.activitySchedule.description}")
-              outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, saved.attendanceId)
+              sendCreatedEvent(savedAttendance)
             }
           }
             .onSuccess { counter += attendancesForInstance.size }
@@ -94,6 +95,37 @@ class ManageAttendancesService(
       }
 
     log.info("Created '$counter' attendance records for prison '$prisonCode' on date '$date'")
+  }
+
+  fun sendCreatedEvent(newAttendance: Attendance) {
+    log.info("Sending sync event for attendance ID ${newAttendance.attendanceId} ${newAttendance.prisonerNumber} ${newAttendance.scheduledInstance.activitySchedule.description}")
+    outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, newAttendance.attendanceId)
+  }
+
+  fun saveAttendances(attendances: List<Attendance>, activitySchedule: ActivitySchedule): List<Attendance> {
+    log.info("Committing ${attendances.size} attendances for ${activitySchedule.description}")
+    return attendanceRepository.saveAllAndFlush(attendances)
+  }
+
+  fun createAnyAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
+    if (scheduleInstanceId == null) {
+      return emptyList()
+    }
+
+    val nextAvailableInstance = scheduledInstanceRepository.findOrThrowNotFound(scheduleInstanceId)
+
+    require(nextAvailableInstance.activitySchedule == allocation.activitySchedule) {
+      "Allocation does not belong to same activity schedule as selected instance"
+    }
+
+    // Need to create attendances for today?
+    return allocation.activitySchedule.instances().filter {
+      it.sessionDate == LocalDate.now() &&
+        it.startTime >= nextAvailableInstance.startTime &&
+        allocation.canAttendOn(it.sessionDate, it.slotTimes())
+    }.mapNotNull {
+      createAttendance(it, allocation, prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber))
+    }
   }
 
   /**

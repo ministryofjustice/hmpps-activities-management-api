@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -47,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -58,6 +61,7 @@ import java.time.temporal.ChronoUnit
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
     "feature.event.activities.prisoner.allocation-amended=true",
+    "feature.event.activities.prisoner.attendance-created=true",
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
@@ -73,6 +77,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var waitlistRepository: WaitingListRepository
+
+  @Autowired
+  private lateinit var attendanceRepository: AttendanceRepository
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
@@ -276,6 +283,76 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      println(details)
+      assertThat(what).isEqualTo("PRISONER_ALLOCATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"MDI\",\"prisonerNumber\":\"G4793VF\",\"scheduleId\":1,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.PRISONER)
+      assertThat(detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("Prisoner G4793VF was allocated to activity 'Maths'(1) and schedule Maths AM(1)")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-7.sql")
+  fun `204 (no content) response when successfully allocate prisoner to an activity schedule that starts today`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
+
+    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.today(),
+        scheduleInstanceId = 1L,
+      ),
+    ).expectStatus().isNoContent
+
+    val allocation = with(repository.findById(1).orElseThrow().allocations().first()) {
+      assertThat(prisonerNumber).isEqualTo("G4793VF")
+      assertThat(allocatedBy).isEqualTo("test-client")
+      assertThat(startDate).isEqualTo(TimeSource.today())
+      this
+    }
+
+    val newAttendance = attendanceRepository.findAll().filter { it.scheduledInstance.sessionDate == TimeSource.today() }
+      .also { it.size isEqualTo 1 }
+      .first()
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
+    }
+
+    with(eventCaptor.secondValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.attendance-created")
+      assertThat(additionalInformation).isEqualTo(PrisonerAttendanceInformation(newAttendance.attendanceId))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A prisoner attendance has been created in the activities management service")
     }
 
     verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())

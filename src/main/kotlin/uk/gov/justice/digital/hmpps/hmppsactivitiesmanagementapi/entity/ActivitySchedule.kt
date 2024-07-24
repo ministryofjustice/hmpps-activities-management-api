@@ -242,7 +242,7 @@ data class ActivitySchedule(
     prisonerNumber: PrisonerNumber,
     payBand: PrisonPayBand?,
     bookingId: Long,
-    startDate: LocalDate = LocalDate.now(),
+    startDate: LocalDate,
     endDate: LocalDate? = null,
     exclusions: List<Slot>? = null,
     allocatedBy: String,
@@ -279,8 +279,9 @@ data class ActivitySchedule(
         exclusions?.onEach { exclusion ->
           slots(exclusion.weekNumber, exclusion.timeSlot())
             .also { require(it.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
+            // Only consider exclusions slots where activity slots exist
             .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
-            .forEach { slot -> this.updateExclusion(slot, exclusion.getDaysOfWeek()) }
+            .forEach { slot -> this.updateExclusion(slot, exclusion.getDaysOfWeek(), startDate) }
         }
       },
     )

@@ -25,7 +25,7 @@ data class Exclusion(
   @JoinColumn(name = "allocation_id", nullable = false)
   val allocation: Allocation,
 
-  val startDate: LocalDate,
+  var startDate: LocalDate,
 
   val weekNumber: Int,
 

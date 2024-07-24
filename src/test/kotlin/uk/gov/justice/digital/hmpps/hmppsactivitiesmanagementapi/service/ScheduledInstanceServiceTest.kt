@@ -246,6 +246,7 @@ class ScheduledInstanceServiceTest {
       schedule.apply {
         this.allocatePrisoner(
           prisonerNumber = "A1234AB".toPrisonerNumber(),
+          startDate = LocalDate.now().plusDays(1),
           bookingId = 10002,
           payBand = prisonPayBandsLowMediumHigh()[1],
           allocatedBy = "Mr Blogs",

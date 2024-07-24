@@ -1083,6 +1083,7 @@ class ActivityServiceTest {
         payBand = lowPayBand,
         bookingId = 10001,
         allocatedBy = "FRED",
+        startDate = LocalDate.now().plusDays(1),
         endDate = updateActivityRequest.endDate?.plusYears(1),
       )
 
@@ -1091,6 +1092,7 @@ class ActivityServiceTest {
         payBand = lowPayBand,
         bookingId = 20002,
         allocatedBy = "BOB",
+        startDate = LocalDate.now().plusDays(2),
         endDate = null,
       )
     }
@@ -2014,7 +2016,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
       }
     }
 
@@ -2080,7 +2082,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
       }
     }
 
