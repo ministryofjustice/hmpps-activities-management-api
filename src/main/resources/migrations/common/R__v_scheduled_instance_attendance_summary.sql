@@ -16,7 +16,9 @@ SELECT
     acts.internal_location_code,
     acts.internal_location_description,
     si.cancelled,
-    (SELECT COUNT(scheduled_instance_id) FROM v_prisoner_scheduled_activities psa where psa.scheduled_instance_id = si.scheduled_instance_id) AS allocations,
+    (SELECT COUNT(scheduled_instance_id)
+      FROM v_prisoner_scheduled_activities psa
+       WHERE psa.scheduled_instance_id = si.scheduled_instance_id AND psa.auto_suspended IS FALSE and psa.suspended IS FALSE) AS allocations,
     att.attendees,
     att.not_recorded,
     att.attended,
