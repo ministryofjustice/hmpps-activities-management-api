@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -52,6 +53,7 @@ const val RISLEY_PRISON_CODE = "RSI"
 @Service
 @Transactional(readOnly = true)
 class MigrateActivityService(
+  @Value("\${migrate.experimental-mode}") val experimentalMode: Boolean,
   private val rolloutPrisonService: RolloutPrisonService,
   private val activityRepository: ActivityRepository,
   private val prisonRegimeService: PrisonRegimeService,
@@ -169,7 +171,12 @@ class MigrateActivityService(
     val prisonRegime = prisonRegimeService.getPrisonTimeSlots(request.prisonCode)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
       val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
-      activity.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
+      activity.schedules().first().addSlot(
+        weekNumber = 1,
+        slotTimes = regime,
+        daysOfWeek = getRequestDaysOfWeek(it),
+        experimentalMode = experimentalMode,
+      )
     }
     return listOf(activity)
   }
