@@ -754,6 +754,18 @@ class ActivityTest {
   }
 
   @Test
+  fun `can update paid attribute on paid activity when all allocations are ended`() {
+    val activity = activityEntity()
+    activity.schedules().forEach {
+      it.allocations().forEach {
+        it.prisonerStatus = PrisonerStatus.ENDED
+      }
+    }
+
+    assertDoesNotThrow { activity.paid = false }
+  }
+
+  @Test
   fun `cannot update paid attribute on unpaid activity when allocated`() {
     val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
 
