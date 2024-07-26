@@ -147,3 +147,6 @@ hmpps:
 springdoc:
   swagger-ui:
     tags-sorter: alpha
+
+migrate:
+  experimental-mode: ${MIGRATE_EXPERIMENTAL_MODE:false}
