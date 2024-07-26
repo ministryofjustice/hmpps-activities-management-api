@@ -1,5 +1,3 @@
-DELETE FROM rollout_prison WHERE code = 'IWI';
-
 insert into rollout_prison (rollout_prison_id, code, description, activities_to_be_rolled_out, activities_rollout_date, appointments_to_be_rolled_out, appointments_rollout_date)
 values (100, 'IWI', 'HMP Isle of Wight', true, current_date, false, current_date);
 
