@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -65,6 +66,7 @@ class MigrateActivityService(
   private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val mapper: ObjectMapper? = null,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -85,6 +87,14 @@ class MigrateActivityService(
     val prisonIncentiveLevels = incentivesApiClient.getIncentiveLevelsCached(request.prisonCode)
     if (prisonIncentiveLevels.isEmpty()) {
       throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
+    }
+
+    mapper?.let {
+      log.info(
+        it.writeValueAsString(
+          Pair(request, prisonIncentiveLevels),
+        ),
+      )
     }
 
     return transactionHandler.newSpringTransaction {
