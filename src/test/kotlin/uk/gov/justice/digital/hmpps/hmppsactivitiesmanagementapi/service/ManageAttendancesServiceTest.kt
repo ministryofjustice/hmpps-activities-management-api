@@ -48,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -80,6 +81,7 @@ class ManageAttendancesServiceTest {
     prisonerSearchApiClient,
     TransactionHandler(),
     monitoringService,
+    Clock.systemDefaultZone(),
   )
 
   private val today = LocalDate.now()

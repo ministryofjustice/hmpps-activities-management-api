@@ -65,6 +65,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 class TransformFunctionsTest {
 
   @Test
+  fun `invalid timeslot`() {
+    val timeSlot = TimeSlot.slot(LocalTime.of(11, 30, 0))
+    assertThat(timeSlot).isEqualTo(TimeSlot.AM)
+  }
+
+  @Test
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
     val activity = activityEntity(timestamp = timestamp).apply { attendanceRequired = false }
@@ -218,6 +224,7 @@ class TransformFunctionsTest {
               fridayFlag = false,
               saturdayFlag = false,
               sundayFlag = false,
+              usePrisonRegimeTime = true,
             ),
           ),
           startDate = activity.startDate,

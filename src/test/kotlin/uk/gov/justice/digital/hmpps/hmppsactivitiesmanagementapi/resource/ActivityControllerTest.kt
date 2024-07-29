@@ -293,6 +293,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
+            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.now(),

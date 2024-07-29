@@ -169,12 +169,17 @@ class MigrateActivityService(
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     val activity = buildActivityEntity(request)
     val prisonRegime = prisonRegimeService.getPrisonTimeSlots(request.prisonCode)
-    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
+    request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
+      val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
+      val regime = regimeTimeSlot.let { slot -> prisonRegime[slot]!! }
+      val usePrisonRegimeTime = scheduleRule.startTime == regime.first && scheduleRule.endTime == regime.second
+
       activity.schedules().first().addSlot(
         weekNumber = 1,
-        slotTimes = regime,
-        daysOfWeek = getRequestDaysOfWeek(it),
+        slotTimes = Pair(scheduleRule.startTime, scheduleRule.endTime),
+        daysOfWeek = getRequestDaysOfWeek(scheduleRule),
+        usePrisonRegimeTime = usePrisonRegimeTime,
+        timeSlot = TimeSlot.slot(scheduleRule.startTime),
         experimentalMode = experimentalMode,
       )
     }
