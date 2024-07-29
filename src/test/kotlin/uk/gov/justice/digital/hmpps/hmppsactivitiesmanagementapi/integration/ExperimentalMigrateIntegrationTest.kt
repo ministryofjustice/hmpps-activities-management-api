@@ -46,7 +46,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   private val regimeStartTimeAM: LocalTime = LocalTime.of(8, 25, 0)
   private val regimeEndTimeAM: LocalTime = LocalTime.of(11, 35, 0)
   private val prisonerNumber = "AE12345"
-  private val now = LocalDateTime.now()
+  private val now = LocalDate.now().atStartOfDay().plusMinutes(15)
   private val nextMonday = now.plusDays(7 + (DayOfWeek.MONDAY.value - now.dayOfWeek.value).toLong())
 
   private val exceptionRequest =
@@ -97,7 +97,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   @BeforeEach
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))
-    whenever(clock.zone).thenReturn(ZoneId.of("UCT"))
+    whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
   }
 
   @Sql(
