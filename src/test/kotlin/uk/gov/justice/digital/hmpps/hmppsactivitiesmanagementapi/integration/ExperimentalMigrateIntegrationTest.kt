@@ -115,6 +115,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       it.fridayFlag && it.endTime == regimeEndTimeAM
     }
 
+    assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
     assertThat(mondayAm.usePrisonRegimeTime).isFalse()
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
@@ -122,7 +123,6 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
   }
 
-  @Disabled
   @Sql(
     "classpath:test_data/seed-migrate-experiment.sql",
   )
@@ -160,11 +160,9 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     val updated = updateActivity(activityId = activityId, slots = slotsExcludingCustomAm)
 
-    assertThat(
-      updated.schedules.first().slots.none {
-        !it.fridayFlag && it.startTime == customStartTimeAM
-      },
-    ).isTrue()
+    assertThat(updated.schedules.first().slots.firstOrNull {
+      it.mondayFlag && it.endTime == regimeEndTimeAM
+    }).isNull()
 
     val slots = ActivityUpdateRequest(
       slots = allSlots,
@@ -172,16 +170,12 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     val updatedWithSlotBack = updateActivity(activityId = activityId, slots = slots)
 
-    assertThat(
-      updatedWithSlotBack.schedules.first().slots.any {
-        !it.fridayFlag && it.startTime == regimeStartTimeAM
-      },
-    ).isTrue()
+    val mondayAm = updatedWithSlotBack.schedules.first().slots.first {
+      it.mondayFlag && it.endTime == regimeEndTimeAM
+    }
 
     assertThat(
-      updatedWithSlotBack.schedules.first().slots.any {
-        !it.fridayFlag && it.startTime == customStartTimeAM
-      },
+      mondayAm.startTime == customStartTimeAM
     ).isTrue()
   }
 
