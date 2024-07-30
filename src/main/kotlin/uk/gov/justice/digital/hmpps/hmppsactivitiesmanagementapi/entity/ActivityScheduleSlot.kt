@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -51,9 +49,6 @@ data class ActivityScheduleSlot(
   var sundayFlag: Boolean = false,
 
   var usePrisonRegimeTime: Boolean = true,
-
-  @Enumerated(EnumType.STRING)
-  var timeSlot: TimeSlot? = null,
 ) {
   init {
     failIfDatesAreInvalidForSlot()
@@ -82,14 +77,12 @@ data class ActivityScheduleSlot(
       slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
       usePrisonRegimeTime: Boolean = true,
-      timeSlot: TimeSlot? = null,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
       startTime = slotTimes.first,
       endTime = slotTimes.second,
       usePrisonRegimeTime = usePrisonRegimeTime,
-      timeSlot = timeSlot,
     ).apply {
       update(daysOfWeek)
     }
