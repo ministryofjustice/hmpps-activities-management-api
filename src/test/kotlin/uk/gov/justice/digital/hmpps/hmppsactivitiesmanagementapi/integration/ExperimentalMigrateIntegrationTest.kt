@@ -126,7 +126,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-migrate-experiment.sql",
   )
   @Test
-  fun `Edit activity slots, remove the custom slot and then reapply, observe the time has now been put back to prison regime time `() {
+  fun `Edit activity slots, remove the custom slot and then reapply, observe the time has now been put back to prison regime time`() {
     val activityId = migrateActivity()
 
     val allSlots = listOf(
@@ -137,6 +137,8 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
         tuesday = true,
         wednesday = true,
         thursday = true,
+        customStartTime = customStartTimeAM,
+        customEndTime = regimeEndTimeAM,
       ),
       Slot(
         weekNumber = 1,
