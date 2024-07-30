@@ -92,7 +92,7 @@ class ActivityScheduleTest {
           fridayFlag = false,
           saturdayFlag = false,
           sundayFlag = false,
-          usePrisonRegimeTime = false,
+          usePrisonRegimeTime = true,
         ),
       ),
       startDate = today,
