@@ -202,8 +202,16 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     val activitySchedule = getActivitySchedule(scheduleId = activity.schedules.first().id)
 
     assertThat(activitySchedule.instances.isNotEmpty()).isTrue()
-    assertThat(activitySchedule.instances.size).isEqualTo(4)
+    assertThat(activitySchedule.instances.firstOrNull { it.date == nextMonday.toLocalDate() && it.startTime == customStartTimeAM }).isNotNull
     assertThat(activitySchedule.instances.first { it.startTime == customStartTimeAM }.attendances.isNotEmpty()).isTrue()
+
+    // move scheduler to friday
+    whenever(clock.instant()).thenReturn(nextMonday.plusDays(4).toInstant(ZoneOffset.UTC))
+
+    scheduleInstances()
+
+    val activityScheduleFriday = getActivitySchedule(scheduleId = activity.schedules.first().id)
+    assertThat(activityScheduleFriday.instances.firstOrNull { it.date == nextMonday.plusDays(4).toLocalDate() && it.startTime == regimeStartTimeAM }).isNotNull
   }
 
   @Sql(
