@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -160,9 +159,11 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     val updated = updateActivity(activityId = activityId, slots = slotsExcludingCustomAm)
 
-    assertThat(updated.schedules.first().slots.firstOrNull {
-      it.mondayFlag && it.endTime == regimeEndTimeAM
-    }).isNull()
+    assertThat(
+      updated.schedules.first().slots.firstOrNull {
+        it.mondayFlag && it.endTime == regimeEndTimeAM
+      },
+    ).isNull()
 
     val slots = ActivityUpdateRequest(
       slots = allSlots,
@@ -175,7 +176,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     }
 
     assertThat(
-      mondayAm.startTime == customStartTimeAM
+      mondayAm.startTime == customStartTimeAM,
     ).isTrue()
   }
 
