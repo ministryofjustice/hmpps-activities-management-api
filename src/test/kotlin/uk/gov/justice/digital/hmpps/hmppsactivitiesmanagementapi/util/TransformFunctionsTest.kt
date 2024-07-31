@@ -218,7 +218,6 @@ class TransformFunctionsTest {
               fridayFlag = false,
               saturdayFlag = false,
               sundayFlag = false,
-              usePrisonRegimeTime = true,
             ),
           ),
           startDate = activity.startDate,

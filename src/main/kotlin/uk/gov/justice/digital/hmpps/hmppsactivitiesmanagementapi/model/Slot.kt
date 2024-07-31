@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.Positive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
-import java.time.LocalTime
 
 @Schema(
   description = """
@@ -39,10 +38,6 @@ data class Slot(
   val saturday: Boolean = false,
 
   val sunday: Boolean = false,
-
-  val customStartTime: LocalTime? = null,
-
-  val customEndTime: LocalTime? = null,
 ) {
   fun getDaysOfWeek(): Set<DayOfWeek> {
     return setOfNotNull(

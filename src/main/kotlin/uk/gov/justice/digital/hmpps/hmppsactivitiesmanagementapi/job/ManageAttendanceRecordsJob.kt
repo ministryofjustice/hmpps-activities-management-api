@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import java.time.Clock
 import java.time.LocalDate
 
 /**
@@ -20,12 +19,11 @@ class ManageAttendanceRecordsJob(
   private val rolloutPrisonService: RolloutPrisonService,
   private val manageAttendancesService: ManageAttendancesService,
   private val jobRunner: SafeJobRunner,
-  private val clock: Clock,
 ) {
   @Async("asyncExecutor")
-  fun execute(mayBePrisonCode: String? = null, date: LocalDate = LocalDate.now(clock), withExpiry: Boolean) {
+  fun execute(mayBePrisonCode: String? = null, date: LocalDate = LocalDate.now(), withExpiry: Boolean) {
     // We cannot create future attendance records
-    if (date > LocalDate.now(clock)) return
+    if (date > LocalDate.now()) return
 
     val rolledOutPrisonCodes = getRolledOutPrisonsForActivities(mayBePrisonCode)
 

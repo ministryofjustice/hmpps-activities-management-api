@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import java.time.Clock
 import java.time.LocalDate
 
 @Service
@@ -24,7 +23,6 @@ class ManageScheduledInstancesService(
   private val outboundEventsService: OutboundEventsService,
   private val monitoringService: MonitoringService,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
-  private val clock: Clock,
 ) {
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
@@ -32,7 +30,7 @@ class ManageScheduledInstancesService(
 
   @Transactional(propagation = Propagation.REQUIRED)
   fun create() {
-    val today = LocalDate.now(clock)
+    val today = LocalDate.now()
     val endDay = today.plusDays(daysInAdvance!!)
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
     log.info("Scheduling activities job running - from $today until $endDay")
@@ -75,14 +73,13 @@ class ManageScheduledInstancesService(
 class CreateInstanceTransactionHandler(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val activityService: ActivityService,
-  private val clock: Clock,
 ) {
   /**
    * Returns the schedule ID if the schedule is updated otherwise returns null.
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>): Long? {
-    val earliestSession = LocalDate.now(clock)
+    val earliestSession = LocalDate.now()
     val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
       ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 

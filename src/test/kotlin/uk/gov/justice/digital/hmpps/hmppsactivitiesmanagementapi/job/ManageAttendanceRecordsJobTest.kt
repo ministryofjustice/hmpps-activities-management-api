@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import java.time.Clock
 import java.time.LocalDate
 
 class ManageAttendanceRecordsJobTest : JobsTestBase() {
@@ -48,7 +47,7 @@ class ManageAttendanceRecordsJobTest : JobsTestBase() {
   }
 
   private val attendancesService: ManageAttendancesService = mock()
-  private val job = ManageAttendanceRecordsJob(rollOutPrisonService, attendancesService, safeJobRunner, Clock.systemDefaultZone())
+  private val job = ManageAttendanceRecordsJob(rollOutPrisonService, attendancesService, safeJobRunner)
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
 
   @Test

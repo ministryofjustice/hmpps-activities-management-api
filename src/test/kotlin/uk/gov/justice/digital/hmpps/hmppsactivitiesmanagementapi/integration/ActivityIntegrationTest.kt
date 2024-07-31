@@ -507,7 +507,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
@@ -562,7 +561,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
@@ -619,7 +617,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 2L,
@@ -635,7 +632,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
@@ -692,7 +688,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 2L,
@@ -708,7 +703,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 3L,
@@ -724,7 +718,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = true,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 4L,
@@ -740,7 +733,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
