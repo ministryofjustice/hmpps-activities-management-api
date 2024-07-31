@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
@@ -691,7 +692,7 @@ class ActivityService(
     request.slots?.let { slots ->
       val regimeTimeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
       activity.schedules().forEach { schedule ->
-        schedule.updateSlots(slots.toMap(regimeTimeSlots))
+        schedule.updateSlots(slots.slotsToTimeSlots(regimeTimeSlots))
         val activeAllocations = schedule.allocations(excludeEnded = true)
         activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) } }
       }
@@ -699,7 +700,13 @@ class ActivityService(
     return updatedAllocationIds
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
-    return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
+  private fun List<Slot>.slotsToTimeSlots(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
+    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(regimeTimeSlots)) to it.getDaysOfWeek() }
+  }
+
+  private fun Slot.getCustomTimeSlotIfPresent(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Pair<LocalTime, LocalTime> {
+    this.customStartTime ?: return regimeTimeSlots[this.timeSlot()]!!
+    this.customEndTime ?: return regimeTimeSlots[this.timeSlot()]!!
+    return Pair(this.customStartTime, this.customEndTime)
   }
 }

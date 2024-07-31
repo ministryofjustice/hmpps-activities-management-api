@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -64,9 +65,9 @@ class ManageScheduledInstancesServiceTest {
     outboundEventsService = mock(),
   )
 
-  private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest)
+  private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest, Clock.systemDefaultZone())
 
-  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, outboundEventsService, monitoringService, 7L)
+  private val job = ManageScheduledInstancesService(activityRepository, rolloutPrisonRepository, transactionHandler, outboundEventsService, monitoringService, 7L, Clock.systemDefaultZone())
 
   private val today = LocalDate.now()
   private val weekFromToday = today.plusWeeks(1)
@@ -235,6 +236,7 @@ class ManageScheduledInstancesServiceTest {
       outboundEventsService,
       monitoringService,
       7L,
+      Clock.systemDefaultZone(),
     ).create()
 
     verify(monitoringService).capture("Failed to schedule instances for MDI A", exception)

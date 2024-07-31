@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import java.time.Clock
 import java.time.LocalDate
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
@@ -29,6 +30,7 @@ class JobTriggerController(
   private val manageAllocationsJob: ManageAllocationsJob,
   private val activityMetricsJob: ActivityMetricsJob,
   private val appointmentMetricsJob: AppointmentMetricsJob,
+  private val clock: Clock,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -61,7 +63,7 @@ class JobTriggerController(
     @Parameter(description = "If true will run the attendance expiry process in addition to other features. Defaults to false.")
     withExpiry: Boolean = false,
   ): String {
-    manageAttendanceRecordsJob.execute(mayBePrisonCode = prisonCode, date = date ?: LocalDate.now(), withExpiry = withExpiry)
+    manageAttendanceRecordsJob.execute(mayBePrisonCode = prisonCode, date = date ?: LocalDate.now(clock), withExpiry = withExpiry)
     return "Manage attendance records triggered"
   }
 
