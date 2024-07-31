@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,6 +39,7 @@ class ManageAttendancesService(
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val transactionHandler: TransactionHandler,
   private val monitoringService: MonitoringService,
+  private val clock: Clock,
 ) {
 
   companion object {
@@ -45,7 +47,7 @@ class ManageAttendancesService(
   }
 
   fun createAttendances(date: LocalDate, prisonCode: String) {
-    require(date <= LocalDate.now()) {
+    require(date <= LocalDate.now(clock)) {
       "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
 
@@ -120,7 +122,7 @@ class ManageAttendancesService(
 
     // Need to create attendances for today?
     return allocation.activitySchedule.instances().filter {
-      it.sessionDate == LocalDate.now() &&
+      it.sessionDate == LocalDate.now(clock) &&
         it.startTime >= nextAvailableInstance.startTime &&
         allocation.canAttendOn(it.sessionDate, it.slotTimes())
     }.mapNotNull {
@@ -215,7 +217,7 @@ class ManageAttendancesService(
   fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
     log.info("Expiring WAITING attendances from yesterday.")
 
-    LocalDate.now().minusDays(1).let { yesterday ->
+    LocalDate.now(clock).minusDays(1).let { yesterday ->
       val counter = AtomicInteger(0)
       forEachRolledOutPrison { prison ->
         attendanceRepository.findWaitingAttendancesOnDate(prison.code, yesterday)

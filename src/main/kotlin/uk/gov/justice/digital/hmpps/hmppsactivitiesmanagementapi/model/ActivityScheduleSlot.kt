@@ -54,6 +54,9 @@ data class ActivityScheduleSlot(
 
   @Schema(description = "Indicates whether the schedule slot takes place on a Sunday", example = "false")
   val sundayFlag: Boolean,
+
+  @Schema(description = "a flag to indicate if this activity is scheduled according to prison standard regime times")
+  val usePrisonRegimeTime: Boolean,
 )
 
 enum class TimeSlot {
