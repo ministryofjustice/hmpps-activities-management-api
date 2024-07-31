@@ -185,8 +185,8 @@ class MigrateActivityServiceTest {
 
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(8, 30),
-          endTime = LocalTime.of(9, 30),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
           monday = true,
         ),
       )
@@ -271,9 +271,9 @@ class MigrateActivityServiceTest {
       )
 
       val nomisScheduleRules = listOf(
-        NomisScheduleRule(startTime = LocalTime.of(8, 30), endTime = LocalTime.of(9, 30), monday = true),
-        NomisScheduleRule(startTime = LocalTime.of(12, 30), endTime = LocalTime.of(13, 30), monday = true),
-        NomisScheduleRule(startTime = LocalTime.of(19, 30), endTime = LocalTime.of(20, 30), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(10, 0), endTime = LocalTime.of(11, 0), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 0), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(18, 0), endTime = LocalTime.of(19, 0), monday = true),
       )
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
@@ -354,8 +354,8 @@ class MigrateActivityServiceTest {
 
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(8, 30),
-          endTime = LocalTime.of(9, 30),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
           monday = true,
           tuesday = true,
           wednesday = true,
@@ -505,13 +505,13 @@ class MigrateActivityServiceTest {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(8, 30),
-          endTime = LocalTime.of(9, 30),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
           monday = true,
         ),
         NomisScheduleRule(
-          startTime = LocalTime.of(8, 30),
-          endTime = LocalTime.of(9, 30),
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
           tuesday = true,
         ),
       )
