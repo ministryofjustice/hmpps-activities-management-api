@@ -47,6 +47,8 @@ data class ActivityScheduleSlot(
   var saturdayFlag: Boolean = false,
 
   var sundayFlag: Boolean = false,
+
+  var usePrisonRegimeTime: Boolean = true,
 ) {
   init {
     failIfDatesAreInvalidForSlot()
@@ -74,11 +76,13 @@ data class ActivityScheduleSlot(
       weekNumber: Int,
       slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
+      usePrisonRegimeTime: Boolean = true,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
       startTime = slotTimes.first,
       endTime = slotTimes.second,
+      usePrisonRegimeTime = usePrisonRegimeTime,
     ).apply {
       update(daysOfWeek)
     }
@@ -111,6 +115,7 @@ data class ActivityScheduleSlot(
     fridayFlag = this.fridayFlag,
     saturdayFlag = this.saturdayFlag,
     sundayFlag = this.sundayFlag,
+    usePrisonRegimeTime = this.usePrisonRegimeTime,
   )
 
   fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(

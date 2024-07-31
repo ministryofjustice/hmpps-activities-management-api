@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 const val MIGRATION_USER = "MIGRATION"
 const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
@@ -72,6 +73,9 @@ class MigrateActivityService(
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
+
+    fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean =
+      this.startTime == slotStartTime && this.endTime == slotEndTime
   }
 
   // Split regime settings - Risley did not use this, they changed to normal regime prior to rollout
@@ -169,12 +173,19 @@ class MigrateActivityService(
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     val activity = buildActivityEntity(request)
     val prisonRegime = prisonRegimeService.getPrisonTimeSlots(request.prisonCode)
-    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
+    request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
+      val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
+      val regime = regimeTimeSlot.let { slot -> prisonRegime[slot]!! }
+      val usePrisonRegimeTime = scheduleRule.usesPrisonRegimeTime(
+        slotStartTime = regime.first,
+        slotEndTime = regime.second,
+      )
+
       activity.schedules().first().addSlot(
         weekNumber = 1,
-        slotTimes = regime,
-        daysOfWeek = getRequestDaysOfWeek(it),
+        slotTimes = Pair(scheduleRule.startTime, scheduleRule.endTime),
+        daysOfWeek = getRequestDaysOfWeek(scheduleRule),
+        usePrisonRegimeTime = usePrisonRegimeTime,
         experimentalMode = experimentalMode,
       )
     }
