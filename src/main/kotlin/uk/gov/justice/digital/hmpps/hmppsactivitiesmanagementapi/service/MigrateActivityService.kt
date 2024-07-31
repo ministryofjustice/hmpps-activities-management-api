@@ -79,19 +79,16 @@ class MigrateActivityService(
     fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean =
       this.startTime == slotStartTime && this.endTime == slotEndTime
 
-    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> {
-      val daysOfWeek = mutableSetOf<DayOfWeek>()
-
-      if (this.monday) daysOfWeek.add(DayOfWeek.MONDAY)
-      if (this.tuesday) daysOfWeek.add(DayOfWeek.TUESDAY)
-      if (this.wednesday) daysOfWeek.add(DayOfWeek.WEDNESDAY)
-      if (this.thursday) daysOfWeek.add(DayOfWeek.THURSDAY)
-      if (this.friday) daysOfWeek.add(DayOfWeek.FRIDAY)
-      if (this.saturday) daysOfWeek.add(DayOfWeek.SATURDAY)
-      if (this.sunday) daysOfWeek.add(DayOfWeek.SUNDAY)
-
-      return daysOfWeek
-    }
+    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> =
+      setOfNotNull(
+        DayOfWeek.MONDAY.takeIf { monday },
+        DayOfWeek.TUESDAY.takeIf { tuesday },
+        DayOfWeek.WEDNESDAY.takeIf { wednesday },
+        DayOfWeek.THURSDAY.takeIf { thursday },
+        DayOfWeek.FRIDAY.takeIf { friday },
+        DayOfWeek.SATURDAY.takeIf { saturday },
+        DayOfWeek.SUNDAY.takeIf { sunday },
+      )
   }
 
   // Split regime settings - Risley did not use this, they changed to normal regime prior to rollout
