@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
@@ -106,7 +107,7 @@ class PrisonRegimeService(
       )
     }
 
-  private fun getPrisonRegimeForDaysOfWeek(prisonCode: String, daysOfWeek: Set<DayOfWeek>): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+  private fun getPrisonRegimeForDaysOfWeek(prisonCode: String, daysOfWeek: Set<DayOfWeek>): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAny(daysOfWeek) }
 
   private fun getPrisonRegimeForDayOfWeek(prisonCode: String, dayOfWeek: DayOfWeek): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
 }

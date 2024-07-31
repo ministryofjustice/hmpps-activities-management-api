@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
@@ -1181,7 +1182,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(instances).hasSizeBetween(3, 4)
@@ -1197,7 +1198,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)
