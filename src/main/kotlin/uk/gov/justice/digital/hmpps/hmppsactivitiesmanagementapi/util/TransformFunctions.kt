@@ -438,6 +438,7 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
   maxDaysToExpiry = prisonRegime.maxDaysToExpiry,
+  daysOfWeek = prisonRegime.prisonRegimeDaysOfWeek.map { it.dayOfWeek },
 )
 
 fun transform(entityEventReview: EventReview) = ModelEventReview(

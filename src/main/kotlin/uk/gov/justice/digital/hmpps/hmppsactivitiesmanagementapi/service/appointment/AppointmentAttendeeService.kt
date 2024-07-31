@@ -19,11 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AppointmentAttendeeRemovalReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -34,7 +34,7 @@ class AppointmentAttendeeService(
   private val appointmentAttendeeRepository: AppointmentAttendeeRepository,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository,
-  private val prisonRegimeRepository: PrisonRegimeRepository,
+  private val prisonRegimeService: PrisonRegimeService,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
   private val prisonApi: PrisonApiApplicationClient,
   private val transactionHandler: TransactionHandler,
@@ -81,7 +81,7 @@ class AppointmentAttendeeService(
       "Supplied days after now must be at least one day and less than 61 days"
     }
 
-    val regime = prisonRegimeRepository.findByPrisonCode(prisonCode)
+    val regime = prisonRegimeService.getPrisonRegime(prisonCode)
     if (regime == null) {
       log.warn("Rolled out prison $prisonCode is missing a prison regime.")
     } else {

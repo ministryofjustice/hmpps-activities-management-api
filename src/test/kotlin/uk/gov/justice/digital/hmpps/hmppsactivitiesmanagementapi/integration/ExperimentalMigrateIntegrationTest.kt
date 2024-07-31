@@ -99,7 +99,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `import activity should set custom times in slot`() {
@@ -116,14 +116,14 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
-    assertThat(mondayAm.usePrisonRegimeTime).isFalse()
+    assertThat(mondayAm.usePrisonRegimeTime).isTrue()
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
     assertThat(fridayAm.usePrisonRegimeTime).isTrue()
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `Edit activity slots, remove the custom slot and then reapply, observe the time has now been put back to prison regime time`() {
@@ -183,7 +183,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `migrate allocation and add attendance and confirm prisoner has allocation and attendance in custom slot`() {
@@ -217,7 +217,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `set up exclusions for the custom slots, and confirm the prisoner has no attendance record`() {
@@ -255,7 +255,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `exclude prisoner on migrate, then remove custom exclusion, and confirm prisoner has attendance`() {

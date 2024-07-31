@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.DayOfWeek
 import java.time.LocalTime
 
 @Schema(description = "Describes a top-level activity")
@@ -39,4 +40,7 @@ data class PrisonRegime(
 
   @Schema(description = "The maximum number of days to expiry", example = "21")
   val maxDaysToExpiry: Int,
+
+  @Schema(description = "days of week the regime is applicable to")
+  val daysOfWeek: List<DayOfWeek>,
 )

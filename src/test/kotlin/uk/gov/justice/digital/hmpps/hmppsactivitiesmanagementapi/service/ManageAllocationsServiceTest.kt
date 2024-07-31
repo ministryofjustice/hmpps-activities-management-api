@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
@@ -30,9 +31,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rollout
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -41,7 +42,7 @@ class ManageAllocationsServiceTest {
   private val rolloutPrisonRepo: RolloutPrisonRepository = mock()
   private val activityScheduleRepo: ActivityScheduleRepository = mock()
   private val allocationRepository: AllocationRepository = mock()
-  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
+  private val prisonRegimeService: PrisonRegimeService = mock()
   private val searchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
@@ -53,7 +54,7 @@ class ManageAllocationsServiceTest {
       rolloutPrisonRepo,
       activityScheduleRepo,
       allocationRepository,
-      prisonRegimeRepository,
+      prisonRegimeService,
       searchApiClient,
       waitingListService,
       TransactionHandler(),
@@ -165,7 +166,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(prisonRegimeService.getPrisonRegime(prison.code)) doReturn prisonRegime()
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
@@ -195,7 +196,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
-    whenever(prisonRegimeRepository.findByPrisonCode(any())) doReturn prisonRegime()
+    whenever(prisonRegimeService.getPrisonRegime(any(), anyOrNull())) doReturn prisonRegime()
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
@@ -218,7 +219,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(prisonRegimeService.getPrisonRegime(prison.code)) doReturn prisonRegime()
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
@@ -247,7 +248,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(prisonRegimeService.getPrisonRegime(prison.code)) doReturn prisonRegime()
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
@@ -278,7 +279,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()) doReturn listOf(prison)
-    whenever(prisonRegimeRepository.findByPrisonCode(prison.code)) doReturn prisonRegime()
+    whenever(prisonRegimeService.getPrisonRegime(prison.code)) doReturn prisonRegime()
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(waitingListService.fetchOpenApplicationsForPrison(prison.code)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
     whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf("A1234AA"))) doReturn
@@ -307,8 +308,8 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonRepo.findAll()).doReturn(listOf(prisonWithRegime, prisonWithoutRegime))
-    whenever(prisonRegimeRepository.findByPrisonCode(prisonWithRegime.code)).doReturn(prisonRegime())
-    whenever(prisonRegimeRepository.findByPrisonCode(prisonWithoutRegime.code)).doReturn(null)
+    whenever(prisonRegimeService.getPrisonRegime(prisonWithRegime.code)).doReturn(prisonRegime())
+    whenever(prisonRegimeService.getPrisonRegime(prisonWithoutRegime.code)).doReturn(null)
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatus(
         prisonWithRegime.code,

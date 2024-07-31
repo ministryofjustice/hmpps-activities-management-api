@@ -3,8 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -23,6 +25,9 @@ class PrisonRegimeTest {
     edStart = LocalTime.NOON.plusHours(5),
     edFinish = LocalTime.NOON.plusHours(10),
     maxDaysToExpiry = fiveDaysToExpiry,
+    prisonRegimeDaysOfWeek = listOf(
+      PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.MONDAY),
+    ),
   )
 
   @Test

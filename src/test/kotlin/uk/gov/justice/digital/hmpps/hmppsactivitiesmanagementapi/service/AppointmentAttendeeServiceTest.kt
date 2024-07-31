@@ -38,9 +38,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,7 +52,7 @@ class AppointmentAttendeeServiceTest {
   private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentAttendeeRemovalReasonRepository = mock<AppointmentAttendeeRemovalReasonRepository>()
-  private val prisonRegimeRepository = mock<PrisonRegimeRepository>()
+  private val prisonRegimeService = mock<PrisonRegimeService>()
   private val prisonerSearch = mock<PrisonerSearchApiApplicationClient>()
   private val prisonApi = mock<PrisonApiApplicationClient>()
   private val outboundEventsService: OutboundEventsService = mock()
@@ -66,7 +66,7 @@ class AppointmentAttendeeServiceTest {
       appointmentAttendeeRepository,
       appointmentInstanceRepository,
       appointmentAttendeeRemovalReasonRepository,
-      prisonRegimeRepository,
+      prisonRegimeService,
       prisonerSearch,
       prisonApi,
       TransactionHandler(),
@@ -184,7 +184,7 @@ class AppointmentAttendeeServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever(prisonRegimeRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonRegime(prisonCode = MOORLAND_PRISON_CODE))
+      whenever(prisonRegimeService.getPrisonRegime(MOORLAND_PRISON_CODE)).thenReturn(prisonRegime(prisonCode = MOORLAND_PRISON_CODE))
       whenever(
         appointmentAttendeeRemovalReasonRepository.findById(
           PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,

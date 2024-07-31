@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import java.time.DayOfWeek
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
@@ -238,7 +239,7 @@ class PrisonRegimeServiceTest {
 
   @Test
   fun `returns a prison regime for known prison code`() {
-    whenever(prisonRegimeRepository.findByPrisonCode("PVI")).thenReturn(prisonRegime())
+    whenever(prisonRegimeRepository.findByPrisonCode("PVI")).thenReturn(listOf(prisonRegime()))
 
     assertThat(service.getPrisonRegimeByPrisonCode("PVI")).isInstanceOf(PrisonRegime::class.java)
   }
@@ -253,8 +254,8 @@ class PrisonRegimeServiceTest {
   fun `returns correct times for AM timeslot`() {
     val prisonCode = "PBI"
     whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
-      .thenReturn(prisonRegime())
-    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM)
+      .thenReturn(listOf(prisonRegime()))
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, DayOfWeek.MONDAY)!!
 
     assertThat(result.start).isEqualTo("00:00")
     assertThat(result.end).isEqualTo("13:00")
@@ -264,8 +265,8 @@ class PrisonRegimeServiceTest {
   fun `returns correct times for PM timeslot`() {
     val prisonCode = "PBI"
     whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
-      .thenReturn(prisonRegime())
-    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM)
+      .thenReturn(listOf(prisonRegime()))
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM, DayOfWeek.MONDAY)!!
 
     assertThat(result.start).isEqualTo("13:00")
     assertThat(result.end).isEqualTo("18:00")
@@ -275,8 +276,8 @@ class PrisonRegimeServiceTest {
   fun `returns correct times for ED timeslot`() {
     val prisonCode = "PBI"
     whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
-      .thenReturn(prisonRegime())
-    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED)
+      .thenReturn(listOf(prisonRegime()))
+    val result = service.getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED, DayOfWeek.MONDAY)!!
 
     assertThat(result.start).isEqualTo("18:00")
     assertThat(result.end).isEqualTo("23:59")
@@ -286,17 +287,12 @@ class PrisonRegimeServiceTest {
   fun `returns prison time slot map`() {
     val prisonCode = "PBI"
     whenever(prisonRegimeRepository.findByPrisonCode(prisonCode))
-      .thenReturn(prisonRegime())
-    val prisonTimeSlots = service.getPrisonTimeSlots(prisonCode)
+      .thenReturn(listOf(prisonRegime()))
+    val prisonTimeSlots = service.getPrisonTimeSlots(prisonCode, DayOfWeek.entries.toSet())
 
-    assertThat(prisonTimeSlots.values).hasSize(3)
+    assertThat(prisonTimeSlots!!.values).hasSize(3)
     assertThat(prisonTimeSlots[TimeSlot.AM]).isEqualTo(LocalTime.of(9, 0) to LocalTime.of(12, 0))
     assertThat(prisonTimeSlots[TimeSlot.PM]).isEqualTo(LocalTime.of(13, 0) to LocalTime.of(16, 30))
     assertThat(prisonTimeSlots[TimeSlot.ED]).isEqualTo(LocalTime.of(18, 0) to LocalTime.of(20, 0))
-  }
-
-  @Test
-  fun `returns IWI prison regime with a monday to thursday regime, friday regime and a weekend regime`() {
-    // pointless doing it here but lets see.
   }
 }

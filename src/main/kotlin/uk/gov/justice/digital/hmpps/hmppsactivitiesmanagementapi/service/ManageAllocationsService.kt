@@ -19,11 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -33,7 +33,7 @@ class ManageAllocationsService(
   private val rolloutPrisonRepository: RolloutPrisonRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationRepository: AllocationRepository,
-  private val prisonRegimeRepository: PrisonRegimeRepository,
+  private val prisonRegimeService: PrisonRegimeService,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
   private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
@@ -163,7 +163,7 @@ class ManageAllocationsService(
       .forEach { prison ->
         log.info("Checking for expired allocations at ${prison.code}.")
 
-        val regime = prisonRegimeRepository.findByPrisonCode(prison.code)
+        val regime = prisonRegimeService.getPrisonRegime(prison.code)
 
         if (regime != null) {
           allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
