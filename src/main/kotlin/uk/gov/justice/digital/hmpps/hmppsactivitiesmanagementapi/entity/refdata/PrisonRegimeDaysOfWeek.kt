@@ -10,7 +10,7 @@ import jakarta.persistence.Table
 import java.time.DayOfWeek
 
 @Entity
-@Table(name = "prison_regime_days_of_Week")
+@Table(name = "prison_regime_days_of_week")
 data class PrisonRegimeDaysOfWeek(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
