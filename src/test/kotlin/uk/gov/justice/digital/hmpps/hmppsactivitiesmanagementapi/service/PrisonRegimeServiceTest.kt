@@ -294,4 +294,9 @@ class PrisonRegimeServiceTest {
     assertThat(prisonTimeSlots[TimeSlot.PM]).isEqualTo(LocalTime.of(13, 0) to LocalTime.of(16, 30))
     assertThat(prisonTimeSlots[TimeSlot.ED]).isEqualTo(LocalTime.of(18, 0) to LocalTime.of(20, 0))
   }
+
+  @Test
+  fun `returns IWI prison regime with a monday to thursday regime, friday regime and a weekend regime`() {
+    // pointless doing it here but lets see.
+  }
 }
