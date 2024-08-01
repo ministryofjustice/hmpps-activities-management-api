@@ -25,4 +25,7 @@ data class RolloutPrisonPlan(
   @Schema(description = "The date appointments rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val appointmentsRolloutDate: LocalDate?,
+
+  @Schema(description = "max days to expire events based on prisoner movement")
+  val maxDaysToExpiry: Int,
 )

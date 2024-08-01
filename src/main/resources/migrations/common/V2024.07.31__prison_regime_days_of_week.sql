@@ -40,3 +40,8 @@ values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 
 ((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'FRIDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SATURDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SUNDAY');
+
+alter table prison_regime drop column max_days_to_expiry;
+
+ALTER TABLE rollout_prison ADD COLUMN max_days_to_expiry not null integer default 21;
+

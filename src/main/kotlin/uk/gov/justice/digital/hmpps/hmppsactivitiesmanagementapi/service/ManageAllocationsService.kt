@@ -15,25 +15,22 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
 @Transactional
 class ManageAllocationsService(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val allocationRepository: AllocationRepository,
-  private val prisonRegimeService: PrisonRegimeService,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
   private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
@@ -76,7 +73,7 @@ class ManageAllocationsService(
    * Caution to be used when using the current date. Allocations should be ended at the end of the day.
    */
   fun endAllocationsDueToEnd(prisonCode: String, date: LocalDate) {
-    require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
+    require(rolloutPrisonService.isActivitiesRolledOutAt(prisonCode)) {
       "Supplied prison $prisonCode is not rolled out."
     }
 
@@ -153,7 +150,7 @@ class ManageAllocationsService(
     )
 
   private fun forEachRolledOutPrison() =
-    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.filterNotNull()
+    rolloutPrisonService.getAllPrisonPlans().filter { it.isActivitiesRolledOut() }
 
   private fun List<Allocation>.ending(date: LocalDate) =
     filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.endsOn(date) }
@@ -163,23 +160,19 @@ class ManageAllocationsService(
       .forEach { prison ->
         log.info("Checking for expired allocations at ${prison.code}.")
 
-        val regime = prisonRegimeService.getPrisonRegime(prison.code)
+        val prisonPlan = rolloutPrisonService.getPrisonPlan(prison.code)
 
-        if (regime != null) {
-          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
-            log.info("Checking for expired pending allocations at ${prison.code}.")
-            deallocateIfExpired(it, regime)
-          }
-          allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
-            log.info("Checking for expired auto-suspended allocations at ${prison.code}.")
-            deallocateIfExpired(it, regime)
-          }
-          waitingListService.fetchOpenApplicationsForPrison(prison.code).ifNotEmpty {
-            log.info("Checking for expired waiting list applications at ${prison.code}.")
-            removeWaitingListApplicationIfExpired(it, regime)
-          }
-        } else {
-          log.warn("Rolled out prison ${prison.code} is missing a prison regime.")
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
+          log.info("Checking for expired pending allocations at ${prison.code}.")
+          deallocateIfExpired(it, prisonPlan)
+        }
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+          log.info("Checking for expired auto-suspended allocations at ${prison.code}.")
+          deallocateIfExpired(it, prisonPlan)
+        }
+        waitingListService.fetchOpenApplicationsForPrison(prison.code).ifNotEmpty {
+          log.info("Checking for expired waiting list applications at ${prison.code}.")
+          removeWaitingListApplicationIfExpired(it, prisonPlan)
         }
       }
   }
@@ -189,45 +182,45 @@ class ManageAllocationsService(
    * the regime and the date of the last known movement out or prison for the prisoner any allocations should be
    * expired/deallocated.
    */
-  private fun deallocateIfExpired(allocations: Collection<Allocation>, regime: PrisonRegime) {
-    log.info("Candidate allocations for expiration for prison ${regime.prisonCode}: ${allocations.map { it.allocationId }}")
+  private fun deallocateIfExpired(allocations: Collection<Allocation>, prisonPlan: RolloutPrison) {
+    log.info("Candidate allocations for expiration for prison ${prisonPlan.code}: ${allocations.map { it.allocationId }}")
 
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
-    val expiredPrisoners = getExpiredPrisoners(regime, prisonerNumbers.toSet())
+    val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
 
     val expiredAllocations = allocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
-    log.info("Expired allocations for prison ${regime.prisonCode}: ${expiredAllocations.map { it.allocationId }}")
+    log.info("Expired allocations for prison ${prisonPlan.code}: ${expiredAllocations.map { it.allocationId }}")
 
     expiredAllocations
       .groupBy { it.activitySchedule }
       .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
   }
 
-  private fun removeWaitingListApplicationIfExpired(applications: Collection<WaitingList>, regime: PrisonRegime) {
-    log.info("Waiting list applications for expiration for prison ${regime.prisonCode}: ${applications.map { it.waitingListId }}")
+  private fun removeWaitingListApplicationIfExpired(applications: Collection<WaitingList>, prisonPlan: RolloutPrison) {
+    log.info("Waiting list applications for expiration for prison ${prisonPlan.code}: ${applications.map { it.waitingListId }}")
 
     val prisonerNumbers = applications.map { it.prisonerNumber }.distinct()
-    val expiredPrisoners = getExpiredPrisoners(regime, prisonerNumbers.toSet())
+    val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
     expiredPrisoners.forEach {
-      waitingListService.removeOpenApplications(regime.prisonCode, it, ServiceName.SERVICE_NAME.value)
+      waitingListService.removeOpenApplications(prisonPlan.code, it, ServiceName.SERVICE_NAME.value)
     }
   }
 
-  fun getExpiredPrisoners(regime: PrisonRegime, prisonerNumbers: Set<String>): Set<String> {
+  fun getExpiredPrisoners(prisonPlan: RolloutPrison, prisonerNumbers: Set<String>): Set<String> {
     val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers.toList())
 
     if (prisoners.isEmpty()) {
-      log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${regime.prisonCode}")
+      log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${prisonPlan.code}")
       return emptySet()
     }
 
     val prisonersNotInExpectedPrison =
-      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(regime.prisonCode) }
+      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonPlan.code) }
 
-    return prisonApi.getMovementsForPrisonersFromPrison(regime.prisonCode, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+    return prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.code, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
       .groupBy { it.offenderNo }
       .mapValues { it -> it.value.maxBy { it.movementDateTime() } }
-      .filter { regime.hasExpired { it.value.movementDate } }
+      .filter { prisonPlan.hasExpired { it.value.movementDate } }
       .map { it.key }
       .toSet()
   }

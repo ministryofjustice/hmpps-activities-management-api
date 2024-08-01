@@ -19,10 +19,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,7 +33,7 @@ class ManageAttendancesService(
   private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val outboundEventsService: OutboundEventsService,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
   private val transactionHandler: TransactionHandler,
@@ -51,7 +50,7 @@ class ManageAttendancesService(
       "Cannot create attendance for prison '$prisonCode', date is in the future '$date'"
     }
 
-    require(rolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode)) {
+    require(rolloutPrisonService.isActivitiesRolledOutAt(prisonCode)) {
       "Cannot create attendance for prison '$prisonCode', not rolled out"
     }
 
@@ -236,6 +235,6 @@ class ManageAttendancesService(
     }
   }
 
-  private fun forEachRolledOutPrison(block: (RolloutPrison) -> Unit) =
-    rolloutPrisonRepository.findAll().filter { it.isActivitiesRolledOut() }.forEach { block(it) }
+  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrison) -> Unit) =
+    rolloutPrisonService.getAllPrisonPlans().filter { it.isActivitiesRolledOut() }.forEach { expireAttendances(it) }
 }

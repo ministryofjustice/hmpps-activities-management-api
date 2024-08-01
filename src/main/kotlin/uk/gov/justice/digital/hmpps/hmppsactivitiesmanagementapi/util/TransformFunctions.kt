@@ -328,6 +328,7 @@ fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
   activitiesRolloutDate = prison.activitiesRolloutDate,
   appointmentsRolledOut = prison.isAppointmentsRolledOut(),
   appointmentsRolloutDate = prison.appointmentsRolloutDate,
+  maxDaysToExpiry = prison.maxDaysToExpiry,
 )
 
 fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
@@ -437,7 +438,8 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
-  maxDaysToExpiry = prisonRegime.maxDaysToExpiry,
+  // TODO, to remove, maybe referenced in the UI
+  maxDaysToExpiry = 21,
   daysOfWeek = prisonRegime.prisonRegimeDaysOfWeek.map { it.dayOfWeek },
 )
 
