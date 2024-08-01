@@ -293,11 +293,11 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.now(),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
 
@@ -528,7 +528,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
-  private fun MockMvc.getActivityCapacity(id: Long) = get("/activities/{activityId}/capacity", id)
   private fun MockMvc.getActivitySchedules(id: Long) =
     get("/activities/{activityId}/schedules", id)
 }

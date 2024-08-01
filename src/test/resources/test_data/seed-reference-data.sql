@@ -122,12 +122,4 @@ values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'THURSDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'FRIDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY'),
-
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'MONDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'TUESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'WEDNESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'THURSDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'FRIDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SUNDAY');
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY');

@@ -31,17 +31,37 @@ values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'THURSDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'FRIDAY'),
 ((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY');
 
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'MONDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'TUESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'WEDNESDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'THURSDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'FRIDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SATURDAY'),
-((select prison_regime_id from prison_regime where prison_code = 'IWI'), 'SUNDAY');
+delete from prison_regime where prison_code = 'IWI';
+
+insert into prison_regime (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
+VALUES ('IWI', '08:25:00', '11:35:00', '13:40:00', '16:50:00', '18:00:00', '19:00:00');
+
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
+values ((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '08:25:00'),'FRIDAY');
+
+insert into prison_regime (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
+VALUES ('IWI', '09:25:00', '11:35:00', '13:40:00', '16:50:00', '18:00:00', '19:00:00');
+
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
+values ((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:25:00'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:25:00'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:25:00'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:25:00'), 'THURSDAY');
+
+insert into prison_regime (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
+VALUES ('IWI', '09:00:00', '11:30:00', '13:40:00', '16:45:00', '18:00:00', '19:00:00');
+
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
+values ((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:00:00'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'IWI' and am_start = '09:00:00'), 'SUNDAY');
 
 alter table prison_regime drop column max_days_to_expiry;
 
 ALTER TABLE rollout_prison ADD COLUMN max_days_to_expiry integer not null default 21;
+
+alter table activity_schedule_slot drop column use_prison_regime_time;
+
+alter table activity_schedule add column use_prison_regime_time boolean not null default true;
 

@@ -98,6 +98,30 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       payRates = emptyList(),
     )
 
+  private val splitActivity = ActivityMigrateRequest(
+    programServiceCode = "INT_NOM",
+    prisonCode = "IWI",
+    startDate = LocalDate.of(2024, 7, 9),
+    endDate = null,
+    internalLocationId = 468492,
+    internalLocationCode = "SITE 3",
+    internalLocationDescription = "IWI-ESTAB-SITE 3",
+    capacity = 1,
+    description = "BNM + 27 PK SPLIT",
+    payPerSession = "H",
+    runsOnBankHoliday = true,
+    outsideWork = false,
+    scheduleRules = listOf(
+      NomisScheduleRule(
+        startTime = LocalTime.of(6, 40, 0),
+        endTime = LocalTime.of(7, 0, 0),
+        saturday = true,
+        sunday = true,
+      ),
+    ),
+    payRates = emptyList(),
+  )
+
   @BeforeEach
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))
@@ -126,13 +150,22 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
-    assertThat(mondayAm.usePrisonRegimeTime).isTrue()
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
-    assertThat(fridayAm.usePrisonRegimeTime).isTrue()
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
     assertThat(weekendAm.startTime == LocalTime.of(6, 40, 0)).isTrue()
     assertThat(weekendAm.endTime == LocalTime.of(7, 0, 0)).isTrue()
-    assertThat(weekendAm.usePrisonRegimeTime).isFalse()
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-iwi-prison-regime.sql",
+  )
+  @Test
+  fun `import split activity`() {
+    val activityId = migrateActivity(request = splitActivity)
+    val activity = getActivity(activityId = activityId)
+
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
 
   @Sql(
@@ -285,13 +318,13 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedule.instances.first { it.startTime == customStartTimeAM }.attendances.isNotEmpty()).isTrue()
   }
 
-  private fun migrateActivity(): Long {
+  private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
     incentivesApiMockServer.stubGetIncentiveLevels("IWI")
     prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
 
     return webTestClient.post()
       .uri("/migrate/activity")
-      .bodyValue(exceptionRequest)
+      .bodyValue(request)
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk

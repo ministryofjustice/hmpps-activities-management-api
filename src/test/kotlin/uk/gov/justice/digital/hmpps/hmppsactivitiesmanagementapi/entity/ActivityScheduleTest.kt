@@ -92,10 +92,10 @@ class ActivityScheduleTest {
           fridayFlag = false,
           saturdayFlag = false,
           sundayFlag = false,
-          usePrisonRegimeTime = true,
         ),
       ),
       startDate = today,
+      usePrisonRegimeTime = true,
     )
     assertThat(
       activitySchedule(
@@ -164,10 +164,10 @@ class ActivityScheduleTest {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = today,
+        usePrisonRegimeTime = true,
       ),
     )
 

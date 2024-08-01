@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
-import java.time.LocalTime
 
 @Service
 @Transactional(readOnly = true)
@@ -65,13 +64,14 @@ class AppointmentSearchService(
 
       val timeSlotSpecs = timeSlots?.map { slot ->
         val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
-          // TODO just use any day for now, given all live prisons have a single regime
+          // TODO just use any day for now, given all live prisons have a single regime, will not work with multi regimes.
+          // resolution is to use the time_slot in db, not the flawed logic in regimeService
           prisonCode = prisonCode, timeSlot = slot, dayOfWeek = LocalDate.now().dayOfWeek,
         )
-        // TODO see hard coded defaults, will not be called, but to discuss with Dave B
+
         appointmentSearchSpecification.startTimeBetween(
-          timeRange?.start ?: LocalTime.now(),
-          timeRange?.end?.minusMinutes(1) ?: LocalTime.now(),
+          timeRange!!.start,
+          timeRange.end.minusMinutes(1),
         )
       } ?: listOf()
 

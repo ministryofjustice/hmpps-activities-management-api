@@ -250,6 +250,7 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
       runsOnBankHoliday = it.key.runsOnBankHoliday,
       updatedTime = it.key.updatedTime,
       updatedBy = it.key.updatedBy,
+      usePrisonRegimeTime = it.key.usePrisonRegimeTime,
     )
   }
 
@@ -272,6 +273,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     runsOnBankHoliday = this.runsOnBankHoliday,
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
+    usePrisonRegimeTime = this.usePrisonRegimeTime,
   )
 
 private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map { it.toModel() }
