@@ -60,15 +60,6 @@ class PrisonRegimeService(
     return transform(regime.first())
   }
 
-  @Deprecated("discuss with Dave, but given this is only used for maxDaysToExpire, unless its regime specific, it should really be on the rollout record instead")
-  fun getPrisonRegime(code: String, dayOfWeek: DayOfWeek? = null): PrisonRegimeEntity? {
-    val regime = prisonRegimeRepository.findByPrisonCode(code)
-    /** when not passing a day in, its being used mainly to get the maxDaysToExpire, which is not really regime specific, ie its prison based **/
-    dayOfWeek ?: return regime.firstOrNull()
-
-    return regime.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
-  }
-
   fun getPrisonRegimeByPrisonCodeV2(code: String): List<PrisonRegime> =
     prisonRegimeRepository.findByPrisonCode(code = code).map {
       transform(it)
