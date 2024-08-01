@@ -357,6 +357,7 @@ internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = Rollo
   LocalDate.of(2022, 12, 22),
   true,
   LocalDate.of(2022, 12, 23),
+  1,
 )
 
 internal fun prisonRegime(
@@ -370,7 +371,6 @@ internal fun prisonRegime(
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
   LocalTime.of(20, 0),
-  1,
   DayOfWeek.entries.map {
     PrisonRegimeDaysOfWeek(dayOfWeek = it)
   },

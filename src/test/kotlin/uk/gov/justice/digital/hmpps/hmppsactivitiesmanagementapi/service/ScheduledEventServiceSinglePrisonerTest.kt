@@ -100,6 +100,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           activitiesRolloutDate = activitiesRolloutDate,
           appointmentsToBeRolledOut = true,
           appointmentsRolloutDate = appointmentsRolloutDate,
+          maxDaysToExpiry = 21,
         ),
       )
   }

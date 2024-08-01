@@ -160,19 +160,17 @@ class ManageAllocationsService(
       .forEach { prison ->
         log.info("Checking for expired allocations at ${prison.code}.")
 
-        val prisonPlan = rolloutPrisonService.getPrisonPlan(prison.code)
-
         allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
           log.info("Checking for expired pending allocations at ${prison.code}.")
-          deallocateIfExpired(it, prisonPlan)
+          deallocateIfExpired(it, prison)
         }
         allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
           log.info("Checking for expired auto-suspended allocations at ${prison.code}.")
-          deallocateIfExpired(it, prisonPlan)
+          deallocateIfExpired(it, prison)
         }
         waitingListService.fetchOpenApplicationsForPrison(prison.code).ifNotEmpty {
           log.info("Checking for expired waiting list applications at ${prison.code}.")
-          removeWaitingListApplicationIfExpired(it, prisonPlan)
+          removeWaitingListApplicationIfExpired(it, prison)
         }
       }
   }

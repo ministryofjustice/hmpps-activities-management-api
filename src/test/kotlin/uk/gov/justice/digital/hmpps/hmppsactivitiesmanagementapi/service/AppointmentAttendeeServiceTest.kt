@@ -22,14 +22,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.cancelOnTransferAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerPermanentTransferAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
@@ -40,7 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -52,11 +51,11 @@ class AppointmentAttendeeServiceTest {
   private val appointmentAttendeeRepository = mock<AppointmentAttendeeRepository>()
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentAttendeeRemovalReasonRepository = mock<AppointmentAttendeeRemovalReasonRepository>()
-  private val prisonRegimeService = mock<PrisonRegimeService>()
   private val prisonerSearch = mock<PrisonerSearchApiApplicationClient>()
   private val prisonApi = mock<PrisonApiApplicationClient>()
   private val outboundEventsService: OutboundEventsService = mock()
   private val auditService = mock<AuditService>()
+  private val rolloutPrisonService = mock<RolloutPrisonService>()
 
   private val appointmentCaptor = argumentCaptor<Appointment>()
 
@@ -66,7 +65,7 @@ class AppointmentAttendeeServiceTest {
       appointmentAttendeeRepository,
       appointmentInstanceRepository,
       appointmentAttendeeRemovalReasonRepository,
-      prisonRegimeService,
+      rolloutPrisonService,
       prisonerSearch,
       prisonApi,
       TransactionHandler(),
@@ -184,7 +183,7 @@ class AppointmentAttendeeServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever(prisonRegimeService.getPrisonRegime(MOORLAND_PRISON_CODE)).thenReturn(prisonRegime(prisonCode = MOORLAND_PRISON_CODE))
+      whenever(rolloutPrisonService.getPrisonPlan(MOORLAND_PRISON_CODE)).thenReturn(rolloutPrison(prisonCode = MOORLAND_PRISON_CODE))
       whenever(
         appointmentAttendeeRemovalReasonRepository.findById(
           PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
@@ -217,16 +216,6 @@ class AppointmentAttendeeServiceTest {
       }
         .isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Supplied days after now must be at least one day and less than 61 days")
-    }
-
-    @Test
-    fun `prison regime must exist`() {
-      service.manageAppointmentAttendees(PENTONVILLE_PRISON_CODE, 0)
-
-      verifyNoInteractions(appointmentRepository)
-      verifyNoInteractions(prisonerSearch)
-      verifyNoInteractions(prisonApi)
-      verify(service, never()).removePrisonerFromFutureAppointments(any(), any(), any(), any(), any())
     }
 
     @Test

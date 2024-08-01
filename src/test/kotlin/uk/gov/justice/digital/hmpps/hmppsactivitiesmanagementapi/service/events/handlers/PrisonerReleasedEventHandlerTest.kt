@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -40,6 +41,7 @@ class PrisonerReleasedEventHandlerTest {
         activitiesRolloutDate = LocalDate.now().plusDays(-1),
       )
   }
+  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val waitingListService: WaitingListService = mock()
@@ -47,7 +49,7 @@ class PrisonerReleasedEventHandlerTest {
   private val allocationRepository: AllocationRepository = mock()
 
   private val handler = PrisonerReleasedEventHandler(
-    rolloutPrisonRepository,
+    rolloutPrisonService,
     appointmentAttendeeService,
     waitingListService,
     prisonerSearchApiClient,

@@ -43,5 +43,5 @@ values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 
 
 alter table prison_regime drop column max_days_to_expiry;
 
-ALTER TABLE rollout_prison ADD COLUMN max_days_to_expiry not null integer default 21;
+ALTER TABLE rollout_prison ADD COLUMN max_days_to_expiry integer not null default 21;
 

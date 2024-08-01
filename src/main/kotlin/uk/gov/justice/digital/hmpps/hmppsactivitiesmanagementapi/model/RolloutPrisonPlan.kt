@@ -26,6 +26,6 @@ data class RolloutPrisonPlan(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val appointmentsRolloutDate: LocalDate?,
 
-  @Schema(description = "max days to expire events based on prisoner movement")
-  val maxDaysToExpiry: Int,
+  @Schema(description = "max days to expire events based on prisoner movement, default is 21")
+  val maxDaysToExpiry: Int = 21,
 )

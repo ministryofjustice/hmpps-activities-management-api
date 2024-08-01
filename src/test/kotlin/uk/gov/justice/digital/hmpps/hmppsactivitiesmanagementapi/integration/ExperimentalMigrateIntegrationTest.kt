@@ -88,6 +88,12 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
           endTime = LocalTime.of(16, 0, 0),
           friday = true,
         ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(6, 40, 0),
+          endTime = LocalTime.of(7, 0, 0),
+          saturday = true,
+          sunday = true,
+        ),
       ),
       payRates = emptyList(),
     )
@@ -114,12 +120,19 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       it.fridayFlag && it.endTime == regimeEndTimeAM
     }
 
+    val weekendAm = activity.schedules.first().slots.first {
+      it.saturdayFlag && it.sundayFlag
+    }
+
     assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
     assertThat(mondayAm.usePrisonRegimeTime).isTrue()
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
     assertThat(fridayAm.usePrisonRegimeTime).isTrue()
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
+    assertThat(weekendAm.startTime == LocalTime.of(6, 40, 0)).isTrue()
+    assertThat(weekendAm.endTime == LocalTime.of(7, 0, 0)).isTrue()
+    assertThat(weekendAm.usePrisonRegimeTime).isFalse()
   }
 
   @Sql(

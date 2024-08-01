@@ -133,6 +133,7 @@ class MigrateActivityServiceTest {
     activitiesRolloutDate = LocalDate.now().minusDays(1),
     appointmentsRolledOut = false,
     appointmentsRolloutDate = null,
+    maxDaysToExpiry = 21,
   )
 
   @Nested
