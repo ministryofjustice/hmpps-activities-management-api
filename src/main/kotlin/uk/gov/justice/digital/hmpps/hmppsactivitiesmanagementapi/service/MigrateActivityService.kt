@@ -35,8 +35,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService.Companion.daysOfWeek
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService.Companion.usesPrisonRegimeTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
@@ -227,20 +225,12 @@ class MigrateActivityService(
    */
   fun genericSplitActivity(request: ActivityMigrateRequest): List<Activity> {
     // Build the first activity
-    var usePrisonRegimeTimeForActivity = true
     val activity1 = buildActivityEntity(request, true, 2, 1)
 
     // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
       val prisonRegime = it.getPrisonRegime(prisonCode = request.prisonCode)
       val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
-      if (!it.usesPrisonRegimeTime(
-          slotStartTime = regime.first,
-          slotEndTime = regime.second,
-        )
-      ) {
-        usePrisonRegimeTimeForActivity = false
-      }
 
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
         activity1.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
@@ -249,7 +239,6 @@ class MigrateActivityService(
         activity1.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
       }
     }
-    activity1.schedules().first().usePrisonRegimeTime = usePrisonRegimeTimeForActivity
 
     // Build the second activity
     val activity2 = buildActivityEntity(request, true, 2, 2)
@@ -265,8 +254,6 @@ class MigrateActivityService(
         activity2.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
       }
     }
-
-    activity2.schedules().first().usePrisonRegimeTime = usePrisonRegimeTimeForActivity
 
     return listOf(activity1, activity2)
   }

@@ -161,17 +161,6 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
-  fun `import split activity`() {
-    val activityId = migrateActivity(request = splitActivity)
-    val activity = getActivity(activityId = activityId)
-
-    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
-  }
-
-  @Sql(
-    "classpath:test_data/seed-iwi-prison-regime.sql",
-  )
-  @Test
   fun `Edit activity slots, remove the custom slot and then reapply, observe the time has now been put back to prison regime time`() {
     val activityId = migrateActivity()
 
