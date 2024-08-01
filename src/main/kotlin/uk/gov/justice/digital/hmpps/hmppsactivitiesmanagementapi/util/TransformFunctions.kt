@@ -438,8 +438,6 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
-  // TODO, to remove, maybe referenced in the UI
-  maxDaysToExpiry = 21,
   daysOfWeek = prisonRegime.prisonRegimeDaysOfWeek.map { it.dayOfWeek },
 )
 
