@@ -724,7 +724,7 @@ class ActivityService(
 
   private fun Slot.getPrisonRegimeTimes(prisonCode: String): Pair<LocalTime, LocalTime> {
     val regimeTimes = prisonRegimeService.getPrisonTimeSlots(prisonCode = prisonCode, daysOfWeek = this.getDaysOfWeek())
-      ?: throw ValidationException("No regime time found for ${this.getDaysOfWeek()} must supply custom start and end times")
+      ?: throw ValidationException("No regime time found for $prisonCode ${this.getDaysOfWeek()} must supply custom start and end times")
 
     return regimeTimes[this.timeSlot()]!!
   }
