@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -12,7 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventPriority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
@@ -241,13 +238,7 @@ class PrisonRegimeServiceTest {
   fun `returns a prison regime for known prison code`() {
     whenever(prisonRegimeRepository.findByPrisonCode("PVI")).thenReturn(listOf(prisonRegime()))
 
-    assertThat(service.getPrisonRegimeByPrisonCode("PVI")).isInstanceOf(PrisonRegime::class.java)
-  }
-
-  @Test
-  fun `throws entity not found exception for unknown prison code`() {
-    assertThatThrownBy { service.getPrisonRegimeByPrisonCode("PVX") }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("PVX")
+    assertThat(service.getPrisonRegimeByPrisonCode("PVI").size).isEqualTo(1)
   }
 
   @Test

@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
@@ -49,18 +48,7 @@ class PrisonRegimeService(
       .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
       .map { it.toModelPrisonPayBand() }
 
-  /**
-   * Returns the prison regime configured for a prison (if any).
-   */
-  @Deprecated("to remove once UI uses v2 endpoint")
-  fun getPrisonRegimeByPrisonCode(code: String): PrisonRegime {
-    val regime = prisonRegimeRepository.findByPrisonCode(code)
-    if (regime.isEmpty()) throw EntityNotFoundException(code)
-
-    return transform(regime.first())
-  }
-
-  fun getPrisonRegimeByPrisonCodeV2(code: String): List<PrisonRegime> =
+  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> =
     prisonRegimeRepository.findByPrisonCode(code = code).map {
       transform(it)
     }

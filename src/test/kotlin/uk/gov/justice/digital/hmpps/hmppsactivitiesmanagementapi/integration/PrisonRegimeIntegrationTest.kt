@@ -14,16 +14,16 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `RSI regime reflects single regime`() {
-    // this test will confirm new model still works for existing prisons and code
     val regime = getPrisonRegime(agencyId = "RSI")
 
-    assertThat(regime.amStart).isEqualTo(LocalTime.of(9, 0, 0))
-    assertThat(regime.amFinish).isEqualTo(LocalTime.of(12, 0, 0))
-    assertThat(regime.pmStart).isEqualTo(LocalTime.of(13, 45, 0))
-    assertThat(regime.pmFinish).isEqualTo(LocalTime.of(16, 45, 0))
-    assertThat(regime.edStart).isEqualTo(LocalTime.of(18, 0, 0))
-    assertThat(regime.edFinish).isEqualTo(LocalTime.of(20, 0, 0))
-    assertThat(regime.daysOfWeek.containsAll(DayOfWeek.entries)).isTrue()
+    assertThat(regime.size).isEqualTo(1)
+    assertThat(regime.first().amStart).isEqualTo(LocalTime.of(9, 0, 0))
+    assertThat(regime.first().amFinish).isEqualTo(LocalTime.of(12, 0, 0))
+    assertThat(regime.first().pmStart).isEqualTo(LocalTime.of(13, 45, 0))
+    assertThat(regime.first().pmFinish).isEqualTo(LocalTime.of(16, 45, 0))
+    assertThat(regime.first().edStart).isEqualTo(LocalTime.of(18, 0, 0))
+    assertThat(regime.first().edFinish).isEqualTo(LocalTime.of(20, 0, 0))
+    assertThat(regime.first().daysOfWeek.containsAll(DayOfWeek.entries)).isTrue()
   }
 
   @Sql(
@@ -31,7 +31,7 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get prison regime for IWI with a monday to thursday regime, friday regime and weekend regime`() {
-    val regime = getPrisonRegimeV2(agencyId = "IWI")
+    val regime = getPrisonRegime(agencyId = "IWI")
     val mondayToThursdayRegime = regime.firstOrNull {
       it.daysOfWeek.containsAll(listOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY))
     }
@@ -51,25 +51,10 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
     assertThat(weekendRegime).isNotNull
   }
 
-  private fun getPrisonRegime(agencyId: String): PrisonRegime = webTestClient.get()
+  private fun getPrisonRegime(agencyId: String): List<PrisonRegime> = webTestClient.get()
     .uri { builder ->
       builder
         .path("/prison/prison-regime/$agencyId")
-        .build(agencyId)
-    }
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, agencyId)
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(PrisonRegime::class.java)
-    .returnResult().responseBody!!
-
-  private fun getPrisonRegimeV2(agencyId: String): List<PrisonRegime> = webTestClient.get()
-    .uri { builder ->
-      builder
-        .path("/prison/prison-regime/v2/$agencyId")
         .build(agencyId)
     }
     .accept(MediaType.APPLICATION_JSON)
