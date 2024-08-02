@@ -98,6 +98,43 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       payRates = emptyList(),
     )
 
+  private val regimeNotFoundRequest =
+    ActivityMigrateRequest(
+      programServiceCode = "INT_NOM",
+      prisonCode = "IWI",
+      startDate = LocalDate.of(2024, 7, 9),
+      endDate = null,
+      internalLocationId = 468492,
+      internalLocationCode = "SITE 3",
+      internalLocationDescription = "IWI-ESTAB-SITE 3",
+      capacity = 1,
+      description = "BNM + 27 PK",
+      payPerSession = "H",
+      runsOnBankHoliday = true,
+      outsideWork = false,
+      scheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = customStartTimeAM,
+          endTime = regimeEndTimeAM,
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+        ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(13, 40, 0),
+          endTime = LocalTime.of(16, 50, 0),
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+        ),
+      ),
+      payRates = emptyList(),
+    )
+
   private val splitActivity = ActivityMigrateRequest(
     programServiceCode = "INT_NOM",
     prisonCode = "IWI",
@@ -126,6 +163,17 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+  }
+
+  @Sql(
+    "classpath:test_data/seed-iwi-prison-regime.sql",
+  )
+  @Test
+  fun `regime not found issue`() {
+    val activityId = migrateActivity(request = regimeNotFoundRequest)
+    val activity = getActivity(activityId = activityId)
+
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
 
   @Sql(
