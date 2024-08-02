@@ -240,6 +240,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
             weekNumber = 1,
             timeSlot = "AM",
             monday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
           ),
         ),
       ),
@@ -249,7 +250,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     with(allocation.exclusions) {
       this hasSize 1
-      this.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      this.first().daysOfWeek isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())

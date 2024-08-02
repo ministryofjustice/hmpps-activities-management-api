@@ -119,8 +119,8 @@ class AllocationsService(
     request.exclusions?.onEach { exclusion ->
       allocation.activitySchedule.slots(exclusion.weekNumber, exclusion.timeSlot())
         .also { require(it.isNotEmpty()) { "Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
-        .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
-        .forEach { slot -> allocation.updateExclusion(slot, exclusion.getDaysOfWeek(), maxOf(allocation.startDate, LocalDate.now())) }
+        .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty() }
+        .forEach { slot -> allocation.updateExclusion(slot, exclusion.daysOfWeek, maxOf(allocation.startDate, LocalDate.now())) }
     }
   }
 
