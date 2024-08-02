@@ -192,11 +192,11 @@ class MigrateActivityService(
         val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode)
 
         usePrisonRegimeTimeForActivity = prisonRegime?.get(regimeTimeSlot)?.let {
-          !scheduleRule.usesPrisonRegimeTime(
+          scheduleRule.usesPrisonRegimeTime(
             slotStartTime = it.first,
             slotEndTime = it.second,
           )
-        } ?: false
+        }?.not() ?: false
       }
 
       activity.schedules().first().addSlot(
