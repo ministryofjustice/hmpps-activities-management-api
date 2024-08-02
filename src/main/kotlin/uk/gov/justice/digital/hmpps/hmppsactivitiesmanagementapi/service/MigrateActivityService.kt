@@ -259,13 +259,11 @@ class MigrateActivityService(
     return listOf(activity1, activity2)
   }
 
-  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String): Map<TimeSlot, SlotTimes>? {
-    val daysOfWeek = this.daysOfWeek()
-    return prisonRegimeService.getPrisonTimeSlots(
+  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String): Map<TimeSlot, SlotTimes>? =
+    prisonRegimeService.getPrisonTimeSlots(
       prisonCode = prisonCode,
-      daysOfWeek = daysOfWeek,
+      daysOfWeek = this.daysOfWeek(),
     )
-  }
 
   private fun buildActivityEntity(
     request: ActivityMigrateRequest,
