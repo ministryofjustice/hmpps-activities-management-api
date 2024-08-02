@@ -263,7 +263,7 @@ class ActivityService(
     slots.forEach { slot ->
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(
         prisonCode = activity.prisonCode,
-        daysOfWeek = slot.getDaysOfWeek(),
+        daysOfWeek = slot.daysOfWeek,
       )
 
       val slotTimes = if (timeSlots == null) {
@@ -712,7 +712,7 @@ class ActivityService(
   }
 
   private fun List<Slot>.slotsToTimeSlots(prisonCode: String): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
-    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(prisonCode = prisonCode)) to it.getDaysOfWeek() }
+    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(prisonCode = prisonCode)) to it.daysOfWeek }
   }
 
   private fun Slot.getCustomTimeSlotIfPresent(prisonCode: String): Pair<LocalTime, LocalTime> {
@@ -723,8 +723,8 @@ class ActivityService(
   }
 
   private fun Slot.getPrisonRegimeTimes(prisonCode: String): Pair<LocalTime, LocalTime> {
-    val regimeTimes = prisonRegimeService.getPrisonTimeSlots(prisonCode = prisonCode, daysOfWeek = this.getDaysOfWeek())
-      ?: throw ValidationException("No regime time found for $prisonCode ${this.getDaysOfWeek()} must supply custom start and end times")
+    val regimeTimes = prisonRegimeService.getPrisonTimeSlots(prisonCode = prisonCode, daysOfWeek = this.daysOfWeek)
+      ?: throw ValidationException("No regime time found for $prisonCode ${this.daysOfWeek} must supply custom start and end times")
 
     return regimeTimes[this.timeSlot()]!!
   }

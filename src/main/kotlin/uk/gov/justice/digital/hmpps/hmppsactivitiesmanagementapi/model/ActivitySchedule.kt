@@ -66,5 +66,5 @@ data class ActivitySchedule(
   val updatedBy: String?,
 
   @Schema(description = "a flag to indicate if this activity is scheduled according to prison standard regime times")
-  val usePrisonRegimeTime: Boolean,
+  val usePrisonRegimeTime: Boolean = true,
 )
