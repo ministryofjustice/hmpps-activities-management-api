@@ -261,10 +261,10 @@ class ActivityService(
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
-      // TODO this needs to take consideration of the slots matching multiple regimes
       val timeSlots = prisonRegimeService.getPrisonTimeSlots(
         prisonCode = activity.prisonCode,
         daysOfWeek = slot.daysOfWeek,
+        acrossRegimes = true,
       )
 
       val slotTimes = if (timeSlots == null) {

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -173,7 +174,7 @@ class ActivityServiceTest {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
     whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(listOf(transform(prisonRegime())))
-    whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
+    whenever(prisonRegimeService.getPrisonTimeSlots(any(), any(), anyOrNull())).thenReturn(
       transform(prisonRegime()).let { pr ->
         mapOf(
           TimeSlot.AM to Pair(pr.amStart, pr.amFinish),

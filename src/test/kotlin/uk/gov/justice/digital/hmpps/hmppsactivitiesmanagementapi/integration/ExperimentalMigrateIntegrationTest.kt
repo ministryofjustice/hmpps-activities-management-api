@@ -10,9 +10,14 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -355,6 +360,59 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedule.instances.first { it.startTime == customStartTimeAM }.attendances.isNotEmpty()).isTrue()
   }
 
+  @Sql(
+    "classpath:test_data/seed-iwi-prison-regime.sql",
+  )
+  @Test
+  fun `create activity across multiple regimes`() {
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-iwi.json",
+    )
+
+    val response = createActivity(
+      activityCreateRequest =
+      ActivityCreateRequest(
+        prisonCode = "IWI",
+        attendanceRequired = true,
+        inCell = false,
+        pieceWork = false,
+        outsideWork = false,
+        payPerSession = null,
+        summary = "Test activity",
+        description = "Test activity",
+        categoryId = activityCategory().activityCategoryId,
+        tierCode = eventTier().code,
+        organiserCode = eventOrganiser().code,
+        eligibilityRuleIds = emptyList(),
+        pay = emptyList(),
+        riskLevel = "high",
+        startDate = TimeSource.tomorrow(),
+        endDate = null,
+        minimumEducationLevel = emptyList(),
+        locationId = 1,
+        capacity = 1,
+        scheduleWeeks = 1,
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            thursday = true,
+            friday = true,
+          ),
+        ),
+        onWing = false,
+        offWing = false,
+        paid = false,
+      ),
+    )
+
+    assertThat(response.schedules.first().usePrisonRegimeTime).isTrue()
+  }
+
   private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
     incentivesApiMockServer.stubGetIncentiveLevels("IWI")
     prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
@@ -481,6 +539,21 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       .header(CASELOAD_ID, "IWI")
       .exchange()
       .expectStatus().isAccepted
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(Activity::class.java)
+      .returnResult().responseBody!!
+
+  private fun createActivity(
+    activityCreateRequest: ActivityCreateRequest,
+  ): Activity =
+    webTestClient.post()
+      .uri("/activities")
+      .bodyValue(activityCreateRequest)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+      .header(CASELOAD_ID, "IWI")
+      .exchange()
+      .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Activity::class.java)
       .returnResult().responseBody!!

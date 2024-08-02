@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -171,7 +172,7 @@ class MigrateActivityServiceTest {
           ),
         ),
       )
-      whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
+      whenever(prisonRegimeService.getPrisonTimeSlots(any(), any(), anyOrNull())).thenReturn(
         mapOf(
           TimeSlot.AM to Pair(LocalTime.of(8, 30), LocalTime.of(9, 30)),
           TimeSlot.PM to Pair(LocalTime.of(12, 30), LocalTime.of(13, 30)),

@@ -76,17 +76,35 @@ class PrisonRegimeService(
       LocalTimeRange(start, end)
     }
 
-  fun getPrisonTimeSlots(prisonCode: String, daysOfWeek: Set<DayOfWeek>): Map<TimeSlot, SlotTimes>? =
-    getPrisonRegimeForDaysOfWeek(prisonCode = prisonCode, daysOfWeek = daysOfWeek)?.let { pr ->
-      mapOf(
-        TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
-        TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
-        TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
-      )
+  fun getPrisonTimeSlots(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    acrossRegimes: Boolean = false,
+  ): Map<TimeSlot, SlotTimes>? = when (acrossRegimes) {
+    false ->
+      getPrisonRegimeForDaysOfWeek(prisonCode = prisonCode, daysOfWeek = daysOfWeek).firstOrNull()?.let {
+          pr ->
+        mapOf(
+          TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
+          TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
+          TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
+        )
+      }
+
+    true -> TODO()
+  }
+
+  private fun getPrisonRegimeForDaysOfWeek(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    acrossRegimes: Boolean = false,
+  ): List<PrisonRegimeEntity> =
+    when (acrossRegimes) {
+      false -> prisonRegimeRepository.findByPrisonCode(code = prisonCode)
+        .filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+
+      true -> TODO("implement me")
     }
-
-  private fun getPrisonRegimeForDaysOfWeek(prisonCode: String, daysOfWeek: Set<DayOfWeek>): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
-
   private fun getPrisonRegimeForDayOfWeek(prisonCode: String, dayOfWeek: DayOfWeek): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
 }
 
