@@ -353,7 +353,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(updateActivityResponse))
 
-    verify(activityService).updateActivity(any(), any(), any(), any())
+    verify(activityService).updateActivity(any(), any(), any(), any(), any())
   }
 
   @Test
@@ -422,7 +422,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { isNotFound() }
       }
 
-    verify(activityService).updateActivity(any(), any(), any(), any())
+    verify(activityService).updateActivity(any(), any(), any(), any(), any())
   }
 
   @Nested

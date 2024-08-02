@@ -322,8 +322,9 @@ class ActivityService(
     activityId: Long,
     request: ActivityUpdateRequest,
     updatedBy: String,
+    adminMode: Boolean? = false,
   ): ModelActivity {
-    checkCaseloadAccess(prisonCode)
+    if (adminMode == false) checkCaseloadAccess(prisonCode)
 
     transactionHandler.newSpringTransaction {
       val activity = activityRepository.findByActivityIdAndPrisonCodeWithFilters(activityId, prisonCode, LocalDate.now())

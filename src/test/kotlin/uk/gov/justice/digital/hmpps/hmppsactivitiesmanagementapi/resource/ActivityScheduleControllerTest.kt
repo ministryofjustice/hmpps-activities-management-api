@@ -163,7 +163,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
       assertThat(contentAsString).contains("Prisoner number cannot be more than 7 characters")
     }
 
-    verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any())
+    verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any(), any())
   }
 
   @Test
