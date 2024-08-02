@@ -43,18 +43,17 @@ data class Slot(
   val customStartTime: LocalTime? = null,
 
   val customEndTime: LocalTime? = null,
+
+  val daysOfWeek: Set<DayOfWeek> = setOfNotNull(
+    DayOfWeek.MONDAY.takeIf { monday },
+    DayOfWeek.TUESDAY.takeIf { tuesday },
+    DayOfWeek.WEDNESDAY.takeIf { wednesday },
+    DayOfWeek.THURSDAY.takeIf { thursday },
+    DayOfWeek.FRIDAY.takeIf { friday },
+    DayOfWeek.SATURDAY.takeIf { saturday },
+    DayOfWeek.SUNDAY.takeIf { sunday },
+  ),
 ) {
-  fun getDaysOfWeek(): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { monday },
-      DayOfWeek.TUESDAY.takeIf { tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { wednesday },
-      DayOfWeek.THURSDAY.takeIf { thursday },
-      DayOfWeek.FRIDAY.takeIf { friday },
-      DayOfWeek.SATURDAY.takeIf { saturday },
-      DayOfWeek.SUNDAY.takeIf { sunday },
-    )
-  }
 
   fun timeSlot() = TimeSlot.valueOf(timeSlot!!)
 }

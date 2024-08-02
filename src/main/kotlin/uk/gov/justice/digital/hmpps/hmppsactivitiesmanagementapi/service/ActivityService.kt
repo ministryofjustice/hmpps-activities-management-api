@@ -701,7 +701,7 @@ class ActivityService(
   }
 
   private fun List<Slot>.slotsToTimeSlots(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
-    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(regimeTimeSlots)) to it.getDaysOfWeek() }
+    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(regimeTimeSlots)) to it.daysOfWeek }
   }
 
   private fun Slot.getCustomTimeSlotIfPresent(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Pair<LocalTime, LocalTime> {
