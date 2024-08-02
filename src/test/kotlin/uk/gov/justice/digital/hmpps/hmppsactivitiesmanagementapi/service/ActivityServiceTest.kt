@@ -172,8 +172,8 @@ class ActivityServiceTest {
   fun setUp() {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(transform(prisonRegime()))
-    whenever(prisonRegimeService.getPrisonTimeSlots(any())).thenReturn(
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(listOf(transform(prisonRegime())))
+    whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
       transform(prisonRegime()).let { pr ->
         mapOf(
           TimeSlot.AM to Pair(pr.amStart, pr.amFinish),

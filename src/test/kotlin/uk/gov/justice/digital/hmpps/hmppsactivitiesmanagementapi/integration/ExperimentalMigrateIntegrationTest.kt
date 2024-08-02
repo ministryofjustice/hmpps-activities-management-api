@@ -88,9 +88,39 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
           endTime = LocalTime.of(16, 0, 0),
           friday = true,
         ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(6, 40, 0),
+          endTime = LocalTime.of(7, 0, 0),
+          saturday = true,
+          sunday = true,
+        ),
       ),
       payRates = emptyList(),
     )
+
+  private val splitActivity = ActivityMigrateRequest(
+    programServiceCode = "INT_NOM",
+    prisonCode = "IWI",
+    startDate = LocalDate.of(2024, 7, 9),
+    endDate = null,
+    internalLocationId = 468492,
+    internalLocationCode = "SITE 3",
+    internalLocationDescription = "IWI-ESTAB-SITE 3",
+    capacity = 1,
+    description = "BNM + 27 PK SPLIT",
+    payPerSession = "H",
+    runsOnBankHoliday = true,
+    outsideWork = false,
+    scheduleRules = listOf(
+      NomisScheduleRule(
+        startTime = LocalTime.of(6, 40, 0),
+        endTime = LocalTime.of(7, 0, 0),
+        saturday = true,
+        sunday = true,
+      ),
+    ),
+    payRates = emptyList(),
+  )
 
   @BeforeEach
   fun init() {
@@ -99,7 +129,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `import activity should set custom times in slot`() {
@@ -114,16 +144,21 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       it.fridayFlag && it.endTime == regimeEndTimeAM
     }
 
+    val weekendAm = activity.schedules.first().slots.first {
+      it.saturdayFlag && it.sundayFlag
+    }
+
     assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
-    assertThat(mondayAm.usePrisonRegimeTime).isFalse()
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
-    assertThat(fridayAm.usePrisonRegimeTime).isTrue()
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
+    assertThat(weekendAm.startTime == LocalTime.of(6, 40, 0)).isTrue()
+    assertThat(weekendAm.endTime == LocalTime.of(7, 0, 0)).isTrue()
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `Edit activity slots, remove the custom slot and then reapply, observe the time has now been put back to prison regime time`() {
@@ -183,7 +218,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `migrate allocation and add attendance and confirm prisoner has allocation and attendance in custom slot`() {
@@ -217,7 +252,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `set up exclusions for the custom slots, and confirm the prisoner has no attendance record`() {
@@ -255,7 +290,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   @Sql(
-    "classpath:test_data/seed-migrate-experiment.sql",
+    "classpath:test_data/seed-iwi-prison-regime.sql",
   )
   @Test
   fun `exclude prisoner on migrate, then remove custom exclusion, and confirm prisoner has attendance`() {
@@ -272,13 +307,13 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedule.instances.first { it.startTime == customStartTimeAM }.attendances.isNotEmpty()).isTrue()
   }
 
-  private fun migrateActivity(): Long {
+  private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
     incentivesApiMockServer.stubGetIncentiveLevels("IWI")
     prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
 
     return webTestClient.post()
       .uri("/migrate/activity")
-      .bodyValue(exceptionRequest)
+      .bodyValue(request)
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
       .exchange()
       .expectStatus().isOk

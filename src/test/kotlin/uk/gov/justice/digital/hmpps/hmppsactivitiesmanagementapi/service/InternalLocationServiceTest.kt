@@ -245,13 +245,13 @@ class InternalLocationServiceTest {
 
     prisonRegimeService.stub {
       on {
-        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM)
+        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.AM, LocalDate.now().dayOfWeek)
       } doReturn LocalTimeRange(timeSlotAm.first, timeSlotAm.second)
       on {
-        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM)
+        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.PM, LocalDate.now().dayOfWeek)
       } doReturn LocalTimeRange(timeSlotPm.first, timeSlotPm.second)
       on {
-        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED)
+        getTimeRangeForPrisonAndTimeSlot(prisonCode, TimeSlot.ED, LocalDate.now().dayOfWeek)
       } doReturn LocalTimeRange(timeSlotEd.first, timeSlotEd.second)
     }
 

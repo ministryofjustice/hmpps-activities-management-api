@@ -95,6 +95,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           activitiesRolloutDate = activitiesRolloutDate,
           appointmentsToBeRolledOut = active,
           appointmentsRolloutDate = appointmentsRolloutDate,
+          maxDaysToExpiry = 21,
         ),
       )
   }

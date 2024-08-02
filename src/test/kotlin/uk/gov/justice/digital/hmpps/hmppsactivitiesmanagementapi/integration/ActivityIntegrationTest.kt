@@ -507,11 +507,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
       ActivityScheduleLite(
         id = 2,
@@ -562,11 +562,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -619,7 +619,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 2L,
@@ -635,11 +634,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -692,7 +691,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 2L,
@@ -708,7 +706,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 3L,
@@ -724,7 +721,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = true,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
           ActivityScheduleSlot(
             id = 4L,
@@ -740,11 +736,11 @@ class ActivityIntegrationTest : IntegrationTestBase() {
             fridayFlag = false,
             saturdayFlag = false,
             sundayFlag = false,
-            usePrisonRegimeTime = true,
           ),
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 2,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -1181,7 +1177,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(instances).hasSizeBetween(3, 4)
@@ -1197,7 +1193,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)

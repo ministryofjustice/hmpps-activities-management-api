@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
-import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
@@ -8,12 +7,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime as PrisonRegimeEntity
 
 @Service
 @Transactional(readOnly = true)
@@ -46,12 +48,10 @@ class PrisonRegimeService(
       .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
       .map { it.toModelPrisonPayBand() }
 
-  /**
-   * Returns the prison regime configured for a prison (if any).
-   */
-  fun getPrisonRegimeByPrisonCode(code: String) = transform(
-    prisonRegimeRepository.findByPrisonCode(code) ?: throw EntityNotFoundException(code),
-  )
+  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> =
+    prisonRegimeRepository.findByPrisonCode(code = code).map {
+      transform(it)
+    }
 
   /**
    *  Converts a TimeSlot for a given Prison into a time range.
@@ -65,26 +65,29 @@ class PrisonRegimeService(
    *   @param prisonCode The code of the prison to look up the times for
    *   @param timeSlot The timeslot to convert
    */
-  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot): LocalTimeRange =
-    getPrisonRegimeByPrisonCode(prisonCode)
-      .let { pr ->
-        val (start, end) = when (timeSlot) {
-          TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
-          TimeSlot.PM -> pr.pmStart to pr.edStart
-          TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
-        }
-
-        LocalTimeRange(start, end)
+  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): LocalTimeRange? =
+    getPrisonRegimeForDayOfWeek(prisonCode = prisonCode, dayOfWeek = dayOfWeek)?.let { pr ->
+      val (start, end) = when (timeSlot) {
+        TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
+        TimeSlot.PM -> pr.pmStart to pr.edStart
+        TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
       }
 
-  fun getPrisonTimeSlots(prisonCode: String): Map<TimeSlot, SlotTimes> =
-    getPrisonRegimeByPrisonCode(prisonCode).let { pr ->
+      LocalTimeRange(start, end)
+    }
+
+  fun getPrisonTimeSlots(prisonCode: String, daysOfWeek: Set<DayOfWeek>): Map<TimeSlot, SlotTimes>? =
+    getPrisonRegimeForDaysOfWeek(prisonCode = prisonCode, daysOfWeek = daysOfWeek)?.let { pr ->
       mapOf(
         TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
         TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
         TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
       )
     }
+
+  private fun getPrisonRegimeForDaysOfWeek(prisonCode: String, daysOfWeek: Set<DayOfWeek>): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+
+  private fun getPrisonRegimeForDayOfWeek(prisonCode: String, dayOfWeek: DayOfWeek): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)

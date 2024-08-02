@@ -61,6 +61,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
         startDate = LocalDate.now(),
         endDate = LocalDate.now(),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
 

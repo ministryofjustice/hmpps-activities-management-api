@@ -48,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -72,11 +73,13 @@ class ManageAttendancesServiceTest {
     on { findByCode(MOORLAND_PRISON_CODE) } doReturn rolloutPrison
   }
 
+  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+
   private val service = ManageAttendancesService(
     scheduledInstanceRepository,
     attendanceRepository,
     attendanceReasonRepository,
-    rolloutPrisonRepository,
+    rolloutPrisonService,
     outboundEventsService,
     prisonerSearchApiClient,
     TransactionHandler(),

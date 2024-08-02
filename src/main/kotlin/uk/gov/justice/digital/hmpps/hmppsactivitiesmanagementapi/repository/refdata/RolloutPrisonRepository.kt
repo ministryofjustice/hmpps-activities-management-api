@@ -8,5 +8,3 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 interface RolloutPrisonRepository : JpaRepository<RolloutPrison, Long> {
   fun findByCode(code: String): RolloutPrison?
 }
-
-fun RolloutPrisonRepository.isActivitiesRolledOutAt(prisonCode: String) = findByCode(prisonCode)?.isActivitiesRolledOut() == true

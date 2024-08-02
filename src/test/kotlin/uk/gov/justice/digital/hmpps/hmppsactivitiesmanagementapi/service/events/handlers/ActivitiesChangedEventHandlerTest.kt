@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class ActivitiesChangedEventHandlerTest {
   private val rolloutPrison: RolloutPrison = mock {
@@ -42,6 +43,8 @@ class ActivitiesChangedEventHandlerTest {
     on { findByCode(MOORLAND_PRISON_CODE) } doReturn rolloutPrison
   }
 
+  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val prisonerAllocationHandler: PrisonerAllocationHandler = mock()
@@ -50,7 +53,7 @@ class ActivitiesChangedEventHandlerTest {
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
 
   private val handler = ActivitiesChangedEventHandler(
-    rolloutPrisonRepository,
+    rolloutPrisonService,
     allocationRepository,
     prisonerSearchApiClient,
     prisonerAllocationHandler,

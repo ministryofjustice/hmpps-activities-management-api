@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -356,6 +357,7 @@ internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = Rollo
   LocalDate.of(2022, 12, 22),
   true,
   LocalDate.of(2022, 12, 23),
+  1,
 )
 
 internal fun prisonRegime(
@@ -369,7 +371,9 @@ internal fun prisonRegime(
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
   LocalTime.of(20, 0),
-  1,
+  DayOfWeek.entries.map {
+    PrisonRegimeDaysOfWeek(dayOfWeek = it)
+  },
 )
 
 internal fun prisonPayBandsLowMediumHigh(prisonCode: String = MOORLAND_PRISON_CODE) = listOf(

@@ -133,6 +133,7 @@ class MigrateActivityServiceTest {
     activitiesRolloutDate = LocalDate.now().minusDays(1),
     appointmentsRolledOut = false,
     appointmentsRolloutDate = null,
+    maxDaysToExpiry = 21,
   )
 
   @Nested
@@ -170,7 +171,7 @@ class MigrateActivityServiceTest {
           ),
         ),
       )
-      whenever(prisonRegimeService.getPrisonTimeSlots(any())).thenReturn(
+      whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
         mapOf(
           TimeSlot.AM to Pair(LocalTime.of(8, 30), LocalTime.of(9, 30)),
           TimeSlot.PM to Pair(LocalTime.of(12, 30), LocalTime.of(13, 30)),

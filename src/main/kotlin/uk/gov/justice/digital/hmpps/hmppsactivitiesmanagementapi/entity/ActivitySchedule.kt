@@ -79,6 +79,8 @@ data class ActivitySchedule(
   var instancesLastUpdatedTime: LocalDateTime? = null,
 
   var scheduleWeeks: Int,
+
+  var usePrisonRegimeTime: Boolean = true,
 ) {
 
   init {
@@ -187,9 +189,6 @@ data class ActivitySchedule(
     return (daysIntoThisSchedulePeriod / daysInWeek).toInt() + 1
   }
 
-  fun hasNoInstancesOnDate(day: LocalDate) =
-    instances.none { instance -> instance.sessionDate == day }
-
   fun hasNoInstancesOnDate(day: LocalDate, startEndTime: SlotTimes) =
     instances.none { instance ->
       instance.sessionDate == day &&
@@ -236,7 +235,6 @@ data class ActivitySchedule(
     weekNumber: Int,
     slotTimes: SlotTimes,
     daysOfWeek: Set<DayOfWeek>,
-    usePrisonRegimeTime: Boolean = true,
     experimentalMode: Boolean = false,
   ): ActivityScheduleSlot {
     if (!experimentalMode) require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
@@ -246,7 +244,6 @@ data class ActivitySchedule(
         weekNumber = weekNumber,
         slotTimes = slotTimes,
         daysOfWeek = daysOfWeek,
-        usePrisonRegimeTime = usePrisonRegimeTime,
       ),
     )
     return slots.last()
@@ -332,6 +329,7 @@ data class ActivitySchedule(
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,
     endDate = this.endDate,
+    usePrisonRegimeTime = this.usePrisonRegimeTime,
   ).apply {
     if (!this.activity.inCell && !this.activity.onWing && !this.activity.offWing) {
       this.internalLocation = InternalLocation(
