@@ -29,7 +29,6 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `after running deallocate prisoners should all be deallocated`() {
-
     webTestClient.post().uri("/job/fix-zero-pay?deallocate=true")
       .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .header(CASELOAD_ID, "RSI")
@@ -42,7 +41,7 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
     assertThat(allocations).hasSize(6)
 
-    with(allocations.first()){
+    with(allocations.first()) {
       assertThat(prisonerNumber).isEqualTo("A7175CH")
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
       assertThat(plannedDeallocation?.plannedReason).isEqualTo(DeallocationReason.OTHER)
