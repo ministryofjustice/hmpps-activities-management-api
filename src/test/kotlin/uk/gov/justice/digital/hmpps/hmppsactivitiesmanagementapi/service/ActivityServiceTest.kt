@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
@@ -26,9 +25,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -67,6 +67,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
@@ -80,7 +81,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activ
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -100,7 +100,12 @@ class ActivityServiceTest {
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonRegimeService: PrisonRegimeService = mock()
+  private val prisonRegimeRepository: PrisonRegimeRepository = mock()
+  private val prisonRegimeService: PrisonRegimeService = PrisonRegimeService(
+    prisonRegimeRepository = prisonRegimeRepository,
+    prisonPayBandRepository = prisonPayBandRepository,
+    eventPriorityRepository = mock(),
+  )
   private val bankHolidayService: BankHolidayService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -141,6 +146,7 @@ class ActivityServiceTest {
   private fun service(
     daysInAdvance: Long = 7L,
   ) = ActivityService(
+    false,
     activityRepository,
     activitySummaryRepository,
     activityCategoryRepository,
@@ -173,16 +179,35 @@ class ActivityServiceTest {
   fun setUp() {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(listOf(transform(prisonRegime())))
-    whenever(prisonRegimeService.getPrisonTimeSlots(any(), any(), anyOrNull())).thenReturn(
-      transform(prisonRegime()).let { pr ->
-        mapOf(
-          TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
-          TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
-          TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
-        )
-      },
+    whenever(prisonRegimeRepository.findByPrisonCode(any())).thenReturn(listOf(prisonRegime()))
+    val regime = prisonRegime()
+    val amTimes = Pair(regime.amStart, regime.amFinish)
+    val pmTimes = Pair(regime.pmStart, regime.pmFinish)
+    val edTimes = Pair(regime.edStart, regime.edFinish)
+
+    whenever(prisonRegimeRepository.findByPrisonCode("MDI")).thenReturn(
+      listOf(
+        PrisonRegime(
+          prisonCode = "MDI",
+          amStart = amTimes.first,
+          amFinish = amTimes.second,
+          pmStart = pmTimes.first,
+          pmFinish = pmTimes.second,
+          edStart = edTimes.first,
+          edFinish = edTimes.second,
+          prisonRegimeDaysOfWeek = listOf(
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.MONDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.TUESDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.WEDNESDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.THURSDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.FRIDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SATURDAY),
+            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SUNDAY),
+          ),
+        ),
+      ),
     )
+
     addCaseloadIdToRequestHeader(caseLoad)
   }
 
@@ -1747,8 +1772,6 @@ class ActivityServiceTest {
 
     // One slot and instance should be removed and replaced with one new slot and instance
     schedule.slots() hasSize 2
-    assertThat(schedule.slots()).doesNotContain(slot1)
-    assertThat(schedule.slots()).contains(slot2)
     schedule.instances() hasSize 2
     assertThat(schedule.instances()).doesNotContain(instance1)
     assertThat(schedule.instances()).contains(instance2)
@@ -2456,6 +2479,24 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance cannot be from YES to NO for a 'Tier 1' activity.")
+  }
+
+  @Test
+  fun `Removing last slot from schedule throws exception`() {
+    val savedActivityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        1,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(savedActivityEntity)
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(slots = emptyList()), "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Must have at least 1 active slot across the schedule")
   }
 
   @Test

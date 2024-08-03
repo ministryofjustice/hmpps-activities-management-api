@@ -402,6 +402,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
             wednesday = true,
             thursday = true,
             friday = true,
+            saturday = true,
           ),
         ),
         onWing = false,
@@ -411,6 +412,60 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     )
 
     assertThat(response.schedules.first().usePrisonRegimeTime).isTrue()
+    assertThat(response.schedules.first().slots.size).isEqualTo(3)
+    assertThat(response.schedules.first().slots.none { it.sundayFlag }).isTrue()
+    assertThat(response.schedules.first().slots.any { it.saturdayFlag }).isTrue()
+
+    // now update it to be mon - sat
+    val updated = updateActivity(
+      activityId = response.id,
+      slots =
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            thursday = true,
+            friday = true,
+            saturday = true,
+          ),
+        ),
+      ),
+    )
+
+    assertThat(updated.schedules.first().usePrisonRegimeTime).isTrue()
+    assertThat(updated.schedules.first().slots.size).isEqualTo(3)
+
+    val now = LocalTime.of(9, 0, 0)
+    // finally update it to use custom times.
+    val updatedToCustom = updateActivity(
+      activityId = response.id,
+      slots =
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = "AM",
+            monday = true,
+            tuesday = true,
+            wednesday = true,
+            thursday = true,
+            friday = true,
+            saturday = true,
+            customStartTime = now,
+            customEndTime = now.plusHours(1),
+          ),
+        ),
+      ),
+    )
+
+    assertThat(updatedToCustom.schedules.first().usePrisonRegimeTime).isFalse()
+    assertThat(updatedToCustom.schedules.first().slots.size).isEqualTo(1)
+    assertThat(updatedToCustom.schedules.first().slots.first().startTime).isEqualTo(now)
+    assertThat(updatedToCustom.schedules.first().slots.first().endTime).isEqualTo(now.plusHours(1))
   }
 
   private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {

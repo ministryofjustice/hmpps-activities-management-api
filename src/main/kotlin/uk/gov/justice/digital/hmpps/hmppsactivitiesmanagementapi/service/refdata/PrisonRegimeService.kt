@@ -76,36 +76,83 @@ class PrisonRegimeService(
       LocalTimeRange(start, end)
     }
 
-  fun getPrisonTimeSlots(
+  fun getSlotTimesForTimeSlot(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    timeSlot: TimeSlot,
+    acrossRegimes: Boolean = false,
+  ): SlotTimes? {
+    val regimeTimes = getSlotTimesForDaysOfWeek(
+      prisonCode = prisonCode, daysOfWeek = daysOfWeek, acrossRegimes = acrossRegimes,
+    ) ?: return null
+
+    val key = regimeTimes.keys.firstOrNull { it.containsAll(daysOfWeek) } ?: return null
+    return regimeTimes[key]?.get(timeSlot)
+  }
+
+  fun getSlotTimesForDaysOfWeek(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,
     acrossRegimes: Boolean = false,
-  ): Map<TimeSlot, SlotTimes>? = when (acrossRegimes) {
-    false ->
-      getPrisonRegimeForDaysOfWeek(prisonCode = prisonCode, daysOfWeek = daysOfWeek).firstOrNull()?.let {
-          pr ->
-        mapOf(
-          TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
-          TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
-          TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
-        )
-      }
+  ): Map<Set<DayOfWeek>, Map<TimeSlot, SlotTimes>>? {
+    val prisonRegimes = getPrisonRegimeForDaysOfWeek(
+      prisonCode = prisonCode,
+      daysOfWeek = daysOfWeek,
+      acrossRegimes = acrossRegimes,
+    )
+    if (prisonRegimes.isEmpty()) return null
 
-    true -> TODO()
+    val prisonTimeSlots = mutableMapOf<Set<DayOfWeek>, Map<TimeSlot, SlotTimes>>()
+
+    prisonRegimes.forEach {
+        regime ->
+      prisonTimeSlots[regime.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet()] =
+        mapOf(
+          TimeSlot.AM to Pair(regime.amStart, regime.amFinish),
+          TimeSlot.PM to Pair(regime.pmStart, regime.pmFinish),
+          TimeSlot.ED to Pair(regime.edStart, regime.edFinish),
+        )
+    }
+
+    return prisonTimeSlots
   }
 
   private fun getPrisonRegimeForDaysOfWeek(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,
     acrossRegimes: Boolean = false,
-  ): List<PrisonRegimeEntity> =
-    when (acrossRegimes) {
-      false -> prisonRegimeRepository.findByPrisonCode(code = prisonCode)
-        .filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+  ): List<PrisonRegimeEntity> {
+    val prisonRegimes = prisonRegimeRepository.findByPrisonCode(code = prisonCode)
 
-      true -> TODO("implement me")
+    return when (acrossRegimes) {
+      false -> prisonRegimes.matchesDays(daysOfWeek = daysOfWeek)
+      true -> {
+        val regimeMatchesDays = prisonRegimes.matchesDays(daysOfWeek = daysOfWeek)
+        if (regimeMatchesDays.isNotEmpty()) return regimeMatchesDays
+
+        val regimesAcrossDays = mutableSetOf<PrisonRegimeEntity>()
+
+        daysOfWeek.forEach { day ->
+          prisonRegimes.firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(day) }?.let {
+            regimesAcrossDays.add(it)
+          }
+        }
+        if (regimesAcrossDays.matchesDaysAcrossRegimes(daysOfWeek = daysOfWeek)) return regimesAcrossDays.toList()
+
+        return emptyList()
+      }
     }
+  }
+
   private fun getPrisonRegimeForDayOfWeek(prisonCode: String, dayOfWeek: DayOfWeek): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+
+  companion object {
+    fun List<PrisonRegimeEntity>.matchesDays(daysOfWeek: Set<DayOfWeek>) =
+      this.filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+
+    fun Set<PrisonRegimeEntity>.matchesDaysAcrossRegimes(daysOfWeek: Set<DayOfWeek>) =
+      this.flatMap { it.prisonRegimeDaysOfWeek }.map { it.dayOfWeek }.containsAll(daysOfWeek)
+  }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)
