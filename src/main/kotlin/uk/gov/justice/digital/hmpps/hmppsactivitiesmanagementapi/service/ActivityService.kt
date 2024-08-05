@@ -262,16 +262,14 @@ class ActivityService(
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
-      val timeSlots = prisonRegimeService.getSlotTimesForDaysOfWeek(
-        prisonCode = activity.prisonCode,
-        daysOfWeek = slot.daysOfWeek,
-        acrossRegimes = true,
-      )
-
       if (slot.customStartTime != null && slot.customEndTime != null) {
         this.addCustomSlot(slot = slot)
       } else {
-        timeSlots?.forEach { timeSlot ->
+        prisonRegimeService.getSlotTimesForDaysOfWeek(
+          prisonCode = activity.prisonCode,
+          daysOfWeek = slot.daysOfWeek,
+          acrossRegimes = true,
+        )?.forEach { timeSlot ->
           if (timeSlot.key.containsAny(slot.daysOfWeek)) {
             val daysOfWeekToApply = timeSlot.key.filter { slot.daysOfWeek.contains(it) }
             this.addSlot(
@@ -289,10 +287,7 @@ class ActivityService(
   private fun ActivitySchedule.addCustomSlot(slot: Slot) {
     this.addSlot(
       weekNumber = slot.weekNumber,
-      slotTimes = Pair(
-        slot.customStartTime!!,
-        slot.customEndTime!!,
-      ),
+      slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
       daysOfWeek = slot.daysOfWeek,
       experimentalMode = experimentalMode,
     )

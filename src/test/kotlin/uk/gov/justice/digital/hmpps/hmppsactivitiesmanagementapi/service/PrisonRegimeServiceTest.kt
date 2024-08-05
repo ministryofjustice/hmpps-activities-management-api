@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.DayOfWeek
-import java.time.LocalDate
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
@@ -31,17 +30,41 @@ class PrisonRegimeServiceTest {
 
   private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository, prisonRegimeRepository)
 
+  private val now = LocalTime.of(9, 0, 0)
+
   private fun createRegime(daysOfWeek: List<PrisonRegimeDaysOfWeek>): PrisonRegime =
     PrisonRegime(
       prisonCode = "IWI",
       prisonRegimeDaysOfWeek = daysOfWeek,
-      amStart = LocalDate.now().atStartOfDay().plusHours(1).toLocalTime(),
-      amFinish = LocalDate.now().atStartOfDay().plusHours(2).toLocalTime(),
-      pmStart = LocalDate.now().atStartOfDay().plusHours(3).toLocalTime(),
-      pmFinish = LocalDate.now().atStartOfDay().plusHours(4).toLocalTime(),
-      edStart = LocalDate.now().atStartOfDay().plusHours(5).toLocalTime(),
-      edFinish = LocalDate.now().atStartOfDay().plusHours(6).toLocalTime(),
+      amStart = now.plusHours(1),
+      amFinish = now.plusHours(2),
+      pmStart = now.plusHours(3),
+      pmFinish = now.plusHours(4),
+      edStart = now.plusHours(5),
+      edFinish = now.plusHours(6),
     )
+
+  private val iwiRegime = listOf(
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.MONDAY),
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.TUESDAY),
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.WEDNESDAY),
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.THURSDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.FRIDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SATURDAY),
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SUNDAY),
+      ),
+    ),
+  )
 
   @Test
   fun `default priorities are returned when no priorities for prison`() {
@@ -335,30 +358,7 @@ class PrisonRegimeServiceTest {
 
   @Test
   fun `get prison regimes across slots matches all days`() {
-    whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(
-      listOf(
-        createRegime(
-          daysOfWeek = listOf(
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.MONDAY),
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.TUESDAY),
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.WEDNESDAY),
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.THURSDAY),
-          ),
-        ),
-        createRegime(
-          daysOfWeek = listOf(
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.FRIDAY),
-          ),
-        ),
-        createRegime(
-          daysOfWeek = listOf(
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SATURDAY),
-            PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SUNDAY),
-          ),
-        ),
-
-      ),
-    )
+    whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(iwiRegime)
 
     val result = service.getSlotTimesForDaysOfWeek(
       prisonCode = "IWI",
@@ -368,5 +368,35 @@ class PrisonRegimeServiceTest {
 
     assertThat(result).isNotNull
     assertThat(result!!.size).isEqualTo(3)
+  }
+
+  @Test
+  fun `get prison regimes across slots for 2 days in different slots`() {
+    whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(iwiRegime)
+
+    val result = service.getSlotTimesForDaysOfWeek(
+      prisonCode = "IWI",
+      daysOfWeek = setOf(DayOfWeek.SATURDAY, DayOfWeek.FRIDAY),
+      acrossRegimes = true,
+    )
+
+    assertThat(result).isNotNull
+    assertThat(result!!.size).isEqualTo(2)
+  }
+
+  @Test
+  fun `get prison regime for time slot`() {
+    whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(iwiRegime)
+
+    val result = service.getSlotTimesForTimeSlot(
+      prisonCode = "IWI",
+      daysOfWeek = setOf(DayOfWeek.SATURDAY),
+      timeSlot = TimeSlot.ED,
+      acrossRegimes = true,
+    )
+
+    assertThat(result).isNotNull
+    assertThat(result!!.first).isEqualTo(now.plusHours(5))
+    assertThat(result.second).isEqualTo(now.plusHours(6))
   }
 }
