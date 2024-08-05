@@ -38,7 +38,7 @@ class PrisonRegimeService(
       .let(::EventPriorities)
 
   private fun defaultPriorities() =
-    EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
+    EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }
 
   /**
    * Returns the pay bands configured for a prison (if any), otherwise a default set of prison pay bands.

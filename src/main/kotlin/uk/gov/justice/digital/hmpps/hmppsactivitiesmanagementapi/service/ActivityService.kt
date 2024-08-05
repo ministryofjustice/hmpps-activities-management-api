@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.contains
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -269,16 +270,12 @@ class ActivityService(
           prisonCode = activity.prisonCode,
           daysOfWeek = slot.daysOfWeek,
           acrossRegimes = true,
-        )?.forEach { timeSlot ->
-          if (timeSlot.key.containsAny(slot.daysOfWeek)) {
-            val daysOfWeekToApply = timeSlot.key.filter { slot.daysOfWeek.contains(it) }
-            this.addSlot(
-              weekNumber = slot.weekNumber,
-              slotTimes = timeSlot.value[TimeSlot.valueOf(slot.timeSlot!!)]!!,
-              daysOfWeek = daysOfWeekToApply.toSet(),
-              experimentalMode = experimentalMode,
-            )
-          }
+        )?.filter { it.key.containsAny(slot.daysOfWeek) }?.forEach { timeSlot ->
+          this.addRegimeSlot(
+            slot = slot,
+            timeSlot = timeSlot.value,
+            daysOfWeekToApply = timeSlot.key.filter { slot.daysOfWeek.contains(it) }.toSet(),
+          )
         } ?: throw ValidationException("unable to add $slot as no applicable timeslots found")
       }
     }
@@ -289,6 +286,15 @@ class ActivityService(
       weekNumber = slot.weekNumber,
       slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
       daysOfWeek = slot.daysOfWeek,
+      experimentalMode = experimentalMode,
+    )
+  }
+
+  private fun ActivitySchedule.addRegimeSlot(slot: Slot, timeSlot: Map<TimeSlot, SlotTimes>, daysOfWeekToApply: Set<DayOfWeek>) {
+    this.addSlot(
+      weekNumber = slot.weekNumber,
+      slotTimes = timeSlot[TimeSlot.valueOf(slot.timeSlot!!)]!!,
+      daysOfWeek = daysOfWeekToApply,
       experimentalMode = experimentalMode,
     )
   }
@@ -327,18 +333,6 @@ class ActivityService(
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
-  }
-
-  private fun getDaysOfWeek(slot: Slot): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { slot.monday },
-      DayOfWeek.TUESDAY.takeIf { slot.tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
-      DayOfWeek.THURSDAY.takeIf { slot.thursday },
-      DayOfWeek.FRIDAY.takeIf { slot.friday },
-      DayOfWeek.SATURDAY.takeIf { slot.saturday },
-      DayOfWeek.SUNDAY.takeIf { slot.sunday },
-    )
   }
 
   @Transactional
