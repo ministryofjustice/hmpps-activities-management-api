@@ -45,5 +45,3 @@ cron:
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
-  fixZeroPayDeallocate: "0 13 2 8 *"
-  fixZeroPayReallocate: "0 5 3 8 *"
