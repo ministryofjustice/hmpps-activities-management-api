@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: activate-allocations
+  name: fix-zero-pay-deallocate
 spec:
   schedule:  "{{ .Values.cron.fixZeroPayDeallocate }}"
   concurrencyPolicy: Replace
