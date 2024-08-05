@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import java.time.Clock
@@ -30,6 +31,7 @@ class JobTriggerController(
   private val manageAllocationsJob: ManageAllocationsJob,
   private val activityMetricsJob: ActivityMetricsJob,
   private val appointmentMetricsJob: AppointmentMetricsJob,
+  private val fixZeroPayJob: FixZeroPayJob,
   private val clock: Clock,
 ) {
 
@@ -118,5 +120,28 @@ class JobTriggerController(
     appointmentMetricsJob.execute()
 
     return "Appointments metrics job triggered"
+  }
+
+  @PostMapping(value = ["/fix-zero-pay"])
+  @Operation(
+    summary = "Trigger the job fix zero pay activities",
+    description = """Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.""",
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerFixZeroPayJob(
+    @RequestParam(value = "deallocate", required = false)
+    @Parameter(description = "If supplied will deallocate prisoners.")
+    deallocate: Boolean = false,
+    @RequestParam(value = "makeUnpaid", required = false)
+    @Parameter(description = "If supplied will deallocate prisoners.")
+    makeUnpaid: Boolean = false,
+    @RequestParam(value = "allocate", required = false)
+    @Parameter(description = "If supplied will deallocate prisoners.")
+    allocate: Boolean = false,
+  ): String {
+    fixZeroPayJob.execute(deallocate = deallocate, makeUnpaid = makeUnpaid, allocate = allocate)
+
+    return "Fix zero pay job triggered"
   }
 }
