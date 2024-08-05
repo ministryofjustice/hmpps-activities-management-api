@@ -18,7 +18,7 @@ generic-service:
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
     SENTRY_ENVIRONMENT: production
-    HEARINGS_ADJUDICATION_SERVICE: true
+    MIGRATE_EXPERIMENTAL_MODE: false
 
   resources:
     requests:

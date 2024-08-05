@@ -1,0 +1,160 @@
+{
+  "id": 1,
+  "prisonCode": "IWI",
+  "attendanceRequired": true,
+  "inCell": false,
+  "onWing": false,
+  "offWing": false,
+  "pieceWork": false,
+  "outsideWork": false,
+  "payPerSession": "H",
+  "summary": "BNM + 27 PK",
+  "description": "BNM + 27 PK",
+  "category": {
+    "id": 6,
+    "code": "SAA_INTERVENTIONS",
+    "name": "Intervention programmes",
+    "description": "Such as programmes for behaviour management, drug and alcohol misuse and community rehabilitation"
+  },
+  "tier": {
+    "id": 1,
+    "code": "TIER_1",
+    "description": "Tier 1"
+  },
+  "organiser": null,
+  "eligibilityRules": [],
+  "schedules": [
+    {
+      "id": 1,
+      "instances": [],
+      "allocations": [],
+      "description": "BNM + 27 PK",
+      "suspensions": [],
+      "internalLocation": {
+        "id": 1,
+        "code": "internal location code",
+        "description": "House_block_7-1-002"
+      },
+      "capacity": 1,
+      "activity": {
+        "id": 1,
+        "prisonCode": "IWI",
+        "attendanceRequired": true,
+        "inCell": false,
+        "onWing": false,
+        "offWing": false,
+        "pieceWork": false,
+        "outsideWork": false,
+        "payPerSession": "H",
+        "summary": "BNM + 27 PK",
+        "description": "BNM + 27 PK",
+        "category": {
+          "id": 6,
+          "code": "SAA_INTERVENTIONS",
+          "name": "Intervention programmes",
+          "description": "Such as programmes for behaviour management, drug and alcohol misuse and community rehabilitation"
+        },
+        "riskLevel": "low",
+        "minimumEducationLevel": [],
+        "endDate": null,
+        "capacity": 1,
+        "allocated": 0,
+        "createdTime": "2024-07-26T12:34:43",
+        "activityState": "LIVE",
+        "paid": false
+      },
+      "scheduleWeeks": 1,
+      "slots": [
+        {
+          "id": 1,
+          "timeSlot": "AM",
+          "weekNumber": 1,
+          "startTime": "08:25",
+          "endTime": "11:35",
+          "daysOfWeek": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu"
+          ],
+          "mondayFlag": true,
+          "tuesdayFlag": true,
+          "wednesdayFlag": true,
+          "thursdayFlag": true,
+          "fridayFlag": false,
+          "saturdayFlag": false,
+          "sundayFlag": false
+        },
+        {
+          "id": 2,
+          "timeSlot": "PM",
+          "weekNumber": 1,
+          "startTime": "13:40",
+          "endTime": "16:00",
+          "daysOfWeek": [
+            "Mon",
+            "Tue",
+            "Wed",
+            "Thu"
+          ],
+          "mondayFlag": true,
+          "tuesdayFlag": true,
+          "wednesdayFlag": true,
+          "thursdayFlag": true,
+          "fridayFlag": false,
+          "saturdayFlag": false,
+          "sundayFlag": false
+        },
+        {
+          "id": 3,
+          "timeSlot": "AM",
+          "weekNumber": 1,
+          "startTime": "08:25",
+          "endTime": "11:35",
+          "daysOfWeek": [
+            "Fri"
+          ],
+          "mondayFlag": false,
+          "tuesdayFlag": false,
+          "wednesdayFlag": false,
+          "thursdayFlag": false,
+          "fridayFlag": true,
+          "saturdayFlag": false,
+          "sundayFlag": false
+        },
+        {
+          "id": 4,
+          "timeSlot": "PM",
+          "weekNumber": 1,
+          "startTime": "13:40",
+          "endTime": "16:00",
+          "daysOfWeek": [
+            "Fri"
+          ],
+          "mondayFlag": false,
+          "tuesdayFlag": false,
+          "wednesdayFlag": false,
+          "thursdayFlag": false,
+          "fridayFlag": true,
+          "saturdayFlag": false,
+          "sundayFlag": false
+        }
+      ],
+      "startDate": "2024-07-27",
+      "endDate": null,
+      "runsOnBankHoliday": true,
+      "updatedTime": null,
+      "updatedBy": null
+    }
+  ],
+  "pay": [],
+  "startDate": "2024-07-27",
+  "endDate": null,
+  "riskLevel": "low",
+  "createdTime": "2024-07-26T12:34:43",
+  "createdBy": "MIGRATION",
+  "updatedTime": null,
+  "updatedBy": null,
+  "minimumEducationLevel": [],
+  "paid": false
+}

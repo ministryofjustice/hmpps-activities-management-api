@@ -46,6 +46,7 @@ class ActivityScheduleTest : ModelTest() {
       updatedTime = LocalDateTime.parse("31 Jan 2023 10:21:22", dateTimeFormatter),
       updatedBy = "TestUser",
       scheduleWeeks = 1,
+      usePrisonRegimeTime = true,
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)

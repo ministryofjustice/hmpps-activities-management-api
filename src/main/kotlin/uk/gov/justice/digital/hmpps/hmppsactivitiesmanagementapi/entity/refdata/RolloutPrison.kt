@@ -26,10 +26,16 @@ data class RolloutPrison(
   val appointmentsToBeRolledOut: Boolean,
 
   val appointmentsRolloutDate: LocalDate? = null,
+
+  val maxDaysToExpiry: Int = 21,
+
 ) {
   fun isActivitiesRolledOut() =
     this.activitiesToBeRolledOut && activitiesRolloutDate?.onOrBefore(LocalDate.now()) == true
 
   fun isAppointmentsRolledOut() =
     this.appointmentsToBeRolledOut && appointmentsRolloutDate?.onOrBefore(LocalDate.now()) == true
+
+  fun hasExpired(predicate: () -> LocalDate?) =
+    predicate()?.onOrBefore(LocalDate.now().minusDays(maxDaysToExpiry.toLong())) == true
 }

@@ -148,5 +148,5 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
 
-hearings:
-  adjudications-source-of-truth: ${HEARINGS_ADJUDICATION_SERVICE:false}
+migrate:
+  experimental-mode: ${MIGRATE_EXPERIMENTAL_MODE:false}

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -52,6 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
@@ -186,6 +188,7 @@ class ActivityService(
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
+            startDate = it.startDate,
           )
         }
         request.minimumEducationLevel.forEach {
@@ -258,8 +261,19 @@ class ActivityService(
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
-      val timeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
-      val slotTimes = timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+      val timeSlots = prisonRegimeService.getPrisonTimeSlots(
+        prisonCode = activity.prisonCode,
+        daysOfWeek = slot.daysOfWeek,
+      )
+
+      val slotTimes = if (timeSlots == null) {
+        Pair(
+          slot.customStartTime ?: throw ValidationException("custom start time required"),
+          slot.customEndTime ?: throw ValidationException("custom end time required"),
+        )
+      } else {
+        timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+      }
 
       val daysOfWeek = getDaysOfWeek(slot)
       this.addSlot(slot.weekNumber, slotTimes, daysOfWeek)
@@ -629,6 +643,7 @@ class ActivityService(
             rate = it.rate,
             pieceRate = it.pieceRate,
             pieceRateItems = it.pieceRateItems,
+            startDate = it.startDate,
           )
         }
       }
@@ -687,9 +702,8 @@ class ActivityService(
   ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
-      val regimeTimeSlots = prisonRegimeService.getPrisonTimeSlots(activity.prisonCode)
       activity.schedules().forEach { schedule ->
-        schedule.updateSlots(slots.toMap(regimeTimeSlots))
+        schedule.updateSlots(slots.slotsToTimeSlots(prisonCode = activity.prisonCode))
         val activeAllocations = schedule.allocations(excludeEnded = true)
         activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) } }
       }
@@ -697,7 +711,21 @@ class ActivityService(
     return updatedAllocationIds
   }
 
-  private fun List<Slot>.toMap(regimeTimeSlots: Map<TimeSlot, SlotTimes>): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
-    return this.associate { Pair(it.weekNumber, regimeTimeSlots[it.timeSlot()]!!) to it.getDaysOfWeek() }
+  private fun List<Slot>.slotsToTimeSlots(prisonCode: String): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
+    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(prisonCode = prisonCode)) to it.daysOfWeek }
+  }
+
+  private fun Slot.getCustomTimeSlotIfPresent(prisonCode: String): Pair<LocalTime, LocalTime> {
+    this.customStartTime ?: return this.getPrisonRegimeTimes(prisonCode = prisonCode)
+    this.customEndTime ?: return this.getPrisonRegimeTimes(prisonCode = prisonCode)
+
+    return Pair(this.customStartTime, this.customEndTime)
+  }
+
+  private fun Slot.getPrisonRegimeTimes(prisonCode: String): Pair<LocalTime, LocalTime> {
+    val regimeTimes = prisonRegimeService.getPrisonTimeSlots(prisonCode = prisonCode, daysOfWeek = this.daysOfWeek)
+      ?: throw ValidationException("No regime time found for $prisonCode ${this.daysOfWeek} must supply custom start and end times")
+
+    return regimeTimes[this.timeSlot()]!!
   }
 }

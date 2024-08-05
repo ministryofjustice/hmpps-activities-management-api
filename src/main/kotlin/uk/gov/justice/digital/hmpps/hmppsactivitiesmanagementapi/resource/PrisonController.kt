@@ -322,7 +322,7 @@ class PrisonController(
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = PrisonRegime::class),
+            array = ArraySchema(schema = Schema(implementation = PrisonRegime::class)),
           ),
         ],
       ),
@@ -346,19 +346,9 @@ class PrisonController(
           ),
         ],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The prison regime for this prison code was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): PrisonRegime =
+  fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): List<PrisonRegime> =
     prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 }

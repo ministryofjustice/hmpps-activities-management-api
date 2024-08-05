@@ -352,12 +352,12 @@ data class Allocation(
 
   fun isEnded() = status(PrisonerStatus.ENDED)
 
-  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
+  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>, startDate: LocalDate): Exclusion? {
     val days = daysOfWeek.intersect(slot.getDaysOfWeek())
     val exclusion = exclusions(ExclusionsFilter.FUTURE)
       .singleOrNull { it.weekNumber == slot.weekNumber && it.slotTimes() == slot.slotTimes() }
       ?.apply { setDaysOfWeek(days) }
-      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days)
+      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days, startDate)
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
       if (exclusions.contains(exclusion).not()) addExclusion(exclusion)

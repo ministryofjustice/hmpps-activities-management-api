@@ -64,4 +64,7 @@ data class ActivitySchedule(
 
   @Schema(description = "The person who updated this activity schedule", example = "Adam Smith")
   val updatedBy: String?,
+
+  @Schema(description = "a flag to indicate if this activity is scheduled according to prison standard regime times")
+  val usePrisonRegimeTime: Boolean = true,
 )

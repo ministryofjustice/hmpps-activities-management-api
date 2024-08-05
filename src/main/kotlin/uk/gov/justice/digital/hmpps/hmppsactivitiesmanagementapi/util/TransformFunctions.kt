@@ -250,6 +250,7 @@ fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule,
       runsOnBankHoliday = it.key.runsOnBankHoliday,
       updatedTime = it.key.updatedTime,
       updatedBy = it.key.updatedBy,
+      usePrisonRegimeTime = it.key.usePrisonRegimeTime,
     )
   }
 
@@ -272,6 +273,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     runsOnBankHoliday = this.runsOnBankHoliday,
     updatedTime = this.updatedTime,
     updatedBy = this.updatedBy,
+    usePrisonRegimeTime = this.usePrisonRegimeTime,
   )
 
 private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map { it.toModel() }
@@ -310,6 +312,7 @@ private fun List<EntityActivityPay>.toModelActivityPayList() = map {
     rate = it.rate,
     pieceRate = it.pieceRate,
     pieceRateItems = it.pieceRateItems,
+    startDate = it.startDate,
   )
 }
 
@@ -327,6 +330,7 @@ fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
   activitiesRolloutDate = prison.activitiesRolloutDate,
   appointmentsRolledOut = prison.isAppointmentsRolledOut(),
   appointmentsRolloutDate = prison.appointmentsRolloutDate,
+  maxDaysToExpiry = prison.maxDaysToExpiry,
 )
 
 fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
@@ -436,7 +440,7 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
-  maxDaysToExpiry = prisonRegime.maxDaysToExpiry,
+  daysOfWeek = prisonRegime.prisonRegimeDaysOfWeek.map { it.dayOfWeek },
 )
 
 fun transform(entityEventReview: EventReview) = ModelEventReview(

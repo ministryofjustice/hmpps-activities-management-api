@@ -233,30 +233,16 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `200 response when get prison by code found`() {
     val prisonRegime = transform(prisonRegime())
 
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(prisonRegime)
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(listOf(prisonRegime))
 
     val response = mockMvc.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonRegime))
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(prisonRegime)))
 
     verify(prisonRegimeService).getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
-  }
-
-  @Test
-  fun `404 response when get prison by code not found`() {
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode("PVX")).thenThrow(EntityNotFoundException("not found"))
-
-    val response = mockMvc.getPrisonRegimeByPrisonCode("PVX")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(prisonRegimeService).getPrisonRegimeByPrisonCode("PVX")
   }
 
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =

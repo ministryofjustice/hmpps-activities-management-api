@@ -336,6 +336,55 @@ class AllocationTest {
   }
 
   @Test
+  fun `is able to get allocation pay with multiple activity pays`() {
+    val allocation = allocation()
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(5),
+    )
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 50,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    allocation.activitySchedule.activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 55,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now().plusDays(4),
+    )
+
+    val allocationPay = allocation.allocationPay("BAS")
+
+    assertThat(allocationPay).isEqualTo(
+      ActivityPay(
+        activity = allocation.activitySchedule.activity,
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        payBand = lowPayBand,
+        rate = 50,
+        pieceRate = 50,
+        pieceRateItems = 60,
+      ),
+    )
+  }
+
+  @Test
   fun `planned deallocation is updated when new end date is before planned`() {
     val allocation = allocation().apply {
       endDate = null
@@ -395,14 +444,14 @@ class AllocationTest {
     val allocation = allocation()
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
-    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY))
+    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), tomorrow)
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     with(exclusion!!) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
-    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf())
+    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(), tomorrow)
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
     updatedExclusion isEqualTo null
@@ -465,11 +514,11 @@ class AllocationTest {
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
-    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY)) }
+    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), today) }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Exclusions cannot be added where the time slot exists over multiple weeks.")
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY))
+    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY), today)
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
   }
@@ -731,7 +780,7 @@ class AllocationTest {
 
     allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool true
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek))
+    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek), today)
 
     allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool false
   }

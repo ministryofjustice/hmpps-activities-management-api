@@ -31,6 +31,7 @@ class AllocationsService(
   private val scheduleRepository: ActivityScheduleRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val manageAttendancesService: ManageAttendancesService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -70,10 +71,19 @@ class AllocationsService(
 
       allocationRepository.saveAndFlush(allocation)
 
-      allocation.toModel()
-    }.let { allocation ->
+      val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+
+      val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, allocation.activitySchedule)
+
+      allocation.toModel() to savedAttendances
+    }.let { (allocation, newAttendances) ->
+
       log.info("Sending allocation amended event for allocation ${allocation.id}")
+
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.id)
+
+      newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it) }
+
       return allocation
     }
   }
@@ -90,6 +100,12 @@ class AllocationsService(
 
   private fun applyExclusionsUpdate(request: AllocationUpdateRequest, allocation: Allocation) {
     request.exclusions?.apply {
+      /*
+       End any exclusions tha have started and not ended.
+
+       Although Nomis does not have the concept of exclusion date ranges the old exclusions are needed for historical
+       reasons such as unlock and attendance lists (SAA-1379)
+       */
       allocation.endExclusions(allocation.exclusions(ExclusionsFilter.PRESENT))
 
       val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
@@ -103,8 +119,8 @@ class AllocationsService(
     request.exclusions?.onEach { exclusion ->
       allocation.activitySchedule.slots(exclusion.weekNumber, exclusion.timeSlot())
         .also { require(it.isNotEmpty()) { "Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
-        .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
-        .forEach { slot -> allocation.updateExclusion(slot, exclusion.getDaysOfWeek()) }
+        .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty() }
+        .forEach { slot -> allocation.updateExclusion(slot, exclusion.daysOfWeek, maxOf(allocation.startDate, LocalDate.now())) }
     }
   }
 
@@ -115,9 +131,13 @@ class AllocationsService(
     request.startDate?.let { newStartDate ->
       val (start, end) = allocation.activitySchedule.activity.startDate to allocation.activitySchedule.activity.endDate
 
-      require(request.startDate > LocalDate.now()) { "Allocation start date must be in the future" }
+      val today = LocalDate.now()
 
-      require(allocation.startDate > LocalDate.now()) {
+      require(request.startDate >= today) { "Allocation start date must not be in the past" }
+
+      if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
+
+      require(allocation.startDate > today) {
         "Start date cannot be updated once allocation has started"
       }
 
@@ -130,6 +150,8 @@ class AllocationsService(
       }
 
       allocation.startDate = newStartDate
+
+      allocation.exclusions(ExclusionsFilter.FUTURE).forEach { it.startDate = newStartDate }
     }
   }
 

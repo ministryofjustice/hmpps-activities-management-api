@@ -200,7 +200,7 @@ class ScheduledEventService(
     val adjudications = async {
       adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = prisonRolledOut.code,
-        dateRange = dateRange,
+        date = dateRange.start,
         prisonerNumbers = setOf(prisoner.second),
       )
     }
@@ -393,7 +393,7 @@ class ScheduledEventService(
     val adjudications = async {
       adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = rolloutPrison.code,
-        dateRange = date.rangeTo(date.plusDays(1)),
+        date = date,
         prisonerNumbers = prisonerNumbers,
         timeSlot = timeSlot,
       )
@@ -460,7 +460,13 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<AppointmentInstance> {
-    val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
+    val timeRange = timeSlot?.let {
+      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
+        prisonCode = prisonCode,
+        timeSlot = it,
+        dayOfWeek = date.dayOfWeek,
+      )
+    }
     val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
     val latestStartTime = timeRange?.end?.minusMinutes(1) ?: LocalTime.of(23, 59)
     return appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(

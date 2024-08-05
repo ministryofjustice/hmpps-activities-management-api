@@ -6,6 +6,27 @@ import java.time.LocalDate
 
 class ManageAdjudicationsApiMockServer : MockServer(8777) {
 
+  fun stubHearingsForDate(
+    agencyId: String,
+    date: LocalDate,
+    body: String,
+  ) {
+    stubFor(
+      WireMock.get(
+        WireMock.urlEqualTo(
+          "/reported-adjudications/hearings?hearingDate=$date",
+        ),
+      )
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withHeader("Active-Caseload", agencyId)
+            .withBody(body)
+            .withStatus(200),
+        ),
+    )
+  }
+
   fun stubHearings(
     agencyId: String,
     startDate: LocalDate,

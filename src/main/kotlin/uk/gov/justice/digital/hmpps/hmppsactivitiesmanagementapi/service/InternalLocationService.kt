@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.validation.ValidationException
 import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisAdjudicationsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -71,7 +73,11 @@ class InternalLocationService(
     runBlocking {
       checkCaseloadAccess(prisonCode)
 
-      val timeRange = getTimeRange(prisonCode, timeSlot)
+      val timeRange = getTimeRange(
+        prisonCode = prisonCode,
+        timeSlot = timeSlot,
+        dayOfWeek = date.dayOfWeek,
+      )
       val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeRange)
       val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
       val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
@@ -146,7 +152,11 @@ class InternalLocationService(
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
-      val timeRange = getTimeRange(prisonCode, timeSlot)
+      val timeRange = getTimeRange(
+        prisonCode = prisonCode,
+        timeSlot = timeSlot,
+        dayOfWeek = date.dayOfWeek,
+      )
 
       val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
         prisonCode,
@@ -216,10 +226,13 @@ class InternalLocationService(
       }.toSet()
     }
 
-  private fun getTimeRange(prisonCode: String, timeSlot: TimeSlot?) =
+  private fun getTimeRange(prisonCode: String, timeSlot: TimeSlot?, dayOfWeek: DayOfWeek) =
     timeSlot?.let {
-      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it)
-        .let { tr -> LocalTimeRange(tr.start, tr.end.minusMinutes(1)) }
+      val regime = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
+        prisonCode = prisonCode, timeSlot = it, dayOfWeek = dayOfWeek,
+      ) ?: throw ValidationException("no regime found for $prisonCode $dayOfWeek")
+
+      regime.let { tr -> LocalTimeRange(tr.start, tr.end.minusMinutes(1)) }
     } ?: LocalTimeRange(
       LocalTime.of(0, 0),
       LocalTime.of(23, 59),

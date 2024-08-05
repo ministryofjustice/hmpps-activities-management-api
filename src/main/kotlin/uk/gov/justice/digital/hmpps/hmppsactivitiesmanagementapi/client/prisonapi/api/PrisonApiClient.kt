@@ -11,7 +11,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
@@ -229,27 +228,6 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .path("/api/schedules/{agencyId}/externalTransfers")
           .queryParam("date", date)
           .build(agencyId)
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .awaitBody()
-  }
-
-  suspend fun getOffenderAdjudications(
-    agencyId: String,
-    dateRange: LocalDateRange,
-    prisonerNumbers: Set<String>,
-    timeSlot: TimeSlot? = null,
-  ): List<OffenderAdjudicationHearing> {
-    return prisonApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/offenders/adjudication-hearings")
-          .queryParam("agencyId", agencyId)
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .maybeQueryParam("timeSlot", timeSlot)
-          .build()
       }
       .bodyValue(prisonerNumbers)
       .retrieve()

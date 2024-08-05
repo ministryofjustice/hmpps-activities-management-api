@@ -13,7 +13,6 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter.Companion.mapOicHearingType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
@@ -22,15 +21,12 @@ import java.time.LocalDateTime
 
 class AdjudicationsHearingAdapterTest {
 
-  private val prisonApiClient: PrisonApiClient = mock()
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
-    manageAdjudicationsAsTruth = true,
-    prisonApiClient = prisonApiClient,
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
 
-  val now = LocalDate.now().atStartOfDay().plusHours(4)
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
 
   @Nested
   inner class AdjudicationHearings {
@@ -68,21 +64,14 @@ class AdjudicationsHearingAdapterTest {
     @CsvSource("true", "false")
     @ParameterizedTest
     fun `empty prisoners list skips call to facade`(mode: Boolean): Unit = runBlocking {
-      val toTest = AdjudicationsHearingAdapter(
-        manageAdjudicationsAsTruth = mode,
-        prisonApiClient = mock(),
-        manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
-      )
-
-      val response = toTest.getAdjudicationHearings(
+      val response = adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = "MDI",
-        dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+        date = LocalDate.now(),
         prisonerNumbers = emptySet(),
       )
       assertThat(response.isEmpty()).isTrue()
 
       verify(manageAdjudicationsApiFacade, never()).getAdjudicationHearings(any(), any(), any(), any())
-      verify(prisonApiClient, never()).getOffenderAdjudications(any(), any(), any(), any())
     }
 
     @Test
@@ -90,7 +79,7 @@ class AdjudicationsHearingAdapterTest {
       val hearings =
         adjudicationsHearingAdapter.getAdjudicationHearings(
           agencyId = "MDI",
-          dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+          date = LocalDate.now(),
           prisonerNumbers = setOf("AE12345"),
           timeSlot = TimeSlot.AM,
         )
@@ -103,7 +92,7 @@ class AdjudicationsHearingAdapterTest {
     fun `fields mapped correctly`(): Unit = runBlocking {
       val hearings = adjudicationsHearingAdapter.getAdjudicationHearings(
         agencyId = "MDI",
-        dateRange = LocalDate.now().rangeTo(LocalDate.now()),
+        date = LocalDate.now(),
         prisonerNumbers = setOf("AE12345"),
       )
 
@@ -192,12 +181,6 @@ class AdjudicationsHearingAdapterTest {
 
       assertThat(hearings.size).isEqualTo(1)
       assertThat(hearings[1]!!.first().hearingId).isEqualTo(1)
-    }
-
-    @Test
-    fun `empty list when flag is false`(): Unit = runBlocking {
-      val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(false, prisonApiClient, manageAdjudicationsApiFacade)
-      assertThat(adjudicationsHearingAdapter.getAdjudicationsByLocation("MDI", LocalDate.now(), null)).isEmpty()
     }
   }
 }

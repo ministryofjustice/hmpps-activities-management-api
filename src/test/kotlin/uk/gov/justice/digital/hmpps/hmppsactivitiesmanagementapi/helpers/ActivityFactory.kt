@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -24,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -107,6 +109,7 @@ internal fun activityEntity(
         rate = 30,
         pieceRate = 40,
         pieceRateItems = 50,
+        startDate = null,
       )
     }
     if (!noMinimumEducationLevels) {
@@ -118,6 +121,26 @@ internal fun activityEntity(
       )
     }
   }
+
+internal fun activityPayEntity(payStartDate: LocalDate? = null) =
+  ActivityPay(
+    1,
+    activity = activityEntity(),
+    incentiveNomisCode = "STD",
+    incentiveLevel = "Standard",
+    payBand = PrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "Low",
+      payBandDescription = "Pay band 1",
+      prisonCode = "MDI",
+    ),
+    rate = 100,
+    pieceRate = 150,
+    pieceRateItems = 1,
+    startDate = payStartDate,
+  )
 
 internal fun activitySummary(
   category: ActivityCategory = activityCategory(),
@@ -243,7 +266,7 @@ internal fun activitySchedule(
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
         ).apply {
-          this.updateExclusion(slot, daysOfWeek)
+          this.updateExclusion(slot, daysOfWeek, LocalDate.now().plusDays(1))
         }
       }
     }
@@ -334,6 +357,7 @@ internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = Rollo
   LocalDate.of(2022, 12, 22),
   true,
   LocalDate.of(2022, 12, 23),
+  1,
 )
 
 internal fun prisonRegime(
@@ -347,7 +371,9 @@ internal fun prisonRegime(
   LocalTime.of(16, 30),
   LocalTime.of(18, 0),
   LocalTime.of(20, 0),
-  1,
+  DayOfWeek.entries.map {
+    PrisonRegimeDaysOfWeek(dayOfWeek = it)
+  },
 )
 
 internal fun prisonPayBandsLowMediumHigh(prisonCode: String = MOORLAND_PRISON_CODE) = listOf(
@@ -397,6 +423,24 @@ fun attendanceList(): List<AllAttendance> = listOf(
     attendanceRequired = true,
     eventTier = null,
   ),
+)
+
+internal fun activityPayCreateRequest(
+  incentiveNomisCode: String = "123",
+  incentiveLevel: String = "level",
+  payBandId: Long = 12,
+  rate: Int? = null,
+  pieceRate: Int? = null,
+  pieceRateItems: Int? = 10,
+  startDate: LocalDate? = null,
+) = ActivityPayCreateRequest(
+  incentiveNomisCode = incentiveNomisCode,
+  incentiveLevel = incentiveLevel,
+  payBandId = payBandId,
+  rate = rate,
+  pieceRate = pieceRate,
+  pieceRateItems = pieceRateItems,
+  startDate = startDate,
 )
 
 internal fun activityCreateRequest(
@@ -475,6 +519,7 @@ internal fun waitingList(
         allocatePrisoner(
           prisonerNumber = prisonerNumber.toPrisonerNumber(),
           bookingId = 10001,
+          startDate = LocalDate.now().plusDays(1),
           payBand = lowPayBand,
           allocatedBy = "Mr Blogs",
         )

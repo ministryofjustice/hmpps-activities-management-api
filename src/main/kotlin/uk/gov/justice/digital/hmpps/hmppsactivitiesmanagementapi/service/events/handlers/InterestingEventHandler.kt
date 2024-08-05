@@ -8,8 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventRev
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
@@ -24,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDateTime
 
 /**
@@ -32,7 +31,7 @@ import java.time.LocalDateTime
  */
 @Component
 class InterestingEventHandler(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val allocationRepository: AllocationRepository,
   private val eventReviewRepository: EventReviewRepository,
   private val prisonerSearchApiAppWebClient: PrisonerSearchApiApplicationClient,
@@ -49,7 +48,7 @@ class InterestingEventHandler(
 
     getPrisonerDetailsFor(event.prisonerNumber())?.let {
       it.prisonId?.let { agencyId ->
-        if (rolloutPrisonRepository.isActivitiesRolledOutAt(agencyId)) {
+        if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
           if (allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
               prisonCode = agencyId,
               prisonerNumber = event.prisonerNumber(),
@@ -80,7 +79,7 @@ class InterestingEventHandler(
   }
 
   private fun recordRelease(releaseEvent: InboundReleaseEvent): Outcome {
-    if (rolloutPrisonRepository.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
+    if (rolloutPrisonService.isActivitiesRolledOutAt(releaseEvent.prisonCode())) {
       getPrisonerDetailsFor(releaseEvent.prisonerNumber())?.let { prisoner ->
         val saved = eventReviewRepository.saveAndFlush(
           EventReview(
@@ -108,7 +107,7 @@ class InterestingEventHandler(
     // Use the new prisoner number - the merged will have been actioned in prison API
     getPrisonerDetailsFor(mergedEvent.prisonerNumber())?.let {
       it.prisonId?.let { agencyId ->
-        if (rolloutPrisonRepository.isActivitiesRolledOutAt(agencyId)) {
+        if (rolloutPrisonService.isActivitiesRolledOutAt(agencyId)) {
           val saved = eventReviewRepository.saveAndFlush(
             EventReview(
               eventTime = LocalDateTime.now(),

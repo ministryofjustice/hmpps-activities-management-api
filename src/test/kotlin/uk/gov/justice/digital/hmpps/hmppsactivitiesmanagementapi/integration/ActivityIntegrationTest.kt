@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -118,6 +119,87 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(pay.size).isEqualTo(2)
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isTrue()
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_CREATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+  }
+
+  @Test
+  fun `createActivity - paid with multiple pay rates for a given pay band and incentive level is successful`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 11,
+      rate = 125,
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 11,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
+
+    val activity = webTestClient.createActivity(createActivityRequest)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(2)
+      assertThat(organiser!!.id).isEqualTo(1)
+      assertThat(eligibilityRules.size).isEqualTo(1)
+      assertThat(pay.size).isEqualTo(2)
+      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(paid).isTrue()
+    }
+
+    with(activity.pay) {
+      this.single { it.startDate == null }
+      this.single { it.startDate == LocalDate.now().plusDays(25) }
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
@@ -405,7 +487,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           capacity = 20,
-          allocated = 4,
+          allocated = 5,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
           paid = true,
@@ -429,6 +511,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
       ActivityScheduleLite(
         id = 2,
@@ -459,7 +542,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           ),
           category = educationCategory,
           capacity = 20,
-          allocated = 4,
+          allocated = 5,
           createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
           activityState = ActivityState.LIVE,
           paid = true,
@@ -483,6 +566,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -554,6 +638,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -655,6 +740,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         ),
         startDate = LocalDate.of(2022, 10, 10),
         scheduleWeeks = 2,
+        usePrisonRegimeTime = true,
       ),
     )
   }
@@ -709,7 +795,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     val mathsAfternoon = with(mathsLevelOneActivity.schedule("Maths PM")) {
       assertThat(capacity).isEqualTo(10)
       assertThat(this.slots[0].daysOfWeek).isEqualTo(listOf("Mon"))
-      assertThat(allocations).hasSize(2)
+      assertThat(allocations).hasSize(3)
       assertThat(internalLocation?.id).isEqualTo(2)
       assertThat(internalLocation?.code).isEqualTo("L2")
       assertThat(internalLocation?.description).isEqualTo("Location 2")
@@ -1022,6 +1108,56 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity pay - pay band with start date - is successful`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
+      ),
+    )
+
+    val newPay = ActivityUpdateRequest(
+      paid = true,
+      attendanceRequired = true,
+      pay = listOf(
+        ActivityPayCreateRequest(
+          incentiveNomisCode = "BAS",
+          incentiveLevel = "Basic",
+          payBandId = 1,
+          rate = 67,
+          startDate = LocalDate.now().plusDays(2),
+        ),
+      ),
+    )
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newPay)) {
+      assertThat(pay).hasSize(1)
+
+      with(pay) {
+        this.single { it.startDate == LocalDate.now().plusDays(2) }
+      }
+
+      with(schedules.first()) {
+        assertThat(allocations).hasSize(3)
+        assertThat(allocations[0].prisonPayBand?.id).isEqualTo(1)
+        assertThat(allocations[1].prisonPayBand?.id).isEqualTo(2)
+        assertThat(allocations[2].prisonPayBand?.id).isEqualTo(2)
+      }
+    }
+
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-activity-update-slot.sql")
   fun `updateActivity slot and instances - is successful`() {
     with(webTestClient.getActivityById(1).schedules.first()) {
@@ -1041,7 +1177,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, mondayTuesdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Mon", "Tue")
       assertThat(instances).hasSizeBetween(3, 4)
@@ -1057,7 +1193,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
+    with(webTestClient.updateActivity(MOORLAND_PRISON_CODE, 1, thursdaySlot).schedules.first()) {
       assertThat(slots).hasSize(1)
       assertThat(slots.first().daysOfWeek).containsExactly("Thu")
       assertThat(instances).hasSizeBetween(1, 2)
