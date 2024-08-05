@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import java.time.Clock
@@ -46,6 +47,9 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
 
   @MockBean
+  private lateinit var fixZeroPayJob: FixZeroPayJob
+
+  @MockBean
   private lateinit var clock: Clock
 
   @BeforeEach
@@ -55,7 +59,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   }
 
   override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, clock)
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
