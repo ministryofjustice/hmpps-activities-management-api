@@ -13,6 +13,7 @@ import java.time.LocalDate
 
 val activeInMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE IN")
 val activeInPentonvillePrisoner = activeInMoorlandPrisoner.copy(prisonId = PENTONVILLE_PRISON_CODE)
+val activeInRisleyPrisoner = activeInMoorlandPrisoner.copy(prisonId = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE)
 val activeOutMoorlandPrisoner = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
 val activeOutPentonvillePrisoner = activeOutMoorlandPrisoner.copy(prisonId = PENTONVILLE_PRISON_CODE)
 val temporarilyReleasedFromMoorland = PrisonerSearchPrisonerFixture.instance(prisonId = MOORLAND_PRISON_CODE, status = "ACTIVE OUT", inOutStatus = Prisoner.InOutStatus.OUT)
