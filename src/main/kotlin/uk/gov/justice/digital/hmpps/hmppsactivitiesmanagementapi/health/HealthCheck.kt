@@ -18,3 +18,6 @@ class PrisonApiHealth(prisonApiHealthWebClient: WebClient) : HealthPingCheck(pri
 
 @Component
 class PrisonerSearchApiHealth(prisonerSearchApiHealthWebClient: WebClient) : HealthPingCheck(prisonerSearchApiHealthWebClient)
+
+@Component
+class ManageAdjudicationsApiHealth(manageAdjudicationsApiHealthWebClient: WebClient) : HealthPingCheck(manageAdjudicationsApiHealthWebClient)

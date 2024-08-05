@@ -38,6 +38,7 @@ class WebClientConfiguration(
   @Value("\${case-notes.api.url}") private val caseNotesApiUrl: String,
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
   @Value("\${incentives.api.url}") private val incentivesApiUrl: String,
+  @Value("\${manage.adjudications.api.url}") private val manageAdjudicationsApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   @Value("\${prison.api.timeout:10s}") private val shorterTimeout: Duration,
@@ -64,6 +65,9 @@ class WebClientConfiguration(
   fun incentivesApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(incentivesApiUrl).timeout(healthTimeout).build()
 
   @Bean
+  fun manageAdjudicationsApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(manageAdjudicationsApiUrl).timeout(healthTimeout).build()
+
+  @Bean
   fun prisonApiUserWebClient(): WebClient {
     val exchangeStrategies = ExchangeStrategies.builder()
       .codecs { configurer: ClientCodecConfigurer -> configurer.defaultCodecs().maxInMemorySize(-1) }
@@ -85,52 +89,35 @@ class WebClientConfiguration(
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder,
   ): WebClient =
-    getPrisonApiOAuthWebClient(
+    getOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonApiUrl,
+      "prison-api",
+      apiTimeout,
     ).also { log.info("WEB CLIENT CONFIG: creating prison api request scope web client") }
 
   @Bean
   fun incentivesApiWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ): WebClient = getIncentivesApiOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl)
+  ): WebClient = getOAuthWebClient(authorizedClientManager, builder, incentivesApiUrl, "incentives-api", apiTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating incentives api web client") }
 
-  private fun getIncentivesApiOAuthWebClient(
-    authorizedClientManager: OAuth2AuthorizedClientManager,
+  @Bean
+  fun manageAdjudicationsApiWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-    rootUri: String,
-  ): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId("incentives-api")
-    return builder.baseUrl(rootUri)
-      .timeout(apiTimeout)
-      .apply(oauth2Client.oauth2Configuration())
-      .build()
-  }
+  ): WebClient = getOAuthWebClient(authorizedClientManager, builder, manageAdjudicationsApiUrl, "manage-adjudications-api", apiTimeout)
+    .also { log.info("WEB CLIENT CONFIG: creating manage adjudications api web client") }
 
   @Bean
   fun prisonApiAppWebClient(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
   ): WebClient =
-    getPrisonApiOAuthWebClient(authorizedClientManager, builder, prisonApiUrl)
+    getOAuthWebClient(authorizedClientManager, builder, prisonApiUrl, "prison-api", apiTimeout)
       .also { log.info("WEB CLIENT CONFIG: creating prison api app web client") }
-
-  private fun getPrisonApiOAuthWebClient(
-    authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder,
-    rootUri: String,
-  ): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId("prison-api")
-    return builder.baseUrl(rootUri)
-      .timeout(apiTimeout)
-      .apply(oauth2Client.oauth2Configuration())
-      .build()
-  }
 
   @Bean
   fun prisonerSearchApiHealthWebClient(): WebClient =
@@ -157,10 +144,12 @@ class WebClientConfiguration(
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder,
   ): WebClient =
-    getPrisonerSearchApiOAuthWebClient(
+    getOAuthWebClient(
       authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
       builder,
       prisonerSearchApiUrl,
+      "prisoner-search-api",
+      shorterTimeout,
     ).also { log.info("WEB CLIENT CONFIG: creating prisoner search api request scope web client") }
 
   @Bean
@@ -168,34 +157,26 @@ class WebClientConfiguration(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
   ): WebClient =
-    getPrisonerSearchApiOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl)
+    getOAuthWebClient(authorizedClientManager, builder, prisonerSearchApiUrl, "prisoner-search-api", shorterTimeout)
       .also { log.info("WEB CLIENT CONFIG: creating prisoner search api app web client") }
 
-  private fun getPrisonerSearchApiOAuthWebClient(
-    authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder,
-    rootUri: String,
-  ): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId("prisoner-search-api")
-    return builder.baseUrl(rootUri)
-      .timeout(shorterTimeout)
-      .apply(oauth2Client.oauth2Configuration())
-      .build()
-  }
+  @Bean
+  fun bankHolidayApiWebClient(): WebClient = webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
+    .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
-  private fun getNonAssociationsApiOAuthWebClient(
-    authorizedClientManager: OAuth2AuthorizedClientManager,
-    builder: WebClient.Builder,
-    rootUri: String,
-  ): WebClient {
-    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
-    oauth2Client.setDefaultClientRegistrationId("non-associations-api")
-    return builder.baseUrl(rootUri)
+  @Bean
+  fun caseNotesApiWebClient(): WebClient =
+    webClientBuilder.baseUrl(caseNotesApiUrl)
       .timeout(apiTimeout)
-      .apply(oauth2Client.oauth2Configuration())
-      .build()
-  }
+      .filter(addAuthHeaderFilterFunction())
+      .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
+
+  @Bean
+  fun nonAssociationsApiWebClient(
+    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+    builder: WebClient.Builder,
+  ) = getOAuthWebClient(authorizedClientManager, builder, nonAssociationsApiUrl, "non-associations-api", apiTimeout)
+    .also { log.info("WEB CLIENT CONFIG: creating non associations api web client") }
 
   @Bean
   fun authorizedClientManagerAppScope(
@@ -209,26 +190,20 @@ class WebClientConfiguration(
     return authorizedClientManager
   }
 
-  @Bean
-  fun bankHolidayApiWebClient(): WebClient = webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
-    .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
-
-  @Bean
-  fun caseNotesApiWebClient(): WebClient =
-    webClientBuilder.baseUrl(caseNotesApiUrl)
-      .timeout(apiTimeout)
-      .filter(addAuthHeaderFilterFunction())
-      .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
-
-  private fun WebClient.Builder.timeout(duration: Duration) =
-    this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
-
-  @Bean
-  fun nonAssociationsApiWebClient(
-    @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
+  private fun getOAuthWebClient(
+    authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
-  ) = getNonAssociationsApiOAuthWebClient(authorizedClientManager, builder, nonAssociationsApiUrl)
-    .also { log.info("WEB CLIENT CONFIG: creating non associations api web client") }
+    rootUri: String,
+    clientRegistrationId: String,
+    timeout: Duration,
+  ): WebClient {
+    val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
+    oauth2Client.setDefaultClientRegistrationId(clientRegistrationId)
+    return builder.baseUrl(rootUri)
+      .timeout(timeout)
+      .apply(oauth2Client.oauth2Configuration())
+      .build()
+  }
 
   // Differs from the 'app scope' auth client manager in that it gets the username from the authentication context
   // and adds it to the request
@@ -271,4 +246,7 @@ class WebClientConfiguration(
           .build(),
       )
     }
+
+  private fun WebClient.Builder.timeout(duration: Duration) =
+    this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
 }

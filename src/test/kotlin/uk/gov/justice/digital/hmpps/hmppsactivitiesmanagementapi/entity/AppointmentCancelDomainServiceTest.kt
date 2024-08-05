@@ -46,7 +46,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecuri
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.*
+import java.util.Optional
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentCancelDomainServiceTest {
@@ -258,7 +258,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
   }
 
@@ -304,7 +304,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
@@ -352,7 +352,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
@@ -400,7 +400,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any())
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
     verify(appointmentSeriesMock, times(0)).cancel(any(), any(), any(), any())
@@ -431,7 +431,7 @@ class AppointmentCancelDomainServiceTest {
       startTimeInMs,
     )
 
-    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any())
+    verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_DELETED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
   }
 

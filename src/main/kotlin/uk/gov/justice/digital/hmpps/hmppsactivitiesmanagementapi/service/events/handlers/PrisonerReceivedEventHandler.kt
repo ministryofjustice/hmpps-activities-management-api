@@ -8,13 +8,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.isActivitiesRolledOutAt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDateTime
 
 /**
@@ -28,7 +27,7 @@ import java.time.LocalDateTime
 @Component
 @Transactional
 class PrisonerReceivedEventHandler(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val allocationRepository: AllocationRepository,
   private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService,
@@ -43,7 +42,7 @@ class PrisonerReceivedEventHandler(
   override fun handle(event: PrisonerReceivedEvent): Outcome {
     log.debug("PRISONER RECEIVED: handling prisoner received event {}", event)
 
-    if (rolloutPrisonRepository.isActivitiesRolledOutAt(event.prisonCode())) {
+    if (rolloutPrisonService.isActivitiesRolledOutAt(event.prisonCode())) {
       prisonerSearchApiApplicationClient.findByPrisonerNumber(event.prisonerNumber())?.let { prisoner ->
         if (prisoner.isActiveInPrison(event.prisonCode())) {
           transactionHandler.newSpringTransaction {

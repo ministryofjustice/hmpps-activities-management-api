@@ -297,6 +297,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         ),
         startDate = LocalDate.now(),
         scheduleWeeks = 1,
+        usePrisonRegimeTime = true,
       ),
     )
 
@@ -352,7 +353,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(updateActivityResponse))
 
-    verify(activityService).updateActivity(any(), any(), any(), any())
+    verify(activityService).updateActivity(any(), any(), any(), any(), any())
   }
 
   @Test
@@ -421,7 +422,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         status { isNotFound() }
       }
 
-    verify(activityService).updateActivity(any(), any(), any(), any())
+    verify(activityService).updateActivity(any(), any(), any(), any(), any())
   }
 
   @Nested
@@ -527,7 +528,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
-  private fun MockMvc.getActivityCapacity(id: Long) = get("/activities/{activityId}/capacity", id)
   private fun MockMvc.getActivitySchedules(id: Long) =
     get("/activities/{activityId}/schedules", id)
 }

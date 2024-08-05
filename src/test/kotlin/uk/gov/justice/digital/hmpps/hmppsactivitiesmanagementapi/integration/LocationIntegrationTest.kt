@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -212,6 +213,13 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, listOf(socialVisitsLocationSummary))
     prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
+    manageAdjudicationsApiMockServer.stubHearingsForDate(
+      agencyId = prisonCode,
+      date = date,
+      body = mapper.writeValueAsString(
+        HearingSummaryResponse(hearings = emptyList()),
+      ),
+    )
 
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date) isEqualTo listOf(
       InternalLocationEventsSummary(
@@ -250,6 +258,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, timeSlot, emptyList())
     prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
+    manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
 
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date, timeSlot) isEqualTo listOf(
       InternalLocationEventsSummary(

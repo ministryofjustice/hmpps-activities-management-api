@@ -29,6 +29,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.activities.prisoner.allocation-amended=true",
       "feature.event.activities.prisoner.attendance-created=true",
       "feature.event.activities.prisoner.attendance-amended=true",
+      "feature.event.activities.prisoner.attendance-deleted=true",
       "feature.event.activities.prisoner.attendance-expired=true",
       "feature.event.appointments.appointment-instance.updated=true",
       "feature.event.appointments.appointment-instance.deleted=true",

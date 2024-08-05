@@ -10,9 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
@@ -420,43 +418,6 @@ class PrisonApiMockServer : MockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(appointmentCategories))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubAdjudicationHearing(
-    prisonCode: String,
-    dateRange: LocalDateRange,
-    prisonerNumbers: List<String>,
-    timeSlot: TimeSlot? = null,
-  ) {
-    stubFor(
-      WireMock.post(
-        WireMock.urlEqualTo(
-          "/api/offenders/adjudication-hearings?agencyId=$prisonCode&fromDate=${dateRange.start}&toDate=${dateRange.endInclusive}${timeSlot?.let { "&timeSlot=$it" } ?: ""}",
-        ),
-      )
-        .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              mapper.writeValueAsString(
-                prisonerNumbers.mapIndexed { hearingId, offenderNo ->
-                  adjudicationHearing(
-                    prisonCode = prisonCode,
-                    offenderNo = offenderNo,
-                    hearingId = hearingId.plus(1).toLong(),
-                    hearingType = "Governors Hearing Adult",
-                    startTime = dateRange.start.atTime(10, 30, 0),
-                    eventStatus = "SCH",
-                    internalLocationId = 1L,
-                    internalLocationDescription = "Governors office",
-                  )
-                },
-              ),
-            )
             .withStatus(200),
         ),
     )

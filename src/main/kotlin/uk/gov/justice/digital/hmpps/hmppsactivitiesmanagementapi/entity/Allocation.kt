@@ -214,6 +214,20 @@ data class Allocation(
       removeExclusions(exclusions(ExclusionsFilter.FUTURE))
     }
 
+  fun deallocateBeforeStart(reason: DeallocationReason, by: String) =
+    this.apply {
+      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = reason
+      deallocatedBy = by
+      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+      endDate = startDate
+
+      endExclusions(exclusions(ExclusionsFilter.PRESENT))
+      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    }
+
   /**
    * This will default to ENDED for the reason unless there is planned deallocation that matches now which overrides it.
    *
@@ -338,12 +352,12 @@ data class Allocation(
 
   fun isEnded() = status(PrisonerStatus.ENDED)
 
-  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>): Exclusion? {
+  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>, startDate: LocalDate): Exclusion? {
     val days = daysOfWeek.intersect(slot.getDaysOfWeek())
     val exclusion = exclusions(ExclusionsFilter.FUTURE)
       .singleOrNull { it.weekNumber == slot.weekNumber && it.slotTimes() == slot.slotTimes() }
       ?.apply { setDaysOfWeek(days) }
-      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days)
+      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days, startDate)
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
       if (exclusions.contains(exclusion).not()) addExclusion(exclusion)

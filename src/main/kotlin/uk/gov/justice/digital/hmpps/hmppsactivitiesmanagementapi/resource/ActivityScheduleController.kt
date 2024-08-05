@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
 import org.springdoc.core.annotations.ParameterObject
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.format.annotation.DateTimeFormat
@@ -307,30 +306,21 @@ class ActivityScheduleController(
     @RequestParam(
       value = "suitableIncentiveLevel",
       required = false,
-    ) suitableIncentiveLevel: List<String>?,
-    @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevel: List<String>?,
+    ) suitableIncentiveLevels: List<String>?,
+    @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevels: List<String>?,
     @RequestParam(value = "suitableForEmployed", required = false) suitableForEmployed: Boolean?,
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
-  ): Page<ActivityCandidate> {
-    val candidates = candidatesService.getActivityCandidates(
-      scheduleId,
-      suitableIncentiveLevel,
-      suitableRiskLevel,
-      suitableForEmployed,
-      search,
+  ): Page<ActivityCandidate> =
+    candidatesService.getActivityCandidates(
+      scheduleId = scheduleId,
+      suitableIncentiveLevels = suitableIncentiveLevels,
+      suitableRiskLevels = suitableRiskLevels,
+      suitableForEmployed = suitableForEmployed,
+      search = search,
+      pageable = pageable,
     )
-
-    val start = pageable.offset.toInt()
-    val end = (start + pageable.pageSize).coerceAtMost(candidates.size)
-
-    return PageImpl(
-      candidates.subList(start.coerceAtMost(end), end),
-      pageable,
-      candidates.size.toLong(),
-    )
-  }
 
   @GetMapping(value = ["/{scheduleId}/suitability"])
   @Operation(

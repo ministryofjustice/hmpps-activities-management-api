@@ -180,7 +180,7 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlots = listOf(TimeSlot.AM))
     val result = appointmentSearchEntity()
 
-    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlots?.get(0) ?: TimeSlot.PM))
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", request.timeSlots?.get(0) ?: TimeSlot.PM, LocalDate.now().dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
     whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
@@ -225,9 +225,9 @@ class AppointmentSearchServiceTest {
     val request = AppointmentSearchRequest(startDate = LocalDate.now(), timeSlots = listOf(TimeSlot.AM, TimeSlot.PM))
     val result = appointmentSearchEntity()
 
-    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.AM))
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.AM, LocalDate.now().dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(0, 0), LocalTime.of(13, 0)))
-    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.PM))
+    whenever(prisonRegimeService.getTimeRangeForPrisonAndTimeSlot("TPR", TimeSlot.PM, LocalDate.now().dayOfWeek))
       .thenReturn(LocalTimeRange(LocalTime.of(13, 0), LocalTime.of(17, 59)))
     whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)

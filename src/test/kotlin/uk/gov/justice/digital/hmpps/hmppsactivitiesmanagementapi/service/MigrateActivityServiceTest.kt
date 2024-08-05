@@ -106,6 +106,7 @@ class MigrateActivityServiceTest {
   )
 
   private val service = MigrateActivityService(
+    false,
     rolloutPrisonService,
     activityRepository,
     prisonRegimeService,
@@ -132,6 +133,7 @@ class MigrateActivityServiceTest {
     activitiesRolloutDate = LocalDate.now().minusDays(1),
     appointmentsRolledOut = false,
     appointmentsRolloutDate = null,
+    maxDaysToExpiry = 21,
   )
 
   @Nested
@@ -169,7 +171,7 @@ class MigrateActivityServiceTest {
           ),
         ),
       )
-      whenever(prisonRegimeService.getPrisonTimeSlots(any())).thenReturn(
+      whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
         mapOf(
           TimeSlot.AM to Pair(LocalTime.of(8, 30), LocalTime.of(9, 30)),
           TimeSlot.PM to Pair(LocalTime.of(12, 30), LocalTime.of(13, 30)),
@@ -184,8 +186,8 @@ class MigrateActivityServiceTest {
 
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
+          startTime = LocalTime.of(8, 30),
+          endTime = LocalTime.of(9, 30),
           monday = true,
         ),
       )
@@ -270,9 +272,9 @@ class MigrateActivityServiceTest {
       )
 
       val nomisScheduleRules = listOf(
-        NomisScheduleRule(startTime = LocalTime.of(10, 0), endTime = LocalTime.of(11, 0), monday = true),
-        NomisScheduleRule(startTime = LocalTime.of(13, 0), endTime = LocalTime.of(14, 0), monday = true),
-        NomisScheduleRule(startTime = LocalTime.of(18, 0), endTime = LocalTime.of(19, 0), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(8, 30), endTime = LocalTime.of(9, 30), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(12, 30), endTime = LocalTime.of(13, 30), monday = true),
+        NomisScheduleRule(startTime = LocalTime.of(19, 30), endTime = LocalTime.of(20, 30), monday = true),
       )
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
@@ -353,8 +355,8 @@ class MigrateActivityServiceTest {
 
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
+          startTime = LocalTime.of(8, 30),
+          endTime = LocalTime.of(9, 30),
           monday = true,
           tuesday = true,
           wednesday = true,
@@ -504,13 +506,13 @@ class MigrateActivityServiceTest {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
+          startTime = LocalTime.of(8, 30),
+          endTime = LocalTime.of(9, 30),
           monday = true,
         ),
         NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
+          startTime = LocalTime.of(8, 30),
+          endTime = LocalTime.of(9, 30),
           tuesday = true,
         ),
       )
@@ -1089,6 +1091,7 @@ class MigrateActivityServiceTest {
       // The expected allocation - required so final check succeeds
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
+        startDate = LocalDate.now().plusDays(1),
         payBand = lowPayBand,
         bookingId = 1,
         allocatedBy = MIGRATION_USER,
@@ -1123,6 +1126,7 @@ class MigrateActivityServiceTest {
       // The expected allocation - required so final check succeeds
       schedule.allocatePrisoner(
         prisonerNumber = "A1234BB".toPrisonerNumber(),
+        startDate = LocalDate.now().plusDays(1),
         payBand = lowPayBand,
         bookingId = 1,
         allocatedBy = MIGRATION_USER,

@@ -26,18 +26,20 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Transac
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class PrisonerReceivedEventHandlerTest {
   private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
+  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
 
   private val handler =
-    PrisonerReceivedEventHandler(rolloutPrisonRepository, allocationRepository, prisonerSearchApiClient, attendanceSuspensionDomainService, TransactionHandler(), outboundEventsService)
+    PrisonerReceivedEventHandler(rolloutPrisonService, allocationRepository, prisonerSearchApiClient, attendanceSuspensionDomainService, TransactionHandler(), outboundEventsService)
 
   @BeforeEach
   fun beforeTests() {

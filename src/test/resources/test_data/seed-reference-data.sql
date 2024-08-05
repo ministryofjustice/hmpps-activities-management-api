@@ -46,10 +46,10 @@ values (1, 'OVER_21', 'Must be over 21'),
 --
 insert into rollout_prison (rollout_prison_id, code, description, activities_to_be_rolled_out,
                             activities_rollout_date, appointments_to_be_rolled_out,
-                            appointments_rollout_date)
-values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', false, null),
-       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23'),
-       (3, 'RSI', 'HMP Risley',  true, '2023-09-29', true, '2023-09-29');
+                            appointments_rollout_date, max_days_to_expiry)
+values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', false, null, 5),
+       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23', 5),
+       (3, 'RSI', 'HMP Risley',  true, '2023-09-29', true, '2023-09-29', 5);
 
 --
 -- Attendance reason codes
@@ -90,3 +90,36 @@ INSERT INTO prison_regime
 (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
 VALUES ('MDI', '09:00:00', '12:00:00', '13:00:00', '16:30:00', '18:00:00', '20:00:00'),
        ('RSI', '09:00:00', '12:00:00', '13:45:00', '16:45:00', '18:00:00', '20:00:00');
+
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
+values ((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'THURSDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'FRIDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'RSI'), 'SUNDAY'),
+
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'THURSDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'FRIDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'MDI'), 'SUNDAY'),
+
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'THURSDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'FRIDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'WDI'), 'SUNDAY'),
+
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'THURSDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'FRIDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'LPI'), 'SUNDAY');

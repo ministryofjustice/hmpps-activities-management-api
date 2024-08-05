@@ -7,6 +7,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -52,6 +53,7 @@ class ScheduledEventService(
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
+  private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
 ) {
   /**
    *  Get scheduled events for a single prisoner, between two dates and with an optional time slot.
@@ -196,7 +198,11 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      prisonApiClient.getOffenderAdjudications(prisonRolledOut.code, dateRange, setOf(prisoner.second))
+      adjudicationsHearingAdapter.getAdjudicationHearings(
+        agencyId = prisonRolledOut.code,
+        date = dateRange.start,
+        prisonerNumbers = setOf(prisoner.second),
+      )
     }
 
     SinglePrisonerSchedules(
@@ -385,11 +391,11 @@ class ScheduledEventService(
     }
 
     val adjudications = async {
-      prisonApiClient.getOffenderAdjudications(
-        rolloutPrison.code,
-        date.rangeTo(date.plusDays(1)),
-        prisonerNumbers,
-        timeSlot,
+      adjudicationsHearingAdapter.getAdjudicationHearings(
+        agencyId = rolloutPrison.code,
+        date = date,
+        prisonerNumbers = prisonerNumbers,
+        timeSlot = timeSlot,
       )
     }
 
@@ -454,7 +460,13 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): List<AppointmentInstance> {
-    val timeRange = timeSlot?.let { prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(prisonCode, it) }
+    val timeRange = timeSlot?.let {
+      prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
+        prisonCode = prisonCode,
+        timeSlot = it,
+        dayOfWeek = date.dayOfWeek,
+      )
+    }
     val earliestStartTime = timeRange?.start ?: LocalTime.of(0, 0)
     val latestStartTime = timeRange?.end?.minusMinutes(1) ?: LocalTime.of(23, 59)
     return appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberAndDateAndTime(

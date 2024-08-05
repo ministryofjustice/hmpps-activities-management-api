@@ -19,6 +19,10 @@ import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyBlocking
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -55,6 +59,10 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
+  private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
+  private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
+    manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+  )
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -63,6 +71,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     prisonerScheduledActivityRepository,
     appointmentInstanceRepository,
     prisonRegimeService,
+    adjudicationsHearingAdapter,
   )
 
   @BeforeEach
@@ -91,6 +100,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           activitiesRolloutDate = activitiesRolloutDate,
           appointmentsToBeRolledOut = true,
           appointmentsRolloutDate = appointmentsRolloutDate,
+          maxDaysToExpiry = 21,
         ),
       )
   }
@@ -174,9 +184,20 @@ class ScheduledEventServiceSinglePrisonerTest {
 
       on {
         runBlocking {
-          prisonApiClient.getOffenderAdjudications(prisonCode, dateRange, setOf(prisonerNumber))
+          manageAdjudicationsApiFacade.getAdjudicationHearings(prisonCode, dateRange.start, dateRange.start, setOf(prisonerNumber))
         }
-      } doReturn adjudications
+      } doReturn adjudications.map {
+        HearingsResponse(
+          prisonerNumber = it.offenderNo,
+          hearing = Hearing(
+            id = it.hearingId,
+            locationId = it.internalLocationId,
+            dateTimeOfHearing = LocalDateTime.parse(it.startTime!!),
+            agencyId = it.agencyId,
+            oicHearingType = it.hearingType!!,
+          ),
+        )
+      }
 
       on {
         runBlocking {

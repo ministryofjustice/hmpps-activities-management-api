@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -16,10 +18,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
+import java.time.Clock
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @WebMvcTest(controllers = [JobTriggerController::class])
 @ContextConfiguration(classes = [JobTriggerController::class])
@@ -45,6 +52,20 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
   override fun controller() =
     JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob)
+
+  private lateinit var fixZeroPayJob: FixZeroPayJob
+
+  @MockBean
+  private lateinit var clock: Clock
+
+  @BeforeEach
+  fun init() {
+    whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
+    whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+  }
+
+  override fun controller() =
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
@@ -93,7 +114,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(withExpiry = true)
+    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), withExpiry = true)
   }
 
   @ParameterizedTest(name = " where withActivate = {0}, withDeallocateEnding={1}, withDeallocateExpiring={2}")

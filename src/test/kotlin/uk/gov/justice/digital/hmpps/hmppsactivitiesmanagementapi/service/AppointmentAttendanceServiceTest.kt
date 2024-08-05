@@ -188,7 +188,7 @@ class AppointmentAttendanceServiceTest {
 
     private val now = LocalTime.now()
 
-    inner class TestData(val toTest: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) :
+    inner class TestData(val didTheyAttend: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) :
       AppointmentAndAttendee {
       override fun getPrisonerNumber(): String = "prisoner"
 
@@ -208,15 +208,17 @@ class AppointmentAttendanceServiceTest {
 
       override fun getCategoryCode(): String = "CAT"
 
-      override fun getCustomName(): String? = "custom"
+      override fun getCustomName(): String = "custom"
 
-      override fun getAttended(): Boolean? = toTest
+      override fun getAttended(): Boolean? = didTheyAttend
     }
 
     private val filterTests = listOf(
-      TestData(tier = EventTierType.TIER_2),
+      TestData(didTheyAttend = true, tier = EventTierType.TIER_2),
       TestData(true),
+      TestData(),
       TestData(false),
+      TestData(didTheyAttend = false, tier = EventTierType.TIER_2),
     )
 
     @BeforeEach
@@ -272,7 +274,7 @@ class AppointmentAttendanceServiceTest {
         status = AttendanceStatus.ATTENDED,
       )
 
-      assertThat(response.size).isEqualTo(1)
+      assertThat(response.size).isEqualTo(2)
     }
 
     @Test
@@ -286,7 +288,7 @@ class AppointmentAttendanceServiceTest {
         status = AttendanceStatus.NOT_ATTENDED,
       )
 
-      assertThat(response.size).isEqualTo(1)
+      assertThat(response.size).isEqualTo(2)
     }
 
     @Test

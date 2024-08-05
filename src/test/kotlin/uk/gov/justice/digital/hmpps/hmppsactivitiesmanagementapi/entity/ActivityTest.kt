@@ -362,6 +362,7 @@ class ActivityTest {
       rate = 30,
       pieceRate = 40,
       pieceRateItems = 50,
+      startDate = null,
     )
 
     activity.addPay(
@@ -371,6 +372,7 @@ class ActivityTest {
       rate = 40,
       pieceRate = 50,
       pieceRateItems = 60,
+      startDate = null,
     )
 
     assertThat(activity.activityPay()).containsExactlyInAnyOrder(
@@ -396,6 +398,53 @@ class ActivityTest {
   }
 
   @Test
+  fun `can add pay bands to paid activity with a pay band and iep combinations to activity`() {
+    val activity = activityEntity(noPayBands = true, paid = true).also { assertThat(it.activityPay()).isEmpty() }
+
+    activity.addPay(
+      incentiveNomisCode = "STD",
+      incentiveLevel = "Standard",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+      startDate = null,
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "STD",
+      incentiveLevel = "Standard",
+      payBand = mediumPayBand,
+      rate = 50,
+      pieceRate = 50,
+      pieceRateItems = 60,
+      startDate = LocalDate.now(),
+    )
+
+    assertThat(activity.activityPay()).containsExactlyInAnyOrder(
+      ActivityPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = lowPayBand,
+        rate = 30,
+        pieceRate = 40,
+        pieceRateItems = 50,
+        activity = activity,
+      ),
+      ActivityPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = mediumPayBand,
+        rate = 40,
+        pieceRate = 50,
+        pieceRateItems = 60,
+        activity = activity,
+        startDate = LocalDate.now(),
+      ),
+    )
+  }
+
+  @Test
   fun `cannot add pay bands to unpaid activity`() {
     val activity = activityEntity(noPayBands = true, paid = false).also { assertThat(it.activityPay()).isEmpty() }
 
@@ -407,13 +456,14 @@ class ActivityTest {
         rate = 30,
         pieceRate = 40,
         pieceRateItems = 50,
+        startDate = null,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Unpaid activity 'Maths' cannot have pay rates added to it")
   }
 
   @Test
-  fun `cannot add duplicate pay band and iep combinations to activity`() {
+  fun `cannot add duplicate pay band, start date and iep combinations to activity`() {
     val activity = activityEntity(noPayBands = true).also { assertThat(it.activityPay()).isEmpty() }
 
     activity.addPay(
@@ -423,6 +473,7 @@ class ActivityTest {
       rate = 30,
       pieceRate = 40,
       pieceRateItems = 50,
+      startDate = null,
     )
 
     val exception = assertThrows<IllegalArgumentException> {
@@ -433,10 +484,10 @@ class ActivityTest {
         rate = 40,
         pieceRate = 50,
         pieceRateItems = 60,
+        startDate = null,
       )
     }
-
-    assertThat(exception.message).isEqualTo("The pay band and incentive level combination must be unique for each pay rate")
+    assertThat(exception.message).isEqualTo("The pay band, incentive level and start date combination must be unique for each pay rate")
   }
 
   @Test
@@ -551,6 +602,76 @@ class ActivityTest {
   }
 
   @Test
+  fun `can fetch activity pay for a particular band and incentive code when there are multiple historic pays`() {
+    val activity = activityEntity()
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 33,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(10),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 34,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    val currentPay = activity.activityPayFor(lowPayBand, "BAS")
+
+    assertThat(currentPay!!.rate).isEqualTo(34)
+    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+  }
+
+  @Test
+  fun `can fetch activity pay for a particular band and incentive code when there are multiple historic and future pays`() {
+    val activity = activityEntity()
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 35,
+      pieceRate = 45,
+      pieceRateItems = 55,
+      startDate = LocalDate.now().minusDays(1),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 65,
+      pieceRate = 65,
+      pieceRateItems = 65,
+      startDate = LocalDate.now().plusDays(1),
+    )
+
+    activity.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 75,
+      pieceRate = 75,
+      pieceRateItems = 75,
+      startDate = LocalDate.now().plusDays(6),
+    )
+
+    val currentPay = activity.activityPayFor(lowPayBand, "BAS")
+
+    assertThat(currentPay!!.rate).isEqualTo(35)
+    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+  }
+
+  @Test
   fun `can add minimum education levels to activity`() {
     val activity =
       activityEntity(noMinimumEducationLevels = true).also { assertThat(it.activityMinimumEducationLevel()).isEmpty() }
@@ -630,6 +751,18 @@ class ActivityTest {
 
     // no op so allowed
     assertDoesNotThrow { activity.paid = true }
+  }
+
+  @Test
+  fun `can update paid attribute on paid activity when all allocations are ended`() {
+    val activity = activityEntity()
+    activity.schedules().forEach {
+      it.allocations().forEach {
+        it.prisonerStatus = PrisonerStatus.ENDED
+      }
+    }
+
+    assertDoesNotThrow { activity.paid = false }
   }
 
   @Test

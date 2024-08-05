@@ -72,7 +72,7 @@ class ActivityScheduleTest {
         ),
         capacity = 1,
         allocated = 2,
-        createdTime = LocalDate.now().atStartOfDay(),
+        createdTime = today.atStartOfDay(),
         activityState = ActivityState.LIVE,
         paid = true,
       ),
@@ -94,13 +94,14 @@ class ActivityScheduleTest {
           sundayFlag = false,
         ),
       ),
-      startDate = LocalDate.now(),
+      startDate = today,
+      usePrisonRegimeTime = true,
     )
     assertThat(
       activitySchedule(
         activityEntity(),
-        timestamp = LocalDate.now().atTime(10, 20),
-        startDate = LocalDate.now(),
+        timestamp = today.atTime(10, 20),
+        startDate = today,
       ).toModelLite(),
     ).isEqualTo(expectedModel)
   }
@@ -143,7 +144,7 @@ class ActivityScheduleTest {
           ),
           capacity = 1,
           allocated = 2,
-          createdTime = LocalDate.now().atStartOfDay(),
+          createdTime = today.atStartOfDay(),
           activityState = ActivityState.LIVE,
           paid = true,
         ),
@@ -165,7 +166,8 @@ class ActivityScheduleTest {
             sundayFlag = false,
           ),
         ),
-        startDate = LocalDate.now(),
+        startDate = today,
+        usePrisonRegimeTime = true,
       ),
     )
 
@@ -173,8 +175,8 @@ class ActivityScheduleTest {
       listOf(
         activitySchedule(
           activityEntity(),
-          timestamp = LocalDate.now().atTime(10, 20),
-          startDate = LocalDate.now(),
+          timestamp = today.atTime(10, 20),
+          startDate = today,
         ),
       ).toModelLite(),
     ).isEqualTo(
@@ -187,6 +189,7 @@ class ActivityScheduleTest {
     val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "123456".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -200,7 +203,7 @@ class ActivityScheduleTest {
       assertThat(prisonerNumber).isEqualTo("123456")
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
       assertThat(payBand).isEqualTo(lowPayBand)
-      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(startDate).isEqualTo(today)
       assertThat(allocatedBy).isEqualTo("FRED")
       assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     }
@@ -212,6 +215,7 @@ class ActivityScheduleTest {
       .also { assertThat(it.allocations()).hasSize(2) }
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -226,7 +230,7 @@ class ActivityScheduleTest {
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
       assertThat(bookingId).isEqualTo(10001)
       assertThat(payBand).isEqualTo(lowPayBand)
-      assertThat(startDate).isEqualTo(LocalDate.now())
+      assertThat(startDate).isEqualTo(today)
       assertThat(allocatedBy).isEqualTo("FREDDIE")
       assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(payBand).isEqualTo(lowPayBand)
@@ -239,6 +243,7 @@ class ActivityScheduleTest {
       .also { it.allocations() hasSize 2 }
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -267,6 +272,7 @@ class ActivityScheduleTest {
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
+        startDate = today,
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
@@ -296,7 +302,7 @@ class ActivityScheduleTest {
       payBand = lowPayBand,
       bookingId = 10001,
       allocatedBy = "FREDDIE",
-      startDate = LocalDate.now().plusDays(1),
+      startDate = tomorrow,
     )
 
     assertThat(schedule.allocations()).hasSize(3)
@@ -307,7 +313,7 @@ class ActivityScheduleTest {
       assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
       assertThat(bookingId).isEqualTo(10001)
       assertThat(payBand).isEqualTo(lowPayBand)
-      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(startDate).isEqualTo(tomorrow)
       assertThat(allocatedBy).isEqualTo("FREDDIE")
       assertThat(allocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(payBand).isEqualTo(lowPayBand)
@@ -319,6 +325,7 @@ class ActivityScheduleTest {
     val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -327,6 +334,7 @@ class ActivityScheduleTest {
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
+        startDate = tomorrow,
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
@@ -358,6 +366,7 @@ class ActivityScheduleTest {
     val schedule = activitySchedule(activity = activityEntity(), noAllocations = true)
 
     val allocation = schedule.allocatePrisoner(
+      startDate = tomorrow,
       prisonerNumber = "654321".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -368,6 +377,7 @@ class ActivityScheduleTest {
 
     assertDoesNotThrow {
       schedule.allocatePrisoner(
+        startDate = today,
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
@@ -382,6 +392,7 @@ class ActivityScheduleTest {
 
     assertThatThrownBy {
       schedule.allocatePrisoner(
+        startDate = today,
         prisonerNumber = "654321".toPrisonerNumber(),
         payBand = lowPayBand,
         bookingId = 10001,
@@ -544,7 +555,7 @@ class ActivityScheduleTest {
       activity = activityEntity(),
       description = "description",
       capacity = 1,
-      startDate = LocalDate.now(),
+      startDate = today,
       scheduleWeeks = 1,
     )
 
@@ -553,7 +564,7 @@ class ActivityScheduleTest {
         activity = activityEntity(),
         description = "description",
         capacity = 0,
-        startDate = LocalDate.now(),
+        startDate = today,
         scheduleWeeks = 1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -567,7 +578,7 @@ class ActivityScheduleTest {
         activity = activityEntity(),
         description = "description",
         capacity = 1,
-        startDate = LocalDate.now(),
+        startDate = today,
         scheduleWeeks = 0,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -578,7 +589,7 @@ class ActivityScheduleTest {
         activity = activityEntity(),
         description = "description",
         capacity = 1,
-        startDate = LocalDate.now(),
+        startDate = today,
         scheduleWeeks = -1,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
@@ -703,6 +714,24 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `check an activity that starts tomorrow is in the future`() {
+    val scheduleWithEndDate = ActivitySchedule(
+      activity = activityEntity(),
+      description = "description",
+      capacity = 1,
+      startDate = tomorrow,
+      scheduleWeeks = 1,
+    ).apply {
+      endDate = tomorrow.plusDays(3)
+    }
+
+    with(scheduleWithEndDate) {
+      assertThat(isFuture(today)).isTrue
+      assertThat(isFuture(tomorrow)).isFalse
+    }
+  }
+
+  @Test
   fun `can add scheduled instance to a schedule`() {
     val scheduleWithSlot = ActivitySchedule(
       activity = activityEntity(),
@@ -732,7 +761,7 @@ class ActivityScheduleTest {
 
     assertThat(schedule.instancesLastUpdatedTime).isNull()
 
-    schedule.addInstance(LocalDate.now().plusDays(1), schedule.slots().first())
+    schedule.addInstance(tomorrow, schedule.slots().first())
 
     assertThat(schedule.instancesLastUpdatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
   }
@@ -911,7 +940,7 @@ class ActivityScheduleTest {
   fun `prisoner is deallocated from schedule when they already have an ended allocation previously`() {
     val schedule = activitySchedule(activity = activityEntity())
     val originalAllocation = schedule.allocations().first().also { it.deallocateNowOn(TimeSource.today()) }
-    val newAllocation = schedule.allocatePrisoner(originalAllocation.prisonerNumber.toPrisonerNumber(), originalAllocation.payBand, originalAllocation.bookingId, allocatedBy = "test")
+    val newAllocation = schedule.allocatePrisoner(originalAllocation.prisonerNumber.toPrisonerNumber(), originalAllocation.payBand, originalAllocation.bookingId, today, allocatedBy = "test")
 
     assertThat(newAllocation.plannedDeallocation).isNull()
 
@@ -930,6 +959,29 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `prisoner is deallocated from schedule when the schedule is yet to start`() {
+    val schedule = activitySchedule(activity = activityEntity(startDate = tomorrow))
+    val originalAllocation = schedule.allocations().first()
+
+    assertThat(originalAllocation.plannedDeallocation).isNull()
+
+    val newAllocation = schedule.deallocatePrisonerOn(
+      originalAllocation.prisonerNumber,
+      today,
+      DeallocationReason.WITHDRAWN_STAFF,
+      "by test",
+    )
+
+    with(newAllocation) {
+      assertThat(allocationId).isEqualTo(originalAllocation.allocationId)
+      assertThat(deallocatedBy).isEqualTo("by test")
+      assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+      assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(endDate).isEqualTo(startDate)
+    }
+  }
+
+  @Test
   fun `prisoner is not deallocated from inactive schedule`() {
     val schedule = activitySchedule(activity = activityEntity(startDate = yesterday.minusDays(1), endDate = yesterday))
 
@@ -944,7 +996,7 @@ class ActivityScheduleTest {
         "by test",
       )
     }.isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("Schedule ${schedule.activityScheduleId} is not active on the planned deallocated date ${TimeSource.tomorrow()}.")
+      .hasMessage("Schedule ${schedule.activityScheduleId} is not active or in the future on the planned deallocated date ${TimeSource.tomorrow()}.")
   }
 
   @Test
@@ -1136,6 +1188,7 @@ class ActivityScheduleTest {
       activitySchedule(activity = activityEntity(), noAllocations = true, startDate = yesterday, endDate = tomorrow)
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "1111111".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
@@ -1144,6 +1197,7 @@ class ActivityScheduleTest {
     )
 
     schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "2222222".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 20002,
@@ -1167,18 +1221,20 @@ class ActivityScheduleTest {
         activity = activityEntity(),
         noAllocations = true,
         startDate = yesterday,
-        endDate = tomorrow.plusDays(1),
+        endDate = today.plusWeeks(1),
       )
 
     val activeAllocation = schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "1111111".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 10001,
       allocatedBy = "FRED",
-      endDate = tomorrow.plusDays(1),
+      endDate = tomorrow,
     )
 
     val endedAllocation = schedule.allocatePrisoner(
+      startDate = today,
       prisonerNumber = "2222222".toPrisonerNumber(),
       payBand = lowPayBand,
       bookingId = 20002,

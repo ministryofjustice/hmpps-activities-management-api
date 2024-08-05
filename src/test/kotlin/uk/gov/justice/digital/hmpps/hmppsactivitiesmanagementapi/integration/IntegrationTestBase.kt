@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.con
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ManageAdjudicationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -75,6 +76,7 @@ abstract class IntegrationTestBase {
     internal val nonAssociationsApiMockServer = NonAssociationsApiMockServer()
     internal val caseNotesApiMockServer = CaseNotesApiMockServer()
     internal val incentivesApiMockServer = IncentivesApiMockServer()
+    internal val manageAdjudicationsApiMockServer = ManageAdjudicationsApiMockServer()
     internal val db = PostgresContainer.instance
 
     internal val localStackContainer = LocalStackContainer.instance
@@ -104,6 +106,7 @@ abstract class IntegrationTestBase {
       nonAssociationsApiMockServer.start()
       caseNotesApiMockServer.start()
       incentivesApiMockServer.start()
+      manageAdjudicationsApiMockServer.start()
     }
 
     @AfterAll
@@ -114,6 +117,7 @@ abstract class IntegrationTestBase {
       nonAssociationsApiMockServer.stop()
       caseNotesApiMockServer.stop()
       incentivesApiMockServer.stop()
+      manageAdjudicationsApiMockServer.stop()
     }
 
     @BeforeEach
@@ -130,6 +134,7 @@ abstract class IntegrationTestBase {
       nonAssociationsApiMockServer.resetAll()
       caseNotesApiMockServer.resetAll()
       incentivesApiMockServer.resetAll()
+      manageAdjudicationsApiMockServer.resetAll()
     }
   }
 

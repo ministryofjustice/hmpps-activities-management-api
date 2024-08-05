@@ -225,6 +225,7 @@ class TransformFunctionsTest {
           updatedTime = null,
           updatedBy = null,
           scheduleWeeks = 1,
+          usePrisonRegimeTime = true,
         ),
       )
       assertThat(pay).containsExactly(
@@ -469,6 +470,7 @@ class TransformFunctionsTest {
         activitiesRolloutDate = LocalDate.of(2022, 12, 22),
         appointmentsRolledOut = true,
         appointmentsRolloutDate = LocalDate.of(2022, 12, 23),
+        maxDaysToExpiry = 1,
       ),
     )
   }

@@ -7,6 +7,14 @@ import java.time.LocalDate
 
 class RolloutPrisonTest {
 
+  private val rolloutPrison = RolloutPrison(
+    code = "",
+    maxDaysToExpiry = 5,
+    activitiesToBeRolledOut = true,
+    description = "",
+    appointmentsToBeRolledOut = true,
+  )
+
   @Test
   fun `isActivitiesRolledOut returns false when activitiesToBeRolledOut is false`() {
     val rolloutPrison = RolloutPrison(1, "PBI", "Some Desc", false, null, false, null)
@@ -65,5 +73,15 @@ class RolloutPrisonTest {
   fun `isAppointmentsRolledOut returns true when appointmentsToBeRolledOut is true and appointmentsRolloutDate is in the present`() {
     val rolloutPrison = RolloutPrison(1, "PBI", "Some Desc", false, null, true, LocalDate.now())
     assertThat(rolloutPrison.isAppointmentsRolledOut()).isTrue
+  }
+
+  @Test
+  fun `date has not expired`() {
+    assertThat(rolloutPrison.hasExpired { LocalDate.now() }).isFalse
+  }
+
+  @Test
+  fun `date has expired`() {
+    assertThat(rolloutPrison.hasExpired { LocalDate.now().minusDays(5) }).isTrue
   }
 }

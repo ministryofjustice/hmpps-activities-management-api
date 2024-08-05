@@ -13,6 +13,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysFromNow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
@@ -49,6 +50,7 @@ import java.time.LocalDateTime
   properties = [
     "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.event.activities.prisoner.attendance-created=true",
     "spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
   ],
 )
@@ -163,6 +165,46 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
+  fun `update allocation start date to today`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1234BC")
+
+    webTestClient.updateAllocation(
+      PENTONVILLE_PRISON_CODE,
+      6,
+      AllocationUpdateRequest(
+        startDate = TimeSource.today(),
+        scheduleInstanceId = 2L,
+      ),
+    )
+
+    allocationRepository.findById(6).get().also {
+      it.startDate isEqualTo TimeSource.today()
+      it.exclusions(ExclusionsFilter.ACTIVE).forEach {
+        it.startDate = TimeSource.today()
+      }
+    }
+
+    val newAttendance = attendanceRepository.findAll().filter { it.scheduledInstance.sessionDate == TimeSource.today() }
+      .also { it.size isEqualTo 1 }
+      .first()
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      eventType isEqualTo "activities.prisoner.allocation-amended"
+      additionalInformation isEqualTo PrisonerAllocatedInformation(6)
+      occurredAt isCloseTo TimeSource.now()
+    }
+
+    with(eventCaptor.secondValue) {
+      eventType isEqualTo "activities.prisoner.attendance-created"
+      additionalInformation isEqualTo PrisonerAttendanceInformation(newAttendance.attendanceId)
+      occurredAt isCloseTo TimeSource.now()
+    }
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  @Test
   fun `update allocation end date`() {
     allocationRepository.findById(1).get().also { it.endDate isEqualTo null }
 
@@ -198,6 +240,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
             weekNumber = 1,
             timeSlot = "AM",
             monday = true,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
           ),
         ),
       ),
@@ -207,7 +250,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     with(allocation.exclusions) {
       this hasSize 1
-      this.first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      this.first().daysOfWeek isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())

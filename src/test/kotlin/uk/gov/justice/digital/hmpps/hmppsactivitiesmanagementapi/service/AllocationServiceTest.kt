@@ -5,15 +5,21 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -39,16 +45,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPri
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val scheduleRepository: ActivityScheduleRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService)
+  private val manageAttendancesService: ManageAttendancesService = mock()
+  private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, manageAttendancesService)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
+  private val activityScheduleCaptor = argumentCaptor<ActivitySchedule>()
 
   @BeforeEach
   fun setUp() {
@@ -106,7 +114,7 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - update start date`() {
+  fun `updateAllocation - update start date - no new attendances needed`() {
     val allocation = allocation(startDate = TimeSource.tomorrow())
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
@@ -123,6 +131,53 @@ class AllocationServiceTest {
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
     assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+
+    inOrder(manageAttendancesService) {
+      verify(manageAttendancesService).createAnyAttendancesForToday(eq(null), any())
+      verify(manageAttendancesService).saveAttendances(eq(emptyList()), any())
+      verifyNoMoreInteractions()
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+  }
+
+  @Test
+  fun `updateAllocation - update start date - new attendances needed`() {
+    val allocation = allocation(startDate = TimeSource.today().plusDays(3), withExclusions = true)
+    allocation.activitySchedule.activity.startDate = TimeSource.today().minusDays(1)
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE).first().startDate).isEqualTo(TimeSource.today().plusDays(3))
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    val attendance1: Attendance = mock()
+    val attendance2: Attendance = mock()
+    val newAttendances: List<Attendance> = listOf(attendance1, attendance2)
+    whenever(manageAttendancesService.createAnyAttendancesForToday(ArgumentMatchers.eq(123L), any())) doReturn newAttendances
+    whenever(manageAttendancesService.saveAttendances(eq(newAttendances), any())) doReturn newAttendances
+
+    allocation.startDate = LocalDate.now().plusDays(1)
+
+    val updateAllocationRequest = AllocationUpdateRequest(startDate = TimeSource.today(), scheduleInstanceId = 123L)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.today())
+    // If there are future exclusions then their start date should be match ew allocation start date
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE).first().startDate).isEqualTo(TimeSource.today())
+
+    inOrder(manageAttendancesService) {
+      verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), allocationCaptor.capture())
+      assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.today())
+      verify(manageAttendancesService).saveAttendances(eq(newAttendances), activityScheduleCaptor.capture())
+      assertThat(activityScheduleCaptor.firstValue).isEqualTo(allocation.activitySchedule)
+      verify(manageAttendancesService).sendCreatedEvent(eq(attendance1))
+      verify(manageAttendancesService).sendCreatedEvent(eq(attendance2))
+    }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
@@ -336,7 +391,24 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - fails if allocation start date not in future`() {
+  fun `updateAllocation - fails if allocation start date cannot be in the past`() {
+    val allocation = allocation(startDate = TimeSource.tomorrow())
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+
+    assertThatThrownBy {
+      service.updateAllocation(allocationId, AllocationUpdateRequest(startDate = TimeSource.yesterday()), prisonCode, "user")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Allocation start date must not be in the past")
+
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `updateAllocation - fails if allocation starts today but schedule instance id is null`() {
     val allocation = allocation(startDate = TimeSource.tomorrow())
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
@@ -347,7 +419,7 @@ class AllocationServiceTest {
       service.updateAllocation(allocationId, AllocationUpdateRequest(startDate = TimeSource.today()), prisonCode, "user")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Allocation start date must be in the future")
+      .hasMessage("The next session must be provided when allocation start date is today")
 
     verifyNoInteractions(outboundEventsService)
   }
@@ -460,7 +532,7 @@ class AllocationServiceTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     )
-      .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY)) }
+      .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY), LocalDate.now().plusDays(1)) }
       .also {
         it.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
         with(it.exclusions(ExclusionsFilter.ACTIVE).first()) {

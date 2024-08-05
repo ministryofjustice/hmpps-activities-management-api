@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
+import java.time.LocalDate
 
 class ActivityUpdateRequestTest : ValidatorBase<ActivityUpdateRequest>() {
 
@@ -39,5 +41,23 @@ class ActivityUpdateRequestTest : ValidatorBase<ActivityUpdateRequest>() {
     val unpaidActivityWithPay = ActivityUpdateRequest(paid = false, pay = listOf(pay))
 
     unpaidActivityWithPay failsWithSingle ModelError("unpaid", "Unpaid activity cannot have pay rates associated with it")
+  }
+
+  @Test
+  fun `Paid activity with an effective pay from date must be a maximum of 30 days in the future`() {
+    val apr = activityPayCreateRequest(startDate = LocalDate.now().plusDays(31))
+    val ar = ActivityUpdateRequest(paid = true, pay = listOf(apr))
+
+    ar failsWithSingle ModelError("maximumFuturePayDate", "Activity pay rate effective date must not be more than 30 days in the future")
+  }
+
+  @Test
+  fun `Paid activity with an effective pay from date must be unique`() {
+    val apr1 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(25))
+    val apr2 = activityPayCreateRequest(startDate = LocalDate.now().plusDays(25))
+
+    val ar = ActivityUpdateRequest(paid = true, pay = listOf(apr1, apr2))
+
+    ar failsWithSingle ModelError("duplicateFuturePayDate", "Activity pay rate effective date must be unique for a given incentive level and pay band")
   }
 }

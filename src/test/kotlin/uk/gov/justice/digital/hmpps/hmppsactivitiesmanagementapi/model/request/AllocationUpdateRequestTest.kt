@@ -11,11 +11,11 @@ class AllocationUpdateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
-  fun `start date must be in the future`() {
+  fun `start date must not be in the past`() {
     val request = AllocationUpdateRequest(
-      startDate = TimeSource.today(),
+      startDate = TimeSource.yesterday(),
     )
-    assertSingleValidationError(validator.validate(request), "startDate", "Start date must be in the future")
+    assertSingleValidationError(validator.validate(request), "startDate", "Start date must not be in the past")
   }
 
   @Test

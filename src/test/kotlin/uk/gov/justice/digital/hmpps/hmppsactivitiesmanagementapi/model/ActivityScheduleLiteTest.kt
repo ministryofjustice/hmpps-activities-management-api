@@ -43,6 +43,7 @@ class ActivityScheduleLiteTest : ModelTest() {
       startDate = originalStartDate,
       endDate = originalEndDate,
       scheduleWeeks = 1,
+      usePrisonRegimeTime = true,
     )
 
     val json = objectMapper.writeValueAsString(activitySchedule)

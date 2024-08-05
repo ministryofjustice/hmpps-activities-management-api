@@ -102,7 +102,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isOk
       .expectBody()
-      .jsonPath("$.size()").isEqualTo(if (status == AttendanceStatus.EVENT_TIER) 3 else 1)
+      .jsonPath("$.size()").isEqualTo(1)
   }
 
   @Sql(

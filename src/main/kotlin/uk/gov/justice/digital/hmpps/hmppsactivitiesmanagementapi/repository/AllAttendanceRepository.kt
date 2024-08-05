@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository as RepositoryAnnotation
 @RepositoryAnnotation
 interface AllAttendanceRepository : ReadOnlyRepository<AllAttendance, Long> {
   fun findByPrisonCodeAndSessionDate(prisonCode: String, sessionDate: LocalDate): List<AllAttendance>
+  fun findByPrisonCodeAndSessionDateAndEventTier(prisonCode: String, sessionDate: LocalDate, eventTier: String): List<AllAttendance>
 
   @Query(
     """

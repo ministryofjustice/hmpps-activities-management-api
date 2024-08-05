@@ -99,7 +99,7 @@ class AppointmentAttendanceService(
         AttendanceStatus.ATTENDED -> it.getAttended() == true
         AttendanceStatus.NOT_ATTENDED -> it.getAttended() == false
         AttendanceStatus.NOT_RECORDED -> it.getAttended() == null
-        AttendanceStatus.EVENT_TIER -> it.getEventTier() == eventTier?.name
+        AttendanceStatus.EVENT_TIER -> it.getEventTier() == eventTier?.name && it.getAttended() == true
         else -> true
       }
     }

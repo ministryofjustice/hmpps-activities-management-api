@@ -10,8 +10,10 @@ import toPrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
@@ -49,6 +51,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 class ActivityScheduleService(
   private val repository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
+  private val prisonerSearchAdminApiClient: PrisonerSearchApiApplicationClient,
   private val caseNotesApiClient: CaseNotesApiClient,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -56,6 +59,7 @@ class ActivityScheduleService(
   private val telemetryClient: TelemetryClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val manageAttendancesService: ManageAttendancesService,
 ) {
 
   companion object {
@@ -141,10 +145,14 @@ class ActivityScheduleService(
     )?.checkCaseloadAccess()?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
   @Transactional
-  fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String) {
+  fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String, adminMode: Boolean? = false) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
-    require(request.startDate!! > LocalDate.now()) { "Allocation start date must be in the future" }
+    val today = LocalDate.now()
+
+    require(request.startDate!! >= today) { "Allocation start date must not be in the past" }
+
+    if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
 
     transactionHandler.newSpringTransaction {
       val schedule = repository.findOrThrowNotFound(scheduleId).also {
@@ -163,7 +171,7 @@ class ActivityScheduleService(
 
       val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
-      val activePrisoner = prisonerSearchApiClient.findByPrisonerNumber(request.prisonerNumber)
+      val activePrisoner = getActivePrisoner(request.prisonerNumber, adminMode)
         ?.also { prisoner ->
           require(prisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
             "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
@@ -201,14 +209,31 @@ class ActivityScheduleService(
           }
           .singleOrNull()?.allocated(allocation)
 
+        // if allocation is for instance(s) later today then need to create attendance records
+        val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
+
         repository.saveAndFlush(schedule)
+
+        val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, schedule)
+
         auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
         logAllocationEvent(allocation, maybeWaitingList)
         log.info("Allocated prisoner $prisonerNumber to activity schedule ${schedule.description}.")
 
-        allocation.allocationId
+        allocation.allocationId to savedAttendances
       }
-    }.also { allocationId -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocationId) }
+    }.also { (allocation, newAttendances) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATED, allocation)
+
+      newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it) }
+    }
+  }
+
+  private fun getActivePrisoner(prisonerNumber: String, adminMode: Boolean?): Prisoner? {
+    if (adminMode == true) {
+      return prisonerSearchAdminApiClient.findByPrisonerNumber(prisonerNumber)
+    }
+    return prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)
   }
 
   @Transactional
@@ -220,6 +245,7 @@ class ActivityScheduleService(
         request.prisonerNumbers!!.distinct()
           .map { prisonerNumber ->
             val deallocationReason = request.reasonCode!!.toDeallocationReason()
+            val endDate = request.endDate!!
             var caseNoteId: Long? = null
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
@@ -228,7 +254,7 @@ class ActivityScheduleService(
 
             deallocatePrisonerOn(
               prisonerNumber,
-              request.endDate!!,
+              endDate,
               deallocationReason,
               deallocatedBy,
               caseNoteId,

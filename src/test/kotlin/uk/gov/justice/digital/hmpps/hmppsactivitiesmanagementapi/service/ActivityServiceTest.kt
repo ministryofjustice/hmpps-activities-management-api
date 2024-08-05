@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory2
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
@@ -82,7 +83,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.*
+import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule as EligibilityRuleEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
@@ -171,8 +172,8 @@ class ActivityServiceTest {
   fun setUp() {
     openMocks(this)
     whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
-    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(transform(prisonRegime()))
-    whenever(prisonRegimeService.getPrisonTimeSlots(any())).thenReturn(
+    whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(any())).thenReturn(listOf(transform(prisonRegime())))
+    whenever(prisonRegimeService.getPrisonTimeSlots(any(), any())).thenReturn(
       transform(prisonRegime()).let { pr ->
         mapOf(
           TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
@@ -288,6 +289,108 @@ class ActivityServiceTest {
         ).isEmpty()
       }
     }
+  }
+
+  @Test
+  fun `createActivity - success - with multiple pay rates for the same incentive level and pay band`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
+        invocation ->
+      invocation.getArgument(0, ActivityEntity::class.java)
+    }
+
+    service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+    verify(activityCategoryRepository).findById(1)
+    verify(eventTierRepository).findByCode("TIER_2")
+    verify(eventOrganiserRepository).findByCode("PRISON_STAFF")
+    verify(eligibilityRuleRepository).findById(any())
+
+    with(activityCaptor.firstValue) {
+      assertThat(eligibilityRules()).hasSize(1)
+      assertThat(activityPay()).hasSize(2)
+      assertThat(activityMinimumEducationLevel()).hasSize(1)
+      assertThat(activityCategory).isEqualTo(activityCategory())
+      assertThat(activityTier).isEqualTo(eventTier())
+      assertThat(organiser).isEqualTo(eventOrganiser())
+    }
+
+    val metricsPropertiesMap = mapOf(
+      PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
+      ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
+      EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
+      EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+    )
+    verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
+  }
+
+  @Test
+  fun `createActivity - fails when the pay band, incentive level and start date are not unique`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+      .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
+
+    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
+    whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
+    whenever(eventOrganiserRepository.findByCode("PRISON_STAFF")).thenReturn(eventOrganiser())
+    whenever(eligibilityRuleRepository.findById(eligibilityRuleOver21.eligibilityRuleId)).thenReturn(
+      Optional.of(
+        eligibilityRuleOver21,
+      ),
+    )
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
+    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
+
+    assertThatThrownBy {
+      service().createActivity(createActivityRequest, "SCH_ACTIVITY")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
   }
 
   @Test
@@ -980,6 +1083,7 @@ class ActivityServiceTest {
         payBand = lowPayBand,
         bookingId = 10001,
         allocatedBy = "FRED",
+        startDate = LocalDate.now().plusDays(1),
         endDate = updateActivityRequest.endDate?.plusYears(1),
       )
 
@@ -988,6 +1092,7 @@ class ActivityServiceTest {
         payBand = lowPayBand,
         bookingId = 20002,
         allocatedBy = "BOB",
+        startDate = LocalDate.now().plusDays(2),
         endDate = null,
       )
     }
@@ -1040,6 +1145,99 @@ class ActivityServiceTest {
   }
 
   @Test
+  fun `updateActivity - update pay with multiple pay rates for the same incentive level and pay band`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      pieceRate = 150,
+      pieceRateItems = 10,
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      pieceRate = 150,
+      pieceRateItems = 10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val updateActivityRequest: ActivityUpdateRequest =
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(2)
+    }
+
+    with(activityCaptor.firstValue.activityPay()) {
+      single { it.startDate == null }
+      single { it.startDate == java.time.LocalDate.now().plusDays(25) }
+    }
+  }
+
+  @Test
+  fun `updateActivity - update pay with multiple pay rates for the same incentive level, pay band and start date fails`() {
+    val apr1 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      pieceRate = 150,
+      pieceRateItems = 10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val apr2 = activityPayCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      pieceRate = 150,
+      pieceRateItems = 10,
+      startDate = LocalDate.now().plusDays(25),
+    )
+
+    val updateActivityRequest: ActivityUpdateRequest =
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+
+    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    assertThatThrownBy {
+      service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "TEST")
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("The pay band, incentive level and start date combination must be unique for each pay rate")
+  }
+
+  @Test
   fun `updateActivity - update pay band where someone is allocated to it`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-6.json")
     val activityEntity: ActivityEntity = activityEntity()
@@ -1066,7 +1264,38 @@ class ActivityServiceTest {
       assertThat(activityPay()).hasSize(1)
       assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
+  }
 
+  @Test
+  fun `updateActivity - update pay band where there is multiple pays for the same incentive level and nomic code and someone is allocated to it`() {
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-7.json")
+    val activityEntity: ActivityEntity = activityEntity()
+
+    whenever(
+      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+        17,
+        MOORLAND_PRISON_CODE,
+        LocalDate.now(),
+      ),
+    ).thenReturn(activityEntity)
+    whenever(activityRepository.saveAndFlush(any())).thenReturn(activityEntity)
+    whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
+
+    val prisonerNumbers = activityEntity.schedules().first().allocations().map { it.prisonerNumber }
+    val prisoners = prisonerNumbers.map { PrisonerSearchPrisonerFixture.instance(prisonerNumber = it) }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)).thenReturn(prisoners)
+
+    service().updateActivity(MOORLAND_PRISON_CODE, 17, updateActivityRequest, "SCH_ACTIVITY")
+
+    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+    with(activityCaptor.firstValue) {
+      assertThat(activityPay()).hasSize(2)
+      assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.last().payBandId)
+    }
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
@@ -1787,7 +2016,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
       }
     }
 
@@ -1853,7 +2082,7 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek))
+        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
       }
     }
 

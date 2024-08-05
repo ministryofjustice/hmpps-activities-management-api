@@ -79,6 +79,8 @@ data class ActivitySchedule(
   var instancesLastUpdatedTime: LocalDateTime? = null,
 
   var scheduleWeeks: Int,
+
+  var usePrisonRegimeTime: Boolean = true,
 ) {
 
   init {
@@ -167,6 +169,8 @@ data class ActivitySchedule(
    */
   fun isActiveOn(date: LocalDate): Boolean = date.between(startDate, endDate)
 
+  fun isFuture(date: LocalDate): Boolean = date.isBefore(startDate)
+
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
 
   fun getWeekNumber(date: LocalDate): Int {
@@ -184,9 +188,6 @@ data class ActivitySchedule(
     val daysIntoThisSchedulePeriod = daysIntoSchedule % (daysInWeek * scheduleWeeks)
     return (daysIntoThisSchedulePeriod / daysInWeek).toInt() + 1
   }
-
-  fun hasNoInstancesOnDate(day: LocalDate) =
-    instances.none { instance -> instance.sessionDate == day }
 
   fun hasNoInstancesOnDate(day: LocalDate, startEndTime: SlotTimes) =
     instances.none { instance ->
@@ -230,9 +231,21 @@ data class ActivitySchedule(
     }
   }
 
-  fun addSlot(weekNumber: Int, slotTimes: SlotTimes, daysOfWeek: Set<DayOfWeek>): ActivityScheduleSlot {
-    require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
-    slots.add(ActivityScheduleSlot.valueOf(this, weekNumber, slotTimes, daysOfWeek))
+  fun addSlot(
+    weekNumber: Int,
+    slotTimes: SlotTimes,
+    daysOfWeek: Set<DayOfWeek>,
+    experimentalMode: Boolean = false,
+  ): ActivityScheduleSlot {
+    if (!experimentalMode) require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
+    slots.add(
+      ActivityScheduleSlot.valueOf(
+        activitySchedule = this,
+        weekNumber = weekNumber,
+        slotTimes = slotTimes,
+        daysOfWeek = daysOfWeek,
+      ),
+    )
     return slots.last()
   }
 
@@ -240,7 +253,7 @@ data class ActivitySchedule(
     prisonerNumber: PrisonerNumber,
     payBand: PrisonPayBand?,
     bookingId: Long,
-    startDate: LocalDate = LocalDate.now(),
+    startDate: LocalDate,
     endDate: LocalDate? = null,
     exclusions: List<Slot>? = null,
     allocatedBy: String,
@@ -277,8 +290,9 @@ data class ActivitySchedule(
         exclusions?.onEach { exclusion ->
           slots(exclusion.weekNumber, exclusion.timeSlot())
             .also { require(it.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
-            .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.getDaysOfWeek()).isNotEmpty() }
-            .forEach { slot -> this.updateExclusion(slot, exclusion.getDaysOfWeek()) }
+            // Only consider exclusions slots where activity slots exist
+            .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty() }
+            .forEach { slot -> this.updateExclusion(slot, exclusion.daysOfWeek, startDate) }
         }
       },
     )
@@ -298,8 +312,11 @@ data class ActivitySchedule(
     if (isActiveOn(date)) {
       return allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by, caseNoteId)
         ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
+    } else if (isFuture(date)) {
+      return allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateBeforeStart(reason, by)
+        ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
     } else {
-      throw IllegalStateException("Schedule $activityScheduleId is not active on the planned deallocated date $date.")
+      throw IllegalStateException("Schedule $activityScheduleId is not active or in the future on the planned deallocated date $date.")
     }
   }
 
@@ -312,6 +329,7 @@ data class ActivitySchedule(
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,
     endDate = this.endDate,
+    usePrisonRegimeTime = this.usePrisonRegimeTime,
   ).apply {
     if (!this.activity.inCell && !this.activity.onWing && !this.activity.offWing) {
       this.internalLocation = InternalLocation(

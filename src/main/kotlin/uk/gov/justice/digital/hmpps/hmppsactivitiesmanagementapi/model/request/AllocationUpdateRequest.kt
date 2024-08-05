@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.validation.constraints.Future
 import jakarta.validation.constraints.FutureOrPresent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
@@ -12,7 +11,7 @@ data class AllocationUpdateRequest(
 
   @Schema(description = "The date when the prisoner will start the activity", example = "2022-09-10")
   @JsonFormat(pattern = "yyyy-MM-dd")
-  @field:Future(message = "Start date must be in the future")
+  @field:FutureOrPresent(message = "Start date must not be in the past")
   val startDate: LocalDate? = null,
 
   @Schema(description = "The date when the prisoner will stop attending the activity", example = "2023-09-10")
@@ -39,4 +38,7 @@ data class AllocationUpdateRequest(
       "there can not not be exclusions defined on the same day and time slot over multiple weeks.",
   )
   val exclusions: List<Slot>? = null,
+
+  @Schema(description = "The scheduled instance id required when allocation starts today")
+  val scheduleInstanceId: Long? = null,
 )

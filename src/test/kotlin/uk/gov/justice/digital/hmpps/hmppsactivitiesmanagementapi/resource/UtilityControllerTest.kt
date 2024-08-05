@@ -32,7 +32,7 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
     val response = mockMvc.publishEvents(OutboundEvent.PRISONER_ALLOCATION_AMENDED, listOf(1, 1, 2))
       .andExpect { status { isCreated() } }.andReturn().response
 
-    verify(outboundEventsService, times(2)).send(eq(OutboundEvent.PRISONER_ALLOCATION_AMENDED), identifierCaptor.capture())
+    verify(outboundEventsService, times(2)).send(eq(OutboundEvent.PRISONER_ALLOCATION_AMENDED), identifierCaptor.capture(), eq(null))
 
     response.contentAsString isEqualTo "Domain event PRISONER_ALLOCATION_AMENDED published"
     identifierCaptor.firstValue isEqualTo 1

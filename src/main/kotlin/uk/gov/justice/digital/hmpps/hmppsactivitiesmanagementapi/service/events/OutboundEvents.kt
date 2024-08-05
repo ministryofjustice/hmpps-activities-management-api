@@ -59,6 +59,14 @@ enum class OutboundEvent(val eventType: String) {
         description = "A prisoner attendance has been amended in the activities management service",
       )
   },
+  PRISONER_ATTENDANCE_DELETED("activities.prisoner.attendance-deleted") {
+    override fun event(additionalInformation: AdditionalInformation) =
+      OutboundHMPPSDomainEvent(
+        eventType = eventType,
+        additionalInformation = additionalInformation,
+        description = "A prisoner attendance has been deleted in the activities management service",
+      )
+  },
   PRISONER_ATTENDANCE_EXPIRED("activities.prisoner.attendance-expired") {
     override fun event(additionalInformation: AdditionalInformation) =
       OutboundHMPPSDomainEvent(
@@ -126,4 +134,5 @@ data class ScheduleCreatedInformation(val activityScheduleId: Long) : Additional
 data class ScheduledInstanceInformation(val scheduledInstanceId: Long) : AdditionalInformation
 data class PrisonerAllocatedInformation(val allocationId: Long) : AdditionalInformation
 data class PrisonerAttendanceInformation(val attendanceId: Long) : AdditionalInformation
+data class PrisonerAttendanceDeleteInformation(val bookingId: Long, val scheduledInstanceId: Long) : AdditionalInformation
 data class AppointmentInstanceInformation(val appointmentInstanceId: Long) : AdditionalInformation

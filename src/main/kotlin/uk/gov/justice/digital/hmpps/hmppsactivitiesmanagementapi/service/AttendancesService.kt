@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -16,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
@@ -57,7 +56,7 @@ class AttendancesService(
     log.info("Attendance marking in progress")
 
     val markedAttendanceIds = transactionHandler.newSpringTransaction {
-      val attendanceUpdatesById = attendances.onEach(AttendanceUpdateRequestValidator::validate).associateBy { it.id }
+      val attendanceUpdatesById = attendances.associateBy { it.id }
       val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
       attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
@@ -93,31 +92,29 @@ class AttendancesService(
     log.info("Attendance marking done for ${markedAttendanceIds.size} attendance record(s)")
   }
 
-  suspend fun getSuspendedPrisonerAttendance(
+  fun getSuspendedPrisonerAttendance(
     prisonCode: String,
     date: LocalDate,
     reason: String? = null,
     categories: List<String>? = null,
-  ): List<SuspendedPrisonerAttendance> = coroutineScope {
-    val attendance = async {
+  ): List<SuspendedPrisonerAttendance> {
+    val attendance =
       attendanceRepository.getSuspendedPrisonerAttendance(
         prisonCode = prisonCode,
         date = date,
         reason = reason,
       )
-    }.await()
 
-    val timeSlots = async {
+    val timeSlots =
       attendanceRepository.getActivityTimeSlot(
         prisonCode = prisonCode,
         date = date,
         categories = categories ?: ActivityCategoryCode.entries.map { it.name },
       )
-    }.await()
 
     val scheduledInstanceIds = timeSlots.map { it.getScheduledInstanceId() }
 
-    attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
+    return attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
       SuspendedPrisonerAttendance(
         prisonerNumber = prisoner.key,
         attendance = prisoner.value.map {
@@ -166,12 +163,15 @@ class AttendancesService(
   fun getAttendanceById(id: Long) =
     transform(attendanceRepository.findOrThrowNotFound(id), caseNotesApiClient)
 
-  fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate): List<ModelAllAttendance> =
-    allAttendanceRepository.findByPrisonCodeAndSessionDate(prisonCode, sessionDate).toModel()
-}
+  fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTier: EventTierType? = null): List<ModelAllAttendance> {
+    eventTier ?: return allAttendanceRepository.findByPrisonCodeAndSessionDate(
+      prisonCode = prisonCode, sessionDate = sessionDate,
+    ).toModel()
 
-internal object AttendanceUpdateRequestValidator {
-  fun validate(request: AttendanceUpdateRequest) {
-    // TODO introduce validation of attendance update
+    return allAttendanceRepository.findByPrisonCodeAndSessionDateAndEventTier(
+      prisonCode = prisonCode,
+      sessionDate = sessionDate,
+      eventTier = eventTier.name,
+    ).toModel()
   }
 }

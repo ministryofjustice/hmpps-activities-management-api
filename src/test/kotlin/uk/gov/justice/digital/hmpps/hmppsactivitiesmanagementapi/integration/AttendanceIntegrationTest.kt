@@ -14,6 +14,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
@@ -175,6 +176,22 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   fun `get attendance list for specified date`() {
     val attendanceList = webTestClient.getAllAttendanceByDate(MOORLAND_PRISON_CODE, LocalDate.of(2022, 10, 10))!!
     assertThat(attendanceList.size).isEqualTo(9)
+    assertThat(attendanceList.any { it.eventTier == EventTierType.TIER_1 }).isTrue()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-attendances.sql",
+  )
+  @Test
+  fun `get attendance list for specified date and event tier`() {
+    val attendanceList = webTestClient.getAllAttendanceByDate(
+      prisonCode = MOORLAND_PRISON_CODE,
+      sessionDate = LocalDate.of(2022, 10, 10),
+      eventTierType = EventTierType.TIER_2,
+    )!!
+
+    assertThat(attendanceList.size).isEqualTo(3)
+    assertThat(attendanceList.all { it.eventTier == EventTierType.TIER_2 }).isTrue()
   }
 
   @Sql(
@@ -214,9 +231,9 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .expectBodyList(ModelAttendance::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) =
+  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) =
     get()
-      .uri("/attendances/$prisonCode/$sessionDate")
+      .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()
