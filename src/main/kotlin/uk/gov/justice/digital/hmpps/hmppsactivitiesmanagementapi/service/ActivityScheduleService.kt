@@ -171,7 +171,7 @@ class ActivityScheduleService(
 
       val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
 
-      var activePrisoner = getActivePrisoner(request.prisonerNumber, adminMode)
+      val activePrisoner = getActivePrisoner(request.prisonerNumber, adminMode)
         ?.also { prisoner ->
           require(prisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
             "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
