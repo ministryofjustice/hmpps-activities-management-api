@@ -38,4 +38,4 @@ generic-prometheus-alerts:
 
 cron:
   fixZeroPayDeallocate: "0 22 5 8 *"
-  fixZeroPayReallocate: "0 5 6 8 *"
+  fixZeroPayReallocate: "0 15 6 8 *"
