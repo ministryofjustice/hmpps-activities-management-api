@@ -78,15 +78,7 @@ abstract class IntegrationTestBase {
     internal val incentivesApiMockServer = IncentivesApiMockServer()
     internal val manageAdjudicationsApiMockServer = ManageAdjudicationsApiMockServer()
     internal val db = PostgresContainer.instance
-
     internal val localStackContainer = LocalStackContainer.instance
-
-    @Suppress("unused")
-    @JvmStatic
-    @DynamicPropertySource
-    fun testcontainers(registry: DynamicPropertyRegistry) {
-      localStackContainer?.also { setLocalStackProperties(it, registry) }
-    }
 
     @JvmStatic
     @DynamicPropertySource
@@ -96,6 +88,7 @@ abstract class IntegrationTestBase {
         registry.add("spring.datasource.username", db::getUsername)
         registry.add("spring.datasource.password", db::getPassword)
       }
+      localStackContainer?.also { setLocalStackProperties(it, registry) }
     }
 
     @BeforeAll
