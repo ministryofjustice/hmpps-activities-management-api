@@ -4,7 +4,7 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.2"
   kotlin("plugin.spring") version "2.0.0"
   kotlin("plugin.jpa") version "2.0.0"
   jacoco
@@ -25,7 +25,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.3")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -33,7 +33,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.0.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.1.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
   // Spring framework retryable dependencies
@@ -54,7 +54,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.8.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.9.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
