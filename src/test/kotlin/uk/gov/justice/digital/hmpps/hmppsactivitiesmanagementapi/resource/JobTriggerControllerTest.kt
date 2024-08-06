@@ -50,9 +50,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @MockBean
   private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
 
-  override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob)
-
+  @MockBean
   private lateinit var fixZeroPayJob: FixZeroPayJob
 
   @MockBean
@@ -65,7 +63,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   }
 
   override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock)
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob, fixZeroPayJob, clock)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
