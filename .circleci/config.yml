@@ -17,6 +17,9 @@ parameters:
   postgres-version:
     type: string
     default: "14"
+  localstack-version:
+    type: string
+    default: "3.0"
 
 jobs:
   validate:
