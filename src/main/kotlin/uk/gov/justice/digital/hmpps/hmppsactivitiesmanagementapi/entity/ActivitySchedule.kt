@@ -2,8 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -83,9 +81,6 @@ data class ActivitySchedule(
   var scheduleWeeks: Int,
 
   var usePrisonRegimeTime: Boolean = true,
-
-  @Enumerated(EnumType.STRING)
-  var timeSlot: TimeSlot,
 ) {
 
   init {
@@ -216,6 +211,7 @@ data class ActivitySchedule(
         sessionDate = sessionDate,
         startTime = slot.startTime,
         endTime = slot.endTime,
+        timeSlot = slot.timeSlot,
       ),
     )
     instancesLastUpdatedTime = LocalDateTime.now()
@@ -243,6 +239,7 @@ data class ActivitySchedule(
     slotTimes: SlotTimes,
     daysOfWeek: Set<DayOfWeek>,
     experimentalMode: Boolean = false,
+    timeSlot: TimeSlot,
   ): ActivityScheduleSlot {
     if (!experimentalMode) require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
     slots.add(
@@ -251,6 +248,7 @@ data class ActivitySchedule(
         weekNumber = weekNumber,
         slotTimes = slotTimes,
         daysOfWeek = daysOfWeek,
+        timeSlot = timeSlot,
       ),
     )
     return slots.last()

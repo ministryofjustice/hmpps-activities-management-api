@@ -287,6 +287,7 @@ class ActivityService(
       slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
       daysOfWeek = slot.daysOfWeek,
       experimentalMode = experimentalMode,
+      timeSlot = slot.timeSlot(),
     )
   }
 
@@ -296,6 +297,7 @@ class ActivityService(
       slotTimes = timeSlot[TimeSlot.valueOf(slot.timeSlot!!)]!!,
       daysOfWeek = daysOfWeekToApply,
       experimentalMode = experimentalMode,
+      timeSlot = slot.timeSlot(),
     )
   }
 
