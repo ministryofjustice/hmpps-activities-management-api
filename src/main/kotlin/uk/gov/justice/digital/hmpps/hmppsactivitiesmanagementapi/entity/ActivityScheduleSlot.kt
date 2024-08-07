@@ -85,7 +85,6 @@ data class ActivityScheduleSlot(
       weekNumber = weekNumber,
       startTime = slotTimes.first,
       endTime = slotTimes.second,
-      timeSlot = TimeSlot.ED,
     ).apply {
       update(daysOfWeek)
     }

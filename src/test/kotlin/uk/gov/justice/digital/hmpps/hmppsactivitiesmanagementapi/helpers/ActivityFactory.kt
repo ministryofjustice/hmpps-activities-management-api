@@ -322,11 +322,24 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
   if (withExclusions) {
     allocation.apply {
       if (startDate != null) {
-        addExclusion(Exclusion.valueOf(
-          allocation = this, weekNumber =  slot.weekNumber, daysOfWeek =  setOf(DayOfWeek.MONDAY),startDate = startDate, timeSlot = slot.timeSlot))
+        addExclusion(
+          Exclusion.valueOf(
+            allocation = this,
+            weekNumber = slot.weekNumber,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            startDate = startDate,
+            timeSlot = slot.timeSlot,
+          ),
+        )
       } else {
-        addExclusion(Exclusion.valueOf(
-          allocation = this, weekNumber = slot.weekNumber,  daysOfWeek = setOf(DayOfWeek.MONDAY), timeSlot = slot.timeSlot))
+        addExclusion(
+          Exclusion.valueOf(
+            allocation = this,
+            weekNumber = slot.weekNumber,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            timeSlot = slot.timeSlot,
+          ),
+        )
       }
     }
   }

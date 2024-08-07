@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -82,6 +84,8 @@ data class ActivitySchedule(
 
   var usePrisonRegimeTime: Boolean = true,
 
+  @Enumerated(EnumType.STRING)
+  var timeSlot: TimeSlot,
 ) {
 
   init {
@@ -212,7 +216,6 @@ data class ActivitySchedule(
         sessionDate = sessionDate,
         startTime = slot.startTime,
         endTime = slot.endTime,
-        timeSlot = TimeSlot.ED,
       ),
     )
     instancesLastUpdatedTime = LocalDateTime.now()
