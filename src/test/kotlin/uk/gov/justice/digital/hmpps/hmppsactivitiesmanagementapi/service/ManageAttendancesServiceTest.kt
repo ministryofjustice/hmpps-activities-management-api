@@ -252,7 +252,15 @@ class ManageAttendancesServiceTest {
 
     val slot = activitySchedule.slots().first()
     allocation.apply {
-      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, slot.getDaysOfWeek(), startDate))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = slot.weekNumber,
+          daysOfWeek = slot.getDaysOfWeek(),
+          startDate = startDate,
+          timeSlot = slot.timeSlot,
+        ),
+      )
     }
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
@@ -709,8 +717,8 @@ class ManageAttendancesServiceTest {
     fun `should only create an attendance records if session time is on or after the selected scheduled instance start time`() {
       val firstSlot = allocation.activitySchedule.slots().first()
 
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek())
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek())
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek(), false, firstSlot.timeSlot)
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek(), false, firstSlot.timeSlot)
 
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[1])
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[2])

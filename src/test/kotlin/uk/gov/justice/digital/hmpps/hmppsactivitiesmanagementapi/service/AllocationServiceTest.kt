@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -517,12 +518,14 @@ class AllocationServiceTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     val allocation = schedule.allocatePrisoner(
