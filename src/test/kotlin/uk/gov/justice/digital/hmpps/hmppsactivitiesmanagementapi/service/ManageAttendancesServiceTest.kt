@@ -53,7 +53,7 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Optional
 
 class ManageAttendancesServiceTest {
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
@@ -717,8 +717,8 @@ class ManageAttendancesServiceTest {
     fun `should only create an attendance records if session time is on or after the selected scheduled instance start time`() {
       val firstSlot = allocation.activitySchedule.slots().first()
 
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek(), false, firstSlot.timeSlot)
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek(), false, firstSlot.timeSlot)
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek(), firstSlot.timeSlot, false)
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek(), firstSlot.timeSlot, false)
 
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[1])
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[2])
