@@ -50,6 +50,9 @@ applications:
 hmpps:
   auth:
     url: http://localhost:8090/auth
+  s3:
+    localstackUrl: http://localhost:4571
+    region: eu-west-2
 
 prison:
   api:
