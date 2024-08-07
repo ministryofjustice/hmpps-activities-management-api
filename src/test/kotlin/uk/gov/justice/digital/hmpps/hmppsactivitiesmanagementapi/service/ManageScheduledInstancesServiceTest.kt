@@ -19,6 +19,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
@@ -523,11 +524,13 @@ class ManageScheduledInstancesServiceTest {
               weekNumber = 1,
               slotTimes = LocalTime.of(9, 30) to LocalTime.of(11, 30),
               daysOfWeek = setOf(LocalDate.now().dayOfWeek),
+              TimeSlot.AM,
             )
             this.addSlot(
               weekNumber = 1,
               slotTimes = LocalTime.of(13, 30) to LocalTime.of(15, 30),
               daysOfWeek = setOf(LocalDate.now().dayOfWeek),
+              TimeSlot.AM,
             )
           },
         )
