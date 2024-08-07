@@ -85,7 +85,7 @@ data class ActivitySchedule(
   var usePrisonRegimeTime: Boolean = true,
 
   @Enumerated(EnumType.STRING)
-  var timeSlot: TimeSlot
+  var timeSlot: TimeSlot,
 ) {
 
   init {

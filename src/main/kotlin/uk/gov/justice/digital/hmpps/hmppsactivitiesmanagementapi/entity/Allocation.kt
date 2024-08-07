@@ -357,7 +357,14 @@ data class Allocation(
     val exclusion = exclusions(ExclusionsFilter.FUTURE)
       .singleOrNull { it.weekNumber == slot.weekNumber && it.slotTimes() == slot.slotTimes() }
       ?.apply { setDaysOfWeek(days) }
-      ?: Exclusion.valueOf(this, slot.slotTimes(), slot.weekNumber, days, startDate)
+      ?: Exclusion.valueOf(
+        allocation = this,
+        slotTimes = slot.slotTimes(),
+        weekNumber = slot.weekNumber,
+        daysOfWeek = days,
+        startDate = startDate,
+        timeSlot = slot.timeSlot,
+      )
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
       if (exclusions.contains(exclusion).not()) addExclusion(exclusion)
@@ -377,13 +384,13 @@ data class Allocation(
     var editedSome: Boolean
     val scheduleSlotPairs = scheduleSlots.map { it.weekNumber to it.timeSlot() }
     exclusions(ExclusionsFilter.PRESENT)
-      .filter { it.weekNumber to it.timeSlot() !in scheduleSlotPairs }
+      .filter { it.weekNumber to it.timeSlot !in scheduleSlotPairs }
       .let {
         editedSome = it.isNotEmpty()
         endExclusions(it.toSet())
       }
     exclusions(ExclusionsFilter.FUTURE)
-      .filter { it.weekNumber to it.timeSlot() !in scheduleSlotPairs }
+      .filter { it.weekNumber to it.timeSlot !in scheduleSlotPairs }
       .let {
         editedSome = it.isNotEmpty() || editedSome
         removeExclusions(it.toSet())
@@ -394,8 +401,8 @@ data class Allocation(
     //  must be ended or removed.
 
     exclusions(ExclusionsFilter.PRESENT).filter { it.endDate == null }.forEach {
-      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
-      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot }
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
 
       if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
@@ -403,13 +410,21 @@ data class Allocation(
         it.endNow()
         val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
         if (intersect.isNotEmpty()) {
-          addExclusion(Exclusion.valueOf(this, matchingSlot.slotTimes(), it.weekNumber, intersect))
+          addExclusion(
+            Exclusion.valueOf(
+              allocation = this,
+              slotTimes = matchingSlot.slotTimes(),
+              weekNumber = it.weekNumber,
+              daysOfWeek = intersect,
+              timeSlot = matchingSlot.timeSlot,
+            ),
+          )
         }
       }
     }
     exclusions(ExclusionsFilter.FUTURE).forEach {
-      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot() }
-      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot() }
+      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot() == it.timeSlot }
+      val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot() == it.timeSlot }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
       if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.slotTimes() != it.slotTimes()) {
         editedSome = true
@@ -441,7 +456,7 @@ data class Allocation(
     //  This is to respect a restraint on the nomis data model
     require(
       activitySchedule.slots().none { slot ->
-        slot.timeSlot() == exclusion.timeSlot() &&
+        slot.timeSlot() == exclusion.timeSlot &&
           slot.weekNumber != exclusion.weekNumber &&
           slot.getDaysOfWeek().containsAny(exclusion.getDaysOfWeek())
       },

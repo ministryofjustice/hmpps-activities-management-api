@@ -1,13 +1,16 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -35,22 +38,12 @@ data class Exclusion(
 
   private var slotEndTime: LocalTime,
 
-  private var mondayFlag: Boolean = false,
-
-  private var tuesdayFlag: Boolean = false,
-
-  private var wednesdayFlag: Boolean = false,
-
-  private var thursdayFlag: Boolean = false,
-
-  private var fridayFlag: Boolean = false,
-
-  private var saturdayFlag: Boolean = false,
-
-  private var sundayFlag: Boolean = false,
-
   @Enumerated(EnumType.STRING)
-  var timeSlot: TimeSlot
+  var timeSlot: TimeSlot,
+
+  @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+  @JoinColumn(name = "exclusion_id")
+  var exclusionDaysOfWeek: MutableList<ExclusionDaysOfWeek> = mutableListOf(),
 
 ) {
   var endDate: LocalDate? = null
@@ -58,28 +51,7 @@ data class Exclusion(
 
   override fun hashCode(): Int = exclusionId.hashCode()
 
-  fun getDaysOfWeek(): Set<DayOfWeek> = setOfNotNull(
-    DayOfWeek.MONDAY.takeIf { mondayFlag },
-    DayOfWeek.TUESDAY.takeIf { tuesdayFlag },
-    DayOfWeek.WEDNESDAY.takeIf { wednesdayFlag },
-    DayOfWeek.THURSDAY.takeIf { thursdayFlag },
-    DayOfWeek.FRIDAY.takeIf { fridayFlag },
-    DayOfWeek.SATURDAY.takeIf { saturdayFlag },
-    DayOfWeek.SUNDAY.takeIf { sundayFlag },
-  )
-  fun setDaysOfWeek(days: Set<DayOfWeek>) {
-    mondayFlag = days.contains(DayOfWeek.MONDAY)
-    tuesdayFlag = days.contains(DayOfWeek.TUESDAY)
-    wednesdayFlag = days.contains(DayOfWeek.WEDNESDAY)
-    thursdayFlag = days.contains(DayOfWeek.THURSDAY)
-    fridayFlag = days.contains(DayOfWeek.FRIDAY)
-    saturdayFlag = days.contains(DayOfWeek.SATURDAY)
-    sundayFlag = days.contains(DayOfWeek.SUNDAY)
-  }
-
   fun endNow() = run { endDate = LocalDate.now() }
-
-  fun timeSlot() = TimeSlot.slot(slotStartTime)
 
   fun slotTimes() = slotStartTime to slotEndTime
 
@@ -88,20 +60,34 @@ data class Exclusion(
     slotEndTime = slotTimes.second
   }
 
+  fun getDaysOfWeek(): List<DayOfWeek> = this.exclusionDaysOfWeek.map { it.dayOfWeek }
+
+  fun setDaysOfWeek(daysOfWeek: Set<DayOfWeek>) {
+    this.exclusionDaysOfWeek.clear()
+    this.exclusionDaysOfWeek.addAll(
+      daysOfWeek.map {
+        ExclusionDaysOfWeek(dayOfWeek = it)
+      },
+    )
+  }
+
   fun toSlotModel() = Slot(
     weekNumber = weekNumber,
-    timeSlot = timeSlot().toString(),
-    monday = mondayFlag,
-    tuesday = tuesdayFlag,
-    wednesday = wednesdayFlag,
-    thursday = thursdayFlag,
-    friday = fridayFlag,
-    saturday = saturdayFlag,
-    sunday = sundayFlag,
+    timeSlot = timeSlot.name,
+    monday = exclusionDaysOfWeek.containsDay(DayOfWeek.MONDAY),
+    tuesday = exclusionDaysOfWeek.containsDay(DayOfWeek.TUESDAY),
+    wednesday = exclusionDaysOfWeek.containsDay(DayOfWeek.WEDNESDAY),
+    thursday = exclusionDaysOfWeek.containsDay(DayOfWeek.THURSDAY),
+    friday = exclusionDaysOfWeek.containsDay(DayOfWeek.FRIDAY),
+    saturday = exclusionDaysOfWeek.containsDay(DayOfWeek.SATURDAY),
+    sunday = exclusionDaysOfWeek.containsDay(DayOfWeek.SUNDAY),
   )
 
   companion object {
     val tomorrow: LocalDate = LocalDate.now().plusDays(1)
+
+    fun List<ExclusionDaysOfWeek>.containsDay(day: DayOfWeek) =
+      this.map { it.dayOfWeek }.contains(day)
 
     fun valueOf(
       allocation: Allocation,
@@ -109,15 +95,18 @@ data class Exclusion(
       weekNumber: Int,
       daysOfWeek: Set<DayOfWeek>,
       startDate: LocalDate = maxOf(tomorrow, allocation.startDate),
+      timeSlot: TimeSlot,
     ) = Exclusion(
       allocation = allocation,
       slotStartTime = slotTimes.first,
       slotEndTime = slotTimes.second,
       weekNumber = weekNumber,
       startDate = startDate,
-    ).apply {
-      setDaysOfWeek(daysOfWeek)
-    }
+      timeSlot = timeSlot,
+      exclusionDaysOfWeek = daysOfWeek.map {
+        ExclusionDaysOfWeek(dayOfWeek = it)
+      }.toMutableList(),
+    )
   }
 }
 

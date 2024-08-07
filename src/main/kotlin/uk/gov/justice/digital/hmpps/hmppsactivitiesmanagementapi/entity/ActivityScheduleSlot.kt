@@ -51,7 +51,7 @@ data class ActivityScheduleSlot(
   var sundayFlag: Boolean = false,
 
   @Enumerated(EnumType.STRING)
-  var timeSlot: TimeSlot
+  var timeSlot: TimeSlot,
 
 ) {
   init {
