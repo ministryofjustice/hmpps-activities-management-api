@@ -21,7 +21,7 @@ class AWSLocalStackConfig {
     @Value("\${hmpps.s3.localstackUrl}") s3Url: String,
     @Value("\${hmpps.s3.region}") awsRegion: String,
     @Value("\${aws.s3.ap.bucket}") bucketName: String,
-    ): S3Client {
+  ): S3Client {
     val s3Client = S3Client {
       credentialsProvider = StaticCredentialsProvider {
         accessKeyId = "test"
@@ -29,6 +29,7 @@ class AWSLocalStackConfig {
       }
       region = awsRegion
       endpointUrl = aws.smithy.kotlin.runtime.net.url.Url.parse(s3Url)
+      forcePathStyle = true
     }
 
     // Initialise the default bucket
@@ -45,8 +46,4 @@ class AWSLocalStackConfig {
 
     return s3Client
   }
-
-
-
-
 }
