@@ -68,6 +68,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - hmpps/wait_till_ready_postgres
+      - hmpps/wait_till_ready
       - run:
           command: ./gradlew integrationTest
       - save_cache:
