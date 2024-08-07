@@ -80,11 +80,13 @@ data class ActivityScheduleSlot(
       weekNumber: Int,
       slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
+      timeSlot: TimeSlot,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
       startTime = slotTimes.first,
       endTime = slotTimes.second,
+      timeSlot = timeSlot,
     ).apply {
       update(daysOfWeek)
     }

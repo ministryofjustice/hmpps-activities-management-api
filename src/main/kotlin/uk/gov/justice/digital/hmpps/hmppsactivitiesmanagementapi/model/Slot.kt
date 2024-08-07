@@ -24,7 +24,7 @@ data class Slot(
     description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
     example = "AM",
   )
-  val timeSlot: String?,
+  val timeSlot: String,
 
   val monday: Boolean = false,
 
