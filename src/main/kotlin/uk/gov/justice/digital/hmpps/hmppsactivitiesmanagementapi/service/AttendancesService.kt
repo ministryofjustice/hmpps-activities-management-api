@@ -103,34 +103,24 @@ class AttendancesService(
         prisonCode = prisonCode,
         date = date,
         reason = reason,
-      )
-
-    val timeSlots =
-      attendanceRepository.getActivityTimeSlot(
-        prisonCode = prisonCode,
-        date = date,
         categories = categories ?: ActivityCategoryCode.entries.map { it.name },
       )
 
-    val scheduledInstanceIds = timeSlots.map { it.getScheduledInstanceId() }
-
-    return attendance.filter { scheduledInstanceIds.contains(it.getScheduledInstanceId()) }.groupBy { it.getPrisonerNumber() }.map { prisoner ->
+    return attendance.groupBy { it.getPrisonerNumber() }.map { prisoner ->
       SuspendedPrisonerAttendance(
         prisonerNumber = prisoner.key,
         attendance = prisoner.value.map {
-          val timeSlot = timeSlots.first { ts -> ts.getScheduledInstanceId() == it.getScheduledInstanceId() }
-
           SuspendedPrisonerActivityAttendance(
             startTime = it.getStartTime(),
             endTime = it.getEndTime(),
-            timeSlot = timeSlot.getTimeSlot(),
-            categoryName = timeSlot.getCategoryName(),
+            timeSlot = it.getTimeSlot(),
+            categoryName = it.getCategoryName(),
             attendanceReasonCode = it.getAttendanceReasonCode(),
             internalLocation = it.getInternalLocation(),
             inCell = it.getInCell(),
             offWing = it.getOffWing(),
             onWing = it.getOnWing(),
-            activitySummary = timeSlot.getActivitySummary(),
+            activitySummary = it.getActivitySummary(),
             scheduledInstanceId = it.getScheduledInstanceId(),
           )
         },

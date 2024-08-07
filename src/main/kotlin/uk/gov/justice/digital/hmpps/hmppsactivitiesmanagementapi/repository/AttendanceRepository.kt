@@ -81,15 +81,20 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
        a.on_wing,
        acts.internal_location_description,
        si.scheduled_instance_id,
-       attr.code AS attendance_reason_code
-      FROM scheduled_instance si
+       attr.code AS attendance_reason_code,
+       a.summary as activity_summary,
+       ac.name as category_name,
+       si.time_slot
+  FROM scheduled_instance si
       JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
       JOIN activity a ON a.activity_id = acts.activity_id
       JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id
       JOIN attendance_reason attr ON att.attendance_reason_id = attr.attendance_reason_id
+      JOIN activity_category ac ON ac.activity_category_id = a.activity_category_id
       WHERE a.prison_code = :prisonCode AND si.session_date = :date
        AND attr.code IN ('SUSPENDED', 'AUTO_SUSPENDED') 
        AND (:reason IS NULL OR attr.code = :reason)
+       AND ac.code in :categories
       """,
     nativeQuery = true,
   )
@@ -97,27 +102,8 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     @Param("prisonCode") prisonCode: String,
     @Param("date") date: LocalDate,
     @Param("reason") reason: String?,
-  ): List<SuspendedPrisonerAttendance>
-
-  @Query(
-    value = """
-      SELECT 
-       time_slot,
-       name as category_name,
-       summary as activity_summary,
-       scheduled_instance_id
-       FROM v_activity_time_slot
-       WHERE code in :categories
-       AND prison_code = :prisonCode
-       AND session_date = :date
-      """,
-    nativeQuery = true,
-  )
-  fun getActivityTimeSlot(
-    @Param("prisonCode") prisonCode: String,
-    @Param("date") date: LocalDate,
     @Param("categories") categories: List<String>,
-  ): List<ActivityTimeSlot>
+  ): List<SuspendedPrisonerAttendance>
 }
 
 interface SuspendedPrisonerAttendance {
@@ -130,11 +116,7 @@ interface SuspendedPrisonerAttendance {
   fun getInternalLocation(): String?
   fun getScheduledInstanceId(): Long
   fun getAttendanceReasonCode(): String
-}
-
-interface ActivityTimeSlot {
   fun getCategoryName(): String
-  fun getScheduledInstanceId(): Long
   fun getTimeSlot(): String
   fun getActivitySummary(): String
 }
