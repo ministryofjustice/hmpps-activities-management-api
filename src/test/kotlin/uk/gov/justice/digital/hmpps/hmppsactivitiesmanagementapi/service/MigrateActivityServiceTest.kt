@@ -1286,19 +1286,19 @@ class MigrateActivityServiceTest {
             weekNumber = 1,
             slotTimes = LocalTime.of(11, 0) to LocalTime.of(12, 0),
             daysOfWeek = setOf(DayOfWeek.MONDAY),
-            timeSlot = TimeSlot.AM,
+            timeSlot = TimeSlot.ED,
           )
           addSlot(
             weekNumber = 1,
             slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
             daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
-            timeSlot = TimeSlot.AM,
+            timeSlot = TimeSlot.PM,
           )
           addSlot(
             weekNumber = 2,
             slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
             daysOfWeek = setOf(DayOfWeek.THURSDAY),
-            timeSlot = TimeSlot.AM,
+            timeSlot = TimeSlot.PM,
           )
         }
       }
@@ -1320,11 +1320,10 @@ class MigrateActivityServiceTest {
 
             this.elementAt(0).weekNumber isEqualTo 1
             this.elementAt(0).timeSlot isEqualTo TimeSlot.AM
-            // this.elementAt(0).slotTimes() isEqualTo (LocalTime.of(10, 0) to LocalTime.of(11, 0))
             this.elementAt(0).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
 
             this.elementAt(1).weekNumber isEqualTo 1
-            this.elementAt(1).timeSlot isEqualTo TimeSlot.AM
+            this.elementAt(1).timeSlot isEqualTo TimeSlot.ED
             this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
 
             this.elementAt(2).weekNumber isEqualTo 1
