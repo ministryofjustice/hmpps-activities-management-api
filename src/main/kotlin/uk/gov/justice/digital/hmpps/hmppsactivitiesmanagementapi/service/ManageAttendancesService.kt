@@ -62,7 +62,7 @@ class ManageAttendancesService(
     scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
-        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.slotTimes()) }
+        val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.timeSlot) }
 
         // Get the details of the prisoners due to attend the session
         val prisonerNumbers = allocations.map { it.prisonerNumber }
@@ -123,7 +123,7 @@ class ManageAttendancesService(
     return allocation.activitySchedule.instances().filter {
       it.sessionDate == LocalDate.now(clock) &&
         it.startTime >= nextAvailableInstance.startTime &&
-        allocation.canAttendOn(it.sessionDate, it.slotTimes())
+        allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
     }.mapNotNull {
       createAttendance(it, allocation, prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber))
     }

@@ -20,4 +20,6 @@ alter table exclusion drop column monday_flag,
                       drop column thursday_flag,
                       drop column friday_flag,
                       drop column saturday_flag,
-                      drop column sunday_flag;
+                      drop column sunday_flag,
+                      drop column slot_start_time,
+                      drop column slot_end_time;

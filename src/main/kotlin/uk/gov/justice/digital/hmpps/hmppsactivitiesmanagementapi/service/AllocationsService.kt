@@ -110,7 +110,7 @@ class AllocationsService(
 
       val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
       val exclusionsToRemove = allocation.exclusions(ExclusionsFilter.FUTURE).mapNotNull {
-        val oldExclusion = it.weekNumber to it.timeSlot().toString()
+        val oldExclusion = it.weekNumber to it.timeSlot.toString()
         it.takeIf { oldExclusion !in newExclusions }
       }.toSet()
       allocation.removeExclusions(exclusionsToRemove)

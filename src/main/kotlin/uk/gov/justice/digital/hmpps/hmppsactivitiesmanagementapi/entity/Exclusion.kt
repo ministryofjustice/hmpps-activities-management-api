@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 
 @Entity
 @Table(name = "exclusion")
@@ -34,10 +33,6 @@ data class Exclusion(
 
   val weekNumber: Int,
 
-  private var slotStartTime: LocalTime,
-
-  private var slotEndTime: LocalTime,
-
   @Enumerated(EnumType.STRING)
   var timeSlot: TimeSlot,
 
@@ -52,13 +47,6 @@ data class Exclusion(
   override fun hashCode(): Int = exclusionId.hashCode()
 
   fun endNow() = run { endDate = LocalDate.now() }
-
-  fun slotTimes() = slotStartTime to slotEndTime
-
-  fun setSlotTimes(slotTimes: SlotTimes) = run {
-    slotStartTime = slotTimes.first
-    slotEndTime = slotTimes.second
-  }
 
   fun getDaysOfWeek(): List<DayOfWeek> = this.exclusionDaysOfWeek.map { it.dayOfWeek }
 
@@ -91,15 +79,12 @@ data class Exclusion(
 
     fun valueOf(
       allocation: Allocation,
-      slotTimes: SlotTimes,
       weekNumber: Int,
       daysOfWeek: Set<DayOfWeek>,
       startDate: LocalDate = maxOf(tomorrow, allocation.startDate),
       timeSlot: TimeSlot,
     ) = Exclusion(
       allocation = allocation,
-      slotStartTime = slotTimes.first,
-      slotEndTime = slotTimes.second,
       weekNumber = weekNumber,
       startDate = startDate,
       timeSlot = timeSlot,
