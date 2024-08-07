@@ -216,6 +216,7 @@ data class ActivitySchedule(
         sessionDate = sessionDate,
         startTime = slot.startTime,
         endTime = slot.endTime,
+        timeSlot = slot.timeSlot,
       ),
     )
     instancesLastUpdatedTime = LocalDateTime.now()
