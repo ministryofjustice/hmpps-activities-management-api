@@ -70,7 +70,10 @@ jobs:
       - hmpps/wait_till_ready_postgres
       - hmpps/wait_till_ready
       - run:
-          command: ./gradlew integrationTest
+          command: |
+            awslocal s3 mb s3://moj-reg-dev
+            awslocal s3 ls
+            ./gradlew integrationTest
       - save_cache:
           paths:
             - ~/.gradle
