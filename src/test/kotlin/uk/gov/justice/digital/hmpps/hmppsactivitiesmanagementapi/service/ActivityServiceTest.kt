@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
@@ -1473,7 +1474,7 @@ class ActivityServiceTest {
   fun `updateActivity - setting of the end date is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow())
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet(), TimeSlot.slot(LocalTime.NOON))
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1537,7 +1538,7 @@ class ActivityServiceTest {
   fun `updateActivity - bringing the end date closer is successful`() {
     val activity = activityEntity(startDate = TimeSource.tomorrow(), endDate = TimeSource.tomorrow().plusDays(5))
     activity.schedules().forEach {
-      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet())
+      val everydaySlot = it.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), DayOfWeek.entries.toSet(), TimeSlot.slot(LocalTime.NOON))
       it.addInstance(TimeSource.tomorrow().plusDays(1), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(2), everydaySlot)
       it.addInstance(TimeSource.tomorrow().plusDays(3), everydaySlot)
@@ -1665,11 +1666,13 @@ class ActivityServiceTest {
       1,
       prisonRegime().amStart to prisonRegime().amFinish,
       setOf(tomorrow.dayOfWeek),
+      TimeSlot.slot(prisonRegime().amStart),
     )
     val slot2 = schedule.addSlot(
       1,
       prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
+      TimeSlot.slot(prisonRegime().pmStart),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
     val instance2 = schedule.addInstance(tomorrow.plusDays(1), slot2)
@@ -1726,11 +1729,13 @@ class ActivityServiceTest {
       1,
       prisonRegime().amStart to prisonRegime().amFinish,
       setOf(tomorrow.dayOfWeek),
+      TimeSlot.slot(prisonRegime().amStart),
     )
     val slot2 = schedule.addSlot(
       1,
       prisonRegime().pmStart to prisonRegime().pmFinish,
       setOf(tomorrow.plusDays(1).dayOfWeek),
+      TimeSlot.slot(prisonRegime().pmStart),
     )
     val instance1 = schedule.addInstance(tomorrow, slot1)
     val instance2 = schedule.addInstance(tomorrow.plusDays(1), slot2)
@@ -1799,6 +1804,7 @@ class ActivityServiceTest {
             1,
             LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
+            TimeSlot.slot(LocalTime.NOON),
           )
         }
 
@@ -1838,6 +1844,7 @@ class ActivityServiceTest {
             1,
             LocalTime.NOON to LocalTime.NOON.plusHours(1),
             setOf(bankHoliday.dayOfWeek, dayAfterBankHoliday.dayOfWeek),
+            TimeSlot.slot(LocalTime.NOON),
           )
         }
 
@@ -1887,11 +1894,13 @@ class ActivityServiceTest {
         weekNumber = 1,
         slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.dayOfWeek, tomorrow.plusDays(2).dayOfWeek),
+        TimeSlot.slot(LocalTime.NOON),
       )
       addSlot(
         weekNumber = 2,
         slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         daysOfWeek = setOf(tomorrow.plusDays(1).dayOfWeek, tomorrow.plusDays(3).dayOfWeek),
+        TimeSlot.slot(LocalTime.NOON),
       )
     }
 
@@ -1949,6 +1958,7 @@ class ActivityServiceTest {
         weekNumber = 1,
         slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
+        TimeSlot.slot(LocalTime.of(9, 0)),
       )
     }
 
@@ -2032,6 +2042,7 @@ class ActivityServiceTest {
         weekNumber = 1,
         slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
+        TimeSlot.slot(LocalTime.of(9, 0)),
       )
       allocatePrisoner(
         prisonerNumber = "A1111BB".toPrisonerNumber(),
@@ -2098,6 +2109,7 @@ class ActivityServiceTest {
         weekNumber = 1,
         slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
+        TimeSlot.slot(LocalTime.of(9, 0)),
       )
       allocatePrisoner(
         prisonerNumber = "A1111BB".toPrisonerNumber(),
@@ -2314,11 +2326,13 @@ class ActivityServiceTest {
         weekNumber = 1,
         slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
+        TimeSlot.slot(LocalTime.of(9, 0)),
       )
       addSlot(
         weekNumber = 2,
         slotTimes = LocalTime.of(9, 0) to LocalTime.of(12, 0),
         daysOfWeek = setOf(tomorrow.dayOfWeek),
+        TimeSlot.slot(LocalTime.of(9, 0)),
       )
     }
 

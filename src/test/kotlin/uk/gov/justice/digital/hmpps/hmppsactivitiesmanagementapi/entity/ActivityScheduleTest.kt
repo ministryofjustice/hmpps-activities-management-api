@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -20,13 +21,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class ActivityScheduleTest {
@@ -34,6 +35,8 @@ class ActivityScheduleTest {
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
+  private val midnightSlot = TimeSlot.slot(LocalTime.MIDNIGHT)
+  private val noonSlot = TimeSlot.slot(LocalTime.NOON)
 
   @Test
   fun `converted to model lite`() {
@@ -80,7 +83,7 @@ class ActivityScheduleTest {
       slots = listOf(
         ActivityScheduleSlot(
           id = 0,
-          timeSlot = TimeSlot.AM,
+          timeSlot = ModelTimeSlot.AM,
           weekNumber = 1,
           startTime = LocalTime.of(10, 20),
           endTime = LocalTime.of(11, 20),
@@ -152,7 +155,7 @@ class ActivityScheduleTest {
         slots = listOf(
           ActivityScheduleSlot(
             id = 0,
-            timeSlot = TimeSlot.AM,
+            timeSlot = ModelTimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(11, 20),
@@ -406,7 +409,7 @@ class ActivityScheduleTest {
   fun `can add one day slot only to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY))
+    schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY), midnightSlot)
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -415,6 +418,7 @@ class ActivityScheduleTest {
         startTime = LocalTime.MIDNIGHT,
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
+        timeSlot = midnightSlot,
       ),
     )
   }
@@ -427,6 +431,7 @@ class ActivityScheduleTest {
       1,
       LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1),
       setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+      midnightSlot,
     )
 
     assertThat(schedule.slots()).containsExactly(
@@ -437,6 +442,7 @@ class ActivityScheduleTest {
         endTime = LocalTime.MIDNIGHT.plusHours(1),
         mondayFlag = true,
         wednesdayFlag = true,
+        timeSlot = midnightSlot,
       ),
     )
   }
@@ -445,7 +451,7 @@ class ActivityScheduleTest {
   fun `can add entire week slot to schedule`() {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
 
-    schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.entries.toSet())
+    schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), DayOfWeek.entries.toSet(), midnightSlot)
 
     assertThat(schedule.slots()).containsExactly(
       EntityActivityScheduleSlot(
@@ -460,6 +466,7 @@ class ActivityScheduleTest {
         fridayFlag = true,
         saturdayFlag = true,
         sundayFlag = true,
+        timeSlot = midnightSlot,
       ),
     )
   }
@@ -472,7 +479,7 @@ class ActivityScheduleTest {
     schedule.slots().single().slotTimes() isEqualTo (LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1))
 
     assertThatThrownBy {
-      schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY))
+      schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY), midnightSlot)
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Adding slot to activity schedule with ID 1: Slot already exists from 00:00 to 01:00 for week number 1")
@@ -483,7 +490,7 @@ class ActivityScheduleTest {
     val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
-      schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON, setOf(DayOfWeek.MONDAY))
+      schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON, setOf(DayOfWeek.MONDAY), midnightSlot)
     }.isInstanceOf(IllegalArgumentException::class.java)
   }
 
@@ -496,12 +503,14 @@ class ActivityScheduleTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = noonSlot,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
+      timeSlot = noonSlot,
     )
 
     assertThat(schedule.slots()).containsExactly(
@@ -512,6 +521,7 @@ class ActivityScheduleTest {
         endTime = LocalTime.NOON.plusHours(1),
         mondayFlag = true,
         fridayFlag = true,
+        timeSlot = noonSlot,
       ),
       EntityActivityScheduleSlot(
         activitySchedule = schedule,
@@ -520,6 +530,7 @@ class ActivityScheduleTest {
         endTime = LocalTime.NOON.plusHours(1),
         wednesdayFlag = true,
         thursdayFlag = true,
+        timeSlot = noonSlot,
       ),
     )
   }
@@ -543,7 +554,7 @@ class ActivityScheduleTest {
     val schedule = activityEntity().schedules().first()
 
     assertThatThrownBy {
-      schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), emptySet())
+      schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), emptySet(), noonSlot)
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("A slot must run on at least one day.")
@@ -744,6 +755,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
+        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
       )
     }
 
@@ -793,6 +805,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
+        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
       )
     }
 
@@ -822,6 +835,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
+        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
       )
     }
 
@@ -852,6 +866,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
+        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
       )
     }
 
@@ -1016,8 +1031,8 @@ class ActivityScheduleTest {
 
     assertThat(schedule.slots()).isEmpty()
 
-    val slotOne = schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.NOON, setOf(today.dayOfWeek))
-    val slotTwo = schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), setOf(tomorrow.dayOfWeek))
+    val slotOne = schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.NOON, setOf(today.dayOfWeek), midnightSlot)
+    val slotTwo = schedule.addSlot(1, LocalTime.NOON to LocalTime.NOON.plusHours(1), setOf(tomorrow.dayOfWeek), noonSlot)
 
     schedule.addInstance(today, slotOne)
     schedule.addInstance(tomorrow, slotTwo)

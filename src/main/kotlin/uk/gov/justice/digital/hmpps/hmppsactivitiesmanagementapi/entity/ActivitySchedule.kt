@@ -238,8 +238,8 @@ data class ActivitySchedule(
     weekNumber: Int,
     slotTimes: SlotTimes,
     daysOfWeek: Set<DayOfWeek>,
-    experimentalMode: Boolean = false,
     timeSlot: TimeSlot,
+    experimentalMode: Boolean = false,
   ): ActivityScheduleSlot {
     if (!experimentalMode) require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
     slots.add(
