@@ -38,7 +38,7 @@ data class Exclusion(
 
   @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
   @JoinColumn(name = "exclusion_id")
-  var exclusionDaysOfWeek: MutableList<ExclusionDaysOfWeek> = mutableListOf(),
+  private var exclusionDaysOfWeek: MutableList<ExclusionDaysOfWeek> = mutableListOf(),
 
 ) {
   var endDate: LocalDate? = null
@@ -48,7 +48,7 @@ data class Exclusion(
 
   fun endNow() = run { endDate = LocalDate.now() }
 
-  fun getDaysOfWeek(): List<DayOfWeek> = this.exclusionDaysOfWeek.map { it.dayOfWeek }
+  fun getDaysOfWeek() = this.exclusionDaysOfWeek.map { it.dayOfWeek }.toSet()
 
   fun setDaysOfWeek(daysOfWeek: Set<DayOfWeek>) {
     this.exclusionDaysOfWeek.clear()
