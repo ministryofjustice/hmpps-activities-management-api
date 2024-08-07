@@ -42,7 +42,7 @@ FROM scheduled_instance si
                                    (ex.end_date >= si.session_date OR ex.end_date IS NULL) AND
                                    ex.time_slot = si.time_slot and
                                    ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
-                                   and TO_CHAR(si.session_date, 'DAY') in (
+                                   and TO_CHAR(si.session_date, 'DAY') not in (
                                    select edw.day_of_week
                                    from exclusion_days_of_week edw
                                    where edw.exclusion_id = ex.exclusion_id);
