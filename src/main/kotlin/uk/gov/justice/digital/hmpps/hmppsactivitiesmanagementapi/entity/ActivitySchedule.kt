@@ -149,6 +149,7 @@ data class ActivitySchedule(
       endDate: LocalDate?,
       runsOnBankHoliday: Boolean,
       scheduleWeeks: Int,
+      usesPrisonRegimeTime: Boolean = true,
     ) = ActivitySchedule(
       activity = activity,
       description = description,
@@ -159,6 +160,7 @@ data class ActivitySchedule(
       startDate = startDate,
       runsOnBankHoliday = runsOnBankHoliday,
       scheduleWeeks = scheduleWeeks,
+      usePrisonRegimeTime = usesPrisonRegimeTime,
     ).apply {
       this.endDate = endDate
     }
@@ -360,32 +362,11 @@ data class ActivitySchedule(
     this.instancesLastUpdatedTime = LocalDateTime.now()
   }
 
-  fun updateSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
-    updateMatchingSlots(updates)
-    addNewSlots(updates)
-    removeRedundantSlots(updates)
+  fun removeSlots() {
+    slots.clear()
   }
 
   fun isPaid() = activity.paid
-
-  private fun removeRedundantSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
-    val slotsToRemove = slots.filterNot { updates.containsKey(Pair(it.weekNumber, it.slotTimes())) }
-    slots.removeAll(slotsToRemove)
-    require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
-  }
-
-  private fun updateMatchingSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
-    slots.forEach { slot ->
-      updates[Pair(slot.weekNumber, slot.slotTimes())]?.let(slot::update)
-    }
-  }
-
-  private fun addNewSlots(updates: Map<Pair<Int, SlotTimes>, Set<DayOfWeek>>) {
-    updates.keys
-      .filterNot { key -> slots.map { Pair(it.weekNumber, it.slotTimes()) }.contains(key) }
-      .forEach { addSlot(it.first, it.second, updates[it]!!) }
-  }
-
   fun endsOn(date: LocalDate) = date == endDate
 }
 

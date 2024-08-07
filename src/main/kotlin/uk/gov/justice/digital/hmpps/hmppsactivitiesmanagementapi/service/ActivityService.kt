@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -53,7 +54,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
@@ -62,6 +62,7 @@ typealias AllocationIds = Set<Long>
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
+  @Value("\${migrate.experimental-mode}") val experimentalMode: Boolean,
   private val activityRepository: ActivityRepository,
   private val activitySummaryRepository: ActivitySummaryRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -203,7 +204,7 @@ class ActivityService(
 
       activity.let {
         val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId!!)
-
+        val usesPrisonRegimeTime = request.slots?.all { s -> s.customStartTime == null && s.customEndTime == null } == true
         activity.addSchedule(
           description = request.description!!,
           internalLocation = scheduleLocation,
@@ -212,6 +213,7 @@ class ActivityService(
           endDate = request.endDate,
           runsOnBankHoliday = request.runsOnBankHoliday,
           scheduleWeeks = request.scheduleWeeks,
+          usesPrisonRegimeTime = request.slots == null || usesPrisonRegimeTime,
         ).let { schedule ->
           schedule.addSlots(request.slots!!)
           schedule.addInstances()
@@ -261,23 +263,40 @@ class ActivityService(
 
   private fun ActivitySchedule.addSlots(slots: List<Slot>) {
     slots.forEach { slot ->
-      val timeSlots = prisonRegimeService.getPrisonTimeSlots(
-        prisonCode = activity.prisonCode,
-        daysOfWeek = slot.daysOfWeek,
-      )
-
-      val slotTimes = if (timeSlots == null) {
-        Pair(
-          slot.customStartTime ?: throw ValidationException("custom start time required"),
-          slot.customEndTime ?: throw ValidationException("custom end time required"),
-        )
+      if (slot.customStartTime != null && slot.customEndTime != null) {
+        this.addCustomSlot(slot = slot)
       } else {
-        timeSlots[TimeSlot.valueOf(slot.timeSlot!!)]!!
+        prisonRegimeService.getSlotTimesForDaysOfWeek(
+          prisonCode = activity.prisonCode,
+          daysOfWeek = slot.daysOfWeek,
+          acrossRegimes = true,
+        )?.filter { it.key.containsAny(slot.daysOfWeek) }?.forEach { timeSlot ->
+          this.addRegimeSlot(
+            slot = slot,
+            timeSlot = timeSlot.value,
+            daysOfWeekToApply = timeSlot.key.filter { slot.daysOfWeek.contains(it) }.toSet(),
+          )
+        } ?: throw ValidationException("unable to add $slot as no applicable timeslots found")
       }
-
-      val daysOfWeek = getDaysOfWeek(slot)
-      this.addSlot(slot.weekNumber, slotTimes, daysOfWeek)
     }
+  }
+
+  private fun ActivitySchedule.addCustomSlot(slot: Slot) {
+    this.addSlot(
+      weekNumber = slot.weekNumber,
+      slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
+      daysOfWeek = slot.daysOfWeek,
+      experimentalMode = experimentalMode,
+    )
+  }
+
+  private fun ActivitySchedule.addRegimeSlot(slot: Slot, timeSlot: Map<TimeSlot, SlotTimes>, daysOfWeekToApply: Set<DayOfWeek>) {
+    this.addSlot(
+      weekNumber = slot.weekNumber,
+      slotTimes = timeSlot[TimeSlot.valueOf(slot.timeSlot!!)]!!,
+      daysOfWeek = daysOfWeekToApply,
+      experimentalMode = experimentalMode,
+    )
   }
 
   fun addScheduleInstances(
@@ -314,18 +333,6 @@ class ActivityService(
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
-  }
-
-  private fun getDaysOfWeek(slot: Slot): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { slot.monday },
-      DayOfWeek.TUESDAY.takeIf { slot.tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { slot.wednesday },
-      DayOfWeek.THURSDAY.takeIf { slot.thursday },
-      DayOfWeek.FRIDAY.takeIf { slot.friday },
-      DayOfWeek.SATURDAY.takeIf { slot.saturday },
-      DayOfWeek.SUNDAY.takeIf { slot.sunday },
-    )
   }
 
   @Transactional
@@ -703,30 +710,15 @@ class ActivityService(
   ): AllocationIds {
     val updatedAllocationIds = mutableSetOf<Long>()
     request.slots?.let { slots ->
+      require(slots.isNotEmpty()) { "Must have at least 1 active slot across the schedule" }
       activity.schedules().forEach { schedule ->
-        schedule.updateSlots(slots.slotsToTimeSlots(prisonCode = activity.prisonCode))
+        schedule.usePrisonRegimeTime = slots.all { s -> s.customStartTime == null && s.customEndTime == null }
+        schedule.removeSlots()
+        schedule.addSlots(slots)
         val activeAllocations = schedule.allocations(excludeEnded = true)
         activeAllocations.forEach { allocation -> allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) } }
       }
     }
     return updatedAllocationIds
-  }
-
-  private fun List<Slot>.slotsToTimeSlots(prisonCode: String): Map<Pair<Int, SlotTimes>, Set<DayOfWeek>> {
-    return this.associate { Pair(it.weekNumber, it.getCustomTimeSlotIfPresent(prisonCode = prisonCode)) to it.daysOfWeek }
-  }
-
-  private fun Slot.getCustomTimeSlotIfPresent(prisonCode: String): Pair<LocalTime, LocalTime> {
-    this.customStartTime ?: return this.getPrisonRegimeTimes(prisonCode = prisonCode)
-    this.customEndTime ?: return this.getPrisonRegimeTimes(prisonCode = prisonCode)
-
-    return Pair(this.customStartTime, this.customEndTime)
-  }
-
-  private fun Slot.getPrisonRegimeTimes(prisonCode: String): Pair<LocalTime, LocalTime> {
-    val regimeTimes = prisonRegimeService.getPrisonTimeSlots(prisonCode = prisonCode, daysOfWeek = this.daysOfWeek)
-      ?: throw ValidationException("No regime time found for $prisonCode ${this.daysOfWeek} must supply custom start and end times")
-
-    return regimeTimes[this.timeSlot()]!!
   }
 }
