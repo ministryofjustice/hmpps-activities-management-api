@@ -29,6 +29,7 @@ class AWSLocalStackConfig {
       }
       region = awsRegion
       endpointUrl = aws.smithy.kotlin.runtime.net.url.Url.parse(s3Url)
+      forcePathStyle = true
     }
 
     // Initialise the default bucket

@@ -14,7 +14,7 @@ class S3Service(
   private val s3ClientAnalyticalPlatform: S3Client,
 ) {
   @Value("\${aws.s3.ap.bucket}")
-  private val awsApS3BucketName: String = "test-aws-s3-ap--bucket"
+  private val awsApS3BucketName: String = "defaultbucket"
 
   @Value("\${aws.s3.ap.project}")
   private val awsApS3ProjectName: String = "test-ap-s3-project"

@@ -54,6 +54,11 @@ hmpps:
     localstackUrl: http://localhost:4566
     region: eu-west-2
 
+aws:
+  s3:
+    ap:
+      bucket: ${AWS_S3_AP_BUCKET:defaultbucket}
+
 prison:
   api:
     url: http://localhost:8999
