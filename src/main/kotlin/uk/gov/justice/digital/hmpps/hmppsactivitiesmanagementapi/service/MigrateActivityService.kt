@@ -186,16 +186,17 @@ class MigrateActivityService(
     var usePrisonRegimeTimeForActivity = true
     val activity = buildActivityEntity(request)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
-      val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
-      val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode)
 
-      val regime = regimeTimeSlot.let { slot -> prisonRegime[slot]!! }
-      if (!scheduleRule.usesPrisonRegimeTime(
-          slotStartTime = regime.first,
-          slotEndTime = regime.second,
-        )
-      ) {
-        usePrisonRegimeTimeForActivity = false
+      if (usePrisonRegimeTimeForActivity) {
+        val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
+        val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = regimeTimeSlot)
+
+        usePrisonRegimeTimeForActivity = prisonRegime?.let {
+          scheduleRule.usesPrisonRegimeTime(
+            slotStartTime = it.first,
+            slotEndTime = it.second,
+          )
+        }?.not() ?: false
       }
 
       activity.schedules().first().addSlot(
@@ -229,8 +230,8 @@ class MigrateActivityService(
 
     // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val prisonRegime = it.getPrisonRegime(prisonCode = request.prisonCode)
-      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
+      val timeSlot = TimeSlot.slot(it.startTime)
+      val regime = it.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = timeSlot)!!
 
       if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
         activity1.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
@@ -245,8 +246,8 @@ class MigrateActivityService(
 
     // Add the afternoon sessions to week 1 and the morning sessions to week 2
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val prisonRegime = it.getPrisonRegime(prisonCode = request.prisonCode)
-      val regime = TimeSlot.slot(it.startTime).let { slot -> prisonRegime[slot]!! }
+      val timeSlot = TimeSlot.slot(it.startTime)
+      val regime = it.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = timeSlot)!!
       if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
         activity2.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
       }
@@ -258,17 +259,12 @@ class MigrateActivityService(
     return listOf(activity1, activity2)
   }
 
-  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String): Map<TimeSlot, SlotTimes> {
-    val daysOfWeek = this.daysOfWeek()
-    val prisonRegime = prisonRegimeService.getPrisonTimeSlots(
+  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? =
+    prisonRegimeService.getSlotTimesForTimeSlot(
       prisonCode = prisonCode,
-      daysOfWeek = daysOfWeek,
+      timeSlot = timeSlot,
+      daysOfWeek = this.daysOfWeek(),
     )
-
-    prisonRegime ?: throw ValidationException("no regime found for $prisonCode $daysOfWeek")
-
-    return prisonRegime
-  }
 
   private fun buildActivityEntity(
     request: ActivityMigrateRequest,

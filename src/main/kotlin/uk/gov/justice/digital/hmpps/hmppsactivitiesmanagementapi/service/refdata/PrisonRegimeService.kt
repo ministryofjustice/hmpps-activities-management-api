@@ -38,7 +38,7 @@ class PrisonRegimeService(
       .let(::EventPriorities)
 
   private fun defaultPriorities() =
-    EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }
+    EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }
 
   /**
    * Returns the pay bands configured for a prison (if any), otherwise a default set of prison pay bands.
@@ -76,18 +76,82 @@ class PrisonRegimeService(
       LocalTimeRange(start, end)
     }
 
-  fun getPrisonTimeSlots(prisonCode: String, daysOfWeek: Set<DayOfWeek>): Map<TimeSlot, SlotTimes>? =
-    getPrisonRegimeForDaysOfWeek(prisonCode = prisonCode, daysOfWeek = daysOfWeek)?.let { pr ->
-      mapOf(
-        TimeSlot.AM to Pair(pr.amStart, pr.amFinish),
-        TimeSlot.PM to Pair(pr.pmStart, pr.pmFinish),
-        TimeSlot.ED to Pair(pr.edStart, pr.edFinish),
-      )
+  fun getSlotTimesForTimeSlot(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    timeSlot: TimeSlot,
+    acrossRegimes: Boolean = false,
+  ): SlotTimes? {
+    val regimeTimes = getSlotTimesForDaysOfWeek(
+      prisonCode = prisonCode, daysOfWeek = daysOfWeek, acrossRegimes = acrossRegimes,
+    ) ?: return null
+
+    val key = regimeTimes.keys.firstOrNull { it.containsAll(daysOfWeek) } ?: return null
+    return regimeTimes[key]?.get(timeSlot)
+  }
+
+  fun getSlotTimesForDaysOfWeek(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    acrossRegimes: Boolean = false,
+  ): Map<Set<DayOfWeek>, Map<TimeSlot, SlotTimes>>? {
+    val prisonRegimes = getPrisonRegimeForDaysOfWeek(
+      prisonCode = prisonCode,
+      daysOfWeek = daysOfWeek,
+      acrossRegimes = acrossRegimes,
+    )
+    if (prisonRegimes.isEmpty()) return null
+
+    return prisonRegimes.associate {
+      it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() to
+        mapOf(
+          TimeSlot.AM to Pair(it.amStart, it.amFinish),
+          TimeSlot.PM to Pair(it.pmStart, it.pmFinish),
+          TimeSlot.ED to Pair(it.edStart, it.edFinish),
+        )
     }
+  }
 
-  private fun getPrisonRegimeForDaysOfWeek(prisonCode: String, daysOfWeek: Set<DayOfWeek>): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+  private fun getPrisonRegimeForDaysOfWeek(
+    prisonCode: String,
+    daysOfWeek: Set<DayOfWeek>,
+    acrossRegimes: Boolean = false,
+  ): List<PrisonRegimeEntity> {
+    val prisonRegimes = prisonRegimeRepository.findByPrisonCode(code = prisonCode)
 
-  private fun getPrisonRegimeForDayOfWeek(prisonCode: String, dayOfWeek: DayOfWeek): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode).firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+    return when (acrossRegimes) {
+      false -> prisonRegimes.matchesDays(daysOfWeek = daysOfWeek)
+      true -> {
+        val regimeMatchesDays = prisonRegimes.matchesDays(daysOfWeek = daysOfWeek)
+        if (regimeMatchesDays.isNotEmpty()) return regimeMatchesDays
+
+        val regimesAcrossDays = daysOfWeek.mapNotNull { day ->
+          prisonRegimes.firstOrNull {
+            it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(day)
+          }
+        }
+
+        if (regimesAcrossDays.matchesDaysAcrossRegimes(daysOfWeek = daysOfWeek)) return regimesAcrossDays.toList()
+
+        return emptyList()
+      }
+    }
+  }
+
+  private fun getPrisonRegimeForDayOfWeek(
+    prisonCode: String,
+    dayOfWeek: DayOfWeek,
+  ): PrisonRegimeEntity? =
+    prisonRegimeRepository.findByPrisonCode(code = prisonCode)
+      .firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+
+  companion object {
+    fun List<PrisonRegimeEntity>.matchesDays(daysOfWeek: Set<DayOfWeek>) =
+      this.filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+
+    fun List<PrisonRegimeEntity>.matchesDaysAcrossRegimes(daysOfWeek: Set<DayOfWeek>) =
+      this.flatMap { it.prisonRegimeDaysOfWeek }.map { it.dayOfWeek }.containsAll(daysOfWeek)
+  }
 }
 
 data class Priority(val priority: Int, val eventCategory: EventCategory? = null)
