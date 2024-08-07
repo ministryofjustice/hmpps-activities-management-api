@@ -1,6 +1,6 @@
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities
 AS
-SELECT si.scheduled_instance_id,
+SELECT DISTINCT si.scheduled_instance_id,
        alloc.allocation_id,
        act.prison_code,
        si.session_date,
@@ -40,13 +40,9 @@ FROM scheduled_instance si
          LEFT JOIN exclusion ex ON alloc.allocation_id = ex.allocation_id AND
                                    ex.start_date <= si.session_date AND
                                    (ex.end_date >= si.session_date OR ex.end_date IS NULL) AND
-                                   ex.slot_start_time = si.start_time AND
-                                   ex.slot_end_time = si.end_time AND
+                                   ex.time_slot = si.time_slot and
                                    ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
-WHERE TO_CHAR(si.session_date, 'DY') = 'MON' AND ex.monday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'TUE' AND ex.tuesday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'WED' AND ex.wednesday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'THU' AND ex.thursday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'FRI' AND ex.friday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'SAT' AND ex.saturday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'SUN' AND ex.sunday_flag IS NOT true;
+                                   and TO_CHAR(si.session_date, 'DAY') in (
+                                   select edw.day_of_week
+                                   from exclusion_days_of_week edw
+                                   where edw.exclusion_id = ex.exclusion_id);
