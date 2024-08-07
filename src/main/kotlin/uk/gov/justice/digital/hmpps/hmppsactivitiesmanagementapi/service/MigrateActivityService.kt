@@ -171,7 +171,7 @@ class MigrateActivityService(
         slotTimes = Pair(scheduleRule.startTime, scheduleRule.endTime),
         daysOfWeek = getRequestDaysOfWeek(scheduleRule),
         experimentalMode = experimentalMode,
-        timeSlot = TimeSlot.slot(scheduleRule.startTime)
+        timeSlot = TimeSlot.slot(scheduleRule.startTime),
       )
     }
 
