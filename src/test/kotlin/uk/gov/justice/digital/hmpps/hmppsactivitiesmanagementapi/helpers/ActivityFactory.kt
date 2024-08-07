@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
@@ -257,7 +258,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, TimeSlot.slot(timestamp.toLocalTime()))
       if (!noAllocations && !noExclusions) {
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),
