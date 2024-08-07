@@ -11,8 +11,9 @@ import java.time.LocalTime
 class ActivityScheduleSlotTest {
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
-  private val now = LocalTime.now()
-  private val timeSlotNow = TimeSlot.slot(now)
+  private val startTime = LocalTime.now()
+  private val endTime = startTime.plusHours(2)
+  private val timeSlot = TimeSlot.slot(startTime)
 
   @Test
   fun `conversion to model sets day flags and days-of-week list correctly`() {
@@ -20,13 +21,13 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       mondayFlag = true,
       wednesdayFlag = true,
       fridayFlag = true,
       sundayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -38,7 +39,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isTrue
       assertThat(daysOfWeek).containsExactly("Mon", "Wed", "Fri", "Sun")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -48,10 +49,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       mondayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -63,7 +64,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Mon")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -73,10 +74,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       tuesdayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -88,7 +89,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Tue")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -98,10 +99,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       wednesdayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -113,7 +114,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Wed")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -123,10 +124,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       thursdayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -138,7 +139,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Thu")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -148,10 +149,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       fridayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -163,7 +164,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Fri")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -173,10 +174,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       saturdayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -188,7 +189,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isTrue
       assertThat(sundayFlag).isFalse
       assertThat(daysOfWeek).containsExactly("Sat")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -198,10 +199,10 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       sundayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot.toModel()) {
@@ -213,7 +214,7 @@ class ActivityScheduleSlotTest {
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isTrue
       assertThat(daysOfWeek).containsExactly("Sun")
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -223,11 +224,11 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       mondayFlag = true,
       sundayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     with(slot) {
@@ -250,7 +251,7 @@ class ActivityScheduleSlotTest {
       assertThat(fridayFlag).isFalse
       assertThat(saturdayFlag).isFalse
       assertThat(sundayFlag).isFalse
-      assertThat(timeSlot).isEqualTo(timeSlotNow)
+      assertThat(timeSlot).isEqualTo(timeSlot)
     }
   }
 
@@ -260,11 +261,11 @@ class ActivityScheduleSlotTest {
       activityScheduleSlotId = 1,
       weekNumber = 1,
       activitySchedule = activitySchedule,
-      startTime = now,
-      endTime = now,
+      startTime = startTime,
+      endTime = endTime,
       mondayFlag = true,
       sundayFlag = true,
-      timeSlot = timeSlotNow,
+      timeSlot = timeSlot,
     )
 
     assertThatThrownBy { slot.update(emptySet()) }
@@ -279,11 +280,11 @@ class ActivityScheduleSlotTest {
         activityScheduleSlotId = 1,
         weekNumber = 0,
         activitySchedule = activitySchedule,
-        startTime = now,
-        endTime = now,
+        startTime = startTime,
+        endTime = endTime,
         mondayFlag = true,
         sundayFlag = true,
-        timeSlot = timeSlotNow,
+        timeSlot = timeSlot,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Week number must be greater than zero.")
@@ -293,11 +294,11 @@ class ActivityScheduleSlotTest {
         activityScheduleSlotId = 1,
         weekNumber = -1,
         activitySchedule = activitySchedule,
-        startTime = now,
-        endTime = now,
+        startTime = startTime,
+        endTime = endTime,
         mondayFlag = true,
         sundayFlag = true,
-        timeSlot = timeSlotNow,
+        timeSlot = timeSlot,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Week number must be greater than zero.")
@@ -313,11 +314,11 @@ class ActivityScheduleSlotTest {
         activityScheduleSlotId = 1,
         weekNumber = 3,
         activitySchedule = schedule,
-        startTime = now,
-        endTime = now,
+        startTime = startTime,
+        endTime = endTime,
         mondayFlag = true,
         sundayFlag = true,
-        timeSlot = timeSlotNow,
+        timeSlot = timeSlot,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Week number must less than or equal to the number of schedule weeks.")
