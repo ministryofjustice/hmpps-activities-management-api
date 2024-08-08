@@ -72,10 +72,16 @@ class InternalLocationService(
   fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) =
     runBlocking {
       checkCaseloadAccess(prisonCode)
+      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
 
       val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeSlot)
       val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
-      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(agencyId = prisonCode, date = date, timeSlot = timeSlot)
+      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(
+        agencyId = prisonCode,
+        date = date,
+        timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
+      )
 
       val timeRange = getTimeRange(
         prisonCode = prisonCode,
@@ -148,6 +154,7 @@ class InternalLocationService(
     runBlocking {
       checkCaseloadAccess(prisonCode)
 
+      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
       val referenceCodesForAppointmentsMap =
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
@@ -187,6 +194,7 @@ class InternalLocationService(
         agencyId = prisonCode,
         date = date,
         timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
       ).filter { internalLocationIds.contains(it.key) }.flatMap { it.value }
 
       val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(

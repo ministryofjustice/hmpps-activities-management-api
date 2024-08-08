@@ -53,6 +53,9 @@ class PrisonRegimeService(
       transform(it)
     }
 
+  fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> =
+    getPrisonRegimeForDaysOfWeek(prisonCode = agencyId, daysOfWeek = DayOfWeek.entries.toSet(), acrossRegimes = true).associateBy { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() }
+
   /**
    *  Converts a TimeSlot for a given Prison into a time range.
    *
@@ -121,10 +124,7 @@ class PrisonRegimeService(
       prisonCode = prisonCode,
       dayOfWeek = day,
     )!!.let {
-      if (time.isBefore(it.pmStart)) return TimeSlot.AM
-      if (time.isBefore(it.edStart)) return TimeSlot.PM
-
-      return TimeSlot.ED
+      return it.getTimeSlot(time = time)
     }
 
   private fun getPrisonRegimeForDaysOfWeek(
@@ -166,6 +166,22 @@ class PrisonRegimeService(
 
     fun List<PrisonRegimeEntity>.matchesDaysAcrossRegimes(daysOfWeek: Set<DayOfWeek>) =
       this.flatMap { it.prisonRegimeDaysOfWeek }.map { it.dayOfWeek }.containsAll(daysOfWeek)
+
+    fun Map<Set<DayOfWeek>, PrisonRegimeEntity>.getSlotForDayAndTime(
+      day: DayOfWeek,
+      time: LocalTime,
+    ): TimeSlot {
+      val key = this.keys.first { it.contains(day) }
+
+      return this[key]!!.getTimeSlot(time = time)
+    }
+
+    fun PrisonRegimeEntity.getTimeSlot(time: LocalTime): TimeSlot {
+      if (time.isBefore(this.pmStart)) return TimeSlot.AM
+      if (time.isBefore(this.edStart)) return TimeSlot.PM
+
+      return TimeSlot.ED
+    }
   }
 }
 

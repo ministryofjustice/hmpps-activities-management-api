@@ -258,7 +258,7 @@ class InternalLocationServiceTest {
     adjudicationsHearingAdapter.stub {
       on {
         runBlocking {
-          getAdjudicationsByLocation(any(), any(), anyOrNull())
+          getAdjudicationsByLocation(any(), any(), anyOrNull(), any())
         }
       } doReturn mapOf(
         adjudicationLocation.locationId to listOf(adjudicationHearing),
@@ -345,7 +345,7 @@ class InternalLocationServiceTest {
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(listOf(education1LocationSummary, education2LocationSummary, socialVisitsLocationSummary))
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
       )
 
@@ -450,7 +450,7 @@ class InternalLocationServiceTest {
       ).thenReturn(listOf(noLocationActivity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noLocationAppointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(emptyMap())
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(emptyMap())
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -500,7 +500,7 @@ class InternalLocationServiceTest {
           null,
         ),
       ).thenReturn(listOf(education1Visit))
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationHearingForEvent.internalLocationId to listOf(adjudicationHearingForEvent)),
       )
 

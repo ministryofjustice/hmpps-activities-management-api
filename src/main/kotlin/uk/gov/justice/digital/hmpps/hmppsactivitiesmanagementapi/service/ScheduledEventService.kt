@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
@@ -163,6 +162,8 @@ class ScheduledEventService(
     prisonRolledOut: RolloutPrison,
     dateRange: LocalDateRange,
   ): SinglePrisonerSchedules = coroutineScope {
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonRolledOut.code)
+
     val sensitiveEventDateRange = when {
       dateRange.start.isAfter(LocalDate.now()) -> LocalDateRange.EMPTY
       dateRange.endInclusive.isAfter(LocalDate.now()) -> LocalDateRange(dateRange.start, LocalDate.now())
@@ -202,6 +203,7 @@ class ScheduledEventService(
         agencyId = prisonRolledOut.code,
         date = dateRange.start,
         prisonerNumbers = setOf(prisoner.second),
+        prisonRegime = prisonRegime,
       )
     }
 
@@ -338,6 +340,8 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = rolloutPrison.code)
+
     val appointments = async {
       if (rolloutPrison.isAppointmentsRolledOut()) {
         emptyList()
@@ -396,6 +400,7 @@ class ScheduledEventService(
         date = date,
         prisonerNumbers = prisonerNumbers,
         timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
       )
     }
 

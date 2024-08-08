@@ -62,7 +62,6 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
-    prisonRegimeService = prisonRegimeService,
   )
 
   private val service = ScheduledEventService(

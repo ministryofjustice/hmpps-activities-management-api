@@ -14,9 +14,10 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter.Companion.mapOicHearingType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -26,22 +27,27 @@ class AdjudicationsHearingAdapterTest {
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
-    prisonRegimeService = prisonRegimeService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
 
   @Nested
   inner class AdjudicationHearings {
 
     @BeforeEach
     fun init() {
-      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.plusHours(10).toLocalTime())).thenReturn(
-        TimeSlot.PM,
-      )
-      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.toLocalTime())).thenReturn(
-        TimeSlot.AM,
-      )
       runBlocking {
         whenever(manageAdjudicationsApiFacade.getAdjudicationHearings(any(), any(), any(), any())).thenReturn(
           listOf(
@@ -77,6 +83,7 @@ class AdjudicationsHearingAdapterTest {
         agencyId = "MDI",
         date = LocalDate.now(),
         prisonerNumbers = emptySet(),
+        prisonRegime = emptyMap(),
       )
       assertThat(response.isEmpty()).isTrue()
 
@@ -91,6 +98,9 @@ class AdjudicationsHearingAdapterTest {
           date = LocalDate.now(),
           prisonerNumbers = setOf("AE12345"),
           timeSlot = TimeSlot.AM,
+          prisonRegime = mapOf(
+            DayOfWeek.entries.toSet() to prisonRegime,
+          ),
         )
 
       assertThat(hearings.size).isEqualTo(1)
@@ -103,6 +113,9 @@ class AdjudicationsHearingAdapterTest {
         agencyId = "MDI",
         date = LocalDate.now(),
         prisonerNumbers = setOf("AE12345"),
+        prisonRegime = mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
       )
 
       assertThat(hearings.first().offenderNo).isEqualTo("AE12345")
@@ -174,6 +187,9 @@ class AdjudicationsHearingAdapterTest {
           agencyId = "MDI",
           date = LocalDate.now(),
           timeSlot = null,
+          prisonRegime = mapOf(
+            DayOfWeek.entries.toSet() to prisonRegime,
+          ),
         )
 
       assertThat(hearings.size).isEqualTo(1)
@@ -192,6 +208,9 @@ class AdjudicationsHearingAdapterTest {
           agencyId = "MDI",
           date = LocalDate.now(),
           timeSlot = TimeSlot.AM,
+          prisonRegime = mapOf(
+            DayOfWeek.entries.toSet() to prisonRegime,
+          ),
         )
 
       assertThat(hearings.size).isEqualTo(1)
