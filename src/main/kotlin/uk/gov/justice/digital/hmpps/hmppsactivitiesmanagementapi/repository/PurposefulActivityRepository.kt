@@ -49,7 +49,7 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
     act.end_date as "activity.end_date",
     act.created_time as "activity.created_time",
     act.updated_time as "activity.updated_time",
-    act.on_wing as "activity.on_wing", s
+    act.on_wing as "activity.on_wing",
     act.off_wing as "activity.off_wing",
     act.paid as "activity.paid",
     asch.activity_schedule_id as "activity_schedule.activity_schedule_id",
