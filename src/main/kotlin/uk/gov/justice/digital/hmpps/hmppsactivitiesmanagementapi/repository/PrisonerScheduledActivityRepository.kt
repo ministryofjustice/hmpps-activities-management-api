@@ -2,10 +2,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.UniquePropertyId
 import java.time.LocalDate
-import java.time.LocalTime
 
 /**
  * This repository is READ-ONLY and uses the view V_PRISONER_SCHEDULED_ACTIVITIES.
@@ -49,32 +49,30 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
   @Query(
     """
     SELECT sa FROM PrisonerScheduledActivity sa 
-    WHERE sa.prisonCode = :prisonCode
-    AND sa.sessionDate = :date
-    AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
+    WHERE (sa.prisonCode = :prisonCode
+    AND sa.sessionDate = :date)
+    AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
-  fun findByPrisonCodeAndDateAndTime(
+  fun findByPrisonCodeAndDateAndTimeSlot(
     prisonCode: String,
     date: LocalDate,
-    earliestStartTime: LocalTime,
-    latestStartTime: LocalTime,
+    timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 
   @Query(
     """
     SELECT sa FROM PrisonerScheduledActivity sa 
-    WHERE sa.prisonCode = :prisonCode
+    WHERE (sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
-    AND sa.internalLocationId in :internalLocationIds
-    AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
+    AND sa.internalLocationId in :internalLocationIds)
+    AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
-  fun findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+  fun findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
     prisonCode: String,
     internalLocationIds: Set<Int>,
     date: LocalDate,
-    earliestStartTime: LocalTime,
-    latestStartTime: LocalTime,
+    timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 }

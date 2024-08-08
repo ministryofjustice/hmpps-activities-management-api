@@ -603,4 +603,5 @@ internal fun activityFromDbInstance(
   activitySummary = activitySummary,
   cancelled = cancelled,
   suspended = suspended,
+  timeSlot = TimeSlot.AM,
 )

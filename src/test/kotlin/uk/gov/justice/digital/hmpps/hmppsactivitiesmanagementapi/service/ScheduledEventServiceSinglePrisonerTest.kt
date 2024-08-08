@@ -257,6 +257,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     activitySummary = activitySummary,
     cancelled = cancelled,
     suspended = suspended,
+    timeSlot = TimeSlot.AM,
   )
 
   private fun appointmentFromDbInstance(

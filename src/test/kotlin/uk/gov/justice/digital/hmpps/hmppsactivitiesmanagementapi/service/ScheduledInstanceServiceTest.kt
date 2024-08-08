@@ -154,8 +154,8 @@ class ScheduledInstanceServiceTest {
             allocationId = 2,
             prisonCode = "MDI",
             sessionDate = LocalDate.now(),
-            startTime = LocalTime.now(),
-            endTime = LocalTime.now(),
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
             prisonerNumber = "ABC123",
             bookingId = 100001,
             inCell = false,
@@ -163,6 +163,7 @@ class ScheduledInstanceServiceTest {
             offWing = true,
             activityCategory = "SAA_OUT_OF_WORK",
             activityId = 1,
+            timeSlot = TimeSlot.AM,
           ),
         ),
       )
