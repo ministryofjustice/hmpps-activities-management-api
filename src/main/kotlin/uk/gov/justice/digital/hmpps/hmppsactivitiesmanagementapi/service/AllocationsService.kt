@@ -121,7 +121,8 @@ class AllocationsService(
       allocation.activitySchedule.slots(exclusion.weekNumber, exclusion.timeSlot())
         .also { require(it.isNotEmpty()) { "Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot()} slots in week number ${exclusion.weekNumber}" } }
         .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty() }
-        .forEach { slot -> allocation.updateExclusion(slot, exclusion.daysOfWeek, maxOf(allocation.startDate, LocalDate.now())) }
+        // exclusion updates always apply tomorrow, if the allocation date is in the past (as per the UI content)
+        .forEach { slot -> allocation.updateExclusion(slot, exclusion.daysOfWeek, maxOf(allocation.startDate, LocalDate.now().plusDays(1))) }
     }
   }
 
