@@ -30,6 +30,8 @@ data class ScheduledInstanceAttendanceSummary(
 
   val endTime: LocalTime,
 
+  val timeSlot: String,
+
   val inCell: Boolean,
 
   val onWing: Boolean,

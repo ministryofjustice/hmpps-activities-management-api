@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -52,6 +53,9 @@ data class ScheduledInstanceAttendanceSummary(
   @Schema(description = "The end time of the scheduled instance", example = "12:00")
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
+
+  @Schema(description = "time slot of scheduled instance")
+  val timeSlot: TimeSlot,
 
   @Schema(description = "Flag to indicate if the location of the activity is in cell", example = "false")
   var inCell: Boolean,
