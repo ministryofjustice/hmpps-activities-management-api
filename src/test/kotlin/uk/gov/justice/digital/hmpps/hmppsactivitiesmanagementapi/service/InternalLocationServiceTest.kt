@@ -479,12 +479,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education1Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          LocalTime.of(0, 0),
-          LocalTime.of(23, 59),
+          null,
         ),
       ).thenReturn(listOf(education1Activity))
       whenever(
@@ -538,12 +537,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education2Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          timeSlotPm.first,
-          timeSlotPm.second.minusMinutes(1),
+          TimeSlot.PM,
         ),
       ).thenReturn(listOf(education2Activity))
       whenever(
@@ -593,12 +591,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education1Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          timeSlotEd.first,
-          timeSlotEd.second.minusMinutes(1),
+          TimeSlot.ED,
         ),
       ).thenReturn(listOf(noLocationActivity))
       whenever(

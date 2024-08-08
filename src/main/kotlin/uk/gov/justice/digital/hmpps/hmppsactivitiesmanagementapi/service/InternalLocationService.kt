@@ -152,18 +152,17 @@ class InternalLocationService(
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
+      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
+        prisonCode,
+        internalLocationIds.map { it.toInt() }.toSet(),
+        date,
+        timeSlot,
+      )
+
       val timeRange = getTimeRange(
         prisonCode = prisonCode,
         timeSlot = timeSlot,
         dayOfWeek = date.dayOfWeek,
-      )
-
-      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
-        prisonCode,
-        internalLocationIds.map { it.toInt() }.toSet(),
-        date,
-        timeRange.start,
-        timeRange.end,
       )
 
       val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
