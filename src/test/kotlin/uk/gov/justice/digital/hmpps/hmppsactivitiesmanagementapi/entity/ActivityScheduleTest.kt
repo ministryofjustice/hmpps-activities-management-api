@@ -253,7 +253,7 @@ class ActivityScheduleTest {
       exclusions = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = "AM",
+          timeSlot = ModelTimeSlot.AM,
           monday = true,
         ),
       ),
@@ -282,7 +282,7 @@ class ActivityScheduleTest {
         exclusions = listOf(
           Slot(
             weekNumber = 3,
-            timeSlot = "AM",
+            timeSlot = ModelTimeSlot.AM,
             monday = true,
           ),
         ),

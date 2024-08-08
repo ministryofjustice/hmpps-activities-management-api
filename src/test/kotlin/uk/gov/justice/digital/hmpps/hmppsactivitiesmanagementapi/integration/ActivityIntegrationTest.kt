@@ -1170,7 +1170,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       slots = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = "AM",
+          timeSlot = TimeSlot.AM,
           monday = true,
           tuesday = true,
         ),
@@ -1187,7 +1187,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       slots = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = "AM",
+          timeSlot = TimeSlot.AM,
           thursday = true,
         ),
       ),
@@ -1223,13 +1223,13 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       slots = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = "AM",
+          timeSlot = TimeSlot.AM,
           monday = true,
           tuesday = true,
         ),
         Slot(
           weekNumber = 1,
-          timeSlot = "PM",
+          timeSlot = TimeSlot.PM,
           monday = true,
           tuesday = true,
         ),
@@ -1310,7 +1310,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           slots = listOf(
             Slot(
               weekNumber = 1,
-              timeSlot = "AM",
+              timeSlot = TimeSlot.AM,
               monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
               tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
               wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1362,7 +1362,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
           slots = listOf(
             Slot(
               weekNumber = 1,
-              timeSlot = "AM",
+              timeSlot = TimeSlot.AM,
               monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
               tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
               wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1407,7 +1407,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val weekOneSlot = Slot(
       weekNumber = 1,
-      timeSlot = "AM",
+      timeSlot = TimeSlot.AM,
       monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
       tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
       wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1419,7 +1419,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     val weekTwoSlot = Slot(
       weekNumber = 2,
-      timeSlot = "AM",
+      timeSlot = TimeSlot.AM,
       monday = startDate.plusDays(1).dayOfWeek == DayOfWeek.MONDAY,
       tuesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.TUESDAY,
       wednesday = startDate.plusDays(1).dayOfWeek == DayOfWeek.WEDNESDAY,

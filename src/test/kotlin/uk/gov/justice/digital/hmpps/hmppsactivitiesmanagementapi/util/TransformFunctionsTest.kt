@@ -188,7 +188,7 @@ class TransformFunctionsTest {
               exclusions = listOf(
                 Slot(
                   weekNumber = 1,
-                  timeSlot = TimeSlot.slot(timestamp.toLocalTime()).toString(),
+                  timeSlot = ModelTimeSlot.valueOf(TimeSlot.slot(timestamp.toLocalTime()).name),
                   monday = true,
                   tuesday = false,
                   wednesday = false,

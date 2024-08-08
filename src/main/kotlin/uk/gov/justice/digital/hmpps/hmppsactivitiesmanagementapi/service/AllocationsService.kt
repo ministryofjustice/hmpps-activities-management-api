@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -108,9 +109,9 @@ class AllocationsService(
        */
       allocation.endExclusions(allocation.exclusions(ExclusionsFilter.PRESENT))
 
-      val newExclusions = this.map { ex -> ex.weekNumber to ex.timeSlot }
+      val newExclusions = this.map { ex -> ex.weekNumber to TimeSlot.valueOf(ex.timeSlot.name) }
       val exclusionsToRemove = allocation.exclusions(ExclusionsFilter.FUTURE).mapNotNull {
-        val oldExclusion = it.weekNumber to it.timeSlot.toString()
+        val oldExclusion = it.weekNumber to it.timeSlot
         it.takeIf { oldExclusion !in newExclusions }
       }.toSet()
       allocation.removeExclusions(exclusionsToRemove)
