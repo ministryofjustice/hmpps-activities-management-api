@@ -2,9 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import aws.sdk.kotlin.services.s3.S3Client
-import aws.sdk.kotlin.services.s3.model.BucketLocationConstraint
-import aws.sdk.kotlin.services.s3.model.CreateBucketConfiguration
-import aws.sdk.kotlin.services.s3.model.CreateBucketRequest
+import aws.sdk.kotlin.services.s3.model.*
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -29,19 +27,25 @@ class AWSLocalStackConfig {
       }
       region = awsRegion
       endpointUrl = aws.smithy.kotlin.runtime.net.url.Url.parse(s3Url)
-      forcePathStyle = true
     }
 
-    // Initialise the default bucket
-    val request = CreateBucketRequest {
-      bucket = bucketName
-      createBucketConfiguration = CreateBucketConfiguration {
-        locationConstraint = BucketLocationConstraint.fromValue(awsRegion)
-      }
-    }
-
+    // Initialise the default bucket if doesn't exist
     runBlocking {
-      s3Client.createBucket(request)
+      val headBucketRequest = HeadBucketRequest {
+        bucket = bucketName
+      }
+
+      try {
+        s3Client.headBucket(headBucketRequest)
+      } catch (e: Exception) {
+        val request = CreateBucketRequest {
+          bucket = bucketName
+          createBucketConfiguration {
+            locationConstraint = BucketLocationConstraint.fromValue(awsRegion)
+          }
+        }
+        s3Client.createBucket(request)
+      }
     }
 
     return s3Client

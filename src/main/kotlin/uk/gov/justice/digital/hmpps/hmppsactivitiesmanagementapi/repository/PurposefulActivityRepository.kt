@@ -49,8 +49,9 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
     act.end_date as "activity.end_date",
     act.created_time as "activity.created_time",
     act.updated_time as "activity.updated_time",
-    act.on_wing as "activity.on_wing",
+    act.on_wing as "activity.on_wing", s
     act.off_wing as "activity.off_wing",
+    act.paid as "activity.paid",
     asch.activity_schedule_id as "activity_schedule.activity_schedule_id",
     asch.description as "activity_schedule.description",
     asch.start_date as "activity_schedule.start_date",
@@ -93,7 +94,7 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
     inner join activity act on act.activity_id = asch.activity_id
     inner join activity_category actcat on actcat.activity_category_id = act.activity_category_id
     left outer join event_tier tier on tier.event_tier_id = act.activity_tier_id
-    left outer join allocation allo on allo.activity_schedule_id = asch.activity_schedule_id and allo.prisoner_number = att.prisoner_number
+    left outer join allocation allo on allo.activity_schedule_id = asch.activity_schedule_id and allo.prisoner_number = att.prisoner_number and allo.deallocated_by is NULL
     left outer join attendance_reason atre on atre.attendance_reason_id = att.attendance_reason_id
     left outer join planned_deallocation pade on pade.allocation_id = allo.allocation_id
   
