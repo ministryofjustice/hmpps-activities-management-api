@@ -4,11 +4,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 
 @Component
 class AdjudicationsHearingAdapter(
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
+  private val prisonRegimeService: PrisonRegimeService,
 ) {
 
   suspend fun getAdjudicationsByLocation(
@@ -19,7 +21,12 @@ class AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
       agencyId = agencyId,
       date = date,
-    ).hearings.filter { timeSlot == null || TimeSlot.slot(it.dateTimeOfHearing.toLocalTime()) == timeSlot }
+    ).hearings.filter {
+      timeSlot == null ||
+        prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
+          prisonCode = agencyId, day = date.dayOfWeek, time = it.dateTimeOfHearing.toLocalTime(),
+        ) == timeSlot
+    }
       .map {
         OffenderAdjudicationHearing(
           offenderNo = it.prisonerNumber,
@@ -47,7 +54,12 @@ class AdjudicationsHearingAdapter(
       endDate = date,
       prisoners = prisonerNumbers,
     )
-      .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
+      .filter {
+        timeSlot == null ||
+          prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
+            prisonCode = agencyId, day = it.hearing.dateTimeOfHearing.dayOfWeek, time = it.hearing.dateTimeOfHearing.toLocalTime(),
+          ) == timeSlot
+      }
       .map {
         OffenderAdjudicationHearing(
           offenderNo = it.prisonerNumber,

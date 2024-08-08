@@ -56,6 +56,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+    prisonRegimeService = prisonRegimeService,
   )
 
   private val service = ScheduledEventService(
@@ -70,6 +71,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   @BeforeEach
   fun reset() {
+    whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(any(), any(), any())).thenReturn(TimeSlot.AM)
     reset(
       prisonApiClient,
       prisonerSearchApiClient,
@@ -300,6 +302,12 @@ class ScheduledEventServiceMultiplePrisonersTest {
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - activities rolled out, appointments are not")
   inner class MultipleWithActivitiesActiveAndAppointmentsNotActive {
+
+    @BeforeEach
+    fun `init`() {
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(any(), any(), any())).thenReturn(TimeSlot.AM)
+    }
+
     @Test
     fun `Events for today - including transfers - success`() {
       val prisonCode = "MDI"
@@ -563,6 +571,12 @@ class ScheduledEventServiceMultiplePrisonersTest {
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - both activities and appointments are rolled out")
   inner class MultipleActivitiesBothActive {
+
+    @BeforeEach
+    fun `init`() {
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(any(), any(), any())).thenReturn(TimeSlot.AM)
+    }
+
     @Test
     fun `Events for today - success - with appointments rolled out`() {
       val prisonCode = "MDI"

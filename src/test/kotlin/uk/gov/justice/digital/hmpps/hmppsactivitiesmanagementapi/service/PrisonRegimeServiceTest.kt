@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -36,12 +38,12 @@ class PrisonRegimeServiceTest {
     PrisonRegime(
       prisonCode = "IWI",
       prisonRegimeDaysOfWeek = daysOfWeek,
-      amStart = now.plusHours(1),
-      amFinish = now.plusHours(2),
-      pmStart = now.plusHours(3),
-      pmFinish = now.plusHours(4),
-      edStart = now.plusHours(5),
-      edFinish = now.plusHours(6),
+      amStart = now,
+      amFinish = now.plusHours(3),
+      pmStart = now.plusHours(4),
+      pmFinish = now.plusHours(6),
+      edStart = now.plusHours(7),
+      edFinish = now.plusHours(9),
     )
 
   private val iwiRegime = listOf(
@@ -396,7 +398,21 @@ class PrisonRegimeServiceTest {
     )
 
     assertThat(result).isNotNull
-    assertThat(result!!.first).isEqualTo(now.plusHours(5))
-    assertThat(result.second).isEqualTo(now.plusHours(6))
+    assertThat(result!!.first).isEqualTo(now.plusHours(7))
+    assertThat(result.second).isEqualTo(now.plusHours(9))
+  }
+
+  @CsvSource("13, PM", "1, AM", "17, ED", "23, ED", "9, AM", "14, PM")
+  @ParameterizedTest
+  fun `get prison regime timeslot for a dateTime`(hour: Int, timeSlot: TimeSlot) {
+    whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(iwiRegime)
+
+    val regimeTimeSlot = service.getPrisonRegimeSlotForDayAndTime(
+      prisonCode = "IWI",
+      day = DayOfWeek.THURSDAY,
+      time = LocalTime.of(hour, 0, 0),
+    )
+
+    assertThat(timeSlot).isEqualTo(regimeTimeSlot)
   }
 }

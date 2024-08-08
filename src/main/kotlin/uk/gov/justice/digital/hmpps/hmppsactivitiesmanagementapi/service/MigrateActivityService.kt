@@ -153,9 +153,14 @@ class MigrateActivityService(
     var usePrisonRegimeTimeForActivity = true
     val activity = buildActivityEntity(request)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
+      val daysOfWeek = getRequestDaysOfWeek(scheduleRule)
+      val regimeTimeSlot = prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
+        prisonCode = request.prisonCode,
+        day = daysOfWeek.first(),
+        time = scheduleRule.startTime,
+      )
 
       if (usePrisonRegimeTimeForActivity) {
-        val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
         val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = regimeTimeSlot)
 
         usePrisonRegimeTimeForActivity = prisonRegime?.let {
@@ -169,9 +174,9 @@ class MigrateActivityService(
       activity.schedules().first().addSlot(
         weekNumber = 1,
         slotTimes = Pair(scheduleRule.startTime, scheduleRule.endTime),
-        daysOfWeek = getRequestDaysOfWeek(scheduleRule),
+        daysOfWeek = daysOfWeek,
         experimentalMode = experimentalMode,
-        timeSlot = TimeSlot.slot(scheduleRule.startTime),
+        timeSlot = regimeTimeSlot,
       )
     }
 

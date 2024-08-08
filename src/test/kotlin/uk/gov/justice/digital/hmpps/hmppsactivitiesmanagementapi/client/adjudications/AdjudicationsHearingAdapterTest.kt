@@ -16,14 +16,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 class AdjudicationsHearingAdapterTest {
 
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
+  private val prisonRegimeService: PrisonRegimeService = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+    prisonRegimeService = prisonRegimeService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -33,6 +36,12 @@ class AdjudicationsHearingAdapterTest {
 
     @BeforeEach
     fun init() {
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.plusHours(10).toLocalTime())).thenReturn(
+        TimeSlot.PM,
+      )
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.toLocalTime())).thenReturn(
+        TimeSlot.AM,
+      )
       runBlocking {
         whenever(manageAdjudicationsApiFacade.getAdjudicationHearings(any(), any(), any(), any())).thenReturn(
           listOf(
@@ -122,6 +131,12 @@ class AdjudicationsHearingAdapterTest {
 
     @BeforeEach
     fun init() {
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.plusHours(10).toLocalTime())).thenReturn(
+        TimeSlot.PM,
+      )
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.toLocalTime())).thenReturn(
+        TimeSlot.AM,
+      )
       runBlocking {
         whenever(manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(any(), any())).thenReturn(
           HearingSummaryResponse(

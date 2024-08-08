@@ -62,6 +62,7 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+    prisonRegimeService = prisonRegimeService,
   )
 
   private val service = ScheduledEventService(
@@ -76,6 +77,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
   @BeforeEach
   fun reset() {
+    whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(any(), any(), any())).thenReturn(TimeSlot.AM)
     reset(
       prisonApiClient,
       prisonerSearchApiClient,

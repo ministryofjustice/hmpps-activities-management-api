@@ -112,6 +112,21 @@ class PrisonRegimeService(
     }
   }
 
+  fun getPrisonRegimeSlotForDayAndTime(
+    prisonCode: String,
+    day: DayOfWeek,
+    time: LocalTime,
+  ): TimeSlot =
+    getPrisonRegimeForDayOfWeek(
+      prisonCode = prisonCode,
+      dayOfWeek = day,
+    )!!.let {
+      if (time.isBefore(it.pmStart)) return TimeSlot.AM
+      if (time.isBefore(it.edStart)) return TimeSlot.PM
+
+      return TimeSlot.ED
+    }
+
   private fun getPrisonRegimeForDaysOfWeek(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,

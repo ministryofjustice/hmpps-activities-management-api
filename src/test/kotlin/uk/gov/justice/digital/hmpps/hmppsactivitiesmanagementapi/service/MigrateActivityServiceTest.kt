@@ -148,6 +148,13 @@ class MigrateActivityServiceTest {
       whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
+      whenever(
+        prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
+          any(),
+          any(),
+          any(),
+        ),
+      ).thenReturn(TimeSlot.AM)
       whenever(incentivesApiClient.getIncentiveLevelsCached(any())).thenReturn(
         listOf(
           prisonIncentiveLevel(levelCode = "BAS", levelName = "Basic"),
