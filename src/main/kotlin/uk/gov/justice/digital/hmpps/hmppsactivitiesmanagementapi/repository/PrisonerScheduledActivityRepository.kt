@@ -6,7 +6,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.UniquePropertyId
 import java.time.LocalDate
-import java.time.LocalTime
 
 /**
  * This repository is READ-ONLY and uses the view V_PRISONER_SCHEDULED_ACTIVITIES.
@@ -50,16 +49,15 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
   @Query(
     """
     SELECT sa FROM PrisonerScheduledActivity sa 
-    WHERE sa.prisonCode = :prisonCode
-    AND sa.sessionDate = :date
-    AND sa.startTime BETWEEN :earliestStartTime AND :latestStartTime
+    WHERE (sa.prisonCode = :prisonCode
+    AND sa.sessionDate = :date)
+    AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
-  fun findByPrisonCodeAndDateAndTime(
+  fun findByPrisonCodeAndDateAndTimeSlot(
     prisonCode: String,
     date: LocalDate,
-    earliestStartTime: LocalTime,
-    latestStartTime: LocalTime,
+    timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 
   @Query(
@@ -71,7 +69,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
-  fun findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
+  fun findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
     prisonCode: String,
     internalLocationIds: Set<Int>,
     date: LocalDate,

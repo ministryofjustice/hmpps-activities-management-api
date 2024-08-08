@@ -73,15 +73,16 @@ class InternalLocationService(
     runBlocking {
       checkCaseloadAccess(prisonCode)
 
+      val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeSlot)
+      val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
+      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(agencyId = prisonCode, date = date, timeSlot = timeSlot)
+
       val timeRange = getTimeRange(
         prisonCode = prisonCode,
         timeSlot = timeSlot,
         dayOfWeek = date.dayOfWeek,
       )
-      val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeRange)
       val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
-      val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
-      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(agencyId = prisonCode, date = date, timeSlot = timeSlot)
 
       val internalLocationIds = locationActivitiesMap.keys
         .union(locationAppointmentsMap.keys)
@@ -95,8 +96,8 @@ class InternalLocationService(
       }.toSet()
     }
 
-  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeRange: LocalTimeRange): Map<Long, PrisonerScheduledActivity> =
-    prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTime(prisonCode, date, timeRange.start, timeRange.end)
+  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> =
+    prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
       .filterNot { it.internalLocationId == null }
       .associateBy { it.internalLocationId!!.toLong() }
 
@@ -152,7 +153,7 @@ class InternalLocationService(
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
-      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndTimeSlot(
+      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
         prisonCode,
         internalLocationIds.map { it.toInt() }.toSet(),
         date,
