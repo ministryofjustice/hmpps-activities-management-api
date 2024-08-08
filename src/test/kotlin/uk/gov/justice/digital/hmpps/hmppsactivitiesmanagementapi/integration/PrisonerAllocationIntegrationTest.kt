@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedDeallocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
@@ -110,7 +111,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           status = PrisonerStatus.AUTO_SUSPENDED,
           plannedDeallocation = null,
           exclusions = listOf(
-            Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
           ),
         ),
       )
@@ -210,7 +211,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
           suspendedReason = "Temporary absence",
           plannedDeallocation = null,
           exclusions = listOf(
-            Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+            Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
           ),
         ),
       )

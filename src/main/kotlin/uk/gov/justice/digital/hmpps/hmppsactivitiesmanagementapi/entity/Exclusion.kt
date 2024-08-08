@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.consolidateMatchingSlots
 import java.time.DayOfWeek
 import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 @Entity
 @Table(name = "exclusion")
@@ -61,7 +62,7 @@ data class Exclusion(
 
   fun toSlotModel() = Slot(
     weekNumber = weekNumber,
-    timeSlot = timeSlot.name,
+    timeSlot = ModelTimeSlot.valueOf(timeSlot.name),
     monday = exclusionDaysOfWeek.containsDay(DayOfWeek.MONDAY),
     tuesday = exclusionDaysOfWeek.containsDay(DayOfWeek.TUESDAY),
     wednesday = exclusionDaysOfWeek.containsDay(DayOfWeek.WEDNESDAY),

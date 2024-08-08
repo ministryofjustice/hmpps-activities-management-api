@@ -35,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 @ActiveProfiles("experimental")
 class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
@@ -220,7 +221,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     val allSlots = listOf(
       Slot(
         weekNumber = 1,
-        timeSlot = "AM",
+        timeSlot = ModelTimeSlot.AM,
         monday = true,
         tuesday = true,
         wednesday = true,
@@ -230,7 +231,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       ),
       Slot(
         weekNumber = 1,
-        timeSlot = "PM",
+        timeSlot = ModelTimeSlot.PM,
         monday = true,
         tuesday = true,
         wednesday = true,
@@ -238,13 +239,13 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       ),
       Slot(
         weekNumber = 1,
-        timeSlot = "PM",
+        timeSlot = ModelTimeSlot.PM,
         friday = true,
       ),
     )
 
     val slotsExcludingCustomAm = ActivityUpdateRequest(
-      slots = allSlots.filter { it.friday || it.timeSlot == "PM" },
+      slots = allSlots.filter { it.friday || it.timeSlot == ModelTimeSlot.PM },
     )
 
     val updated = updateActivity(activityId = activityId, slots = slotsExcludingCustomAm)
@@ -317,7 +318,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
     assertThat(
       activity.schedules.first().allocations.first {
         it.exclusions.isNotEmpty()
-      }.exclusions.first().timeSlot == "AM",
+      }.exclusions.first().timeSlot == ModelTimeSlot.AM,
     ).isTrue()
 
     assertThat(
@@ -396,7 +397,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = "AM",
+            timeSlot = ModelTimeSlot.AM,
             monday = true,
             tuesday = true,
             wednesday = true,
@@ -424,7 +425,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = "AM",
+            timeSlot = ModelTimeSlot.AM,
             monday = true,
             tuesday = true,
             wednesday = true,
@@ -448,7 +449,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = "AM",
+            timeSlot = ModelTimeSlot.AM,
             monday = true,
             tuesday = true,
             wednesday = true,
@@ -498,7 +499,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       suspendedFlag = false,
       exclusions = if (incExclusion) {
         listOf(
-          Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true),
         )
       } else {
         emptyList()

@@ -38,6 +38,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
@@ -494,7 +495,7 @@ internal fun activityCreateRequest(
     locationId = 1,
     capacity = 1,
     scheduleWeeks = 1,
-    slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
+    slots = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true)),
     onWing = false,
     offWing = false,
     paid = paid,
