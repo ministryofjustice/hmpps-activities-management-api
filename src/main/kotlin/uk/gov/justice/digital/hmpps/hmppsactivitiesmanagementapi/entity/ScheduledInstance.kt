@@ -77,6 +77,7 @@ data class ScheduledInstance(
     nextScheduledInstanceId = this.next()?.scheduledInstanceId,
     nextScheduledInstanceDate = this.next()?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance, null) },
+    timeSlot = this.timeSlot,
   )
 
   private fun previous() = activitySchedule.previous(this)

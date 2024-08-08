@@ -4,6 +4,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -29,6 +30,8 @@ data class ScheduledInstanceAttendanceSummary(
   val startTime: LocalTime,
 
   val endTime: LocalTime,
+
+  val timeSlot: String,
 
   val inCell: Boolean,
 

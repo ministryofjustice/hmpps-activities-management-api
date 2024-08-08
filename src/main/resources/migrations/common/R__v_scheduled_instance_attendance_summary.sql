@@ -9,6 +9,7 @@ SELECT
     si.session_date,
     si.start_time,
     si.end_time,
+    si.time_slot,
     act.in_cell,
     act.on_wing,
     act.off_wing,

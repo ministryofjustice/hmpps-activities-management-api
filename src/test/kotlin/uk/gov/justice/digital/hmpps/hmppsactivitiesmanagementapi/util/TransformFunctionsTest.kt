@@ -742,6 +742,7 @@ class TransformFunctionsTest {
       attended = 1,
       absences = 1,
       paid = 1,
+      timeSlot = TimeSlot.AM.name,
     )
 
     with(attendanceSummary.toModel()) {
