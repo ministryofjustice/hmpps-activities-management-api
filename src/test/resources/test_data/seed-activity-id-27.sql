@@ -11,8 +11,8 @@ values (1, 1, '1', 'Reading Measure 1.0', 'MATH', 'Maths');
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:00:00', '11:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, time_slot)
+values (1, 1, '10:00:00', '11:00:00', true, 'AM');
 
 -- Activity 2
 insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid)
@@ -27,27 +27,27 @@ values (2, 2, '1', 'Reading Measure 1.0', 'ENGLA', 'English Language');
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (2, 2, 'English PM', 2, 'L2', 'Location 3', 10, '2022-10-10');
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (2, 2, '14:00:00', '15:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, time_slot)
+values (2, 2, '14:00:00', '15:00:00', true, 'PM');
 
 -- schedules exist for the last 3 days on each activity (note we test for 1 day ago so only scheduled_instance_id 2 and 5 should be included)
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, 1, current_date - 2, '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, 1, current_date - 2, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (2, 1, current_date - 1, '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (2, 1, current_date - 1, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (3, 1, current_date, '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (3, 1, current_date, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (4, 2, current_date - 2, '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (4, 2, current_date - 2, '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (5, 2, current_date - 1, '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (5, 2, current_date - 1, '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (6, 2, current_date, '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (6, 2, current_date, '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
 -- allocation for prisoner 1 on activity 1 is active so will be included
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)

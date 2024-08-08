@@ -8,11 +8,11 @@ INSERT INTO public.activity_schedule
 VALUES(151, 135, 'Long Term Sick', 789671, 'STAYONWING', 'RSI-OTHER-STAYONWING', 10, '2023-09-30', NULL, true, '2023-11-14 10:53:16.214', 'activities-management-admin-1', '2024-07-15 04:00:19.257', 1);
 
 INSERT INTO public.activity_schedule_slot
-(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number)
-VALUES(225, 151, '08:30:00', '11:45:00', true, true, true, true, true, false, false, 1);
+(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number, time_slot)
+VALUES(225, 151, '08:30:00', '11:45:00', true, true, true, true, true, false, false, 1, 'AM');
 INSERT INTO public.activity_schedule_slot
-(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number)
-VALUES(235, 151, '13:45:00', '16:45:00', true, true, true, true, true, false, false, 1);
+(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number, time_slot)
+VALUES(235, 151, '13:45:00', '16:45:00', true, true, true, true, true, false, false, 1, 'PM');
 
 INSERT INTO public.activity_pay
 (activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items)
@@ -152,71 +152,71 @@ VALUES(23073, 151, 'A5617CQ', 2889202, 6, '2024-07-16', NULL, '2024-07-15 08:45:
 
 
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(124003, 151, '2024-07-15', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(124003, 151, '2024-07-15', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(124004, 151, '2024-07-15', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(124004, 151, '2024-07-15', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(124815, 151, '2024-07-16', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(124815, 151, '2024-07-16', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(124816, 151, '2024-07-16', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(124816, 151, '2024-07-16', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(125510, 151, '2024-07-17', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(125510, 151, '2024-07-17', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(125511, 151, '2024-07-17', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(125511, 151, '2024-07-17', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(126222, 151, '2024-07-18', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(126222, 151, '2024-07-18', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(126223, 151, '2024-07-18', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(126223, 151, '2024-07-18', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(126861, 151, '2024-07-19', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(126861, 151, '2024-07-19', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(126862, 151, '2024-07-19', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(126862, 151, '2024-07-19', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(127887, 151, '2024-07-22', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(127887, 151, '2024-07-22', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(127888, 151, '2024-07-22', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(127888, 151, '2024-07-22', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(128631, 151, '2024-07-23', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(128631, 151, '2024-07-23', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(128632, 151, '2024-07-23', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(128632, 151, '2024-07-23', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(129337, 151, '2024-07-24', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(129337, 151, '2024-07-24', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(129338, 151, '2024-07-24', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(129338, 151, '2024-07-24', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(130056, 151, '2024-07-25', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(130056, 151, '2024-07-25', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(130057, 151, '2024-07-25', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(130057, 151, '2024-07-25', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(130684, 151, '2024-07-26', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(130684, 151, '2024-07-26', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(130685, 151, '2024-07-26', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(130685, 151, '2024-07-26', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(131725, 151, '2024-07-29', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(131725, 151, '2024-07-29', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
 INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment")
-VALUES(131726, 151, '2024-07-29', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
+VALUES(131726, 151, '2024-07-29', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
 
 
 INSERT INTO public.attendance

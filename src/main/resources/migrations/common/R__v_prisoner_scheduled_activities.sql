@@ -1,6 +1,6 @@
 CREATE OR REPLACE VIEW v_prisoner_scheduled_activities
 AS
-SELECT DISTINCT si.scheduled_instance_id,
+SELECT si.scheduled_instance_id,
        alloc.allocation_id,
        act.prison_code,
        si.session_date,

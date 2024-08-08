@@ -13,8 +13,8 @@ values (1, 1, '1', 'Reading Measure 1.0', 'ENGLA', 'English Language');
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:00:00', '11:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, time_slot)
+values (1, 1, '10:00:00', '11:00:00', true, 'AM');
 
 insert into activity_schedule_suspension(activity_schedule_suspension_id, activity_schedule_id, suspended_from, suspended_until)
 values (1, 1, '2022-10-10', current_timestamp);
@@ -28,8 +28,8 @@ values (2, 1, 'A22222A', 10002, 2, '2022-10-10', null, '2022-10-10 09:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 1, 'A33333A', 10003, 2, '2022-10-10', '2022-10-11', '2022-10-10 09:00:00', 'MRS BLOGS', '2022-10-11 09:00:00', 'SYSTEM', 'ENDED', null, null, null, 'ENDED');
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);

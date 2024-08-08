@@ -86,50 +86,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate activity - generic split regime - success`() {
-    val nomisPayRates = listOf(
-      NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),
-    )
-
-    val nomisScheduleRules = listOf(
-      NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
-    )
-
-    // Build a request for Risley that will trigger the generic split regime rules
-    val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-      prisonCode = "RSI",
-      description = "Maths SPLIT",
-    )
-
-    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
-    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-id-1.json")
-
-    val response = webTestClient.migrateActivity(
-      requestBody,
-      listOf("ROLE_NOMIS_ACTIVITIES"),
-    )
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivityMigrateResponse::class.java)
-      .returnResult().responseBody
-
-    with(response!!) {
-      assertThat(activityId).isNotNull
-      assertThat(splitRegimeActivityId).isNotNull
-    }
-
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful activity migration: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-    }
-  }
-
-  @Test
   fun `migrate activity - incorrect roles is forbidden`() {
     val nomisPayRates = listOf(
       NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),

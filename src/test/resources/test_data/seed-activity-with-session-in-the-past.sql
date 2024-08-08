@@ -14,14 +14,14 @@ INSERT INTO activity_schedule
 VALUES(1, 1, 'daf testing', 67128, 'AWING', 'A WING', 3, '2024-03-07', NULL, false, '2024-03-07 11:29:10.547', 'SCH_ACTIVITY', '2024-03-07 11:25:15.652', 1);
 
 INSERT INTO activity_schedule_slot
-(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number)
-VALUES(2, 1, '13:45:00', '16:45:00', true, true, true, true, true, true, true, 1);
+(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number, time_slot)
+VALUES(2, 1, '13:45:00', '16:45:00', true, true, true, true, true, true, true, 1, 'PM');
 INSERT INTO activity_schedule_slot
-(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number)
-VALUES(3, 1, '17:30:00', '19:15:00', true, true, true, true, true, true, true, 1);
+(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number, time_slot)
+VALUES(3, 1, '17:30:00', '19:15:00', true, true, true, true, true, true, true, 1, 'ED');
 INSERT INTO activity_schedule_slot
-(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number)
-VALUES(1, 1, '08:30:00', '11:45:00', true, true, true, true, true, true, true, 1);
+(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, tuesday_flag, wednesday_flag, thursday_flag, friday_flag, saturday_flag, sunday_flag, week_number, time_slot)
+VALUES(1, 1, '08:30:00', '11:45:00', true, true, true, true, true, true, true, 1, 'AM');
 
 INSERT INTO allocation
 (allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
@@ -38,5 +38,5 @@ INSERT INTO allocation
 VALUES(3, 1, 'G4206GA', 1033561, 999, '2024-03-07', NULL, '2024-03-07 13:25:00.000', 'SCH_ACTIVITY', NULL, NULL, NULL, NULL, NULL, NULL, 'PENDING', NULL, NULL);
 
 INSERT INTO scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-VALUES(43, 1, '2024-03-07', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL);
+(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+VALUES(43, 1, '2024-03-07', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
