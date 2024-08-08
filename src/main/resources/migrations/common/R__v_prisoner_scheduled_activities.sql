@@ -37,12 +37,13 @@ FROM scheduled_instance si
          JOIN activity act ON act.activity_id = schedule.activity_id AND
                               (act.end_date IS NULL OR act.end_date >= si.session_date)
          JOIN activity_category category ON category.activity_category_id = act.activity_category_id
-         LEFT JOIN exclusion ex ON alloc.allocation_id = ex.allocation_id AND
-                                   ex.start_date <= si.session_date AND
-                                   (ex.end_date >= si.session_date OR ex.end_date IS NULL) AND
-                                   ex.time_slot = si.time_slot and
-                                   ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
-                                   and TO_CHAR(si.session_date, 'DAY') not in (
-                                   select edw.day_of_week
-                                   from exclusion_days_of_week edw
-                                   where edw.exclusion_id = ex.exclusion_id);
+          WHERE TRIM(TO_CHAR(si.session_date, 'DAY')) NOT IN
+                    (
+                      SELECT edw.day_of_week FROM exclusion_days_of_week edw
+                      JOIN exclusion ex ON ex.exclusion_id = edw.exclusion_id
+                      WHERE alloc.allocation_id = ex.allocation_id
+                   AND ex.start_date <= si.session_date
+                                     AND (ex.end_date >= si.session_date OR ex.end_date IS NULL)
+                                     AND ex.time_slot = si.time_slot
+                                     AND ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
+                          );
