@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
@@ -142,7 +141,7 @@ class ScheduledEventService(
                 eventPriorities,
                 referenceCodesForAppointmentsMap,
                 locationsForAppointmentsMap,
-                getSinglePrisonerAppointments(bookingId, dateRange, slot),
+                getSinglePrisonerAppointments(prisonCode, bookingId, dateRange, slot),
               )
             }
           }
@@ -229,10 +228,11 @@ class ScheduledEventService(
         dateRange.endInclusive,
       )
 
-    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
+    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
   }
 
   private fun getSinglePrisonerAppointments(
+    prisonCode: String,
     bookingId: Long,
     dateRange: LocalDateRange,
     slot: TimeSlot?,
@@ -240,7 +240,7 @@ class ScheduledEventService(
     val appointments = appointmentInstanceRepository
       .findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
 
-    return if (slot != null) appointments.filter { TimeSlot.slot(it.startTime) == slot } else appointments
+    return if (slot != null) appointments.filter { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = prisonCode, day = it.appointmentDate.dayOfWeek) == slot } else appointments
   }
 
   /**
@@ -451,7 +451,7 @@ class ScheduledEventService(
       prisonerNumbers,
       date,
     )
-    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
+    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
   }
 
   private fun getMultiplePrisonersAppointments(

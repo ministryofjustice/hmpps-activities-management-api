@@ -65,6 +65,7 @@ internal fun activityEntity(
   tier: EventTier = eventTier(),
   organiser: EventOrganiser = eventOrganiser(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  timeSlot: TimeSlot = TimeSlot.AM,
   activityId: Long = 1L,
   prisonCode: String = "MDI",
   summary: String = "Maths",
@@ -101,7 +102,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp, paid = paid))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp = timestamp, paid = paid, timeSlot = timeSlot))
     }
     if (!noPayBands) {
       this.addPay(
@@ -224,6 +225,7 @@ internal fun activitySchedule(
   activity: Activity,
   activityScheduleId: Long = 1,
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  timeSlot: TimeSlot = TimeSlot.AM,
   description: String = "schedule description",
   scheduleWeeks: Int = 1,
   daysOfWeek: Set<DayOfWeek> = setOf(DayOfWeek.MONDAY),
@@ -259,7 +261,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, TimeSlot.slot(timestamp.toLocalTime()))
+      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, timeSlot)
       if (!noAllocations && !noExclusions) {
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),

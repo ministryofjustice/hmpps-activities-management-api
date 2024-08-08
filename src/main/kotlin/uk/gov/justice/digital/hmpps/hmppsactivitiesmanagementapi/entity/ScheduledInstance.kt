@@ -85,8 +85,6 @@ data class ScheduledInstance(
 
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
 
-  fun timeSlot() = TimeSlot.slot(startTime)
-
   fun slotTimes() = startTime to endTime
 
   fun attendanceRequired() = activitySchedule.activity.attendanceRequired

@@ -500,7 +500,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       DayOfWeek.entries.toSet(),
-      timeSlot = TimeSlot.slot(LocalTime.NOON),
+      timeSlot = TimeSlot.PM,
     )
 
     val schedules = activity.getSchedulesOnDay(schedule.startDate)
@@ -517,7 +517,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       DayOfWeek.entries.toSet(),
-      timeSlot = TimeSlot.slot(LocalTime.NOON),
+      timeSlot = TimeSlot.PM,
     )
 
     val suspension = ActivityScheduleSuspension(
@@ -542,7 +542,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
-      timeSlot = TimeSlot.slot(LocalTime.NOON),
+      timeSlot = TimeSlot.PM,
     )
 
     val suspension = ActivityScheduleSuspension(
@@ -580,7 +580,7 @@ class ActivityTest {
         weekNumber = 1,
         slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         DayOfWeek.entries.toSet(),
-        timeSlot = TimeSlot.slot(LocalTime.NOON),
+        timeSlot = TimeSlot.PM,
       )
     }.also {
       assertThat(activity.schedules()).hasSize(1)

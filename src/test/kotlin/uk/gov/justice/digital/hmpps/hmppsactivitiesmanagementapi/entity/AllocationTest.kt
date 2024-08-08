@@ -840,7 +840,7 @@ class AllocationTest {
   fun `allocation with exclusion cannot be attended`() {
     val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.tomorrow().dayOfWeek)).allocations().first()
 
-    val timeSlot = allocation.activitySchedule.slots().first().timeSlot()
+    val timeSlot = allocation.activitySchedule.slots().first().timeSlot
 
     allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool true
 

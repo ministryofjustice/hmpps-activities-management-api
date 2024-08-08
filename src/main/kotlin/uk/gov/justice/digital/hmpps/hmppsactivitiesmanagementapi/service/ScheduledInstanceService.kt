@@ -10,9 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
@@ -26,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -38,6 +37,7 @@ class ScheduledInstanceService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
+  private val prisonRegimeService: PrisonRegimeService,
   private val outboundEventsService: OutboundEventsService,
   private val transactionHandler: TransactionHandler,
   private val telemetryClient: TelemetryClient,
@@ -69,7 +69,7 @@ class ScheduledInstanceService(
     ).toModel()
 
     return if (slot != null) {
-      activities.filter { TimeSlot.slot(it.startTime) == slot }
+      activities.filter { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = prisonCode, day = it.date.dayOfWeek) == slot }
     } else {
       activities
     }

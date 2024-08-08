@@ -167,7 +167,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
         .also { it hasSize 2 }
 
     val morningSchedule = with(schedules.single { it.description == "Maths AM" }) {
-      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A33333A")
+      allocations.map(Allocation::prisonerNumber) containsExactlyInAnyOrder listOf("A11111A", "A22222A", "A33333A")
       instances hasSize 1
       this
     }
@@ -202,7 +202,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10), TimeSlot.AM)!!
 
     val schedule = with(schedules.single { it.description == "Maths AM" }) {
-      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A33333A")
+      allocations.map(Allocation::prisonerNumber) containsExactlyInAnyOrder listOf("A11111A", "A22222A", "A33333A")
       instances hasSize 1
       internalLocation isEqualTo InternalLocation(1, "L1", "Location 1")
       this
@@ -225,7 +225,7 @@ class PrisonIntegrationTest : IntegrationTestBase() {
       webTestClient.getSchedulesByPrison("PVI", LocalDate.of(2022, 10, 10), TimeSlot.PM)!!
 
     val schedule = with(schedules.single { it.description == "Maths PM" }) {
-      allocations.map(Allocation::prisonerNumber) containsExactly listOf("A11111A", "A22222A", "A1234BC")
+      allocations.map(Allocation::prisonerNumber) containsExactlyInAnyOrder listOf("A11111A", "A22222A", "A1234BC")
       instances hasSize 1
       this
     }

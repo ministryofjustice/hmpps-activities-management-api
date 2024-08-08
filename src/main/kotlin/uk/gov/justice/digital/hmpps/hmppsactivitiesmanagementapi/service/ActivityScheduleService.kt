@@ -103,7 +103,7 @@ class ActivityScheduleService(
     filter { it.activity.isActive(date) }
 
   private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
-    filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot() == timeSlot) }
+    filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot == timeSlot) }
 
   fun getAllocationsBy(
     scheduleId: Long,

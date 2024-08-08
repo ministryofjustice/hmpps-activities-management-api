@@ -11,9 +11,9 @@ import java.time.LocalTime
 class ActivityScheduleSlotTest {
   private val activity = activityEntity()
   private val activitySchedule = activity.schedules().first()
-  private val startTime = LocalTime.now()
+  private val startTime = LocalTime.of(9, 0)
   private val endTime = startTime.plusHours(2)
-  private val timeSlot = TimeSlot.slot(startTime)
+  private val timeSlot = TimeSlot.AM
 
   @Test
   fun `conversion to model sets day flags and days-of-week list correctly`() {
