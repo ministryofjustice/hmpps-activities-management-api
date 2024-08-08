@@ -2,7 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import aws.sdk.kotlin.runtime.auth.credentials.StaticCredentialsProvider
 import aws.sdk.kotlin.services.s3.S3Client
-import aws.sdk.kotlin.services.s3.model.*
+import aws.sdk.kotlin.services.s3.model.BucketLocationConstraint
+import aws.sdk.kotlin.services.s3.model.CreateBucketRequest
+import aws.sdk.kotlin.services.s3.model.HeadBucketRequest
 import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
