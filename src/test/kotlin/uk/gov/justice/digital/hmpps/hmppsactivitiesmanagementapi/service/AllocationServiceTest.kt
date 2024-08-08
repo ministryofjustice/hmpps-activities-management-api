@@ -507,6 +507,7 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().startDate isEqualTo LocalDate.now().plusDays(1)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
