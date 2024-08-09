@@ -16,6 +16,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
@@ -211,6 +212,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
           offWing = true,
           attendanceRequired = true,
           cancelled = false,
+          timeSlot = TimeSlot.AM,
           attendanceSummary = AttendanceSummaryDetails(
             allocations = 10,
           ),

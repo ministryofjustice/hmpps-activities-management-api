@@ -22,8 +22,8 @@ values (1, 1, '1', 'Reading Measure 1.0', 'ENGLA', 'English Language');
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (1, 1, 'Maths AM', 1, 'L1', 'Location 1', 10, '2022-10-10');
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (1, 1, '10:00:00', '11:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, time_slot)
+values (1, 1, '10:00:00', '11:00:00', true, 'AM');
 
 insert into activity_schedule_suspension(activity_schedule_suspension_id, activity_schedule_id, suspended_from, suspended_until)
 values (1, 1, '2022-10-10', current_timestamp);
@@ -31,8 +31,8 @@ values (1, 1, '2022-10-10', current_timestamp);
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (2, 1, 'Maths PM', 2, 'L2', 'Location 2', 10, '2022-10-10');
 
-insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag)
-values (2, 2, '14:00:00', '15:00:00', true);
+insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_id, start_time, end_time, monday_flag, time_slot)
+values (2, 2, '14:00:00', '15:00:00', true, 'PM');
 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date)
 values (3, 2, 'English Level 1', 2, 'L2', 'Location 2', 10, '2022-10-10');
@@ -55,8 +55,8 @@ values (5, 2, 'A22222A', 10002, 3, '2022-10-10', null, '2022-10-10 10:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (6, 3, 'A11111A', 10001, 3, current_date + 1, null, '2022-10-10 10:00:00', 'MR BLOGS', null, null, null, null, null, null, 'PENDING');
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null);
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, '2022-10-10', '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
@@ -64,8 +64,8 @@ values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (2, 1, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null);
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (1, 'PVI', 'A11111A', 1207485, '2023-06-23', 2, 3, 'Fred Bloggs', 'PENDING', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);

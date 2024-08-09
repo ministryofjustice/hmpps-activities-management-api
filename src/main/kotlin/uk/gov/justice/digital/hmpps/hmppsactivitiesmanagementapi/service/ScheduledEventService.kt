@@ -17,16 +17,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerActivitiesToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerAppointmentsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerCourtEventsToScheduledEvents
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisCourt
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformAppointmentInstanceToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformPrisonerScheduledActivityToScheduledEvents
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -69,6 +71,7 @@ class ScheduledEventService(
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode> = emptyMap(),
     locationsForAppointmentsMap: Map<Long, Location> = emptyMap(),
   ) = runBlocking {
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
     prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)).firstOrNull()
       .also { prisoner ->
         if (prisoner == null) {
@@ -85,7 +88,12 @@ class ScheduledEventService(
         val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
         val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
 
-        getSinglePrisonerEventCalls(BookingIdPrisonerNo(bookingId, prisonerNumber), prisonRolledOut, dateRange)
+        getSinglePrisonerEventCalls(
+          prisoner = BookingIdPrisonerNo(bookingId, prisonerNumber),
+          prisonRolledOut = prisonRolledOut,
+          dateRange = dateRange,
+          prisonRegime = prisonRegime,
+        )
           .let { schedules ->
             PrisonerScheduledEvents(
               prisonCode,
@@ -142,7 +150,9 @@ class ScheduledEventService(
                 eventPriorities,
                 referenceCodesForAppointmentsMap,
                 locationsForAppointmentsMap,
-                getSinglePrisonerAppointments(bookingId, dateRange, slot),
+                getSinglePrisonerAppointments(
+                  bookingId = bookingId, dateRange = dateRange, slot = slot, prisonRegime = prisonRegime,
+                ),
               )
             }
           }
@@ -162,6 +172,7 @@ class ScheduledEventService(
     prisoner: BookingIdPrisonerNo,
     prisonRolledOut: RolloutPrison,
     dateRange: LocalDateRange,
+    prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ): SinglePrisonerSchedules = coroutineScope {
     val sensitiveEventDateRange = when {
       dateRange.start.isAfter(LocalDate.now()) -> LocalDateRange.EMPTY
@@ -202,6 +213,7 @@ class ScheduledEventService(
         agencyId = prisonRolledOut.code,
         date = dateRange.start,
         prisonerNumbers = setOf(prisoner.second),
+        prisonRegime = prisonRegime,
       )
     }
 
@@ -229,18 +241,19 @@ class ScheduledEventService(
         dateRange.endInclusive,
       )
 
-    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
+    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
   }
 
   private fun getSinglePrisonerAppointments(
     bookingId: Long,
     dateRange: LocalDateRange,
     slot: TimeSlot?,
+    prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ): List<AppointmentInstance> {
     val appointments = appointmentInstanceRepository
       .findByBookingIdAndDateRange(bookingId, dateRange.start, dateRange.endInclusive)
 
-    return if (slot != null) appointments.filter { TimeSlot.slot(it.startTime) == slot } else appointments
+    return if (slot != null) appointments.filter { prisonRegime.getSlotForDayAndTime(time = it.startTime, day = it.appointmentDate.dayOfWeek) == slot } else appointments
   }
 
   /**
@@ -338,6 +351,8 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot?,
   ): MultiPrisonerSchedules = coroutineScope {
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = rolloutPrison.code)
+
     val appointments = async {
       if (rolloutPrison.isAppointmentsRolledOut()) {
         emptyList()
@@ -396,6 +411,7 @@ class ScheduledEventService(
         date = date,
         prisonerNumbers = prisonerNumbers,
         timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
       )
     }
 
@@ -451,7 +467,7 @@ class ScheduledEventService(
       prisonerNumbers,
       date,
     )
-    return if (slot != null) activities.filter { TimeSlot.slot(it.startTime!!) == slot } else activities
+    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
   }
 
   private fun getMultiplePrisonersAppointments(

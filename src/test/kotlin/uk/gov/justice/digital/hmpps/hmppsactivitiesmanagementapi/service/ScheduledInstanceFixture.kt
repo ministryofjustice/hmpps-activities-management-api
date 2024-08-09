@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -18,6 +19,7 @@ object ScheduledInstanceFixture {
     activityCategoryCode: String = "ACTIVITY CATEGORY CODE $activityCategoryId",
     activityTierId: Long = 6000 + id,
     date: LocalDate = LocalDate.of(2022, 10, 1),
+    timeSlot: TimeSlot = TimeSlot.PM,
     startTime: LocalTime = LocalTime.of(12, 0, 0),
     endTime: LocalTime = LocalTime.of(13, 0, 0),
     prisonCode: String = "MDI",
@@ -60,6 +62,7 @@ object ScheduledInstanceFixture {
       scheduleWeeks = 1,
     ),
     sessionDate = date,
+    timeSlot = timeSlot,
     startTime = startTime,
     endTime = endTime,
     cancelled = cancelled,

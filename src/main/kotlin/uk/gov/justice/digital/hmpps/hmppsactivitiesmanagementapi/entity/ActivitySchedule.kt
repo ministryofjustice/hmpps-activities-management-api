@@ -130,7 +130,7 @@ data class ActivitySchedule(
 
   fun slots() = slots.toList()
 
-  fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot() == timeSlot }
+  fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot == timeSlot }
 
   fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
 
@@ -211,6 +211,7 @@ data class ActivitySchedule(
         sessionDate = sessionDate,
         startTime = slot.startTime,
         endTime = slot.endTime,
+        timeSlot = slot.timeSlot,
       ),
     )
     instancesLastUpdatedTime = LocalDateTime.now()
@@ -237,6 +238,7 @@ data class ActivitySchedule(
     weekNumber: Int,
     slotTimes: SlotTimes,
     daysOfWeek: Set<DayOfWeek>,
+    timeSlot: TimeSlot,
     experimentalMode: Boolean = false,
   ): ActivityScheduleSlot {
     if (!experimentalMode) require(slot(weekNumber, slotTimes) == null) { "Adding slot to activity schedule with ID $activityScheduleId: Slot already exists from ${slotTimes.first} to ${slotTimes.second} for week number $weekNumber" }
@@ -246,6 +248,7 @@ data class ActivitySchedule(
         weekNumber = weekNumber,
         slotTimes = slotTimes,
         daysOfWeek = daysOfWeek,
+        timeSlot = timeSlot,
       ),
     )
     return slots.last()

@@ -68,14 +68,14 @@ insert into activity_schedule(activity_schedule_id, activity_id, description, in
 values (3, 3, 'QAtestingKitchenActivity', 14435, 'A3EDU', 'A3 EDUCATION', 150, '2023-07-21', '2024-01-02'),
        (6, 6, 'Adams Advanced Archery', 14441, 'BWINT1', 'AB WING INTERVIEW 1', 102, '2023-07-21', '5000-10-02');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment)
-values (14, 3, '2023-07-21', '09:00:00', '12:00:00', false, null, null, null, null),
-       (15, 3, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null),
-       (16, 3, '2023-07-21', '18:00:00', '20:00:00', false, null, null, null, null),
-       (18, 3, '2023-07-22', '13:00:00', '16:30:00', false, null, null, null, null),
-       (19, 3, '2023-07-22', '18:00:00', '20:00:00', false, null, null, null, null),
-       (71, 6, '2023-07-20', '09:00:00', '12:00:00', true, '2023-07-21 17:37:52.000000', 'SCH_ACTIVITY', 'Staff unavailable', null),
-       (72, 6, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null);
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (14, 3, '2023-07-21', '09:00:00', '12:00:00', false, null, null, null, null, 'AM'),
+       (15, 3, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null, 'PM'),
+       (16, 3, '2023-07-21', '18:00:00', '20:00:00', false, null, null, null, null, 'ED'),
+       (18, 3, '2023-07-22', '13:00:00', '16:30:00', false, null, null, null, null, 'PM'),
+       (19, 3, '2023-07-22', '18:00:00', '20:00:00', false, null, null, null, null, 'ED'),
+       (71, 6, '2023-07-20', '09:00:00', '12:00:00', true, '2023-07-21 17:37:52.000000', 'SCH_ACTIVITY', 'Staff unavailable', null, 'AM'),
+       (72, 6, '2023-07-21', '13:00:00', '16:30:00', false, null, null, null, null, 'PM');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (9, 14, 'A4743DZ', 9, null, '2023-07-21 16:55:34.057591', 'MR BLOGS', 'COMPLETED', null, null, null),

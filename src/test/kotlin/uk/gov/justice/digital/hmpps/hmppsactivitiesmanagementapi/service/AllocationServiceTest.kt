@@ -16,6 +16,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -45,7 +46,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPri
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.*
+import java.util.Optional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
@@ -490,7 +492,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = "AM",
+          timeSlot = ModelTimeSlot.AM,
           monday = true,
         ),
       ),
@@ -505,6 +507,7 @@ class AllocationServiceTest {
 
     allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().startDate isEqualTo LocalDate.now().plusDays(1)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
   }
 
@@ -517,12 +520,14 @@ class AllocationServiceTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     val allocation = schedule.allocatePrisoner(
@@ -551,7 +556,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 2,
-          timeSlot = "PM",
+          timeSlot = ModelTimeSlot.PM,
           thursday = true,
         ),
       ),
@@ -579,7 +584,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 3,
-          timeSlot = "AM",
+          timeSlot = ModelTimeSlot.AM,
           monday = true,
         ),
       ),

@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,8 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
@@ -34,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -58,7 +56,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 class MigrateActivityServiceTest {
   private val rolloutPrisonService: RolloutPrisonService = mock()
@@ -70,7 +70,6 @@ class MigrateActivityServiceTest {
   private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
-  private val featureSwitches: FeatureSwitches = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
@@ -118,7 +117,6 @@ class MigrateActivityServiceTest {
     eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
-    featureSwitches,
     eventOrganiserRepository,
     TransactionHandler(),
     outboundEventsService,
@@ -137,6 +135,20 @@ class MigrateActivityServiceTest {
     maxDaysToExpiry = 21,
   )
 
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
+
   @Nested
   @DisplayName("Migrate activity")
   inner class MigrateActivity {
@@ -152,7 +164,11 @@ class MigrateActivityServiceTest {
       whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
-      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
       whenever(incentivesApiClient.getIncentiveLevelsCached(any())).thenReturn(
         listOf(
           prisonIncentiveLevel(levelCode = "BAS", levelName = "Basic"),
@@ -656,162 +672,6 @@ class MigrateActivityServiceTest {
       verify(prisonPayBandRepository).findByPrisonCode("MDI")
 
       verify(activityScheduleRepository, times(0)).saveAllAndFlush(anyList())
-    }
-
-    @Disabled("needs more work around split - regime will be broken currently")
-    @Test
-    fun `Generic split regime rules creates two activities with AM and PM slots according to the rules`() {
-      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
-
-      val nomisScheduleRules = listOf(
-        NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
-          monday = true,
-          tuesday = true,
-        ),
-        NomisScheduleRule(
-          startTime = LocalTime.of(14, 0),
-          endTime = LocalTime.of(15, 0),
-          monday = true,
-          tuesday = true,
-        ),
-      )
-
-      // Trigger the generic split regime rules "SPLIT" in the description
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-        prisonCode = "RSI",
-        description = "Maths SPLIT",
-      )
-
-      // Return dummy activities - we check what is saved, not what is returned
-      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(
-        listOf(
-          activityEntity(activityId = 1, prisonCode = "RSI"),
-          activityEntity(activityId = 2, prisonCode = "RSI"),
-        ),
-      )
-
-      val response = service.migrateActivity(request)
-
-      assertThat(response.activityId).isEqualTo(1)
-      assertThat(response.splitRegimeActivityId).isEqualTo(2)
-
-      verify(rolloutPrisonService).getByPrisonCode("RSI")
-      verify(eventTierRepository, times(2)).findAll()
-      verify(activityCategoryRepository, times(2)).findAll()
-      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
-
-      // Two activities should be saved
-      assertThat(activityCaptor.firstValue).hasSize(2)
-
-      // Check the content of the 1st Activity entity saved
-      with(activityCaptor.firstValue[0]) {
-        assertThat(isPaid()).isTrue
-        assertThat(summary).isEqualTo("Maths group 1")
-        assertThat(description).isEqualTo("Maths group 1")
-        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-
-        // Check the pay rates for this activity
-        assertThat(activityPay()).hasSize(1)
-        with(activityPay().first()) {
-          assertThat(incentiveNomisCode).isEqualTo("BAS")
-          assertThat(payBand.nomisPayBand).isEqualTo(1)
-          assertThat(payBand.payBandAlias).isEqualTo("1")
-          assertThat(rate).isEqualTo(110)
-        }
-
-        // Check the schedule attributes
-        assertThat(schedules()).hasSize(1)
-
-        with(schedules().first()) {
-          assertThat(description).isEqualTo("Maths group 1")
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-          assertThat(scheduleWeeks).isEqualTo(2)
-
-          // Check the slots created
-          assertThat(slots()).hasSize(2)
-
-          // Check the AM slot on Mondays and Tuesdays
-          with(slots()[0]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(8, 30))
-            assertThat(endTime).isEqualTo(LocalTime.of(9, 30))
-            assertThat(mondayFlag).isTrue
-            assertThat(tuesdayFlag).isTrue
-            assertThat(wednesdayFlag).isFalse
-            assertThat(thursdayFlag).isFalse
-            assertThat(fridayFlag).isFalse
-            assertThat(saturdayFlag).isFalse
-            assertThat(sundayFlag).isFalse
-            assertThat(weekNumber).isEqualTo(1)
-          }
-
-          // Check that a PM slot is generated for the same days
-          with(slots()[1]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(12, 30))
-            assertThat(endTime).isEqualTo(LocalTime.of(13, 30))
-            assertThat(mondayFlag).isTrue
-            assertThat(tuesdayFlag).isTrue
-            assertThat(wednesdayFlag).isFalse
-            assertThat(thursdayFlag).isFalse
-            assertThat(fridayFlag).isFalse
-            assertThat(saturdayFlag).isFalse
-            assertThat(sundayFlag).isFalse
-            assertThat(weekNumber).isEqualTo(2)
-          }
-        }
-      }
-
-      // Check the content of the 2nd Activity entity that was passed into saveAllAndFlush
-      with(activityCaptor.firstValue[1]) {
-        assertThat(isPaid()).isTrue
-        assertThat(summary).isEqualTo("Maths group 2")
-        assertThat(description).isEqualTo("Maths group 2")
-        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-
-        // Check the schedule attributes
-        assertThat(schedules()).hasSize(1)
-
-        with(schedules().first()) {
-          assertThat(description).isEqualTo("Maths group 2")
-          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
-          assertThat(scheduleWeeks).isEqualTo(2)
-
-          // Check the number of slots created
-          assertThat(slots()).hasSize(2)
-
-          // Check the afternoon slots are generated for week 1
-          with(slots()[0]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(8, 30))
-            assertThat(endTime).isEqualTo(LocalTime.of(9, 30))
-            assertThat(mondayFlag).isTrue
-            assertThat(tuesdayFlag).isTrue
-            assertThat(wednesdayFlag).isFalse
-            assertThat(thursdayFlag).isFalse
-            assertThat(fridayFlag).isFalse
-            assertThat(saturdayFlag).isFalse
-            assertThat(sundayFlag).isFalse
-            assertThat(weekNumber).isEqualTo(2)
-          }
-
-          // Check the morning slots are in week 2
-          with(slots()[1]) {
-            assertThat(startTime).isEqualTo(LocalTime.of(12, 30))
-            assertThat(endTime).isEqualTo(LocalTime.of(13, 30))
-            assertThat(mondayFlag).isTrue
-            assertThat(tuesdayFlag).isTrue
-            assertThat(wednesdayFlag).isFalse
-            assertThat(thursdayFlag).isFalse
-            assertThat(fridayFlag).isFalse
-            assertThat(saturdayFlag).isFalse
-            assertThat(sundayFlag).isFalse
-            assertThat(weekNumber).isEqualTo(1)
-          }
-        }
-      }
-
-      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
-      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 2)
     }
 
     @Test
@@ -1389,7 +1249,7 @@ class MigrateActivityServiceTest {
     @Test
     fun `A valid exclusion provided will be applied to the prisoner as part of the allocation`() {
       val request = buildAllocationMigrateRequest().copy(
-        exclusions = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true)),
       )
 
       val activity = activityEntity(noSchedules = true).apply {
@@ -1397,7 +1257,8 @@ class MigrateActivityServiceTest {
           addSlot(
             weekNumber = 1,
             slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
-            setOf(DayOfWeek.MONDAY),
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            timeSlot = TimeSlot.AM,
           )
         }
       }
@@ -1418,7 +1279,7 @@ class MigrateActivityServiceTest {
           assertThat(exclusions(ExclusionsFilter.ACTIVE)).hasSize(1)
           with(exclusions(ExclusionsFilter.ACTIVE).first()) {
             getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
-            assertThat(timeSlot()).isEqualTo(TimeSlot.AM)
+            assertThat(timeSlot).isEqualTo(TimeSlot.AM)
           }
         }
       }
@@ -1428,10 +1289,10 @@ class MigrateActivityServiceTest {
     fun `Multiple exclusions for common timeSlot and weekNumber pairs will be applied to the correct slots`() {
       val request = buildAllocationMigrateRequest().copy(
         exclusions = listOf(
-          Slot(weekNumber = 1, timeSlot = "AM", monday = true),
-          Slot(weekNumber = 1, timeSlot = "AM", tuesday = true),
-          Slot(weekNumber = 1, timeSlot = "PM", wednesday = true),
-          Slot(weekNumber = 2, timeSlot = "PM", thursday = true),
+          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true),
+          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, tuesday = true),
+          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.PM, wednesday = true),
+          Slot(weekNumber = 2, timeSlot = ModelTimeSlot.PM, thursday = true),
         ),
       )
 
@@ -1440,22 +1301,20 @@ class MigrateActivityServiceTest {
           addSlot(
             weekNumber = 1,
             slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
-            setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
-          )
-          addSlot(
-            weekNumber = 1,
-            slotTimes = LocalTime.of(11, 0) to LocalTime.of(12, 0),
-            setOf(DayOfWeek.MONDAY),
+            daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY),
+            timeSlot = TimeSlot.AM,
           )
           addSlot(
             weekNumber = 1,
             slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
-            setOf(DayOfWeek.WEDNESDAY),
+            daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
+            timeSlot = TimeSlot.PM,
           )
           addSlot(
             weekNumber = 2,
             slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
-            setOf(DayOfWeek.THURSDAY),
+            daysOfWeek = setOf(DayOfWeek.THURSDAY),
+            timeSlot = TimeSlot.PM,
           )
         }
       }
@@ -1473,23 +1332,19 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           with(exclusions(ExclusionsFilter.ACTIVE)) {
-            this hasSize 4
+            this hasSize 3
 
             this.elementAt(0).weekNumber isEqualTo 1
-            this.elementAt(0).slotTimes() isEqualTo (LocalTime.of(10, 0) to LocalTime.of(11, 0))
+            this.elementAt(0).timeSlot isEqualTo TimeSlot.AM
             this.elementAt(0).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
 
             this.elementAt(1).weekNumber isEqualTo 1
-            this.elementAt(1).slotTimes() isEqualTo (LocalTime.of(11, 0) to LocalTime.of(12, 0))
-            this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+            this.elementAt(1).timeSlot isEqualTo TimeSlot.PM
+            this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.WEDNESDAY)
 
-            this.elementAt(2).weekNumber isEqualTo 1
-            this.elementAt(2).slotTimes() isEqualTo (LocalTime.of(13, 0) to LocalTime.of(14, 0))
-            this.elementAt(2).getDaysOfWeek() isEqualTo setOf(DayOfWeek.WEDNESDAY)
-
-            this.elementAt(3).weekNumber isEqualTo 2
-            this.elementAt(3).slotTimes() isEqualTo (LocalTime.of(13, 0) to LocalTime.of(14, 0))
-            this.elementAt(3).getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
+            this.elementAt(2).weekNumber isEqualTo 2
+            this.elementAt(2).timeSlot isEqualTo TimeSlot.PM
+            this.elementAt(2).getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
           }
         }
       }
@@ -1498,7 +1353,7 @@ class MigrateActivityServiceTest {
     @Test
     fun `Exclusions which do not match slots in the schedule will fail`() {
       val request = buildAllocationMigrateRequest().copy(
-        exclusions = listOf(Slot(weekNumber = 1, timeSlot = "PM", friday = true)),
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.PM, friday = true)),
       )
 
       val activity = activityEntity(noSchedules = true).apply {
@@ -1506,7 +1361,8 @@ class MigrateActivityServiceTest {
           addSlot(
             weekNumber = 1,
             slotTimes = LocalTime.of(10, 0) to LocalTime.of(11, 0),
-            setOf(DayOfWeek.MONDAY),
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            timeSlot = TimeSlot.AM,
           )
         }
       }
@@ -1859,58 +1715,6 @@ class MigrateActivityServiceTest {
       val description = "0123456789 0123456789 0123456789 01234567890 0123456789 SPLIT"
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("0123456789 0123456789 0123456789 0123456789 group 1")
-    }
-  }
-
-  @Nested
-  @DisplayName("Is split regime")
-  inner class IsSplitRegime {
-    val templateRequest = ActivityMigrateRequest(
-      programServiceCode = "XXX",
-      prisonCode = "LEI",
-      startDate = LocalDate.now().minusDays(1),
-      capacity = 1,
-      description = "Maths",
-      internalLocationId = null,
-      internalLocationCode = null,
-      internalLocationDescription = null,
-      payPerSession = "H",
-      scheduleRules = listOf(
-        NomisScheduleRule(
-          startTime = LocalTime.of(9, 0),
-          endTime = LocalTime.of(11, 30),
-          monday = true,
-        ),
-      ),
-      payRates = listOf(NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100)),
-    )
-
-    @Test
-    fun `Not a split regime activity - does not match pattern - at Risley`() {
-      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one PM")
-      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
-      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
-    }
-
-    @Test
-    fun `Is a split regime activity - matches pattern - at Risley`() {
-      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one SPLIT")
-      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
-      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(true)
-    }
-
-    @Test
-    fun `Is not a split regime - not in split regime prison list - at Leeds`() {
-      val request = templateRequest.copy(description = "Maths level one SPLIT")
-      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(true)
-      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
-    }
-
-    @Test
-    fun `Is not a split regime if the feature flag is not allowing it`() {
-      val request = templateRequest.copy(prisonCode = "RSI", description = "Maths level one SPLIT")
-      whenever(featureSwitches.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)).thenReturn(false)
-      assertThat(service.isSplitRegimeActivity(request)).isEqualTo(false)
     }
   }
 }

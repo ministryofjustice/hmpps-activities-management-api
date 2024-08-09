@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -44,6 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -74,8 +76,27 @@ class ScheduledEventServiceSinglePrisonerTest {
     adjudicationsHearingAdapter,
   )
 
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
+
   @BeforeEach
   fun reset() {
+    whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+      mapOf(
+        DayOfWeek.entries.toSet() to prisonRegime,
+      ),
+    )
     reset(
       prisonApiClient,
       prisonerSearchApiClient,
@@ -255,6 +276,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     activitySummary = activitySummary,
     cancelled = cancelled,
     suspended = suspended,
+    timeSlot = TimeSlot.AM,
   )
 
   private fun appointmentFromDbInstance(
@@ -768,6 +790,15 @@ class ScheduledEventServiceSinglePrisonerTest {
   @DisplayName("Scheduled events - appointments are active, activities are not active")
   inner class AppointmentsActiveActivitiesNot {
 
+    @BeforeEach
+    fun init() {
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
+    }
+
     @Test
     fun `Success - appointments active, activities from NOMIS`() {
       val prisonCode = "MDI"
@@ -792,9 +823,16 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber = prisonerNumber,
         bookingId = bookingId,
         customName = "Meeting with the governor",
+        startTime = now.toLocalTime(),
       )
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
+
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
 
       val result = service.getScheduledEventsForSinglePrisoner(
         prisonCode,
@@ -870,6 +908,15 @@ class ScheduledEventServiceSinglePrisonerTest {
   @DisplayName("Scheduled events - both activities and appointments active")
   inner class ActivitiesAndAppointmentsActive {
 
+    @BeforeEach
+    fun init() {
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
+    }
+
     @Test
     fun `Success - both active`() {
       val prisonCode = "MDI"
@@ -890,7 +937,9 @@ class ScheduledEventServiceSinglePrisonerTest {
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
-      val activityEntity = activityFromDbInstance()
+      val activityEntity = activityFromDbInstance(
+        startTime = now.toLocalTime(),
+      )
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
           prisonCode,
@@ -901,9 +950,15 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
         .thenReturn(listOf(activityEntity))
 
-      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId)
+      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId, startTime = now.toLocalTime())
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
+
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
 
       val result = service.getScheduledEventsForSinglePrisoner(
         prisonCode,

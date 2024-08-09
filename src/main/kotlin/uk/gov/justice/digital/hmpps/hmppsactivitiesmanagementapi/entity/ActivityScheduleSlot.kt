@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -47,6 +49,10 @@ data class ActivityScheduleSlot(
   var saturdayFlag: Boolean = false,
 
   var sundayFlag: Boolean = false,
+
+  @Enumerated(EnumType.STRING)
+  var timeSlot: TimeSlot,
+
 ) {
   init {
     failIfDatesAreInvalidForSlot()
@@ -74,11 +80,13 @@ data class ActivityScheduleSlot(
       weekNumber: Int,
       slotTimes: SlotTimes,
       daysOfWeek: Set<DayOfWeek>,
+      timeSlot: TimeSlot,
     ) = ActivityScheduleSlot(
       activitySchedule = activitySchedule,
       weekNumber = weekNumber,
       startTime = slotTimes.first,
       endTime = slotTimes.second,
+      timeSlot = timeSlot,
     ).apply {
       update(daysOfWeek)
     }
@@ -98,7 +106,7 @@ data class ActivityScheduleSlot(
 
   fun toModel() = ModelActivityScheduleSlot(
     id = this.activityScheduleSlotId,
-    timeSlot = ModelTimeSlot.valueOf(this.timeSlot().toString()),
+    timeSlot = ModelTimeSlot.valueOf(this.timeSlot.name),
     weekNumber = this.weekNumber,
     startTime = this.startTime,
     endTime = this.endTime,
@@ -122,8 +130,6 @@ data class ActivityScheduleSlot(
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
-
-  fun timeSlot() = TimeSlot.slot(startTime)
 
   fun slotTimes(): SlotTimes = startTime to endTime
 

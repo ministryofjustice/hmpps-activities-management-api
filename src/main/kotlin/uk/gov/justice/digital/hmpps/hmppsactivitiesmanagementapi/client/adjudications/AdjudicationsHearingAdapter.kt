@@ -4,6 +4,9 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Component
@@ -15,11 +18,17 @@ class AdjudicationsHearingAdapter(
     agencyId: String,
     date: LocalDate,
     timeSlot: TimeSlot?,
+    prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ): Map<Long, List<OffenderAdjudicationHearing>> =
     manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
       agencyId = agencyId,
       date = date,
-    ).hearings.filter { timeSlot == null || TimeSlot.slot(it.dateTimeOfHearing.toLocalTime()) == timeSlot }
+    ).hearings.filter {
+      timeSlot == null ||
+        prisonRegime.getSlotForDayAndTime(
+          day = date.dayOfWeek, time = it.dateTimeOfHearing.toLocalTime(),
+        ) == timeSlot
+    }
       .map {
         OffenderAdjudicationHearing(
           offenderNo = it.prisonerNumber,
@@ -38,6 +47,7 @@ class AdjudicationsHearingAdapter(
     date: LocalDate,
     prisonerNumbers: Set<String>,
     timeSlot: TimeSlot? = null,
+    prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ): List<OffenderAdjudicationHearing> {
     if (prisonerNumbers.isEmpty()) return emptyList()
 
@@ -47,7 +57,12 @@ class AdjudicationsHearingAdapter(
       endDate = date,
       prisoners = prisonerNumbers,
     )
-      .filter { timeSlot == null || TimeSlot.slot(it.hearing.dateTimeOfHearing.toLocalTime()) == timeSlot }
+      .filter {
+        timeSlot == null ||
+          prisonRegime.getSlotForDayAndTime(
+            day = it.hearing.dateTimeOfHearing.dayOfWeek, time = it.hearing.dateTimeOfHearing.toLocalTime(),
+          ) == timeSlot
+      }
       .map {
         OffenderAdjudicationHearing(
           offenderNo = it.prisonerNumber,

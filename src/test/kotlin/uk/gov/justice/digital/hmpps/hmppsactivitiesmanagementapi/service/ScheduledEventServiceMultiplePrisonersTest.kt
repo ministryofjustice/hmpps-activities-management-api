@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ADJUDICATION_HEARING_DURATION_TWO_HOURS
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -68,8 +70,27 @@ class ScheduledEventServiceMultiplePrisonersTest {
     adjudicationsHearingAdapter,
   )
 
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
+
   @BeforeEach
   fun reset() {
+    whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+      mapOf(
+        DayOfWeek.entries.toSet() to prisonRegime,
+      ),
+    )
     reset(
       prisonApiClient,
       prisonerSearchApiClient,
@@ -240,6 +261,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     activitySummary = activitySummary,
     cancelled = cancelled,
     suspended = suspended,
+    timeSlot = TimeSlot.AM,
   )
 
   private fun appointmentFromDbInstance(
@@ -300,6 +322,16 @@ class ScheduledEventServiceMultiplePrisonersTest {
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - activities rolled out, appointments are not")
   inner class MultipleWithActivitiesActiveAndAppointmentsNotActive {
+
+    @BeforeEach
+    fun `init`() {
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
+    }
+
     @Test
     fun `Events for today - including transfers - success`() {
       val prisonCode = "MDI"
@@ -563,6 +595,16 @@ class ScheduledEventServiceMultiplePrisonersTest {
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - both activities and appointments are rolled out")
   inner class MultipleActivitiesBothActive {
+
+    @BeforeEach
+    fun `init`() {
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
+    }
+
     @Test
     fun `Events for today - success - with appointments rolled out`() {
       val prisonCode = "MDI"
@@ -699,6 +741,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
     fun beforeEach() {
       setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2022, 12, 22))
 
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
+        ),
+      )
       val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
@@ -714,7 +761,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         .thenReturn(listOf(appointmentEntity))
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
     }
 
     @Test

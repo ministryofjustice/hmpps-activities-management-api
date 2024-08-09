@@ -481,6 +481,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
             description = "Location 1",
           ),
           cancelled = false,
+          timeSlot = TimeSlot.AM,
           attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
             allocations = 1,
             attendees = 2,
@@ -509,6 +510,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
             description = "Location 2",
           ),
           cancelled = true,
+          timeSlot = TimeSlot.PM,
           attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
             allocations = 2,
           ),

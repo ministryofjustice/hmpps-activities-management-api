@@ -6,6 +6,7 @@ SELECT si.scheduled_instance_id,
        si.session_date,
        si.start_time,
        si.end_time,
+       si.time_slot,
        alloc.prisoner_number,
        alloc.booking_id,
        schedule.internal_location_id,
@@ -37,16 +38,13 @@ FROM scheduled_instance si
          JOIN activity act ON act.activity_id = schedule.activity_id AND
                               (act.end_date IS NULL OR act.end_date >= si.session_date)
          JOIN activity_category category ON category.activity_category_id = act.activity_category_id
-         LEFT JOIN exclusion ex ON alloc.allocation_id = ex.allocation_id AND
-                                   ex.start_date <= si.session_date AND
-                                   (ex.end_date >= si.session_date OR ex.end_date IS NULL) AND
-                                   ex.slot_start_time = si.start_time AND
-                                   ex.slot_end_time = si.end_time AND
-                                   ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
-WHERE TO_CHAR(si.session_date, 'DY') = 'MON' AND ex.monday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'TUE' AND ex.tuesday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'WED' AND ex.wednesday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'THU' AND ex.thursday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'FRI' AND ex.friday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'SAT' AND ex.saturday_flag IS NOT true
-   OR TO_CHAR(si.session_date, 'DY') = 'SUN' AND ex.sunday_flag IS NOT true;
+          WHERE TRIM(TO_CHAR(si.session_date, 'DAY')) NOT IN
+                    (
+                      SELECT edw.day_of_week FROM exclusion_days_of_week edw
+                      JOIN exclusion ex ON ex.exclusion_id = edw.exclusion_id
+                      WHERE alloc.allocation_id = ex.allocation_id
+                   AND ex.start_date <= si.session_date
+                                     AND (ex.end_date >= si.session_date OR ex.end_date IS NULL)
+                                     AND ex.time_slot = si.time_slot
+                                     AND ex.week_number = FLOOR(MOD(EXTRACT(DAY FROM (si.session_date - date_trunc('week', schedule.start_date))), schedule.schedule_weeks * 7) / 7) + 1
+                          );

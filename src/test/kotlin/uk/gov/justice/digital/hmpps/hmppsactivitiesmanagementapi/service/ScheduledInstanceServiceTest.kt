@@ -102,8 +102,9 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `filtered by time slot`() {
-      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null))
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+      val scheduledInstance = ScheduledInstanceFixture.instance(id = 1, locationId = 22)
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null, TimeSlot.PM))
+        .thenReturn(listOf(scheduledInstance))
 
       var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM, null)
       assertThat(result).hasSize(1)
@@ -154,8 +155,8 @@ class ScheduledInstanceServiceTest {
             allocationId = 2,
             prisonCode = "MDI",
             sessionDate = LocalDate.now(),
-            startTime = LocalTime.now(),
-            endTime = LocalTime.now(),
+            startTime = LocalTime.of(10, 0),
+            endTime = LocalTime.of(11, 0),
             prisonerNumber = "ABC123",
             bookingId = 100001,
             inCell = false,
@@ -163,6 +164,7 @@ class ScheduledInstanceServiceTest {
             offWing = true,
             activityCategory = "SAA_OUT_OF_WORK",
             activityId = 1,
+            timeSlot = TimeSlot.AM,
           ),
         ),
       )
@@ -342,6 +344,7 @@ class ScheduledInstanceServiceTest {
         absences = 1,
         paid = 1,
         attendanceRequired = true,
+        timeSlot = TimeSlot.AM.name,
       )
 
       whenever(attendanceSummaryRepository.findByPrisonAndDate("MDI", LocalDate.now()))

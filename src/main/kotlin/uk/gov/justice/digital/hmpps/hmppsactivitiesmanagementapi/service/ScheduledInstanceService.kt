@@ -10,9 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
@@ -60,20 +58,14 @@ class ScheduledInstanceService(
     dateRange: LocalDateRange,
     slot: TimeSlot?,
     cancelled: Boolean?,
-  ): List<ActivityScheduleInstance> {
-    val activities = repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
-      prisonCode,
-      dateRange.start,
-      dateRange.endInclusive,
-      cancelled,
+  ): List<ActivityScheduleInstance> =
+    repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+      prisonCode = prisonCode,
+      startDate = dateRange.start,
+      endDate = dateRange.endInclusive,
+      cancelled = cancelled,
+      timeSlot = slot,
     ).toModel()
-
-    return if (slot != null) {
-      activities.filter { TimeSlot.slot(it.startTime) == slot }
-    } else {
-      activities
-    }
-  }
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)

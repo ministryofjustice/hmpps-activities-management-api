@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
@@ -307,7 +308,7 @@ fun appointmentDetails(
   null,
 )
 
-fun appointmentSearchResultModel() = AppointmentSearchResult(
+fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = AppointmentSearchResult(
   1,
   2,
   AppointmentType.INDIVIDUAL,
@@ -321,6 +322,7 @@ fun appointmentSearchResultModel() = AppointmentSearchResult(
   LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
+  timeSlot,
   false,
   1,
   1,

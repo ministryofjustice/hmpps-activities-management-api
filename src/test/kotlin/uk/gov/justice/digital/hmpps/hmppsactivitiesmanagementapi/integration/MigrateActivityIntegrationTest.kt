@@ -15,6 +15,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
@@ -75,50 +76,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
-
-    eventCaptor.allValues.forEach { event ->
-      log.info("Event captured on successful activity migration: ${event.eventType}")
-    }
-
-    with(eventCaptor.firstValue) {
-      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
-    }
-  }
-
-  @Test
-  fun `migrate activity - generic split regime - success`() {
-    val nomisPayRates = listOf(
-      NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),
-    )
-
-    val nomisScheduleRules = listOf(
-      NomisScheduleRule(startTime = startTime, endTime = endTime, monday = true),
-    )
-
-    // Build a request for Risley that will trigger the generic split regime rules
-    val requestBody = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-      prisonCode = "RSI",
-      description = "Maths SPLIT",
-    )
-
-    incentivesApiMockServer.stubGetIncentiveLevels(requestBody.prisonCode)
-    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-id-1.json")
-
-    val response = webTestClient.migrateActivity(
-      requestBody,
-      listOf("ROLE_NOMIS_ACTIVITIES"),
-    )
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivityMigrateResponse::class.java)
-      .returnResult().responseBody
-
-    with(response!!) {
-      assertThat(activityId).isNotNull
-      assertThat(splitRegimeActivityId).isNotNull
-    }
-
-    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     eventCaptor.allValues.forEach { event ->
       log.info("Event captured on successful activity migration: ${event.eventType}")
@@ -382,7 +339,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       endComment = null,
       suspendedFlag = false,
       exclusions = listOf(
-        Slot(weekNumber = 1, timeSlot = "AM", monday = true),
+        Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
       ),
     )
 

@@ -1,10 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import java.io.Serializable
 import java.time.LocalDate
@@ -95,6 +98,9 @@ data class PrisonerScheduledActivity(
   val suspended: Boolean = false,
 
   val autoSuspended: Boolean = false,
+
+  @Enumerated(EnumType.STRING)
+  val timeSlot: TimeSlot,
 ) {
   fun toScheduledAttendeeModel() = ScheduledAttendee(
     scheduledInstanceId = scheduledInstanceId,

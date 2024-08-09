@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -64,10 +66,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class TransformFunctionsTest {
 
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   @Test
   fun `transformation of activity entity to the activity models`() {
-    val timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)
-    val activity = activityEntity(timestamp = timestamp).apply { attendanceRequired = false }
+    val timestamp = LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)).truncatedTo(ChronoUnit.MINUTES)
+    val timeSlot = TimeSlot.AM
+    val activity = activityEntity(timestamp = timestamp, timeSlot = TimeSlot.AM).apply { attendanceRequired = false }
 
     with(transform(activity)) {
       assertThat(id).isEqualTo(1)
@@ -160,7 +167,7 @@ class TransformFunctionsTest {
               prisonPayBand = lowPayBand.toModel(),
               startDate = timestamp.toLocalDate(),
               endDate = null,
-              allocatedTime = timestamp,
+              allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
               allocatedBy = "Mr Blogs",
               activitySummary = "Maths",
               activityId = 1,
@@ -177,7 +184,7 @@ class TransformFunctionsTest {
               prisonPayBand = lowPayBand.toModel(),
               startDate = timestamp.toLocalDate(),
               endDate = null,
-              allocatedTime = timestamp,
+              allocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES),
               allocatedBy = "Mr Blogs",
               activitySummary = "Maths",
               activityId = 1,
@@ -188,7 +195,7 @@ class TransformFunctionsTest {
               exclusions = listOf(
                 Slot(
                   weekNumber = 1,
-                  timeSlot = TimeSlot.slot(timestamp.toLocalTime()).toString(),
+                  timeSlot = ModelTimeSlot.valueOf(timeSlot.name),
                   monday = true,
                   tuesday = false,
                   wednesday = false,
@@ -206,7 +213,7 @@ class TransformFunctionsTest {
           slots = listOf(
             ActivityScheduleSlot(
               id = 0,
-              timeSlot = ModelTimeSlot.valueOf(TimeSlot.slot(timestamp.toLocalTime()).toString()),
+              timeSlot = ModelTimeSlot.valueOf(timeSlot.name),
               weekNumber = 1,
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),
@@ -742,6 +749,7 @@ class TransformFunctionsTest {
       attended = 1,
       absences = 1,
       paid = 1,
+      timeSlot = TimeSlot.AM.name,
     )
 
     with(attendanceSummary.toModel()) {

@@ -72,16 +72,23 @@ class InternalLocationService(
   fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) =
     runBlocking {
       checkCaseloadAccess(prisonCode)
+      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
+
+      val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeSlot)
+      val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
+      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(
+        agencyId = prisonCode,
+        date = date,
+        timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
+      )
 
       val timeRange = getTimeRange(
         prisonCode = prisonCode,
         timeSlot = timeSlot,
         dayOfWeek = date.dayOfWeek,
       )
-      val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeRange)
       val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
-      val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
-      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(agencyId = prisonCode, date = date, timeSlot = timeSlot)
 
       val internalLocationIds = locationActivitiesMap.keys
         .union(locationAppointmentsMap.keys)
@@ -95,8 +102,8 @@ class InternalLocationService(
       }.toSet()
     }
 
-  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeRange: LocalTimeRange): Map<Long, PrisonerScheduledActivity> =
-    prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTime(prisonCode, date, timeRange.start, timeRange.end)
+  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> =
+    prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
       .filterNot { it.internalLocationId == null }
       .associateBy { it.internalLocationId!!.toLong() }
 
@@ -147,23 +154,23 @@ class InternalLocationService(
     runBlocking {
       checkCaseloadAccess(prisonCode)
 
+      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
       val referenceCodesForAppointmentsMap =
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
       val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
       val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
+      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
+        prisonCode,
+        internalLocationIds.map { it.toInt() }.toSet(),
+        date,
+        timeSlot,
+      )
+
       val timeRange = getTimeRange(
         prisonCode = prisonCode,
         timeSlot = timeSlot,
         dayOfWeek = date.dayOfWeek,
-      )
-
-      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
-        prisonCode,
-        internalLocationIds.map { it.toInt() }.toSet(),
-        date,
-        timeRange.start,
-        timeRange.end,
       )
 
       val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
@@ -187,6 +194,7 @@ class InternalLocationService(
         agencyId = prisonCode,
         date = date,
         timeSlot = timeSlot,
+        prisonRegime = prisonRegime,
       ).filter { internalLocationIds.contains(it.key) }.flatMap { it.value }
 
       val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(

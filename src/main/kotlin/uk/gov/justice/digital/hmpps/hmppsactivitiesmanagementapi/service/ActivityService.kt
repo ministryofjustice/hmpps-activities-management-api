@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModelLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
@@ -56,6 +55,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot as ModelTimeSlot
 
 typealias AllocationIds = Set<Long>
 
@@ -261,7 +261,7 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addSlots(slots: List<Slot>) {
+  private fun ActivitySchedule.addSlots(slots: List<ModelTimeSlot>) {
     slots.forEach { slot ->
       if (slot.customStartTime != null && slot.customEndTime != null) {
         this.addCustomSlot(slot = slot)
@@ -281,21 +281,23 @@ class ActivityService(
     }
   }
 
-  private fun ActivitySchedule.addCustomSlot(slot: Slot) {
+  private fun ActivitySchedule.addCustomSlot(slot: ModelTimeSlot) {
     this.addSlot(
       weekNumber = slot.weekNumber,
       slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
       daysOfWeek = slot.daysOfWeek,
       experimentalMode = experimentalMode,
+      timeSlot = slot.timeSlot(),
     )
   }
 
-  private fun ActivitySchedule.addRegimeSlot(slot: Slot, timeSlot: Map<TimeSlot, SlotTimes>, daysOfWeekToApply: Set<DayOfWeek>) {
+  private fun ActivitySchedule.addRegimeSlot(slot: ModelTimeSlot, timeSlot: Map<TimeSlot, SlotTimes>, daysOfWeekToApply: Set<DayOfWeek>) {
     this.addSlot(
       weekNumber = slot.weekNumber,
-      slotTimes = timeSlot[TimeSlot.valueOf(slot.timeSlot!!)]!!,
+      slotTimes = timeSlot[TimeSlot.valueOf(slot.timeSlot.name)]!!,
       daysOfWeek = daysOfWeekToApply,
       experimentalMode = experimentalMode,
+      timeSlot = slot.timeSlot(),
     )
   }
 

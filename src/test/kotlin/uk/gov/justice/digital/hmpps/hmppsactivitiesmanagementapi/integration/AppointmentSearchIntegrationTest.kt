@@ -40,47 +40,19 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointments in prison with no appointments`() {
-    val request = AppointmentSearchRequest(
-      startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
-    )
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "NAP",
-      listOf(
-        appointmentLocation(123, "NAP", userDescription = "Location 123"),
-        appointmentLocation(456, "NAP", userDescription = "Location 456"),
-      ),
-    )
-
-    val results = webTestClient.searchAppointments("NAP", request)!!
-
-    assertThat(results).hasSize(0)
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-search.sql",
-  )
-  @Test
   fun `search for appointments in other prison`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
 
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "OTH",
-      listOf(
-        appointmentLocation(789, "OTH", userDescription = "Location 789"),
-      ),
-    )
-
-    val results = webTestClient.searchAppointments("OTH", request)!!
-
-    assertThat(results.map { it.prisonCode }.distinct().single()).isEqualTo("OTH")
+    webTestClient.post()
+      .uri("/appointments/OTH/search")
+      .bodyValue(request)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, "OTH")
+      .exchange()
+      .expectStatus().isBadRequest
   }
 
   @Sql(
@@ -248,9 +220,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(1)
+    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(3)
+    results.count { it.timeSlot == TimeSlot.PM }.isEqualTo(2)
+    results.count { it.timeSlot == TimeSlot.ED }.isEqualTo(1)
   }
 
   @Sql(

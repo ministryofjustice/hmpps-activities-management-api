@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
@@ -499,6 +500,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       DayOfWeek.entries.toSet(),
+      timeSlot = TimeSlot.PM,
     )
 
     val schedules = activity.getSchedulesOnDay(schedule.startDate)
@@ -515,6 +517,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       DayOfWeek.entries.toSet(),
+      timeSlot = TimeSlot.PM,
     )
 
     val suspension = ActivityScheduleSuspension(
@@ -539,6 +542,7 @@ class ActivityTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       setOf(*DayOfWeek.values()),
+      timeSlot = TimeSlot.PM,
     )
 
     val suspension = ActivityScheduleSuspension(
@@ -576,6 +580,7 @@ class ActivityTest {
         weekNumber = 1,
         slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
         DayOfWeek.entries.toSet(),
+        timeSlot = TimeSlot.PM,
       )
     }.also {
       assertThat(activity.schedules()).hasSize(1)

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
@@ -53,7 +54,7 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Optional
 
 class ManageAttendancesServiceTest {
   private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
@@ -208,7 +209,7 @@ class ManageAttendancesServiceTest {
 
     instance.activitySchedule.activity.attendanceRequired = true
 
-    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(any(), any(), any(), isNull())) doReturn listOf(instance)
+    whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(any(), any(), any(), isNull(), anyOrNull())) doReturn listOf(instance)
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(anyList())) doReturn listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber }
 
     service.createAttendances(today, MOORLAND_PRISON_CODE)
@@ -252,7 +253,15 @@ class ManageAttendancesServiceTest {
 
     val slot = activitySchedule.slots().first()
     allocation.apply {
-      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, slot.getDaysOfWeek(), startDate))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = slot.weekNumber,
+          daysOfWeek = slot.getDaysOfWeek(),
+          startDate = startDate,
+          timeSlot = slot.timeSlot,
+        ),
+      )
     }
 
     whenever(scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(MOORLAND_PRISON_CODE, today, today)) doReturn listOf(instance)
@@ -709,8 +718,8 @@ class ManageAttendancesServiceTest {
     fun `should only create an attendance records if session time is on or after the selected scheduled instance start time`() {
       val firstSlot = allocation.activitySchedule.slots().first()
 
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek())
-      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek())
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(1) to firstSlot.endTime.plusHours(1), firstSlot.getDaysOfWeek(), firstSlot.timeSlot, false)
+      allocation.activitySchedule.addSlot(firstSlot.weekNumber, firstSlot.startTime.plusHours(2) to firstSlot.endTime.plusHours(2), firstSlot.getDaysOfWeek(), firstSlot.timeSlot, false)
 
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[1])
       allocation.activitySchedule.addInstance(TimeSource.today(), allocation.activitySchedule.slots()[2])

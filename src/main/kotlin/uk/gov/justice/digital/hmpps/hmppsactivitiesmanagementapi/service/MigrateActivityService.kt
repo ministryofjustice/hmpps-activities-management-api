@@ -13,8 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
@@ -38,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -66,7 +65,6 @@ class MigrateActivityService(
   private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
-  private val feature: FeatureSwitches,
   private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
@@ -90,8 +88,6 @@ class MigrateActivityService(
       )
   }
 
-  // Split regime settings - Risley did not use this, they changed to normal regime prior to rollout
-  val prisonsWithASplitRegime = listOf(RISLEY_PRISON_CODE)
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
 
   @Transactional
@@ -119,13 +115,7 @@ class MigrateActivityService(
       // Get the pay bands/aliases configured for this prison
       val payBands = prisonPayBandRepository.findByPrisonCode(request.prisonCode)
 
-      // Detect a split regime activity (we will create 2 activities for each 1 received)
-      val splitRegime = isSplitRegimeActivity(request)
-      val activities = if (splitRegime) {
-        buildSplitActivity(request)
-      } else {
-        buildSingleActivity(request)
-      }
+      val activities = buildSingleActivity(request)
 
       // Add the pay rates for paid activities - either 1 or 2 activities created
       activities.forEach { activity ->
@@ -147,11 +137,7 @@ class MigrateActivityService(
         it.first() to it.getOrNull(1)
       }
 
-      if (splitRegime) {
-        log.info("Migrated split-regime activity ${request.description} - IDs ${activity.activityId} and ${splitRegimeActivity?.activityId}")
-      } else {
-        log.info("Migrated 1-2-1 activity ${request.description} - ID ${activity.activityId}")
-      }
+      log.info("Migrated 1-2-1 activity ${request.description} - ID ${activity.activityId}")
 
       activity to splitRegimeActivity
     }
@@ -163,32 +149,16 @@ class MigrateActivityService(
       .let { (single, split) -> ActivityMigrateResponse(request.prisonCode, single.activityId, split?.activityId) }
   }
 
-  fun isSplitRegimeActivity(request: ActivityMigrateRequest): Boolean {
-    if (prisonsWithASplitRegime.find { it == request.prisonCode }.isNullOrEmpty()) {
-      return false
-    }
-
-    if (!feature.isEnabled(Feature.MIGRATE_SPLIT_REGIME_ENABLED, false)) {
-      log.info("Split regime feature flag is OFF and all migrations will be 1-2-1")
-      return false
-    }
-
-    // Something in the request to identify activities that have a split regime - using SPLIT for now
-    if (request.description.contains("SPLIT")) {
-      return true
-    }
-
-    return false
-  }
-
   fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
+    val prisonRegimes = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = request.prisonCode)
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     var usePrisonRegimeTimeForActivity = true
     val activity = buildActivityEntity(request)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
+      val daysOfWeek = getRequestDaysOfWeek(scheduleRule)
+      val regimeTimeSlot = prisonRegimes.getSlotForDayAndTime(day = daysOfWeek.first(), time = scheduleRule.startTime)
 
       if (usePrisonRegimeTimeForActivity) {
-        val regimeTimeSlot = TimeSlot.slot(scheduleRule.startTime)
         val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = regimeTimeSlot)
 
         usePrisonRegimeTimeForActivity = prisonRegime?.let {
@@ -202,61 +172,15 @@ class MigrateActivityService(
       activity.schedules().first().addSlot(
         weekNumber = 1,
         slotTimes = Pair(scheduleRule.startTime, scheduleRule.endTime),
-        daysOfWeek = getRequestDaysOfWeek(scheduleRule),
+        daysOfWeek = daysOfWeek,
         experimentalMode = experimentalMode,
+        timeSlot = regimeTimeSlot,
       )
     }
 
     activity.schedules().first().usePrisonRegimeTime = usePrisonRegimeTimeForActivity
 
     return listOf(activity)
-  }
-
-  fun buildSplitActivity(request: ActivityMigrateRequest): List<Activity> {
-    log.info("Migrating activity ${request.description} as a split regime activity")
-    return genericSplitActivity(request)
-  }
-
-  /**
-   * Generic rules for splitting an activity.
-   * The description indicates it is a split regime activity by containing the phrase "SPLIT" (temporary method)
-   * Take an activity that includes both AM and PM sessions and split it into 2 activities.
-   * Group 1 has the morning sessions in week 1, and afternoon sessions in week 2.
-   * Group 2 has the afternoon sessions in week 1, and morning sessions in week 2.
-   */
-  fun genericSplitActivity(request: ActivityMigrateRequest): List<Activity> {
-    // Build the first activity
-    val activity1 = buildActivityEntity(request, true, 2, 1)
-
-    // Add the morning sessions to week 1 and the afternoon sessions to week 2 (ignores evening slots!)
-    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val timeSlot = TimeSlot.slot(it.startTime)
-      val regime = it.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = timeSlot)!!
-
-      if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity1.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
-      }
-      if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity1.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
-      }
-    }
-
-    // Build the second activity
-    val activity2 = buildActivityEntity(request, true, 2, 2)
-
-    // Add the afternoon sessions to week 1 and the morning sessions to week 2
-    request.scheduleRules.consolidateMatchingScheduleSlots().forEach {
-      val timeSlot = TimeSlot.slot(it.startTime)
-      val regime = it.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = timeSlot)!!
-      if (TimeSlot.slot(it.startTime) == TimeSlot.PM) {
-        activity2.schedules().first().addSlot(1, regime, getRequestDaysOfWeek(it))
-      }
-      if (TimeSlot.slot(it.startTime) == TimeSlot.AM) {
-        activity2.schedules().first().addSlot(2, regime, getRequestDaysOfWeek(it))
-      }
-    }
-
-    return listOf(activity1, activity2)
   }
 
   private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? =

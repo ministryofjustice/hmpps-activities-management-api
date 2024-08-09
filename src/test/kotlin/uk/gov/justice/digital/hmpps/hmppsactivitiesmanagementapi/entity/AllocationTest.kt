@@ -469,19 +469,40 @@ class AllocationTest {
     }
 
     assertThatThrownBy {
-      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.NOON to LocalTime.NOON.plusHours(1), 1, setOf(DayOfWeek.MONDAY)))
+      allocation.addExclusion(
+        Exclusion.valueOf(
+          allocation = allocation,
+          weekNumber = 1,
+          daysOfWeek = setOf(DayOfWeek.MONDAY),
+          timeSlot = TimeSlot.PM,
+        ),
+      )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot set exclusions where the activity does not run")
 
     assertThatThrownBy {
-      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), 2, setOf(DayOfWeek.MONDAY)))
+      allocation.addExclusion(
+        Exclusion.valueOf(
+          allocation = allocation,
+          weekNumber = 2,
+          daysOfWeek = setOf(DayOfWeek.MONDAY),
+          timeSlot = TimeSlot.AM,
+        ),
+      )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot set exclusions where the activity does not run")
 
     assertThatThrownBy {
-      allocation.addExclusion(Exclusion.valueOf(allocation, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), 1, setOf(DayOfWeek.TUESDAY)))
+      allocation.addExclusion(
+        Exclusion.valueOf(
+          allocation = allocation,
+          weekNumber = 1,
+          daysOfWeek = setOf(DayOfWeek.TUESDAY),
+          timeSlot = TimeSlot.PM,
+        ),
+      )
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot set exclusions where the activity does not run")
@@ -496,12 +517,14 @@ class AllocationTest {
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     val allocation = schedule.allocatePrisoner(
@@ -532,7 +555,7 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY), TimeSlot.AM),
       ),
     )
 
@@ -549,7 +572,7 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.TUESDAY), TimeSlot.AM),
       ),
     )
 
@@ -563,7 +586,15 @@ class AllocationTest {
     val schedule = activitySchedule(activity, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY))
     val slot = schedule.slots().first()
     val allocation = schedule.allocations().first().apply {
-      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), LocalDate.now()))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = slot.weekNumber,
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          startDate = LocalDate.now(),
+          timeSlot = slot.timeSlot,
+        ),
+      )
     }
 
     with(allocation) {
@@ -574,7 +605,13 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+        ActivityScheduleSlot.valueOf(
+          allocation.activitySchedule,
+          1,
+          prisonRegime[TimeSlot.AM]!!,
+          setOf(DayOfWeek.MONDAY),
+          TimeSlot.AM,
+        ),
       ),
     )
 
@@ -592,7 +629,15 @@ class AllocationTest {
     val schedule = activitySchedule(activity, daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY))
     val slot = schedule.slots().first()
     val allocation = schedule.allocations().first().apply {
-      addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), LocalDate.now().plusDays(1)))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = slot.weekNumber,
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
+          startDate = LocalDate.now().plusDays(1),
+          timeSlot = slot.timeSlot,
+        ),
+      )
     }
 
     with(allocation) {
@@ -603,7 +648,7 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.AM]!!, setOf(DayOfWeek.MONDAY), TimeSlot.AM),
       ),
     )
 
@@ -624,12 +669,14 @@ class AllocationTest {
       weekNumber = 1,
       slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.THURSDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     val allocation = schedule.allocatePrisoner(
@@ -639,7 +686,15 @@ class AllocationTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     ).apply {
-      addExclusion(Exclusion.valueOf(this, prisonRegime[TimeSlot.PM]!!, 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), LocalDate.now()))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = 1,
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+          startDate = LocalDate.now(),
+          timeSlot = TimeSlot.PM,
+        ),
+      )
     }
 
     with(allocation) {
@@ -649,8 +704,8 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), TimeSlot.PM),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY), TimeSlot.PM),
       ),
     )
 
@@ -669,12 +724,14 @@ class AllocationTest {
       weekNumber = 1,
       slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     schedule.addSlot(
       weekNumber = 2,
       slotTimes = prisonRegime[TimeSlot.PM]!!,
       daysOfWeek = setOf(DayOfWeek.THURSDAY),
+      timeSlot = TimeSlot.PM,
     )
 
     val allocation = schedule.allocatePrisoner(
@@ -684,7 +741,14 @@ class AllocationTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     ).apply {
-      addExclusion(Exclusion.valueOf(this, LocalTime.NOON to LocalTime.NOON.plusHours(1), 1, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)))
+      addExclusion(
+        Exclusion.valueOf(
+          allocation = this,
+          weekNumber = 1,
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
+          timeSlot = TimeSlot.PM,
+        ),
+      )
     }
 
     with(allocation) {
@@ -694,8 +758,8 @@ class AllocationTest {
 
     allocation.syncExclusionsWithScheduleSlots(
       listOf(
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)),
-        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY)),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 1, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY), TimeSlot.PM),
+        ActivityScheduleSlot.valueOf(allocation.activitySchedule, 2, prisonRegime[TimeSlot.PM]!!, setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY), TimeSlot.PM),
       ),
     )
 
@@ -709,42 +773,42 @@ class AllocationTest {
   fun `allocation starting today can be attended today`() {
     val allocation = allocation(startDate = TimeSource.today())
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
   }
 
   @Test
   fun `allocation starting today cannot be attended yesterday`() {
     val allocation = allocation(startDate = TimeSource.today())
 
-    allocation.canAttendOn(TimeSource.yesterday(), prisonRegime[TimeSlot.AM]!!) isBool false
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool false
   }
 
   @Test
   fun `allocation starting yesterday can be attended today`() {
     val allocation = allocation(startDate = TimeSource.yesterday())
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
   }
 
   @Test
   fun `allocation ending today can be attended today`() {
     val allocation = allocation(startDate = TimeSource.today()).apply { endDate = TimeSource.today() }
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool true
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool true
   }
 
   @Test
   fun `allocation ending yesterday can be attended yesterday`() {
     val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
 
-    allocation.canAttendOn(TimeSource.yesterday(), prisonRegime[TimeSlot.AM]!!) isBool true
+    allocation.canAttendOn(TimeSource.yesterday(), TimeSlot.AM) isBool true
   }
 
   @Test
   fun `allocation ending yesterday cannot be attended today`() {
     val allocation = allocation(startDate = TimeSource.yesterday()).apply { endDate = TimeSource.yesterday() }
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
   }
 
   @Test
@@ -755,34 +819,34 @@ class AllocationTest {
       plannedDeallocation?.plannedDate = TimeSource.yesterday()
     }
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
   }
 
   @Test
   fun `allocation starting tomorrow cannot be attended today`() {
     val allocation = allocation(startDate = TimeSource.tomorrow())
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
   }
 
   @Test
   fun `allocation deallocated cannot be attended`() {
     val allocation = allocation().deallocateNowOn(TimeSource.today())
 
-    allocation.canAttendOn(TimeSource.today(), prisonRegime[TimeSlot.AM]!!) isBool false
+    allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
   }
 
   @Test
   fun `allocation with exclusion cannot be attended`() {
     val allocation = activitySchedule(activity = activityEntity(), daysOfWeek = setOf(TimeSource.tomorrow().dayOfWeek)).allocations().first()
 
-    val timeSlot = allocation.activitySchedule.slots().first().timeSlot()
+    val timeSlot = allocation.activitySchedule.slots().first().timeSlot
 
-    allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool true
+    allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool true
 
     allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek), today)
 
-    allocation.canAttendOn(TimeSource.tomorrow(), prisonRegime[timeSlot]!!) isBool false
+    allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool false
   }
 
   @Test

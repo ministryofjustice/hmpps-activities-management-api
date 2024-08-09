@@ -258,7 +258,7 @@ class InternalLocationServiceTest {
     adjudicationsHearingAdapter.stub {
       on {
         runBlocking {
-          getAdjudicationsByLocation(any(), any(), anyOrNull())
+          getAdjudicationsByLocation(any(), any(), anyOrNull(), any())
         }
       } doReturn mapOf(
         adjudicationLocation.locationId to listOf(adjudicationHearing),
@@ -336,17 +336,16 @@ class InternalLocationServiceTest {
     @Test
     fun `uses events from all day when no time slot is supplied`() = runBlocking {
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(
           prisonCode,
           date,
-          LocalTime.of(0, 0),
-          LocalTime.of(23, 59),
+          null,
         ),
       ).thenReturn(listOf(education2Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(listOf(education1LocationSummary, education2LocationSummary, socialVisitsLocationSummary))
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
       )
 
@@ -390,11 +389,10 @@ class InternalLocationServiceTest {
     @Test
     fun `uses events from time slot when time slot is supplied`() = runBlocking {
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(
           prisonCode,
           date,
-          timeSlotPm.first,
-          timeSlotPm.second.minusMinutes(1),
+          TimeSlot.PM,
         ),
       ).thenReturn(listOf(inactiveEducation1Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noUserDescriptionLocationAppointment))
@@ -444,16 +442,15 @@ class InternalLocationServiceTest {
     @Test
     fun `exclude events with no internal location ids`() = runBlocking {
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(
           prisonCode,
           date,
-          timeSlotPm.first,
-          timeSlotPm.second,
+          TimeSlot.PM,
         ),
       ).thenReturn(listOf(noLocationActivity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(noLocationAppointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(emptyMap())
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(emptyMap())
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -479,12 +476,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education1Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          LocalTime.of(0, 0),
-          LocalTime.of(23, 59),
+          null,
         ),
       ).thenReturn(listOf(education1Activity))
       whenever(
@@ -504,7 +500,7 @@ class InternalLocationServiceTest {
           null,
         ),
       ).thenReturn(listOf(education1Visit))
-      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull())).thenReturn(
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationHearingForEvent.internalLocationId to listOf(adjudicationHearingForEvent)),
       )
 
@@ -538,12 +534,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education2Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          timeSlotPm.first,
-          timeSlotPm.second.minusMinutes(1),
+          TimeSlot.PM,
         ),
       ).thenReturn(listOf(education2Activity))
       whenever(
@@ -593,12 +588,11 @@ class InternalLocationServiceTest {
       val internalLocationIds = setOf(education1Location.locationId)
 
       whenever(
-        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
           prisonCode,
           internalLocationIds.map { it.toInt() }.toSet(),
           date,
-          timeSlotEd.first,
-          timeSlotEd.second.minusMinutes(1),
+          TimeSlot.ED,
         ),
       ).thenReturn(listOf(noLocationActivity))
       whenever(

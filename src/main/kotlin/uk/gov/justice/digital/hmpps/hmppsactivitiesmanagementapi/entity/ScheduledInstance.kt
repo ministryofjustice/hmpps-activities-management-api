@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -52,6 +54,9 @@ data class ScheduledInstance(
   var cancelledReason: String? = null,
 
   var comment: String? = null,
+
+  @Enumerated(EnumType.STRING)
+  var timeSlot: TimeSlot,
 ) {
 
   fun dayOfWeek() = sessionDate.dayOfWeek
@@ -72,6 +77,7 @@ data class ScheduledInstance(
     nextScheduledInstanceId = this.next()?.scheduledInstanceId,
     nextScheduledInstanceDate = this.next()?.sessionDate,
     attendances = this.attendances.map { attendance -> transform(attendance, null) },
+    timeSlot = this.timeSlot,
   )
 
   private fun previous() = activitySchedule.previous(this)
@@ -79,8 +85,6 @@ data class ScheduledInstance(
   private fun next() = activitySchedule.next(this)
 
   fun isRunningOn(date: LocalDate) = !cancelled && sessionDate == date
-
-  fun timeSlot() = TimeSlot.slot(startTime)
 
   fun slotTimes() = startTime to endTime
 

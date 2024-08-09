@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
@@ -37,6 +38,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
@@ -63,6 +65,7 @@ internal fun activityEntity(
   tier: EventTier = eventTier(),
   organiser: EventOrganiser = eventOrganiser(),
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  timeSlot: TimeSlot = TimeSlot.AM,
   activityId: Long = 1L,
   prisonCode: String = "MDI",
   summary: String = "Maths",
@@ -99,7 +102,7 @@ internal fun activityEntity(
       this.addEligibilityRule(eligibilityRuleOver21)
     }
     if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp, paid = paid))
+      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp = timestamp, paid = paid, timeSlot = timeSlot))
     }
     if (!noPayBands) {
       this.addPay(
@@ -222,6 +225,7 @@ internal fun activitySchedule(
   activity: Activity,
   activityScheduleId: Long = 1,
   timestamp: LocalDateTime = LocalDate.now().atStartOfDay(),
+  timeSlot: TimeSlot = TimeSlot.AM,
   description: String = "schedule description",
   scheduleWeeks: Int = 1,
   daysOfWeek: Set<DayOfWeek> = setOf(DayOfWeek.MONDAY),
@@ -257,7 +261,7 @@ internal fun activitySchedule(
       )
     }
     if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek)
+      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, timeSlot)
       if (!noAllocations && !noExclusions) {
         this.allocatePrisoner(
           prisonerNumber = "A1111BB".toPrisonerNumber(),
@@ -322,9 +326,24 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
   if (withExclusions) {
     allocation.apply {
       if (startDate != null) {
-        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY), startDate))
+        addExclusion(
+          Exclusion.valueOf(
+            allocation = this,
+            weekNumber = slot.weekNumber,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            startDate = startDate,
+            timeSlot = slot.timeSlot,
+          ),
+        )
       } else {
-        addExclusion(Exclusion.valueOf(this, slot.startTime to slot.endTime, slot.weekNumber, setOf(DayOfWeek.MONDAY)))
+        addExclusion(
+          Exclusion.valueOf(
+            allocation = this,
+            weekNumber = slot.weekNumber,
+            daysOfWeek = setOf(DayOfWeek.MONDAY),
+            timeSlot = slot.timeSlot,
+          ),
+        )
       }
     }
   }
@@ -478,7 +497,7 @@ internal fun activityCreateRequest(
     locationId = 1,
     capacity = 1,
     scheduleWeeks = 1,
-    slots = listOf(Slot(weekNumber = 1, timeSlot = "AM", monday = true)),
+    slots = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true)),
     onWing = false,
     offWing = false,
     paid = paid,
@@ -586,4 +605,5 @@ internal fun activityFromDbInstance(
   activitySummary = activitySummary,
   cancelled = cancelled,
   suspended = suspended,
+  timeSlot = TimeSlot.AM,
 )

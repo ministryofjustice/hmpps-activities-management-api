@@ -204,6 +204,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
       val scheduledEvents = webTestClient.getScheduledEventsForSinglePrisoner(prisonCode, prisonerNumber, tomorrow, tomorrow)
 
+      println(scheduledEvents)
+
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(tomorrow)
