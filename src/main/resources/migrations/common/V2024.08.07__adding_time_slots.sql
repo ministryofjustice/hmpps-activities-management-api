@@ -14,7 +14,7 @@ alter table exclusion add column time_slot char(2);
 
 update exclusion set time_slot = 'AM' where slot_start_time < '11:00';
 update exclusion set time_slot = 'ED' where slot_start_time >= '17:00';
-update exclusion set time_slot = 'PM' where slot_start_time >= '13:00' and start_time < '17:00';
+update exclusion set time_slot = 'PM' where slot_start_time >= '13:00' and slot_start_time < '17:00';
 
 
 drop view v_activity_time_slot cascade;
