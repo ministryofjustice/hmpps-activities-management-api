@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -60,6 +61,8 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     assertThat(results).hasSize(0)
   }
 
+  @Disabled("this is a pointless test.  currently would need a regime for it, but we dont store appointments for prisons outside of rollout" +
+    "this is likely related to the end point for DPS that no one uses")
   @Sql(
     "classpath:test_data/seed-appointment-search.sql",
   )

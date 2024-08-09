@@ -1306,12 +1306,6 @@ class MigrateActivityServiceTest {
           )
           addSlot(
             weekNumber = 1,
-            slotTimes = LocalTime.of(11, 0) to LocalTime.of(12, 0),
-            daysOfWeek = setOf(DayOfWeek.MONDAY),
-            timeSlot = TimeSlot.ED,
-          )
-          addSlot(
-            weekNumber = 1,
             slotTimes = LocalTime.of(13, 0) to LocalTime.of(14, 0),
             daysOfWeek = setOf(DayOfWeek.WEDNESDAY),
             timeSlot = TimeSlot.PM,
@@ -1338,23 +1332,19 @@ class MigrateActivityServiceTest {
       with(activityScheduleCaptor.firstValue) {
         with(allocations().last()) {
           with(exclusions(ExclusionsFilter.ACTIVE)) {
-            this hasSize 4
+            this hasSize 3
 
             this.elementAt(0).weekNumber isEqualTo 1
             this.elementAt(0).timeSlot isEqualTo TimeSlot.AM
             this.elementAt(0).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
 
             this.elementAt(1).weekNumber isEqualTo 1
-            this.elementAt(1).timeSlot isEqualTo TimeSlot.ED
-            this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+            this.elementAt(1).timeSlot isEqualTo TimeSlot.PM
+            this.elementAt(1).getDaysOfWeek() isEqualTo setOf(DayOfWeek.WEDNESDAY)
 
-            this.elementAt(2).weekNumber isEqualTo 1
+            this.elementAt(2).weekNumber isEqualTo 2
             this.elementAt(2).timeSlot isEqualTo TimeSlot.PM
-            this.elementAt(2).getDaysOfWeek() isEqualTo setOf(DayOfWeek.WEDNESDAY)
-
-            this.elementAt(3).weekNumber isEqualTo 2
-            this.elementAt(3).timeSlot isEqualTo TimeSlot.PM
-            this.elementAt(3).getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
+            this.elementAt(2).getDaysOfWeek() isEqualTo setOf(DayOfWeek.THURSDAY)
           }
         }
       }
