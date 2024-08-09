@@ -103,7 +103,7 @@ class ScheduledInstanceServiceTest {
     @Test
     fun `filtered by time slot`() {
       val scheduledInstance = ScheduledInstanceFixture.instance(id = 1, locationId = 22)
-      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null))
+      whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null, TimeSlot.PM))
         .thenReturn(listOf(scheduledInstance))
 
       var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM, null)

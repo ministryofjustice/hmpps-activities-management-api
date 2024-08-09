@@ -823,6 +823,7 @@ class ScheduledEventServiceSinglePrisonerTest {
         prisonerNumber = prisonerNumber,
         bookingId = bookingId,
         customName = "Meeting with the governor",
+        startTime = now.toLocalTime(),
       )
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
@@ -936,7 +937,9 @@ class ScheduledEventServiceSinglePrisonerTest {
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
 
-      val activityEntity = activityFromDbInstance()
+      val activityEntity = activityFromDbInstance(
+        startTime = now.toLocalTime(),
+      )
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
           prisonCode,
@@ -947,7 +950,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
         .thenReturn(listOf(activityEntity))
 
-      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId)
+      val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId, startTime = now.toLocalTime())
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
 

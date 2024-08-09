@@ -17,7 +17,7 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
       WHERE s.activity.prisonCode = :prisonCode 
       AND si.sessionDate >= :startDate
       AND si.sessionDate <= :endDate
-      AND (:timeSlot is null or si.time_slot = :timeSlot)
+      AND (:timeSlot is null or si.timeSlot = :timeSlot)
     ) AND (:cancelled is null or si.cancelled = :cancelled)
     """,
   )

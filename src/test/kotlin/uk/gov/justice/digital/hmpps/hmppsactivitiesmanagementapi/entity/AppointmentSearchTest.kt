@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -30,7 +31,7 @@ class AppointmentSearchTest {
   @Test
   fun `entity to result mapping`() {
     val entity = appointmentSearchEntity()
-    val expectedModel = appointmentSearchResultModel()
+    val expectedModel = appointmentSearchResultModel(timeSlot = TimeSlot.PM)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
     assertThat(
@@ -48,7 +49,7 @@ class AppointmentSearchTest {
   @Test
   fun `entity list to results list mapping`() {
     val entityList = listOf(appointmentSearchEntity())
-    val expectedModel = listOf(appointmentSearchResultModel())
+    val expectedModel = listOf(appointmentSearchResultModel(timeSlot = TimeSlot.PM))
     val referenceCodeMap = mapOf(entityList.first().categoryCode to appointmentCategoryReferenceCode(entityList.first().categoryCode))
     val locationMap = mapOf(entityList.first().internalLocationId!! to appointmentLocation(entityList.first().internalLocationId!!, "TPR"))
     assertThat(

@@ -308,7 +308,7 @@ fun appointmentDetails(
   null,
 )
 
-fun appointmentSearchResultModel() = AppointmentSearchResult(
+fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = AppointmentSearchResult(
   1,
   2,
   AppointmentType.INDIVIDUAL,
@@ -322,7 +322,7 @@ fun appointmentSearchResultModel() = AppointmentSearchResult(
   LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),
   LocalTime.of(10, 30),
-  TimeSlot.AM,
+  timeSlot,
   false,
   1,
   1,
