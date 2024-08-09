@@ -1,13 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
-import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,18 +14,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import java.time.LocalDate
 
 @RestController
 @RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -137,130 +131,6 @@ class PrisonController(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("categoryId") categoryId: Long,
   ): List<ActivityLite> = activityService.getActivitiesByCategoryInPrison(prisonCode, categoryId)
-
-  @GetMapping(value = ["/{prisonCode}/locations"])
-  @ResponseBody
-  @Operation(
-    summary = "Get scheduled prison locations",
-    description = "Returns a list of zero or more scheduled prison locations for the supplied criteria.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Locations found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = InternalLocation::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getScheduledPrisonLocations(
-    @PathVariable("prisonCode")
-    prisonCode: String,
-    @RequestParam(value = "date", required = false)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Date of activity, default today")
-    date: LocalDate?,
-    @RequestParam(value = "timeSlot", required = false)
-    @Parameter(description = "AM, PM or ED")
-    timeSlot: TimeSlot?,
-  ): List<InternalLocation> =
-    scheduleService.getScheduledInternalLocations(prisonCode, date ?: LocalDate.now(), timeSlot)
-
-  @GetMapping(value = ["/{prisonCode}/schedules"])
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of activity schedules at a given prison",
-    description = "Returns zero or more activity schedules at a given prison.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity schedules found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivitySchedule::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getSchedulesByPrisonCode(
-    @PathVariable("prisonCode") prisonCode: String,
-    @RequestParam(
-      value = "date",
-      required = false,
-    )
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Date of activity, default today")
-    date: LocalDate?,
-    @RequestParam(
-      value = "timeSlot",
-      required = false,
-    )
-    @Parameter(description = "AM, PM or ED")
-    timeSlot: TimeSlot?,
-    @RequestParam(
-      value = "locationId",
-      required = false,
-    )
-    @Parameter(description = "The internal NOMIS location id of the activity")
-    locationId: Long?,
-  ): List<ActivitySchedule> =
-    scheduleService.getActivitySchedulesByPrisonCode(
-      prisonCode = prisonCode,
-      date = date ?: LocalDate.now(),
-      timeSlot = timeSlot,
-      locationId = locationId,
-    )
 
   @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
   @ResponseBody

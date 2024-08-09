@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
@@ -41,49 +40,19 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointments in prison with no appointments`() {
-    val request = AppointmentSearchRequest(
-      startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
-    )
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "NAP",
-      listOf(
-        appointmentLocation(123, "NAP", userDescription = "Location 123"),
-        appointmentLocation(456, "NAP", userDescription = "Location 456"),
-      ),
-    )
-
-    val results = webTestClient.searchAppointments("NAP", request)!!
-
-    assertThat(results).hasSize(0)
-  }
-
-  @Disabled("this is a pointless test.  currently would need a regime for it, but we dont store appointments for prisons outside of rollout" +
-    "this is likely related to the end point for DPS that no one uses")
-  @Sql(
-    "classpath:test_data/seed-appointment-search.sql",
-  )
-  @Test
   fun `search for appointments in other prison`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
       endDate = LocalDate.now().plusMonths(1),
     )
 
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "OTH",
-      listOf(
-        appointmentLocation(789, "OTH", userDescription = "Location 789"),
-      ),
-    )
-
-    val results = webTestClient.searchAppointments("OTH", request)!!
-
-    assertThat(results.map { it.prisonCode }.distinct().single()).isEqualTo("OTH")
+    webTestClient.post()
+      .uri("/appointments/OTH/search")
+      .bodyValue(request)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, "OTH")
+      .exchange()
+      .expectStatus().isBadRequest
   }
 
   @Sql(

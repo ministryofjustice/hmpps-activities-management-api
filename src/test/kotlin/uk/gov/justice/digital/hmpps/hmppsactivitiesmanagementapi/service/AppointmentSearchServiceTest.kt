@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSearchRepository
@@ -33,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
@@ -64,6 +66,7 @@ class AppointmentSearchServiceTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val rolloutPrisonService: RolloutPrisonService = mock()
 
   private val principal: Principal = mock()
 
@@ -81,6 +84,7 @@ class AppointmentSearchServiceTest {
     referenceCodeService,
     locationService,
     telemetryClient,
+    rolloutPrisonService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -101,6 +105,10 @@ class AppointmentSearchServiceTest {
   fun setup() {
     MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
+
+    whenever(rolloutPrisonService.getPrisonPlan(any())).thenReturn(
+      rolloutPrison(prisonCode = ""),
+    )
 
     whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
       mapOf(

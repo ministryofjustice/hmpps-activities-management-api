@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Locatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
@@ -40,6 +41,7 @@ class AppointmentSearchService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val telemetryClient: TelemetryClient,
+  private val rolloutPrisonService: RolloutPrisonService,
 ) {
   fun searchAppointments(
     prisonCode: String,
@@ -47,6 +49,8 @@ class AppointmentSearchService(
     principal: Principal,
   ): List<AppointmentSearchResult> {
     checkCaseloadAccess(prisonCode)
+
+    rolloutPrisonService.getPrisonPlan(prisonCode = prisonCode)
 
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(
       agencyId = prisonCode,
