@@ -22,6 +22,8 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     SENTRY_ENVIRONMENT: development
+    AWS_S3_AP_BUCKET: moj-reg-dev
+    AWS_S3_AP_PROJECT: hmpps-activities-management-dev
     MIGRATE_EXPERIMENTAL_MODE: false
 
   resources:
@@ -45,3 +47,4 @@ cron:
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
+  purposefulActivityReports: "30 8 * * 2"
