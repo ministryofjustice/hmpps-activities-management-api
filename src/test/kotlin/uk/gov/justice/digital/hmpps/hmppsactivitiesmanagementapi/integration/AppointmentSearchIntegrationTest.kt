@@ -15,12 +15,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.LocalDate
 import java.time.LocalTime
 
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var appointmentSeriesRepository: AppointmentSeriesRepository
+
+  @Autowired
+  private lateinit var prisonRegimeService: PrisonRegimeService
 
   // Note these time slots coincide with the Moorland prison regime SQL seed data.
   private val amRange = LocalTime.of(0, 0)..LocalTime.of(12, 59)
@@ -248,9 +252,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.AM }.isEqualTo(2)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.PM }.isEqualTo(3)
-    results.count { TimeSlot.slot(it.startTime) == TimeSlot.ED }.isEqualTo(1)
+    results.count { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = "MDI", day = it.startDate.dayOfWeek) == TimeSlot.AM }.isEqualTo(3)
+    results.count { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = "MDI", day = it.startDate.dayOfWeek) == TimeSlot.PM }.isEqualTo(2)
+    results.count { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = "MDI", day = it.startDate.dayOfWeek) == TimeSlot.ED }.isEqualTo(1)
   }
 
   @Sql(

@@ -106,7 +106,7 @@ data class ActivityScheduleSlot(
 
   fun toModel() = ModelActivityScheduleSlot(
     id = this.activityScheduleSlotId,
-    timeSlot = ModelTimeSlot.valueOf(this.timeSlot().toString()),
+    timeSlot = ModelTimeSlot.valueOf(this.timeSlot.name),
     weekNumber = this.weekNumber,
     startTime = this.startTime,
     endTime = this.endTime,
@@ -130,8 +130,6 @@ data class ActivityScheduleSlot(
     DayOfWeek.SATURDAY.takeIf { saturdayFlag },
     DayOfWeek.SUNDAY.takeIf { sundayFlag },
   )
-
-  fun timeSlot() = TimeSlot.slot(startTime)
 
   fun slotTimes(): SlotTimes = startTime to endTime
 

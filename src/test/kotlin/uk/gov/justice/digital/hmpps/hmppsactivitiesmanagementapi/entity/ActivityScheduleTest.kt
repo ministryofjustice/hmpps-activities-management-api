@@ -35,8 +35,8 @@ class ActivityScheduleTest {
   private val today = LocalDate.now()
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
-  private val midnightSlot = TimeSlot.slot(LocalTime.MIDNIGHT)
-  private val noonSlot = TimeSlot.slot(LocalTime.NOON)
+  private val midnightSlot = TimeSlot.AM
+  private val noonSlot = TimeSlot.PM
 
   @Test
   fun `converted to model lite`() {
@@ -755,7 +755,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
-        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
+        timeSlot = TimeSlot.AM,
       )
     }
 
@@ -805,7 +805,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
-        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
+        timeSlot = TimeSlot.AM,
       )
     }
 
@@ -835,7 +835,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
-        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
+        timeSlot = TimeSlot.AM,
       )
     }
 
@@ -866,7 +866,7 @@ class ActivityScheduleTest {
         weekNumber = 1,
         slotTimes = today.atStartOfDay().toLocalTime() to today.atStartOfDay().toLocalTime().plusHours(1),
         setOf(DayOfWeek.MONDAY),
-        timeSlot = TimeSlot.slot(today.atStartOfDay().toLocalTime()),
+        timeSlot = TimeSlot.AM,
       )
     }
 

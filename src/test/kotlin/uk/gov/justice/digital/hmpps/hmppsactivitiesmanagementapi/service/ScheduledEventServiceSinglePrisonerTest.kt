@@ -798,6 +798,9 @@ class ScheduledEventServiceSinglePrisonerTest {
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
 
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(prisonCode = prisonCode, time = appointmentEntity.startTime, day = appointmentEntity.appointmentDate.dayOfWeek))
+        .thenReturn(TimeSlot.AM)
+
       val result = service.getScheduledEventsForSinglePrisoner(
         prisonCode,
         prisonerNumber,
@@ -906,6 +909,9 @@ class ScheduledEventServiceSinglePrisonerTest {
       val appointmentEntity = appointmentFromDbInstance(prisonerNumber = prisonerNumber, bookingId = bookingId)
       whenever(appointmentInstanceRepository.findByBookingIdAndDateRange(any(), any(), any()))
         .thenReturn(listOf(appointmentEntity))
+
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(prisonCode = prisonCode, time = appointmentEntity.startTime, day = appointmentEntity.appointmentDate.dayOfWeek))
+        .thenReturn(TimeSlot.AM)
 
       val result = service.getScheduledEventsForSinglePrisoner(
         prisonCode,

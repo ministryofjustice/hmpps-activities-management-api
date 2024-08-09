@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Sche
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -47,6 +48,7 @@ class ScheduledInstanceServiceTest {
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
+  private val prisonRegimeService: PrisonRegimeService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val service = ScheduledInstanceService(
@@ -54,6 +56,7 @@ class ScheduledInstanceServiceTest {
     attendanceReasonRepository,
     attendanceSummaryRepository,
     prisonerScheduledActivityRepository,
+    prisonRegimeService,
     outboundEventsService,
     TransactionHandler(),
     telemetryClient,
@@ -102,8 +105,12 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `filtered by time slot`() {
+      val scheduledInstance = ScheduledInstanceFixture.instance(id = 1, locationId = 22)
       whenever(repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, startDate, endDate, null))
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+        .thenReturn(listOf(scheduledInstance))
+
+      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime(prisonCode = prisonCode, time = scheduledInstance.startTime, day = scheduledInstance.dayOfWeek()))
+        .thenReturn(TimeSlot.PM)
 
       var result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, TimeSlot.PM, null)
       assertThat(result).hasSize(1)
