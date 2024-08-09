@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -32,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -56,6 +56,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
@@ -134,6 +135,20 @@ class MigrateActivityServiceTest {
     maxDaysToExpiry = 21,
   )
 
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
+
   @Nested
   @DisplayName("Migrate activity")
   inner class MigrateActivity {
@@ -149,13 +164,11 @@ class MigrateActivityServiceTest {
       whenever(rolloutPrisonService.getByPrisonCode("RSI")).thenReturn(rolledOutRisley)
       whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(payBandsMoorland)
       whenever(prisonPayBandRepository.findByPrisonCode("RSI")).thenReturn(payBandsRisley)
-      whenever(
-        prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
-          any(),
-          any(),
-          any(),
+      whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+        mapOf(
+          DayOfWeek.entries.toSet() to prisonRegime,
         ),
-      ).thenReturn(TimeSlot.AM)
+      )
       whenever(incentivesApiClient.getIncentiveLevelsCached(any())).thenReturn(
         listOf(
           prisonIncentiveLevel(levelCode = "BAS", levelName = "Basic"),
@@ -1272,7 +1285,7 @@ class MigrateActivityServiceTest {
       }
     }
 
-    @Test @Disabled // FIXME last build broke this
+    @Test
     fun `Multiple exclusions for common timeSlot and weekNumber pairs will be applied to the correct slots`() {
       val request = buildAllocationMigrateRequest().copy(
         exclusions = listOf(

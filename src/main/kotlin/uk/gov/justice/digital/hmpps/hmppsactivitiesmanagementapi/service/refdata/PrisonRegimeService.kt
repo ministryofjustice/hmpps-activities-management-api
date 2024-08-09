@@ -115,18 +115,6 @@ class PrisonRegimeService(
     }
   }
 
-  fun getPrisonRegimeSlotForDayAndTime(
-    prisonCode: String,
-    day: DayOfWeek,
-    time: LocalTime,
-  ): TimeSlot =
-    getPrisonRegimeForDayOfWeek(
-      prisonCode = prisonCode,
-      dayOfWeek = day,
-    )!!.let {
-      return it.getTimeSlot(time = time)
-    }
-
   private fun getPrisonRegimeForDaysOfWeek(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,

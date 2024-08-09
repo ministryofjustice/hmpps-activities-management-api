@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -149,16 +150,13 @@ class MigrateActivityService(
   }
 
   fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
+    val prisonRegimes = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = request.prisonCode)
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     var usePrisonRegimeTimeForActivity = true
     val activity = buildActivityEntity(request)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
       val daysOfWeek = getRequestDaysOfWeek(scheduleRule)
-      val regimeTimeSlot = prisonRegimeService.getPrisonRegimeSlotForDayAndTime(
-        prisonCode = request.prisonCode,
-        day = daysOfWeek.first(),
-        time = scheduleRule.startTime,
-      )
+      val regimeTimeSlot = prisonRegimes.getSlotForDayAndTime(day = daysOfWeek.first(), time = scheduleRule.startTime)
 
       if (usePrisonRegimeTimeForActivity) {
         val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = regimeTimeSlot)

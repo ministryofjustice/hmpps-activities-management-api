@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
@@ -37,7 +36,6 @@ class ScheduledInstanceService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
   private val attendanceSummaryRepository: ScheduledInstanceAttendanceSummaryRepository,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
-  private val prisonRegimeService: PrisonRegimeService,
   private val outboundEventsService: OutboundEventsService,
   private val transactionHandler: TransactionHandler,
   private val telemetryClient: TelemetryClient,
@@ -60,20 +58,14 @@ class ScheduledInstanceService(
     dateRange: LocalDateRange,
     slot: TimeSlot?,
     cancelled: Boolean?,
-  ): List<ActivityScheduleInstance> {
-    val activities = repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
-      prisonCode,
-      dateRange.start,
-      dateRange.endInclusive,
-      cancelled,
+  ): List<ActivityScheduleInstance> =
+    repository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+      prisonCode = prisonCode,
+      startDate = dateRange.start,
+      endDate = dateRange.endInclusive,
+      cancelled = cancelled,
+      timeSlot = slot,
     ).toModel()
-
-    return if (slot != null) {
-      activities.filter { prisonRegimeService.getPrisonRegimeSlotForDayAndTime(time = it.startTime, prisonCode = prisonCode, day = it.date.dayOfWeek) == slot }
-    } else {
-      activities
-    }
-  }
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)

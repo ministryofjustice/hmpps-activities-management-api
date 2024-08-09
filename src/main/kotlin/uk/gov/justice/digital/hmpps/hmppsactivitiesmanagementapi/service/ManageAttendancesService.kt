@@ -59,7 +59,11 @@ class ManageAttendancesService(
     var counter = 0
 
     // Schedules instance for AM might be created if next session was PM. Need thinking
-    scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(prisonCode, date, date)
+    scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
+      prisonCode = prisonCode,
+      startDate = date,
+      endDate = date,
+    )
       .forEach { instance ->
         // Get the allocations which can be attended on the supplied date and time slot for the instance
         val allocations = instance.activitySchedule.allocations().filter { it.canAttendOn(date, instance.timeSlot) }

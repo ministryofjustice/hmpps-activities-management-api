@@ -20,6 +20,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
@@ -49,7 +50,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecuri
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @ExtendWith(FakeSecurityContext::class)
@@ -80,10 +83,30 @@ class AppointmentSearchServiceTest {
     telemetryClient,
   )
 
+  val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+
+  private val prisonRegime = PrisonRegime(
+    prisonCode = "",
+    amStart = now.toLocalTime(),
+    amFinish = now.toLocalTime(),
+    pmStart = now.plusHours(4).toLocalTime(),
+    pmFinish = now.toLocalTime().plusHours(5),
+    edStart = now.plusHours(8).toLocalTime(),
+    edFinish = now.plusHours(9).toLocalTime(),
+    prisonRegimeDaysOfWeek =
+    emptyList(),
+  )
+
   @BeforeEach
   fun setup() {
     MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
+
+    whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
+      mapOf(
+        DayOfWeek.entries.toSet() to prisonRegime,
+      ),
+    )
   }
 
   @AfterEach

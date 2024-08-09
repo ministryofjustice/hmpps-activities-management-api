@@ -10,10 +10,13 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -75,30 +78,32 @@ data class AppointmentSearch(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
+    prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ) = AppointmentSearchResult(
-    appointmentSeriesId,
-    appointmentId,
-    appointmentType,
-    prisonCode,
-    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentSeriesId = appointmentSeriesId,
+    appointmentId = appointmentId,
+    appointmentType = appointmentType,
+    prisonCode = prisonCode,
+    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
     attendees = attendees.toResult(),
-    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-    customName,
-    if (inCell) {
+    category = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    customName = customName,
+    internalLocation = if (inCell) {
       null
     } else {
       locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
     },
-    inCell,
-    startDate,
-    startTime,
-    endTime,
-    isRepeat,
-    sequenceNumber,
-    maxSequenceNumber,
-    isEdited,
-    isCancelled,
-    isExpired(),
+    inCell = inCell,
+    startDate = startDate,
+    startTime = startTime,
+    endTime = endTime,
+    isRepeat = isRepeat,
+    sequenceNumber = sequenceNumber,
+    maxSequenceNumber = maxSequenceNumber,
+    isEdited = isEdited,
+    isCancelled = isCancelled,
+    isExpired = isExpired(),
+    timeSlot = prisonRegime.getSlotForDayAndTime(day = startDate.dayOfWeek, time = startTime),
   )
 
   private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)
@@ -110,4 +115,12 @@ fun List<AppointmentSearch>.toResults(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
   locationMap: Map<Long, Location>,
-) = map { it.toResult(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
+  prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
+) = map {
+  it.toResult(
+    attendees = attendeeMap[it.appointmentId] ?: emptyList(),
+    referenceCodeMap = referenceCodeMap,
+    locationMap = locationMap,
+    prisonRegime = prisonRegime,
+  )
+}

@@ -48,6 +48,10 @@ class AppointmentSearchService(
   ): List<AppointmentSearchResult> {
     checkCaseloadAccess(prisonCode)
 
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(
+      agencyId = prisonCode,
+    )
+
     val startTime = System.currentTimeMillis()
     var spec = appointmentSearchSpecification.prisonCodeEquals(prisonCode)
 
@@ -109,7 +113,12 @@ class AppointmentSearchService(
 
     logAppointmentSearchMetric(principal, prisonCode, request, results.size, startTime)
 
-    return results.filter { it.appointmentType == AppointmentType.GROUP || attendeeMap.containsKey(it.appointmentId) }.toResults(attendeeMap, referenceCodeMap, locationMap)
+    return results.filter { it.appointmentType == AppointmentType.GROUP || attendeeMap.containsKey(it.appointmentId) }.toResults(
+      attendeeMap = attendeeMap,
+      referenceCodeMap = referenceCodeMap,
+      locationMap = locationMap,
+      prisonRegime = prisonRegime,
+    )
   }
 
   private fun logAppointmentSearchMetric(principal: Principal, prisonCode: String, request: AppointmentSearchRequest, results: Int, startTimeInMs: Long) {

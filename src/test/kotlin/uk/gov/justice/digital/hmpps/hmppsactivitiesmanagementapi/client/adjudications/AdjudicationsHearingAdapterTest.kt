@@ -144,12 +144,6 @@ class AdjudicationsHearingAdapterTest {
 
     @BeforeEach
     fun init() {
-      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.plusHours(10).toLocalTime())).thenReturn(
-        TimeSlot.PM,
-      )
-      whenever(prisonRegimeService.getPrisonRegimeSlotForDayAndTime("MDI", now.dayOfWeek, now.toLocalTime())).thenReturn(
-        TimeSlot.AM,
-      )
       runBlocking {
         whenever(manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(any(), any())).thenReturn(
           HearingSummaryResponse(

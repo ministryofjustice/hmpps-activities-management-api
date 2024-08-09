@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import java.time.DayOfWeek
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
@@ -407,12 +408,15 @@ class PrisonRegimeServiceTest {
   fun `get prison regime timeslot for a dateTime`(hour: Int, timeSlot: TimeSlot) {
     whenever(prisonRegimeRepository.findByPrisonCode(code = "IWI")).thenReturn(iwiRegime)
 
-    val regimeTimeSlot = service.getPrisonRegimeSlotForDayAndTime(
-      prisonCode = "IWI",
-      day = DayOfWeek.THURSDAY,
-      time = LocalTime.of(hour, 0, 0),
+    val regime = service.getPrisonRegimesByDaysOfWeek(
+      agencyId = "IWI",
     )
 
-    assertThat(timeSlot).isEqualTo(regimeTimeSlot)
+    assertThat(
+      regime.getSlotForDayAndTime(
+        day = DayOfWeek.THURSDAY,
+        time = LocalTime.of(hour, 0, 0),
+      ),
+    ).isEqualTo(timeSlot)
   }
 }
