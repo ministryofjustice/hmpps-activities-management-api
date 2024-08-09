@@ -7,8 +7,8 @@ update activity_schedule_slot set time_slot = 'PM' where start_time > '13:00' an
 alter table scheduled_instance add column time_slot char(2);
 
 update scheduled_instance set time_slot = 'AM' where start_time < '11:00';
-update scheduled_instance set time_slot = 'ED' where start_time > '17:00';
-update scheduled_instance set time_slot = 'PM' where start_time > '13:00' and start_time < '17:00';
+update scheduled_instance set time_slot = 'ED' where start_time >= '17:00';
+update scheduled_instance set time_slot = 'PM' where start_time >= '13:00' and start_time < '17:00';
 
 alter table exclusion add column time_slot char(2);
 
