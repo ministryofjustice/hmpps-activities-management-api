@@ -47,7 +47,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 class AllocationServiceTest {
   private val allocationRepository: AllocationRepository = mock()
@@ -492,7 +491,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = ModelTimeSlot.AM,
+          timeSlot = TimeSlot.AM,
           monday = true,
         ),
       ),
@@ -556,7 +555,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 2,
-          timeSlot = ModelTimeSlot.PM,
+          timeSlot = TimeSlot.PM,
           thursday = true,
         ),
       ),
@@ -584,7 +583,7 @@ class AllocationServiceTest {
       exclusions = listOf(
         Slot(
           weekNumber = 3,
-          timeSlot = ModelTimeSlot.AM,
+          timeSlot = TimeSlot.AM,
           monday = true,
         ),
       ),

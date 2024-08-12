@@ -4,7 +4,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
@@ -497,7 +496,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
       )
     },
     cancelled = this.cancelled,
-    timeSlot = TimeSlot.valueOf(this.timeSlot),
+    timeSlot = this.timeSlot,
     attendanceSummary = ModelScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
       allocations = this.allocations,
       attendees = this.attendees,

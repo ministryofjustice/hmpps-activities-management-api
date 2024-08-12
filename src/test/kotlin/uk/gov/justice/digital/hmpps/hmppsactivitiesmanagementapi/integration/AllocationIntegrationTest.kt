@@ -11,6 +11,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysFromNow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
@@ -29,7 +30,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testPentonvillePayBandTwo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.SuspendPrisonerRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UnsuspendPrisonerRequest

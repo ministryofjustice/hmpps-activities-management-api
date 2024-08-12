@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalTime
 
 @Schema(
@@ -55,20 +56,3 @@ data class ActivityScheduleSlot(
   @Schema(description = "Indicates whether the schedule slot takes place on a Sunday", example = "false")
   val sundayFlag: Boolean,
 )
-
-enum class TimeSlot {
-  @Schema(
-    description = "Morning",
-  )
-  AM,
-
-  @Schema(
-    description = "Afternoon",
-  )
-  PM,
-
-  @Schema(
-    description = "Evening",
-  )
-  ED,
-}
