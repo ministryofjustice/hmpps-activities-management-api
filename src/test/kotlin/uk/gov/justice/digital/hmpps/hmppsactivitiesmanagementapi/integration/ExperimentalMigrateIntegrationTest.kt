@@ -336,6 +336,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       prisonerNumber = prisonerNumber,
       startDate = nextMonday.toLocalDate(),
       endDate = nextMonday.toLocalDate(),
+      timeSlot = null,
     )
 
     assertThat(data.size).isEqualTo(1)
