@@ -38,6 +38,6 @@ data class PrisonRegime(
   @JsonFormat(pattern = "HH:mm")
   val edFinish: LocalTime,
 
-  @Schema(description = "days of week the regime is applicable to")
-  val daysOfWeek: List<DayOfWeek>,
+  @Schema(description = "day of week the regime is applicable to")
+  val dayOfWeek: DayOfWeek,
 )

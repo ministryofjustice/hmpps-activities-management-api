@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [PrisonController::class])
@@ -161,7 +162,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   @Test
   fun `200 response when get prison by code found`() {
-    val prisonRegime = transform(prisonRegime())
+    val prisonRegime = transform(prisonRegime(), DayOfWeek.MONDAY)
 
     whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(listOf(prisonRegime))
 

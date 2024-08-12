@@ -279,7 +279,7 @@ class PrisonRegimeServiceTest {
   fun `returns a prison regime for known prison code`() {
     whenever(prisonRegimeRepository.findByPrisonCode("PVI")).thenReturn(listOf(prisonRegime()))
 
-    assertThat(service.getPrisonRegimeByPrisonCode("PVI").size).isEqualTo(1)
+    assertThat(service.getPrisonRegimeByPrisonCode("PVI").size).isEqualTo(7)
   }
 
   @Test

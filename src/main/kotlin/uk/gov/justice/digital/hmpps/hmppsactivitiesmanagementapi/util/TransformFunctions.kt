@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
+import java.time.DayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic as EntityActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
@@ -431,7 +432,7 @@ fun EntityPrisonPayBand.toModelPrisonPayBand() =
     prisonCode = this.prisonCode,
   )
 
-fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
+fun transform(prisonRegime: EntityPrisonRegime, dayOfWeek: DayOfWeek) = ModelPrisonRegime(
   id = prisonRegime.prisonRegimeId,
   prisonCode = prisonRegime.prisonCode,
   amStart = prisonRegime.amStart,
@@ -440,7 +441,7 @@ fun transform(prisonRegime: EntityPrisonRegime) = ModelPrisonRegime(
   pmFinish = prisonRegime.pmFinish,
   edStart = prisonRegime.edStart,
   edFinish = prisonRegime.edFinish,
-  daysOfWeek = prisonRegime.prisonRegimeDaysOfWeek.map { it.dayOfWeek },
+  dayOfWeek = dayOfWeek,
 )
 
 fun transform(entityEventReview: EventReview) = ModelEventReview(

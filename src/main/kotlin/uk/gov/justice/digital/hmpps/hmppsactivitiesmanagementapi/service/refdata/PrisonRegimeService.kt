@@ -48,10 +48,19 @@ class PrisonRegimeService(
       .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
       .map { it.toModelPrisonPayBand() }
 
-  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> =
-    prisonRegimeRepository.findByPrisonCode(code = code).map {
-      transform(it)
+  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> {
+    val prisonRegimes = prisonRegimeRepository.findByPrisonCode(code = code)
+
+    return DayOfWeek.entries.map { dayOfWeek ->
+      val regime = prisonRegimes.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+      transform(
+        prisonRegime = regime,
+        dayOfWeek = dayOfWeek,
+      )
+    }.sortedBy {
+      it.dayOfWeek.value
     }
+  }
 
   fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> =
     getPrisonRegimeForDaysOfWeek(prisonCode = agencyId, daysOfWeek = DayOfWeek.entries.toSet(), acrossRegimes = true).associateBy { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() }
