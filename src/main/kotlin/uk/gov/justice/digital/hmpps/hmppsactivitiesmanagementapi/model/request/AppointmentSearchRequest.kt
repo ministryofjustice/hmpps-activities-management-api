@@ -37,9 +37,6 @@ data class AppointmentSearchRequest(
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,
 
-  @Deprecated("this is not supported - do not supply")
-  val endDate: LocalDate? = null,
-
   @Schema(
     description =
     """
