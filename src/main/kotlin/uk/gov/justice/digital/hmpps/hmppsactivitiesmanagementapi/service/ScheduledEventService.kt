@@ -232,17 +232,14 @@ class ScheduledEventService(
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot?,
-  ): List<PrisonerScheduledActivity> {
-    val activities = prisonerScheduledActivityRepository
-      .getScheduledActivitiesForPrisonerAndDateRange(
-        prisonCode,
-        prisonerNumber,
-        dateRange.start,
-        dateRange.endInclusive,
-      )
-
-    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
-  }
+  ): List<PrisonerScheduledActivity> = prisonerScheduledActivityRepository
+    .getScheduledActivitiesForPrisonerAndDateRange(
+      prisonCode = prisonCode,
+      prisonerNumber = prisonerNumber,
+      startDate = dateRange.start,
+      endDate = dateRange.endInclusive,
+      timeSlot = slot,
+    )
 
   private fun getSinglePrisonerAppointments(
     bookingId: Long,
@@ -461,14 +458,13 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     slot: TimeSlot?,
-  ): List<PrisonerScheduledActivity> {
-    val activities = prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
-      prisonCode,
-      prisonerNumbers,
-      date,
+  ): List<PrisonerScheduledActivity> =
+    prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+      prisonCode = prisonCode,
+      prisonerNumbers = prisonerNumbers,
+      date = date,
+      timeSlot = slot,
     )
-    return if (slot != null) activities.filter { it.timeSlot == slot } else activities
-  }
 
   private fun getMultiplePrisonersAppointments(
     prisonCode: String,

@@ -349,6 +349,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonCode,
           prisonerNumbers,
           today,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityEntity))
@@ -502,6 +503,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonCode,
           prisonerNumbers,
           tomorrow,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityEntity))
@@ -622,6 +624,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonCode,
           prisonerNumbers,
           today,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityEntity))
@@ -752,6 +755,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonCode,
           prisonerNumbers,
           tomorrow,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityEntity))

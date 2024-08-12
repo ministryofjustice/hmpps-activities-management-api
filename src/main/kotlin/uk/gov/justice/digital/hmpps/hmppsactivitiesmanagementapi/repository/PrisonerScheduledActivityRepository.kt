@@ -23,6 +23,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate >= :startDate
     AND sa.sessionDate <= :endDate
     AND sa.prisonerNumber = :prisonerNumber
+    AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
   fun getScheduledActivitiesForPrisonerAndDateRange(
@@ -30,6 +31,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
+    timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 
   @Query(
@@ -38,12 +40,14 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     WHERE sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
     AND sa.prisonerNumber in :prisonerNumbers
+    AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,
   )
   fun getScheduledActivitiesForPrisonerListAndDate(
     prisonCode: String,
     prisonerNumbers: Set<String>,
     date: LocalDate,
+    timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 
   @Query(

@@ -361,6 +361,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityFromDbInstance()))
@@ -540,6 +541,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityFromDbInstance()))
@@ -600,6 +602,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityFromDbInstance()))
@@ -670,6 +673,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityFromDbInstance()))
@@ -761,6 +765,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityFromDbInstance(activityCategory = "NOT_IN_WORK")))
@@ -844,7 +849,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       verify(prisonerScheduledActivityRepository, never())
-        .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
+        .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate, timeSlot)
 
       verify(appointmentInstanceRepository)
         .findByBookingIdAndDateRange(bookingId, startDate, endDate)
@@ -946,6 +951,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       )
         .thenReturn(listOf(activityEntity))
@@ -1092,7 +1098,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       verify(prisonerScheduledActivityRepository, never())
-        .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate)
+        .getScheduledActivitiesForPrisonerAndDateRange(prisonCode, prisonerNumber, startDate, endDate, timeSlot)
 
       verifyBlocking(prisonApiClient) { getScheduledActivitiesAsync(any(), any()) }
       verifyBlocking(prisonApiClient) { getScheduledAppointmentsAsync(any(), any()) }
@@ -1349,6 +1355,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           prisonerNumber,
           startDate,
           endDate,
+          timeSlot,
         ),
       ).thenReturn(listOf(activityFromDbInstance()))
     }
