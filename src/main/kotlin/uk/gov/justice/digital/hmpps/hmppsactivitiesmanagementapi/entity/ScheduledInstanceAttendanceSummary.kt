@@ -1,9 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -30,7 +33,8 @@ data class ScheduledInstanceAttendanceSummary(
 
   val endTime: LocalTime,
 
-  val timeSlot: String,
+  @Enumerated(EnumType.STRING)
+  val timeSlot: TimeSlot,
 
   val inCell: Boolean,
 

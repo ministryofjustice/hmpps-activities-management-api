@@ -89,7 +89,6 @@ import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule as EligibilityRuleEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 class ActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
@@ -1630,7 +1629,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
             wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1690,7 +1689,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
             wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1751,7 +1750,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.ED,
+            timeSlot = TimeSlot.ED,
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
             wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1762,7 +1761,7 @@ class ActivityServiceTest {
           ),
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.PM,
+            timeSlot = TimeSlot.PM,
             monday = tomorrow.plusDays(1).dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.plusDays(1).dayOfWeek == DayOfWeek.TUESDAY,
             wednesday = tomorrow.plusDays(1).dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1975,7 +1974,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
             wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
@@ -1986,7 +1985,7 @@ class ActivityServiceTest {
           ),
           Slot(
             weekNumber = 2,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = week2SlotDay == DayOfWeek.MONDAY,
             tuesday = week2SlotDay == DayOfWeek.TUESDAY,
             wednesday = week2SlotDay == DayOfWeek.WEDNESDAY,
@@ -2063,7 +2062,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = tomorrow.dayOfWeek != DayOfWeek.MONDAY,
             tuesday = tomorrow.dayOfWeek != DayOfWeek.TUESDAY,
             wednesday = tomorrow.dayOfWeek != DayOfWeek.WEDNESDAY,
@@ -2130,7 +2129,7 @@ class ActivityServiceTest {
         slots = listOf(
           Slot(
             weekNumber = 1,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = true,
             tuesday = true,
             wednesday = true,

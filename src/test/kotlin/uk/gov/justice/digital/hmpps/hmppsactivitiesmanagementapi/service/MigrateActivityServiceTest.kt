@@ -58,7 +58,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 class MigrateActivityServiceTest {
   private val rolloutPrisonService: RolloutPrisonService = mock()
@@ -1249,7 +1248,7 @@ class MigrateActivityServiceTest {
     @Test
     fun `A valid exclusion provided will be applied to the prisoner as part of the allocation`() {
       val request = buildAllocationMigrateRequest().copy(
-        exclusions = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true)),
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true)),
       )
 
       val activity = activityEntity(noSchedules = true).apply {
@@ -1289,10 +1288,10 @@ class MigrateActivityServiceTest {
     fun `Multiple exclusions for common timeSlot and weekNumber pairs will be applied to the correct slots`() {
       val request = buildAllocationMigrateRequest().copy(
         exclusions = listOf(
-          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, monday = true),
-          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.AM, tuesday = true),
-          Slot(weekNumber = 1, timeSlot = ModelTimeSlot.PM, wednesday = true),
-          Slot(weekNumber = 2, timeSlot = ModelTimeSlot.PM, thursday = true),
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
+          Slot(weekNumber = 1, timeSlot = TimeSlot.AM, tuesday = true),
+          Slot(weekNumber = 1, timeSlot = TimeSlot.PM, wednesday = true),
+          Slot(weekNumber = 2, timeSlot = TimeSlot.PM, thursday = true),
         ),
       )
 
@@ -1353,7 +1352,7 @@ class MigrateActivityServiceTest {
     @Test
     fun `Exclusions which do not match slots in the schedule will fail`() {
       val request = buildAllocationMigrateRequest().copy(
-        exclusions = listOf(Slot(weekNumber = 1, timeSlot = ModelTimeSlot.PM, friday = true)),
+        exclusions = listOf(Slot(weekNumber = 1, timeSlot = TimeSlot.PM, friday = true)),
       )
 
       val activity = activityEntity(noSchedules = true).apply {

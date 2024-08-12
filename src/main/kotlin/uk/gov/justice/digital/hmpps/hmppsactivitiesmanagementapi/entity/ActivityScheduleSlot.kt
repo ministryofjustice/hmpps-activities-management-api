@@ -15,7 +15,6 @@ import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot as ModelActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 typealias SlotTimes = Pair<LocalTime, LocalTime>
 
@@ -106,7 +105,7 @@ data class ActivityScheduleSlot(
 
   fun toModel() = ModelActivityScheduleSlot(
     id = this.activityScheduleSlotId,
-    timeSlot = ModelTimeSlot.valueOf(this.timeSlot.name),
+    timeSlot = this.timeSlot,
     weekNumber = this.weekNumber,
     startTime = this.startTime,
     endTime = this.endTime,

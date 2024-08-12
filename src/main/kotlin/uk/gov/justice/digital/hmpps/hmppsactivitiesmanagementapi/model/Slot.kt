@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Positive
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 
 @Schema(
   description = """
@@ -22,10 +21,9 @@ data class Slot(
 
   @field:NotEmpty(message = "The time slot must supplied")
   @Schema(
-    description = "The time slot of the activity schedule, morning afternoon or evening e.g. AM, PM or ED",
-    example = "AM",
+    description = "The time slot of the activity schedule",
   )
-  val timeSlot: ModelTimeSlot,
+  val timeSlot: TimeSlot,
 
   val monday: Boolean = false,
 
@@ -54,10 +52,7 @@ data class Slot(
     DayOfWeek.SATURDAY.takeIf { saturday },
     DayOfWeek.SUNDAY.takeIf { sunday },
   ),
-) {
-
-  fun timeSlot() = TimeSlot.valueOf(timeSlot.name)
-}
+)
 
 fun List<Slot>.consolidateMatchingSlots() =
   groupBy { it.weekNumber to it.timeSlot }

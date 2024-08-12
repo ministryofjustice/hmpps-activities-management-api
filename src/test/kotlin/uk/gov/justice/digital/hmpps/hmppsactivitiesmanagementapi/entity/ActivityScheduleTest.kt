@@ -27,7 +27,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.TimeSlot as ModelTimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class ActivityScheduleTest {
@@ -83,7 +82,7 @@ class ActivityScheduleTest {
       slots = listOf(
         ActivityScheduleSlot(
           id = 0,
-          timeSlot = ModelTimeSlot.AM,
+          timeSlot = TimeSlot.AM,
           weekNumber = 1,
           startTime = LocalTime.of(10, 20),
           endTime = LocalTime.of(11, 20),
@@ -155,7 +154,7 @@ class ActivityScheduleTest {
         slots = listOf(
           ActivityScheduleSlot(
             id = 0,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             weekNumber = 1,
             startTime = LocalTime.of(10, 20),
             endTime = LocalTime.of(11, 20),
@@ -253,7 +252,7 @@ class ActivityScheduleTest {
       exclusions = listOf(
         Slot(
           weekNumber = 1,
-          timeSlot = ModelTimeSlot.AM,
+          timeSlot = TimeSlot.AM,
           monday = true,
         ),
       ),
@@ -282,7 +281,7 @@ class ActivityScheduleTest {
         exclusions = listOf(
           Slot(
             weekNumber = 3,
-            timeSlot = ModelTimeSlot.AM,
+            timeSlot = TimeSlot.AM,
             monday = true,
           ),
         ),
