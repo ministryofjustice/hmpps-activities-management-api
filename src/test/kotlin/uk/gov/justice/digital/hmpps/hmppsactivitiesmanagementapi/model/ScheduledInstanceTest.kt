@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -25,6 +26,7 @@ class ScheduledInstanceTest : ModelTest() {
       date = originalDate,
       startTime = originalStartTime,
       endTime = originalEndTime,
+      timeSlot = TimeSlot.AM,
       cancelled = true,
       cancelledTime = originalCancelledTime,
       attendances = emptyList(),

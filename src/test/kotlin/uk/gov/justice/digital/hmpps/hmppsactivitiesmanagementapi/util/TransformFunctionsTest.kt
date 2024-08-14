@@ -4,8 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -65,10 +63,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 
 class TransformFunctionsTest {
 
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
   @Test
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)).truncatedTo(ChronoUnit.MINUTES)
@@ -116,6 +110,7 @@ class TransformFunctionsTest {
               date = timestamp.toLocalDate(),
               startTime = timestamp.toLocalTime(),
               endTime = timestamp.toLocalTime().plusHours(1),
+              timeSlot = timeSlot,
               cancelled = false,
               attendances = listOf(
                 ModelAttendance(
