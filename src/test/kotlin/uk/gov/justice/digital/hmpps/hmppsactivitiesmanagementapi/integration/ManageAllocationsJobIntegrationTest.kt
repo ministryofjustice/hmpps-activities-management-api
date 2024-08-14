@@ -1,14 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -18,7 +15,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.SystemTimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
@@ -59,9 +55,6 @@ import java.time.LocalDateTime
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @MockBean
-  private lateinit var systemTimeSource: SystemTimeSource
-
-  @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
@@ -72,16 +65,9 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
-  @BeforeEach
-  fun beforeEach() {
-    whenever(systemTimeSource.now()) doReturn LocalDateTime.now()
-  }
-
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
   fun `deallocate offenders for activity ending yesterday`() {
-    whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
-
     val activeAllocations = with(allocationRepository.findAll().filterNot(Allocation::isEnded)) {
       size isEqualTo 3
       onEach { it isStatus ACTIVE }
@@ -113,8 +99,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-12.sql")
   @Test
   fun `deallocate offenders for activity with no end date`() {
-    whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
-
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       onEach { it isStatus ACTIVE }
@@ -136,9 +120,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-28.sql")
   @Test
   fun `do not deallocate offenders for activity if allocated end date is before job window`() {
-    // FIORST
-    whenever(systemTimeSource.now()) doReturn LocalDate.now().atTime(22, 0)
-
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       onEach { it isStatus ACTIVE }
