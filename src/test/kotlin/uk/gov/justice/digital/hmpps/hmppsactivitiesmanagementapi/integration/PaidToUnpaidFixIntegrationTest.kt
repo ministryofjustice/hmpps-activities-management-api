@@ -41,11 +41,13 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
     assertThat(allocations).hasSize(22)
 
-    with(allocations.first()) {
-      assertThat(prisonerNumber).isEqualTo("A8862DW")
-      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
-      assertThat(plannedDeallocation?.plannedReason).isEqualTo(DeallocationReason.OTHER)
-      assertThat(plannedDeallocation?.plannedDate).isEqualTo(LocalDate.now())
+    with(allocations) {
+      this.single {
+        it.prisonerNumber == "A8862DW" &&
+          it.prisonerStatus == PrisonerStatus.ACTIVE &&
+          it.plannedDeallocation?.plannedReason == DeallocationReason.OTHER &&
+          it.plannedDeallocation?.plannedDate == LocalDate.now()
+      }
     }
   }
 
