@@ -148,5 +148,12 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
 
+aws:
+  s3:
+    ap:
+      region: eu-west-2
+      bucket: ${AWS_S3_AP_BUCKET:moj-reg-dev}
+      project: ${AWS_S3_AP_PROJECT:hmpps-activities-management-dev}
+
 migrate:
   experimental-mode: ${MIGRATE_EXPERIMENTAL_MODE:false}

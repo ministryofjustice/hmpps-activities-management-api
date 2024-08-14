@@ -17,6 +17,9 @@ parameters:
   postgres-version:
     type: string
     default: "14"
+  localstack-version:
+    type: string
+    default: "3.0"
 
 jobs:
   validate:
@@ -48,10 +51,11 @@ jobs:
 
   integration-test:
     executor:
-      name: hmpps/java_postgres
+      name: hmpps/java_localstack_postgres
       jdk_tag: << pipeline.parameters.java-version >>
+      localstack_tag: << pipeline.parameters.localstack-version >>
+      services: "sns,sqs,s3"
       postgres_tag: << pipeline.parameters.postgres-version >>
-      postgres_db: "activities"
       postgres_username: "activities"
       postgres_password: "activities"
     resource_class: medium+
@@ -64,6 +68,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - hmpps/wait_till_ready_postgres
+      - hmpps/wait_till_ready
       - run:
           command: ./gradlew integrationTest
       - save_cache:
