@@ -37,5 +37,5 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service-dev
 
 cron:
-  fixZeroPayDeallocate: "0 22 5 8 *"
-  fixZeroPayReallocate: "0 15 6 8 *"
+  fixZeroPayDeallocate: "0 22 14 8 *"
+  fixZeroPayReallocate: "0 5 15 8 *"
