@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
@@ -42,8 +44,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @TestPropertySource(
   properties = [
@@ -55,6 +60,9 @@ import java.time.LocalDateTime
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   @MockBean
+  private lateinit var clock: Clock
+
+  @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
@@ -64,6 +72,12 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   private lateinit var waitingListRepository: WaitingListRepository
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
+
+  @BeforeEach
+  fun beforeEach() {
+    whenever(clock.instant()).thenReturn(LocalDateTime.now().toInstant(ZoneOffset.UTC))
+    whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+  }
 
   @Sql("classpath:test_data/seed-activity-id-11.sql")
   @Test
@@ -99,6 +113,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-12.sql")
   @Test
   fun `deallocate offenders for activity with no end date`() {
+    whenever(clock.instant()).thenReturn(LocalDate.now().atTime(22, 0).toInstant(ZoneOffset.UTC))
+
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       onEach { it isStatus ACTIVE }
@@ -120,6 +136,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-28.sql")
   @Test
   fun `do not deallocate offenders for activity if allocated end date is before job window`() {
+    whenever(clock.instant()).thenReturn(LocalDate.now().atTime(22, 0).toInstant(ZoneOffset.UTC))
     with(allocationRepository.findAll()) {
       size isEqualTo 3
       onEach { it isStatus ACTIVE }
