@@ -37,15 +37,17 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(3000)
 
-    val allocations = repository.findById(151).orElseThrow().allocations()
+    val allocations = repository.findById(129).orElseThrow().allocations()
 
-    assertThat(allocations).hasSize(6)
+    assertThat(allocations).hasSize(22)
 
-    with(allocations.first()) {
-      assertThat(prisonerNumber).isEqualTo("A7175CH")
-      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
-      assertThat(plannedDeallocation?.plannedReason).isEqualTo(DeallocationReason.OTHER)
-      assertThat(plannedDeallocation?.plannedDate).isEqualTo(LocalDate.now())
+    with(allocations) {
+      this.single {
+        it.prisonerNumber == "A8862DW" &&
+          it.prisonerStatus == PrisonerStatus.ACTIVE &&
+          it.plannedDeallocation?.plannedReason == DeallocationReason.OTHER &&
+          it.plannedDeallocation?.plannedDate == LocalDate.now()
+      }
     }
   }
 
@@ -54,14 +56,30 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `after running reset to paid and reallocate activity should be unpaid and the prisoners reallocated`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A7175CH"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A3903DM"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A2539EW"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A3084EX"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A4778DA"))
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A5617CQ"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A8862DW"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A0334EZ"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A1611AF"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A6015FC"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A7345CR"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A4425FC"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A1590FA"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A5091ER"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A5022DQ"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A4812DT"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A1798EF"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A2221CW"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A8764EV"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A2902EY"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A3840EA"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A6655AQ"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A3316CV"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A0593FD"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A4249DC"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A7188AE"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A3161FD"))
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A4774FD"))
 
-    val activitySchedule = repository.findById(151).orElseThrow()
+    val activitySchedule = repository.findById(129).orElseThrow()
 
     assertThat(activitySchedule.activity.paid).isTrue()
     assertThat(activitySchedule.activity.activityPay()).hasSize(30)
@@ -74,16 +92,16 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
     Thread.sleep(3000)
 
-    val activityScheduleUpdated = repository.findById(151).orElseThrow()
+    val activityScheduleUpdated = repository.findById(129).orElseThrow()
 
     assertThat(activityScheduleUpdated.activity.paid).isFalse()
     assertThat(activityScheduleUpdated.activity.activityPay()).hasSize(0)
 
-    assertThat(activityScheduleUpdated.allocations()).hasSize(12)
+    assertThat(activityScheduleUpdated.allocations()).hasSize(44)
 
     with(activityScheduleUpdated.allocations()) {
-      this.single { it.prisonerNumber == "A7175CH" && it.prisonerStatus == PrisonerStatus.ENDED }
-      this.single { it.prisonerNumber == "A7175CH" && it.prisonerStatus == PrisonerStatus.PENDING && it.startDate == LocalDate.now().plusDays(1) }
+      this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.ENDED }
+      this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.PENDING && it.startDate == LocalDate.now().plusDays(1) }
     }
   }
 }

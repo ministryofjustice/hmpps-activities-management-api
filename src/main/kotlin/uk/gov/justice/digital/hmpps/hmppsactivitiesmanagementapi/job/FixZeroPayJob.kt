@@ -17,42 +17,58 @@ class FixZeroPayJob(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  val longTermSickActivityIdScheduleId = Pair(135L, 151L)
-  val longTermSickPrisoners = listOf(
-    Pair("A7175CH", LocalDate.now().plusDays(1)),
-    Pair("A3903DM", LocalDate.now().plusDays(1)),
-    Pair("A2539EW", LocalDate.now().plusDays(1)),
-    Pair("A3084EX", LocalDate.now().plusDays(1)),
-    Pair("A4778DA", LocalDate.now().plusDays(1)),
-    Pair("A5617CQ", LocalDate.now().plusDays(1)),
-  )
-  val longTermSickPrisonerIdList = longTermSickPrisoners.map { it.first }
-
   @Async("asyncExecutor")
   fun execute(deallocate: Boolean = false, makeUnpaid: Boolean = false, allocate: Boolean = false) {
     log.info("Running fix paid to unpaid job with deallocate: $deallocate makeUnpaid: $makeUnpaid allocate: $allocate")
 
+    val retiredActivityIdScheduleId = Pair(119L, 129L)
+    val retiredPrisoners = listOf(
+      Pair("A8862DW", LocalDate.now().plusDays(1)),
+      Pair("A0334EZ", LocalDate.now().plusDays(1)),
+      Pair("A1611AF", LocalDate.now().plusDays(1)),
+      Pair("A6015FC", LocalDate.now().plusDays(1)),
+      Pair("A7345CR", LocalDate.now().plusDays(1)),
+      Pair("A4425FC", LocalDate.now().plusDays(1)),
+      Pair("A1590FA", LocalDate.now().plusDays(1)),
+      Pair("A5091ER", LocalDate.now().plusDays(1)),
+      Pair("A5022DQ", LocalDate.now().plusDays(1)),
+      Pair("A4812DT", LocalDate.now().plusDays(1)),
+      Pair("A1798EF", LocalDate.now().plusDays(1)),
+      Pair("A2221CW", LocalDate.now().plusDays(1)),
+      Pair("A8764EV", LocalDate.now().plusDays(1)),
+      Pair("A2902EY", LocalDate.now().plusDays(1)),
+      Pair("A3840EA", LocalDate.now().plusDays(1)),
+      Pair("A6655AQ", LocalDate.now().plusDays(1)),
+      Pair("A3316CV", LocalDate.now().plusDays(1)),
+      Pair("A0593FD", LocalDate.now().plusDays(1)),
+      Pair("A4249DC", LocalDate.now().plusDays(1)),
+      Pair("A7188AE", LocalDate.now().plusDays(1)),
+      Pair("A3161FD", LocalDate.now().plusDays(1)),
+      Pair("A4774FD", LocalDate.now().plusDays(1)),
+    )
+    val retiredPrisonerIdList = retiredPrisoners.map { it.first }
+
     if (deallocate) {
       jobRunner.runJob(
         JobDefinition(
-          JobType.FIX_ZERO_PAY,
-        ) { dataFixService.deallocate(longTermSickActivityIdScheduleId.second, longTermSickPrisonerIdList, LocalDate.now()) },
+          JobType.FIX_ZERO_PAY_DEALLOCATE,
+        ) { dataFixService.deallocate(retiredActivityIdScheduleId.second, retiredPrisonerIdList, LocalDate.now()) },
       )
     }
 
     if (makeUnpaid) {
       jobRunner.runJob(
         JobDefinition(
-          JobType.FIX_ZERO_PAY,
-        ) { dataFixService.makeUnpaid("RSI", longTermSickActivityIdScheduleId.first) },
+          JobType.FIX_ZERO_PAY_MAKE_UNPAID,
+        ) { dataFixService.makeUnpaid("RSI", retiredActivityIdScheduleId.first) },
       )
     }
 
     if (allocate) {
       jobRunner.runJob(
         JobDefinition(
-          JobType.FIX_ZERO_PAY,
-        ) { dataFixService.allocate(longTermSickActivityIdScheduleId.second, longTermSickPrisoners) },
+          JobType.FIX_ZERO_PAY_REALLOCATE,
+        ) { dataFixService.allocate(retiredActivityIdScheduleId.second, retiredPrisoners) },
       )
     }
 
