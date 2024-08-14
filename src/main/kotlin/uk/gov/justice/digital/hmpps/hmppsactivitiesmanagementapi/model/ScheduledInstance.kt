@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -23,6 +24,9 @@ data class ScheduledInstance(
   @Schema(description = "The end time for this scheduled instance", example = "10:00")
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
+
+  @Schema(description = "The timeslot")
+  val timeSlot: TimeSlot,
 
   @Schema(description = "Flag to indicate if this scheduled instance has been cancelled since being scheduled", example = "false")
   val cancelled: Boolean,
