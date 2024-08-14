@@ -31,7 +31,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search appointments authorisation required`() {
     webTestClient.post()
       .uri("/appointments/MDI/search")
-      .bodyValue(AppointmentSearchRequest())
+      .bodyValue(AppointmentSearchRequest(startDate = LocalDate.now()))
       .exchange()
       .expectStatus().isUnauthorized
   }
@@ -43,7 +43,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments in other prison`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
     )
 
     webTestClient.post()
@@ -63,7 +62,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val request = AppointmentSearchRequest(
       appointmentType = AppointmentType.GROUP,
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
@@ -107,39 +105,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointments starting within a week`() {
-    val request = AppointmentSearchRequest(
-      startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusWeeks(1),
-    )
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "MDI",
-      listOf(
-        appointmentLocation(123, "MDI", userDescription = "Location 123"),
-        appointmentLocation(456, "MDI", userDescription = "Location 456"),
-      ),
-    )
-
-    val results = webTestClient.searchAppointments("MDI", request)!!
-
-    results.map { it.startDate }.forEach {
-      assertThat(it).isBetween(request.startDate, request.endDate)
-    }
-
-    assertThat(results.filter { it.startDate == request.startDate }).isNotEmpty
-    assertThat(results.filter { it.startDate == request.endDate }).isNotEmpty
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-search.sql",
-  )
-  @Test
   fun `search for appointments starting in the AM timeslot`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       timeSlots = listOf(TimeSlot.AM),
     )
 
@@ -158,7 +126,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
 
-    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in amRange }.isEqualTo(4)
     results.count { it.startTime in pmRange }.isEqualTo(0)
     results.count { it.startTime in edRange }.isEqualTo(0)
   }
@@ -170,7 +138,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments starting in AM and PM timeslots`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       timeSlots = listOf(TimeSlot.AM, TimeSlot.PM),
     )
 
@@ -189,7 +156,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
     }
 
-    results.count { it.startTime in amRange }.isEqualTo(3)
+    results.count { it.startTime in amRange }.isEqualTo(4)
     results.count { it.startTime in pmRange }.isEqualTo(2)
     results.count { it.startTime in edRange }.isEqualTo(0)
   }
@@ -201,7 +168,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments in AM, PM, and ED timeslots`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       timeSlots = listOf(TimeSlot.AM, TimeSlot.PM, TimeSlot.ED),
     )
 
@@ -220,7 +186,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(3)
+    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(4)
     results.count { it.timeSlot == TimeSlot.PM }.isEqualTo(2)
     results.count { it.timeSlot == TimeSlot.ED }.isEqualTo(1)
   }
@@ -232,7 +198,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments that are part of an appointment with category AC1`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       categoryCode = "AC1",
     )
 
@@ -257,7 +222,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments with internal location id 123`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       internalLocationId = 123,
     )
 
@@ -282,7 +246,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for in cell appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       inCell = true,
     )
 
@@ -307,7 +270,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments created by DIFFERENT USER`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       createdBy = "DIFFERENT.USER",
     )
 
@@ -334,7 +296,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search for appointments for prisoner number B2345CD`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
       prisonerNumbers = listOf("B2345CD"),
     )
 
@@ -361,7 +322,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search returns edited appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
@@ -385,7 +345,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   fun `search returns cancelled appointments`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      endDate = LocalDate.now().plusMonths(1),
     )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()

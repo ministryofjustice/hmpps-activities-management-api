@@ -344,27 +344,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
-  fun `400 bad request response when search appointments with invalid json`() {
-    val request = AppointmentSearchRequest()
-    val mockPrincipal: Principal = mock()
-
-    mockMvc.searchAppointments("TPR", request, mockPrincipal)
-      .andDo { print() }
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect {
-        status { isBadRequest() }
-        content {
-          contentType(MediaType.APPLICATION_JSON)
-          jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Start date must be supplied"))
-          }
-        }
-      }
-
-    verifyNoInteractions(appointmentService)
-  }
-
-  @Test
   fun `202 accepted response when search appointments with valid json`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.now())
     val expectedResponse = listOf(appointmentSearchResultModel())

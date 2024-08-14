@@ -17,9 +17,9 @@ VALUES (301, 201, 'B2345CD', 457);
 
 --Prisoner A1234BC, Category AC3, In cell, One week from now 12:30-14:00, Created by TEST.USER
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (102, 'INDIVIDUAL', 'MDI', 'AC3', 1, null, true, now()::date + 7, '12:30', '14:00', now()::timestamp, 'TEST.USER');
+VALUES (102, 'INDIVIDUAL', 'MDI', 'AC3', 1, null, true, now()::date, '12:30', '14:00', now()::timestamp, 'TEST.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (202, 102, 1, 'MDI', 'AC3', 1, null, true, now()::date + 7, '12:30', '14:00', now()::timestamp, 'TEST.USER');
+VALUES (202, 102, 1, 'MDI', 'AC3', 1, null, true, now()::date, '12:30', '14:00', now()::timestamp, 'TEST.USER');
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (302, 202, 'A1234BC', 456);
 
@@ -45,15 +45,15 @@ VALUES (304, 204, 'A1234BC', 456);
 INSERT INTO appointment_series_schedule (appointment_series_schedule_id, frequency, number_of_appointments)
 VALUES (10, 'WEEKLY', 4);
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (110, 'GROUP', 'MDI', 'AC1', 1, 123, false, now()::date - 7, '09:00', '10:30', 10, now()::timestamp, 'TEST.USER');
+VALUES (110, 'GROUP', 'MDI', 'AC1', 1, 123, false, now()::date, '09:00', '10:30', 10, now()::timestamp, 'TEST.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (210, 110, 1, 'MDI', 'AC1', 1, 123, false, now()::date - 7, '09:00', '10:30', now()::timestamp, 'TEST.USER');
+VALUES (210, 110, 1, 'MDI', 'AC1', 1, 123, false, now()::date , '09:00', '10:30', now()::timestamp, 'TEST.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, updated_time, updated_by)
 VALUES (211, 110, 2, 'MDI', 'AC1', 1, 456, false, now()::date, '13:30', '15:00', now()::timestamp, 'TEST.USER', now()::timestamp, 'DIFFERENT.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by)
-VALUES (212, 110, 3, 'MDI', 'AC1', 1, 123, false, now()::date + 7, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'DIFFERENT.USER');
+VALUES (212, 110, 3, 'MDI', 'AC1', 1, 123, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 2, 'DIFFERENT.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted)
-VALUES (213, 110, 4, 'MDI', 'AC1', 1, 123, false, now()::date + 14, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DIFFERENT.USER', true);
+VALUES (213, 110, 4, 'MDI', 'AC1', 1, 123, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER', now()::timestamp, 1, 'DIFFERENT.USER', true);
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (320, 210, 'A1234BC', 456);
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)

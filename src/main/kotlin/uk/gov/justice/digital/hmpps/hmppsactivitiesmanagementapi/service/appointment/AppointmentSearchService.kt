@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
@@ -29,7 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
-import java.time.LocalDate
 
 @Service
 @Transactional(readOnly = true)
@@ -64,17 +62,11 @@ class AppointmentSearchService(
         spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), appointmentType) }
       }
 
-      spec = if (endDate != null) {
-        spec.and(appointmentSearchSpecification.startDateBetween(startDate!!, endDate))
-      } else {
-        spec.and(appointmentSearchSpecification.startDateEquals(startDate!!))
-      }
+      spec = spec.and(appointmentSearchSpecification.startDateEquals(startDate))
 
       val timeSlotSpecs = timeSlots?.map { slot ->
         val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
-          // TODO just use any day for now, given all live prisons have a single regime, will not work with multi regimes.
-          // resolution is to use the time_slot in db, not the flawed logic in regimeService
-          prisonCode = prisonCode, timeSlot = slot, dayOfWeek = LocalDate.now().dayOfWeek,
+          prisonCode = prisonCode, timeSlot = slot, dayOfWeek = startDate.dayOfWeek,
         )
 
         appointmentSearchSpecification.startTimeBetween(
@@ -129,8 +121,7 @@ class AppointmentSearchService(
     val propertiesMap = mapOf(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to prisonCode,
-      START_DATE_PROPERTY_KEY to (request.startDate?.toString() ?: ""),
-      END_DATE_PROPERTY_KEY to (request.endDate?.toString() ?: ""),
+      START_DATE_PROPERTY_KEY to (request.startDate.toString() ?: ""),
       TIME_SLOT_PROPERTY_KEY to (request.timeSlots?.toString() ?: ""),
       CATEGORY_CODE_PROPERTY_KEY to (request.categoryCode ?: ""),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to (request.internalLocationId?.toString() ?: ""),
