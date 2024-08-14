@@ -233,28 +233,6 @@ private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
 
 fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities.toModelSchedules()
 
-fun transformFilteredInstances(scheduleAndInstances: Map<EntityActivitySchedule, List<EntityScheduledInstance>>) =
-  scheduleAndInstances.map {
-    ModelActivitySchedule(
-      id = it.key.activityScheduleId,
-      instances = it.value.toModelScheduledInstances(),
-      allocations = it.key.allocations().toModelAllocations(),
-      description = it.key.description,
-      suspensions = it.key.suspensions.toModelSuspensions(),
-      internalLocation = it.key.toInternalLocation(),
-      capacity = it.key.capacity,
-      activity = it.key.activity.toModelLite(),
-      scheduleWeeks = it.key.scheduleWeeks,
-      slots = it.key.slots().toModelActivityScheduleSlots(),
-      startDate = it.key.startDate,
-      endDate = it.key.endDate,
-      runsOnBankHoliday = it.key.runsOnBankHoliday,
-      updatedTime = it.key.updatedTime,
-      updatedBy = it.key.updatedBy,
-      usePrisonRegimeTime = it.key.usePrisonRegimeTime,
-    )
-  }
-
 fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
 
 fun EntityActivitySchedule.toModelSchedule() =
@@ -285,6 +263,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     date = it.sessionDate,
     startTime = it.startTime,
     endTime = it.endTime,
+    timeSlot = it.timeSlot,
     cancelled = it.cancelled,
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
@@ -457,10 +436,6 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   acknowledgedBy = entityEventReview.acknowledgedBy,
   eventDescription = enumValues<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
 )
-
-fun List<EventReview>.toModelEventReviewList() = map {
-  transform(it)
-}
 
 fun transform(activityBasic: EntityActivityBasic) =
   ModelActivityBasic(
