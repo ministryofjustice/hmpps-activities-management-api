@@ -20,8 +20,7 @@ class AWSLocalConfig {
    */
   @Bean
   @Primary
-  fun s3ClientAnalyticalPlatform(
-  ): S3Client {
+  fun s3ClientAnalyticalPlatform(): S3Client {
     val s3Client = mockk<S3Client>()
     val putObjectResponse = PutObjectResponse {
     }
