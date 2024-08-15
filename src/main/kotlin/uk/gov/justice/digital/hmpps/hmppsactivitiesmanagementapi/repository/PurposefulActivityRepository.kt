@@ -6,7 +6,7 @@ import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
-interface PurposefulActivityRepositoryCustom {
+interface PurposefulActivityRepository {
   fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>?
 
   fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>?
@@ -15,7 +15,7 @@ interface PurposefulActivityRepositoryCustom {
 }
 
 @Repository
-class PurposefulActivityRepositoryImpl : PurposefulActivityRepositoryCustom {
+class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
   @PersistenceContext
   private lateinit var entityManager: EntityManager
 

@@ -10,10 +10,12 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
-import org.springframework.test.context.ActiveProfiles
+import org.springframework.context.annotation.Profile
+
+// An s3Client for usage with localstack, particularly when running in the circleci pipeline
 
 @Configuration
-@ActiveProfiles("test")
+@Profile("test")
 class AWSLocalStackConfig {
   @Bean
   @Primary
