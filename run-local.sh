@@ -17,6 +17,8 @@ export DB_PASS=activities-management
 export DB_SSL_MODE=prefer
 export DPR_USER=dpr_user
 export DPR_PASSWORD=dpr_password
+export AWS_S3_AP_BUCKET=dummy-bucket
+export AWS_S3_AP_PROJECT=dummy-project
 export $(cat .env | xargs)  # If you want to set or update the current shell environment
 
 # Run the application with stdout and local profiles active
