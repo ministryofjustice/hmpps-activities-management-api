@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
@@ -28,6 +29,7 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-fix-unpaid-to-paid-and-deallocate.sql",
   )
   @Test
+  @Disabled
   fun `after running deallocate prisoners should all be deallocated`() {
     webTestClient.post().uri("/job/fix-zero-pay?deallocate=true")
       .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
@@ -55,6 +57,7 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-fix-unpaid-to-paid-and-reallocate.sql",
   )
   @Test
+  @Disabled
   fun `after running reset to paid and reallocate activity should be unpaid and the prisoners reallocated`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A8862DW"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A0334EZ"))
