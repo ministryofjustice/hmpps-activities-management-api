@@ -6,10 +6,8 @@ import aws.sdk.kotlin.services.s3.model.S3Exception
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.test.context.TestPropertySource
 
 class S3ServiceTest {
   private val amazonS3: S3Client = mockk(relaxed = true)
@@ -37,5 +35,4 @@ class S3ServiceTest {
       runBlocking { service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName) }
     }
   }
-
 }
