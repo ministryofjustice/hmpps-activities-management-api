@@ -18,7 +18,7 @@ class PurposefulActivityReportsJobTest : JobsTestBase() {
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val purposefulActivityService: PurposefulActivityService = mock()
   private val s3Service: S3Service = mock()
-  private val job = PurposefulActivityReportsJob(safeJobRunner, purposefulActivityService, s3Service)
+  private val job = PurposefulActivityReportsJob(safeJobRunner, purposefulActivityService)
 
   @Test
   fun `Create purposeful activity reports`() {
