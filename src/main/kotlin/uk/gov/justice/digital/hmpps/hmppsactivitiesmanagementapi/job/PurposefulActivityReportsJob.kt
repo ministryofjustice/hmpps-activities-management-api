@@ -3,12 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PurposefulActivityService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.S3Service
 
 @Component
 class PurposefulActivityReportsJob(
   private val jobRunner: SafeJobRunner,
-  private val purposefulActivityService: PurposefulActivityService
+  private val purposefulActivityService: PurposefulActivityService,
 ) {
 
   suspend fun execute(weekOffset: Int) {
