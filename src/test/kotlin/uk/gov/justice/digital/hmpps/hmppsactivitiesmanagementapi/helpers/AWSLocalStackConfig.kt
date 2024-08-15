@@ -9,7 +9,6 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 
 // An s3Client for usage with localstack, particularly when running in the circleci pipeline
@@ -18,7 +17,6 @@ import org.springframework.context.annotation.Profile
 @Profile("test")
 class AWSLocalStackConfig {
   @Bean
-  @Primary
   fun s3ClientAnalyticalPlatform(
     @Value("\${hmpps.s3.localstackUrl}") s3Url: String,
     @Value("\${hmpps.s3.region}") awsRegion: String,
