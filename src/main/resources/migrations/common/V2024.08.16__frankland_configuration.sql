@@ -6,6 +6,16 @@ values ('FKI', 'HMP Frankland', false, '2024-09-24', false, '2024-09-24');
 insert into prison_regime (prison_code, am_start, am_finish, pm_start, pm_finish, ed_start, ed_finish)
 VALUES ('FKI', '08:30:00', '11:45:00', '13:30:00', '17:00:00', '17:00:00', '19:00:00');
 
+-- Regime days-of-week for Frankland (no variation between days)
+insert into prison_regime_days_of_week(prison_regime_id, day_of_week)
+values ((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'MONDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'TUESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'WEDNESDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'THURSDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'FRIDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'SATURDAY'),
+((select prison_regime_id from prison_regime where prison_code = 'FKI'), 'SUNDAY'); 
+
 -- Pay bands for HMP Frankland
 insert into prison_pay_band (display_sequence, nomis_pay_band, pay_band_alias, pay_band_description, prison_code)
 values (1,  1,  'Pay band 1 (Lowest)', 'Pay band 1 (Lowest)', 'FKI'),
