@@ -82,3 +82,9 @@ manage:
  adjudications:
    api:
      url: http://localhost:8777
+
+aws:
+  s3:
+    ap:
+      bucket: dummy-bucket
+      project: dummy-project
