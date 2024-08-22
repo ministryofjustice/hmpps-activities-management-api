@@ -13,8 +13,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
@@ -223,7 +223,7 @@ class ManageAttendancesService(
     LocalDate.now(clock).minusDays(1).let { yesterday ->
       val counter = AtomicInteger(0)
       forEachRolledOutPrison { prison ->
-        attendanceRepository.findWaitingAttendancesOnDate(prison.code, yesterday)
+        attendanceRepository.findWaitingAttendancesOnDate(prison.prisonCode, yesterday)
           .forEach { waitingAttendance ->
             runCatching {
               outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, waitingAttendance.attendanceId)
@@ -239,6 +239,6 @@ class ManageAttendancesService(
     }
   }
 
-  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrison) -> Unit) =
-    rolloutPrisonService.getAllPrisonPlans().filter { it.isActivitiesRolledOut() }.forEach { expireAttendances(it) }
+  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) =
+    rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
 }

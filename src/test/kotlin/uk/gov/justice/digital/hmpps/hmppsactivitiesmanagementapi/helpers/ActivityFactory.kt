@@ -27,7 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
@@ -367,15 +367,11 @@ internal fun deallocation(endDate: LocalDate? = null) =
     ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
     ?: activitySchedule(activityEntity()).allocations().first()
 
-internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = RolloutPrison(
-  1,
-  prisonCode,
-  "HMP Pentonville",
-  true,
-  LocalDate.of(2022, 12, 22),
-  true,
-  LocalDate.of(2022, 12, 23),
-  1,
+internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = RolloutPrisonPlan(
+  prisonCode = prisonCode,
+  activitiesRolledOut = true,
+  appointmentsRolledOut = true,
+  maxDaysToExpiry = 1,
 )
 
 internal fun prisonRegime(

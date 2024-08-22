@@ -162,7 +162,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
       lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(5),
+      releaseDate = LocalDate.now().minusDays(22),
     )
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
@@ -195,7 +195,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
       lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(5),
+      releaseDate = LocalDate.now().minusDays(22),
     )
 
     with(waitingListRepository.findAll().prisoner("A11111A")) {

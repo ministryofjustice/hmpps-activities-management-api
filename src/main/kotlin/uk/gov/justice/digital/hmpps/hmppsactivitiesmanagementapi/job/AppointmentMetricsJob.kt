@@ -6,8 +6,8 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.DailyAppointmentMetricsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
@@ -15,7 +15,7 @@ import kotlin.system.measureTimeMillis
 @Component
 class AppointmentMetricsJob(
   private val jobRunner: SafeJobRunner,
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val prisonApiClient: PrisonApiApplicationClient,
   private val service: DailyAppointmentMetricsService,
 
@@ -31,7 +31,7 @@ class AppointmentMetricsJob(
         log.info("Generating daily appointments metrics")
 
         val elapsed = measureTimeMillis {
-          val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
+          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
           val allAppointmentCategories = prisonApiClient.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT.value).map { it.code }
           val yesterday = LocalDate.now().minusDays(1)
 

@@ -28,16 +28,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.ADJUDICATION_HEARING_DURATION_TWO_HOURS
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -51,7 +51,7 @@ import java.time.LocalTime
 class ScheduledEventServiceMultiplePrisonersTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
+  private val rolloutPrisonRepository: RolloutPrisonService = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
@@ -103,19 +103,15 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(activitiesRolloutDate: LocalDate, appointmentsRolloutDate: LocalDate) {
+  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean) {
     val prisonCode = "MDI"
     val active = true
-    whenever(rolloutPrisonRepository.findByCode(prisonCode))
+    whenever(rolloutPrisonRepository.getByPrisonCode(prisonCode))
       .thenReturn(
-        RolloutPrison(
-          rolloutPrisonId = 10,
-          code = prisonCode,
-          description = "Description",
-          activitiesToBeRolledOut = active,
-          activitiesRolloutDate = activitiesRolloutDate,
-          appointmentsToBeRolledOut = active,
-          appointmentsRolloutDate = appointmentsRolloutDate,
+        RolloutPrisonPlan(
+          prisonCode = prisonCode,
+          activitiesRolledOut = activitiesRolledOut,
+          appointmentsRolledOut = appointmentsRolledOut,
           maxDaysToExpiry = 21,
         ),
       )
@@ -341,7 +337,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
+      setupRolledOutPrisonMock(true, false)
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -495,7 +491,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2600, 12, 22))
+      setupRolledOutPrisonMock(true, false)
 
       val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
       whenever(
@@ -616,7 +612,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2022, 12, 22))
+      setupRolledOutPrisonMock(true, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -742,7 +738,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
     @BeforeEach
     fun beforeEach() {
-      setupRolledOutPrisonMock(LocalDate.of(2022, 12, 22), LocalDate.of(2022, 12, 22))
+      setupRolledOutPrisonMock(true, true)
 
       whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
         mapOf(

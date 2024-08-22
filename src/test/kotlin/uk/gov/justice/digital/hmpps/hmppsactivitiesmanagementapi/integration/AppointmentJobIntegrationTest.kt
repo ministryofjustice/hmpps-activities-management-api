@@ -165,7 +165,7 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf(prisonNumber, "B2345CD"), listOf(activeInDifferentPrison, activeInPrisoner))
     prisonApiMockServer.stubPrisonerMovements(listOf(prisonNumber), listOf(expiredMovement))
 
-    webTestClient.manageAppointmentAttendees(1)
+    webTestClient.manageAppointmentAttendees(22)
 
     with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
       flatMap { it.attendees } hasSize 7

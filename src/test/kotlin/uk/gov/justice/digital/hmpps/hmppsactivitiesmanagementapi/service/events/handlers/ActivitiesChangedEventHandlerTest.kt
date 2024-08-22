@@ -8,7 +8,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -16,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -25,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -35,15 +32,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class ActivitiesChangedEventHandlerTest {
-  private val rolloutPrison: RolloutPrison = mock {
-    on { isActivitiesRolledOut() } doReturn true
-  }
 
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
-    on { findByCode(MOORLAND_PRISON_CODE) } doReturn rolloutPrison
-  }
-
-  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
 
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
@@ -76,21 +66,7 @@ class ActivitiesChangedEventHandlerTest {
 
   @Test
   fun `event is ignored for an inactive prison`() {
-    rolloutPrison.stub { on { isActivitiesRolledOut() } doReturn false }
-
-    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE)).isSuccess()).isTrue
-
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
-    verifyNoInteractions(allocationRepository)
-  }
-
-  @Test
-  fun `event is ignored when no matching prison`() {
-    rolloutPrisonRepository.stub { on { findByCode(MOORLAND_PRISON_CODE) } doReturn null }
-
-    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, MOORLAND_PRISON_CODE)).isSuccess()).isTrue
-
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
+    assertThat(handler.handle(activitiesChangedEvent("123456", Action.SUSPEND, "PVI")).isSuccess()).isTrue
     verifyNoInteractions(allocationRepository)
   }
 
