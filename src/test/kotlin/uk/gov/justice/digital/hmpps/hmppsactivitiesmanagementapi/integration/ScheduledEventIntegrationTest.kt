@@ -253,8 +253,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(userMessage).isEqualTo("Not found: Prisoner '$prisonerNumber' not found")
       }
     }
-
-
   }
 
   @Nested
@@ -303,7 +301,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(adjudications).hasSize(2)
       }
     }
-
 
     @Test
     @Sql("classpath:test_data/seed-activity-for-events.sql")
