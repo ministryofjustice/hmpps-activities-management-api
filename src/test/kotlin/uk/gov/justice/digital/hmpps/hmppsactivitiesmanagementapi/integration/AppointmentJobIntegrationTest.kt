@@ -85,7 +85,7 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     confirmedReleaseDate = LocalDate.now(),
   )
 
-  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = RISLEY_PRISON_CODE, movementDate = 5.daysAgo())
+  private val expiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = RISLEY_PRISON_CODE, movementDate = 21.daysAgo())
   private val nonExpiredMovement = movement(prisonerNumber = prisonNumber, fromPrisonCode = RISLEY_PRISON_CODE, movementDate = 4.daysAgo())
 
   @Sql("classpath:test_data/seed-manage-appointments-job.sql")

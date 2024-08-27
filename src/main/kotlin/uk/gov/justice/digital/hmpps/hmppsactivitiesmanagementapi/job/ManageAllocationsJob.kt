@@ -6,14 +6,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 @Component
 class ManageAllocationsJob(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val service: ManageAllocationsService,
   private val jobRunner: SafeJobRunner,
   @Value("\${jobs.deallocate-allocations-ending.days-start}") private val deallocateDaysStart: Int = 3,
@@ -67,6 +66,6 @@ class ManageAllocationsJob(
     }
   }
 
-  private fun getRolledOutPrisonCodes() =
-    rolloutPrisonRepository.findAll().filter(RolloutPrison::isActivitiesRolledOut).map(RolloutPrison::code)
+  private fun getRolledOutPrisonCodes(): List<String> =
+    rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
 }

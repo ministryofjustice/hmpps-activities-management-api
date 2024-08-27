@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDesc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
@@ -36,7 +35,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier as EntityEventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime as EntityPrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison as EntityRolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
@@ -303,15 +301,6 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
     description = internalLocationDescription!!,
   )
 }
-
-fun transform(prison: EntityRolloutPrison) = RolloutPrisonPlan(
-  prisonCode = prison.code,
-  activitiesRolledOut = prison.isActivitiesRolledOut(),
-  activitiesRolloutDate = prison.activitiesRolloutDate,
-  appointmentsRolledOut = prison.isAppointmentsRolledOut(),
-  appointmentsRolloutDate = prison.appointmentsRolloutDate,
-  maxDaysToExpiry = prison.maxDaysToExpiry,
-)
 
 fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
   ModelAttendance(

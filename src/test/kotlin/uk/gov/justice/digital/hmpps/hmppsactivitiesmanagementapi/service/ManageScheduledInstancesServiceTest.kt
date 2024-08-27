@@ -23,14 +23,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityBasic
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -43,7 +43,7 @@ class ManageScheduledInstancesServiceTest {
   private val activityRepository: ActivityRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock { on { findAll() } doReturn (rolledOutPrisons) }
+  private val rolloutPrisonRepository: RolloutPrisonService = mock { on { getRolloutPrisons() } doReturn (rolledOutPrisons) }
   private val outboundEventsService: OutboundEventsService = mock()
   private val monitoringService: MonitoringService = mock()
 
@@ -228,7 +228,7 @@ class ManageScheduledInstancesServiceTest {
   fun `should capture failures in monitoring service for any exceptions when creating schedules`() {
     val failingTransactionHandler: CreateInstanceTransactionHandler = mock()
     val exception = RuntimeException("Something went wrong")
-    doThrow(exception).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any(), any())
+    doThrow(exception).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any())
     whenever(activityRepository.getBasicForPrisonBetweenDates(any(), any(), any())) doReturn moorlandBasic
 
     ManageScheduledInstancesService(
@@ -252,9 +252,9 @@ class ManageScheduledInstancesServiceTest {
   companion object {
 
     val rolledOutPrisons = listOf(
-      RolloutPrison(1, "MDI", "Moorland", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21),
-      RolloutPrison(2, "LEI", "Leeds", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21),
-      RolloutPrison(3, "XXX", "Other prison", false, null, true, LocalDate.of(2022, 11, 1), 21),
+      RolloutPrisonPlan("MDI", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21),
+      RolloutPrisonPlan("LEI", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21),
+      RolloutPrisonPlan("XXX", false, null, true, LocalDate.of(2022, 11, 1), 21),
     )
 
     val yesterday: LocalDate = LocalDate.now().minusDays(1)

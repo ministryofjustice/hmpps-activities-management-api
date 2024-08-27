@@ -6,7 +6,6 @@ truncate table event_organiser restart identity cascade;
 -- --Activities
 truncate table activity_category restart identity cascade;
 truncate table eligibility_rule restart identity cascade;
-truncate table rollout_prison restart identity cascade;
 truncate table attendance restart identity cascade;
 truncate table attendance_reason restart identity cascade;
 truncate table scheduled_instance restart identity cascade;

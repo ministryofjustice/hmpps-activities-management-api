@@ -10,6 +10,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -27,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DELET
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 
+@ActiveProfiles("test")
 class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
 
   @MockBean
@@ -76,7 +78,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.generateAppointmentsMetrics()
 
     verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
-
+    // this test is flakey and relies on order of prisons.  also probably pointless, given no one uses these daily metrics in app insights
     with(telemetryMetricsMap.firstValue) {
       this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0
       this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 9.0

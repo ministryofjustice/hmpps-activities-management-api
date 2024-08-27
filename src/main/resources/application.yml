@@ -150,3 +150,5 @@ springdoc:
 
 migrate:
   experimental-mode: ${MIGRATE_EXPERIMENTAL_MODE:false}
+  activities-live: ${ACTIVITIES_LIVE:MDI,RSI,IWI,PVI}
+  appointments-live: ${APPOINTMENTS_LIVE:MDI,RSI,IWI,PVI}

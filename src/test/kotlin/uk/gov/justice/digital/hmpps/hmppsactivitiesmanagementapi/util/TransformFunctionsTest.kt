@@ -27,14 +27,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earlies
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
@@ -460,20 +458,6 @@ class TransformFunctionsTest {
         listOf(appointmentInstance),
       )
     }
-  }
-
-  @Test
-  fun `transformation of rollout prison entity to rollout prison model`() {
-    assertThat(transform(rolloutPrison())).isEqualTo(
-      RolloutPrisonPlan(
-        prisonCode = "PVI",
-        activitiesRolledOut = true,
-        activitiesRolloutDate = LocalDate.of(2022, 12, 22),
-        appointmentsRolledOut = true,
-        appointmentsRolloutDate = LocalDate.of(2022, 12, 23),
-        maxDaysToExpiry = 1,
-      ),
-    )
   }
 
   @Test

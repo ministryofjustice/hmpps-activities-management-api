@@ -7,19 +7,18 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.LocalDate
 
 @Service
 class ManageScheduledInstancesService(
   private val activityRepository: ActivityRepository,
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val transactionHandler: CreateInstanceTransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val monitoringService: MonitoringService,
@@ -37,16 +36,15 @@ class ManageScheduledInstancesService(
     val listOfDatesToSchedule = today.datesUntil(endDay).toList()
     log.info("Scheduling activities job running - from $today until $endDay")
 
-    rolloutPrisonRepository.findAll()
-      .filter { it.isActivitiesRolledOut() }
+    rolloutPrisonService.getRolloutPrisons()
       .forEach { prison ->
-        log.info("Scheduling activities for prison ${prison.description} until $endDay")
-        val activities = activityRepository.getBasicForPrisonBetweenDates(prison.code, today, endDay)
+        log.info("Scheduling activities for prison ${prison.prisonCode} until $endDay")
+        val activities = activityRepository.getBasicForPrisonBetweenDates(prison.prisonCode, today, endDay)
         activities.mapNotNull { basic ->
           continueToRunOnFailure(
-            block = { transactionHandler.createInstancesForActivitySchedule(prison, basic.activityScheduleId, listOfDatesToSchedule) },
-            success = "Scheduled instances for ${prison.code} ${basic.summary}",
-            failure = "Failed to schedule instances for ${prison.code} ${basic.summary}",
+            block = { transactionHandler.createInstancesForActivitySchedule(basic.activityScheduleId, listOfDatesToSchedule) },
+            success = "Scheduled instances for ${prison.prisonCode} ${basic.summary}",
+            failure = "Failed to schedule instances for ${prison.prisonCode} ${basic.summary}",
           )
         }.forEach { updatedScheduledId ->
           outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduledId)
@@ -81,7 +79,7 @@ class CreateInstanceTransactionHandler(
    * Returns the schedule ID if the schedule is updated otherwise returns null.
    */
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun createInstancesForActivitySchedule(prison: RolloutPrison, scheduleId: Long, days: List<LocalDate>): Long? {
+  fun createInstancesForActivitySchedule(scheduleId: Long, days: List<LocalDate>): Long? {
     val earliestSession = LocalDate.now(clock)
     val schedule = activityScheduleRepository.getActivityScheduleByIdWithFilters(scheduleId, earliestSession)
       ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")

@@ -1,6 +1,3 @@
-insert into rollout_prison (rollout_prison_id, code, description, activities_to_be_rolled_out, activities_rollout_date, appointments_to_be_rolled_out, appointments_rollout_date)
-values (100, 'IWI', 'HMP Isle of Wight', true, current_date, false, current_date);
-
 insert into prison_pay_band(prison_pay_band_id,display_sequence, nomis_pay_band, pay_band_alias, pay_band_description, prison_code)
 values (10001,1, 1, 'Low', 'Pay band 1 (Lowest)', 'IWI'),
        (20001,2, 2, 'Medium', 'Pay band 2', 'IWI'),

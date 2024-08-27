@@ -1,0 +1,1 @@
+DROP TABLE rollout_prison;

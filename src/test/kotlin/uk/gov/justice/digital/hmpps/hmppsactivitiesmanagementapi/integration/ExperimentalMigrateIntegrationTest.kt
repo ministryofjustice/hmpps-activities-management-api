@@ -140,30 +140,6 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       payRates = emptyList(),
     )
 
-  private val splitActivity = ActivityMigrateRequest(
-    programServiceCode = "INT_NOM",
-    prisonCode = "IWI",
-    startDate = LocalDate.of(2024, 7, 9),
-    endDate = null,
-    internalLocationId = 468492,
-    internalLocationCode = "SITE 3",
-    internalLocationDescription = "IWI-ESTAB-SITE 3",
-    capacity = 1,
-    description = "BNM + 27 PK SPLIT",
-    payPerSession = "H",
-    runsOnBankHoliday = true,
-    outsideWork = false,
-    scheduleRules = listOf(
-      NomisScheduleRule(
-        startTime = LocalTime.of(6, 40, 0),
-        endTime = LocalTime.of(7, 0, 0),
-        saturday = true,
-        sunday = true,
-      ),
-    ),
-    payRates = emptyList(),
-  )
-
   @BeforeEach
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))

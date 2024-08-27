@@ -42,16 +42,6 @@ values (1, 'OVER_21', 'Must be over 21'),
        (2, 'FEMALE_18-50', 'Female aged 18 to 15 only');
 
 --
--- Rollout prisons
---
-insert into rollout_prison (rollout_prison_id, code, description, activities_to_be_rolled_out,
-                            activities_rollout_date, appointments_to_be_rolled_out,
-                            appointments_rollout_date, max_days_to_expiry)
-values (1, 'PVI', 'HMP Pentonville', true, '2022-12-22', false, null, 5),
-       (2, 'MDI', 'HMP Moorland',  true, '2022-12-22', true, '2022-12-23', 5),
-       (3, 'RSI', 'HMP Risley',  true, '2023-09-29', true, '2023-09-29', 5);
-
---
 -- Attendance reason codes
 --
 insert into attendance_reason(attendance_reason_id, code, description, attended, capture_pay, capture_more_detail, capture_case_note,

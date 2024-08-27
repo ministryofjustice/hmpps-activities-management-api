@@ -33,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -46,7 +45,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
@@ -64,17 +62,7 @@ class ManageAttendancesServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val monitoringService: MonitoringService = mock()
 
-  private val rolloutPrison: RolloutPrison = mock {
-    on { code } doReturn MOORLAND_PRISON_CODE
-    on { isActivitiesRolledOut() } doReturn true
-  }
-
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
-    on { findAll() } doReturn listOf(rolloutPrison)
-    on { findByCode(MOORLAND_PRISON_CODE) } doReturn rolloutPrison
-  }
-
-  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
 
   private val service = ManageAttendancesService(
     scheduledInstanceRepository,
