@@ -18,21 +18,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendanceSuspensionDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInMoorlandPrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class PrisonerReceivedEventHandlerTest {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
-  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
@@ -43,32 +39,16 @@ class PrisonerReceivedEventHandlerTest {
 
   @BeforeEach
   fun beforeTests() {
-    reset(rolloutPrisonRepository, allocationRepository)
-    rolloutPrisonRepository.stub {
-      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
-        rolloutPrison().copy(
-          activitiesToBeRolledOut = true,
-          activitiesRolloutDate = LocalDate.now().plusDays(-1),
-        )
-    }
+    reset(allocationRepository)
   }
 
   @Test
   fun `inbound received event is not handled for an inactive prison`() {
-    val inboundEvent = prisonerReceivedFromTemporaryAbsence(MOORLAND_PRISON_CODE, "123456")
-    reset(rolloutPrisonRepository)
-    rolloutPrisonRepository.stub {
-      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
-        rolloutPrison().copy(
-          activitiesToBeRolledOut = false,
-          activitiesRolloutDate = null,
-        )
-    }
+    val inboundEvent = prisonerReceivedFromTemporaryAbsence("PVI", "123456")
 
     val outcome = handler.handle(inboundEvent)
 
     assertThat(outcome.isSuccess()).isTrue
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
   }
 

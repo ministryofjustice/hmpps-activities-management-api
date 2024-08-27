@@ -14,13 +14,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class ManageAllocationsJobTest : JobsTestBase() {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
-    on { findAll() } doReturn listOf(rolloutPrison(PENTONVILLE_PRISON_CODE), rolloutPrison(MOORLAND_PRISON_CODE))
+  private val rolloutPrisonRepository: RolloutPrisonService = mock {
+    on { getRolloutPrisons() } doReturn listOf(rolloutPrison(PENTONVILLE_PRISON_CODE), rolloutPrison(MOORLAND_PRISON_CODE))
   }
   private val deallocationService: ManageAllocationsService = mock()
   private val job = ManageAllocationsJob(rolloutPrisonRepository, deallocationService, safeJobRunner, 2)

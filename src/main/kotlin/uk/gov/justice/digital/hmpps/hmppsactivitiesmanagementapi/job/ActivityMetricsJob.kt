@@ -11,8 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.DailyActivityMetricsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ENDED_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_PENDING_COUNT_METRIC_KEY
@@ -43,7 +43,7 @@ import kotlin.system.measureTimeMillis
 
 @Component
 class ActivityMetricsJob(
-  private val rolloutPrisonRepository: RolloutPrisonRepository,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val eventTierRepository: EventTierRepository,
   private val activityRepository: ActivityRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -63,7 +63,7 @@ class ActivityMetricsJob(
         log.info("Generating daily activities metrics")
 
         val elapsed = measureTimeMillis {
-          val allPrisonCodes = rolloutPrisonRepository.findAll().map { it.code }
+          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
           val allEventTiers = eventTierRepository.findAll()
           val allActivityCategories = activityCategoryRepository.findAll()
 

@@ -15,13 +15,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService.Companion.hasExpired
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -115,7 +116,7 @@ class ManageAllocationsService(
       forEachRolledOutPrison()
         .forEach { prison ->
           transactionHandler.newSpringTransaction {
-            pendingAllocationsStartingOnOrBefore(today, prison.code).let { allocations ->
+            pendingAllocationsStartingOnOrBefore(today, prison.prisonCode).let { allocations ->
               val prisoners = prisonerSearch.findByPrisonerNumbers(allocations.map { it.prisonerNumber }.distinct())
 
               allocations.map { allocation -> allocation to prisoners.firstOrNull { it.prisonerNumber == allocation.prisonerNumber } }
@@ -134,8 +135,8 @@ class ManageAllocationsService(
               }
               .map { (allocation, _) -> allocation }
               .also {
-                log.info("Activated ${it.filter { a -> a.status(PrisonerStatus.ACTIVE) }.size} pending allocation(s) at prison ${prison.code}.")
-                log.info("Auto-Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.code}.")
+                log.info("Activated ${it.filter { a -> a.status(PrisonerStatus.ACTIVE) }.size} pending allocation(s) at prison ${prison.prisonCode}.")
+                log.info("Auto-Suspended ${it.filter { a -> a.status(PrisonerStatus.AUTO_SUSPENDED) }.size} pending allocation(s) at prison ${prison.prisonCode}.")
               }.map(Allocation::allocationId)
           }.let(::sendAllocationsAmendedEvents)
         }
@@ -150,7 +151,7 @@ class ManageAllocationsService(
     )
 
   private fun forEachRolledOutPrison() =
-    rolloutPrisonService.getAllPrisonPlans().filter { it.isActivitiesRolledOut() }
+    rolloutPrisonService.getRolloutPrisons()
 
   private fun List<Allocation>.ending(date: LocalDate) =
     filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.endsOn(date) }
@@ -158,18 +159,18 @@ class ManageAllocationsService(
   private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
       .forEach { prison ->
-        log.info("Checking for expired allocations at ${prison.code}.")
+        log.info("Checking for expired allocations at ${prison.prisonCode}.")
 
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING).ifNotEmpty {
-          log.info("Checking for expired pending allocations at ${prison.code}.")
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING).ifNotEmpty {
+          log.info("Checking for expired pending allocations at ${prison.prisonCode}.")
           deallocateIfExpired(it, prison)
         }
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
-          log.info("Checking for expired auto-suspended allocations at ${prison.code}.")
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+          log.info("Checking for expired auto-suspended allocations at ${prison.prisonCode}.")
           deallocateIfExpired(it, prison)
         }
-        waitingListService.fetchOpenApplicationsForPrison(prison.code).ifNotEmpty {
-          log.info("Checking for expired waiting list applications at ${prison.code}.")
+        waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode).ifNotEmpty {
+          log.info("Checking for expired waiting list applications at ${prison.prisonCode}.")
           removeWaitingListApplicationIfExpired(it, prison)
         }
       }
@@ -180,42 +181,42 @@ class ManageAllocationsService(
    * the regime and the date of the last known movement out or prison for the prisoner any allocations should be
    * expired/deallocated.
    */
-  private fun deallocateIfExpired(allocations: Collection<Allocation>, prisonPlan: RolloutPrison) {
-    log.info("Candidate allocations for expiration for prison ${prisonPlan.code}: ${allocations.map { it.allocationId }}")
+  private fun deallocateIfExpired(allocations: Collection<Allocation>, prisonPlan: RolloutPrisonPlan) {
+    log.info("Candidate allocations for expiration for prison ${prisonPlan.prisonCode}: ${allocations.map { it.allocationId }}")
 
     val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
     val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
 
     val expiredAllocations = allocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
-    log.info("Expired allocations for prison ${prisonPlan.code}: ${expiredAllocations.map { it.allocationId }}")
+    log.info("Expired allocations for prison ${prisonPlan.prisonCode}: ${expiredAllocations.map { it.allocationId }}")
 
     expiredAllocations
       .groupBy { it.activitySchedule }
       .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
   }
 
-  private fun removeWaitingListApplicationIfExpired(applications: Collection<WaitingList>, prisonPlan: RolloutPrison) {
-    log.info("Waiting list applications for expiration for prison ${prisonPlan.code}: ${applications.map { it.waitingListId }}")
+  private fun removeWaitingListApplicationIfExpired(applications: Collection<WaitingList>, prisonPlan: RolloutPrisonPlan) {
+    log.info("Waiting list applications for expiration for prison ${prisonPlan.prisonCode}: ${applications.map { it.waitingListId }}")
 
     val prisonerNumbers = applications.map { it.prisonerNumber }.distinct()
     val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
     expiredPrisoners.forEach {
-      waitingListService.removeOpenApplications(prisonPlan.code, it, ServiceName.SERVICE_NAME.value)
+      waitingListService.removeOpenApplications(prisonPlan.prisonCode, it, ServiceName.SERVICE_NAME.value)
     }
   }
 
-  fun getExpiredPrisoners(prisonPlan: RolloutPrison, prisonerNumbers: Set<String>): Set<String> {
+  fun getExpiredPrisoners(prisonPlan: RolloutPrisonPlan, prisonerNumbers: Set<String>): Set<String> {
     val prisoners = prisonerSearch.findByPrisonerNumbers(prisonerNumbers.toList())
 
     if (prisoners.isEmpty()) {
-      log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${prisonPlan.code}")
+      log.error("No matches for prisoner numbers $prisonerNumbers found via prisoner search for prison ${prisonPlan.prisonCode}")
       return emptySet()
     }
 
     val prisonersNotInExpectedPrison =
-      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonPlan.code) }
+      prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonPlan.prisonCode) }
 
-    return prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.code, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+    return prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
       .groupBy { it.offenderNo }
       .mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { prisonPlan.hasExpired { it.value.movementDate } }

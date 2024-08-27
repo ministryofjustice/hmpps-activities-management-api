@@ -20,28 +20,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.Ser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendeeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 class PrisonerReleasedEventHandlerTest {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock {
-    on { findByCode(MOORLAND_PRISON_CODE) } doReturn
-      rolloutPrison().copy(
-        activitiesToBeRolledOut = true,
-        activitiesRolloutDate = LocalDate.now().plusDays(-1),
-      )
-  }
-  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val waitingListService: WaitingListService = mock()
@@ -70,27 +60,14 @@ class PrisonerReleasedEventHandlerTest {
 
   @Test
   fun `released event is not handled for an inactive prison`() {
-    rolloutPrisonRepository.stub {
-      on { findByCode(MOORLAND_PRISON_CODE) } doReturn
-        rolloutPrison().copy(
-          activitiesToBeRolledOut = false,
-          activitiesRolloutDate = null,
-        )
-    }
+    handler.handle(prisonerReleasedEvent("PVI", "123456")).also { it.isSuccess() isBool true }
 
-    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
-
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verifyNoInteractions(prisonerAllocationHandler)
   }
 
   @Test
   fun `release event is not processed when no matching prison is found`() {
-    rolloutPrisonRepository.stub { on { findByCode(MOORLAND_PRISON_CODE) } doReturn null }
-
-    handler.handle(prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")).also { it.isSuccess() isBool true }
-
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
+    handler.handle(prisonerReleasedEvent("PVI", "123456")).also { it.isSuccess() isBool true }
     verifyNoInteractions(prisonerAllocationHandler)
   }
 

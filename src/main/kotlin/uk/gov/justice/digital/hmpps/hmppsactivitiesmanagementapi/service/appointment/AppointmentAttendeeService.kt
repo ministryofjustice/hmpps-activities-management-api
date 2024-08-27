@@ -10,7 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.RolloutPrison
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Transac
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService.Companion.hasExpired
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -81,7 +82,7 @@ class AppointmentAttendeeService(
       "Supplied days after now must be at least one day and less than 61 days"
     }
 
-    val prisonPlan = rolloutPrisonService.getPrisonPlan(prisonCode = prisonCode)
+    val prisonPlan = rolloutPrisonService.getByPrisonCode(code = prisonCode)
     val prisoners = prisonerSearch.findByPrisonerNumbers(getPrisonNumbersForFutureAppointments(prisonCode, daysAfterNow))
     log.info("Found ${prisoners.size} prisoners for future appointments in prison code '$prisonCode' taking place within '$daysAfterNow' day(s)")
 
@@ -115,8 +116,8 @@ class AppointmentAttendeeService(
     filterNot { it.isPermanentlyReleased() }
       .filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonCode) }
 
-  private fun List<Prisoner>.getExpiredMoves(prisonPlan: RolloutPrison) =
-    prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.code, this.map { it.prisonerNumber }.toSet())
+  private fun List<Prisoner>.getExpiredMoves(prisonPlan: RolloutPrisonPlan) =
+    prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, this.map { it.prisonerNumber }.toSet())
       .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { prisonPlan.hasExpired { it.value.movementDate } }
 }

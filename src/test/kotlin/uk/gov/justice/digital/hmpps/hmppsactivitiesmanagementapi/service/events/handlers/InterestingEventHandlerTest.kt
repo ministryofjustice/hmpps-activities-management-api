@@ -6,7 +6,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -23,10 +22,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
@@ -43,8 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class InterestingEventHandlerTest {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
-  private val rolloutPrisonService = RolloutPrisonService(rolloutPrisonRepository)
+  private val rolloutPrisonService = RolloutPrisonService("PVI,MDI", "PVI.MDI")
   private val allocationRepository: AllocationRepository = mock()
   private val eventReviewRepository: EventReviewRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
@@ -60,7 +56,6 @@ class InterestingEventHandlerTest {
 
   @BeforeEach
   fun beforeTests() {
-    whenever(rolloutPrisonRepository.findByCode(PENTONVILLE_PRISON_CODE)) doReturn rolloutPrison()
     whenever(eventReviewRepository.saveAndFlush(any<EventReview>())) doReturn EventReview(eventReviewId = 1)
   }
 
@@ -75,7 +70,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -101,7 +95,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -126,7 +119,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -151,7 +143,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -169,12 +160,10 @@ class InterestingEventHandlerTest {
   fun `stores a permanent prisoner released event`() {
     // Note prison code is different to that of the event because they have been release to Pentonville
     mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
-    whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
     val inboundEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
@@ -192,12 +181,10 @@ class InterestingEventHandlerTest {
   fun `stores a temporary prisoner released event`() {
     // Note prison code is different to that of the event because they have been release to Pentonville
     mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
-    whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
     val inboundEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", reason = "TEMPORARY_ABSENCE_RELEASE")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
@@ -215,12 +202,10 @@ class InterestingEventHandlerTest {
   fun `stores a prisoner released event which is not handled as temporary or permanent`() {
     // Note prison code is different to that of the event because they have been release to Pentonville
     mockPrisoner(prisonCode = PENTONVILLE_PRISON_CODE)
-    whenever(rolloutPrisonRepository.findByCode(MOORLAND_PRISON_CODE)) doReturn rolloutPrison()
     val inboundEvent = prisonerReleasedEvent(MOORLAND_PRISON_CODE, "123456", reason = "UNEXPECTED")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(MOORLAND_PRISON_CODE)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
@@ -245,7 +230,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -270,7 +254,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -295,7 +278,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -320,7 +302,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -345,7 +326,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "ABC1234", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -367,7 +347,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
     with(eventReviewCaptor.firstValue) {
@@ -389,7 +368,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -412,7 +390,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -435,7 +412,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
     verify(eventReviewRepository).saveAndFlush(eventReviewCaptor.capture())
 
@@ -451,20 +427,11 @@ class InterestingEventHandlerTest {
 
   @Test
   fun `ignores prisoners in prisons which are not rolled out`() {
-    mockPrisoner()
+    mockPrisoner(prisonCode = "RSI")
     val inboundEvent = cellMoveEvent("123456")
-    rolloutPrisonRepository.stub {
-      on { findByCode(PENTONVILLE_PRISON_CODE) } doReturn
-        rolloutPrison().copy(
-          code = PENTONVILLE_PRISON_CODE,
-          activitiesToBeRolledOut = false,
-          activitiesRolloutDate = null,
-        )
-    }
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool false }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verifyNoInteractions(allocationRepository)
     verifyNoInteractions(eventReviewRepository)
   }
@@ -477,7 +444,6 @@ class InterestingEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool false }
 
-    verify(rolloutPrisonRepository).findByCode(PENTONVILLE_PRISON_CODE)
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verifyNoInteractions(eventReviewRepository)
   }

@@ -35,6 +35,7 @@ class DailyAppointmentMetricsService(
     )
 
     val metricsMap = appointmentRepository.findByPrisonCodeAndCategoryCodeAndDate(prisonCode, categoryCode, date).let { appointments ->
+      println("$prisonCode ${appointments.size}")
       val activeAppointments = appointments.filterNot { it.isCancelled() || it.isDeleted }
       mutableMapOf(
         APPOINTMENT_COUNT_METRIC_KEY to activeAppointments.size.toDouble(),

@@ -105,7 +105,7 @@ class AppointmentSearchServiceTest {
     MockitoAnnotations.openMocks(this)
     addCaseloadIdToRequestHeader("TPR")
 
-    whenever(rolloutPrisonService.getPrisonPlan(any())).thenReturn(
+    whenever(rolloutPrisonService.getByPrisonCode(any())).thenReturn(
       rolloutPrison(prisonCode = ""),
     )
 

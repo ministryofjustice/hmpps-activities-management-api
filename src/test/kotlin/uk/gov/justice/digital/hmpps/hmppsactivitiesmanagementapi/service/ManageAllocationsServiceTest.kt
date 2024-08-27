@@ -69,10 +69,10 @@ class ManageAllocationsServiceTest {
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.code)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
+    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
 
-    service.endAllocationsDueToEnd(prison.code, LocalDate.now())
+    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
 
     allocation.verifyIsEnded()
 
@@ -84,10 +84,10 @@ class ManageAllocationsServiceTest {
     val prison = rolloutPrison()
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
 
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.code)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
+    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
 
-    service.endAllocationsDueToEnd(prison.code, LocalDate.now())
+    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
 
     verify(waitingListService).declinePendingOrApprovedApplications(
       schedule.activity.activityId,
@@ -103,10 +103,10 @@ class ManageAllocationsServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
     allocation.deallocateOn(today, DeallocationReason.OTHER, "by test")
 
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.code)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
+    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
 
-    service.endAllocationsDueToEnd(prison.code, LocalDate.now())
+    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
 
     allocation.verifyIsEnded(DeallocationReason.OTHER, "by test")
 
@@ -119,10 +119,10 @@ class ManageAllocationsServiceTest {
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
     val allocation = schedule.allocations().first().apply { endDate = today }.also { it.verifyIsActive() }
 
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.code)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
+    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
 
-    service.endAllocationsDueToEnd(prison.code, LocalDate.now())
+    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
 
     allocation.verifyIsEnded()
 
@@ -136,10 +136,10 @@ class ManageAllocationsServiceTest {
     val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.code)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.code)) doReturn listOf(schedule)
+    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
+    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
 
-    service.endAllocationsDueToEnd(prison.code, LocalDate.now())
+    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
 
     allocation.verifyIsActive()
 
@@ -158,13 +158,13 @@ class ManageAllocationsServiceTest {
       on { prisonerNumber } doReturn allocation.prisonerNumber
     }
 
-    whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
@@ -187,10 +187,10 @@ class ManageAllocationsServiceTest {
       on { prisonerNumber } doReturn allocation.prisonerNumber
     }
 
-    whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(allocation)
+    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -206,17 +206,17 @@ class ManageAllocationsServiceTest {
     val prisonerInAtOtherPrison: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.IN
       on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { prisonId } doReturn prison.code.plus("-other")
+      on { prisonId } doReturn prison.prisonCode.plus("-other")
     }
 
-    whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
-      listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.code, movementDate = TimeSource.yesterday()))
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
+      listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -234,20 +234,20 @@ class ManageAllocationsServiceTest {
     val prisoner: Prisoner = mock {
       on { inOutStatus } doReturn Prisoner.InOutStatus.OUT
       on { prisonerNumber } doReturn allocation.prisonerNumber
-      on { prisonId } doReturn prison.code
+      on { prisonId } doReturn prison.prisonCode
     }
 
-    whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
     // Multiple moves to demonstrate takes the latest move for an offender
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf(allocation.prisonerNumber))) doReturn
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(
         movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
-        movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.code, movementDate = TimeSource.today()),
+        movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.today()),
       )
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
@@ -267,16 +267,16 @@ class ManageAllocationsServiceTest {
       on { prisonerNumber } doReturn "A1234AA"
     }
 
-    whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(prison)
+    whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(waitingListService.fetchOpenApplicationsForPrison(prison.code)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.code, setOf("A1234AA"))) doReturn
+    whenever(waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
+    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
       listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
     verify(waitingListService).removeOpenApplications(
-      prison.code,
+      prison.prisonCode,
       "A1234AA",
       ServiceName.SERVICE_NAME.value,
     )
@@ -285,7 +285,7 @@ class ManageAllocationsServiceTest {
   @Test
   fun `pending allocations on or before today are correctly activated`() {
     val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it)
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
 
     val pendingAllocationYesterday: Allocation = allocation().copy(
@@ -306,7 +306,7 @@ class ManageAllocationsServiceTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-        prison.code,
+        prison.prisonCode,
         PrisonerStatus.PENDING,
         TimeSource.today(),
       ),
@@ -327,7 +327,7 @@ class ManageAllocationsServiceTest {
   @Test
   fun `pending allocations on or before today are auto-suspended when prisoner is out of prison`() {
     val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it)
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
 
     val pendingAllocationYesterday: Allocation = allocation().copy(
@@ -348,7 +348,7 @@ class ManageAllocationsServiceTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-        prison.code,
+        prison.prisonCode,
         PrisonerStatus.PENDING,
         TimeSource.today(),
       ),
@@ -372,7 +372,7 @@ class ManageAllocationsServiceTest {
   @Test
   fun `pending allocation not processed when prisoner not found`() {
     val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it)
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
 
     val pendingAllocation: Allocation = allocation().copy(
@@ -386,7 +386,7 @@ class ManageAllocationsServiceTest {
 
     whenever(
       allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-        prison.code,
+        prison.prisonCode,
         PrisonerStatus.PENDING,
         TimeSource.today(),
       ),
@@ -404,18 +404,18 @@ class ManageAllocationsServiceTest {
   @Test
   fun `active allocations with a suspension due to start today are suspended`() {
     val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it)
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
 
     val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
 
     whenever(
-      allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE),
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.ACTIVE),
     ) doReturn listOf(activeAllocation)
 
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
 
-    service.suspendAllocationsDueToBeSuspended(prison.code)
+    service.suspendAllocationsDueToBeSuspended(prison.prisonCode)
 
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
 
@@ -426,11 +426,11 @@ class ManageAllocationsServiceTest {
   fun `should capture failures in monitoring service for any exceptions when suspending`() {
     val exception = RuntimeException("Something went wrong")
     doThrow(exception).whenever(allocationRepository).saveAndFlush(any())
-    val prison = rolloutPrison().also { whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it) }
+    val prison = rolloutPrison().also { whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it) }
     val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.ACTIVE)) doReturn listOf(activeAllocation)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.ACTIVE)) doReturn listOf(activeAllocation)
 
-    service.suspendAllocationsDueToBeSuspended(prison.code)
+    service.suspendAllocationsDueToBeSuspended(prison.prisonCode)
 
     verify(monitoringService).capture("An error occurred while suspending allocations due to be suspended today", exception)
   }
@@ -439,22 +439,22 @@ class ManageAllocationsServiceTest {
   fun `should capture failures in monitoring service for any exceptions when unsuspending`() {
     val exception = RuntimeException("Something went wrong")
     doThrow(exception).whenever(allocationRepository).saveAndFlush(any())
-    val prison = rolloutPrison().also { whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it) }
+    val prison = rolloutPrison().also { whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it) }
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
       activatePlannedSuspension()
       plannedSuspension()!!.endOn(LocalDate.now(), "TEST")
     }
 
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
 
-    service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.prisonCode)
     verify(monitoringService).capture("An error occurred while unsuspending allocations due to be unsuspended today", exception)
   }
 
   @Test
   fun `suspended allocations with a suspension due to end today are activated`() {
     val prison = rolloutPrison().also {
-      whenever(rolloutPrisonService.getAllPrisonPlans()) doReturn listOf(it)
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
     }
 
     val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true).apply {
@@ -463,12 +463,12 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(
-      allocationRepository.findByPrisonCodePrisonerStatus(prison.code, PrisonerStatus.SUSPENDED),
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.SUSPENDED),
     ) doReturn listOf(suspendedAllocation)
 
     suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
 
-    service.unsuspendAllocationsDueToBeUnsuspended(prison.code)
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.prisonCode)
 
     suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
 

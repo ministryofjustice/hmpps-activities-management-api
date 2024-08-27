@@ -12,13 +12,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.RolloutPrisonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.DailyAppointmentMetricsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import java.time.LocalDate
 
 class AppointmentMetricsJobTest : JobsTestBase() {
-  private val rolloutPrisonRepository: RolloutPrisonRepository = mock()
+  private val rolloutPrisonRepository: RolloutPrisonService = mock()
   private val prisonApiClient: PrisonApiApplicationClient = mock()
   private val service: DailyAppointmentMetricsService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
@@ -42,12 +42,12 @@ class AppointmentMetricsJobTest : JobsTestBase() {
   @Test
   fun `job calls service to manage appointment attendees`() {
     val rolloutPrison = rolloutPrison()
-    whenever(rolloutPrisonRepository.findAll()).thenReturn(listOf(rolloutPrison))
+    whenever(rolloutPrisonRepository.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
     val appointmentCategory = appointmentCategoryReferenceCode()
     whenever(prisonApiClient.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT.value)).thenReturn(listOf(appointmentCategory))
 
     job.execute()
 
-    verify(service).generateAppointmentMetrics(rolloutPrison.code, appointmentCategory.code, LocalDate.now().minusDays(1))
+    verify(service).generateAppointmentMetrics(rolloutPrison.prisonCode, appointmentCategory.code, LocalDate.now().minusDays(1))
   }
 }

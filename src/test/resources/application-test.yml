@@ -79,3 +79,7 @@ manage:
  adjudications:
    api:
      url: http://localhost:8777
+
+migrate:
+  activities-live: PVI,RSI,MDI
+  appointments-live: PVI,RSI,MDI

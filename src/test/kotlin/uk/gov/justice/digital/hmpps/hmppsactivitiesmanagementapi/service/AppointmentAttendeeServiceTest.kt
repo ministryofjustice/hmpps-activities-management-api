@@ -183,7 +183,7 @@ class AppointmentAttendeeServiceTest {
 
     @BeforeEach
     fun setup() {
-      whenever(rolloutPrisonService.getPrisonPlan(MOORLAND_PRISON_CODE)).thenReturn(rolloutPrison(prisonCode = MOORLAND_PRISON_CODE))
+      whenever(rolloutPrisonService.getByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(rolloutPrison(prisonCode = MOORLAND_PRISON_CODE))
       whenever(
         appointmentAttendeeRemovalReasonRepository.findById(
           PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,

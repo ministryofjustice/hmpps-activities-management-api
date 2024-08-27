@@ -19,6 +19,8 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     SENTRY_ENVIRONMENT: production
     MIGRATE_EXPERIMENTAL_MODE: false
+    ACTIVITIES_LIVE: RSI,LPI,WDI
+    APPOINTMENTS_LIVE: RSI,LPI,WDI
 
   resources:
     requests:

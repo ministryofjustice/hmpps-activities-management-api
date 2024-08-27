@@ -23,4 +23,4 @@ values (2, 1, 'A22222A', 10002, 2, current_date - 3, current_date - 2, '2022-10-
 
 -- Should not deallocate
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (3, 1, 'A33333A', 10003, 2, current_date - 4, current_date - 3, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (3, 1, 'A33333A', 10003, 2, current_date - 25, current_date - 24, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
