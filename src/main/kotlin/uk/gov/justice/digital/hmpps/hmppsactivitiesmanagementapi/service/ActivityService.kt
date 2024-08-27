@@ -268,7 +268,6 @@ class ActivityService(
         prisonRegimeService.getSlotTimesForDaysOfWeek(
           prisonCode = activity.prisonCode,
           daysOfWeek = slot.daysOfWeek,
-          acrossRegimes = true,
         )?.filter { it.key.containsAny(slot.daysOfWeek) }?.forEach { timeSlot ->
           this.addRegimeSlot(
             slot = slot,
