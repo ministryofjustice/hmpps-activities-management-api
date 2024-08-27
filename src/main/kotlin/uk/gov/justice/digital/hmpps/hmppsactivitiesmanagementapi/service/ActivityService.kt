@@ -62,7 +62,6 @@ typealias AllocationIds = Set<Long>
 @Service
 @Transactional(readOnly = true)
 class ActivityService(
-  @Value("\${migrate.experimental-mode}") val experimentalMode: Boolean,
   private val activityRepository: ActivityRepository,
   private val activitySummaryRepository: ActivitySummaryRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
@@ -286,7 +285,6 @@ class ActivityService(
       weekNumber = slot.weekNumber,
       slotTimes = Pair(slot.customStartTime!!, slot.customEndTime!!),
       daysOfWeek = slot.daysOfWeek,
-      experimentalMode = experimentalMode,
       timeSlot = slot.timeSlot,
     )
   }
@@ -296,7 +294,6 @@ class ActivityService(
       weekNumber = slot.weekNumber,
       slotTimes = timeSlot[slot.timeSlot]!!,
       daysOfWeek = daysOfWeekToApply,
-      experimentalMode = experimentalMode,
       timeSlot = slot.timeSlot,
     )
   }

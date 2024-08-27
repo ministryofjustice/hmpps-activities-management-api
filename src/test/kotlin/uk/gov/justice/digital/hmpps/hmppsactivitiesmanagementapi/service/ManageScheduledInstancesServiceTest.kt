@@ -48,7 +48,6 @@ class ManageScheduledInstancesServiceTest {
   private val monitoringService: MonitoringService = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
-    experimentalMode = false,
     activityRepository = activityRepository,
     activitySummaryRepository = mock(),
     activityCategoryRepository = mock(),
