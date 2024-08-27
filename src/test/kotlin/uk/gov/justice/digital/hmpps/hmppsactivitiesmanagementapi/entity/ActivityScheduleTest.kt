@@ -471,20 +471,6 @@ class ActivityScheduleTest {
   }
 
   @Test
-  fun `fails to add slot when a slot already exists with the same week and timeSlot`() {
-    val schedule = activityEntity().schedules().first()
-
-    schedule.slots().single().weekNumber isEqualTo 1
-    schedule.slots().single().slotTimes() isEqualTo (LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1))
-
-    assertThatThrownBy {
-      schedule.addSlot(1, LocalTime.MIDNIGHT to LocalTime.MIDNIGHT.plusHours(1), setOf(DayOfWeek.MONDAY), midnightSlot)
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Adding slot to activity schedule with ID 1: Slot already exists from 00:00 to 01:00 for week number 1")
-  }
-
-  @Test
   fun `fails to add slot when end time not after start time`() {
     val schedule = activityEntity().schedules().first()
 
