@@ -54,7 +54,7 @@ import java.time.ZoneOffset
   properties = [
     "feature.audit.service.local.enabled=true",
     "feature.audit.service.hmpps.enabled=true",
-    "jobs.deallocate-allocations-ending.days-start=2",
+    "jobs.deallocate-allocations-ending.days-start=22",
   ],
 )
 class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
@@ -162,13 +162,13 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
       lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(22),
+      releaseDate = LocalDate.now().minusDays(42),
     )
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 21.daysAgo())),
     )
 
     with(allocationRepository.findAll()) {
@@ -195,7 +195,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       prisonerNumber = "A11111A",
       inOutStatus = Prisoner.InOutStatus.OUT,
       lastMovementType = MovementType.RELEASE,
-      releaseDate = LocalDate.now().minusDays(22),
+      releaseDate = LocalDate.now().minusDays(42),
     )
 
     with(waitingListRepository.findAll().prisoner("A11111A")) {
@@ -207,7 +207,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(listOf("A11111A"), listOf(prisoner))
     prisonApiMockServer.stubPrisonerMovements(
       listOf("A11111A"),
-      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 10.daysAgo())),
+      listOf(movement("A11111A", fromPrisonCode = PENTONVILLE_PRISON_CODE, movementDate = 21.daysAgo())),
     )
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
