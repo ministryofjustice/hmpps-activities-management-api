@@ -1,0 +1,1 @@
+update prison_regime set ed_finish = '19:00:00' where prison_code = 'FMI';
