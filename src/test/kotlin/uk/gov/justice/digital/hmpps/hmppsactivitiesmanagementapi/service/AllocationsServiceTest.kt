@@ -48,7 +48,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.Optional
 
-class AllocationServiceTest {
+class AllocationsServiceTest {
   private val allocationRepository: AllocationRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val scheduleRepository: ActivityScheduleRepository = mock()
@@ -131,7 +131,10 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+    val savedAllocation = allocationCaptor.firstValue
+
+    assertThat(savedAllocation.startDate).isEqualTo(TimeSource.tomorrow().plusDays(1))
+    assertThat(savedAllocation.prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
 
     inOrder(manageAttendancesService) {
       verify(manageAttendancesService).createAnyAttendancesForToday(eq(null), any())
@@ -142,7 +145,7 @@ class AllocationServiceTest {
   }
 
   @Test
-  fun `updateAllocation - update start date - new attendances needed`() {
+  fun `updateAllocation - update start date to today - new attendances needed and status becomes active`() {
     val allocation = allocation(startDate = TimeSource.today().plusDays(3), withExclusions = true)
     allocation.activitySchedule.activity.startDate = TimeSource.today().minusDays(1)
     val allocationId = allocation.allocationId
@@ -167,7 +170,10 @@ class AllocationServiceTest {
 
     verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
 
-    assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.today())
+    val savedAllocation = allocationCaptor.firstValue
+
+    assertThat(savedAllocation.startDate).isEqualTo(TimeSource.today())
+    assertThat(savedAllocation.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
     // If there are future exclusions then their start date should be match ew allocation start date
     assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE).first().startDate).isEqualTo(TimeSource.today())
 
@@ -203,7 +209,7 @@ class AllocationServiceTest {
 
   @Test
   fun `updateAllocation - update end date when it had been set before`() {
-    var allocation = deallocation(endDate = TimeSource.tomorrow().plusDays(2))
+    val allocation = deallocation(endDate = TimeSource.tomorrow().plusDays(2))
     allocation.deallocateOn(TimeSource.tomorrow().plusDays(2), DeallocationReason.HEALTH, "Test User")
     val allocationId = allocation.allocationId
     val prisonCode = allocation.activitySchedule.activity.prisonCode
