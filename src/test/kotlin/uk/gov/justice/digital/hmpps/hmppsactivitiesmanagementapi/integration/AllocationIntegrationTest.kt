@@ -14,7 +14,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysFromNow
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ExclusionsFilter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
@@ -169,6 +168,11 @@ class AllocationIntegrationTest : IntegrationTestBase() {
   fun `update allocation start date to today`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1234BC")
 
+    allocationRepository.findById(6).get().also {
+      it.startDate isEqualTo TimeSource.today().plusDays(2)
+      it.prisonerStatus isEqualTo PrisonerStatus.PENDING
+    }
+
     webTestClient.updateAllocation(
       PENTONVILLE_PRISON_CODE,
       6,
@@ -180,9 +184,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
 
     allocationRepository.findById(6).get().also {
       it.startDate isEqualTo TimeSource.today()
-      it.exclusions(ExclusionsFilter.ACTIVE).forEach {
-        it.startDate = TimeSource.today()
-      }
+      it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
     }
 
     val newAttendance = attendanceRepository.findAll().filter { it.scheduledInstance.sessionDate == TimeSource.today() }

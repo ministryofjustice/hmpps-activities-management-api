@@ -150,6 +150,7 @@ class AllocationsService(
         "Allocation start date cannot be after allocation end date"
       }
 
+      allocation.prisonerStatus = if (newStartDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE
       allocation.startDate = newStartDate
 
       allocation.exclusions(ExclusionsFilter.FUTURE).forEach { it.startDate = newStartDate }
