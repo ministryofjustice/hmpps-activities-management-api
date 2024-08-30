@@ -403,35 +403,36 @@ data class Allocation(
     //  must be ended or removed.
 
     exclusions(ExclusionsFilter.PRESENT).filter { it.endDate == null }.forEach {
-      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot == it.timeSlot }
+      val matchingSlots = scheduleSlots.filter { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot == it.timeSlot && slot.getDaysOfWeek().any { dow -> it.getDaysOfWeek().contains(dow) } }
+      val slotDaysOfWeek = matchingSlots.flatMap { it.getDaysOfWeek() }.toSet()
       val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot == it.timeSlot }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
 
-      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.timeSlot != it.timeSlot) {
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !slotDaysOfWeek.containsAll(it.getDaysOfWeek())) {
         editedSome = true
         it.endNow()
-        val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
+        val intersect = it.getDaysOfWeek().intersect(slotDaysOfWeek).subtract(disallowedExclusionDays)
         if (intersect.isNotEmpty()) {
           addExclusion(
             Exclusion.valueOf(
               allocation = this,
               weekNumber = it.weekNumber,
               daysOfWeek = intersect,
-              timeSlot = matchingSlot.timeSlot,
+              timeSlot = it.timeSlot,
             ),
           )
         }
       }
     }
     exclusions(ExclusionsFilter.FUTURE).forEach {
-      val matchingSlot = scheduleSlots.single { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot == it.timeSlot }
+      val matchingSlots = scheduleSlots.filter { slot -> slot.weekNumber == it.weekNumber && slot.timeSlot == it.timeSlot && slot.getDaysOfWeek().any { dow -> it.getDaysOfWeek().contains(dow) } }
+      val slotDaysOfWeek = matchingSlots.flatMap { it.getDaysOfWeek() }.toSet()
       val matchingSlotsInOtherWeeks = scheduleSlots.filter { slot -> slot.weekNumber != it.weekNumber && slot.timeSlot == it.timeSlot }
       val disallowedExclusionDays = matchingSlotsInOtherWeeks.flatMap { slot -> slot.getDaysOfWeek() }.toSet()
-      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !matchingSlot.getDaysOfWeek().containsAll(it.getDaysOfWeek()) || matchingSlot.timeSlot != it.timeSlot) {
+      if (it.getDaysOfWeek().containsAny(disallowedExclusionDays) || !slotDaysOfWeek.containsAll(it.getDaysOfWeek())) {
         editedSome = true
-        val intersect = it.getDaysOfWeek().intersect(matchingSlot.getDaysOfWeek()).subtract(disallowedExclusionDays)
+        val intersect = it.getDaysOfWeek().intersect(slotDaysOfWeek).subtract(disallowedExclusionDays)
         if (intersect.isNotEmpty()) {
-          it.timeSlot = matchingSlot.timeSlot
           it.setDaysOfWeek(intersect)
         } else {
           removeExclusion(it)

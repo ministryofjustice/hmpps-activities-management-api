@@ -609,9 +609,17 @@ class AllocationTest {
           allocation.activitySchedule,
           1,
           prisonRegime[TimeSlot.AM]!!,
-          setOf(DayOfWeek.MONDAY),
+          setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY),
           TimeSlot.AM,
         ),
+        ActivityScheduleSlot.valueOf(
+          allocation.activitySchedule,
+          1,
+          prisonRegime[TimeSlot.AM]!!,
+          setOf(DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
+          TimeSlot.AM,
+        ),
+
       ),
     )
 
@@ -619,7 +627,7 @@ class AllocationTest {
       exclusions(ExclusionsFilter.PRESENT) hasSize 1
       exclusions(ExclusionsFilter.PRESENT).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
       exclusions(ExclusionsFilter.ACTIVE) hasSize 1
-      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
+      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
     }
   }
 
