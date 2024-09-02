@@ -147,7 +147,6 @@ class ActivityServiceTest {
   private fun service(
     daysInAdvance: Long = 7L,
   ) = ActivityService(
-    false,
     activityRepository,
     activitySummaryRepository,
     activityCategoryRepository,
