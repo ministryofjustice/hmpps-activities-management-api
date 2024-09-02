@@ -105,7 +105,6 @@ class MigrateActivityServiceTest {
   )
 
   private val service = MigrateActivityService(
-    false,
     rolloutPrisonService,
     activityRepository,
     prisonRegimeService,

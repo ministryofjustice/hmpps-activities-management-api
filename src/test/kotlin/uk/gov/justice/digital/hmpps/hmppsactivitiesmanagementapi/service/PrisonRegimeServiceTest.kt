@@ -353,7 +353,6 @@ class PrisonRegimeServiceTest {
     val result = service.getSlotTimesForDaysOfWeek(
       prisonCode = "IWI",
       daysOfWeek = DayOfWeek.entries.toSet(),
-      acrossRegimes = true,
     )
 
     assertThat(result).isNull()
@@ -366,7 +365,6 @@ class PrisonRegimeServiceTest {
     val result = service.getSlotTimesForDaysOfWeek(
       prisonCode = "IWI",
       daysOfWeek = DayOfWeek.entries.toSet(),
-      acrossRegimes = true,
     )
 
     assertThat(result).isNotNull
@@ -380,7 +378,6 @@ class PrisonRegimeServiceTest {
     val result = service.getSlotTimesForDaysOfWeek(
       prisonCode = "IWI",
       daysOfWeek = setOf(DayOfWeek.SATURDAY, DayOfWeek.FRIDAY),
-      acrossRegimes = true,
     )
 
     assertThat(result).isNotNull
@@ -395,7 +392,6 @@ class PrisonRegimeServiceTest {
       prisonCode = "IWI",
       daysOfWeek = setOf(DayOfWeek.SATURDAY),
       timeSlot = TimeSlot.ED,
-      acrossRegimes = true,
     )
 
     assertThat(result).isNotNull

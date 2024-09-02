@@ -4,11 +4,11 @@ import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.2"
-  kotlin("plugin.spring") version "2.0.10"
-  kotlin("plugin.jpa") version "2.0.10"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.0.4"
+  kotlin("plugin.spring") version "2.0.20"
+  kotlin("plugin.jpa") version "2.0.20"
   jacoco
-  id("org.openapi.generator") version "7.7.0"
+  id("org.openapi.generator") version "7.8.0"
   id("io.sentry.jvm.gradle") version "4.11.0"
 }
 
@@ -25,7 +25,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.3")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.0.5")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -33,14 +33,14 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.3.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:4.3.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
   // Spring framework retryable dependencies
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.6.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.7.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
