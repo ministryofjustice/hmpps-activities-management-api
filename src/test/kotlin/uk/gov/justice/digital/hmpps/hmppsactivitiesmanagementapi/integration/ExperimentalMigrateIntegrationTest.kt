@@ -103,6 +103,64 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       payRates = emptyList(),
     )
 
+  private val felthamRegimeTimeRequest =
+    ActivityMigrateRequest(
+      programServiceCode = "INT_NOM",
+      prisonCode = "FMI",
+      startDate = LocalDate.of(2024, 7, 9),
+      endDate = null,
+      internalLocationId = 468492,
+      internalLocationCode = "SITE 3",
+      internalLocationDescription = "IWI-ESTAB-SITE 3",
+      capacity = 1,
+      description = "BNM + 27 PK",
+      payPerSession = "H",
+      runsOnBankHoliday = true,
+      outsideWork = false,
+      scheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(8, 30, 0),
+          endTime = LocalTime.of(11, 30, 0),
+          monday = false,
+          tuesday = false,
+          wednesday = true,
+          thursday = false,
+          friday = true,
+          sunday = true,
+        ),
+      ),
+      payRates = emptyList(),
+    )
+
+  private val felthamCustomTimeRequest =
+    ActivityMigrateRequest(
+      programServiceCode = "INT_NOM",
+      prisonCode = "FMI",
+      startDate = LocalDate.of(2024, 7, 9),
+      endDate = null,
+      internalLocationId = 468492,
+      internalLocationCode = "SITE 3",
+      internalLocationDescription = "IWI-ESTAB-SITE 3",
+      capacity = 1,
+      description = "BNM + 27 PK",
+      payPerSession = "H",
+      runsOnBankHoliday = true,
+      outsideWork = false,
+      scheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(8, 15, 0),
+          endTime = LocalTime.of(11, 30, 0),
+          monday = false,
+          tuesday = false,
+          wednesday = true,
+          thursday = false,
+          friday = true,
+          sunday = true,
+        ),
+      ),
+      payRates = emptyList(),
+    )
+
   private val regimeNotFoundRequest =
     ActivityMigrateRequest(
       programServiceCode = "INT_NOM",
@@ -153,6 +211,28 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   fun `regime not found issue`() {
     val activityId = migrateActivity(request = regimeNotFoundRequest)
     val activity = getActivity(activityId = activityId)
+
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-fmi-prison-regime.sql",
+  )
+  @Test
+  fun `import with regime time should set flag to true`() {
+    val activityId = migrateActivity(request = felthamRegimeTimeRequest)
+    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-fmi-prison-regime.sql",
+  )
+  @Test
+  fun `import with custom time should not set flag to true`() {
+    val activityId = migrateActivity(request = felthamCustomTimeRequest)
+    val activity = getActivity(activityId = activityId, agencyId = "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
@@ -446,7 +526,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
   }
 
   private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
-    incentivesApiMockServer.stubGetIncentiveLevels("IWI")
+    incentivesApiMockServer.stubGetIncentiveLevels(request.prisonCode)
     prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
 
     return webTestClient.post()
@@ -552,12 +632,12 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
       .expectBody(ActivitySchedule::class.java)
       .returnResult().responseBody!!
 
-  private fun getActivity(activityId: Long): Activity =
+  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity =
     webTestClient.get()
       .uri("/activities/$activityId")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, "IWI")
+      .header(CASELOAD_ID, agencyId)
       .exchange()
       .expectBody(Activity::class.java)
       .returnResult().responseBody!!
