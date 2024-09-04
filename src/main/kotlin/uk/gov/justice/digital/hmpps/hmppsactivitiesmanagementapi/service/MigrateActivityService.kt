@@ -164,7 +164,7 @@ class MigrateActivityService(
             slotStartTime = it.first,
             slotEndTime = it.second,
           )
-        }?.not() ?: false
+        } ?: false
       }
 
       activity.schedules().first().addSlot(
