@@ -47,6 +47,7 @@ jobs:
           path: build/reports/jacoco
 
   integration-test:
+    parallelism: 4
     executor:
       name: hmpps/java_postgres
       jdk_tag: << pipeline.parameters.java-version >>
