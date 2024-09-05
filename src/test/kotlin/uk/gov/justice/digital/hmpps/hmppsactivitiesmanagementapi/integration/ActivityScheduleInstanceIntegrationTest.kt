@@ -483,7 +483,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
           cancelled = false,
           timeSlot = TimeSlot.AM,
           attendanceSummary = ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(
-            allocations = 1,
+            allocations = 2,
             attendees = 2,
             notRecorded = 2,
             attended = 0,
