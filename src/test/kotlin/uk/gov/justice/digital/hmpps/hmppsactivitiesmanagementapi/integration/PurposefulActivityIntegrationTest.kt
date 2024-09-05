@@ -82,6 +82,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     val purposefulActivityRow2 = activityData[1] as Array<*>
 
     // Check some of the data is as expected for first attendance
+    // These index numbers are going to be horrendous to maintain as the report changes
     assertThat(purposefulActivityRow1[3]).isEqualTo("SAA_EDUCATION") // check activity category
     assertThat(purposefulActivityRow1[44]).isEqualTo("A11111A") // check prisoner number
     assertThat(purposefulActivityRow1[23]).isEqualTo("Maths AM")

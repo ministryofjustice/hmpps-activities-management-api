@@ -64,15 +64,6 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     si.cancelled as "scheduled_instance.cancelled",
     si.cancelled_time as "scheduled_instance.cancelled_time",
     si.cancelled_reason as "scheduled_instance.cancelled_reason",
-    allo.allocation_id as "allocation.allocation_id",
-    allo.allocated_time as "allocation.allocated_time",
-    allo.deallocated_time as "allocation.deallocated_time",
-    allo.deallocated_reason as "allocation.deallocated_reason",
-    allo.suspended_time as "allocation.suspended_time",
-    allo.suspended_reason as "allocation.suspended_reason",
-    allo.planned_deallocation_id as "allocation.planned_deallocation_id",
-    pade.planned_date as "planned_deallocation.planned_date",
-    pade.planned_reason as "planned_deallocation.planned_reason",
     att.attendance_id as "attendance.attendance_id",
     att.prisoner_number as "attendance.prisoner_number",
     att.attendance_reason_id as "attendance.attendance_reason_id",
@@ -94,14 +85,12 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     inner join activity act on act.activity_id = asch.activity_id
     inner join activity_category actcat on actcat.activity_category_id = act.activity_category_id
     left outer join event_tier tier on tier.event_tier_id = act.activity_tier_id
-    left outer join allocation allo on allo.activity_schedule_id = asch.activity_schedule_id and allo.prisoner_number = att.prisoner_number and allo.deallocated_by is NULL
     left outer join attendance_reason atre on atre.attendance_reason_id = att.attendance_reason_id
-    left outer join planned_deallocation pade on pade.allocation_id = allo.allocation_id
   
   """
 
   private val appointmentsQuery = """
-      WITH date_range AS (
+  WITH date_range AS (
           SELECT
               (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7 + 7))::timestamp AS start_date,
               ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
@@ -117,6 +106,8 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
       a.custom_name as "appointment.custom_name",
       a.appointment_tier_id as "appointment.appointment_tier_id",
       tier.description as "appointment_tier.description",
+      a.appointment_organiser_id as "appointment.appointment_organiser_id",
+      eo.description as "event_organiser.event_organiser_description",
       a.internal_location_id as "appointment.internal_location_id",
       a.custom_location as "appointment.custom_location",
       a.in_cell as "appointment.in_cell",
@@ -144,12 +135,12 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
       left outer join event_tier tier on tier.event_tier_id = a.appointment_tier_id
       left outer join appointment_set_appointment_series asas on asas.appointment_series_id = apse.appointment_series_id
       left outer join appointment_cancellation_reason acr on acr.appointment_cancellation_reason_id = a.cancellation_reason_id
+      left outer join event_organiser eo on eo.event_organiser_id = a.appointment_organiser_id
       inner join appointment_attendee aa on aa.appointment_id = a.appointment_id
       WHERE (a.start_date || ' ' || a.start_time)::timestamp BETWEEN
          (SELECT start_date FROM date_range) AND
          (SELECT end_date FROM date_range);
-
-    """
+  """
 
   private val rolloutPrisonQuery = """
     select
