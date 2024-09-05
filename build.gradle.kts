@@ -1,6 +1,5 @@
-import org.jlleitschuh.gradle.ktlint.KtlintExtension
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
+import org.gradle.kotlin.dsl.exclude
+import org.gradle.kotlin.dsl.filter
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
@@ -67,6 +66,8 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
+
+  implementation("io.netty:netty-resolver-dns-native-macos:4.1.112.Final:osx-aarch_64")
 }
 
 kotlin {
@@ -79,14 +80,6 @@ tasks {
     kotlinOptions {
       jvmTarget = "21"
     }
-  }
-  withType<KtLintCheckTask> {
-    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
-  }
-  withType<KtLintFormatTask> {
-    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
 }
 
@@ -176,7 +169,13 @@ tasks.named<JacocoReport>("jacocoTestReport") {
   }
 }
 
-configure<KtlintExtension> {
+tasks.named("runKtlintCheckOverMainSourceSet") {
+  dependsOn("buildPrisonApiModel")
+  dependsOn("buildIncentivesApiModel")
+  dependsOn("buildNonAssociationsApiModel")
+}
+
+ktlint {
   filter {
     generatedProjectDirs.forEach { generatedProject ->
       exclude { element ->
