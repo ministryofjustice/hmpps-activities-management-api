@@ -4,7 +4,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -77,6 +76,7 @@ internal fun activityEntity(
   noMinimumEducationLevels: Boolean = false,
   inCell: Boolean = false,
   onWing: Boolean = false,
+  offWing: Boolean = false,
   riskLevel: String = "high",
   paid: Boolean = true,
 ) =
@@ -93,6 +93,7 @@ internal fun activityEntity(
     createdBy = "test",
     inCell = inCell,
     onWing = onWing,
+    offWing = offWing,
     isPaid = paid,
   ).apply {
     this.organiser = organiser
@@ -123,26 +124,6 @@ internal fun activityEntity(
       )
     }
   }
-
-internal fun activityPayEntity(payStartDate: LocalDate? = null) =
-  ActivityPay(
-    1,
-    activity = activityEntity(),
-    incentiveNomisCode = "STD",
-    incentiveLevel = "Standard",
-    payBand = PrisonPayBand(
-      prisonPayBandId = 1,
-      displaySequence = 1,
-      nomisPayBand = 1,
-      payBandAlias = "Low",
-      payBandDescription = "Pay band 1",
-      prisonCode = "MDI",
-    ),
-    rate = 100,
-    pieceRate = 150,
-    pieceRateItems = 1,
-    startDate = payStartDate,
-  )
 
 internal fun activitySummary(
   category: ActivityCategory = activityCategory(),
@@ -236,15 +217,13 @@ internal fun activitySchedule(
   noInstances: Boolean = false,
   noExclusions: Boolean = false,
   paid: Boolean = true,
+  noInternalLocation: Boolean = false,
 ) =
   ActivitySchedule(
     activityScheduleId = activityScheduleId,
     activity = activity,
     description = description,
     capacity = 1,
-    internalLocationId = 1,
-    internalLocationCode = "EDU-ROOM-1",
-    internalLocationDescription = "Education - R1",
     startDate = startDate ?: activity.startDate,
     runsOnBankHoliday = runsOnBankHolidays,
     scheduleWeeks = scheduleWeeks,
@@ -312,6 +291,11 @@ internal fun activitySchedule(
           },
         )
       }
+    }
+    if (!noInternalLocation) {
+      this.internalLocationId = 1
+      this.internalLocationCode = "EDU-ROOM-1"
+      this.internalLocationDescription = "Education - R1"
     }
   }
 

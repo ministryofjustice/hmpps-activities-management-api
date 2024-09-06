@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
@@ -1216,7 +1217,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue.activityPay()) {
       single { it.startDate == null }
-      single { it.startDate == java.time.LocalDate.now().plusDays(25) }
+      single { it.startDate == LocalDate.now().plusDays(25) }
     }
   }
 
@@ -2145,24 +2146,143 @@ class ActivityServiceTest {
     verify(outboundEventsService, never()).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0L)
   }
 
-  @Test
-  fun `updateActivity - update to off-wing`() {
-    val activity = activityEntity()
+  @Nested
+  inner class UpdateToNonInternalLocationId {
+    lateinit var activity: ActivityEntity
 
-    whenever(
-      activityRepository.findByActivityIdAndPrisonCodeWithFilters(
-        1,
-        MOORLAND_PRISON_CODE,
-        LocalDate.now(),
-      ),
-    ).thenReturn(activity)
+    @BeforeEach
+    fun setUp() {
+      val activity = activityEntity()
 
-    service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true), "TEST")
+      with(activity.schedules().first()) {
+        internalLocationId isEqualTo activity.schedules().first().internalLocationId
+        internalLocationCode isEqualTo activity.schedules().first().internalLocationCode
+        internalLocationDescription isEqualTo activity.schedules().first().internalLocationDescription
+      }
 
-    verify(activityRepository).saveAndFlush(activityCaptor.capture())
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+    }
 
-    with(activityCaptor.firstValue) {
-      assertThat(offWing).isTrue
+    @AfterEach
+    fun afterEach() {
+      with(activityCaptor.firstValue) {
+        with(schedules().first()) {
+          assertThat(internalLocationId).isNull()
+          assertThat(internalLocationCode).isNull()
+          assertThat(internalLocationDescription).isNull()
+        }
+      }
+    }
+
+    @Test
+    fun `updateActivity - update to off-wing`() {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true), "TEST")
+
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue) {
+        assertThat(offWing).isTrue
+      }
+    }
+
+    @Test
+    fun `updateActivity - update to on-wing`() {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true), "TEST")
+
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue) {
+        assertThat(onWing).isTrue
+      }
+    }
+
+    @Test
+    fun `updateActivity - update to in-cell`() {
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(inCell = true), "TEST")
+
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue) {
+        assertThat(inCell).isTrue
+      }
+    }
+  }
+
+  @Nested
+  inner class UpdateToInternalLocationId {
+    @AfterEach
+    fun afterEach() {
+      verify(activityRepository).saveAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue) {
+        onWing isBool false
+        offWing isBool false
+        inCell isBool false
+
+        with(schedules().first()) {
+          internalLocationId isEqualTo location.locationId.toInt()
+          internalLocationCode isEqualTo location.internalLocationCode
+          internalLocationDescription isEqualTo location.description
+        }
+      }
+    }
+
+    @Test
+    fun `updateActivity - update to internal location from on-wing`() {
+      val activity = activityEntity(onWing = true)
+      activity.schedules().first().removeLocationDetails()
+
+      activity.onWing isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
+    }
+
+    @Test
+    fun `updateActivity - update to internal location from off-wing`() {
+      val activity = activityEntity(offWing = true)
+
+      activity.offWing isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
+    }
+
+    @Test
+    fun `updateActivity - update to internal location from in-cell`() {
+      val activity = activityEntity(inCell = true)
+
+      activity.inCell isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
     }
   }
 
