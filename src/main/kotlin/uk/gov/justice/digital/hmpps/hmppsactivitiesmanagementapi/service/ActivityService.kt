@@ -560,25 +560,33 @@ class ActivityService(
 
     require((request.locationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
 
-    request.locationId?.apply {
-      val scheduleLocation = getLocationForSchedule(activity, this)
-      activity.schedules().forEach {
-        it.internalLocationId = scheduleLocation.locationId.toInt()
-        it.internalLocationCode = scheduleLocation.internalLocationCode
-        it.internalLocationDescription = scheduleLocation.description
+    when (request.locationId) {
+      null -> activity.schedules().forEach {
+        it.removeLocationDetails()
+
+        request.inCell?.apply {
+          activity.inCell = this
+        }
+
+        request.onWing?.apply {
+          activity.onWing = this
+        }
+
+        request.offWing?.apply {
+          activity.offWing = this
+        }
       }
-    }
-
-    request.inCell?.apply {
-      activity.inCell = this
-    }
-
-    request.onWing?.apply {
-      activity.onWing = this
-    }
-
-    request.offWing?.apply {
-      activity.offWing = this
+      else -> {
+        val scheduleLocation = getLocationForSchedule(activity, request.locationId)
+        activity.schedules().forEach {
+          it.internalLocationId = scheduleLocation.locationId.toInt()
+          it.internalLocationCode = scheduleLocation.internalLocationCode
+          it.internalLocationDescription = scheduleLocation.description
+        }
+        activity.inCell = false
+        activity.onWing = false
+        activity.offWing = false
+      }
     }
   }
 

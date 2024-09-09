@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
@@ -87,6 +88,17 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var auditRepository: AuditRepository
 
+  @BeforeEach
+  fun setUp() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
+      ),
+    )
+  }
+
   @Test
   fun `createActivity - paid is successful`() {
     prisonApiMockServer.stubGetReferenceCode(
@@ -134,7 +146,17 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(hmppsAuditEventCaptor.firstValue) {
       assertThat(what).isEqualTo("ACTIVITY_CREATED")
       assertThat(who).isEqualTo("test-client")
-      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"IT level 1\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+      assertThatJson(details).isEqualTo(
+        """
+          {
+            activityId: 1,
+            activityName: "IT level 1",
+            prisonCode: "MDI",
+            createdAt: "${'$'}{json-unit.ignore}",
+            createdBy: "test-client"
+          }
+        """.trimIndent(),
+      )
     }
 
     assertThat(auditRepository.findAll().size).isEqualTo(1)
@@ -1059,14 +1081,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity pay - is successful`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A11111A", "A22222A"),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
-      ),
-    )
-
     val newPay = ActivityUpdateRequest(
       pay = listOf(
         ActivityPayCreateRequest(
@@ -1110,14 +1124,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity pay - pay band with start date - is successful`() {
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A11111A", "A22222A"),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A"),
-        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
-      ),
-    )
-
     val newPay = ActivityUpdateRequest(
       paid = true,
       attendanceRequired = true,
@@ -1154,6 +1160,35 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity to in-cell - is successful`() {
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(inCell = true))) {
+      inCell isEqualTo true
+      assertThat(schedules.first().internalLocation).isNull()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity to on-wing and back to internal location`() {
+    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-PVI.json")
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true))) {
+      onWing isEqualTo true
+      assertThat(schedules.first().internalLocation).isNull()
+    }
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(locationId = 1))) {
+      onWing isEqualTo false
+      with(schedules.first()) {
+        internalLocation?.id isEqualTo 1
+        internalLocation?.code isEqualTo "internal location code"
+        internalLocation?.description isEqualTo "House_block_7-1-002"
+      }
     }
   }
 
