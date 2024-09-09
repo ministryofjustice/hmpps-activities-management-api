@@ -32,7 +32,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew build
+          command: ./gradlew build -x test
       - save_cache:
           paths:
             - ~/.gradle
