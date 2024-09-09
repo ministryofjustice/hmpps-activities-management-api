@@ -369,6 +369,12 @@ data class ActivitySchedule(
 
   fun isPaid() = activity.paid
   fun endsOn(date: LocalDate) = date == endDate
+
+  fun removeLocationDetails() {
+    this.internalLocationId = null
+    this.internalLocationCode = null
+    this.internalLocationDescription = null
+  }
 }
 
 fun List<ActivitySchedule>.toModelLite() = map { it.toModelLite() }
