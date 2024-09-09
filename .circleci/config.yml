@@ -19,7 +19,7 @@ parameters:
     default: "14"
 
 jobs:
-  validate:
+  build:
     executor:
       name: hmpps/java
       tag: << pipeline.parameters.java-version >>
@@ -32,7 +32,26 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check
+          command: ./gradlew build
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: gradle-{{ checksum "build.gradle.kts" }}
+
+  unit-test:
+    executor:
+      name: hmpps/java
+      tag: << pipeline.parameters.java-version >>
+    environment:
+      _JAVA_OPTIONS: -Xmx2048m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - gradle-{{ checksum "build.gradle.kts" }}
+            - gradle-
+      - run:
+          command: ./gradlew test
       - codecov/upload:
           file: build/reports/jacoco/test/jacocoTestReport.xml
       - save_cache:
@@ -47,7 +66,7 @@ jobs:
           path: build/reports/jacoco
 
   integration-test:
-    parallelism: 7
+    parallelism: 4
     executor:
       name: hmpps/java_postgres
       jdk_tag: << pipeline.parameters.java-version >>
@@ -91,14 +110,22 @@ workflows:
   version: 2
   build-test-and-deploy:
     jobs:
-      - validate:
+      - build:
           filters:
             tags:
               ignore: /.*/
+      - unit-test:
+          filters:
+            tags:
+              ignore: /.*/
+          requires:
+            - build
       - integration-test:
           filters:
             tags:
               ignore: /.*/
+          requires:
+            - build
       - hmpps/helm_lint:
           name: helm_lint
       - hmpps/build_multiplatform_docker:
@@ -119,7 +146,8 @@ workflows:
               only:
                 - main
           requires:
-            - validate
+            - build
+            - unit-test
             - integration-test
             - build_docker
             - helm_lint
