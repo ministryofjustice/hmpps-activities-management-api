@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ModelTest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDate
 
@@ -24,7 +25,10 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
   @MockBean
   private lateinit var prisonService: RolloutPrisonService
 
-  override fun controller() = RolloutController(prisonService)
+  @MockBean
+  private lateinit var prisonRegimeService: PrisonRegimeService
+
+  override fun controller() = RolloutController(prisonService, prisonRegimeService)
 
   @Test
   fun `200 response when get prison by code found`() {
