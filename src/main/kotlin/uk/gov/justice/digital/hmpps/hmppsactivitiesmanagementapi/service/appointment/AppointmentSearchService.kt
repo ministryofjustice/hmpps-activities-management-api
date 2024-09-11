@@ -48,7 +48,7 @@ class AppointmentSearchService(
   ): List<AppointmentSearchResult> {
     checkCaseloadAccess(prisonCode)
 
-    rolloutPrisonService.isActive(code = prisonCode)
+    rolloutPrisonService.isAppointmentsRolledOut(code = prisonCode)
 
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(
       agencyId = prisonCode,
