@@ -216,36 +216,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
   }
 
   @Test
-  fun `200 response when get activity by ID found`() {
-    val activity = activityModel(activityEntity())
-
-    whenever(activityService.getActivityById(1)).thenReturn(activity)
-
-    val response = mockMvc.getActivityById(1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(activity))
-
-    verify(activityService).getActivityById(1)
-  }
-
-  @Test
-  fun `404 response when get activity by ID not found`() {
-    whenever(activityService.getActivityById(2)).thenThrow(EntityNotFoundException("not found"))
-
-    val response = mockMvc.getActivityById(2)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(activityService).getActivityById(2)
-  }
-
-  @Test
   fun `200 response when get activity schedules`() {
     val expectedModel = listOf(
       ActivityScheduleLite(
@@ -497,23 +467,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     }
 
     @Nested
-    @DisplayName("Authorization tests")
-    inner class AuthorizationTests {
-      @Nested
-      @DisplayName("Get activity by id")
-      inner class GetActivityByIdTests {
-        @Test
-        @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
-        fun `Get activity by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
-          mockMvcWithSecurity.get("/activities/1") {
-            contentType = MediaType.APPLICATION_JSON
-            header(CASELOAD_ID, "MDI")
-          }.andExpect { status { isOk() } }
-        }
-      }
-    }
-
-    @Nested
     @DisplayName("Get filtered activity by id")
     inner class GetFilteredActivityByIdTests {
       @Test
@@ -527,7 +480,6 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     }
   }
 
-  private fun MockMvc.getActivityById(id: Long) = get("/activities/{activityId}", id)
   private fun MockMvc.getActivitySchedules(id: Long) =
     get("/activities/{activityId}/schedules", id)
 }

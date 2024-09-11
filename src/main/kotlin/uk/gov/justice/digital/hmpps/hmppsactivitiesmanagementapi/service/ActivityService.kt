@@ -91,13 +91,6 @@ class ActivityService(
     return transform(activity)
   }
 
-  fun getActivityById(activityId: Long): ModelActivity {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
-    checkCaseloadAccess(activity.prisonCode)
-    return transform(activity)
-  }
-
   fun getActivityBasicById(activityId: Long): ModelActivityBasic {
     // TODO: Caseload check
     val activityBasic = activityRepository.getActivityBasicById(activityId)

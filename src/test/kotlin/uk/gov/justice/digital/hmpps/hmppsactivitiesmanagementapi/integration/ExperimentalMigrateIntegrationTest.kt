@@ -634,7 +634,7 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
   private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity =
     webTestClient.get()
-      .uri("/activities/$activityId")
+      .uri("/activities/$activityId/filtered")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
       .header(CASELOAD_ID, agencyId)
