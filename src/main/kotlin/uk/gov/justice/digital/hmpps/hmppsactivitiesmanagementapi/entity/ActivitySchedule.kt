@@ -312,10 +312,10 @@ data class ActivitySchedule(
   fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String, caseNoteId: Long? = null): Allocation {
     val allocation = allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }
       ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
-    return if (isActiveOn(date)) {
-      allocation.deallocateOn(date, reason, by, caseNoteId)
-    } else if (date.isBefore(allocation.startDate)) {
+    return if (date.isBefore(allocation.startDate)) {
       allocation.deallocateBeforeStart(reason, by)
+    } else if (isActiveOn(date)) {
+      allocation.deallocateOn(date, reason, by, caseNoteId)
     } else {
       throw IllegalStateException("Schedule $activityScheduleId is not active or in the future on the planned deallocated date $date.")
     }
