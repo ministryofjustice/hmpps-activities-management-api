@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
+import jakarta.validation.ValidationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
@@ -7,10 +8,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.PrisonRegimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
@@ -18,7 +21,6 @@ import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime as PrisonRegimeEntity
 
 @Service
-@Transactional(readOnly = true)
 class PrisonRegimeService(
   private val eventPriorityRepository: EventPriorityRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
@@ -30,6 +32,7 @@ class PrisonRegimeService(
    *
    * If no priorities are found then defaults are provided, see [EventType] for the default order.
    */
+  @Transactional(readOnly = true)
   fun getEventPrioritiesForPrison(code: String) =
     eventPriorityRepository.findByPrisonCode(code)
       .groupBy { it.eventType }
@@ -43,25 +46,17 @@ class PrisonRegimeService(
   /**
    * Returns the pay bands configured for a prison (if any), otherwise a default set of prison pay bands.
    */
+  @Transactional(readOnly = true)
   fun getPayBandsForPrison(code: String) =
     prisonPayBandRepository.findByPrisonCode(code)
       .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
       .map { it.toModelPrisonPayBand() }
 
-  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> {
-    val prisonRegimes = prisonRegimeRepository.findByPrisonCode(code = code)
+  @Transactional(readOnly = true)
+  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> =
+    prisonRegimeRepository.findByPrisonCode(code = code).transformRegime()
 
-    return DayOfWeek.entries.map { dayOfWeek ->
-      val regime = prisonRegimes.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
-      transform(
-        prisonRegime = regime,
-        dayOfWeek = dayOfWeek,
-      )
-    }.sortedBy {
-      it.dayOfWeek.value
-    }
-  }
-
+  @Transactional(readOnly = true)
   fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> =
     getPrisonRegimeForDaysOfWeek(prisonCode = agencyId, daysOfWeek = DayOfWeek.entries.toSet()).associateBy { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() }
 
@@ -77,6 +72,8 @@ class PrisonRegimeService(
    *   @param prisonCode The code of the prison to look up the times for
    *   @param timeSlot The timeslot to convert
    */
+
+  @Transactional(readOnly = true)
   fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): LocalTimeRange? =
     getPrisonRegimeForDayOfWeek(prisonCode = prisonCode, dayOfWeek = dayOfWeek)?.let { pr ->
       val (start, end) = when (timeSlot) {
@@ -88,6 +85,7 @@ class PrisonRegimeService(
       LocalTimeRange(start, end)
     }
 
+  @Transactional(readOnly = true)
   fun getSlotTimesForTimeSlot(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,
@@ -101,6 +99,7 @@ class PrisonRegimeService(
     return regimeTimes[key]?.get(timeSlot)
   }
 
+  @Transactional(readOnly = true)
   fun getSlotTimesForDaysOfWeek(
     prisonCode: String,
     daysOfWeek: Set<DayOfWeek>,
@@ -119,6 +118,31 @@ class PrisonRegimeService(
           TimeSlot.ED to Pair(it.edStart, it.edFinish),
         )
     }
+  }
+
+  @Transactional
+  fun setPrisonRegime(agencyId: String, slots: List<PrisonRegimeSlot>): List<PrisonRegime> {
+    if (slots.map { it.dayOfWeek }.containsAll(DayOfWeek.entries).not()) {
+      throw ValidationException("requires all days of week")
+    }
+    prisonRegimeRepository.deleteByPrisonCode(code = agencyId)
+
+    return slots.map {
+      prisonRegimeRepository.save(
+        PrisonRegimeEntity(
+          prisonCode = agencyId,
+          amStart = it.amStart,
+          amFinish = it.amFinish,
+          pmStart = it.pmStart,
+          pmFinish = it.pmFinish,
+          edStart = it.edStart,
+          edFinish = it.edFinish,
+          prisonRegimeDaysOfWeek = listOf(
+            PrisonRegimeDaysOfWeek(dayOfWeek = it.dayOfWeek),
+          ),
+        ),
+      )
+    }.transformRegime()
   }
 
   private fun getPrisonRegimeForDaysOfWeek(
@@ -163,6 +187,17 @@ class PrisonRegimeService(
 
       return this[key]!!.getTimeSlot(time = time)
     }
+
+    fun List<PrisonRegimeEntity>.transformRegime(): List<PrisonRegime> =
+      DayOfWeek.entries.map { dayOfWeek ->
+        val regime = this.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+        transform(
+          prisonRegime = regime,
+          dayOfWeek = dayOfWeek,
+        )
+      }.sortedBy {
+        it.dayOfWeek.value
+      }
 
     private fun PrisonRegimeEntity.getTimeSlot(time: LocalTime): TimeSlot {
       if (time.isBefore(this.pmStart)) return TimeSlot.AM

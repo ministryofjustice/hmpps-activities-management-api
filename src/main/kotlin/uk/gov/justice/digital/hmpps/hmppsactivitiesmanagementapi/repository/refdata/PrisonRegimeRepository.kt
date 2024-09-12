@@ -7,4 +7,5 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 @Repository
 interface PrisonRegimeRepository : JpaRepository<PrisonRegime, Long> {
   fun findByPrisonCode(code: String): List<PrisonRegime>
+  fun deleteByPrisonCode(code: String)
 }

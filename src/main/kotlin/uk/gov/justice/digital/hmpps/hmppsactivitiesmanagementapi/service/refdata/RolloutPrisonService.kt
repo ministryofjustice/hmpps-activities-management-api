@@ -40,8 +40,8 @@ class RolloutPrisonService(
     )
   }
 
-  fun isActive(code: String) {
-    if (activitiesLive.split(",").contains(code).not()) throw ValidationException("prison not active")
+  fun isAppointmentsRolledOut(code: String) {
+    if (appointmentsLive.split(",").contains(code).not()) throw ValidationException("prison not active")
   }
 
   fun isActivitiesRolledOutAt(prisonCode: String): Boolean = getPrison(code = prisonCode).activities

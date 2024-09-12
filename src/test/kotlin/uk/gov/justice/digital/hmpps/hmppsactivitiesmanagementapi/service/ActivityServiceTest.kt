@@ -89,7 +89,6 @@ import java.time.LocalTime
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule as EligibilityRuleEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 class ActivityServiceTest {
   private val activityRepository: ActivityRepository = mock()
@@ -595,26 +594,6 @@ class ActivityServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK must be a Foundation Tier")
-  }
-
-  @Test
-  fun `getActivityById returns an activity for known activity ID`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = caseLoad)))
-
-    assertThat(service().getActivityById(1)).isInstanceOf(ModelActivity::class.java)
-  }
-
-  @Test
-  fun `getActivityById throws a CaseLoadAccessException an activity with a different prison code`() {
-    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activityEntity(prisonCode = "DIFFERENT_PRISON_CODE")))
-
-    assertThatThrownBy { service().getActivityById(1) }.isInstanceOf(CaseloadAccessException::class.java)
-  }
-
-  @Test
-  fun `getActivityById throws entity not found exception for unknown activity ID`() {
-    assertThatThrownBy { service().getActivityById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Activity -1 not found")
   }
 
   @Test

@@ -1,9 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.mockito.Mockito
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -17,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonR
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.PrisonRegimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
@@ -415,4 +420,54 @@ class PrisonRegimeServiceTest {
       ),
     ).isEqualTo(timeSlot)
   }
+
+  @Test
+  fun `set a regime throws exception if a day of week is missing`() {
+    assertThatThrownBy {
+      service.setPrisonRegime(
+        agencyId = "TST",
+        slots = listOf(createRegimeSlot(dayOfWeek = DayOfWeek.MONDAY)),
+      )
+    }.isInstanceOf(ValidationException::class.java).hasMessage("requires all days of week")
+  }
+
+  @Test
+  fun `set a prison regime`() {
+    Mockito.doNothing().whenever(prisonRegimeRepository).deleteByPrisonCode(any())
+    whenever(prisonRegimeRepository.save(any())).thenReturn(
+      PrisonRegime(
+        prisonCode = "",
+        prisonRegimeDaysOfWeek =
+        DayOfWeek.entries.map {
+          PrisonRegimeDaysOfWeek(dayOfWeek = it)
+        },
+        amStart = LocalTime.now(),
+        amFinish = LocalTime.now(),
+        pmStart = LocalTime.now(),
+        pmFinish = LocalTime.now(),
+        edStart = LocalTime.now(),
+        edFinish = LocalTime.now(),
+      ),
+    )
+
+    val response = service.setPrisonRegime(
+      agencyId = "TST",
+      slots = DayOfWeek.entries.map {
+        createRegimeSlot(dayOfWeek = it)
+      },
+    )
+
+    assertThat(response.size).isEqualTo(7)
+  }
+
+  private fun createRegimeSlot(dayOfWeek: DayOfWeek): PrisonRegimeSlot =
+    PrisonRegimeSlot(
+      dayOfWeek = dayOfWeek,
+      amStart = LocalTime.now(),
+      amFinish = LocalTime.now(),
+      pmStart = LocalTime.now(),
+      pmFinish = LocalTime.now(),
+      edStart = LocalTime.now(),
+      edFinish = LocalTime.now(),
+    )
 }
