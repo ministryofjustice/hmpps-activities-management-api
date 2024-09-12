@@ -1,6 +1,4 @@
-import org.jlleitschuh.gradle.ktlint.KtlintExtension
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintCheckTask
-import org.jlleitschuh.gradle.ktlint.tasks.KtLintFormatTask
+import org.gradle.kotlin.dsl.exclude
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
@@ -71,6 +69,7 @@ dependencies {
 
 kotlin {
   jvmToolchain(21)
+  kotlinDaemonJvmArgs = listOf("-Xmx1g", "-Xms256m", "-XX:+UseParallelGC")
 }
 
 tasks {
@@ -79,14 +78,6 @@ tasks {
     kotlinOptions {
       jvmTarget = "21"
     }
-  }
-  withType<KtLintCheckTask> {
-    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
-  }
-  withType<KtLintFormatTask> {
-    // Under gradle 8 we must declare the dependency here, even if we're not going to be linting the model
-    mustRunAfter("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel")
   }
 }
 
@@ -146,20 +137,14 @@ jacoco {
   toolVersion = "0.8.12"
 }
 
-val integrationTest = task<Test>("integrationTest") {
-  description = "Integration tests"
-  group = "verification"
-  shouldRunAfter("test")
-  // required for jjwt 0.12 - see https://github.com/jwtk/jjwt/issues/849
-  jvmArgs("--add-exports", "java.base/sun.security.util=ALL-UNNAMED")
-}
-
-tasks.named<Test>("integrationTest") {
-  useJUnitPlatform()
-  filter {
-    includeTestsMatching("*.integration.*")
+tasks.register("integrationTest", Test::class) {
+  useJUnitPlatform {
+    filter {
+      includeTestsMatching("*.integration.*")
+    }
   }
-  maxHeapSize = "1024m"
+  shouldRunAfter("test")
+  maxHeapSize = "2048m"
 }
 
 tasks.named<Test>("test") {
@@ -176,7 +161,13 @@ tasks.named<JacocoReport>("jacocoTestReport") {
   }
 }
 
-configure<KtlintExtension> {
+tasks.named("runKtlintCheckOverMainSourceSet") {
+  dependsOn("buildPrisonApiModel")
+  dependsOn("buildIncentivesApiModel")
+  dependsOn("buildNonAssociationsApiModel")
+}
+
+ktlint {
   filter {
     generatedProjectDirs.forEach { generatedProject ->
       exclude { element ->
