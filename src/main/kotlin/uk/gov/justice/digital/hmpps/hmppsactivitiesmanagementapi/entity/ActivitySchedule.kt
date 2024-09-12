@@ -171,8 +171,6 @@ data class ActivitySchedule(
    */
   fun isActiveOn(date: LocalDate): Boolean = date.between(startDate, endDate)
 
-  fun isFuture(date: LocalDate): Boolean = date.isBefore(startDate)
-
   fun isSuspendedOn(date: LocalDate) = suspensions.any { it.isSuspendedOn(date) }
 
   fun getWeekNumber(date: LocalDate): Int {
@@ -312,12 +310,12 @@ data class ActivitySchedule(
       ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
   fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String, caseNoteId: Long? = null): Allocation {
-    if (isActiveOn(date)) {
-      return allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateOn(date, reason, by, caseNoteId)
-        ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
-    } else if (isFuture(date)) {
-      return allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }?.deallocateBeforeStart(reason, by)
-        ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
+    val allocation = allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }
+      ?: throw IllegalArgumentException("Allocation not found for prisoner $prisonerNumber for schedule $activityScheduleId.")
+    return if (date.isBefore(allocation.startDate)) {
+      allocation.deallocateBeforeStart(reason, by)
+    } else if (isActiveOn(date)) {
+      allocation.deallocateOn(date, reason, by, caseNoteId)
     } else {
       throw IllegalStateException("Schedule $activityScheduleId is not active or in the future on the planned deallocated date $date.")
     }
