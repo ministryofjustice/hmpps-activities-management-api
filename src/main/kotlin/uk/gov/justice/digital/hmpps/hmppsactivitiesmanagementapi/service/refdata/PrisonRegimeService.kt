@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
+import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.ValidationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -53,8 +54,11 @@ class PrisonRegimeService(
       .map { it.toModelPrisonPayBand() }
 
   @Transactional(readOnly = true)
-  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> =
-    prisonRegimeRepository.findByPrisonCode(code = code).transformRegime()
+  fun getPrisonRegimeByPrisonCode(code: String): List<PrisonRegime> {
+    val regime = prisonRegimeRepository.findByPrisonCode(code = code)
+    if (regime.isEmpty()) throw EntityNotFoundException("no regime set for prison")
+    return regime.transformRegime()
+  }
 
   @Transactional(readOnly = true)
   fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> =

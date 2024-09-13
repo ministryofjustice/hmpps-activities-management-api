@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.DayOfWeek
 import java.time.LocalTime
 
+@Schema(description = "prison regime slots for a day of the week")
 data class PrisonRegimeSlot(
   val dayOfWeek: DayOfWeek,
   val amStart: LocalTime,
