@@ -76,11 +76,26 @@ class PrisonRegimeIntegrationTest : IntegrationTestBase() {
     assertThat(fridayRegime.edFinish).isEqualTo(LocalTime.of(19, 0, 0))
   }
 
+  @Test
+  fun `prison regime not found`() {
+    webTestClient.get()
+      .uri { builder ->
+        builder
+          .path("/prison/prison-regime/RDI")
+          .build()
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, "RDI")
+      .exchange()
+      .expectStatus().isNotFound
+  }
+
   private fun getPrisonRegime(agencyId: String): List<PrisonRegime> = webTestClient.get()
     .uri { builder ->
       builder
         .path("/prison/prison-regime/$agencyId")
-        .build(agencyId)
+        .build()
     }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
