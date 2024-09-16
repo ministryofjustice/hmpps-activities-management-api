@@ -14,7 +14,9 @@ SELECT att.attendance_id,
        att.prisoner_number,
        att.recorded_time,
        act.attendance_required,
-       et.code AS event_tier
+       et.code AS event_tier,
+       si.start_time,
+       si.end_time
 FROM scheduled_instance si
          JOIN activity_schedule asch ON si.activity_schedule_id = asch.activity_schedule_id
          JOIN activity act ON asch.activity_id = act.activity_id

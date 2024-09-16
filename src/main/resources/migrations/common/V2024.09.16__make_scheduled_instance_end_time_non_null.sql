@@ -1,0 +1,1 @@
+alter table scheduled_instance alter column end_time set not null;
