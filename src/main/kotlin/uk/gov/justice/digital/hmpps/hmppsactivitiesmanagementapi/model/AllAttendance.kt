@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Schema(
   description =
@@ -31,6 +32,14 @@ data class AllAttendance(
 
   @Schema(description = "AM, PM, ED.", example = "AM")
   val timeSlot: String,
+
+  @Schema(description = "The start time", example = "9:00")
+  @JsonFormat(pattern = "HH:mm")
+  val startTime: LocalTime,
+
+  @Schema(description = "The end time", example = "11:30")
+  @JsonFormat(pattern = "HH:mm")
+  val endTime: LocalTime,
 
   @Schema(description = "WAITING, COMPLETED.", example = "WAITING")
   val status: String,
