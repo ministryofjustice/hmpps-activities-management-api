@@ -7,6 +7,7 @@ import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as AllAttendanceModel
 
 @Entity
@@ -21,6 +22,10 @@ data class AllAttendance(
   val sessionDate: LocalDate,
 
   val timeSlot: String,
+
+  val startTime: LocalTime,
+
+  val endTime: LocalTime,
 
   val status: String,
 
@@ -50,6 +55,8 @@ data class AllAttendance(
       prisonCode = prisonCode,
       sessionDate = sessionDate,
       timeSlot = timeSlot,
+      startTime = startTime,
+      endTime = endTime,
       status = status,
       attendanceReasonCode = attendanceReasonCode,
       issuePayment = issuePayment,
