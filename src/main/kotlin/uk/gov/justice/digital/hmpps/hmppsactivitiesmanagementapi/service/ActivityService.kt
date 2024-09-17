@@ -715,7 +715,7 @@ class ActivityService(
         schedule.removeSlots()
         schedule.addSlots(slots)
         val activeAllocations = schedule.allocations(excludeEnded = true)
-        if (schedule.slots().all { it.weekNumber == 1 }) {
+        if (schedule.scheduleWeeks == 1) {
           activeAllocations.forEach { allocation ->
             allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) }
           }
