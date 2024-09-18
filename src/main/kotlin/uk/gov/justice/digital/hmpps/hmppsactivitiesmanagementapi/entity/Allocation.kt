@@ -454,16 +454,6 @@ data class Allocation(
       "Cannot set exclusions where the activity does not run"
     }
 
-    // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
-    //  This is to respect a restraint on the nomis data model
-    require(
-      activitySchedule.slots().none { slot ->
-        slot.timeSlot == exclusion.timeSlot &&
-          slot.weekNumber != exclusion.weekNumber &&
-          slot.getDaysOfWeek().containsAny(exclusion.getDaysOfWeek())
-      },
-    ) { "Exclusions cannot be added where the time slot exists over multiple weeks." }
-
     require(
       exclusions(ExclusionsFilter.ACTIVE).none { it.timeSlot == exclusion.timeSlot && it.weekNumber == exclusion.weekNumber },
     ) {

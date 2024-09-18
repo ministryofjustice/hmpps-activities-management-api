@@ -509,44 +509,6 @@ class AllocationTest {
   }
 
   @Test
-  fun `update exclusions - cannot add exclusions for same day and time slot over multiple weeks`() {
-    val activity = activityEntity(noSchedules = true)
-    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
-
-    schedule.addSlot(
-      weekNumber = 1,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
-      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
-      timeSlot = TimeSlot.PM,
-    )
-
-    schedule.addSlot(
-      weekNumber = 2,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
-      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
-      timeSlot = TimeSlot.PM,
-    )
-
-    val allocation = schedule.allocatePrisoner(
-      prisonerNumber = "A1111BB".toPrisonerNumber(),
-      bookingId = 20002,
-      payBand = lowPayBand,
-      allocatedBy = "Mr Blogs",
-      startDate = activity.startDate,
-    )
-
-    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
-
-    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), today) }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Exclusions cannot be added where the time slot exists over multiple weeks.")
-
-    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY), today)
-
-    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
-  }
-
-  @Test
   fun `syncExclusionsWithScheduleSlots - ends present exclusions which do not have a matching slot`() {
     val allocation = allocation(startDate = LocalDate.now(), withExclusions = true)
 
