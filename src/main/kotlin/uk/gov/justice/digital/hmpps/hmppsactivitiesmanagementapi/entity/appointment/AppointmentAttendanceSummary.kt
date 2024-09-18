@@ -76,6 +76,7 @@ data class AppointmentAttendanceSummary(
       notRecordedCount = notRecordedCount,
       attendees = attendees.toResult(),
       eventTierType = if (eventTier != null) EventTierType.valueOf(eventTier) else null,
+      inCell = inCell,
     )
 }
 
