@@ -32,3 +32,25 @@ values (1,  1,  'Pay band 1 (Lowest)', 'Pay band 1 (Lowest)', 'HEI'),
        (8,  8,  'Pay band 8', 'Pay band 8', 'HEI'),
        (9,  9,  'Pay band 9', 'Pay band 9', 'HEI'),
        (10, 10, 'Pay band 10 (Highest)', 'Pay band 10 (Highest)', 'HEI');
+insert into prison_pay_band (display_sequence, nomis_pay_band, pay_band_alias, pay_band_description, prison_code)
+values (1,  1,  'Pay band 1 (Lowest)', 'Pay band 1 (Lowest)', 'STI'),
+       (2,  2,  'Pay band 2', 'Pay band 2', 'STI'),
+       (3,  3,  'Pay band 3', 'Pay band 3', 'STI'),
+       (4,  4,  'Pay band 4', 'Pay band 4', 'STI'),
+       (5,  5,  'Pay band 5', 'Pay band 5', 'STI'),
+       (6,  6,  'Pay band 6', 'Pay band 6', 'STI'),
+       (7,  7,  'Pay band 7', 'Pay band 7', 'STI'),
+       (8,  8,  'Pay band 8', 'Pay band 8', 'STI'),
+       (9,  9,  'Pay band 9', 'Pay band 9', 'STI'),
+       (10, 10, 'Pay band 10 (Highest)', 'Pay band 10 (Highest)', 'STI');
+insert into prison_pay_band (display_sequence, nomis_pay_band, pay_band_alias, pay_band_description, prison_code)
+values (1,  1,  'Pay band 1 (Lowest)', 'Pay band 1 (Lowest)', 'PVI'),
+       (2,  2,  'Pay band 2', 'Pay band 2', 'PVI'),
+       (3,  3,  'Pay band 3', 'Pay band 3', 'PVI'),
+       (4,  4,  'Pay band 4', 'Pay band 4', 'PVI'),
+       (5,  5,  'Pay band 5', 'Pay band 5', 'PVI'),
+       (6,  6,  'Pay band 6', 'Pay band 6', 'PVI'),
+       (7,  7,  'Pay band 7', 'Pay band 7', 'PVI'),
+       (8,  8,  'Pay band 8', 'Pay band 8', 'PVI'),
+       (9,  9,  'Pay band 9', 'Pay band 9', 'PVI'),
+       (10, 10, 'Pay band 10 (Highest)', 'Pay band 10 (Highest)', 'PVI');
