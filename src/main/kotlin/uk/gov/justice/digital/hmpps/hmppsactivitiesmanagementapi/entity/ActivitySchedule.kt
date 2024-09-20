@@ -132,12 +132,29 @@ data class ActivitySchedule(
 
   fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot == timeSlot }
 
+  fun mergedSlots(): List<ActivityScheduleSlot> {
+    var mergedSlots: MutableList<ActivityScheduleSlot> = mutableListOf()
+
+    val weekTimeSlot = slots().flatMap { listOf(Pair(it.weekNumber, it.timeSlot)) }.distinct()
+
+    weekTimeSlot.forEach {
+        weekTimeSlot ->
+      mergedSlot(weekTimeSlot.first, weekTimeSlot.second)?.let { mergedSlots.add(it) }
+    }
+    return mergedSlots
+  }
+
   fun mergedSlot(weekNumber: Int, timeSlot: TimeSlot): ActivityScheduleSlot? {
     var mergedSlot: ActivityScheduleSlot? = null
     val hasSlots = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot }
 
     if (hasSlots) {
-      mergedSlot = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
+      val copy = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
+      mergedSlot = ActivityScheduleSlot(
+        weekNumber = copy.weekNumber, timeSlot = copy.timeSlot,
+        startTime = copy.startTime, endTime = copy.endTime, activitySchedule = copy.activitySchedule,
+      )
+
       mergedSlot.mondayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.mondayFlag }
       mergedSlot.tuesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.tuesdayFlag }
       mergedSlot.wednesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.wednesdayFlag }
