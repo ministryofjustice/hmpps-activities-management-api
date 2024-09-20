@@ -268,6 +268,47 @@ class ActivityScheduleTest {
   }
 
   @Test
+  fun `can allocate prisoner to a schedule with correct exclusions when there are multiple schedule slots for a timeslots`() {
+    val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
+      .also { it.allocations() hasSize 1 }
+
+    schedule.addSlot(1,  LocalTime.of(9, 25) to LocalTime.of(11, 35),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY), TimeSlot.AM)
+    schedule.addSlot(1,  LocalTime.of(13, 40) to LocalTime.of(16, 35),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY), TimeSlot.PM)
+    schedule.addSlot(1,  LocalTime.of(8, 35) to LocalTime.of(11, 35),
+      setOf(DayOfWeek.FRIDAY), TimeSlot.AM)
+
+    schedule.allocatePrisoner(
+      startDate = tomorrow,
+      prisonerNumber = "654323".toPrisonerNumber(),
+      payBand = lowPayBand,
+      bookingId = 1,
+      exclusions = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.AM,
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          friday = true,
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+        ),
+      ),
+      allocatedBy = "FREDDIE",
+    )
+
+    schedule.allocations() hasSize 2
+
+    with(schedule.allocations().first { it.prisonerNumber == "654323" }) {
+      exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+      exclusions(ExclusionsFilter.ACTIVE).first().timeSlot isEqualTo TimeSlot.AM
+      exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+    }
+  }
+
+  @Test
   fun `can not allocate prisoner to a schedule with an exclusion which does not relate to a real slot`() {
     val schedule = activitySchedule(activity = activityEntity())
       .also { it.allocations() hasSize 2 }
