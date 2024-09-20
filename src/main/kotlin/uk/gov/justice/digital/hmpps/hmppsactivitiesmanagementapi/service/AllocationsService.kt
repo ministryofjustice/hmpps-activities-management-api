@@ -125,7 +125,6 @@ class AllocationsService(
         }
       } ?: throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
     }
-    log.info("test")
   }
 
   private fun applyStartDateUpdate(
