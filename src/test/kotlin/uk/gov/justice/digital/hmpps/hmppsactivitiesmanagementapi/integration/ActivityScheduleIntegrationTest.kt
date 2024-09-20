@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -52,7 +53,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 
 @TestPropertySource(
   properties = [
@@ -62,6 +65,7 @@ import java.time.temporal.ChronoUnit
     "feature.audit.service.local.enabled=true",
     "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.attendance-created=true",
+    "feature.event.activities.prisoner.attendance-deleted=true",
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {
@@ -73,7 +77,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   private lateinit var auditRepository: AuditRepository
 
   @Autowired
-  private lateinit var repository: ActivityScheduleRepository
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   @Autowired
   private lateinit var waitlistRepository: WaitingListRepository
@@ -247,6 +251,17 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectBody(ActivitySchedule::class.java)
       .returnResult().responseBody
 
+  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) =
+    get()
+      .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ModelAllAttendance::class.java)
+      .returnResult().responseBody
+
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
   fun `204 (no content) response when successfully allocate prisoner to an activity schedule`() {
@@ -259,7 +274,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -270,7 +285,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    val allocation = with(repository.findById(1).orElseThrow().allocations().first()) {
+    val allocation = with(activityScheduleRepository.findById(1).orElseThrow().allocations().first()) {
       assertThat(prisonerNumber).isEqualTo("G4793VF")
       assertThat(allocatedBy).isEqualTo("test-client")
       this
@@ -316,7 +331,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -328,7 +343,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    val allocation = with(repository.findById(1).orElseThrow().allocations().first()) {
+    val allocation = with(activityScheduleRepository.findById(1).orElseThrow().allocations().first()) {
       assertThat(prisonerNumber).isEqualTo("G4793VF")
       assertThat(allocatedBy).isEqualTo("test-client")
       assertThat(startDate).isEqualTo(TimeSource.today())
@@ -388,7 +403,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -415,7 +430,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     val error = webTestClient.post()
       .uri("/schedules/1/allocations")
@@ -466,7 +481,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    with(repository.findById(1).orElseThrow()) {
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
       val allocation = allocations().first()
 
       with(waitlistRepository.findByActivitySchedule(this).first()) {
@@ -613,7 +628,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -634,7 +649,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    repository.findById(1).orElseThrow().also {
+    activityScheduleRepository.findById(1).orElseThrow().also {
       with(it.allocations().first().plannedDeallocation!!) {
         assertThat(plannedBy).isEqualTo("test-client")
         assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
@@ -662,7 +677,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    repository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
 
     webTestClient.allocatePrisoner(
       1,
@@ -683,7 +698,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    repository.findById(1).orElseThrow().also {
+    activityScheduleRepository.findById(1).orElseThrow().also {
       with(it.allocations().first()) {
         assertThat(deallocatedBy).isEqualTo("test-client")
         assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
@@ -698,6 +713,69 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
     assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-33.sql")
+  fun `deallocate deletes attendances for later today`() {
+    val scheduledInstance = webTestClient.getScheduleBy(1)!!.instances.first { i -> i.startTime == LocalTime.of(12, 0) }
+
+    // Remove sessions starting from today PM for A11111A
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("A11111A"),
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
+        endDate = TimeSource.tomorrow(),
+        caseNote = null,
+        scheduleInstanceId = scheduledInstance.id,
+      ),
+    ).expectStatus().isNoContent
+
+    webTestClient.getAllAttendanceByDate("MDI", LocalDate.now()).also {
+      // Today AM for A11111A should remain
+      assertThat(it.filter { a -> a.scheduledInstanceId == 1L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
+      // Today PM should be empty as only A11111A
+      assertThat(it.filter { a -> a.scheduledInstanceId == 2L }).isEmpty()
+      // Today PM should be B22222B
+      assertThat(it.filter { a -> a.scheduledInstanceId == 3L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("B22222B")
+    }
+
+    webTestClient.getAllAttendanceByDate("MDI", LocalDate.now().plusDays(1)).also {
+      // Tomorrow attendances should remain
+      assertThat(it.filter { a -> a.scheduledInstanceId == 4L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
+    }
+
+    activityScheduleRepository.findById(1).orElseThrow().also {
+      with(it.allocations().first { a -> a.prisonerNumber == "A11111A" }.plannedDeallocation!!) {
+        assertThat(plannedBy).isEqualTo("test-client")
+        assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+        assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+      }
+
+      assertThat(it.allocations().first { a -> a.prisonerNumber != "A11111A" }.plannedDeallocation).isNull()
+    }
+
+    verify(eventsPublisher, times(3)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+    assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.attendance-deleted")
+    assertThat(eventCaptor.thirdValue.eventType).isEqualTo("activities.prisoner.attendance-deleted")
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-33.sql")
+  fun `400 (bad request) response when attempt to de-allocate multiple prisoners`() {
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("A11111A", "B22222B)"),
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
+        endDate = TimeSource.tomorrow(),
+        caseNote = null,
+        scheduleInstanceId = 123L,
+      ),
+    ).expectStatus().isBadRequest
   }
 
   @Sql(
