@@ -272,12 +272,24 @@ class ActivityScheduleTest {
     val schedule = activitySchedule(activity = activityEntity(), noSlots = true)
       .also { it.allocations() hasSize 1 }
 
-    schedule.addSlot(1,  LocalTime.of(9, 25) to LocalTime.of(11, 35),
-      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY), TimeSlot.AM)
-    schedule.addSlot(1,  LocalTime.of(13, 40) to LocalTime.of(16, 35),
-      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY), TimeSlot.PM)
-    schedule.addSlot(1,  LocalTime.of(8, 35) to LocalTime.of(11, 35),
-      setOf(DayOfWeek.FRIDAY), TimeSlot.AM)
+    schedule.addSlot(
+      1,
+      LocalTime.of(9, 25) to LocalTime.of(11, 35),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
+      TimeSlot.AM,
+    )
+    schedule.addSlot(
+      1,
+      LocalTime.of(13, 40) to LocalTime.of(16, 35),
+      setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
+      TimeSlot.PM,
+    )
+    schedule.addSlot(
+      1,
+      LocalTime.of(8, 35) to LocalTime.of(11, 35),
+      setOf(DayOfWeek.FRIDAY),
+      TimeSlot.AM,
+    )
 
     schedule.allocatePrisoner(
       startDate = tomorrow,
@@ -293,7 +305,7 @@ class ActivityScheduleTest {
           wednesday = true,
           thursday = true,
           friday = true,
-          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+          daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY),
         ),
       ),
       allocatedBy = "FREDDIE",
