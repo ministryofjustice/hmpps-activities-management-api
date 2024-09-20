@@ -132,6 +132,23 @@ data class ActivitySchedule(
 
   fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot == timeSlot }
 
+  fun mergedSlot(weekNumber: Int, timeSlot: TimeSlot): ActivityScheduleSlot? {
+    var mergedSlot: ActivityScheduleSlot? = null
+    val hasSlots = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot }
+
+    if (hasSlots) {
+      mergedSlot = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
+      mergedSlot.mondayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.mondayFlag }
+      mergedSlot.tuesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.tuesdayFlag }
+      mergedSlot.wednesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.wednesdayFlag }
+      mergedSlot.thursdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.thursdayFlag }
+      mergedSlot.fridayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.fridayFlag }
+      mergedSlot.saturdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.saturdayFlag }
+      mergedSlot.sundayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.sundayFlag }
+    }
+    return mergedSlot
+  }
+
   fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
@@ -289,11 +306,12 @@ data class ActivitySchedule(
       ).apply {
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
-          slots(exclusion.weekNumber, exclusion.timeSlot)
-            .also { require(it.isNotEmpty()) { "Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}" } }
-            // Only consider exclusions slots where activity slots exist
-            .filter { slot -> slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty() }
-            .forEach { slot -> this.updateExclusion(slot, exclusion.daysOfWeek, startDate) }
+          mergedSlot(exclusion.weekNumber, exclusion.timeSlot)?.let {
+              slot ->
+            if (slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty()) {
+              this.updateExclusion(slot, exclusion.daysOfWeek, startDate)
+            }
+          } ?: throw IllegalArgumentException("Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
         }
       },
     )
