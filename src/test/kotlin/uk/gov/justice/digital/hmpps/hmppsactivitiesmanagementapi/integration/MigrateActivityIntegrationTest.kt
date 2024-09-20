@@ -176,10 +176,9 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       val slots = activity.schedules.first().slots
 
       assertThat(slots).hasSize(3)
-      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag  })
-      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.PM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag  })
-      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && !slot.mondayFlag && !slot.tuesdayFlag && !slot.wednesdayFlag && !slot.thursdayFlag && slot.fridayFlag  })
-
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag })
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.PM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag })
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && !slot.mondayFlag && !slot.tuesdayFlag && !slot.wednesdayFlag && !slot.thursdayFlag && slot.fridayFlag })
 
       val allocation = activity.schedules.first().allocations.first()
       assertThat(allocation.exclusions).hasSize(1)
