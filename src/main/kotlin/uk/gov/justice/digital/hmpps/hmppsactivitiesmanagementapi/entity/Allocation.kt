@@ -445,7 +445,7 @@ data class Allocation(
 
   fun addExclusion(exclusion: Exclusion) = run {
     require(
-      activitySchedule.slots().any { slot ->
+      activitySchedule.mergedSlots().any { slot ->
         slot.timeSlot == exclusion.timeSlot &&
           slot.weekNumber == exclusion.weekNumber &&
           slot.getDaysOfWeek().containsAll(exclusion.getDaysOfWeek())
