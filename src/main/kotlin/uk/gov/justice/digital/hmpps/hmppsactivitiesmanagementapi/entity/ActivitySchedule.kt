@@ -137,16 +137,16 @@ data class ActivitySchedule(
     val hasSlots = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot }
 
     if (hasSlots) {
-      var amSlot = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
-      amSlot.mondayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.mondayFlag == true }
-      amSlot.tuesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.tuesdayFlag == true }
-      amSlot.wednesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.wednesdayFlag == true }
-      amSlot.thursdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.thursdayFlag == true }
-      amSlot.fridayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.fridayFlag == true }
-      amSlot.saturdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.saturdayFlag == true }
-      amSlot.sundayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.sundayFlag == true }
+      var mergedSlot = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
+      mergedSlot.mondayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.mondayFlag == true }
+      mergedSlot.tuesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.tuesdayFlag == true }
+      mergedSlot.wednesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.wednesdayFlag == true }
+      mergedSlot.thursdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.thursdayFlag == true }
+      mergedSlot.fridayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.fridayFlag == true }
+      mergedSlot.saturdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.saturdayFlag == true }
+      mergedSlot.sundayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.sundayFlag == true }
 
-      mergedSlots.add(amSlot)
+      mergedSlots.add(mergedSlot)
     }
     return mergedSlots
   }
