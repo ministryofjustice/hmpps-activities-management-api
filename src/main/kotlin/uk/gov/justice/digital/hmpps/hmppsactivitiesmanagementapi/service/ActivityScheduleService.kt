@@ -14,14 +14,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -40,7 +38,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.time.LocalDate
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -62,30 +59,6 @@ class ActivityScheduleService(
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
-
-  private fun schedulesMatching(
-    prisonCode: String,
-    date: LocalDate,
-    timeSlot: TimeSlot? = null,
-    locationId: Long? = null,
-  ): Map<EntityActivitySchedule, List<ScheduledInstance>> {
-    val filteredInstances = repository.findAllByActivityPrisonCodeWithScheduledInstances(prisonCode)
-      .selectSchedulesAtLocation(locationId)
-      .selectSchedulesWithActiveActivitiesOn(date)
-      .flatMap { it.instances() }
-      .selectInstancesRunningOn(date, timeSlot)
-
-    return filteredInstances.groupBy { it.activitySchedule }
-  }
-
-  private fun List<ActivitySchedule>.selectSchedulesAtLocation(locationId: Long?) =
-    filter { locationId == null || it.internalLocationId == locationId.toInt() }
-
-  private fun List<ActivitySchedule>.selectSchedulesWithActiveActivitiesOn(date: LocalDate) =
-    filter { it.activity.isActive(date) }
-
-  private fun List<ScheduledInstance>.selectInstancesRunningOn(date: LocalDate, timeSlot: TimeSlot?) =
-    filter { it.isRunningOn(date) && (timeSlot == null || it.timeSlot == timeSlot) }
 
   fun getAllocationsBy(
     scheduleId: Long,
@@ -225,13 +198,28 @@ class ActivityScheduleService(
     transactionHandler.newSpringTransaction {
       repository.findOrThrowNotFound(scheduleId).run {
         request.prisonerNumbers!!.distinct()
+          .also {
+            if (request.scheduleInstanceId != null) {
+              require(it.size == 1) { "Cannot deallocate sessions later today for multiple prisoners" }
+            }
+          }
           .map { prisonerNumber ->
             val deallocationReason = request.reasonCode!!.toDeallocationReason()
             val endDate = request.endDate!!
             var caseNoteId: Long? = null
+
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
-              caseNoteId = caseNotesApiClient.postCaseNote(activity.prisonCode, prisonerNumber, request.caseNote.text!!, request.caseNote.type!!, subType, "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}").caseNoteId.toLong()
+
+              caseNoteId = caseNotesApiClient.postCaseNote(
+                activity.prisonCode,
+                prisonerNumber,
+                request.caseNote.text!!,
+                request.caseNote.type!!,
+                subType,
+                "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}",
+              )
+                .caseNoteId.toLong()
             }
 
             deallocatePrisonerOn(
@@ -240,12 +228,22 @@ class ActivityScheduleService(
               deallocationReason,
               deallocatedBy,
               caseNoteId,
-            ).also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
-          }.also { repository.saveAndFlush(this) }.map { it.allocationId to it.prisonerNumber }
+            )
+              .also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
+              .let {
+                val deletedAttendances = manageAttendancesService.deleteAnyAttendancesForToday(request.scheduleInstanceId, it)
+                it to deletedAttendances
+              }
+          }
+          .also { repository.saveAndFlush(this) }
       }
-    }.onEach { (allocationId, prisonerNumber) ->
-      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
-      logDeallocationEvent(prisonerNumber)
+    }.onEach { (allocation, deletedAttendances) ->
+      outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId)
+
+      // Should only happen for one prisoner due to earlier require
+      deletedAttendances.forEach { manageAttendancesService.sendDeletedEvent(it, allocation) }
+
+      logDeallocationEvent(allocation.prisonerNumber)
     }
   }
 
