@@ -117,13 +117,14 @@ class AllocationsService(
     }
 
     request.exclusions?.onEach { exclusion ->
-      allocation.activitySchedule.mergedSlot(exclusion.weekNumber, exclusion.timeSlot)?.let {
-          slot ->
-        if (slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty()) {
-          // exclusion updates always apply tomorrow, if the allocation date is in the past (as per the UI content)
-          allocation.updateExclusion(slot, exclusion.daysOfWeek, maxOf(allocation.startDate, LocalDate.now().plusDays(1)))
-        }
-      } ?: throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
+
+      if (allocation.activitySchedule.noMatchingSlots(exclusion)) throw IllegalArgumentException("Updating allocation with id ${allocation.allocationId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
+
+      // exclusion updates always apply tomorrow, if the allocation date is in the past (as per the UI content)
+      allocation.updateExclusion(
+        exclusionSlot = exclusion,
+        startDate = maxOf(allocation.startDate, LocalDate.now().plusDays(1)),
+      )
     }
   }
 

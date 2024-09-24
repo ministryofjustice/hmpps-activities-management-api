@@ -578,7 +578,16 @@ class AllocationsServiceTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     )
-      .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY), LocalDate.now().plusDays(1)) }
+      .apply {
+        updateExclusion(
+          exclusionSlot = Slot(
+            weekNumber = slot.weekNumber,
+            timeSlot = slot.timeSlot,
+            friday = true,
+          ),
+          startDate = LocalDate.now().plusDays(1),
+        )
+      }
       .also {
         it.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
         with(it.exclusions(ExclusionsFilter.ACTIVE).first()) {

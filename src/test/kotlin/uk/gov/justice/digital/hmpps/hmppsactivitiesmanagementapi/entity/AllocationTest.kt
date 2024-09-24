@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -444,14 +445,28 @@ class AllocationTest {
     val allocation = allocation()
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
-    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), tomorrow)
+    val exclusion = allocation.updateExclusion(
+      exclusionSlot = Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+        monday = true,
+      ),
+      startDate = tomorrow,
+    )
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     with(exclusion!!) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
-    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(), tomorrow)
+    val updatedExclusion = allocation.updateExclusion(
+      exclusionSlot =
+      Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+      ),
+      startDate = tomorrow,
+    )
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
     updatedExclusion isEqualTo null
@@ -814,7 +829,20 @@ class AllocationTest {
 
     allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool true
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek), today)
+    allocation.updateExclusion(
+      exclusionSlot = Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+        monday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.MONDAY,
+        tuesday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.TUESDAY,
+        wednesday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.WEDNESDAY,
+        thursday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.THURSDAY,
+        friday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.FRIDAY,
+        saturday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.SATURDAY,
+        sunday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.SUNDAY,
+      ),
+      startDate = today,
+    )
 
     allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool false
   }
