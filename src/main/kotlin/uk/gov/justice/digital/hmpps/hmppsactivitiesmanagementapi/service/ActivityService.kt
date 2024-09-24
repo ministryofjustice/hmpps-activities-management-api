@@ -306,7 +306,7 @@ class ActivityService(
     possibleDaysToSchedule.filter(::isActiveOn).forEach { activeDay ->
       val scheduleWeekNumber = this.getWeekNumber(activeDay)
 
-      this.slots().filter { slot -> slot.weekNumber == scheduleWeekNumber }.forEach { slot ->
+      this.slots(weekNumber = scheduleWeekNumber).forEach { slot ->
         if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
           this.hasNoInstancesOnDate(activeDay, slot.slotTimes()) &&
           (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
@@ -514,11 +514,12 @@ class ActivityService(
       it.sessionDate > LocalDate.now()
     }.filter {
       !this.isActiveOn(it.sessionDate) ||
-        this.slots().none { slot ->
-          slot.weekNumber == this.getWeekNumber(it.sessionDate) &&
-            slot.getDaysOfWeek().contains(it.dayOfWeek()) &&
-            it.slotTimes() == slot.slotTimes()
-        } ||
+        this.slots(
+          weekNumber = this.getWeekNumber(it.sessionDate),
+          dayOfWeek = it.dayOfWeek(),
+          slotTimes = it.slotTimes(),
+
+        ).isEmpty() ||
         !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
     }
 
@@ -715,11 +716,12 @@ class ActivityService(
         schedule.removeSlots()
         schedule.addSlots(slots)
         val activeAllocations = schedule.allocations(excludeEnded = true)
-        if (schedule.scheduleWeeks == 1) {
-          activeAllocations.forEach { allocation ->
-            allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) }
-          }
+        // this has been disabled in lieu of review around exclusions and two week activities
+        //   if (schedule.scheduleWeeks == 1) {
+        activeAllocations.forEach { allocation ->
+          allocation.syncExclusionsWithScheduleSlots(schedule.slots())?.let { updatedAllocationIds.add(it) }
         }
+        //  }
       }
     }
     return updatedAllocationIds

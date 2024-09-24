@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityEligibility as EntityActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
@@ -244,7 +243,7 @@ fun EntityActivitySchedule.toModelSchedule() =
     capacity = this.capacity,
     activity = this.activity.toModelLite(),
     scheduleWeeks = this.scheduleWeeks,
-    slots = this.slots().toModelActivityScheduleSlots(),
+    slots = this.toModelActivityScheduleSlots(),
     startDate = this.startDate,
     endDate = this.endDate,
     runsOnBankHoliday = this.runsOnBankHoliday,
@@ -252,8 +251,6 @@ fun EntityActivitySchedule.toModelSchedule() =
     updatedBy = this.updatedBy,
     usePrisonRegimeTime = this.usePrisonRegimeTime,
   )
-
-private fun List<EntityActivityScheduleSlot>.toModelActivityScheduleSlots() = map { it.toModel() }
 
 private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
   ModelScheduledInstance(

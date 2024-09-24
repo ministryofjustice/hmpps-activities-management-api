@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
@@ -128,48 +129,38 @@ data class ActivitySchedule(
 
   fun instances() = instances.toList()
 
+  @Deprecated(" used in one place now syncExclusionsWithScheduleSlots, ideally remove this / make private once sync code resolved")
   fun slots() = slots.toList()
+
+  fun noMatchingSlots(exclusion: Slot): Boolean =
+    slots().matchingSlots(daysOfWeek = exclusion.daysOfWeek, weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot).not()
+
+  fun hasMatchingSlots(exclusion: Exclusion): Boolean =
+    slots().matchingSlots(daysOfWeek = exclusion.getDaysOfWeek(), weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot)
+
+  private fun List<ActivityScheduleSlot>.matchingSlots(daysOfWeek: Set<DayOfWeek>, weekNumber: Int, timeSlot: TimeSlot): Boolean =
+    this.filter {
+      it.weekNumber == weekNumber && it.timeSlot == timeSlot
+    }.flatMap { it.getDaysOfWeek() }.containsAll(daysOfWeek)
 
   fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot == timeSlot }
 
-  fun mergedSlots(): List<ActivityScheduleSlot> {
-    var mergedSlots: MutableList<ActivityScheduleSlot> = mutableListOf()
-
-    val weekTimeSlot = slots().flatMap { listOf(Pair(it.weekNumber, it.timeSlot)) }.distinct()
-
-    weekTimeSlot.forEach {
-        weekTimeSlot ->
-      mergedSlot(weekTimeSlot.first, weekTimeSlot.second)?.let { mergedSlots.add(it) }
-    }
-    return mergedSlots
-  }
-
-  fun mergedSlot(weekNumber: Int, timeSlot: TimeSlot): ActivityScheduleSlot? {
-    var mergedSlot: ActivityScheduleSlot? = null
-    val hasSlots = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot }
-
-    if (hasSlots) {
-      val copy = slots().first { it.weekNumber == weekNumber && it.timeSlot == timeSlot }
-      mergedSlot = ActivityScheduleSlot(
-        weekNumber = copy.weekNumber, timeSlot = copy.timeSlot,
-        startTime = copy.startTime, endTime = copy.endTime, activitySchedule = copy.activitySchedule,
-      )
-
-      mergedSlot.mondayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.mondayFlag }
-      mergedSlot.tuesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.tuesdayFlag }
-      mergedSlot.wednesdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.wednesdayFlag }
-      mergedSlot.thursdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.thursdayFlag }
-      mergedSlot.fridayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.fridayFlag }
-      mergedSlot.saturdayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.saturdayFlag }
-      mergedSlot.sundayFlag = slots().any { slot -> slot.weekNumber == weekNumber && slot.timeSlot == timeSlot && slot.sundayFlag }
-    }
-    return mergedSlot
-  }
-
   fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
+
+  fun hasSlot(dayOfWeek: DayOfWeek): Boolean =
+    slots().any { dayOfWeek in it.getDaysOfWeek() }
+
+  fun slots(weekNumber: Int): List<ActivityScheduleSlot> = slots().filter { it.weekNumber == weekNumber }
+
+  fun slots(weekNumber: Int, slotTimes: Pair<LocalTime, LocalTime>, dayOfWeek: DayOfWeek): List<ActivityScheduleSlot> =
+    this.slots().filter {
+      it.weekNumber == weekNumber && it.slotTimes() == slotTimes && it.getDaysOfWeek().contains(dayOfWeek)
+    }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
     allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
+
+  fun toModelActivityScheduleSlots() = this.slots().map { it.toModel() }
 
   companion object {
     fun valueOf(
@@ -323,12 +314,10 @@ data class ActivitySchedule(
       ).apply {
         this.endDate = endDate?.also { deallocateOn(it, DeallocationReason.PLANNED, allocatedBy) }
         exclusions?.onEach { exclusion ->
-          mergedSlot(exclusion.weekNumber, exclusion.timeSlot)?.let {
-              slot ->
-            if (slot.getDaysOfWeek().intersect(exclusion.daysOfWeek).isNotEmpty()) {
-              this.updateExclusion(slot, exclusion.daysOfWeek, startDate)
-            }
-          } ?: throw IllegalArgumentException("Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
+
+          if (noMatchingSlots(exclusion)) throw IllegalArgumentException("Allocating to schedule ${activitySchedule.activityScheduleId}: No ${exclusion.timeSlot} slots in week number ${exclusion.weekNumber}")
+
+          this.updateExclusion(exclusionSlot = exclusion, startDate = startDate)
         }
       },
     )
