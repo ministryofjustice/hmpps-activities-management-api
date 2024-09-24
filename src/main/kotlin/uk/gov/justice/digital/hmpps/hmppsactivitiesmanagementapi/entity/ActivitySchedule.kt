@@ -147,7 +147,7 @@ data class ActivitySchedule(
 
   fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
 
-  fun slots(dayOfWeek: DayOfWeek): Boolean =
+  fun hasSlot(dayOfWeek: DayOfWeek): Boolean =
     slots().any { dayOfWeek in it.getDaysOfWeek() }
 
   fun slots(weekNumber: Int): List<ActivityScheduleSlot> = slots().filter { it.weekNumber == weekNumber }
