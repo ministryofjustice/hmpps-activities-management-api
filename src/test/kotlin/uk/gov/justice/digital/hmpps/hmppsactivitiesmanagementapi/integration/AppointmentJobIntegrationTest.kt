@@ -67,15 +67,6 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     confirmedReleaseDate = null,
   )
 
-  private val activeOutPrisoner = PrisonerSearchPrisonerFixture.instance(
-    prisonerNumber = prisonNumber,
-    inOutStatus = Prisoner.InOutStatus.OUT,
-    status = "ACTIVE OUT",
-    prisonId = RISLEY_PRISON_CODE,
-    lastMovementType = null,
-    confirmedReleaseDate = null,
-  )
-
   private val prisonerReleasedToday = PrisonerSearchPrisonerFixture.instance(
     prisonerNumber = prisonNumber,
     inOutStatus = Prisoner.InOutStatus.OUT,
@@ -128,9 +119,8 @@ class AppointmentJobIntegrationTest : IntegrationTestBase() {
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      size isEqualTo 4
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        listOf(4L, 6L, 10L, 20L).map { AppointmentInstanceInformation(it) },
+      assertThat(map { it.additionalInformation }).hasSameElementsAs(
+        listOf(20L, 6L, 10L, 4L).map { AppointmentInstanceInformation(it) },
       )
     }
 

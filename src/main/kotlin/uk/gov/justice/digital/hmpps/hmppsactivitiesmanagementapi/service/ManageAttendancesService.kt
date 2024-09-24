@@ -108,7 +108,7 @@ class ManageAttendancesService(
   }
 
   fun sendDeletedEvent(deletedAttendance: Attendance, allocation: Allocation) {
-    log.info("Sending prisoner attendance deleted event for bookingId ${deletedAttendance.attendanceId} and scheduledInstance ${allocation.bookingId}")
+    log.info("Sending prisoner attendance deleted event for bookingId ${allocation.bookingId} and scheduledInstanceId ${deletedAttendance.scheduledInstance.scheduledInstanceId}")
     outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, allocation.bookingId, deletedAttendance.scheduledInstance.scheduledInstanceId)
   }
 
