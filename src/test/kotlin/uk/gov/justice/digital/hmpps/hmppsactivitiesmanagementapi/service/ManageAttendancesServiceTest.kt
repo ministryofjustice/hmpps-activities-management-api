@@ -23,6 +23,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -49,8 +50,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
 
@@ -657,7 +660,7 @@ class ManageAttendancesServiceTest {
 
   @Nested
   @DisplayName("Create attendances for today")
-  inner class UpdateAppointments {
+  inner class CreateAttendances {
     private lateinit var allocation: Allocation
 
     @BeforeEach
@@ -732,6 +735,78 @@ class ManageAttendancesServiceTest {
       val attendances = service.createAnyAttendancesForToday(1, allocation)
 
       assertThat(attendances).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("Delete attendances for today")
+  inner class DeleteAttendances {
+    private lateinit var allocation: Allocation
+    private lateinit var nextInstanceToday: ScheduledInstance
+    private lateinit var lastInstanceToday: ScheduledInstance
+    private lateinit var firstInstanceTomorrow: ScheduledInstance
+    private lateinit var joeBloggsTodayAMAttendance: Attendance
+    private lateinit var joeBloggsTodayPMAttendance: Attendance
+    private lateinit var joeBloggsTodayEDAttendance: Attendance
+    private lateinit var frankSmithTodayEDAttendance: Attendance
+    private lateinit var joeBloggsTomorrowPMAttendance: Attendance
+
+    @BeforeEach
+    fun init() {
+      allocation = allocation()
+      val pmStart = LocalTime.now().plusMinutes(10)
+      val edStart = pmStart.plusMinutes(30)
+      val pm = allocation.activitySchedule.addSlot(1, pmStart to pmStart.plusMinutes(30), setOf(DayOfWeek.MONDAY), TimeSlot.PM)
+      val ed = allocation.activitySchedule.addSlot(1, edStart to edStart.plusMinutes(30), setOf(DayOfWeek.MONDAY), TimeSlot.ED)
+
+      nextInstanceToday = allocation.activitySchedule.addInstance(sessionDate = LocalDate.now(), slot = pm)
+      lastInstanceToday = allocation.activitySchedule.addInstance(sessionDate = LocalDate.now(), slot = ed)
+      firstInstanceTomorrow = allocation.activitySchedule.addInstance(sessionDate = LocalDate.now().plusDays(1), slot = pm)
+
+      joeBloggsTodayAMAttendance = allocation.activitySchedule.instances().first().attendances.first()
+      joeBloggsTodayPMAttendance = joeBloggsTodayAMAttendance.copy(scheduledInstance = nextInstanceToday)
+      joeBloggsTodayEDAttendance = joeBloggsTodayAMAttendance.copy(scheduledInstance = lastInstanceToday)
+      frankSmithTodayEDAttendance = joeBloggsTodayAMAttendance.copy(scheduledInstance = lastInstanceToday, prisonerNumber = "AAAAAA")
+      joeBloggsTomorrowPMAttendance = joeBloggsTodayAMAttendance.copy(scheduledInstance = firstInstanceTomorrow)
+
+      nextInstanceToday.attendances.add(joeBloggsTodayPMAttendance)
+      lastInstanceToday.attendances.add(joeBloggsTodayEDAttendance)
+      lastInstanceToday.attendances.add(frankSmithTodayEDAttendance)
+      firstInstanceTomorrow.attendances.add(joeBloggsTomorrowPMAttendance)
+    }
+
+    @Test
+    fun `should do nothing if no schedule instance id was provided`() {
+      assertThat(service.deleteAnyAttendancesForToday(null, allocation)).isEmpty()
+    }
+
+    @Test
+    fun `should not delete attendances if schedule instance id is null`() {
+      whenever(scheduledInstanceRepository.findById(123)).doReturn(Optional.of(nextInstanceToday))
+
+      val deletedAttendances = service.deleteAnyAttendancesForToday(123L, allocation)
+
+      assertThat(deletedAttendances).containsOnly(joeBloggsTodayPMAttendance, joeBloggsTodayEDAttendance)
+
+      assertThat(allocation.activitySchedule.instances().first().attendances).containsOnly(joeBloggsTodayAMAttendance)
+      assertThat(nextInstanceToday.attendances).isEmpty()
+      assertThat(lastInstanceToday.attendances).containsOnly(frankSmithTodayEDAttendance)
+      assertThat(firstInstanceTomorrow.attendances).containsOnly(joeBloggsTomorrowPMAttendance)
+    }
+
+    @Test
+    fun `should throw an exception if the provided schedule id does not match the allocation schedule id`() {
+      whenever(scheduledInstanceRepository.findById(123)).thenReturn(Optional.of(instance.copy(123)))
+
+      assertThatThrownBy {
+        service.deleteAnyAttendancesForToday(123, allocation)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Allocation does not belong to same activity schedule as selected instance")
+
+      assertThat(allocation.activitySchedule.instances().first().attendances).containsOnly(joeBloggsTodayAMAttendance)
+      assertThat(nextInstanceToday.attendances).containsOnly(joeBloggsTodayPMAttendance)
+      assertThat(lastInstanceToday.attendances).containsOnly(joeBloggsTodayEDAttendance, frankSmithTodayEDAttendance)
+      assertThat(firstInstanceTomorrow.attendances).containsOnly(joeBloggsTomorrowPMAttendance)
     }
   }
 

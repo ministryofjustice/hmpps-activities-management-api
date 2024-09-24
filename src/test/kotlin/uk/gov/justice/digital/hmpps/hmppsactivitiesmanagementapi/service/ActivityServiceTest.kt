@@ -2030,7 +2030,20 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
+        this.updateExclusion(
+          exclusionSlot = Slot(
+            weekNumber = slot.weekNumber,
+            timeSlot = slot.timeSlot,
+            monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
+            tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
+            wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
+            thursday = tomorrow.dayOfWeek == DayOfWeek.THURSDAY,
+            friday = tomorrow.dayOfWeek == DayOfWeek.FRIDAY,
+            saturday = tomorrow.dayOfWeek == DayOfWeek.SATURDAY,
+            sunday = tomorrow.dayOfWeek == DayOfWeek.SUNDAY,
+          ),
+          startDate = tomorrow,
+        )
       }
     }
 
@@ -2097,7 +2110,20 @@ class ActivityServiceTest {
         allocatedBy = "Mr Blogs",
         startDate = startDate,
       ).apply {
-        this.updateExclusion(slot, setOf(tomorrow.dayOfWeek), tomorrow)
+        this.updateExclusion(
+          exclusionSlot = Slot(
+            weekNumber = slot.weekNumber,
+            timeSlot = slot.timeSlot,
+            monday = tomorrow.dayOfWeek == DayOfWeek.MONDAY,
+            tuesday = tomorrow.dayOfWeek == DayOfWeek.TUESDAY,
+            wednesday = tomorrow.dayOfWeek == DayOfWeek.WEDNESDAY,
+            thursday = tomorrow.dayOfWeek == DayOfWeek.THURSDAY,
+            friday = tomorrow.dayOfWeek == DayOfWeek.FRIDAY,
+            saturday = tomorrow.dayOfWeek == DayOfWeek.SATURDAY,
+            sunday = tomorrow.dayOfWeek == DayOfWeek.SUNDAY,
+          ),
+          startDate = tomorrow,
+        )
       }
     }
 

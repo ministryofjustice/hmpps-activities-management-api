@@ -248,7 +248,21 @@ internal fun activitySchedule(
           allocatedBy = "Mr Blogs",
           startDate = startDate ?: activity.startDate,
         ).apply {
-          this.updateExclusion(slot, daysOfWeek, LocalDate.now().plusDays(1))
+          this.updateExclusion(
+            exclusionSlot =
+            Slot(
+              weekNumber = slot.weekNumber,
+              timeSlot = slot.timeSlot,
+              monday = daysOfWeek.contains(DayOfWeek.MONDAY),
+              tuesday = daysOfWeek.contains(DayOfWeek.TUESDAY),
+              wednesday = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
+              thursday = daysOfWeek.contains(DayOfWeek.THURSDAY),
+              friday = daysOfWeek.contains(DayOfWeek.FRIDAY),
+              saturday = daysOfWeek.contains(DayOfWeek.SATURDAY),
+              sunday = daysOfWeek.contains(DayOfWeek.SUNDAY),
+            ),
+            startDate = LocalDate.now().plusDays(1),
+          )
         }
       }
     }
