@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
@@ -14,6 +15,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -22,6 +24,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -142,10 +146,20 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
+  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity =
+    webTestClient.get()
+      .uri("/activities/$activityId/filtered")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+      .header(CASELOAD_ID, agencyId)
+      .exchange()
+      .expectBody(Activity::class.java)
+      .returnResult().responseBody!!
+
   @Test
-  @Sql("classpath:test_data/seed-activity-id-23.sql")
-  fun `migrate allocation - success`() {
-    val request = buildAllocationMigrateRequest()
+  @Sql("classpath:test_data/seed-activity-id-23-1.sql")
+  fun `migrate allocation with multiple exclusions - success`() {
+    val request = buildAllocationMigrateRequestWithMultipleExclusions()
 
     stubPrisonerSearch(request.prisonCode, request.prisonerNumber, true)
 
@@ -157,6 +171,25 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
 
     with(response!!) {
       assertThat(allocationId).isNotNull
+
+      val activity = getActivity(activityId, "MDI")
+      val slots = activity.schedules.first().slots
+
+      assertThat(slots).hasSize(3)
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag })
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.PM && slot.mondayFlag && slot.tuesdayFlag && slot.wednesdayFlag && slot.thursdayFlag && !slot.fridayFlag })
+      assertTrue(slots.any { slot -> slot.weekNumber == 1 && slot.timeSlot == TimeSlot.AM && !slot.mondayFlag && !slot.tuesdayFlag && !slot.wednesdayFlag && !slot.thursdayFlag && slot.fridayFlag })
+
+      val allocation = activity.schedules.first().allocations.first()
+      assertThat(allocation.exclusions).hasSize(1)
+      val exclusion = allocation.exclusions.first()
+      assertThat(exclusion.monday).isTrue()
+      assertThat(exclusion.tuesday).isTrue()
+      assertThat(exclusion.wednesday).isTrue()
+      assertThat(exclusion.thursday).isTrue()
+      assertThat(exclusion.friday).isTrue()
+      assertThat(exclusion.saturday).isFalse()
+      assertThat(exclusion.sunday).isFalse()
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
@@ -339,6 +372,24 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       suspendedFlag = false,
       exclusions = listOf(
         Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
+      ),
+    )
+
+  private fun buildAllocationMigrateRequestWithMultipleExclusions() =
+    AllocationMigrateRequest(
+      prisonCode = "MDI",
+      activityId = 1,
+      splitRegimeActivityId = null,
+      prisonerNumber = "A1234BB",
+      bookingId = 1,
+      cellLocation = "MDI-1-1-001",
+      nomisPayBand = "1",
+      startDate = LocalDate.now().minusDays(1),
+      endDate = null,
+      endComment = null,
+      suspendedFlag = false,
+      exclusions = listOf(
+        Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, wednesday = true, thursday = true, friday = true),
       ),
     )
 

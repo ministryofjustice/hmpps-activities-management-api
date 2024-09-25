@@ -47,4 +47,7 @@ data class PrisonerDeallocationRequest(
   @field:Valid
   @field:Nullable
   val caseNote: AddCaseNoteRequest? = null,
+
+  @Schema(description = "The scheduled instance id required when de-allocation is a session later today")
+  val scheduleInstanceId: Long? = null,
 )

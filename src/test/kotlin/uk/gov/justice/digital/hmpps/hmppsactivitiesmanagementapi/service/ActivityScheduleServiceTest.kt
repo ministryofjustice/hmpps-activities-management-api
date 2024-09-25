@@ -17,6 +17,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
@@ -230,8 +231,10 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `can deallocate a prisoner from activity schedule`() {
+    val allocation = allocation().copy(prisonerNumber = "1")
+
     val schedule = mock<ActivitySchedule>().stub {
-      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation().copy(prisonerNumber = "1")
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation
     }
 
     whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
@@ -255,6 +258,9 @@ class ActivityScheduleServiceTest {
     )
     verify(repository).saveAndFlush(schedule)
     verify(caseNotesApiClient, never()).postCaseNote(any(), any(), any(), any(), any(), any())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0)
+    verify(manageAttendancesService).deleteAnyAttendancesForToday(null, allocation)
+    verify(manageAttendancesService, never()).sendDeletedEvent(any(), any())
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
       mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
@@ -263,9 +269,11 @@ class ActivityScheduleServiceTest {
 
   @Test
   fun `can add a case note when deallocating a prisoner from activity schedule`() {
+    val allocation = allocation().copy(prisonerNumber = "1")
+
     val schedule = mock<ActivitySchedule>().stub {
       on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test", 10001) } doReturn
-        allocation().copy(prisonerNumber = "1").apply { deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, "test") }
+        allocation.apply { deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, "test") }
       on { activity } doReturn activityEntity()
     }
 
@@ -308,6 +316,9 @@ class ActivityScheduleServiceTest {
       10001,
     )
     verify(repository).saveAndFlush(schedule)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0)
+    verify(manageAttendancesService).deleteAnyAttendancesForToday(null, allocation)
+    verify(manageAttendancesService, never()).sendDeletedEvent(any(), any())
     verify(telemetryClient).trackEvent(
       TelemetryEvent.PRISONER_DEALLOCATED.value,
       mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
@@ -317,8 +328,8 @@ class ActivityScheduleServiceTest {
   @Test
   fun `can deallocate multiple prisoners from activity schedule`() {
     val schedule = mock<ActivitySchedule>().stub {
-      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
-      on { deallocatePrisonerOn("2", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
+      on { deallocatePrisonerOn("G0007AB", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
+      on { deallocatePrisonerOn("A1234CD", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation()
     }
 
     whenever(repository.findById(schedule.activityScheduleId)).doReturn(Optional.of(schedule))
@@ -326,7 +337,7 @@ class ActivityScheduleServiceTest {
     service.deallocatePrisoners(
       schedule.activityScheduleId,
       PrisonerDeallocationRequest(
-        listOf("1", "2"),
+        listOf("G0007AB", "A1234CD"),
         DeallocationReason.OTHER.name,
         TimeSource.tomorrow(),
         null,
@@ -335,18 +346,20 @@ class ActivityScheduleServiceTest {
     )
 
     verify(schedule).deallocatePrisonerOn(
-      "1",
+      "G0007AB",
       TimeSource.tomorrow(),
       DeallocationReason.OTHER,
       "by test",
     )
     verify(schedule).deallocatePrisonerOn(
-      "2",
+      "A1234CD",
       TimeSource.tomorrow(),
       DeallocationReason.OTHER,
       "by test",
     )
+    verify(manageAttendancesService, times(2)).deleteAnyAttendancesForToday(eq(null), any())
     verify(repository).saveAndFlush(schedule)
+    verify(manageAttendancesService, never()).sendDeletedEvent(any(), any())
   }
 
   @Test
@@ -369,6 +382,7 @@ class ActivityScheduleServiceTest {
       )
     }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule ${schedule.activityScheduleId} not found")
+    verifyNoInteractions(manageAttendancesService)
   }
 
   @Test
@@ -391,6 +405,76 @@ class ActivityScheduleServiceTest {
         )
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Invalid deallocation reason specified '$reasonCode'")
+      verifyNoInteractions(manageAttendancesService)
+    }
+  }
+
+  @Test
+  fun `can deallocate and delete attendances later today`() {
+    val allocation = allocation().copy(prisonerNumber = "1")
+
+    val schedule = mock<ActivitySchedule>().stub {
+      on { deallocatePrisonerOn("123456", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test") } doReturn allocation
+    }
+
+    whenever(repository.findById(0)) doReturn Optional.of(schedule)
+
+    val attendances: List<Attendance> = listOf(mock(), mock())
+
+    whenever(manageAttendancesService.deleteAnyAttendancesForToday(123, allocation)).doReturn(attendances)
+
+    service.deallocatePrisoners(
+      schedule.activityScheduleId,
+      PrisonerDeallocationRequest(
+        listOf("123456"),
+        DeallocationReason.OTHER.name,
+        TimeSource.tomorrow(),
+        null,
+        123,
+      ),
+      "by test",
+    )
+
+    verify(schedule).deallocatePrisonerOn(
+      "123456",
+      TimeSource.tomorrow(),
+      DeallocationReason.OTHER,
+      "by test",
+    )
+    verify(repository).saveAndFlush(schedule)
+    verify(caseNotesApiClient, never()).postCaseNote(any(), any(), any(), any(), any(), any())
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0)
+    verify(manageAttendancesService).deleteAnyAttendancesForToday(123L, allocation)
+    verify(manageAttendancesService).sendDeletedEvent(attendances[0], allocation)
+    verify(manageAttendancesService).sendDeletedEvent(attendances[1], allocation)
+    verify(telemetryClient).trackEvent(
+      TelemetryEvent.PRISONER_DEALLOCATED.value,
+      mapOf(PRISONER_NUMBER_PROPERTY_KEY to "1"),
+    )
+  }
+
+  @Test
+  fun `throws exception if trying to deallocate and delete attendances for multiple prisoners`() {
+    val schedule = mock<ActivitySchedule>()
+
+    whenever(repository.findById(schedule.activityScheduleId)) doReturn Optional.of(schedule)
+
+    DeallocationReason.entries.filter { !it.displayed }.map { it.name }.forEach { reasonCode ->
+      assertThatThrownBy {
+        service.deallocatePrisoners(
+          schedule.activityScheduleId,
+          PrisonerDeallocationRequest(
+            listOf("123456", "333333"),
+            reasonCode,
+            TimeSource.tomorrow(),
+            null,
+            123L,
+          ),
+          "by test",
+        )
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot deallocate sessions later today for multiple prisoners")
+      verifyNoInteractions(manageAttendancesService)
     }
   }
 

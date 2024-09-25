@@ -107,6 +107,11 @@ class ManageAttendancesService(
     outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, newAttendance.attendanceId)
   }
 
+  fun sendDeletedEvent(deletedAttendance: Attendance, allocation: Allocation) {
+    log.info("Sending prisoner attendance deleted event for bookingId ${allocation.bookingId} and scheduledInstanceId ${deletedAttendance.scheduledInstance.scheduledInstanceId}")
+    outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, allocation.bookingId, deletedAttendance.scheduledInstance.scheduledInstanceId)
+  }
+
   fun saveAttendances(attendances: List<Attendance>, activitySchedule: ActivitySchedule): List<Attendance> {
     log.info("Committing ${attendances.size} attendances for ${activitySchedule.description}")
     return attendanceRepository.saveAllAndFlush(attendances)
@@ -131,6 +136,28 @@ class ManageAttendancesService(
     }.mapNotNull {
       createAttendance(it, allocation, prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber))
     }
+  }
+
+  fun deleteAnyAttendancesForToday(scheduleInstanceId: Long?, allocation: Allocation): List<Attendance> {
+    if (scheduleInstanceId == null) {
+      return emptyList()
+    }
+
+    val nextAvailableInstance = scheduledInstanceRepository.findOrThrowNotFound(scheduleInstanceId)
+
+    require(nextAvailableInstance.activitySchedule == allocation.activitySchedule) {
+      "Allocation does not belong to same activity schedule as selected instance"
+    }
+
+    return allocation.activitySchedule.instances()
+      .filter { it.sessionDate == LocalDate.now(clock) && it.startTime >= nextAvailableInstance.startTime }
+      .flatMap {
+        it.attendances.filter { it.prisonerNumber == allocation.prisonerNumber }
+          .map { it ->
+            it.scheduledInstance.remove(it)
+            it
+          }
+      }
   }
 
   /**
