@@ -1451,7 +1451,6 @@ class MigrateActivityServiceTest {
 
     @Test
     fun `Gym, sports and fitness activities`() {
-      
       assertThat(service.mapProgramToCategory("PE_TYPE2")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("SPORT")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("HEALTH")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
