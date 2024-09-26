@@ -93,11 +93,11 @@ class ActivityScheduleService(
       }
   }
 
-  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate) =
+  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate, adminMode: Boolean? = false) =
     repository.getActivityScheduleByIdWithFilters(
       activityScheduleId = scheduleId,
       earliestSessionDate = earliestSessionDate,
-    )?.checkCaseloadAccess()?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
+    )?.checkCaseloadAccess(adminMode)?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
   @Transactional
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String, adminMode: Boolean? = false) {
@@ -253,7 +253,7 @@ class ActivityScheduleService(
       .firstOrNull { it.name == this }
       ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 
-  private fun ActivitySchedule.checkCaseloadAccess() = also { checkCaseloadAccess(activity.prisonCode) }
+  private fun ActivitySchedule.checkCaseloadAccess(adminMode: Boolean? = false) = also { if (adminMode == false) checkCaseloadAccess(activity.prisonCode) }
 
   private fun logAllocationEvent(allocation: Allocation, maybeWaitingList: WaitingList?) {
     val propertiesMap = allocation.createAllocationTelemetryPropertiesMap(maybeWaitingList)
