@@ -114,4 +114,13 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
     assertThat(dataFixRepository.findAll()).hasSize(0)
   }
+
+  @Test
+  fun `no prison or activity schedule id supplied runs successfully`() {
+    webTestClient.post().uri("/job/fix-zero-pay?allocate=true&makeUnpaid=true&prisonCode=xxx&activityScheduleId=-1")
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, "RSI")
+      .exchange()
+      .expectStatus().isAccepted
+  }
 }

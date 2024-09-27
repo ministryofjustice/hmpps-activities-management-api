@@ -23,5 +23,5 @@ data class DataFix(
   val startDate: LocalDate,
 
   @Enumerated(EnumType.STRING)
-  val prisonerStatus: PrisonerStatus?,
+  val prisonerStatus: PrisonerStatus,
 )

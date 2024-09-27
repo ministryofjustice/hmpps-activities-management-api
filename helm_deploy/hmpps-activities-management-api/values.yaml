@@ -130,6 +130,6 @@ cron:
   fixZeroPayReallocate: "0 5 2 8 *"
 
   datafix:
-    prisonCode: ""
-    activityScheduleId: ""
+    prisonCode: "xxx"
+    activityScheduleId: "-1"
 
