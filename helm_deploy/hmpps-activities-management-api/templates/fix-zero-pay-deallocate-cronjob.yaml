@@ -22,4 +22,4 @@ spec:
               args:
                 - /bin/sh
                 - -c
-                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/fix-zero-pay?deallocate=true
+                - curl --fail --retry 2 -XPOST "http://hmpps-activities-management-api/job/fix-zero-pay?deallocate=true&prisonCode={{ .Values.cron.datafix.prisonCode }}&activityScheduleId={{ .Values.cron.datafix.activityScheduleId }}"

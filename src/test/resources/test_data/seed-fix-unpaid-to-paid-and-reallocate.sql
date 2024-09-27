@@ -104,6 +104,11 @@ INSERT INTO public.activity_pay
 (activity_pay_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, piece_rate, piece_rate_items, start_date)
 VALUES(400, 119, 'ENH', 'Enhanced', 13, 0, NULL, NULL, NULL);
 
+INSERT INTO public.data_fix (data_fix_id, activity_schedule_id, prisoner_number, start_date, prisoner_status) VALUES(1, 129, 'A8862DW', now()::date, 'ACTIVE');
+INSERT INTO public.data_fix (data_fix_id, activity_schedule_id, prisoner_number, start_date, prisoner_status) VALUES(2, 129, 'A0334EZ', now()::date + 3, 'PENDING');
+INSERT INTO public.data_fix (data_fix_id, activity_schedule_id, prisoner_number, start_date, prisoner_status) VALUES(3, 129, 'A1611AF', now()::date, 'AUTO_SUSPENDED');
+INSERT INTO public.data_fix (data_fix_id, activity_schedule_id, prisoner_number, start_date, prisoner_status) VALUES(4, 129, 'A6015FC', now()::date, 'SUSPENDED');
+
 INSERT INTO public.allocation
 (allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
 VALUES(920, 129, 'A8862DW', 1153507, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.000', 'MIGRATION', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
@@ -116,88 +121,15 @@ VALUES(1119, 129, 'A1611AF', 46135, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.
 INSERT INTO public.allocation
 (allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
 VALUES(19874, 129, 'A6015FC', 2916081, 6, '2024-06-11', NULL, '2024-06-10 15:15:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(24410, 129, 'A7345CR', 2820627, 6, '2024-08-01', NULL, '2024-07-31 11:40:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(13529, 129, 'A4425FC', 2912105, 6, '2024-04-05', NULL, '2024-03-28 08:45:00.000', 'VQI30O', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(19365, 129, 'A1590FA', 2881002, 6, '2024-06-13', NULL, '2024-06-05 08:03:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(19692, 129, 'A5091ER', 2913798, 6, '2024-06-18', NULL, '2024-06-10 08:04:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(21159, 129, 'A5022DQ', 2808713, 4, '2024-07-03', NULL, '2024-06-25 09:14:00.000', 'RQZ82W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(1121, 129, 'A4812DT', 1102885, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.000', 'MIGRATION', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(758, 129, 'A1798EF', 2388295, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.000', 'MIGRATION', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(21158, 129, 'A2221CW', 718204, 4, '2024-07-03', NULL, '2024-06-25 09:14:00.000', 'RQZ82W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(1048, 129, 'A8764EV', 2780214, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.000', 'MIGRATION', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(12129, 129, 'A2902EY', 2836175, 6, '2024-03-20', NULL, '2024-03-12 08:52:00.000', 'VQI30O', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(854, 129, 'A3840EA', 1227745, 6, '2023-09-30', NULL, '2023-09-29 16:50:00.000', 'MIGRATION', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(23274, 129, 'A6655AQ', 2935791, 6, '2024-07-25', NULL, '2024-07-17 08:00:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(15304, 129, 'A3316CV', 2887278, 6, '2024-04-30', NULL, '2024-04-22 07:46:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(18707, 129, 'A0593FD', 2927363, 6, '2024-06-06', NULL, '2024-05-29 07:59:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(24025, 129, 'A4249DC', 2886387, 4, '2024-08-03', NULL, '2024-07-26 08:06:00.000', 'RQZ82W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(24663, 129, 'A7188AE', 41646, 6, '2024-08-03', NULL, '2024-08-02 11:39:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(24219, 129, 'A3161FD', 2933855, 4, '2024-08-07', NULL, '2024-07-30 08:49:00.000', 'RQZ82W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
-INSERT INTO public.allocation
-(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, planned_deallocation_id, deallocation_case_note_id)
-VALUES(24593, 129, 'A4774FD', 2937945, 6, '2024-08-10', NULL, '2024-08-02 08:08:00.000', 'NQY96W', '2024-07-15 08:45:00.000', 'TEST_USER', 'OTHER', NULL, NULL, NULL, 'ENDED', NULL, NULL);
 
 INSERT INTO public.scheduled_instance
 (scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(140669, 129, '2024-08-14', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
+VALUES(140668, 129, now()::date + 1, '15:30:00', '17:45:00', false, NULL, NULL, NULL, NULL, 'PM');
+
 INSERT INTO public.scheduled_instance
 (scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(139962, 129, '2024-08-13', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
+VALUES(140669, 129, now()::date, '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
+
 INSERT INTO public.scheduled_instance
 (scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(141386, 129, '2024-08-15', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(142047, 129, '2024-08-16', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(143008, 129, '2024-08-19', '08:30:00', '11:45:00', false, NULL, NULL, NULL, NULL, 'AM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(140670, 129, '2024-08-14', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(139963, 129, '2024-08-13', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(141387, 129, '2024-08-15', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(142048, 129, '2024-08-16', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
-INSERT INTO public.scheduled_instance
-(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, "comment", time_slot)
-VALUES(143009, 129, '2024-08-19', '13:45:00', '16:45:00', false, NULL, NULL, NULL, NULL, 'PM');
+VALUES(140670, 129, now()::date, '15:30:00', '17:45:00', false, NULL, NULL, NULL, NULL, 'PM');

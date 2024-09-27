@@ -115,7 +115,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Test
   fun `404 response when get schedule by id not found`() {
-    whenever(activityScheduleService.getScheduleById(eq(-99), any())).thenThrow(EntityNotFoundException("not found"))
+    whenever(activityScheduleService.getScheduleById(eq(-99), any(), eq(false))).thenThrow(EntityNotFoundException("not found"))
 
     val response = mockMvc.getScheduleById(-99)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
