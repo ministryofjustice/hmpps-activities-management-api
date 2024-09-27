@@ -1424,6 +1424,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("KITCHEN")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("LIBRARY")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("FG")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
+      assertThat(service.mapProgramToCategory("SAFE")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
     }
 
     @Test
@@ -1432,6 +1433,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("CORECLASS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("KEY_SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
+      assertThat(service.mapProgramToCategory("PE_TYPE1")).isEqualTo(getCategory("SAA_EDUCATION"))
     }
 
     @Test
@@ -1449,7 +1451,6 @@ class MigrateActivityServiceTest {
 
     @Test
     fun `Gym, sports and fitness activities`() {
-      assertThat(service.mapProgramToCategory("PE_TYPE1")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("PE_TYPE2")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("SPORT")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("HEALTH")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
@@ -1460,7 +1461,6 @@ class MigrateActivityServiceTest {
     fun `Induction activities`() {
       assertThat(service.mapProgramToCategory("INDUCTION")).isEqualTo(getCategory("SAA_INDUCTION"))
       assertThat(service.mapProgramToCategory("IAG")).isEqualTo(getCategory("SAA_INDUCTION"))
-      assertThat(service.mapProgramToCategory("SAFE")).isEqualTo(getCategory("SAA_INDUCTION"))
     }
 
     @Test
