@@ -63,7 +63,7 @@ class DataFixService(
 
   private fun saveAllocations(activityScheduleId: Long, allocations: List<Allocation>) {
     allocations.forEach {
-      val dataFix = DataFix(activityScheduleId = activityScheduleId, prisonerNumber = it.prisonerNumber, startDate = it.startDate, prisonerStatus = it.prisonerStatus?.let { it1 -> PrisonerStatus.valueOf(it1) })
+      val dataFix = DataFix(activityScheduleId = activityScheduleId, prisonerNumber = it.prisonerNumber, startDate = it.startDate, prisonerStatus = it.status)
       dataFixRepository.save(dataFix)
     }
   }
