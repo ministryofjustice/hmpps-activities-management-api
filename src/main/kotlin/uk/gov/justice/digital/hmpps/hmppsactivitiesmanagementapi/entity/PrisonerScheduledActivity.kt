@@ -8,6 +8,7 @@ import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import java.io.Serializable
 import java.time.LocalDate
@@ -101,6 +102,17 @@ data class PrisonerScheduledActivity(
 
   @Enumerated(EnumType.STRING)
   val timeSlot: TimeSlot,
+
+  val issuePayment: Boolean?,
+
+  @Enumerated(EnumType.STRING)
+  val attendanceStatus: AttendanceStatus?,
+
+  @Enumerated(EnumType.STRING)
+  val attendanceReasonCode: AttendanceReasonEnum?,
+
+  val paidActivity: Boolean,
+
 ) {
   fun toScheduledAttendeeModel() = ScheduledAttendee(
     scheduledInstanceId = scheduledInstanceId,

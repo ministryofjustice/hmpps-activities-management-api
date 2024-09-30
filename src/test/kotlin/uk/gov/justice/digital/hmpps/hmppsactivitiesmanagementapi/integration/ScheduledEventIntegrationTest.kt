@@ -13,8 +13,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
@@ -257,6 +258,9 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
   @Nested
   inner class GetScheduledEventsForMultiplePrisoners {
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = listOf("A11111A", "A22222A", "C11111A")
+    private val date = LocalDate.of(2022, 10, 1)
 
     private fun WebTestClient.getScheduledEventsForMultiplePrisoners(
       prisonCode: String,
@@ -274,31 +278,52 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         .expectBody(PrisonerScheduledEvents::class.java)
         .returnResult().responseBody
 
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
-    fun `POST - multiple prisoners - activities active, appointments not active - 200 success`() {
-      val prisonCode = "MDI"
-      val prisonerNumbers = listOf("A11111A", "A22222A")
-      val date = LocalDate.of(2022, 10, 1)
+    @BeforeEach
+    fun setUp() {
+      val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
+      val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
+      val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
 
       prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
-      adjudicationsMock(prisonCode, date, prisonerNumbers)
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
 
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `POST - multiple prisoners - activities active, appointments not active - 200 success`() {
       val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
 
       with(scheduledEvents!!) {
         assertThat(prisonerNumbers).contains("A11111A")
         assertThat(courtHearings).hasSize(2)
         assertThat(visits).hasSize(2)
-        assertThat(activities).hasSize(1)
-        activities!!.map {
-          assertThat(it.eventType).isEqualTo(EventType.ACTIVITY.name)
-          assertThat(it.eventSource).isEqualTo("SAA")
-          assertThat(it.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+        assertThat(activities).hasSize(2)
+
+        with(activities!!.first { a -> a.prisonerNumber == "A11111A" }) {
+          assertThat(eventType).isEqualTo(EventType.ACTIVITY.name)
+          assertThat(eventSource).isEqualTo("SAA")
+          assertThat(priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+          assertThat(paidActivity).isTrue
+          assertThat(issuePayment).isNull()
+          assertThat(attendanceStatus).isEqualTo(AttendanceStatus.WAITING.name)
+          assertThat(attendanceReasonCode).isEqualTo(AttendanceReasonEnum.NOT_REQUIRED.name)
         }
-        assertThat(adjudications).hasSize(2)
+
+        with(activities!!.first { a -> a.prisonerNumber == "C11111A" }) {
+          assertThat(eventType).isEqualTo(EventType.ACTIVITY.name)
+          assertThat(eventSource).isEqualTo("SAA")
+          assertThat(priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+          assertThat(paidActivity).isTrue
+          assertThat(issuePayment).isTrue
+          assertThat(attendanceStatus).isEqualTo(AttendanceStatus.COMPLETED.name)
+          assertThat(attendanceReasonCode).isEqualTo(AttendanceReasonEnum.ATTENDED.name)
+        }
+
+        assertThat(adjudications).hasSize(3)
       }
     }
 
@@ -492,7 +517,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           prisonCode isEqualTo prisonCode
           code isEqualTo activityLocation1.description
           description isEqualTo activityLocation1.userDescription
-          events.single { it.scheduledInstanceId == 1L }.eventType isEqualTo "ACTIVITY"
+          events.filter { it.scheduledInstanceId == 1L && it.eventType == "ACTIVITY" } hasSize 2
         }
         with(this.single { it.id == activityLocation2.locationId }) {
           prisonCode isEqualTo prisonCode

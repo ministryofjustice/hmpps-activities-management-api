@@ -22,10 +22,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
@@ -105,7 +106,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean) {
     val prisonCode = "MDI"
-    val active = true
+
     whenever(rolloutPrisonRepository.getByPrisonCode(prisonCode))
       .thenReturn(
         RolloutPrisonPlan(
@@ -236,6 +237,10 @@ class ScheduledEventServiceMultiplePrisonersTest {
     activitySummary: String? = "English level 1",
     cancelled: Boolean = false,
     suspended: Boolean = false,
+    paidActivity: Boolean = false,
+    issuePayment: Boolean = false,
+    attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
+    attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
   ) = PrisonerScheduledActivity(
     scheduledInstanceId = scheduledInstanceId,
     allocationId = allocationId,
@@ -258,6 +263,10 @@ class ScheduledEventServiceMultiplePrisonersTest {
     cancelled = cancelled,
     suspended = suspended,
     timeSlot = TimeSlot.AM,
+    paidActivity = paidActivity,
+    issuePayment = issuePayment,
+    attendanceStatus = attendanceStatus,
+    attendanceReasonCode = attendanceReasonCode,
   )
 
   private fun appointmentFromDbInstance(
@@ -630,7 +639,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         .thenReturn(listOf(appointmentEntity))
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
