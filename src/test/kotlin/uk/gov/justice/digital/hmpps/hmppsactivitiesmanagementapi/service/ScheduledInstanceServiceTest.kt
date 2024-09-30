@@ -165,6 +165,10 @@ class ScheduledInstanceServiceTest {
             activityCategory = "SAA_OUT_OF_WORK",
             activityId = 1,
             timeSlot = TimeSlot.AM,
+            paidActivity = true,
+            issuePayment = true,
+            attendanceStatus = AttendanceStatus.COMPLETED,
+            attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
           ),
         ),
       )

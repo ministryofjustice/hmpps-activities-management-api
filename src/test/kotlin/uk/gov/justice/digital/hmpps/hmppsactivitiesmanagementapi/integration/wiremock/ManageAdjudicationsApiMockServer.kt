@@ -40,7 +40,7 @@ class ManageAdjudicationsApiMockServer : MockServer(8777) {
           "/reported-adjudications/hearings/$agencyId?startDate=$startDate&endDate=$endDate",
         ),
       )
-        .withRequestBody(equalToJson(mapper.writeValueAsString(prisoners)))
+        .withRequestBody(equalToJson(mapper.writeValueAsString(prisoners), true, true))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

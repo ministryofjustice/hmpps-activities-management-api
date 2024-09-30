@@ -119,4 +119,16 @@ data class ScheduledEvent(
     example = "DAILY",
   )
   val appointmentSeriesFrequency: AppointmentFrequency?,
+
+  @Schema(description = "Set to true if this activity is a paid activity", example = "false")
+  val paidActivity: Boolean?,
+
+  @Schema(description = "Should activity payment be issued for SICK, REST or OTHER", example = "true")
+  val issuePayment: Boolean?,
+
+  @Schema(description = "The activity attendance status - WAITING or COMPLETED", example = "WAITING")
+  val attendanceStatus: String?,
+
+  @Schema(description = "The code for the activity (non) attendance reason", example = "SICK")
+  val attendanceReasonCode: String?,
 )

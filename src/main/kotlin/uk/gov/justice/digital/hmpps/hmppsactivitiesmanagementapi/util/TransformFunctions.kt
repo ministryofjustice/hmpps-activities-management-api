@@ -134,6 +134,10 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = it.paidActivity,
+    issuePayment = it.issuePayment,
+    attendanceStatus = it.attendanceStatus?.name,
+    attendanceReasonCode = it.attendanceReasonCode?.name,
   )
 }
 
@@ -196,6 +200,10 @@ fun transformAppointmentInstanceToScheduledEvents(
     appointmentSeriesCancellationStartDate = it.seriesCancellationStartDate,
     appointmentSeriesCancellationStartTime = it.seriesCancellationStartTime,
     appointmentSeriesFrequency = it.seriesFrequency?.let { it1 -> ModelAppointmentFrequency.valueOf(it1.name) },
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 

@@ -53,6 +53,10 @@ class PrisonApiTransformationsTest {
         appointmentSeriesCancellationStartDate = null,
         appointmentSeriesCancellationStartTime = null,
         appointmentSeriesFrequency = null,
+        paidActivity = null,
+        issuePayment = null,
+        attendanceStatus = null,
+        attendanceReasonCode = null,
       ),
     )
   }
@@ -89,6 +93,10 @@ class PrisonApiTransformationsTest {
         appointmentSeriesCancellationStartDate = null,
         appointmentSeriesCancellationStartTime = null,
         appointmentSeriesFrequency = null,
+        paidActivity = null,
+        issuePayment = null,
+        attendanceStatus = null,
+        attendanceReasonCode = null,
       ),
     )
   }
@@ -127,6 +135,10 @@ class PrisonApiTransformationsTest {
         appointmentSeriesCancellationStartDate = null,
         appointmentSeriesCancellationStartTime = null,
         appointmentSeriesFrequency = null,
+        paidActivity = null,
+        issuePayment = null,
+        attendanceStatus = null,
+        attendanceReasonCode = null,
       ),
     )
   }
