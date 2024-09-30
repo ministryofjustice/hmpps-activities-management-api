@@ -517,6 +517,42 @@ class AllocationsServiceTest {
   }
 
   @Test
+  fun `updateAllocation - update exclusions with multiple schedule slots for a timeslots`() {
+    val allocation = allocation().also { it.exclusions(ExclusionsFilter.ACTIVE) hasSize 0 }
+    val allocationId = allocation.allocationId
+    allocation.activitySchedule.addSlot(
+      1,
+      LocalTime.of(9, 40) to LocalTime.of(11, 35),
+      setOf(DayOfWeek.TUESDAY),
+      TimeSlot.AM,
+    )
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val updateAllocationRequest = AllocationUpdateRequest(
+      exclusions = listOf(
+        Slot(
+          weekNumber = 1,
+          timeSlot = TimeSlot.AM,
+          monday = true,
+          tuesday = true,
+        ),
+      ),
+    )
+
+    whenever(allocationRepository.findByAllocationIdAndPrisonCode(allocationId, prisonCode)).thenReturn(allocation)
+    whenever(allocationRepository.saveAndFlush(any())).thenReturn(allocation)
+
+    service.updateAllocation(allocationId, updateAllocationRequest, prisonCode, "user")
+
+    verify(allocationRepository).saveAndFlush(allocationCaptor.capture())
+
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY)
+    allocationCaptor.firstValue.exclusions(ExclusionsFilter.ACTIVE).first().startDate isEqualTo LocalDate.now().plusDays(1)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+  }
+
+  @Test
   fun `updateAllocation - update exclusions removes existing exclusions which are not present in the update request`() {
     val activity = activityEntity(noSchedules = true)
     val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
@@ -542,7 +578,16 @@ class AllocationsServiceTest {
       allocatedBy = "Mr Blogs",
       startDate = activity.startDate,
     )
-      .apply { updateExclusion(slot, setOf(DayOfWeek.FRIDAY), LocalDate.now().plusDays(1)) }
+      .apply {
+        updateExclusion(
+          exclusionSlot = Slot(
+            weekNumber = slot.weekNumber,
+            timeSlot = slot.timeSlot,
+            friday = true,
+          ),
+          startDate = LocalDate.now().plusDays(1),
+        )
+      }
       .also {
         it.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
         with(it.exclusions(ExclusionsFilter.ACTIVE).first()) {

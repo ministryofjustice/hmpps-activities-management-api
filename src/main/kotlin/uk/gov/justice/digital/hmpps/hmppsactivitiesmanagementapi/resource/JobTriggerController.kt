@@ -131,16 +131,22 @@ class JobTriggerController(
   @ResponseStatus(HttpStatus.ACCEPTED)
   fun triggerFixZeroPayJob(
     @RequestParam(value = "deallocate", required = false)
-    @Parameter(description = "If supplied will deallocate prisoners.")
+    @Parameter(description = "If supplied will deallocate prisoners")
     deallocate: Boolean = false,
     @RequestParam(value = "makeUnpaid", required = false)
-    @Parameter(description = "If supplied will deallocate prisoners.")
+    @Parameter(description = "If supplied will make activity unpaid")
     makeUnpaid: Boolean = false,
     @RequestParam(value = "allocate", required = false)
-    @Parameter(description = "If supplied will deallocate prisoners.")
+    @Parameter(description = "If supplied will reallocate prisoners")
     allocate: Boolean = false,
+    @RequestParam("prisonCode", required = true)
+    @Parameter(description = "The prison code")
+    prisonCode: String,
+    @RequestParam("activityScheduleId", required = true)
+    @Parameter(description = "The activity schedule Id")
+    activityScheduleId: Long,
   ): String {
-    fixZeroPayJob.execute(deallocate = deallocate, makeUnpaid = makeUnpaid, allocate = allocate)
+    fixZeroPayJob.execute(deallocate = deallocate, makeUnpaid = makeUnpaid, allocate = allocate, activityScheduleId = activityScheduleId, prisonCode = prisonCode)
 
     return "Fix zero pay job triggered"
   }

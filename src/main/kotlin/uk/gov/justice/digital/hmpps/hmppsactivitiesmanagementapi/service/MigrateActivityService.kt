@@ -279,12 +279,14 @@ class MigrateActivityService(
       programServiceCode.startsWith("LIBRARY") -> activityCategories.isPrisonJobs()
       programServiceCode.startsWith("WORKS") -> activityCategories.isPrisonJobs()
       programServiceCode.startsWith("RECYCLE") -> activityCategories.isPrisonJobs()
+      programServiceCode.startsWith("SAFE") -> activityCategories.isPrisonJobs()
 
       // Education
       programServiceCode.startsWith("EDU") -> activityCategories.isEducation()
       programServiceCode.startsWith("CORECLASS") -> activityCategories.isEducation()
       programServiceCode.startsWith("SKILLS") -> activityCategories.isEducation()
       programServiceCode.startsWith("KEY_SKILLS") -> activityCategories.isEducation()
+      programServiceCode.startsWith("PE_TYPE1") -> activityCategories.isEducation() // Must precede the mapping for "PE" to gym below
 
       // Not in work
       programServiceCode.startsWith("UNEMP") -> activityCategories.isNotInWork()
@@ -311,7 +313,6 @@ class MigrateActivityService(
       // Induction/guidance
       programServiceCode.startsWith("INDUCTION") -> activityCategories.isInduction()
       programServiceCode.startsWith("IAG") -> activityCategories.isInduction()
-      programServiceCode.startsWith("SAFE") -> activityCategories.isInduction()
 
       // Everything else is Other
       else -> activityCategories.isOther()

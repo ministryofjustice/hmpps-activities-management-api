@@ -35,3 +35,5 @@ truncate table appointment_series_schedule restart identity cascade;
 truncate table appointment_series restart identity cascade;
 truncate table appointment_set_appointment_series restart identity cascade;
 truncate table appointment_set restart identity cascade;
+
+truncate table data_fix restart identity cascade;

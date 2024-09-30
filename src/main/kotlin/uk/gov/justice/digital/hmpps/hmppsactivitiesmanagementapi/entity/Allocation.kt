@@ -22,7 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.contains
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.isAfterDates
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
-import java.time.DayOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -353,17 +353,16 @@ data class Allocation(
 
   fun isEnded() = status(PrisonerStatus.ENDED)
 
-  fun updateExclusion(slot: ActivityScheduleSlot, daysOfWeek: Set<DayOfWeek>, startDate: LocalDate): Exclusion? {
-    val days = daysOfWeek.intersect(slot.getDaysOfWeek())
+  fun updateExclusion(exclusionSlot: Slot, startDate: LocalDate): Exclusion? {
     val exclusion = exclusions(ExclusionsFilter.FUTURE)
-      .singleOrNull { it.weekNumber == slot.weekNumber && it.timeSlot == slot.timeSlot }
-      ?.apply { setDaysOfWeek(days) }
+      .singleOrNull { it.weekNumber == exclusionSlot.weekNumber && it.timeSlot == exclusionSlot.timeSlot }
+      ?.apply { setDaysOfWeek(exclusionSlot.daysOfWeek) }
       ?: Exclusion.valueOf(
         allocation = this,
-        weekNumber = slot.weekNumber,
-        daysOfWeek = days,
+        weekNumber = exclusionSlot.weekNumber,
+        daysOfWeek = exclusionSlot.daysOfWeek,
         startDate = startDate,
-        timeSlot = slot.timeSlot,
+        timeSlot = exclusionSlot.timeSlot,
       )
 
     return if (exclusion.getDaysOfWeek().isNotEmpty()) {
@@ -445,24 +444,10 @@ data class Allocation(
 
   fun addExclusion(exclusion: Exclusion) = run {
     require(
-      activitySchedule.slots().any { slot ->
-        slot.timeSlot == exclusion.timeSlot &&
-          slot.weekNumber == exclusion.weekNumber &&
-          slot.getDaysOfWeek().containsAll(exclusion.getDaysOfWeek())
-      },
+      activitySchedule.hasMatchingSlots(exclusion),
     ) {
       "Cannot set exclusions where the activity does not run"
     }
-
-    // TODO: The following requirement is temporary, for as long as we need to sync events of this service back to nomis.
-    //  This is to respect a restraint on the nomis data model
-    require(
-      activitySchedule.slots().none { slot ->
-        slot.timeSlot == exclusion.timeSlot &&
-          slot.weekNumber != exclusion.weekNumber &&
-          slot.getDaysOfWeek().containsAny(exclusion.getDaysOfWeek())
-      },
-    ) { "Exclusions cannot be added where the time slot exists over multiple weeks." }
 
     require(
       exclusions(ExclusionsFilter.ACTIVE).none { it.timeSlot == exclusion.timeSlot && it.weekNumber == exclusion.weekNumber },

@@ -33,6 +33,9 @@ data class AppointmentAttendanceSummary(
   @Schema(description = "The summary of the internal location this appointment will take place. Will be null if in cell = true")
   val internalLocation: AppointmentLocationSummary?,
 
+  @Schema(description = "Flag to indicate if the location of the appointment is in cell", example = "false")
+  var inCell: Boolean,
+
   @Schema(description = "The date this appointment is taking place on")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,

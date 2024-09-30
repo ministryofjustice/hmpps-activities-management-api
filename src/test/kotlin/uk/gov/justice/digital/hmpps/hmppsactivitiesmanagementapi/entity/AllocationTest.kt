@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -444,14 +445,28 @@ class AllocationTest {
     val allocation = allocation()
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
 
-    val exclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), tomorrow)
+    val exclusion = allocation.updateExclusion(
+      exclusionSlot = Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+        monday = true,
+      ),
+      startDate = tomorrow,
+    )
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
     with(exclusion!!) {
       getDaysOfWeek() isEqualTo setOf(DayOfWeek.MONDAY)
     }
 
-    val updatedExclusion = allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(), tomorrow)
+    val updatedExclusion = allocation.updateExclusion(
+      exclusionSlot =
+      Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+      ),
+      startDate = tomorrow,
+    )
 
     allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
     updatedExclusion isEqualTo null
@@ -506,44 +521,6 @@ class AllocationTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot set exclusions where the activity does not run")
-  }
-
-  @Test
-  fun `update exclusions - cannot add exclusions for same day and time slot over multiple weeks`() {
-    val activity = activityEntity(noSchedules = true)
-    val schedule = activitySchedule(activity, noSlots = true, scheduleWeeks = 2)
-
-    schedule.addSlot(
-      weekNumber = 1,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
-      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY),
-      timeSlot = TimeSlot.PM,
-    )
-
-    schedule.addSlot(
-      weekNumber = 2,
-      slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
-      daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.THURSDAY),
-      timeSlot = TimeSlot.PM,
-    )
-
-    val allocation = schedule.allocatePrisoner(
-      prisonerNumber = "A1111BB".toPrisonerNumber(),
-      bookingId = 20002,
-      payBand = lowPayBand,
-      allocatedBy = "Mr Blogs",
-      startDate = activity.startDate,
-    )
-
-    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 0
-
-    assertThatThrownBy { allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(DayOfWeek.MONDAY), today) }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Exclusions cannot be added where the time slot exists over multiple weeks.")
-
-    allocation.updateExclusion(allocation.activitySchedule.slots().last(), setOf(DayOfWeek.THURSDAY), today)
-
-    allocation.exclusions(ExclusionsFilter.ACTIVE) hasSize 1
   }
 
   @Test
@@ -852,7 +829,20 @@ class AllocationTest {
 
     allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool true
 
-    allocation.updateExclusion(allocation.activitySchedule.slots().first(), setOf(TimeSource.tomorrow().dayOfWeek), today)
+    allocation.updateExclusion(
+      exclusionSlot = Slot(
+        weekNumber = allocation.activitySchedule.slots().first().weekNumber,
+        timeSlot = allocation.activitySchedule.slots().first().timeSlot,
+        monday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.MONDAY,
+        tuesday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.TUESDAY,
+        wednesday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.WEDNESDAY,
+        thursday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.THURSDAY,
+        friday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.FRIDAY,
+        saturday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.SATURDAY,
+        sunday = TimeSource.tomorrow().dayOfWeek == DayOfWeek.SUNDAY,
+      ),
+      startDate = today,
+    )
 
     allocation.canAttendOn(TimeSource.tomorrow(), timeSlot) isBool false
   }
