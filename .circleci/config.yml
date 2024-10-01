@@ -58,7 +58,6 @@ jobs:
       localstack_tag: << pipeline.parameters.localstack-version >>
       services: "sns,sqs"
       postgres_tag: << pipeline.parameters.postgres-version >>
-      postgres_db: "activities"
       postgres_username: "activities"
       postgres_password: "activities"
     resource_class: medium+
