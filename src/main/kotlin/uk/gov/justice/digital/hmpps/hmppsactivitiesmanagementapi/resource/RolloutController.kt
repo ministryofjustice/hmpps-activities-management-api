@@ -136,7 +136,7 @@ class RolloutController(
     description = "If a regine exists it will overwrite it.  Called via migration dashboard only",
   )
   @PostMapping("/prison-regime/{agencyId}")
-  @PreAuthorize("hasRole('ACTIVITY_ADMIN')")
+  @PreAuthorize("hasRole('MIGRATE_ACTIVITIES')")
   @ResponseStatus(HttpStatus.CREATED)
   fun setPrisonRegimeSlots(
     @PathVariable("agencyId") agencyId: String,
