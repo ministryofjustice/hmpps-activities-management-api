@@ -58,7 +58,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
       .uri("/rollout/prison-regime/TST")
       .bodyValue(slots)
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_ACTIVITIES")))
       .exchange()
       .expectStatus().isCreated
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
