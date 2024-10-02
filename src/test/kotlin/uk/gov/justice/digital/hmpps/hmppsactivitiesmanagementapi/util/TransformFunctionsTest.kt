@@ -9,12 +9,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -255,6 +258,98 @@ class TransformFunctionsTest {
   }
 
   @Nested
+  @DisplayName("prisonerScheduledActivityToScheduledEvents")
+  inner class PrisonerScheduledActivityToScheduledEvents {
+    @Test
+    fun `activity instance, to scheduled event`() {
+      val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
+
+      val sessionDate = LocalDate.now()
+      val startTime = LocalTime.of(10, 0)
+      val endTime = LocalTime.of(11, 0)
+
+      val activitiesForPrisoners = listOf(
+        PrisonerScheduledActivity(
+          scheduledInstanceId = 1,
+          allocationId = 2,
+          prisonCode = "RSI",
+          sessionDate = sessionDate,
+          startTime = startTime,
+          endTime = endTime,
+          prisonerNumber = "ABC123",
+          bookingId = 90001,
+          internalLocationId = 333,
+          internalLocationCode = "LOC123",
+          internalLocationDescription = "LOC123",
+          inCell = true,
+          onWing = true,
+          offWing = true,
+          activityCategory = "SAA_OUT_OF_WORK",
+          activityId = 1,
+          timeSlot = TimeSlot.AM,
+          issuePayment = true,
+          attendanceStatus = AttendanceStatus.COMPLETED,
+          attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+          paidActivity = true,
+          cancelled = true,
+          scheduleDescription = "Test Category",
+        ),
+      )
+
+      val location = Location(
+        locationId = 1, locationType = "VIDE", description = "video-room-a", locationUsage = "APP",
+        agencyId = "MDI", parentLocationId = 123, currentOccupancy = 2, locationPrefix = "MDI-prefix",
+        operationalCapacity = 2, userDescription = "Video Room A", internalLocationCode = "Room 1",
+      )
+
+      val prisonLocations = mapOf(333L to location)
+
+      val scheduledEvents = transformPrisonerScheduledActivityToScheduledEvents("RSI", eventPriorities, activitiesForPrisoners, prisonLocations)
+
+      assertThat(scheduledEvents.first()).isEqualTo(
+        ModelScheduledEvent(
+          prisonCode = "RSI",
+          eventSource = "SAA",
+          eventType = EventType.ACTIVITY.name,
+          scheduledInstanceId = 1,
+          bookingId = 90001,
+          internalLocationId = 333,
+          internalLocationCode = "LOC123",
+          internalLocationUserDescription = "Video Room A",
+          internalLocationDescription = "video-room-a",
+          eventId = null,
+          appointmentSeriesId = null,
+          appointmentId = null,
+          appointmentAttendeeId = null,
+          oicHearingId = null,
+          cancelled = true,
+          suspended = false,
+          categoryCode = "SAA_OUT_OF_WORK",
+          categoryDescription = "SAA_OUT_OF_WORK",
+          summary = "Test Category",
+          comments = null,
+          prisonerNumber = "ABC123",
+          inCell = true,
+          onWing = true,
+          offWing = true,
+          outsidePrison = false,
+          date = sessionDate,
+          startTime = startTime,
+          endTime = endTime,
+          priority = EventType.ACTIVITY.defaultPriority,
+          appointmentSeriesCancellationStartDate = null,
+          appointmentSeriesCancellationStartTime = null,
+          appointmentSeriesFrequency = null,
+          paidActivity = true,
+          issuePayment = true,
+          attendanceStatus = "COMPLETED",
+          attendanceReasonCode = "ATTENDED",
+        ),
+      )
+    }
+  }
+
+  @Nested
   @DisplayName("appointmentInstanceToScheduledEvents")
   inner class AppointmentInstanceToScheduledEvents {
     @Test
@@ -294,6 +389,10 @@ class TransformFunctionsTest {
           appointmentSeriesCancellationStartDate = null,
           appointmentSeriesCancellationStartTime = null,
           appointmentSeriesFrequency = null,
+          paidActivity = null,
+          issuePayment = null,
+          attendanceStatus = null,
+          attendanceReasonCode = null,
         ),
       )
     }
@@ -335,6 +434,10 @@ class TransformFunctionsTest {
           appointmentSeriesCancellationStartDate = null,
           appointmentSeriesCancellationStartTime = null,
           appointmentSeriesFrequency = null,
+          paidActivity = null,
+          issuePayment = null,
+          attendanceStatus = null,
+          attendanceReasonCode = null,
         ),
       )
     }
@@ -380,6 +483,10 @@ class TransformFunctionsTest {
           appointmentSeriesCancellationStartDate = LocalDate.of(2024, 5, 12),
           appointmentSeriesCancellationStartTime = LocalTime.of(10, 20),
           appointmentSeriesFrequency = ModelAppointmentFrequency.WEEKLY,
+          paidActivity = null,
+          issuePayment = null,
+          attendanceStatus = null,
+          attendanceReasonCode = null,
         ),
       )
     }

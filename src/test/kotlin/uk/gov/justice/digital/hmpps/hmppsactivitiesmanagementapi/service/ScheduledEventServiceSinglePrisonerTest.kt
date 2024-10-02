@@ -28,9 +28,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
@@ -251,6 +253,10 @@ class ScheduledEventServiceSinglePrisonerTest {
     activitySummary: String? = "English level 1",
     cancelled: Boolean = false,
     suspended: Boolean = false,
+    paidActivity: Boolean = false,
+    issuePayment: Boolean = false,
+    attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
+    attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
   ) = PrisonerScheduledActivity(
     scheduledInstanceId = scheduledInstanceId,
     allocationId = allocationId,
@@ -273,6 +279,10 @@ class ScheduledEventServiceSinglePrisonerTest {
     cancelled = cancelled,
     suspended = suspended,
     timeSlot = TimeSlot.AM,
+    paidActivity = paidActivity,
+    issuePayment = issuePayment,
+    attendanceStatus = attendanceStatus,
+    attendanceReasonCode = attendanceReasonCode,
   )
 
   private fun appointmentFromDbInstance(
@@ -529,7 +539,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
@@ -815,7 +825,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       val appointmentEntity = appointmentFromDbInstance(
         prisonerNumber = prisonerNumber,
@@ -930,7 +940,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       setupRolledOutPrisonMock(true, true)
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       val activityEntity = activityFromDbInstance(
         startTime = now.toLocalTime(),
@@ -1316,7 +1326,7 @@ class ScheduledEventServiceSinglePrisonerTest {
       )
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
-        .thenReturn(EventPriorities(EventType.values().associateWith { listOf(Priority(it.defaultPriority)) }))
+        .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(

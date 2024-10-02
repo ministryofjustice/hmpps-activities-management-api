@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAtten
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -579,6 +580,10 @@ internal fun activityFromDbInstance(
   activitySummary: String? = "English level 1",
   cancelled: Boolean = false,
   suspended: Boolean = false,
+  paidActivity: Boolean = false,
+  issuePayment: Boolean = false,
+  attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
+  attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
 ) = PrisonerScheduledActivity(
   scheduledInstanceId = scheduledInstanceId,
   allocationId = allocationId,
@@ -601,4 +606,8 @@ internal fun activityFromDbInstance(
   cancelled = cancelled,
   suspended = suspended,
   timeSlot = TimeSlot.AM,
+  paidActivity = paidActivity,
+  issuePayment = issuePayment,
+  attendanceStatus = attendanceStatus,
+  attendanceReasonCode = attendanceReasonCode,
 )

@@ -97,6 +97,10 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 
   fun activityInstance(
@@ -152,6 +156,10 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 
   fun visitInstance(
@@ -204,6 +212,10 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 
   fun courtHearingInstance(
@@ -251,6 +263,10 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 
   fun adjudicationInstance(
@@ -303,6 +319,10 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 
   fun externalTransferInstance(
@@ -350,5 +370,9 @@ object PrisonerScheduledEventsFixture {
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }

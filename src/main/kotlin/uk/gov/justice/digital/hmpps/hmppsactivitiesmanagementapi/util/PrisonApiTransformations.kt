@@ -80,6 +80,10 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 
@@ -122,6 +126,10 @@ fun PrisonApiCourtHearings?.nomisCourtHearingsToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 } ?: emptyList()
 
@@ -167,6 +175,10 @@ fun List<PrisonApiOffenderAdjudicationHearing>.nomisAdjudicationsToScheduledEven
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 
@@ -210,6 +222,10 @@ fun List<PrisonApiScheduledEvent>.nomisAppointmentsToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 
@@ -253,6 +269,10 @@ fun List<PrisonApiScheduledEvent>.nomisVisitsToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 
@@ -296,6 +316,10 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
     appointmentSeriesCancellationStartDate = null,
     appointmentSeriesCancellationStartTime = null,
     appointmentSeriesFrequency = null,
+    paidActivity = null,
+    issuePayment = null,
+    attendanceStatus = null,
+    attendanceReasonCode = null,
   )
 }
 
