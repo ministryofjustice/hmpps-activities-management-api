@@ -18,8 +18,8 @@ generic-service:
     FEATURE_AUDIT_SERVICE_HMPPS_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
     SENTRY_ENVIRONMENT: production
-    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI
-    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI
+    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI
+    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI
 
   resources:
     requests:
@@ -49,9 +49,9 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service
 
 cron:
-  fixZeroPayDeallocate: "0 22 4 10 *"
-  fixZeroPayReallocate: "0 5 5 10 *"
+  fixZeroPayDeallocate: "0 22 7 10 *"
+  fixZeroPayReallocate: "0 5 8 10 *"
 
   datafix:
     prisonCode: "RSI"
-    activityScheduleId: "129"
+    activityScheduleId: "74"
