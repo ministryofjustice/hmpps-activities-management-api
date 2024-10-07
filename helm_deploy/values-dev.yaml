@@ -46,9 +46,3 @@ cron:
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
-  fixZeroPayDeallocate: "0 22 27 9 *"
-  fixZeroPayReallocate: "0 5 28 9 *"
-
-  datafix:
-    prisonCode: "RSI"
-    activityScheduleId: "438"
