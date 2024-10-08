@@ -131,7 +131,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
   @Test
   fun `Attendance records are not created for where there are exclusions`() {
-    val allocatedPrisoners = listOf(listOf("G4793VF"), listOf("G4793VF", "A5193DY"))
+    val allocatedPrisoners = listOf(listOf("G4793VF", "H4793VF"), listOf("A5193DY"))
     allocatedPrisoners.forEach {
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         prisonerNumbers = it,
@@ -149,7 +149,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedules).hasSize(1)
 
     with(activitySchedules.first()) {
-      allocations() hasSize 3
+      allocations() hasSize 4
       instances() hasSize 2
       val scheduledInstances = scheduledInstanceRepository.findAll()
       assertThat(scheduledInstances).isNotEmpty
@@ -164,15 +164,15 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     val morningSession = scheduledInstanceRepository.getReferenceById(1)
     log.info("ScheduledInstanceId (AM) = ${morningSession.scheduledInstanceId} attendances ${morningSession.attendances.size}")
-    assertThat(morningSession.attendances).hasSize(1)
+    assertThat(morningSession.attendances).hasSize(2)
 
     val afternoonSession = scheduledInstanceRepository.getReferenceById(2)
     log.info("ScheduledInstanceId (PM) = ${afternoonSession.scheduledInstanceId} attendances ${afternoonSession.attendances.size}")
-    assertThat(afternoonSession.attendances).hasSize(3)
+    assertThat(afternoonSession.attendances).hasSize(4)
 
-    assertThat(attendanceRepository.count()).isEqualTo(4)
+    assertThat(attendanceRepository.count()).isEqualTo(6)
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+    verify(eventsPublisher, times(6)).send(eventCaptor.capture())
 
     eventCaptor.allValues.forEach {
       it.eventType isEqualTo "activities.prisoner.attendance-created"

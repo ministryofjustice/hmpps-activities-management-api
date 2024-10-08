@@ -23,6 +23,9 @@ values (2, 1, 'A5193DY', 10002, 2, '2022-10-01', null, '2022-10-01 09:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 1, 'F7024DX', 10003, 2, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (4, 1, 'H4793VF', 10001, 1, '2022-10-01', null, '2022-10-01 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
 values (1, current_date, '09:00:00', '12:00:00', false, null, null, null, null, 'AM'),
        (1, current_date, '13:00:00', '16:30:00', false, null, null, null, null, 'PM');
