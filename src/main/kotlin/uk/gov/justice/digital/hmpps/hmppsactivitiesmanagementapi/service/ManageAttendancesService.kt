@@ -57,6 +57,7 @@ class ManageAttendancesService(
     log.info("Creating attendance records for prison '$prisonCode' on date '$date'")
 
     var counter = 0
+    val prisonerIncentiveLevelCodeMap = mutableMapOf<String, String?>()
 
     // Schedules instance for AM might be created if next session was PM. Need thinking
     scheduledInstanceRepository.getActivityScheduleInstancesByPrisonCodeAndDateRange(
@@ -70,12 +71,17 @@ class ManageAttendancesService(
 
         // Get the details of the prisoners due to attend the session
         val prisonerNumbers = allocations.map { it.prisonerNumber }
-        val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
+
+        prisonerNumbers.filter { prisonerNumber -> prisonerIncentiveLevelCodeMap[prisonerNumber] == null }.also { prisonerNumbersNotYetFound ->
+          val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbersNotYetFound)
+          // add missing entries
+          prisonerMap.forEach { (prisonerNumber, prisoner) -> prisonerIncentiveLevelCodeMap[prisonerNumber] = prisoner?.currentIncentive?.level?.code }
+        }
 
         // Build up a list of attendances required - it will not duplicate if one already exists, so safe to re-run
         val attendancesForInstance = allocations
           .mapNotNull { allocation ->
-            createAttendance(instance, allocation, prisonerMap[allocation.prisonerNumber])
+            createAttendance(instance, allocation, prisonerIncentiveLevelCodeMap[allocation.prisonerNumber])
           }
 
         attendancesForInstance.ifNotEmpty {
@@ -134,7 +140,8 @@ class ManageAttendancesService(
         it.startTime >= nextAvailableInstance.startTime &&
         allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
     }.mapNotNull {
-      createAttendance(it, allocation, prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber))
+      val prisonerDetails: Prisoner? = prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber)
+      createAttendance(it, allocation, prisonerDetails?.currentIncentive?.level?.code)
     }
   }
 
@@ -168,7 +175,7 @@ class ManageAttendancesService(
   private fun createAttendance(
     instance: ScheduledInstance,
     allocation: Allocation,
-    prisonerDetails: Prisoner?,
+    incentiveLevelCode: String?,
   ): Attendance? {
     if (!attendanceAlreadyExistsFor(instance, allocation)) {
       when {
@@ -192,7 +199,6 @@ class ManageAttendancesService(
         }
       }.apply {
         // Calculate what we think the pay rate should be at the prisoner's current incentive level
-        val incentiveLevelCode = prisonerDetails?.currentIncentive?.level?.code
         payAmount = incentiveLevelCode?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
       }.also { attendance ->
         return attendance
