@@ -104,6 +104,7 @@ workflows:
           name: helm_lint
       - hmpps/build_multiplatform_docker:
           name: build_docker
+          additional_docker_build_args: --progress=plain
           filters:
             branches:
               only:

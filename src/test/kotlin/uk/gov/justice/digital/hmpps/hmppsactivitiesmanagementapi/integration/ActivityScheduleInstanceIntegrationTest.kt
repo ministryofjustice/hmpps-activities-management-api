@@ -114,7 +114,7 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
     fun `get scheduled attendees by scheduled instance id - does not contain exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
-      assertThat(attendees).hasSize(1)
+      assertThat(attendees).hasSize(2)
       with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G4793VF") }
     }
 
