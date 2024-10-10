@@ -53,6 +53,14 @@ class ScheduledInstanceService(
   }
 
   @Transactional(readOnly = true)
+  fun getActivityScheduleInstancesByIds(ids: List<Long>) =
+    repository.findByIds(ids)
+      .also {
+        it.forEach { instance -> checkCaseloadAccess(instance.activitySchedule.activity.prisonCode) }
+      }
+      .toModel(includeAllocations = false)
+
+  @Transactional(readOnly = true)
   fun getActivityScheduleInstancesByDateRange(
     prisonCode: String,
     dateRange: LocalDateRange,

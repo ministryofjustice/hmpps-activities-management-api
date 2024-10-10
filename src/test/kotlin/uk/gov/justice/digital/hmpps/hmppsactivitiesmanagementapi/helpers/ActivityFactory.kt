@@ -80,6 +80,7 @@ internal fun activityEntity(
   offWing: Boolean = false,
   riskLevel: String = "high",
   paid: Boolean = true,
+  attendanceRequired: Boolean = true,
 ) =
   Activity(
     activityId = activityId,
@@ -96,6 +97,7 @@ internal fun activityEntity(
     onWing = onWing,
     offWing = offWing,
     isPaid = paid,
+    attendanceRequired = attendanceRequired,
   ).apply {
     this.organiser = organiser
     this.endDate = endDate

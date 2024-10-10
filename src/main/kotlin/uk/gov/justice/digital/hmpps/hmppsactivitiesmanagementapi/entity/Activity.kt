@@ -297,30 +297,36 @@ data class Activity(
 
   fun ends(date: LocalDate) = date == endDate
 
-  fun toModelLite() = ActivityLite(
-    id = activityId,
-    prisonCode = prisonCode,
-    attendanceRequired = attendanceRequired,
-    inCell = inCell,
-    onWing = onWing,
-    offWing = offWing,
-    pieceWork = pieceWork,
-    outsideWork = outsideWork,
-    payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
-    summary = summary,
-    description = description,
-    category = activityCategory.toModel(),
-    riskLevel = riskLevel,
-    minimumEducationLevel = activityMinimumEducationLevel().toModel(),
-    capacity = schedules().sumOf { schedule -> schedule.capacity },
-    allocated = schedules().sumOf { schedule ->
-      schedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.size
-    },
-    endDate = endDate,
-    createdTime = createdTime,
-    activityState = getActivityState(),
-    paid = paid,
-  )
+  fun toModelLite(includeAllocations: Boolean = true): ActivityLite {
+    val numAllocated = if (includeAllocations) {
+      schedules().sumOf { schedule -> schedule.allocations().filterNot { it.status(PrisonerStatus.ENDED) }.size }
+    } else {
+      0
+    }
+
+    return ActivityLite(
+      id = activityId,
+      prisonCode = prisonCode,
+      attendanceRequired = attendanceRequired,
+      inCell = inCell,
+      onWing = onWing,
+      offWing = offWing,
+      pieceWork = pieceWork,
+      outsideWork = outsideWork,
+      payPerSession = ModelPayPerSession.valueOf(payPerSession.name),
+      summary = summary,
+      description = description,
+      category = activityCategory.toModel(),
+      riskLevel = riskLevel,
+      minimumEducationLevel = activityMinimumEducationLevel().toModel(),
+      capacity = schedules().sumOf { schedule -> schedule.capacity },
+      allocated = numAllocated,
+      endDate = endDate,
+      createdTime = createdTime,
+      activityState = getActivityState(),
+      paid = paid,
+    )
+  }
 
   fun isPaid() = paid
 

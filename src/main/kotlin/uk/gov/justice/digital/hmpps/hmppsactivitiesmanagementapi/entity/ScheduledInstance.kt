@@ -61,8 +61,8 @@ data class ScheduledInstance(
 
   fun dayOfWeek() = sessionDate.dayOfWeek
 
-  fun toModel() = ModelScheduledInstance(
-    activitySchedule = this.activitySchedule.toModelLite(),
+  fun toModel(includeAllocations: Boolean = true) = ModelScheduledInstance(
+    activitySchedule = this.activitySchedule.toModelLite(includeAllocations),
     id = this.scheduledInstanceId,
     date = this.sessionDate,
     startTime = this.startTime,
@@ -72,10 +72,10 @@ data class ScheduledInstance(
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
     comment = this.comment,
-    previousScheduledInstanceId = this.previous()?.scheduledInstanceId,
-    previousScheduledInstanceDate = this.previous()?.sessionDate,
-    nextScheduledInstanceId = this.next()?.scheduledInstanceId,
-    nextScheduledInstanceDate = this.next()?.sessionDate,
+    previousScheduledInstanceId = if (includeAllocations) this.previous()?.scheduledInstanceId else null,
+    previousScheduledInstanceDate = if (includeAllocations) this.previous()?.sessionDate else null,
+    nextScheduledInstanceId = if (includeAllocations) this.next()?.scheduledInstanceId else null,
+    nextScheduledInstanceDate = if (includeAllocations) this.next()?.sessionDate else null,
     attendances = this.attendances.map { attendance -> transform(attendance, null) },
     timeSlot = this.timeSlot,
   )
@@ -157,4 +157,4 @@ data class ScheduledInstance(
   fun isEndFuture(dateTime: LocalDateTime) = sessionDate.atTime(endTime).isAfter(dateTime)
 }
 
-fun List<ScheduledInstance>.toModel() = map { it.toModel() }
+fun List<ScheduledInstance>.toModel(includeAllocations: Boolean = true) = map { it.toModel(includeAllocations) }

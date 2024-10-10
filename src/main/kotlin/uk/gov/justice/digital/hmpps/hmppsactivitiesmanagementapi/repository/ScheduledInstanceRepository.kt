@@ -7,8 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import java.time.LocalDate
 
 interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
-  fun findAllBySessionDate(date: LocalDate): List<ScheduledInstance>
-
   @Query(
     """
     SELECT si FROM ScheduledInstance si 
@@ -28,4 +26,16 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
     cancelled: Boolean? = null,
     timeSlot: TimeSlot? = null,
   ): List<ScheduledInstance>
+
+  @Query(
+    "select si " +
+      "from ScheduledInstance si " +
+      "join fetch si.activitySchedule asch " +
+      "join fetch asch.activity act " +
+      "join fetch act.activityCategory actc " +
+      "left join fetch si.attendances att " +
+      "left join fetch att.attendanceReason attr " +
+      "where si.scheduledInstanceId in :ids",
+  )
+  fun findByIds(ids: List<Long>): List<ScheduledInstance>
 }
