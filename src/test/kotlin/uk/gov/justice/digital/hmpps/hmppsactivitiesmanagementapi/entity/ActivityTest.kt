@@ -61,7 +61,7 @@ class ActivityTest {
   }
 
   @Test
-  fun `converted to model lite`() {
+  fun `converted to model lite with allocation details`() {
     val expectedModel = ActivityLite(
       id = 1,
       attendanceRequired = false,
@@ -81,17 +81,65 @@ class ActivityTest {
         name = "category name",
         description = "category description",
       ),
-      capacity = 0,
+      capacity = 1,
+      allocated = 2,
+      createdTime = LocalDate.now().atStartOfDay(),
+      activityState = ActivityState.LIVE,
+      paid = true,
+      minimumEducationLevel = listOf(
+        ModelActivityMinimumEducationLevel(
+          id = 0,
+          educationLevelCode = "1",
+          educationLevelDescription = "Reading Measure 1.0",
+          studyAreaCode = "ENGLA",
+          studyAreaDescription = "English Language",
+        ),
+      ),
+    )
+    assertThat(activityEntity(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
+  }
+
+  @Test
+  fun `converted to model lite without allocation details`() {
+    val expectedModel = ActivityLite(
+      id = 1,
+      attendanceRequired = false,
+      inCell = false,
+      onWing = false,
+      offWing = false,
+      pieceWork = false,
+      outsideWork = false,
+      payPerSession = PayPerSession.H,
+      prisonCode = "MDI",
+      summary = "Maths",
+      description = "Maths basic",
+      riskLevel = "high",
+      category = ActivityCategory(
+        id = 1L,
+        code = "category code",
+        name = "category name",
+        description = "category description",
+      ),
+      capacity = 1,
       allocated = 0,
       createdTime = LocalDate.now().atStartOfDay(),
       activityState = ActivityState.LIVE,
       paid = true,
+      minimumEducationLevel = listOf(
+        ModelActivityMinimumEducationLevel(
+          id = 0,
+          educationLevelCode = "1",
+          educationLevelDescription = "Reading Measure 1.0",
+          studyAreaCode = "ENGLA",
+          studyAreaDescription = "English Language",
+        ),
+      ),
     )
-    assertThat(activityEntity().copy(attendanceRequired = false).toModelLite()).isEqualTo(expectedModel)
+    assertThat(activityEntity(attendanceRequired = false).toModelLite(includeAllocations = false)).isEqualTo(expectedModel)
   }
 
   @Test
-  fun `List converted to model lite`() {
+  fun `list converted to model lite`() {
     val expectedModel = listOf(
       ActivityLite(
         id = 1,
@@ -541,7 +589,7 @@ class ActivityTest {
     schedule.addSlot(
       weekNumber = 1,
       slotTimes = LocalTime.NOON to LocalTime.NOON.plusHours(1),
-      setOf(*DayOfWeek.values()),
+      setOf(*DayOfWeek.entries.toTypedArray()),
       timeSlot = TimeSlot.PM,
     )
 
@@ -633,7 +681,7 @@ class ActivityTest {
     val currentPay = activity.activityPayFor(lowPayBand, "BAS")
 
     assertThat(currentPay!!.rate).isEqualTo(34)
-    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+    assertThat(currentPay.startDate).isEqualTo(LocalDate.now().minusDays(1))
   }
 
   @Test
@@ -673,7 +721,7 @@ class ActivityTest {
     val currentPay = activity.activityPayFor(lowPayBand, "BAS")
 
     assertThat(currentPay!!.rate).isEqualTo(35)
-    assertThat(currentPay!!.startDate).isEqualTo(LocalDate.now().minusDays(1))
+    assertThat(currentPay.startDate).isEqualTo(LocalDate.now().minusDays(1))
   }
 
   @Test
