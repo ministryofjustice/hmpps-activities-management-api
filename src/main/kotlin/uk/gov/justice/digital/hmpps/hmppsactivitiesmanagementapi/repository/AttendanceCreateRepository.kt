@@ -17,7 +17,7 @@ interface AttendanceCreateRepository : ReadOnlyRepository<AttendanceCreate, Long
       AND ac.sessionDate = :sessionDate
       AND ac.allocStart <= :sessionDate
       AND (ac.allocEnd is null OR ac.allocEnd >= :sessionDate)
-    """
+    """,
   )
   fun findBy(prisonCode: String, sessionDate: LocalDate): List<AttendanceCreate>
 
@@ -26,7 +26,7 @@ interface AttendanceCreateRepository : ReadOnlyRepository<AttendanceCreate, Long
       SELECT ppb 
       FROM PrisonPayBand ppb 
       WHERE ppb.prisonPayBandId = :prisonPayBandId 
-    """
+    """,
   )
   fun findPayBandById(prisonPayBandId: Long): PrisonPayBand
 }

@@ -61,11 +61,11 @@ class ManageAttendancesExperimentalService(
     var counter = 0
     val prisonerIncentiveLevelCodeMap = mutableMapOf<String, String?>()
 
-    //find possible attendance records to create
+    // find possible attendance records to create
     val possibleRecords = attendanceCreateRepository.findBy(prisonCode, date)
     log.info("possibleRecords: ${possibleRecords.size}")
 
-    //retrieve scheduled instances
+    // retrieve scheduled instances
     val scheduledInstanceMap = mutableMapOf<Long, ScheduledInstance>()
 
     val scheduledInstanceNumbers = possibleRecords.map { it.scheduledInstanceId }.distinct()
@@ -73,7 +73,7 @@ class ManageAttendancesExperimentalService(
       scheduledInstanceMap[scheduledInstance.scheduledInstanceId] = scheduledInstance
     }
 
-    //retrieve prisoner incentive levels
+    // retrieve prisoner incentive levels
     val prisonerNumbers = possibleRecords.map { it.prisonerNumber }.distinct()
 
     prisonerNumbers.chunked(999).forEach { prisoners ->
@@ -84,26 +84,25 @@ class ManageAttendancesExperimentalService(
     val attendancesList = mutableListOf<Attendance>()
 
     possibleRecords.forEach {
-      attendanceCreate ->
+        attendanceCreate ->
 
       var canAttend = true
 
-      if(attendanceCreate.possibleExclusion) {
+      if (attendanceCreate.possibleExclusion) {
         val allocation = allocationRepository.findById(attendanceCreate.allocationId).orElseThrow { EntityNotFoundException("Allocation ${attendanceCreate.allocationId} not found") }
         allocation?.let { canAttend = allocation.canAttendOn(date, attendanceCreate.timeSlot) }
-      // FIXME incorrect for G4732GK. Excluded thurs? is it before the call rather than direct on allocation
-      }
-      else {
+        // FIXME incorrect for G4732GK. Excluded thurs? is it before the call rather than direct on allocation
+      } else {
         val endDate = when {
           attendanceCreate.allocEnd != null -> attendanceCreate.allocEnd
-          //FIXME planned dealloc logic or from view
+          // FIXME planned dealloc logic or from view
           attendanceCreate.scheduleEnd != null -> attendanceCreate.scheduleEnd
           else -> null
         }
-        canAttend = date.between(attendanceCreate.allocStart, endDate )
+        canAttend = date.between(attendanceCreate.allocStart, endDate)
       }
 
-      if(canAttend) {
+      if (canAttend) {
         val scheduledInstance = scheduledInstanceMap.get(attendanceCreate.scheduledInstanceId)!!
         val incentiveLevelCode = prisonerIncentiveLevelCodeMap.get(attendanceCreate.prisonerNumber)
         // log.info("prisonNumber: ${attendanceCreate.prisonerNumber}" )
@@ -148,7 +147,7 @@ class ManageAttendancesExperimentalService(
     incentiveLevelCode: String?,
   ): Attendance? {
     val prisonerNumber = "x" + attendanceCreate.prisonerNumber.drop(1)
-     if (!attendanceAlreadyExistsFor(instance, prisonerNumber)) {
+    if (!attendanceAlreadyExistsFor(instance, prisonerNumber)) {
       when {
         // Suspended prisoners produce pre-marked and unpaid suspended attendances
         attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED -> {
@@ -173,7 +172,7 @@ class ManageAttendancesExperimentalService(
         val activity = activityRepository.findById(attendanceCreate.activityId).orElseThrow { EntityNotFoundException("Activity $attendanceCreate.activityId not found") }
         // log.info("ppb: ${attendanceCreate.prisonPayBandId}")
         val payBand = attendanceCreate.prisonPayBandId?.let { attendanceCreateRepository.findPayBandById(attendanceCreate.prisonPayBandId) }
-        payAmount = payBand?.let { incentiveLevelCode?.let { activity.activityPayFor(payBand, incentiveLevelCode)?.rate }} ?: 0
+        payAmount = payBand?.let { incentiveLevelCode?.let { activity.activityPayFor(payBand, incentiveLevelCode)?.rate } } ?: 0
         // payAmount = incentiveLevelCode?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
       }.also { attendance ->
         return attendance
@@ -182,7 +181,7 @@ class ManageAttendancesExperimentalService(
     return null
   }
 
-  private fun suspendedAttendance(instance: ScheduledInstance, prisonerNumber: String ) = Attendance(
+  private fun suspendedAttendance(instance: ScheduledInstance, prisonerNumber: String) = Attendance(
     scheduledInstance = instance,
     prisonerNumber = prisonerNumber,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
@@ -222,7 +221,7 @@ class ManageAttendancesExperimentalService(
     attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, prisonerNumber)
 
   fun saveAttendances(attendances: List<Attendance>, description: String): List<Attendance> {
-    ManageAttendancesExperimentalService.log.info("Committing ${attendances.size} attendances for ${description}")
+    ManageAttendancesExperimentalService.log.info("Committing ${attendances.size} attendances for $description")
     return attendanceRepository.saveAllAndFlush(attendances)
   }
 

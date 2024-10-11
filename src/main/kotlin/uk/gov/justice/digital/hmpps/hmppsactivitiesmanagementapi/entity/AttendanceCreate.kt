@@ -54,5 +54,4 @@ data class AttendanceCreate(
   var cancelledReason: String? = null,
 
   val possibleExclusion: Boolean,
-) {
-}
+)
