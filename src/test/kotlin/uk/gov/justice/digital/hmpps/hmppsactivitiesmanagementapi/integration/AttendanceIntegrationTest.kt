@@ -4,6 +4,7 @@ import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
@@ -103,8 +104,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `403 error morning attendances are marked without the correct role`() {
-    val unmarkedAttendances = attendanceRepository.findAll().also { assertThat(it).hasSize(2) }
-    unmarkedAttendances.forEach { assertThat(it.attendanceReason).isNull() }
+    assertThat(attendanceRepository.findAll()).hasSize(3)
 
     val error = webTestClient.put()
       .uri("/attendances")
@@ -112,6 +112,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
         listOf(
           AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "ATTENDED", null, null, null, null, null),
           AttendanceUpdateRequest(2, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, null, null, null, null),
+          AttendanceUpdateRequest(3, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "REFUSED", null, null, null, null, null),
         ),
       )
       .accept(MediaType.APPLICATION_JSON)
@@ -130,8 +131,12 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       assertThat(moreInfo).isNull()
     }
 
+    assertThat(attendanceRepository.findById(1).get().attendanceReason).isNull()
+    assertThat(attendanceRepository.findById(2).get().attendanceReason).isNull()
+    assertThat(attendanceRepository.findById(3).get().attendanceReason!!.code).isEqualTo(AttendanceReasonEnum.SICK)
+
     // Check that no sync events were emitted
-    verify(eventsPublisher, times(0)).send(eventCaptor.capture())
+    verify(eventsPublisher, never()).send(eventCaptor.capture())
   }
 
   @Sql(
