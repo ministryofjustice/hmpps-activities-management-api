@@ -65,6 +65,22 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `allocation data should be returned`() {
+      webTestClient.getScheduledInstanceById(1)!!.also {
+        assertThat(it.nextScheduledInstanceId).isEqualTo(4L)
+        assertThat(it.nextScheduledInstanceDate).isEqualTo(LocalDate.of(2022, 10, 11))
+        assertThat(it.activitySchedule.activity.allocated).isEqualTo(5)
+      }
+
+      webTestClient.getScheduledInstanceById(4)!!.also {
+        assertThat(it.previousScheduledInstanceId).isEqualTo(1L)
+        assertThat(it.previousScheduledInstanceDate).isEqualTo(LocalDate.of(2022, 10, 10))
+        assertThat(it.activitySchedule.activity.allocated).isEqualTo(5)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
     fun `403 when fetching a schedule by its id for the wrong caseload`() {
       webTestClient.get()
         .uri("/scheduled-instances/1")
@@ -95,6 +111,28 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
         .headers(setAuthorisation(isClientToken = true, roles = listOf(ROLE_ACTIVITY_ADMIN)))
         .exchange()
         .expectStatus().isOk
+    }
+  }
+
+  @Nested
+  @DisplayName("getActivityScheduleInstancesByIds")
+  inner class GetActivityScheduleInstancesByIds {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `get schedule by its id`() {
+      val scheduledInstances = webTestClient.getScheduledInstancesByIds(1, 2, 3, 4)!!
+
+      assertThat(scheduledInstances).hasSize(4)
+      scheduledInstances.forEach {
+        assertThat(it.previousScheduledInstanceId).isNull()
+        assertThat(it.previousScheduledInstanceDate).isNull()
+        assertThat(it.nextScheduledInstanceId).isNull()
+        assertThat(it.nextScheduledInstanceId).isNull()
+        assertThat(it.activitySchedule.activity.allocated).isZero()
+      }
+      scheduledInstances.filter { it.id == 4L }.forEach {
+        assertThat(it.attendances[0].attendanceReason!!.code).isEqualTo("SICK")
+      }
     }
   }
 
@@ -528,6 +566,18 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(ActivityScheduleInstance::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.getScheduledInstancesByIds(vararg ids: Long) = post()
+    .uri("/scheduled-instances")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "PVI")
+    .bodyValue(ids)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
 
   private fun WebTestClient.getScheduledAttendeesByInstanceId(id: Long) = get()
