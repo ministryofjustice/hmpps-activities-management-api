@@ -83,6 +83,27 @@ class ScheduledInstanceServiceTest {
   }
 
   @Nested
+  @DisplayName("getActivityScheduleInstancesByIds")
+  inner class GetActivityScheduleInstancesByIds {
+
+    @Test
+    fun `scheduled instances found - success`() {
+      addCaseloadIdToRequestHeader("MDI")
+      whenever(repository.findByIds(listOf(1, 2, 3)))
+        .thenReturn(
+          listOf(
+            ScheduledInstanceFixture.instance(id = 1, locationId = 11),
+            ScheduledInstanceFixture.instance(id = 2, locationId = 22),
+            ScheduledInstanceFixture.instance(id = 3, locationId = 33),
+          ),
+        )
+
+      assertThat(service.getActivityScheduleInstancesByIds(listOf(1, 2, 3)))
+        .extracting<Long> { it.id }.containsOnly(1, 2, 3)
+    }
+  }
+
+  @Nested
   @DisplayName("getActivityScheduleInstancesByDateRange")
   inner class GetActivityScheduleInstancesByDateRange {
     val prisonCode = "MDI"

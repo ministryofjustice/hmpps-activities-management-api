@@ -345,11 +345,11 @@ data class ActivitySchedule(
     }
   }
 
-  fun toModelLite() = ActivityScheduleLite(
+  fun toModelLite(includeAllocations: Boolean = true) = ActivityScheduleLite(
     id = this.activityScheduleId,
     description = this.description,
     capacity = this.capacity,
-    activity = this.activity.toModelLite(),
+    activity = this.activity.toModelLite(includeAllocations),
     scheduleWeeks = this.scheduleWeeks,
     slots = this.slots.map { it.toModel() },
     startDate = this.startDate,

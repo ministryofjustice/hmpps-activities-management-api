@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -97,6 +98,57 @@ class ScheduledInstanceController(
   fun getScheduledInstanceById(
     @PathVariable("instanceId") instanceId: Long,
   ): ActivityScheduleInstance = scheduledInstanceService.getActivityScheduleInstanceById(instanceId)
+
+  @PostMapping
+  @ResponseBody
+  @Operation(
+    summary = "Get scheduled instances by their ids",
+    description = "Returns a list of scheduled instances.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The scheduled instances found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivityScheduleInstance::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
+  fun getScheduledInstancesByIds(
+    @RequestBody
+    @Parameter(
+      description = "The scheduled instance ids",
+      required = true,
+    )
+    instanceIds: List<Long>,
+  ): List<ActivityScheduleInstance> = scheduledInstanceService.getActivityScheduleInstancesByIds(instanceIds)
 
   @GetMapping(value = ["/{instanceId}/scheduled-attendees"])
   @ResponseBody
