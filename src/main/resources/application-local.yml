@@ -16,7 +16,9 @@ spring:
   jpa:
     show-sql: true
     properties:
-      hibernate.format_sql: true
+      hibernate:
+        generate_statistics: false
+        format_sql: false
 
   security:
     oauth2:

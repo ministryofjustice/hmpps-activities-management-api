@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsExperimentalJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import java.time.Clock
 import java.time.LocalDate
@@ -28,6 +29,7 @@ import java.time.LocalDate
 class JobTriggerController(
   private val createScheduledInstancesJob: CreateScheduledInstancesJob,
   private val manageAttendanceRecordsJob: ManageAttendanceRecordsJob,
+  private val manageAttendanceRecordsExperimentalJob: ManageAttendanceRecordsExperimentalJob,
   private val manageAllocationsJob: ManageAllocationsJob,
   private val activityMetricsJob: ActivityMetricsJob,
   private val appointmentMetricsJob: AppointmentMetricsJob,
@@ -66,6 +68,25 @@ class JobTriggerController(
     withExpiry: Boolean = false,
   ): String {
     manageAttendanceRecordsJob.execute(mayBePrisonCode = prisonCode, date = date ?: LocalDate.now(clock), withExpiry = withExpiry)
+    return "Manage attendance records triggered"
+  }
+
+  @PostMapping(value = ["/manage-attendance-records-exp"])
+  @Operation(
+    summary = "Trigger the job to manage attendance records in advance",
+    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.CREATED)
+  fun triggerManageAttendanceExperimentalRecordsJob(
+    @RequestParam(value = "prisonCode", required = false)
+    @Parameter(description = "If supplied will create attendance records for the given rolled out prison.")
+    prisonCode: String? = null,
+    @RequestParam(value = "date", required = false)
+    @Parameter(description = "If supplied will create attendance records for the given date. Default to the current date.")
+    date: LocalDate? = null,
+  ): String {
+    manageAttendanceRecordsExperimentalJob.execute(mayBePrisonCode = prisonCode, date = date ?: LocalDate.now(clock))
     return "Manage attendance records triggered"
   }
 
