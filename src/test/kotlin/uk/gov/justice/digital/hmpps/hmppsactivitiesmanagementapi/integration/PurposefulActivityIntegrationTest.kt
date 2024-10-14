@@ -84,13 +84,13 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     // Check some of the data is as expected for first attendance
     // These index numbers are going to be horrendous to maintain as the report changes
     assertThat(purposefulActivityRow1[3]).isEqualTo("SAA_EDUCATION") // check activity category
-    assertThat(purposefulActivityRow1[44]).isEqualTo("A11111A") // check prisoner number
-    assertThat(purposefulActivityRow1[23]).isEqualTo("Maths AM")
+    assertThat(purposefulActivityRow1[34]).isEqualTo("A11111A") // check prisoner number
+    assertThat(purposefulActivityRow1[22]).isEqualTo("Maths AM")
 
     // Check some fields as expected for second attendance
-    assertThat(purposefulActivityRow2).hasSize(55) // confirm total size
-    assertThat(purposefulActivityRow2[13]).isEqualTo("Maths")
-    assertThat(purposefulActivityRow2[8]).isEqualTo("Tier 1")
+    assertThat(purposefulActivityRow2).hasSize(45) // confirm total size
+    assertThat(purposefulActivityRow2[12]).isEqualTo("Maths")
+    assertThat(purposefulActivityRow2[7]).isEqualTo("Tier 1")
   }
 
   @Sql(
