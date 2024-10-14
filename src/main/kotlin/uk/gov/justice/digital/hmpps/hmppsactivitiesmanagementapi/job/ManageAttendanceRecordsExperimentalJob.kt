@@ -33,8 +33,7 @@ class ManageAttendanceRecordsExperimentalJob(
       jobDefinition = JobDefinition(
         JobType.ATTENDANCE_CREATE_EXPERIMENTAL,
       ) {
-        // rolledOutPrisonCodes.forEach { prisonCode -> manageExperimentalAttendancesService.createAttendances(date, prisonCode) }
-        manageExperimentalAttendancesService.createAttendances(date.minusDays(1), "IWI")
+        rolledOutPrisonCodes.forEach { prisonCode -> manageExperimentalAttendancesService.createAttendances(date, prisonCode) }
       },
     )
   }

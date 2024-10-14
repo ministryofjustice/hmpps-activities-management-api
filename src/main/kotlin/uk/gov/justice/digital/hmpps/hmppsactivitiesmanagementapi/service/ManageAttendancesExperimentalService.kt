@@ -7,19 +7,22 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceCreate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceCreationData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceCreateRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceCreationDataRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
@@ -29,15 +32,16 @@ import java.time.LocalDateTime
 @Service
 @Transactional
 class ManageAttendancesExperimentalService(
-  private val attendanceCreateRepository: AttendanceCreateRepository,
+  private val attendanceCreationDataRepository: AttendanceCreationDataRepository,
   private val activityRepository: ActivityRepository,
   private val allocationRepository: AllocationRepository,
-  private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
-  private val rolloutPrisonService: RolloutPrisonService,
+  private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val outboundEventsService: OutboundEventsService,
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient,
+  private val rolloutPrisonService: RolloutPrisonService,
   private val transactionHandler: TransactionHandler,
   private val monitoringService: MonitoringService,
   private val clock: Clock,
@@ -62,53 +66,61 @@ class ManageAttendancesExperimentalService(
     val prisonerIncentiveLevelCodeMap = mutableMapOf<String, String?>()
 
     // find possible attendance records to create
-    val possibleRecords = attendanceCreateRepository.findBy(prisonCode, date)
-    log.info("possibleRecords: ${possibleRecords.size}")
+    val possibleRecords = attendanceCreationDataRepository.findBy(prisonCode, date)
 
     // retrieve scheduled instances
     val scheduledInstanceMap = mutableMapOf<Long, ScheduledInstance>()
-
     val scheduledInstanceNumbers = possibleRecords.map { it.scheduledInstanceId }.distinct()
     scheduledInstanceRepository.findAllById(scheduledInstanceNumbers).forEach { scheduledInstance ->
       scheduledInstanceMap[scheduledInstance.scheduledInstanceId] = scheduledInstance
     }
 
+    // retrieve activities
+    val activityMap = mutableMapOf<Long, Activity>()
+    val activityIds = possibleRecords.map { it.activityId }.distinct()
+    activityRepository.findAllById(activityIds).forEach { activity ->
+      activityMap[activity.activityId] = activity
+    }
+
+    // retrieve prison pay bands
+    val prisonPayBandMap = mutableMapOf<Long, PrisonPayBand>()
+    val prisonPayBandIds = possibleRecords.mapNotNull { it.prisonPayBandId }.distinct()
+    prisonPayBandRepository.findAllById(prisonPayBandIds).forEach { prisonPayBand ->
+      prisonPayBandMap[prisonPayBand.prisonPayBandId] = prisonPayBand
+    }
+
     // retrieve prisoner incentive levels
     val prisonerNumbers = possibleRecords.map { it.prisonerNumber }.distinct()
-
-    prisonerNumbers.chunked(999).forEach { prisoners ->
-      val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisoners)
-      prisonerMap.forEach { (prisonerNumber, prisoner) -> prisonerIncentiveLevelCodeMap[prisonerNumber] = prisoner?.currentIncentive?.level?.code }
-    }
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
+    prisonerMap.forEach { (prisonerNumber, prisoner) -> prisonerIncentiveLevelCodeMap[prisonerNumber] = prisoner?.currentIncentive?.level?.code }
 
     val attendancesList = mutableListOf<Attendance>()
 
     possibleRecords.forEach {
-        attendanceCreate ->
+        attendanceCreationDataRecord ->
 
       var canAttend = true
 
-      if (attendanceCreate.possibleExclusion) {
-        val allocation = allocationRepository.findById(attendanceCreate.allocationId).orElseThrow { EntityNotFoundException("Allocation ${attendanceCreate.allocationId} not found") }
-        allocation?.let { canAttend = allocation.canAttendOn(date, attendanceCreate.timeSlot) }
-        // FIXME incorrect for G4732GK. Excluded thurs? is it before the call rather than direct on allocation
+      if (attendanceCreationDataRecord.possibleExclusion) {
+        val allocation = allocationRepository.findById(attendanceCreationDataRecord.allocationId).orElseThrow { EntityNotFoundException("Allocation ${attendanceCreationDataRecord.allocationId} not found") }
+        allocation?.let { canAttend = allocation.canAttendOn(date, attendanceCreationDataRecord.timeSlot) }
       } else {
         val endDate = when {
-          attendanceCreate.allocEnd != null -> attendanceCreate.allocEnd
-          // FIXME planned dealloc logic or from view
-          attendanceCreate.scheduleEnd != null -> attendanceCreate.scheduleEnd
+          attendanceCreationDataRecord.allocEnd != null -> attendanceCreationDataRecord.allocEnd
+          attendanceCreationDataRecord.plannedDeallocationDate != null -> attendanceCreationDataRecord.plannedDeallocationDate
+          attendanceCreationDataRecord.scheduleEnd != null -> attendanceCreationDataRecord.scheduleEnd
           else -> null
         }
-        canAttend = date.between(attendanceCreate.allocStart, endDate)
+        canAttend = date.between(attendanceCreationDataRecord.allocStart, endDate)
       }
 
       if (canAttend) {
-        val scheduledInstance = scheduledInstanceMap.get(attendanceCreate.scheduledInstanceId)!!
-        val incentiveLevelCode = prisonerIncentiveLevelCodeMap.get(attendanceCreate.prisonerNumber)
-        // log.info("prisonNumber: ${attendanceCreate.prisonerNumber}" )
-        createAttendance(scheduledInstance, attendanceCreate, incentiveLevelCode)?.let {
+        val scheduledInstance = scheduledInstanceMap.get(attendanceCreationDataRecord.scheduledInstanceId)!!
+        val incentiveLevelCode = prisonerIncentiveLevelCodeMap.get(attendanceCreationDataRecord.prisonerNumber)
+        val activity = activityMap.get(attendanceCreationDataRecord.activityId)!!
+        val prisonPayBand = prisonPayBandMap.get(attendanceCreationDataRecord.prisonPayBandId)
+        createAttendance(scheduledInstance, attendanceCreationDataRecord, incentiveLevelCode, activity, prisonPayBand)?.let {
           attendancesList.add(it)
-          // log.info("adding ${it.prisonerNumber}")
         }
       }
     }
@@ -138,47 +150,38 @@ class ManageAttendancesExperimentalService(
 
   /**
    * This function creates the appropriate type of attendance based on the prisoner allocation
-   * and session status. If there is already an attendance for this person at this session
-   * the function returns a null, otherwise it returns the Attendance entity to create.
+   * and session status and returns the Attendance entity to create.
    */
   private fun createAttendance(
     instance: ScheduledInstance,
-    attendanceCreate: AttendanceCreate,
+    attendanceCreate: AttendanceCreationData,
     incentiveLevelCode: String?,
+    activity: Activity,
+    prisonPayBand: PrisonPayBand?,
   ): Attendance? {
     val prisonerNumber = "x" + attendanceCreate.prisonerNumber.drop(1)
-    if (!attendanceAlreadyExistsFor(instance, prisonerNumber)) {
-      when {
-        // Suspended prisoners produce pre-marked and unpaid suspended attendances
-        attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED -> {
-          suspendedAttendance(instance, prisonerNumber)
-        }
-
-        attendanceCreate.prisonerStatus == PrisonerStatus.AUTO_SUSPENDED -> {
-          autoSuspendedAttendance(instance, prisonerNumber)
-        }
-
-        // Cancelled instances produce pre-marked cancelled and paid attendances
-        instance.cancelled -> {
-          cancelledAttendance(instance, prisonerNumber)
-        }
-
-        // By default, create an unmarked, waiting attendance
-        else -> {
-          waitingAttendance(instance, prisonerNumber)
-        }
-      }.apply {
-        // Calculate what we think the pay rate should be at the prisoner's current incentive level
-        val activity = activityRepository.findById(attendanceCreate.activityId).orElseThrow { EntityNotFoundException("Activity $attendanceCreate.activityId not found") }
-        // log.info("ppb: ${attendanceCreate.prisonPayBandId}")
-        val payBand = attendanceCreate.prisonPayBandId?.let { attendanceCreateRepository.findPayBandById(attendanceCreate.prisonPayBandId) }
-        payAmount = payBand?.let { incentiveLevelCode?.let { activity.activityPayFor(payBand, incentiveLevelCode)?.rate } } ?: 0
-        // payAmount = incentiveLevelCode?.let { allocation.allocationPay(incentiveLevelCode)?.rate } ?: 0
-      }.also { attendance ->
-        return attendance
+    when {
+      // Suspended prisoners produce pre-marked and unpaid suspended attendances
+      attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED -> {
+        suspendedAttendance(instance, prisonerNumber)
       }
+      attendanceCreate.prisonerStatus == PrisonerStatus.AUTO_SUSPENDED -> {
+        autoSuspendedAttendance(instance, prisonerNumber)
+      }
+      // Cancelled instances produce pre-marked cancelled and paid attendances
+      instance.cancelled -> {
+        cancelledAttendance(instance, prisonerNumber)
+      }
+      // By default, create an unmarked, waiting attendance
+      else -> {
+        waitingAttendance(instance, prisonerNumber)
+      }
+    }.apply {
+      // Calculate what we think the pay rate should be at the prisoner's current incentive level
+      payAmount = prisonPayBand?.let { incentiveLevelCode?.let { activity.activityPayFor(prisonPayBand, incentiveLevelCode)?.rate } } ?: 0
+    }.also { attendance ->
+      return attendance
     }
-    return null
   }
 
   private fun suspendedAttendance(instance: ScheduledInstance, prisonerNumber: String) = Attendance(
@@ -217,16 +220,13 @@ class ManageAttendancesExperimentalService(
     prisonerNumber = prisonerNumber,
   )
 
-  private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, prisonerNumber: String) =
-    attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, prisonerNumber)
-
   fun saveAttendances(attendances: List<Attendance>, description: String): List<Attendance> {
-    ManageAttendancesExperimentalService.log.info("Committing ${attendances.size} attendances for $description")
+    log.info("Committing ${attendances.size} attendances for $description")
     return attendanceRepository.saveAllAndFlush(attendances)
   }
 
   fun sendCreatedEvent(newAttendance: Attendance) {
-    ManageAttendancesExperimentalService.log.info("Sending sync event for attendance ID ${newAttendance.attendanceId} ${newAttendance.prisonerNumber} ${newAttendance.scheduledInstance.activitySchedule.description}")
+    log.info("Sending sync event for attendance ID ${newAttendance.attendanceId} ${newAttendance.prisonerNumber}")
     // outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, newAttendance.attendanceId)
   }
 }

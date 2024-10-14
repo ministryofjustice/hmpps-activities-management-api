@@ -71,7 +71,7 @@ class JobTriggerController(
     return "Manage attendance records triggered"
   }
 
-  @PostMapping(value = ["/manage-attendance-records-exp"])
+  @PostMapping(value = ["/manage-attendance-experimental-records"])
   @Operation(
     summary = "Trigger the job to manage attendance records in advance",
     description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",

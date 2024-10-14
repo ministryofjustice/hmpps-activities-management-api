@@ -46,3 +46,4 @@ cron:
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
+  attendanceExperimentalRecords: "45 7 * * *"

@@ -12,8 +12,8 @@ import java.util.UUID
 
 @Entity
 @Immutable
-@Table(name = "v_attendance_create")
-data class AttendanceCreate(
+@Table(name = "v_attendance_creation_data")
+data class AttendanceCreationData(
   @Id
   val id: UUID,
 
@@ -54,4 +54,6 @@ data class AttendanceCreate(
   var cancelledReason: String? = null,
 
   val possibleExclusion: Boolean,
+
+  val plannedDeallocationDate: LocalDate?,
 )

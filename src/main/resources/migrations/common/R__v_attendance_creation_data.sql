@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW v_attendance_create
+CREATE OR REPLACE VIEW v_attendance_creation_data
 AS SELECT gen_random_uuid() as id, data.*
    FROM (SELECT DISTINCT si.scheduled_instance_id,
                          si.session_date,
@@ -20,7 +20,8 @@ AS SELECT gen_random_uuid() as id, data.*
                              end          as possible_exclusion,
                          a.prison_code,
                          a.paid,
-                         a.activity_id
+                         a.activity_id,
+                        pd.planned_date as planned_deallocation_date
          FROM scheduled_instance si
                   join
               activity_schedule as1
@@ -34,4 +35,11 @@ AS SELECT gen_random_uuid() as id, data.*
                   left join
               exclusion e
               on alloc.allocation_id = e.allocation_id
-         WHERE alloc.prisoner_status <> 'ENDED') as data
+                  left join
+              planned_deallocation pd
+              on pd.allocation_id = alloc.planned_deallocation_id
+         WHERE alloc.prisoner_status <> 'ENDED'
+         AND NOT EXISTS (select 1
+                         from attendance a2
+                         where a2.scheduled_instance_id = si.scheduled_instance_id
+                           and a2.prisoner_number = alloc.prisoner_number)) as data
