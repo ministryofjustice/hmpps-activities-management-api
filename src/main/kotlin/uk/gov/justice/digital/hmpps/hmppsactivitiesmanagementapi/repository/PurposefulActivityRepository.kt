@@ -35,7 +35,6 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     act.activity_category_id as "activity.activity_category_id",
     actcat.code as "activity_category.code",
     actcat.name as "activity_category.name",
-    actcat.description as "activity_category.description",
     act.activity_tier_id as "activity.activity_tier_id",
     tier.code as "activity_tier.code",
     tier.description as "activity_tier.description",
@@ -129,7 +128,8 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
       aa.added_time as "appointment_attendee.added_time",
       aa.attended as "appointment_attendee.attended",
       aa.attendance_recorded_time as "appointment_attendee.attendance_recorded_time",
-      aa.removed_time as "appointment_attendee.removed_time"
+      aa.removed_time as "appointment_attendee.removed_time",
+      aa.is_deleted as "appointment_attendee.is_deleted"
       FROM appointment a
       inner join appointment_series apse on apse.appointment_series_id = a.appointment_series_id
       left outer join event_tier tier on tier.event_tier_id = a.appointment_tier_id
