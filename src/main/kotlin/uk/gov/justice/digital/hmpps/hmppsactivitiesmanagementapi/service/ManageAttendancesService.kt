@@ -124,10 +124,10 @@ class ManageAttendancesService(
       }
 
       if (canAttend) {
-        val scheduledInstance = scheduledInstanceMap.get(attendanceCreationDataRecord.scheduledInstanceId)!!
-        val incentiveLevelCode = prisonerIncentiveLevelCodeMap.get(attendanceCreationDataRecord.prisonerNumber)
-        val activity = activityMap.get(attendanceCreationDataRecord.activityId)!!
-        val prisonPayBand = prisonPayBandMap.get(attendanceCreationDataRecord.prisonPayBandId)
+        val scheduledInstance = scheduledInstanceMap[attendanceCreationDataRecord.scheduledInstanceId]!!
+        val incentiveLevelCode = prisonerIncentiveLevelCodeMap[attendanceCreationDataRecord.prisonerNumber]
+        val activity = activityMap[attendanceCreationDataRecord.activityId]!!
+        val prisonPayBand = prisonPayBandMap[attendanceCreationDataRecord.prisonPayBandId]
         createAttendance(scheduledInstance, attendanceCreationDataRecord, incentiveLevelCode, activity, prisonPayBand)?.let {
           attendancesList.add(it)
         }
