@@ -39,8 +39,8 @@ AS SELECT gen_random_uuid() as id, data.*
               planned_deallocation pd
               on pd.allocation_id = alloc.planned_deallocation_id
          WHERE alloc.prisoner_status <> 'ENDED'
---          AND NOT EXISTS (select 1
---                          from attendance a2
---                          where a2.scheduled_instance_id = si.scheduled_instance_id
---                            and a2.prisoner_number = alloc.prisoner_number)
+         AND NOT EXISTS (select 1
+                         from attendance a2
+                         where a2.scheduled_instance_id = si.scheduled_instance_id
+                           and a2.prisoner_number = alloc.prisoner_number)
          ) as data
