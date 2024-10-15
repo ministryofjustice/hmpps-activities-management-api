@@ -138,7 +138,7 @@ class ManageAttendancesService(
       runCatching {
         // Save the attendances for this session within a new sub-transaction
         transactionHandler.newSpringTransaction {
-          saveAttendances(attendancesList, "instance.activitySchedule")
+          saveAttendances(attendancesList, "prison '$prisonCode'")
         }.onEach { savedAttendance ->
           // Send a sync event for each committed attendance row
           sendCreatedEvent(savedAttendance)
