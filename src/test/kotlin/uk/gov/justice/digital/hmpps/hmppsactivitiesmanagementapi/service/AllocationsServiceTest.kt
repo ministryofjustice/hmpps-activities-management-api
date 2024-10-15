@@ -18,7 +18,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -57,7 +56,6 @@ class AllocationsServiceTest {
   private val service: AllocationsService = AllocationsService(allocationRepository, prisonPayBandRepository, scheduleRepository, TransactionHandler(), outboundEventsService, manageAttendancesService)
   private val activeAllocation = activityEntity().schedules().first().allocations().first()
   private val allocationCaptor = argumentCaptor<Allocation>()
-  private val activityScheduleCaptor = argumentCaptor<ActivitySchedule>()
 
   @BeforeEach
   fun setUp() {
@@ -180,8 +178,7 @@ class AllocationsServiceTest {
     inOrder(manageAttendancesService) {
       verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), allocationCaptor.capture())
       assertThat(allocationCaptor.firstValue.startDate).isEqualTo(TimeSource.today())
-      verify(manageAttendancesService).saveAttendances(eq(newAttendances), activityScheduleCaptor.capture())
-      assertThat(activityScheduleCaptor.firstValue).isEqualTo(allocation.activitySchedule)
+      verify(manageAttendancesService).saveAttendances(eq(newAttendances), eq("schedule description"))
       verify(manageAttendancesService).sendCreatedEvent(eq(attendance1))
       verify(manageAttendancesService).sendCreatedEvent(eq(attendance2))
     }

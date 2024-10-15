@@ -169,7 +169,7 @@ class ActivityScheduleService(
 
         repository.saveAndFlush(schedule)
 
-        val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, schedule)
+        val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, schedule.description)
 
         auditService.logEvent(allocation.toPrisonerAllocatedEvent(maybeWaitingList?.waitingListId))
         logAllocationEvent(allocation, maybeWaitingList)
