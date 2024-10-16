@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsExperimentalJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
 import java.time.Clock
 import java.time.LocalDate
@@ -37,9 +36,6 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
   @MockBean
   private lateinit var manageAttendanceRecordsJob: ManageAttendanceRecordsJob
-
-  @MockBean
-  private lateinit var manageAttendanceRecordsExperimentalJob: ManageAttendanceRecordsExperimentalJob
 
   @MockBean
   private lateinit var manageAllocationsJob: ManageAllocationsJob
@@ -63,7 +59,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   }
 
   override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAttendanceRecordsExperimentalJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock)
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {

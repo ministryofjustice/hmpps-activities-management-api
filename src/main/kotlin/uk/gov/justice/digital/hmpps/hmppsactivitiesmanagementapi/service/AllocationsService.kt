@@ -73,7 +73,7 @@ class AllocationsService(
 
       val newAttendances = manageAttendancesService.createAnyAttendancesForToday(request.scheduleInstanceId, allocation)
 
-      val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, allocation.activitySchedule)
+      val savedAttendances = manageAttendancesService.saveAttendances(newAttendances, allocation.activitySchedule.description)
 
       allocation.toModel() to savedAttendances
     }.let { (allocation, newAttendances) ->

@@ -707,7 +707,7 @@ class ActivityScheduleServiceTest {
     val attendance2: Attendance = mock()
     val newAttendances: List<Attendance> = listOf(attendance1, attendance2)
     whenever(manageAttendancesService.createAnyAttendancesForToday(eq(123L), any())) doReturn newAttendances
-    whenever(manageAttendancesService.saveAttendances(newAttendances, schedule)) doReturn newAttendances
+    whenever(manageAttendancesService.saveAttendances(newAttendances, schedule.description)) doReturn newAttendances
 
     service.allocatePrisoner(
       schedule.activityScheduleId,
@@ -726,7 +726,7 @@ class ActivityScheduleServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     inOrder(manageAttendancesService) {
       verify(manageAttendancesService).createAnyAttendancesForToday(eq(123L), any())
-      verify(manageAttendancesService).saveAttendances(newAttendances, schedule)
+      verify(manageAttendancesService).saveAttendances(newAttendances, schedule.description)
       verify(manageAttendancesService).sendCreatedEvent(attendance1)
       verify(manageAttendancesService).sendCreatedEvent(attendance2)
     }
