@@ -30,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -38,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAll
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [ActivityScheduleController::class])
 @ContextConfiguration(classes = [ActivityScheduleController::class])
@@ -82,8 +85,45 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     assertThat(response.contentAsString).contains("Not found")
   }
 
+  private fun nonAssociations() = listOf(
+    NonAssociationDetails(
+      allocated = true,
+      reasonCode = "BULLYING",
+      reasonDescription = "Bullying",
+      roleCode = "VICTIM",
+      roleDescription = "Victim",
+      restrictionType = "LANDING",
+      restrictionTypeDescription = "Landing",
+      otherPrisonerDetails = OtherPrisonerDetails(
+        prisonerNumber = "ZZ3333Z",
+        firstName = "Joe",
+        lastName = "Bloggs",
+        cellLocation = "F-2-009",
+      ),
+      whenUpdated = LocalDateTime.now(),
+      comments = "Bullying comment",
+    ),
+  )
+
+  @Test
+  fun `200 response when get non-associations is successful`() {
+    val expected = nonAssociations()
+
+    whenever(candidatesService.nonAssociations(123, "A1234DD")) doReturn expected
+
+    val response = mockMvc.getNonAssociations(123, "A1234DD")
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    response.contentAsString isEqualTo mapper.writeValueAsString(expected)
+  }
+
   private fun MockMvc.getAllocationsByScheduleId(scheduleId: Long) =
     get("/schedules/$scheduleId/allocations")
+
+  private fun MockMvc.getNonAssociations(scheduleId: Long, prisonerNumber: String) =
+    get("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
 
   @Test
   fun `200 response when get schedule by schedule identifier with earliest session date default`() {

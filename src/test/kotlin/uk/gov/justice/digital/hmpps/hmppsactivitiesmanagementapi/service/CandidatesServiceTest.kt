@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
@@ -50,6 +51,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
@@ -58,6 +60,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails as OtherPrisonerDetailsDto
 
 class CandidatesServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
@@ -880,4 +883,90 @@ class CandidatesServiceTest {
       candidates.content.single().otherAllocations.single() isEqualTo schedule.allocations().single().toModel()
     }
   }
+
+  @Nested
+  inner class NonAssociations {
+    @Test
+    fun `Should return non-associations`() {
+      val schedule = schedule()
+      val prisonerNumber = schedule.allocations(true)[0].prisonerNumber
+      val prisonerA1234AA = nonAssociation("A1234AA")
+      val prisonerB3333BB = nonAssociation("B3333BB")
+
+      whenever(nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)).thenReturn(
+        listOf(prisonerA1234AA, prisonerB3333BB),
+      )
+
+      whenever(activityScheduleRepository.findById(1)).thenReturn(Optional.of(schedule))
+
+      val nonAssociations = service.nonAssociations(1, prisonerNumber)
+
+      assertThat(nonAssociations).isEqualTo(
+        listOf(
+          NonAssociationDetails(
+            allocated = true,
+            reasonCode = prisonerA1234AA.reason.toString(),
+            reasonDescription = prisonerA1234AA.reasonDescription,
+            roleCode = prisonerA1234AA.role.toString(),
+            roleDescription = prisonerA1234AA.roleDescription,
+            restrictionType = prisonerA1234AA.restrictionType.toString(),
+            restrictionTypeDescription = prisonerA1234AA.restrictionTypeDescription,
+            otherPrisonerDetails = OtherPrisonerDetailsDto(
+              prisonerNumber = prisonerA1234AA.otherPrisonerDetails.prisonerNumber,
+              firstName = prisonerA1234AA.otherPrisonerDetails.firstName,
+              lastName = prisonerA1234AA.otherPrisonerDetails.lastName,
+              cellLocation = prisonerA1234AA.otherPrisonerDetails.cellLocation,
+            ),
+            whenUpdated = LocalDateTime.parse(prisonerA1234AA.whenUpdated),
+            comments = prisonerA1234AA.comment,
+          ),
+          NonAssociationDetails(
+            allocated = false,
+            reasonCode = prisonerB3333BB.reason.toString(),
+            reasonDescription = prisonerB3333BB.reasonDescription,
+            roleCode = prisonerB3333BB.role.toString(),
+            roleDescription = prisonerB3333BB.roleDescription,
+            restrictionType = prisonerB3333BB.restrictionType.toString(),
+            restrictionTypeDescription = prisonerB3333BB.restrictionTypeDescription,
+            otherPrisonerDetails = OtherPrisonerDetailsDto(
+              prisonerNumber = prisonerB3333BB.otherPrisonerDetails.prisonerNumber,
+              firstName = prisonerB3333BB.otherPrisonerDetails.firstName,
+              lastName = prisonerB3333BB.otherPrisonerDetails.lastName,
+              cellLocation = prisonerB3333BB.otherPrisonerDetails.cellLocation,
+            ),
+            whenUpdated = LocalDateTime.parse(prisonerB3333BB.whenUpdated),
+            comments = prisonerB3333BB.comment,
+          ),
+        ),
+      )
+    }
+  }
+
+  fun nonAssociation(prisonerNumber: String) =
+    PrisonerNonAssociation(
+      id = 1,
+      role = PrisonerNonAssociation.Role.VICTIM,
+      roleDescription = "Victim",
+      reason = PrisonerNonAssociation.Reason.BULLYING,
+      reasonDescription = "Bullying",
+      restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
+      restrictionTypeDescription = "Landing",
+      comment = "Bullying comment",
+      authorisedBy = "ADMIN",
+      whenCreated = "2022-04-02",
+      whenUpdated = "2022-04-14T12:37:16",
+      updatedBy = "ADMIN",
+      isClosed = false,
+      isOpen = true,
+      otherPrisonerDetails = OtherPrisonerDetails(
+        prisonerNumber = prisonerNumber,
+        role = OtherPrisonerDetails.Role.PERPETRATOR,
+        roleDescription = "Perpetrator",
+        firstName = "Joseph",
+        lastName = "Bloggs",
+        prisonId = "MDI",
+        prisonName = "HMP Moorland",
+        cellLocation = "F-2-009",
+      ),
+    )
 }
