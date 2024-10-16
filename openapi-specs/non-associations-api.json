@@ -7,7 +7,10 @@
       "name": "HMPPS Digital Studio",
       "email": "feedback@digital.justice.gov.uk"
     },
-    "version": "2023-10-20.2293.736d484"
+    "license": {
+      "name": "MIT"
+    },
+    "version": "2024-10-14.6680.cd97cc5"
   },
   "servers": [
     {
@@ -28,14 +31,6 @@
   ],
   "tags": [
     {
-      "name": "Migrate non-associations from NOMIS",
-      "description": "Receive initial data being copied over from NOMIS"
-    },
-    {
-      "name": "Sync non-associations from NOMIS",
-      "description": "Receive updates from NOMIS after migration has been completed"
-    },
-    {
       "name": "Non-Associations",
       "description": "Endpoints to get/create/update prisoners' non-associations"
     },
@@ -45,113 +40,6 @@
     }
   ],
   "paths": {
-    "/sync/upsert": {
-      "put": {
-        "tags": [
-          "Sync non-associations from NOMIS"
-        ],
-        "summary": "Sync upsert a non-association, is a record is found will be updated else created",
-        "description": "Requires ROLE_NON_ASSOCIATIONS_SYNC role.",
-        "operationId": "sync",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertSyncRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Returns the updated or created non-association",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NonAssociation"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized to access this endpoint",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Missing required role. Requires the ROLE_NON_ASSOCIATIONS_SYNC role",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/sync/delete": {
-      "put": {
-        "tags": [
-          "Sync non-associations from NOMIS"
-        ],
-        "summary": "Sync delete a non-association",
-        "description": "Will delete all non-associations between these 2 prisoners. Requires ROLE_NON_ASSOCIATIONS_SYNC role.",
-        "operationId": "delete",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeleteSyncRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Non-association removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NonAssociation"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized to access this endpoint",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Missing required role. Requires the ROLE_NON_ASSOCIATIONS_SYNC role",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/queue-admin/retry-dlq/{dlqName}": {
       "put": {
         "tags": [
@@ -169,6 +57,36 @@
           }
         ],
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -189,6 +107,36 @@
         ],
         "operationId": "retryAllDlqs",
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -222,12 +170,148 @@
           }
         ],
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/PurgeQueueResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/non-associations/{id}/reopen": {
+      "put": {
+        "tags": [
+          "Non-Associations"
+        ],
+        "summary": "Re-open a non-association",
+        "description": "Requires REOPEN_NON_ASSOCIATIONS role with write scope.\n**Please note**: This is a special endpoint which should NOT be exposed to regular users, they should instead create a new non-association.",
+        "operationId": "reopenNonAssociation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The non-association ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "The non-association ID",
+              "example": 42
+            },
+            "example": 42
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReopenNonAssociationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Non-association re-opened",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NonAssociation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized to access this endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing required role. Requires the REOPEN_NON_ASSOCIATIONS role with write scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Non-association not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -268,6 +352,36 @@
           "required": true
         },
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "Non-association updated and returned",
             "content": {
@@ -385,12 +499,12 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "A page of non-associations are returned",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/PageNonAssociation"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -401,6 +515,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "A page of non-associations are returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageNonAssociation"
                 }
               }
             }
@@ -445,12 +579,12 @@
           "required": true
         },
         "responses": {
-          "201": {
-            "description": "Returns the created non-association",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/NonAssociation"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -461,6 +595,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Returns the created non-association",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NonAssociation"
                 }
               }
             }
@@ -486,7 +640,17 @@
             }
           },
           "404": {
-            "description": "Any of the prisoners could not be found.",
+            "description": "Some of the prisoners were not be found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Open non-association already exists or some prisoner’s location is null.",
             "content": {
               "application/json": {
                 "schema": {
@@ -531,6 +695,36 @@
           "required": true
         },
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "204": {
             "description": "Non-association deleted"
           },
@@ -634,15 +828,12 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Returns the non-associations",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NonAssociation"
-                  }
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -653,6 +844,29 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Returns the non-associations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NonAssociation"
+                  }
                 }
               }
             }
@@ -757,15 +971,12 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Returns the non-associations",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/NonAssociation"
-                  }
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -776,6 +987,29 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Returns the non-associations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NonAssociation"
+                  }
                 }
               }
             }
@@ -813,58 +1047,6 @@
         }
       }
     },
-    "/migrate": {
-      "post": {
-        "tags": [
-          "Migrate non-associations from NOMIS"
-        ],
-        "summary": "Migrate a non-association",
-        "description": "Requires ROLE_NON_ASSOCIATIONS_MIGRATE role.",
-        "operationId": "migrate",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertSyncRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Returns the new created non-association",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NonAssociation"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized to access this endpoint",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Missing required role. Requires the ROLE_NON_ASSOCIATIONS_MIGRATE role",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/non-associations/{id}": {
       "get": {
         "tags": [
@@ -888,6 +1070,36 @@
           }
         ],
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "Returns the non-association",
             "content": {
@@ -962,6 +1174,36 @@
           "required": true
         },
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "Non-association updated and returned",
             "content": {
@@ -1005,6 +1247,1042 @@
         }
       }
     },
+    "/subject-access-request": {
+      "get": {
+        "tags": [
+          "Subject Access Request"
+        ],
+        "summary": "Provides content for a prisoner to satisfy the needs of a subject access request on their behalf",
+        "description": "Requires role SAR_DATA_ACCESS or additional role as specified by hmpps.sar.additionalAccessRole configuration.",
+        "operationId": "getSarContentByReference",
+        "parameters": [
+          {
+            "name": "prn",
+            "in": "query",
+            "description": "NOMIS Prison Reference Number",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "crn",
+            "in": "query",
+            "description": "nDelius Case Reference Number",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "description": "Optional parameter denoting minimum date of event occurrence which should be returned in the response",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "description": "Optional parameter denoting maximum date of event occurrence which should be returned in the response",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Unexpected error occurred",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Request successfully processed - no content found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Request successfully processed - content found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HmppsSubjectAccessRequestContent"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden, requires an appropriate role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "209": {
+            "description": "Subject Identifier is not recognised by this service",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The client does not have authorisation to make this request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}": {
+      "get": {
+        "tags": [
+          "Data API - Synchronous"
+        ],
+        "description": "Returns the dataset for the given report ID and report variant ID filtered by the filters provided in the query.",
+        "operationId": "configuredApiDataset",
+        "parameters": [
+          {
+            "name": "selectedPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortColumn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortedAsc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "The filter query parameters have to start with the prefix \"filters.\" followed by the name of the filter.\n      For range filters, like date for instance, these need to be followed by a .start or .end suffix accordingly.\n    ",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "example": {
+              "filters.date.start": "2023-04-25",
+              "filters.date.end": "2023-05-30"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/{fieldId}": {
+      "get": {
+        "tags": [
+          "Data API - Synchronous"
+        ],
+        "description": "Returns the dataset for the given report ID and report variant ID filtered by the filters provided in the query.",
+        "operationId": "configuredApiDynamicFilter",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortedAsc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "The filter query parameters have to start with the prefix \"filters.\" followed by the name of the filter.\n      For range filters, like date for instance, these need to be followed by a .start or .end suffix accordingly.\n    ",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "example": {
+              "filters.date.start": "2023-04-25",
+              "filters.date.end": "2023-05-30"
+            }
+          },
+          {
+            "name": "prefix",
+            "in": "query",
+            "description": "The value to match the start of the fieldId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Lond"
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "in": "path",
+            "description": "The name of the schema field which will be used as a dynamic filter.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "name"
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/tables/{tableId}/result": {
+      "get": {
+        "tags": [
+          "Data API - Asynchronous"
+        ],
+        "description": "Returns the resulting rows of the executed statement in a paginated fashion which has been stored in a dedicated table.",
+        "operationId": "getQueryExecutionResult",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            }
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "selectedPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "minimum": 1,
+              "type": "integer",
+              "format": "int64",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/tables/{tableId}/result/summary/{summaryId}": {
+      "get": {
+        "tags": [
+          "Data API - Asynchronous"
+        ],
+        "description": "Returns a summary of a request, which has been stored in a dedicated table.",
+        "operationId": "getSummaryQueryExecutionResult",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            }
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "summaryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/statements/{statementId}/status": {
+      "get": {
+        "tags": [
+          "Data API - Asynchronous"
+        ],
+        "description": "Returns the status of the statement execution based on the statement ID provided.The following status values can be returned: \nABORTED - The query run was stopped by the user.\nALL - A status value that includes all query statuses. This value can be used to filter results.\nFAILED - The query run failed.\nFINISHED - The query has finished running.\nPICKED - The query has been chosen to be run.\nSTARTED - The query run has started.\nSUBMITTED - The query was submitted, but not yet processed.\nNote: When the status is FAILED the error field of the response will be populated.ResultRows is the number of rows returned from the SQL statement. A -1 indicates the value is null.ResultSize is the size in bytes of the returned results. A -1 indicates the value is null.\nFor Athena: \nAthena automatically retries your queries in cases of certain transient errors. As a result, you may see the query state transition from STARTED or FAILED to SUBMITTED.\n",
+        "operationId": "getQueryExecutionStatus",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "statementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementExecutionStatus"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/count": {
+      "get": {
+        "tags": [
+          "Data API - Synchronous"
+        ],
+        "description": "Returns the number of records for the given report ID and report variant ID filtered by the filters provided in the query.",
+        "operationId": "configuredApiCount",
+        "parameters": [
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "The filter query parameters have to start with the prefix \"filters.\" followed by the name of the filter.\n      For range filters, like date for instance, these need to be followed by a .start or .end suffix accordingly.\n    ",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "example": {
+              "filters.date.start": "2023-04-25",
+              "filters.date.end": "2023-05-30"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/metrics/{metricId}": {
+      "get": {
+        "tags": [
+          "Metrics Data API"
+        ],
+        "description": "Returns the metric dataset for the given data product definition ID.",
+        "operationId": "configuredApiDataset_1",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metricId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricDataResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/report/tables/{tableId}/count": {
+      "get": {
+        "tags": [
+          "Data API - Asynchronous"
+        ],
+        "description": "Returns the number of rows of the table which contains the result of a previously executed query.",
+        "operationId": "getExternalTableRowCount",
+        "parameters": [
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Count"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
     "/queue-admin/get-dlq-messages/{dlqName}": {
       "get": {
         "tags": [
@@ -1032,6 +2310,36 @@
           }
         ],
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "content": {
@@ -1119,6 +2427,7 @@
               "enum": [
                 "WHEN_CREATED",
                 "WHEN_UPDATED",
+                "WHEN_CLOSED",
                 "LAST_NAME",
                 "FIRST_NAME",
                 "PRISONER_NUMBER",
@@ -1148,12 +2457,12 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Returns non-association details for this prisoner",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/PrisonerNonAssociations"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -1164,6 +2473,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Returns non-association details for this prisoner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrisonerNonAssociations"
                 }
               }
             }
@@ -1201,88 +2530,6 @@
         }
       }
     },
-    "/legacy/api/offenders/{prisonerNumber}/non-association-details": {
-      "get": {
-        "tags": [
-          "Legacy non-associations-details"
-        ],
-        "summary": "Get non-associations by prisoner number in NOMIS/Prison API format",
-        "description": "Currently this is a façade that calls Prison API, but will in future use the non-associations database and yet maintain the Prison API contract.",
-        "operationId": "getDetailsFromPrisonApiByPrisonerNumber",
-        "parameters": [
-          {
-            "name": "prisonerNumber",
-            "in": "path",
-            "description": "The offender prisoner number",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "The offender prisoner number",
-              "example": "A1234BC"
-            },
-            "example": "A1234BC"
-          },
-          {
-            "name": "currentPrisonOnly",
-            "in": "query",
-            "description": "Returns only non-association details for this prisoner in the same prison",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "Returns only non-association details for this prisoner in the same prison",
-              "example": true,
-              "default": "false"
-            },
-            "example": true
-          },
-          {
-            "name": "excludeInactive",
-            "in": "query",
-            "description": "Returns only active non-association details for this prisoner",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "Returns only active non-association details for this prisoner",
-              "example": true,
-              "default": "false"
-            },
-            "example": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns non-association details for this prisoner",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LegacyPrisonerNonAssociations"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized to access this endpoint",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Prisoner number not found (and possibly when no non-associations exist)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/legacy/api/non-associations/{id}": {
       "get": {
         "tags": [
@@ -1306,6 +2553,36 @@
           }
         ],
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "Returns the non-association",
             "content": {
@@ -1349,6 +2626,360 @@
         }
       }
     },
+    "/definitions": {
+      "get": {
+        "tags": [
+          "Report Definition API"
+        ],
+        "description": "Gets summaries of all report definitions",
+        "operationId": "definitions",
+        "parameters": [
+          {
+            "name": "renderMethod",
+            "in": "query",
+            "description": "Set this parameter to filter the list to only include reports for the given rendering method.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HTML",
+                "PDF",
+                "SVG"
+              ]
+            },
+            "example": "HTML"
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportDefinitionSummary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/definitions/{reportId}/{variantId}": {
+      "get": {
+        "tags": [
+          "Report Definition API"
+        ],
+        "description": "Gets report definition containing a single variant.",
+        "operationId": "definition",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "description": "The ID of the report definition.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "external-movements"
+          },
+          {
+            "name": "variantId",
+            "in": "path",
+            "description": "The ID of the variant definition.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "list"
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SingleVariantReportDefinition"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/definitions/{dataProductDefinitionId}/metrics/{metricId}": {
+      "get": {
+        "tags": [
+          "Metric Definition API"
+        ],
+        "description": "Gets the metric definition.",
+        "operationId": "metricDefinition",
+        "parameters": [
+          {
+            "name": "dataProductDefinitionId",
+            "in": "path",
+            "description": "The ID of the Data Product Definition.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "external-movements"
+          },
+          {
+            "name": "metricId",
+            "in": "path",
+            "description": "The ID of the metric.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "metricId"
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricDefinition"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/definitions/{dataProductDefinitionId}/dashboards/{dashboardId}": {
+      "get": {
+        "tags": [
+          "Metric Definition API"
+        ],
+        "description": "Gets the metric dashboard definition.",
+        "operationId": "dashboardDefinition",
+        "parameters": [
+          {
+            "name": "dataProductDefinitionId",
+            "in": "path",
+            "description": "The ID of the Data Product Definition.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "external-movements"
+          },
+          {
+            "name": "dashboardId",
+            "in": "path",
+            "description": "The ID of the dashboard.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "dashboardId"
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDefinition"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
     "/constants": {
       "get": {
         "tags": [
@@ -1357,6 +2988,36 @@
         "summary": "List codes and descriptions for enumerated field types",
         "operationId": "constants",
         "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "Returns codes and descriptions",
             "content": {
@@ -1376,60 +3037,224 @@
         }
       }
     },
-    "/sync/{id}": {
-      "delete": {
+    "/async/reports/{reportId}/{reportVariantId}": {
+      "get": {
         "tags": [
-          "Sync non-associations from NOMIS"
+          "Data API - Asynchronous"
         ],
-        "summary": "Delete a non-association by ID",
-        "description": "Will delete a non-association for the given ID. Requires ROLE_NON_ASSOCIATIONS_SYNC role.",
-        "operationId": "delete_1",
+        "description": "Executes asynchronously the dataset query for the given report and stores the result into an external table.The response returned contains the table ID and the execution ID. This is the asynchronous version of the /reports/{reportId}/{reportVariantId} API.",
+        "operationId": "asyncConfiguredApiExecuteQuery",
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "The non-association ID",
+            "name": "sortColumn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortedAsc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "The filter query parameters have to start with the prefix \"filters.\" followed by the name of the filter.\n      For range filters, like date for instance, these need to be followed by a .start or .end suffix accordingly.\n     Note: For legacy nomis and bodmis reports, for filters deriving from DPD parameters(prompts),there is no need for these to be suffixed with .start and .end. For example, filters.start_date and filters.end_date are perfectly valid in this case.",
             "required": true,
             "schema": {
-              "type": "string",
-              "description": "The non-association ID",
-              "example": 42
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             },
-            "example": 42
+            "example": {
+              "filters.date.start": "2023-04-25",
+              "filters.date.end": "2023-05-30"
+            }
+          },
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
           }
         ],
         "responses": {
-          "204": {
-            "description": "Non-association removed",
+          "500": {
+            "description": "Internal Server Error",
             "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NonAssociation"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized to access this endpoint",
-            "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
           },
-          "403": {
-            "description": "Missing required role. Requires the ROLE_NON_ASSOCIATIONS_SYNC role",
+          "400": {
+            "description": "Bad Request",
             "content": {
-              "application/json": {
+              "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "default response",
+            "headers": {
+              "x-no-data-warning": {
+                "description": "Provides additional information about why no data has been returned.",
+                "style": "simple",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementExecutionResponse"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    },
+    "/reports/{reportId}/{reportVariantId}/statements/{statementId}": {
+      "delete": {
+        "tags": [
+          "Data API - Asynchronous"
+        ],
+        "description": "Cancels the execution of a running query.",
+        "operationId": "cancelQueryExecution",
+        "parameters": [
+          {
+            "name": "reportId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reportVariantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "statementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dataProductDefinitionsPath",
+            "in": "query",
+            "description": "This optional parameter sets the path of the directory of the data product definition files your application will use.\n      \"This query parameter is intended to be used in conjunction with the `dpr.lib.dataProductDefinitions.host` property to retrieve definition files from another application by using a web client.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "definitions/prisons/orphanage"
+            },
+            "example": "definitions/prisons/orphanage"
+          }
+        ],
+        "responses": {
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatementCancellationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
       }
     }
   },
@@ -1445,136 +3270,71 @@
         "properties": {
           "status": {
             "type": "integer",
-            "description": "HTTP status code",
-            "format": "int32",
-            "example": 500
+            "format": "int32"
           },
           "userMessage": {
-            "type": "string",
-            "description": "User message for the error",
-            "example": "No non-association found for ID `324234`"
+            "type": "string"
           },
           "developerMessage": {
-            "type": "string",
-            "description": "More detailed error message",
-            "example": "[Details, sometimes a stack trace]"
+            "type": "string"
           },
           "errorCode": {
             "type": "integer",
-            "description": "When present, uniquely identifies the type of error making it easier for clients to discriminate without relying on error description or HTTP status code; see `uk.gov.justice.digital.hmpps.hmppsnonassociationsapi.config.ErrorCode` enumeration in hmpps-non-associations-api",
-            "format": "int32",
-            "example": 101
+            "format": "int32"
           },
           "moreInfo": {
-            "type": "string",
-            "description": "More information about the error",
-            "example": "[Rarely used, error-specific]"
+            "type": "string"
           }
         },
         "description": "Error response"
       },
-      "UpsertSyncRequest": {
+      "RetryDlqResult": {
         "required": [
-          "effectiveFromDate",
-          "firstPrisonerNumber",
-          "firstPrisonerReason",
-          "restrictionType",
-          "secondPrisonerNumber",
-          "secondPrisonerReason"
+          "messagesFoundCount"
         ],
         "type": "object",
         "properties": {
-          "id": {
+          "messagesFoundCount": {
             "type": "integer",
-            "description": "ID of the non-association, if provided an update will be performed",
-            "format": "int64",
-            "example": 234233
+            "format": "int32"
+          }
+        }
+      },
+      "PurgeQueueResult": {
+        "required": [
+          "messagesFoundCount"
+        ],
+        "type": "object",
+        "properties": {
+          "messagesFoundCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ReopenNonAssociationRequest": {
+        "required": [
+          "reopenReason"
+        ],
+        "type": "object",
+        "properties": {
+          "reopenReason": {
+            "maxLength": 2147483647,
+            "minLength": 1,
+            "type": "string"
           },
-          "firstPrisonerNumber": {
-            "maxLength": 10,
-            "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
+          "reopenedAt": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "Prisoner number to not associate, this is ignored if ID is provided",
-            "example": "A1234BC"
+            "example": "2021-07-05T10:35:17"
           },
-          "firstPrisonerReason": {
-            "type": "string",
-            "description": "Reason why this prisoner should be kept apart from the other",
-            "example": "VIC",
-            "enum": [
-              "BUL",
-              "PER",
-              "RIV",
-              "VIC",
-              "NOT_REL",
-              "UNKNOWN"
-            ]
-          },
-          "secondPrisonerNumber": {
-            "maxLength": 10,
-            "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
-            "type": "string",
-            "description": "Prisoner number to not associate, this is ignored if ID is provided",
-            "example": "D5678EF"
-          },
-          "secondPrisonerReason": {
-            "type": "string",
-            "description": "Reason why this prisoner should be kept apart from the other",
-            "example": "PER",
-            "enum": [
-              "BUL",
-              "PER",
-              "RIV",
-              "VIC",
-              "NOT_REL",
-              "UNKNOWN"
-            ]
-          },
-          "restrictionType": {
-            "type": "string",
-            "description": "Type of restriction, e.g. don't locate in the same cell",
-            "example": "CELL",
-            "enum": [
-              "CELL",
-              "LAND",
-              "NONEX",
-              "TNA",
-              "WING"
-            ]
-          },
-          "comment": {
-            "type": "string",
-            "description": "Explanation of why prisoners are non-associated",
-            "example": "John and Luke always end up fighting"
-          },
-          "authorisedBy": {
+          "reopenedBy": {
             "maxLength": 60,
             "minLength": 1,
-            "type": "string",
-            "description": "Who authorised the non-association",
-            "example": "John Smith"
-          },
-          "lastModifiedByUsername": {
-            "maxLength": 60,
-            "minLength": 1,
-            "type": "string",
-            "description": "The last staff member who changed this record, username of 60 characters, if not provided the API credentials will be used",
-            "example": "JSMITH"
-          },
-          "effectiveFromDate": {
-            "type": "string",
-            "description": "The date that the NA became active",
-            "format": "date",
-            "example": "2023-05-09"
-          },
-          "expiryDate": {
-            "type": "string",
-            "description": "The date that the NA became inactive",
-            "format": "date",
-            "example": "2026-05-09"
+            "type": "string"
           }
         },
-        "description": "Upsert Sync Request"
+        "description": "Request to re-open a non-association"
       },
       "NonAssociation": {
         "required": [
@@ -1600,19 +3360,13 @@
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID of the non-association",
-            "format": "int64",
-            "example": 42
+            "format": "int64"
           },
           "firstPrisonerNumber": {
-            "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "A1234BC"
+            "type": "string"
           },
           "firstPrisonerRole": {
             "type": "string",
-            "description": "This prisoner’s role code in the non-association",
-            "example": "VICTIM",
             "enum": [
               "VICTIM",
               "PERPETRATOR",
@@ -1621,19 +3375,13 @@
             ]
           },
           "firstPrisonerRoleDescription": {
-            "type": "string",
-            "description": "This prisoner’s role description in the non-association",
-            "example": "Victim"
+            "type": "string"
           },
           "secondPrisonerNumber": {
-            "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "D5678EF"
+            "type": "string"
           },
           "secondPrisonerRole": {
             "type": "string",
-            "description": "Other prisoner’s role code in the non-association",
-            "example": "PERPETRATOR",
             "enum": [
               "VICTIM",
               "PERPETRATOR",
@@ -1642,14 +3390,10 @@
             ]
           },
           "secondPrisonerRoleDescription": {
-            "type": "string",
-            "description": "Other prisoner’s role description in the non-association",
-            "example": "Perpetrator"
+            "type": "string"
           },
           "reason": {
             "type": "string",
-            "description": "Reason code why these prisoners should be kept apart",
-            "example": "BULLYING",
             "enum": [
               "BULLYING",
               "GANG_RELATED",
@@ -1661,14 +3405,10 @@
             ]
           },
           "reasonDescription": {
-            "type": "string",
-            "description": "Reason description why these prisoners should be kept apart",
-            "example": "Bullying"
+            "type": "string"
           },
           "restrictionType": {
             "type": "string",
-            "description": "Location-based restriction code",
-            "example": "CELL",
             "enum": [
               "CELL",
               "LANDING",
@@ -1676,51 +3416,36 @@
             ]
           },
           "restrictionTypeDescription": {
-            "type": "string",
-            "description": "Location-based restriction description",
-            "example": "Cell only"
+            "type": "string"
           },
           "comment": {
-            "type": "string",
-            "description": "Explanation of why prisoners are non-associated",
-            "example": "John and Luke always end up fighting"
+            "type": "string"
           },
           "whenCreated": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "When the non-association was created",
             "example": "2021-07-05T10:35:17"
           },
           "whenUpdated": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "When the non-association was last updated",
             "example": "2021-07-05T10:35:17"
           },
           "updatedBy": {
-            "type": "string",
-            "description": "User ID of the person who last updated the non-association",
-            "example": "OFF3_GEN"
+            "type": "string"
           },
           "isClosed": {
-            "type": "boolean",
-            "description": "Whether the non-association is closed or is in effect",
-            "example": false
+            "type": "boolean"
           },
           "closedBy": {
-            "type": "string",
-            "description": "User ID of the person who closed the non-association. Only present when the non-association is closed, null for open non-associations",
-            "example": "null"
+            "type": "string"
           },
           "closedReason": {
-            "type": "string",
-            "description": "Reason why the non-association was closed. Only present when the non-association is closed, null for open non-associations",
-            "example": "null"
+            "type": "string"
           },
           "closedAt": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "Date and time of when the non-association was closed. Only present when the non-association is closed, null for open non-associations",
             "example": "2021-07-05T10:35:17"
           },
           "isOpen": {
@@ -1729,27 +3454,249 @@
         },
         "description": "Non-association"
       },
-      "DeleteSyncRequest": {
+      "CloseNonAssociationRequest": {
         "required": [
+          "closedReason"
+        ],
+        "type": "object",
+        "properties": {
+          "closedReason": {
+            "maxLength": 2147483647,
+            "minLength": 1,
+            "type": "string"
+          },
+          "closedAt": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+            "type": "string",
+            "example": "2021-07-05T10:35:17"
+          },
+          "closedBy": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "description": "Request to close a non-association"
+      },
+      "CreateNonAssociationRequest": {
+        "required": [
+          "comment",
           "firstPrisonerNumber",
-          "secondPrisonerNumber"
+          "firstPrisonerRole",
+          "reason",
+          "restrictionType",
+          "secondPrisonerNumber",
+          "secondPrisonerRole"
         ],
         "type": "object",
         "properties": {
           "firstPrisonerNumber": {
             "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
+            "type": "string"
+          },
+          "firstPrisonerRole": {
             "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "A1234BC"
+            "enum": [
+              "VICTIM",
+              "PERPETRATOR",
+              "NOT_RELEVANT",
+              "UNKNOWN"
+            ]
           },
           "secondPrisonerNumber": {
             "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
+            "type": "string"
+          },
+          "secondPrisonerRole": {
             "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "D5678EF"
+            "enum": [
+              "VICTIM",
+              "PERPETRATOR",
+              "NOT_RELEVANT",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "BULLYING",
+              "GANG_RELATED",
+              "ORGANISED_CRIME",
+              "LEGAL_REQUEST",
+              "THREAT",
+              "VIOLENCE",
+              "OTHER"
+            ]
+          },
+          "restrictionType": {
+            "type": "string",
+            "enum": [
+              "CELL",
+              "LANDING",
+              "WING"
+            ]
+          },
+          "comment": {
+            "maxLength": 2147483647,
+            "minLength": 1,
+            "type": "string"
           }
         },
-        "description": "Delete Sync Request"
+        "description": "Request format for creating a new, open, non-association between two prisoners"
+      },
+      "DeleteNonAssociationRequest": {
+        "required": [
+          "deletionReason",
+          "staffUserNameRequestingDeletion"
+        ],
+        "type": "object",
+        "properties": {
+          "deletionReason": {
+            "maxLength": 2147483647,
+            "minLength": 1,
+            "type": "string"
+          },
+          "staffUserNameRequestingDeletion": {
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "description": "Request to delete a non-association"
+      },
+      "PatchNonAssociationRequest": {
+        "type": "object",
+        "properties": {
+          "firstPrisonerRole": {
+            "type": "string",
+            "enum": [
+              "VICTIM",
+              "PERPETRATOR",
+              "NOT_RELEVANT",
+              "UNKNOWN"
+            ]
+          },
+          "secondPrisonerRole": {
+            "type": "string",
+            "enum": [
+              "VICTIM",
+              "PERPETRATOR",
+              "NOT_RELEVANT",
+              "UNKNOWN"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "BULLYING",
+              "GANG_RELATED",
+              "ORGANISED_CRIME",
+              "LEGAL_REQUEST",
+              "THREAT",
+              "VIOLENCE",
+              "OTHER"
+            ]
+          },
+          "restrictionType": {
+            "type": "string",
+            "enum": [
+              "CELL",
+              "LANDING",
+              "WING"
+            ]
+          },
+          "comment": {
+            "maxLength": 2147483647,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "description": "Request format for updating a non-association between two prisoners"
+      },
+      "HmppsSubjectAccessRequestContent": {
+        "required": [
+          "content"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "object"
+          }
+        }
+      },
+      "StatementExecutionStatus": {
+        "required": [
+          "duration",
+          "resultRows",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resultRows": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resultSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "error": {
+            "type": "string"
+          },
+          "errorCategory": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "stateChangeReason": {
+            "type": "string"
+          }
+        }
+      },
+      "Count": {
+        "required": [
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "MetricDataResponse": {
+        "required": [
+          "data",
+          "id",
+          "updated"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "updated": {
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+            "type": "string",
+            "example": "2021-07-05T10:35:17"
+          }
+        }
       },
       "DlqMessage": {
         "required": [
@@ -1768,231 +3715,6 @@
             "type": "string"
           }
         }
-      },
-      "RetryDlqResult": {
-        "required": [
-          "messages",
-          "messagesFoundCount"
-        ],
-        "type": "object",
-        "properties": {
-          "messagesFoundCount": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "messages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DlqMessage"
-            }
-          }
-        }
-      },
-      "PurgeQueueResult": {
-        "required": [
-          "messagesFoundCount"
-        ],
-        "type": "object",
-        "properties": {
-          "messagesFoundCount": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "CloseNonAssociationRequest": {
-        "required": [
-          "closedReason"
-        ],
-        "type": "object",
-        "properties": {
-          "closedReason": {
-            "maxLength": 2147483647,
-            "minLength": 1,
-            "type": "string",
-            "description": "Reason for closing the non-association",
-            "example": "They are friends now"
-          },
-          "closedAt": {
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
-            "type": "string",
-            "description": "Date and time of the closure, if not provided will default to today's time",
-            "example": "2021-07-05T10:35:17"
-          },
-          "closedBy": {
-            "maxLength": 60,
-            "minLength": 1,
-            "type": "string",
-            "description": "The username of the member of staff requesting the closure, if not provided will use the user in the JWT access token",
-            "example": "ASMITH"
-          }
-        },
-        "description": "Request to close a non-association"
-      },
-      "CreateNonAssociationRequest": {
-        "required": [
-          "comment",
-          "firstPrisonerNumber",
-          "firstPrisonerRole",
-          "reason",
-          "restrictionType",
-          "secondPrisonerNumber",
-          "secondPrisonerRole"
-        ],
-        "type": "object",
-        "properties": {
-          "firstPrisonerNumber": {
-            "maxLength": 10,
-            "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
-            "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "A1234BC"
-          },
-          "firstPrisonerRole": {
-            "type": "string",
-            "description": "This prisoner’s role in the non-association",
-            "example": "VICTIM",
-            "enum": [
-              "VICTIM",
-              "PERPETRATOR",
-              "NOT_RELEVANT",
-              "UNKNOWN"
-            ]
-          },
-          "secondPrisonerNumber": {
-            "maxLength": 10,
-            "pattern": "[a-zA-Z][0-9]{4}[a-zA-Z]{2}",
-            "type": "string",
-            "description": "Prisoner number to not associate",
-            "example": "D5678EF"
-          },
-          "secondPrisonerRole": {
-            "type": "string",
-            "description": "Other prisoner’s role in the non-association",
-            "example": "PERPETRATOR",
-            "enum": [
-              "VICTIM",
-              "PERPETRATOR",
-              "NOT_RELEVANT",
-              "UNKNOWN"
-            ]
-          },
-          "reason": {
-            "type": "string",
-            "description": "Reason why these prisoners should be kept apart",
-            "example": "BULLYING",
-            "enum": [
-              "BULLYING",
-              "GANG_RELATED",
-              "ORGANISED_CRIME",
-              "LEGAL_REQUEST",
-              "THREAT",
-              "VIOLENCE",
-              "OTHER"
-            ]
-          },
-          "restrictionType": {
-            "type": "string",
-            "description": "Location-based restriction code",
-            "example": "CELL",
-            "enum": [
-              "CELL",
-              "LANDING",
-              "WING"
-            ]
-          },
-          "comment": {
-            "maxLength": 2147483647,
-            "minLength": 1,
-            "type": "string",
-            "description": "Explanation of why prisoners are non-associated",
-            "example": "John and Luke always end up fighting"
-          }
-        },
-        "description": "Request format for creating a new, open, non-association between two prisoners"
-      },
-      "DeleteNonAssociationRequest": {
-        "required": [
-          "deletionReason",
-          "staffUserNameRequestingDeletion"
-        ],
-        "type": "object",
-        "properties": {
-          "deletionReason": {
-            "maxLength": 2147483647,
-            "minLength": 1,
-            "type": "string",
-            "description": "Reason for deleting the non-association",
-            "example": "Created in error and removed on requested from OMU team"
-          },
-          "staffUserNameRequestingDeletion": {
-            "maxLength": 60,
-            "minLength": 1,
-            "type": "string",
-            "description": "The username of the member of staff requesting the deletion",
-            "example": "AJONES"
-          }
-        },
-        "description": "Request to delete a non-association"
-      },
-      "PatchNonAssociationRequest": {
-        "type": "object",
-        "properties": {
-          "firstPrisonerRole": {
-            "type": "string",
-            "description": "This prisoner’s role in the non-association",
-            "example": "VICTIM",
-            "enum": [
-              "VICTIM",
-              "PERPETRATOR",
-              "NOT_RELEVANT",
-              "UNKNOWN"
-            ]
-          },
-          "secondPrisonerRole": {
-            "type": "string",
-            "description": "Other prisoner’s role in the non-association",
-            "example": "PERPETRATOR",
-            "enum": [
-              "VICTIM",
-              "PERPETRATOR",
-              "NOT_RELEVANT",
-              "UNKNOWN"
-            ]
-          },
-          "reason": {
-            "type": "string",
-            "description": "Reason why these prisoners should be kept apart",
-            "example": "BULLYING",
-            "enum": [
-              "BULLYING",
-              "GANG_RELATED",
-              "ORGANISED_CRIME",
-              "LEGAL_REQUEST",
-              "THREAT",
-              "VIOLENCE",
-              "OTHER"
-            ]
-          },
-          "restrictionType": {
-            "type": "string",
-            "description": "Location-based restriction code",
-            "example": "CELL",
-            "enum": [
-              "CELL",
-              "LANDING",
-              "WING"
-            ]
-          },
-          "comment": {
-            "maxLength": 2147483647,
-            "minLength": 1,
-            "type": "string",
-            "description": "Explanation of why prisoners are non-associated",
-            "example": "John and Luke always end up fighting"
-          }
-        },
-        "description": "Request format for updating a non-association between two prisoners"
       },
       "GetDlqResult": {
         "required": [
@@ -2022,8 +3744,6 @@
         "required": [
           "firstName",
           "lastName",
-          "prisonId",
-          "prisonName",
           "prisonerNumber",
           "role",
           "roleDescription"
@@ -2031,14 +3751,10 @@
         "type": "object",
         "properties": {
           "prisonerNumber": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "D5678EF"
+            "type": "string"
           },
           "role": {
             "type": "string",
-            "description": "Other prisoner’s role code in the non-association",
-            "example": "PERPETRATOR",
             "enum": [
               "VICTIM",
               "PERPETRATOR",
@@ -2047,34 +3763,22 @@
             ]
           },
           "roleDescription": {
-            "type": "string",
-            "description": "Other prisoner’s role description in the non-association",
-            "example": "Perpetrator"
+            "type": "string"
           },
           "firstName": {
-            "type": "string",
-            "description": "First name",
-            "example": "Joseph"
+            "type": "string"
           },
           "lastName": {
-            "type": "string",
-            "description": "Last name",
-            "example": "Bloggs"
+            "type": "string"
           },
           "prisonId": {
-            "type": "string",
-            "description": "ID of the prison the prisoner is assigned to",
-            "example": "MDI"
+            "type": "string"
           },
           "prisonName": {
-            "type": "string",
-            "description": "Name of the prison the prisoner is assigned to",
-            "example": "Moorland (HMP & YOI)"
+            "type": "string"
           },
           "cellLocation": {
-            "type": "string",
-            "description": "Cell the prisoner is assigned to",
-            "example": "B-2-007"
+            "type": "string"
           }
         },
         "description": "Other prisoner’s details for an item in a list of non-associations"
@@ -2101,14 +3805,10 @@
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID of the non-association",
-            "format": "int64",
-            "example": 42
+            "format": "int64"
           },
           "role": {
             "type": "string",
-            "description": "This prisoner’s role code in the non-association",
-            "example": "VICTIM",
             "enum": [
               "VICTIM",
               "PERPETRATOR",
@@ -2117,14 +3817,10 @@
             ]
           },
           "roleDescription": {
-            "type": "string",
-            "description": "This prisoner’s role description in the non-association",
-            "example": "Victim"
+            "type": "string"
           },
           "reason": {
             "type": "string",
-            "description": "Reason code why these prisoners should be kept apart",
-            "example": "BULLYING",
             "enum": [
               "BULLYING",
               "GANG_RELATED",
@@ -2136,14 +3832,10 @@
             ]
           },
           "reasonDescription": {
-            "type": "string",
-            "description": "Reason description why these prisoners should be kept apart",
-            "example": "Bullying"
+            "type": "string"
           },
           "restrictionType": {
             "type": "string",
-            "description": "Location-based restriction code",
-            "example": "CELL",
             "enum": [
               "CELL",
               "LANDING",
@@ -2151,56 +3843,39 @@
             ]
           },
           "restrictionTypeDescription": {
-            "type": "string",
-            "description": "Location-based restriction description",
-            "example": "Cell only"
+            "type": "string"
           },
           "comment": {
-            "type": "string",
-            "description": "Explanation of why prisoners are non-associated",
-            "example": "John and Luke always end up fighting"
+            "type": "string"
           },
           "authorisedBy": {
-            "type": "string",
-            "description": "User ID of the person who created the non-association. NOTE: For records migrated from NOMIS/Prison API this is free text and may not be a valid User ID. Additionally, migrated records might use an internal system username",
-            "example": "OFF3_GEN"
+            "type": "string"
           },
           "whenCreated": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "When the non-association was created",
             "example": "2021-07-05T10:35:17"
           },
           "whenUpdated": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "When the non-association was last updated",
             "example": "2021-07-05T10:35:17"
           },
           "updatedBy": {
-            "type": "string",
-            "description": "User ID of the person who last updated the non-association",
-            "example": "OFF3_GEN"
+            "type": "string"
           },
           "isClosed": {
-            "type": "boolean",
-            "description": "Whether the non-association is closed or is in effect",
-            "example": false
+            "type": "boolean"
           },
           "closedBy": {
-            "type": "string",
-            "description": "User ID of the person who closed the non-association. Only present when the non-association is closed, null for open non-associations",
-            "example": "null"
+            "type": "string"
           },
           "closedReason": {
-            "type": "string",
-            "description": "Reason why the non-association was closed. Only present when the non-association is closed, null for open non-associations",
-            "example": "null"
+            "type": "string"
           },
           "closedAt": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "Date and time of when the non-association was closed. Only present when the non-association is closed, null for open non-associations",
             "example": "2021-07-05T10:35:17"
           },
           "otherPrisonerDetails": {
@@ -2219,59 +3894,38 @@
           "lastName",
           "nonAssociations",
           "openCount",
-          "prisonId",
-          "prisonName",
           "prisonerNumber"
         ],
         "type": "object",
         "properties": {
           "prisonerNumber": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "A1234BC"
+            "type": "string"
           },
           "firstName": {
-            "type": "string",
-            "description": "First name",
-            "example": "James"
+            "type": "string"
           },
           "lastName": {
-            "type": "string",
-            "description": "Last name",
-            "example": "Hall"
+            "type": "string"
           },
           "prisonId": {
-            "type": "string",
-            "description": "ID of the prison the prisoner is assigned to",
-            "example": "MDI"
+            "type": "string"
           },
           "prisonName": {
-            "type": "string",
-            "description": "Name of the prison the prisoner is assigned to",
-            "example": "Moorland (HMP & YOI)"
+            "type": "string"
           },
           "cellLocation": {
-            "type": "string",
-            "description": "Cell the prisoner is assigned to",
-            "example": "A-1-002"
+            "type": "string"
           },
           "openCount": {
-            "minimum": 0,
             "type": "integer",
-            "description": "Number of open non-associations (follows includeOtherPrisons filter)",
-            "format": "int32",
-            "example": 1
+            "format": "int32"
           },
           "closedCount": {
-            "minimum": 0,
             "type": "integer",
-            "description": "Number of closed non-associations (follows includeOtherPrisons filter)",
-            "format": "int32",
-            "example": 0
+            "format": "int32"
           },
           "nonAssociations": {
             "type": "array",
-            "description": "Non-associations with other prisoners",
             "items": {
               "$ref": "#/components/schemas/PrisonerNonAssociation"
             }
@@ -2282,15 +3936,18 @@
       "PageNonAssociation": {
         "type": "object",
         "properties": {
-          "totalPages": {
-            "type": "integer",
-            "format": "int32"
-          },
           "totalElements": {
             "type": "integer",
             "format": "int64"
           },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
           "first": {
+            "type": "boolean"
+          },
+          "last": {
             "type": "boolean"
           },
           "size": {
@@ -2308,7 +3965,10 @@
             "format": "int32"
           },
           "sort": {
-            "$ref": "#/components/schemas/SortObject"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SortObject"
+            }
           },
           "numberOfElements": {
             "type": "integer",
@@ -2316,9 +3976,6 @@
           },
           "pageable": {
             "$ref": "#/components/schemas/PageableObject"
-          },
-          "last": {
-            "type": "boolean"
           },
           "empty": {
             "type": "boolean"
@@ -2333,7 +3990,10 @@
             "format": "int64"
           },
           "sort": {
-            "$ref": "#/components/schemas/SortObject"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SortObject"
+            }
           },
           "pageSize": {
             "type": "integer",
@@ -2342,216 +4002,34 @@
           "paged": {
             "type": "boolean"
           },
-          "unpaged": {
-            "type": "boolean"
-          },
           "pageNumber": {
             "type": "integer",
             "format": "int32"
+          },
+          "unpaged": {
+            "type": "boolean"
           }
         }
       },
       "SortObject": {
         "type": "object",
         "properties": {
-          "empty": {
+          "direction": {
+            "type": "string"
+          },
+          "nullHandling": {
+            "type": "string"
+          },
+          "ascending": {
             "type": "boolean"
           },
-          "sorted": {
-            "type": "boolean"
+          "property": {
+            "type": "string"
           },
-          "unsorted": {
+          "ignoreCase": {
             "type": "boolean"
           }
         }
-      },
-      "LegacyOtherPrisonerDetails": {
-        "required": [
-          "agencyDescription",
-          "agencyId",
-          "firstName",
-          "lastName",
-          "offenderNo",
-          "reasonCode",
-          "reasonDescription"
-        ],
-        "type": "object",
-        "properties": {
-          "offenderNo": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "B1234CD"
-          },
-          "firstName": {
-            "type": "string",
-            "description": "First name",
-            "example": "Joseph"
-          },
-          "lastName": {
-            "type": "string",
-            "description": "Last name",
-            "example": "Bloggs"
-          },
-          "reasonCode": {
-            "type": "string",
-            "description": "Reason code for the non-association",
-            "example": "PER",
-            "enum": [
-              "BUL",
-              "PER",
-              "RIV",
-              "VIC",
-              "NOT_REL",
-              "UNKNOWN"
-            ]
-          },
-          "reasonDescription": {
-            "type": "string",
-            "description": "Reason for the non-association",
-            "example": "Perpetrator"
-          },
-          "agencyId": {
-            "type": "string",
-            "description": "Prison ID where prisoner resides or OUT for released",
-            "example": "MDI"
-          },
-          "agencyDescription": {
-            "type": "string",
-            "description": "Description of the agency (e.g. prison) the offender is assigned to",
-            "example": "Moorland (HMP & YOI)"
-          },
-          "assignedLivingUnitDescription": {
-            "type": "string",
-            "description": "Description of living unit (e.g. cell) the offender is assigned to.",
-            "example": "MDI-2-3-4"
-          }
-        },
-        "description": "Other prisoner’s details for an item in a list of non-associations in NOMIS/Prison API format"
-      },
-      "LegacyPrisonerNonAssociation": {
-        "required": [
-          "effectiveDate",
-          "offenderNonAssociation",
-          "reasonCode",
-          "reasonDescription",
-          "typeCode",
-          "typeDescription"
-        ],
-        "type": "object",
-        "properties": {
-          "reasonCode": {
-            "type": "string",
-            "description": "Reason code for the non-association",
-            "example": "VIC",
-            "enum": [
-              "BUL",
-              "PER",
-              "RIV",
-              "VIC",
-              "NOT_REL",
-              "UNKNOWN"
-            ]
-          },
-          "reasonDescription": {
-            "type": "string",
-            "description": "Reason for the non-association",
-            "example": "Victim"
-          },
-          "typeCode": {
-            "type": "string",
-            "description": "The non-association type code",
-            "example": "WING",
-            "enum": [
-              "CELL",
-              "LAND",
-              "NONEX",
-              "TNA",
-              "WING"
-            ]
-          },
-          "typeDescription": {
-            "type": "string",
-            "description": "The non-association type description",
-            "example": "Do Not Locate on Same Wing"
-          },
-          "effectiveDate": {
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
-            "type": "string",
-            "description": "Date and time the non-association is effective from. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.",
-            "example": "2021-07-05T10:35:17"
-          },
-          "expiryDate": {
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
-            "type": "string",
-            "description": "Date and time the non-association expires. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.",
-            "example": "2021-07-05T10:35:17"
-          },
-          "authorisedBy": {
-            "type": "string",
-            "description": "The person who authorised the non-association (free text).",
-            "example": "Officer Alice B."
-          },
-          "comments": {
-            "type": "string",
-            "description": "Additional free text comments related to the non-association.",
-            "example": "Mr. Bloggs assaulted Mr. Hall"
-          },
-          "offenderNonAssociation": {
-            "$ref": "#/components/schemas/LegacyOtherPrisonerDetails"
-          }
-        },
-        "description": "An item in a list of non-associations for a given prisoner in NOMIS/Prison API format"
-      },
-      "LegacyPrisonerNonAssociations": {
-        "required": [
-          "agencyDescription",
-          "agencyId",
-          "firstName",
-          "lastName",
-          "nonAssociations",
-          "offenderNo"
-        ],
-        "type": "object",
-        "properties": {
-          "offenderNo": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "A1234BC"
-          },
-          "firstName": {
-            "type": "string",
-            "description": "First name",
-            "example": "James"
-          },
-          "lastName": {
-            "type": "string",
-            "description": "Last name",
-            "example": "Hall"
-          },
-          "agencyId": {
-            "type": "string",
-            "description": "Prison ID where prisoner resides or OUT for released",
-            "example": "MDI"
-          },
-          "agencyDescription": {
-            "type": "string",
-            "description": "Description of the agency (e.g. prison) the offender is assigned to",
-            "example": "Moorland (HMP & YOI)"
-          },
-          "assignedLivingUnitDescription": {
-            "type": "string",
-            "description": "Description of living unit (e.g. cell) the offender is assigned to.",
-            "example": "MDI-1-1-3"
-          },
-          "nonAssociations": {
-            "type": "array",
-            "description": "Non-associations with other prisoners",
-            "items": {
-              "$ref": "#/components/schemas/LegacyPrisonerNonAssociation"
-            }
-          }
-        },
-        "description": "List of non-associations for a given prisoner in NOMIS/Prison API format"
       },
       "LegacyNonAssociation": {
         "required": [
@@ -2569,19 +4047,13 @@
         "properties": {
           "id": {
             "type": "integer",
-            "description": "ID of the non-association",
-            "format": "int64",
-            "example": 42
+            "format": "int64"
           },
           "offenderNo": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "A1234BC"
+            "type": "string"
           },
           "reasonCode": {
             "type": "string",
-            "description": "Reason code for the non-association",
-            "example": "VIC",
             "enum": [
               "BUL",
               "PER",
@@ -2592,48 +4064,34 @@
             ]
           },
           "reasonDescription": {
-            "type": "string",
-            "description": "Reason for the non-association",
-            "example": "Victim"
+            "type": "string"
           },
           "typeCode": {
             "type": "string",
-            "description": "The non-association type code",
-            "example": "WING",
             "enum": [
               "CELL",
               "LAND",
-              "NONEX",
-              "TNA",
               "WING"
             ]
           },
           "typeDescription": {
-            "type": "string",
-            "description": "The non-association type description",
-            "example": "Do Not Locate on Same Wing"
+            "type": "string"
           },
           "effectiveDate": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "Date and time the non-association is effective from. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.",
             "example": "2021-07-05T10:35:17"
           },
           "expiryDate": {
             "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
             "type": "string",
-            "description": "Date and time the non-association expires. In Europe/London (ISO 8601) format without timezone offset e.g. YYYY-MM-DDTHH:MM:SS.",
             "example": "2021-07-05T10:35:17"
           },
           "authorisedBy": {
-            "type": "string",
-            "description": "The person who authorised the non-association (free text).",
-            "example": "Officer Alice B."
+            "type": "string"
           },
           "comments": {
-            "type": "string",
-            "description": "Additional free text comments related to the non-association.",
-            "example": "Mr. Bloggs assaulted Mr. Hall"
+            "type": "string"
           },
           "offenderNonAssociation": {
             "$ref": "#/components/schemas/LegacyNonAssociationOtherPrisonerDetails"
@@ -2650,14 +4108,10 @@
         "type": "object",
         "properties": {
           "offenderNo": {
-            "type": "string",
-            "description": "Prisoner number",
-            "example": "B1234CD"
+            "type": "string"
           },
           "reasonCode": {
             "type": "string",
-            "description": "Reason code for the non-association",
-            "example": "PER",
             "enum": [
               "BUL",
               "PER",
@@ -2668,12 +4122,453 @@
             ]
           },
           "reasonDescription": {
-            "type": "string",
-            "description": "Reason for the non-association",
-            "example": "Perpetrator"
+            "type": "string"
           }
         },
         "description": "Details about the other non-association person in NOMIS/Prison API format"
+      },
+      "DashboardDefinition": {
+        "required": [
+          "description",
+          "id",
+          "metrics",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardMetricDefinition"
+            }
+          }
+        }
+      },
+      "DashboardMetricDefinition": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportDefinitionSummary": {
+        "required": [
+          "id",
+          "name",
+          "variants"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantDefinitionSummary"
+            }
+          },
+          "dashboards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDefinition"
+            }
+          }
+        }
+      },
+      "VariantDefinitionSummary": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "DynamicFilterOption": {
+        "required": [
+          "returnAsStaticOptions"
+        ],
+        "type": "object",
+        "properties": {
+          "minimumLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "returnAsStaticOptions": {
+            "type": "boolean"
+          },
+          "maximumOptions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          }
+        }
+      },
+      "FieldDefinition": {
+        "required": [
+          "calculated",
+          "defaultsort",
+          "display",
+          "mandatory",
+          "name",
+          "sortable",
+          "type",
+          "visible"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          },
+          "wordWrap": {
+            "type": "string",
+            "enum": [
+              "none",
+              "normal",
+              "break-words"
+            ]
+          },
+          "filter": {
+            "$ref": "#/components/schemas/FilterDefinition"
+          },
+          "sortable": {
+            "type": "boolean"
+          },
+          "defaultsort": {
+            "type": "boolean"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "date",
+              "double",
+              "HTML",
+              "long",
+              "string",
+              "time"
+            ]
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "visible": {
+            "type": "boolean"
+          },
+          "calculated": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FilterDefinition": {
+        "required": [
+          "mandatory",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "Radio",
+              "Select",
+              "daterange",
+              "autocomplete",
+              "text",
+              "date"
+            ]
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "staticOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilterOption"
+            }
+          },
+          "dynamicOptions": {
+            "$ref": "#/components/schemas/DynamicFilterOption"
+          },
+          "defaultValue": {
+            "type": "string"
+          },
+          "min": {
+            "type": "string"
+          },
+          "max": {
+            "type": "string"
+          }
+        }
+      },
+      "FilterOption": {
+        "required": [
+          "display",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportSummary": {
+        "required": [
+          "fields",
+          "id",
+          "template"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "table-header",
+              "table-footer",
+              "section-header",
+              "section-footer",
+              "page-header",
+              "page-footer"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SummaryField"
+            }
+          }
+        }
+      },
+      "SingleVariantReportDefinition": {
+        "required": [
+          "id",
+          "name",
+          "variant"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "variant": {
+            "$ref": "#/components/schemas/VariantDefinition"
+          }
+        }
+      },
+      "Specification": {
+        "required": [
+          "fields",
+          "sections",
+          "template"
+        ],
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "enum": [
+              "list",
+              "list-section",
+              "list-aggregate",
+              "list-tab",
+              "crosstab",
+              "summary",
+              "summary-section"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDefinition"
+            }
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "SummaryField": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "boolean",
+              "date",
+              "double",
+              "HTML",
+              "long",
+              "string",
+              "time"
+            ]
+          }
+        }
+      },
+      "VariantDefinition": {
+        "required": [
+          "id",
+          "name",
+          "resourceName"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "resourceName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "specification": {
+            "$ref": "#/components/schemas/Specification"
+          },
+          "classification": {
+            "type": "string"
+          },
+          "printable": {
+            "type": "boolean"
+          },
+          "summaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportSummary"
+            }
+          }
+        }
+      },
+      "MetricDefinition": {
+        "required": [
+          "description",
+          "display",
+          "id",
+          "name",
+          "specification"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "specification": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricSpecificationDefinition"
+            }
+          }
+        }
+      },
+      "MetricSpecificationDefinition": {
+        "required": [
+          "display",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "display": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "chart": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "doughnut",
+                "bar",
+                "line"
+              ]
+            }
+          },
+          "group": {
+            "type": "boolean"
+          }
+        }
       },
       "Constant": {
         "required": [
@@ -2689,6 +4584,32 @@
             "type": "string"
           }
         }
+      },
+      "StatementExecutionResponse": {
+        "required": [
+          "executionId",
+          "tableId"
+        ],
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string"
+          },
+          "executionId": {
+            "type": "string"
+          }
+        }
+      },
+      "StatementCancellationResponse": {
+        "required": [
+          "cancellationSucceeded"
+        ],
+        "type": "object",
+        "properties": {
+          "cancellationSucceeded": {
+            "type": "boolean"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -2701,15 +4622,15 @@
         "type": "oauth2",
         "flows": {
           "clientCredentials": {
-            "tokenUrl": "https://sign-in-dev.hmpps.service.justice.gov.uk/auth/oauth/token",
+            "tokenUrl": "https://sign-in.hmpps.service.justice.gov.uk/auth/oauth/token",
             "scopes": {
               "read": "Allows read of data",
               "write": "Allows write of data"
             }
           },
           "authorizationCode": {
-            "authorizationUrl": "https://sign-in-dev.hmpps.service.justice.gov.uk/auth/oauth/authorize",
-            "tokenUrl": "https://sign-in-dev.hmpps.service.justice.gov.uk/auth/oauth/token",
+            "authorizationUrl": "https://sign-in.hmpps.service.justice.gov.uk/auth/oauth/authorize",
+            "tokenUrl": "https://sign-in.hmpps.service.justice.gov.uk/auth/oauth/token",
             "scopes": {
               "read": "Allows read of data",
               "write": "Allows write of data"

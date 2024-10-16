@@ -595,16 +595,21 @@ class TransformFunctionsTest {
       ),
     )
 
-    assertThat(nonAssociationDetail.toModel()).isEqualTo(
+    assertThat(nonAssociationDetail.toModel(true)).isEqualTo(
       NonAssociationDetails(
+        allocated = true,
         reasonCode = "BULLYING",
         reasonDescription = "Bullying",
+        roleCode = "VICTIM",
+        roleDescription = "Victim",
+        restrictionType = "LANDING",
+        restrictionTypeDescription = "Landing",
         otherPrisonerDetails = OtherPrisonerDetails(
           prisonerNumber = "A1234AA",
           firstName = "Joseph",
           lastName = "Bloggs",
         ),
-        whenCreated = LocalDateTime.parse(nonAssociationDetail.whenCreated),
+        whenUpdated = LocalDateTime.parse(nonAssociationDetail.whenUpdated),
         comments = nonAssociationDetail.comment,
       ),
     )

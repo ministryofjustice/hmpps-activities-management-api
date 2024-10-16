@@ -5,9 +5,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import java.time.LocalDateTime
 
-fun PrisonerNonAssociation.toModel() = NonAssociationDetails(
+fun PrisonerNonAssociation.toModel(isAllocated: Boolean = true) = NonAssociationDetails(
+  allocated = isAllocated,
   reasonCode = this.reason.toString(),
   reasonDescription = this.reasonDescription,
+  roleCode = this.role.toString(),
+  roleDescription = this.roleDescription,
+  restrictionType = this.restrictionType.toString(),
+  restrictionTypeDescription = this.restrictionTypeDescription,
   otherPrisonerDetails = with(this.otherPrisonerDetails) {
     OtherPrisonerDetails(
       prisonerNumber = this.prisonerNumber,
@@ -16,6 +21,6 @@ fun PrisonerNonAssociation.toModel() = NonAssociationDetails(
       cellLocation = this.cellLocation,
     )
   },
-  whenCreated = LocalDateTime.parse(this.whenCreated),
+  whenUpdated = LocalDateTime.parse(this.whenUpdated),
   comments = this.comment,
 )

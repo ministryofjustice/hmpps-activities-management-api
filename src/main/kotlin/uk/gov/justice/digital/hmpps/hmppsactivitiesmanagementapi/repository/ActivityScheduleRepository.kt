@@ -10,13 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 
 @Repository
 interface ActivityScheduleRepository : JpaRepository<ActivitySchedule, Long>, ActivityScheduleRepositoryCustom {
-  @Query(
-    "from ActivitySchedule asch " +
-      "join fetch asch.instances " +
-      "where asch.activity.prisonCode = :prisonCode",
-  )
-  fun findAllByActivityPrisonCodeWithScheduledInstances(prisonCode: String): List<ActivitySchedule>
-
   fun findAllByActivityPrisonCode(prisonCode: String): List<ActivitySchedule>
 
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)
