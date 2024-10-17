@@ -37,7 +37,7 @@ AS SELECT gen_random_uuid() as id, data.*
               on alloc.allocation_id = e.allocation_id
                   left join
               planned_deallocation pd
-              on pd.allocation_id = alloc.planned_deallocation_id
+              on alloc.planned_deallocation_id = pd.planned_deallocation_id
          WHERE alloc.prisoner_status <> 'ENDED'
          AND NOT EXISTS (select 1
                          from attendance a2
