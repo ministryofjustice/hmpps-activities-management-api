@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
@@ -37,12 +36,9 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   private lateinit var activityService: ActivityService
 
   @MockBean
-  private lateinit var scheduleService: ActivityScheduleService
-
-  @MockBean
   private lateinit var prisonRegimeService: PrisonRegimeService
 
-  override fun controller() = PrisonController(activityService, scheduleService, prisonRegimeService)
+  override fun controller() = PrisonController(activityService, prisonRegimeService)
 
   @Test
   fun `200 response when get category activities`() {
@@ -104,9 +100,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: Long) =
     get("/prison/{prisonCode}/activity-categories/{categoryId}/activities", prisonCode, categoryId)
-
-  private fun MockMvc.getCategoryCapacity(prisonCode: String, categoryId: Long) =
-    get("/prison/{prisonCode}/activity-categories/{categoryId}/capacity", prisonCode, categoryId)
 
   @Test
   fun `200 response when get activities`() {

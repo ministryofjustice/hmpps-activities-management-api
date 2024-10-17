@@ -36,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationSuitability
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.CandidatesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -168,7 +169,7 @@ class ActivityScheduleController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  fun getScheduleId(
+  fun getScheduleById(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -514,4 +515,53 @@ class ActivityScheduleController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) =
     waitingListService.getWaitingListsBySchedule(scheduleId)
+
+  @GetMapping(value = ["/{scheduleId}/non-associations"])
+  @ResponseBody
+  @Operation(
+    summary = "Get non-associations for a prisoner within an activity schedule",
+    description = "Returns a list of non-associations for the prisoner.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Get non-associations for the prisoner",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = NonAssociationDetails::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getNonAssociations(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(value = "prisonerNumber", required = true)
+    @Parameter(description = "Prisoner number. Format A9999AA.", required = true)
+    prisonerNumber: String,
+  ) = candidatesService.nonAssociations(scheduleId, prisonerNumber)
 }

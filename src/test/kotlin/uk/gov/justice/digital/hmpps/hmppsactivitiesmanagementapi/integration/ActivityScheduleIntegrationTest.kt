@@ -523,16 +523,21 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       assertThat(nonAssociation!!.nonAssociations).isEqualTo(
         listOf(
           NonAssociationDetails(
+            allocated = true,
             reasonCode = PrisonerNonAssociation.Reason.LEGAL_REQUEST.toString(),
             reasonDescription = "Police or legal request",
+            roleCode = "PERPETRATOR",
+            roleDescription = "Perpetrator",
+            restrictionType = "LANDING",
+            restrictionTypeDescription = "Cell and landing",
             otherPrisonerDetails = OtherPrisonerDetails(
               prisonerNumber = "A11111A",
               firstName = "YZRIRATIF",
               lastName = "AMBENTINO",
               cellLocation = "A-3-08S",
             ),
-            whenCreated = LocalDateTime.parse("2023-10-03T14:08:07"),
-            comments = "",
+            whenUpdated = LocalDateTime.parse("2023-10-03T14:08:07"),
+            comments = "Comment 1",
           ),
         ),
       )
@@ -549,6 +554,54 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         assertThat(caseNoteText).isEqualTo("Case Note Text")
       }
     }
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-for-suitability-check.sql",
+  )
+  fun `should be able to fetch non-associations for an allocated prisoner`() {
+    nonAssociationsApiMockServer.stubGetNonAssociations("A1143DZ")
+
+    val response = webTestClient.getNonAssociations(1, "A1143DZ")
+
+    val expectedAllocated = NonAssociationDetails(
+      allocated = true,
+      reasonCode = "LEGAL_REQUEST",
+      reasonDescription = "Police or legal request",
+      roleCode = "PERPETRATOR",
+      roleDescription = "Perpetrator",
+      restrictionType = "LANDING",
+      restrictionTypeDescription = "Cell and landing",
+      otherPrisonerDetails = OtherPrisonerDetails(
+        prisonerNumber = "A11111A",
+        firstName = "YZRIRATIF",
+        lastName = "AMBENTINO",
+        cellLocation = "A-3-08S",
+      ),
+      whenUpdated = LocalDateTime.parse("2023-10-03T14:08:07"),
+      comments = "Comment 1",
+    )
+
+    val expectedNonAllocated = NonAssociationDetails(
+      allocated = false,
+      reasonCode = "GANG_RELATED",
+      reasonDescription = "Gang related",
+      roleCode = "VICTIM",
+      roleDescription = "Victim",
+      restrictionType = "WING",
+      restrictionTypeDescription = "Cell, landing and wing",
+      otherPrisonerDetails = OtherPrisonerDetails(
+        prisonerNumber = "G9353UC",
+        firstName = "BARPRENAV",
+        lastName = "TONONNE",
+        cellLocation = "A-3-08S",
+      ),
+      whenUpdated = LocalDateTime.parse("2023-10-04T15:08:07"),
+      comments = "Comment 2",
+    )
+
+    assertThat(response).containsOnly(expectedAllocated, expectedNonAllocated)
   }
 
   @Test
@@ -869,5 +922,20 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(WaitingListApplication::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getNonAssociations(
+    scheduleId: Long,
+    prisonerNumber: String,
+    caseLoadId: String = "PVI",
+  ) =
+    get()
+      .uri("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(NonAssociationDetails::class.java)
       .returnResult().responseBody
 }

@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Education
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -31,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.CandidateAllocation
@@ -58,7 +58,6 @@ class CandidatesService(
       ?: throw IllegalArgumentException("Prisoner number '$prisonerNumber' not found")
 
     val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))
-    val prisonerNonAssociations = nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)
     val prisonerNumbers = schedule.allocations(true).map { it.prisonerNumber }
 
     val candidateAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(
@@ -92,7 +91,7 @@ class CandidatesService(
       incentiveLevel = incentiveLevelSuitability(schedule.activity, candidateDetails.currentIncentive),
       education = educationSuitability(schedule.activity.activityMinimumEducationLevel(), prisonerEducation),
       releaseDate = releaseDateSuitability(schedule.startDate, candidateDetails),
-      nonAssociation = nonAssociationSuitability(prisonerNumbers, prisonerNonAssociations),
+      nonAssociation = nonAssociationSuitability(prisonerNumber, prisonerNumbers),
       allocations = currentAllocations,
       previousDeallocations = previousDeallocations,
     )
@@ -152,6 +151,18 @@ class CandidatesService(
       pageable,
       prisonerCount.toLong(),
     )
+  }
+
+  fun nonAssociations(
+    scheduleId: Long,
+    prisonerNumber: String,
+  ): List<NonAssociationDetails> {
+    val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
+
+    val allocatedPrisoners = schedule.allocations(true).map { it.prisonerNumber }
+
+    return nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)
+      .map { it.toModel(allocatedPrisoners.contains(it.otherPrisonerDetails.prisonerNumber)) }
   }
 
   private fun getPrisonerCandidates(
@@ -287,14 +298,15 @@ class CandidatesService(
   }
 
   private fun nonAssociationSuitability(
+    prisonerNumber: String,
     allocatedPrisoners: List<String>,
-    nonAssociations: List<PrisonerNonAssociation>,
   ): NonAssociationSuitability {
-    val allocationNonAssociations = nonAssociations.filter { allocatedPrisoners.contains(it.otherPrisonerDetails.prisonerNumber) }
+    val allocationNonAssociations = nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)
+      .filter { allocatedPrisoners.contains(it.otherPrisonerDetails.prisonerNumber) }
 
     return NonAssociationSuitability(
       allocationNonAssociations.isEmpty(),
-      allocationNonAssociations.map { it.toModel() },
+      allocationNonAssociations.map { it.toModel(true) },
     )
   }
 
