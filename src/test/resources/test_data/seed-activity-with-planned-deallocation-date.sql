@@ -19,6 +19,9 @@ values(1, current_date + 1, 'MR BLOGS', 'PLANNED', '2022-10-11 09:00:00', 1);
 update allocation set planned_deallocation_id = 1 where allocation_id = 1;
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, current_date, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
+
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
 values (1, current_date + 1, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
