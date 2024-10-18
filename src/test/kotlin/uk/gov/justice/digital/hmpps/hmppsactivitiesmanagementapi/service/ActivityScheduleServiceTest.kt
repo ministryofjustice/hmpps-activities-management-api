@@ -2,11 +2,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -23,6 +26,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -87,6 +92,7 @@ class ActivityScheduleServiceTest {
   private val telemetryClient: TelemetryClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val manageAttendancesService: ManageAttendancesService = mock()
+  private val nonAssociationsApiClient: NonAssociationsApiClient = mock()
   private val service =
     ActivityScheduleService(
       repository,
@@ -100,6 +106,7 @@ class ActivityScheduleServiceTest {
       TransactionHandler(),
       outboundEventsService,
       manageAttendancesService,
+      nonAssociationsApiClient,
     )
 
   private val caseLoad = PENTONVILLE_PRISON_CODE
@@ -131,8 +138,9 @@ class ActivityScheduleServiceTest {
     assertThat(service.getAllocationsBy(1)).isEmpty()
   }
 
-  @Test
-  fun `getAllocationsBy - prisoner information is returned`() {
+  @CsvSource("true", "false")
+  @ParameterizedTest
+  fun `getAllocationsBy - prisoner information is returned`(hasNonAssociation: Boolean) {
     val schedule = schedule(PENTONVILLE_PRISON_CODE)
     val prisoner1: Prisoner = mock {
       on { firstName } doReturn "JOE"
@@ -154,7 +162,30 @@ class ActivityScheduleServiceTest {
     }
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)) doReturn schedule
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1111BB"))) doReturn listOf(prisoner1, prisoner2)
+
+    val nonAssociation1: NonAssociation = mock {
+      on { firstPrisonerNumber } doReturn (if (hasNonAssociation) "A1234AA" else "UNKNOWN")
+    }
+
+    val nonAssociation2: NonAssociation = mock {
+      on { secondPrisonerNumber } doReturn (if (hasNonAssociation) "A1111BB" else "UNKNOWN")
+    }
+
+    prisonerSearchApiClient.stub {
+      on {
+        runBlocking {
+          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("A1234AA", "A1111BB"))
+        }
+      } doReturn listOf(prisoner1, prisoner2)
+    }
+
+    nonAssociationsApiClient.stub {
+      on {
+        runBlocking {
+          nonAssociationsApiClient.getNonAssociationsInvolving("PVI", listOf("A1234AA", "A1111BB"))
+        }
+      } doReturn listOf(nonAssociation1, nonAssociation2)
+    }
 
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {
@@ -163,6 +194,62 @@ class ActivityScheduleServiceTest {
         it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
         it.prisonerStatus = "ACTIVE IN"
         it.prisonerPrisonCode = "MDI"
+        it.nonAssociations = hasNonAssociation
+      }
+    }
+
+    assertThat(service.getAllocationsBy(1, activeOnly = false, includePrisonerSummary = true))
+      .isEqualTo(expectedResponse)
+  }
+
+  @Test
+  fun `getAllocationsBy - empty non-associations is handles correctly`() {
+    val schedule = schedule(PENTONVILLE_PRISON_CODE)
+    val prisoner1: Prisoner = mock {
+      on { firstName } doReturn "JOE"
+      on { lastName } doReturn "BLOGGS"
+      on { cellLocation } doReturn "MDI-1-1-001"
+      on { releaseDate } doReturn LocalDate.now()
+      on { prisonerNumber } doReturn "A1234AA"
+      on { prisonId } doReturn "MDI"
+      on { status } doReturn "ACTIVE IN"
+    }
+    val prisoner2: Prisoner = mock {
+      on { firstName } doReturn "JOE"
+      on { lastName } doReturn "BLOGGS"
+      on { cellLocation } doReturn "MDI-1-1-001"
+      on { releaseDate } doReturn LocalDate.now()
+      on { prisonerNumber } doReturn "A1111BB"
+      on { prisonId } doReturn "MDI"
+      on { status } doReturn "ACTIVE IN"
+    }
+
+    whenever(repository.getActivityScheduleByIdWithFilters(1)) doReturn schedule
+
+    prisonerSearchApiClient.stub {
+      on {
+        runBlocking {
+          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("A1234AA", "A1111BB"))
+        }
+      } doReturn listOf(prisoner1, prisoner2)
+    }
+
+    nonAssociationsApiClient.stub {
+      on {
+        runBlocking {
+          nonAssociationsApiClient.getNonAssociationsInvolving("PVI", listOf("A1234AA", "A1111BB"))
+        }
+      } doReturn emptyList()
+    }
+
+    val expectedResponse = schedule.allocations().toModelAllocations().apply {
+      map {
+        it.prisonerName = "JOE BLOGGS"
+        it.cellLocation = "MDI-1-1-001"
+        it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
+        it.prisonerStatus = "ACTIVE IN"
+        it.prisonerPrisonCode = "MDI"
+        it.nonAssociations = false
       }
     }
 
@@ -175,7 +262,14 @@ class ActivityScheduleServiceTest {
     val schedule = schedule(PENTONVILLE_PRISON_CODE)
 
     whenever(repository.getActivityScheduleByIdWithFilters(1)) doReturn schedule
-    whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234AA", "A1111BB"))) doReturn emptyList()
+
+    prisonerSearchApiClient.stub {
+      on {
+        runBlocking {
+          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("A1234AA", "A1111BB"))
+        }
+      } doReturn emptyList()
+    }
 
     val exception = assertThrows<NullPointerException> {
       service.getAllocationsBy(1, activeOnly = false, includePrisonerSummary = true)

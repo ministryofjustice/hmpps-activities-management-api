@@ -111,14 +111,16 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("PVI")
+
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
 
     // response will be in random order
     assertThat(response)
-      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate)
+      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
       .containsOnly(
-        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1))),
-        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now())),
+        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), false),
+        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), true),
       )
   }
 
@@ -508,19 +510,19 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     with(response) {
       assertThat(workplaceRiskAssessment!!.suitable).isTrue
-      assertThat(workplaceRiskAssessment!!.riskLevel).isEqualTo("none")
+      assertThat(workplaceRiskAssessment.riskLevel).isEqualTo("none")
 
       assertThat(incentiveLevel!!.suitable).isTrue
-      assertThat(incentiveLevel!!.incentiveLevel).isEqualTo("Basic")
+      assertThat(incentiveLevel.incentiveLevel).isEqualTo("Basic")
 
       assertThat(education!!.suitable).isFalse
-      assertThat(education!!.education).isEmpty()
+      assertThat(education.education).isEmpty()
 
       assertThat(releaseDate!!.suitable).isTrue
-      assertThat(releaseDate!!.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
+      assertThat(releaseDate.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
 
       assertThat(nonAssociation!!.suitable).isFalse
-      assertThat(nonAssociation!!.nonAssociations).isEqualTo(
+      assertThat(nonAssociation.nonAssociations).isEqualTo(
         listOf(
           NonAssociationDetails(
             allocated = true,
