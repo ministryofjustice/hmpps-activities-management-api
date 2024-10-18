@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -10,6 +12,7 @@ import toPrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
@@ -54,6 +57,7 @@ class ActivityScheduleService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val manageAttendancesService: ManageAttendancesService,
+  private val nonAssociationsApiClient: NonAssociationsApiClient,
 ) {
 
   companion object {
@@ -65,29 +69,33 @@ class ActivityScheduleService(
     activeOnly: Boolean = true,
     includePrisonerSummary: Boolean = false,
     activeOn: LocalDate? = null,
-  ): List<ModelAllocation> {
+  ): List<ModelAllocation> = runBlocking {
     val activitySchedule = repository.getActivityScheduleByIdWithFilters(
       scheduleId,
       allocationsActiveOnDate = activeOn,
     ) ?: throw EntityNotFoundException("Activity Schedule $scheduleId not found")
 
-    return activitySchedule
+    activitySchedule
       .checkCaseloadAccess()
       .allocations()
       .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
       .toModelAllocations()
       .apply {
         if (includePrisonerSummary) {
-          val prisoners =
-            prisonerSearchApiClient.findByPrisonerNumbers(map { it.prisonerNumber })
+          val prisonerNumbers = map { it.prisonerNumber }.distinct()
+
+          val prisoners = async { prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers) }
+
+          val nonAssociations = async { nonAssociationsApiClient.getNonAssociationsInvolving(activitySchedule.activity.prisonCode, prisonerNumbers) }
 
           map {
-            val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber } ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for allocation id ${it.id}")
+            val prisoner = prisoners.await().find { p -> it.prisonerNumber == p.prisonerNumber } ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for allocation id ${it.id}")
             it.prisonerName = "${prisoner.firstName} ${prisoner.lastName}"
             it.prisonerStatus = prisoner.status
             it.prisonerPrisonCode = prisoner.prisonId
             it.cellLocation = prisoner.cellLocation
             it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
+            it.nonAssociations = nonAssociations.await().any { nonAssociation -> nonAssociation.firstPrisonerNumber == it.prisonerNumber || nonAssociation.secondPrisonerNumber == it.prisonerNumber }
           }
         }
       }

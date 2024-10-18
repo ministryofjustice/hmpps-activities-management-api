@@ -103,6 +103,9 @@ data class Allocation(
 
   @Schema(description = "The earliest release date of the prisoner. Included only if includePrisonerSummary = true")
   var earliestReleaseDate: EarliestReleaseDate? = null,
+
+  @Schema(description = "Does the prisoner have non-associations?. Included only if includePrisonerSummary = true")
+  var nonAssociations: Boolean? = null,
 )
 
 @Schema(
