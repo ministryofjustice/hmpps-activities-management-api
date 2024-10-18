@@ -45,7 +45,7 @@ FROM scheduled_instance si
          LEFT JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id AND att.prisoner_number = alloc.prisoner_number
          LEFT JOIN attendance_reason attr ON attr.attendance_reason_id = att.attendance_reason_id
          LEFT JOIN planned_deallocation pdl ON alloc.planned_deallocation_id = pdl.planned_deallocation_id
-    WHERE (pdl.planned_date IS NULL OR pdl.planned_date >= si.session_date)
+    WHERE (pdl.planned_date IS NULL OR (pdl.planned_date >= current_date AND pdl.planned_date >= si.session_date))
         AND TRIM(TO_CHAR(si.session_date, 'DAY')) NOT IN
                     (
                       SELECT edw.day_of_week FROM exclusion_days_of_week edw

@@ -473,7 +473,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     fun `POST - multiple prisoners - scheduled events returned on planned deallocation date`() {
       val prisonCode = "MDI"
       val prisonerNumbers = listOf("G0459MM")
-      val date = LocalDate.now().plusDays(1)
+      val date = LocalDate.now()
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
       prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
