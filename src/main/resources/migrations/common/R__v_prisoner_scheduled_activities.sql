@@ -26,12 +26,10 @@ SELECT si.scheduled_instance_id,
        act.on_wing,
        act.off_wing,
        EXISTS (SELECT 1 WHERE alloc.prisoner_status = 'AUTO_SUSPENDED')                      AS auto_suspended,
-
        att.issue_payment                                                                     AS issue_payment,
        att.status                                                                            AS attendance_status,
        attr.code                                                                             AS attendance_reason_code,
        act.paid                                                                              AS paid_activity
-
 FROM scheduled_instance si
          JOIN activity_schedule schedule
               ON schedule.activity_schedule_id = si.activity_schedule_id AND
@@ -44,11 +42,11 @@ FROM scheduled_instance si
          JOIN activity act ON act.activity_id = schedule.activity_id AND
                               (act.end_date IS NULL OR act.end_date >= si.session_date)
          JOIN activity_category category ON category.activity_category_id = act.activity_category_id
-
          LEFT JOIN attendance att ON si.scheduled_instance_id = att.scheduled_instance_id AND att.prisoner_number = alloc.prisoner_number
          LEFT JOIN attendance_reason attr ON attr.attendance_reason_id = att.attendance_reason_id
-
-          WHERE TRIM(TO_CHAR(si.session_date, 'DAY')) NOT IN
+         LEFT JOIN planned_deallocation pdl ON alloc.planned_deallocation_id = pdl.planned_deallocation_id
+    WHERE (pdl.planned_date IS NULL OR pdl.planned_date < current_date OR pdl.planned_date >= si.session_date)
+        AND TRIM(TO_CHAR(si.session_date, 'DAY')) NOT IN
                     (
                       SELECT edw.day_of_week FROM exclusion_days_of_week edw
                       JOIN exclusion ex ON ex.exclusion_id = edw.exclusion_id
