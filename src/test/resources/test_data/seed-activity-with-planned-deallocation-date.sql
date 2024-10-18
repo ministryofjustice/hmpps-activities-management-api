@@ -14,7 +14,7 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (1, 1, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into planned_deallocation(planned_deallocation_id, planned_date, planned_by, planned_reason, planned_at, allocation_id)
-values(1, current_date + 1, 'MR BLOGS', 'PLANNED', '2022-10-11 09:00:00', 3);
+values(1, current_date + 1, 'MR BLOGS', 'PLANNED', '2022-10-11 09:00:00', 1);
 
 update allocation set planned_deallocation_id = 1 where allocation_id = 1;
 
