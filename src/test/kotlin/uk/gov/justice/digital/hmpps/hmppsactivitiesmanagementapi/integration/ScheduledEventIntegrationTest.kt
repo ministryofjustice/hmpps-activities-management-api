@@ -472,7 +472,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
     fun `POST - multiple prisoners - scheduled events returned on planned deallocation date`() {
       val prisonCode = "MDI"
-      val prisonerNumbers = listOf("A11111A")
+      val prisonerNumbers = listOf("G0459GU")
       val date = LocalDate.now().plusDays(1)
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
@@ -492,7 +492,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
     fun `POST - multiple prisoners - scheduled events not returned after planned deallocation date`() {
       val prisonCode = "MDI"
-      val prisonerNumbers = listOf("A11111A")
+      val prisonerNumbers = listOf("G0459GU")
       val date = LocalDate.now().plusDays(2)
 
       prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
