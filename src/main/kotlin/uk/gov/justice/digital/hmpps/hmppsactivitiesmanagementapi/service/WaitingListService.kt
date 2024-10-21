@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerDeclinedFromWaitingListEvent
 import toPrisonerRemovedFromWaitingListEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveAtPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
@@ -31,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -45,6 +49,7 @@ class WaitingListService(
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  private val nonAssociationsApiClient: NonAssociationsApiClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -60,7 +65,7 @@ class WaitingListService(
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
-  fun getWaitingListsBySchedule(id: Long): List<WaitingListApplication> {
+  fun getWaitingListsBySchedule(id: Long): List<WaitingListApplication> = runBlocking {
     val schedule = scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess()
 
     val waitingLists = waitingListRepository.findByActivitySchedule(schedule)
@@ -68,12 +73,17 @@ class WaitingListService(
 
     val prisonerNumbers = waitingLists.map { it.prisonerNumber }
 
-    val prisoners = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
+    val prisoners = async { prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers) }
 
-    return waitingLists.map {
-      val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
+    val nonAssociations = async { nonAssociationsApiClient.getNonAssociationsInvolving(schedule.activity.prisonCode, prisonerNumbers) }
+
+    waitingLists.map {
+      val prisoner = prisoners.await().find { p -> it.prisonerNumber == p.prisonerNumber }
         ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
-      it.toModel(determineEarliestReleaseDate(prisoner))
+
+      val nonAssociations = nonAssociations.await().hasNonAssociations(it.prisonerNumber)
+
+      it.toModel(determineEarliestReleaseDate(prisoner), nonAssociations)
     }
   }
 
@@ -182,7 +192,7 @@ class WaitingListService(
       "Prisoner ${request.prisonerNumber} has no booking id at prison $prisonCode"
     }
 
-    return prisonerDetails.bookingId!!.toLong()
+    return prisonerDetails.bookingId.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {

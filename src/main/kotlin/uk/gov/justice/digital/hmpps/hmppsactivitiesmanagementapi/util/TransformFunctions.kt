@@ -482,7 +482,7 @@ fun List<EntityActivityBasic>.toActivityBasicList() = map {
   transform(it)
 }
 
-fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate) = ModelWaitingListApplication(
+fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate, nonAssociations: Boolean = false) = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
   activityId = activitySchedule.activity.activityId,
@@ -501,4 +501,5 @@ fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate) = ModelW
   updatedBy = updatedBy,
   statusUpdatedTime = statusUpdatedTime,
   earliestReleaseDate = earliestReleaseDate,
+  nonAssociations = nonAssociations,
 )
