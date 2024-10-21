@@ -484,6 +484,37 @@ class WaitingListServiceTest {
   }
 
   @Test
+  fun `get waiting lists by the schedule identifier succeeds when the waitlist is empty `() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
+    }
+
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule) } doReturn emptyList()
+    }
+
+    prisonerSearchApiClient.stub {
+      on {
+        runBlocking {
+          prisonerSearchApiClient.findByPrisonerNumbersAsync(emptyList())
+        }
+      } doReturn emptyList()
+    }
+
+    nonAssociationsApiClient.stub {
+      on {
+        runBlocking {
+          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, emptyList())
+        }
+      } doReturn emptyList()
+    }
+
+    assertThat(service.getWaitingListsBySchedule(1L)).isEmpty()
+  }
+
+  @Test
   fun `get waiting lists by the schedule identifier with earliest release date`() {
     val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
     val allocation = schedule.allocations().first()
