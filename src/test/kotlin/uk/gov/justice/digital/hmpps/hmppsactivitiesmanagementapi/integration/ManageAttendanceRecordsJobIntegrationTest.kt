@@ -352,8 +352,8 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(attendanceRecords).hasSize(2)
 
     with(attendanceRecords) {
-      this.single { it.prisonerNumber == "A11111A" && it.status() == AttendanceStatus.WAITING}
-      this.single { it.prisonerNumber == "A22222A" && it.status() == AttendanceStatus.WAITING}
+      this.single { it.prisonerNumber == "A11111A" && it.status() == AttendanceStatus.WAITING }
+      this.single { it.prisonerNumber == "A22222A" && it.status() == AttendanceStatus.WAITING }
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
