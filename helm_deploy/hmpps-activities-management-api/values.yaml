@@ -77,6 +77,7 @@ generic-service:
     FEATURE_AUDIT_SERVICE_LOCAL_ENABLED: true
     FEATURE_MIGRATE_SPLIT_REGIME_ENABLED: false
     FEATURE_OFFENDER_MERGE_ENABLED: true
+    FEATURE_NON_ASSOCIATIONS_ENABLED: false
 
   # Pre-existing kubernetes secrets to load as environment variables in the deployment.
   # namespace_secrets:

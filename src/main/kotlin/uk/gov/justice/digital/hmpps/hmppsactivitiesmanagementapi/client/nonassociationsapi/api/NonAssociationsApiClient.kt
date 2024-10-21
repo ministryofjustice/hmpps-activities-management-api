@@ -7,9 +7,16 @@ import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 
 @Service
-class NonAssociationsApiClient(private val nonAssociationsApiWebClient: WebClient) {
+class NonAssociationsApiClient(
+  private val nonAssociationsApiWebClient: WebClient,
+  features: FeatureSwitches,
+) {
+  private val nonAssociationEnabled = features.isEnabled(Feature.NON_ASSOCIATIONS_ENABLED)
+
   fun getOffenderNonAssociations(prisonerNumber: String): List<PrisonerNonAssociation> {
     return nonAssociationsApiWebClient.get()
       .uri("/prisoner/{prisonerNumber}/non-associations", prisonerNumber)
@@ -19,6 +26,7 @@ class NonAssociationsApiClient(private val nonAssociationsApiWebClient: WebClien
   }
 
   suspend fun getNonAssociationsInvolving(prisonCode: String, prisonerNumbers: List<String>): List<NonAssociation> {
+    if (!nonAssociationEnabled) return emptyList()
     if (prisonerNumbers.isEmpty()) return emptyList()
     return nonAssociationsApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
