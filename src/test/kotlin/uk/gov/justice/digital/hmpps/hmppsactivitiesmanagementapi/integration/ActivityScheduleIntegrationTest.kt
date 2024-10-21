@@ -111,14 +111,16 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("PVI")
+
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
 
     // response will be in random order
     assertThat(response)
-      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate)
+      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
       .containsOnly(
-        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1))),
-        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now())),
+        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), false),
+        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), true),
       )
   }
 
@@ -508,19 +510,19 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     with(response) {
       assertThat(workplaceRiskAssessment!!.suitable).isTrue
-      assertThat(workplaceRiskAssessment!!.riskLevel).isEqualTo("none")
+      assertThat(workplaceRiskAssessment.riskLevel).isEqualTo("none")
 
       assertThat(incentiveLevel!!.suitable).isTrue
-      assertThat(incentiveLevel!!.incentiveLevel).isEqualTo("Basic")
+      assertThat(incentiveLevel.incentiveLevel).isEqualTo("Basic")
 
       assertThat(education!!.suitable).isFalse
-      assertThat(education!!.education).isEmpty()
+      assertThat(education.education).isEmpty()
 
       assertThat(releaseDate!!.suitable).isTrue
-      assertThat(releaseDate!!.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
+      assertThat(releaseDate.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
 
       assertThat(nonAssociation!!.suitable).isFalse
-      assertThat(nonAssociation!!.nonAssociations).isEqualTo(
+      assertThat(nonAssociation.nonAssociations).isEqualTo(
         listOf(
           NonAssociationDetails(
             allocated = true,
@@ -843,7 +845,28 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
     webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
+  fun `get all waiting lists includes non-associations details`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A4065DZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+      ),
+    )
+
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
+    val result = webTestClient.getWaitingListsBy(1)
+
+    assertThat(result).extracting<Boolean> { w -> w.nonAssociations }.containsExactly(true)
   }
 
   @Sql(
