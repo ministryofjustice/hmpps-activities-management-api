@@ -6,8 +6,12 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 
 class NonAssociationsApiClientTest {
@@ -34,7 +38,10 @@ class NonAssociationsApiClientTest {
   fun resetStubs() {
     nonAssociationsApiMockServer.resetAll()
     val webClient = WebClient.create("http://localhost:${nonAssociationsApiMockServer.port()}")
-    nonAssociationsApiWebClient = NonAssociationsApiClient(webClient)
+
+    val featureSwitches: FeatureSwitches = mock()
+    whenever(featureSwitches.isEnabled(Feature.NON_ASSOCIATIONS_ENABLED)).thenReturn(true)
+    nonAssociationsApiWebClient = NonAssociationsApiClient(webClient, featureSwitches)
   }
 
   @Test
