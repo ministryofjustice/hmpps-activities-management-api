@@ -506,7 +506,7 @@ class WaitingListServiceTest {
     nonAssociationsApiClient.stub {
       on {
         runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE,emptyList())
+          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, emptyList())
         }
       } doReturn emptyList()
     }
