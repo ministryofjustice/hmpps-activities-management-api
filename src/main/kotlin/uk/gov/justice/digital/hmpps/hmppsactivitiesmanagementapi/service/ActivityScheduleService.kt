@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.creat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.createAllocationTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.time.LocalDate
@@ -95,7 +96,7 @@ class ActivityScheduleService(
             it.prisonerPrisonCode = prisoner.prisonId
             it.cellLocation = prisoner.cellLocation
             it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
-            it.nonAssociations = nonAssociations.await().any { nonAssociation -> nonAssociation.firstPrisonerNumber == it.prisonerNumber || nonAssociation.secondPrisonerNumber == it.prisonerNumber }
+            it.nonAssociations = nonAssociations.await().hasNonAssociations(it.prisonerNumber)
           }
         }
       }

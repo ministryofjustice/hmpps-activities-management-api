@@ -315,6 +315,56 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
+  @Sql("classpath:test_data/seed-activity-with-previous-current-future-deallocation.sql")
+  @Test
+  fun `Two attendance records are created when there is a previously ended, a current and a future deallocations present`() {
+    val allocatedPrisoners = listOf(listOf("A22222A", "A11111A"))
+    allocatedPrisoners.forEach {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        prisonerNumbers = it,
+        prisoners = it.map { prisonNumber ->
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = prisonNumber, prisonId = "PVI")
+        },
+      )
+    }
+
+    assertThat(attendanceRepository.count()).isZero
+    val activity = activityRepository.findById(1).orElseThrow()
+    val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
+
+    with(activity) {
+      assertThat(description).isEqualTo("Basic retirement")
+    }
+
+    assertThat(activitySchedules).hasSize(1)
+
+    with(activitySchedules.first()) {
+      assertThat(allocations()).hasSize(3)
+      assertThat(instances()).hasSize(1)
+      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
+        .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
+      assertThat(scheduledInstance.attendances).isEmpty()
+    }
+
+    webTestClient.manageAttendanceRecords()
+
+    val attendanceRecords = attendanceRepository.findAll()
+    assertThat(attendanceRecords).hasSize(2)
+
+    with(attendanceRecords) {
+      this.single { it.prisonerNumber == "A11111A" && it.status() == AttendanceStatus.WAITING }
+      this.single { it.prisonerNumber == "A22222A" && it.status() == AttendanceStatus.WAITING }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    eventCaptor.allValues.map {
+      assertThat(it.eventType).isEqualTo("activities.prisoner.attendance-created")
+      assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+      assertThat(it.description).isEqualTo("A prisoner attendance has been created in the activities management service")
+    }
+  }
+
   private fun List<ActivitySchedule>.findByDescription(description: String) =
     first { it.description.uppercase() == description.uppercase() }
 
