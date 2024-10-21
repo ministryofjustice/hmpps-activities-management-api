@@ -19,6 +19,7 @@ class NonAssociationsApiClient(private val nonAssociationsApiWebClient: WebClien
   }
 
   suspend fun getNonAssociationsInvolving(prisonCode: String, prisonerNumbers: List<String>): List<NonAssociation> {
+    if (prisonerNumbers.isEmpty()) return emptyList()
     return nonAssociationsApiWebClient.post()
       .uri { uriBuilder: UriBuilder ->
         uriBuilder
