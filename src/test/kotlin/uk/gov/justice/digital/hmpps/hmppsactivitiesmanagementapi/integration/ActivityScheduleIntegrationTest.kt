@@ -845,7 +845,28 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
     webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
+  fun `get all waiting lists includes non-associations details`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A4065DZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+      ),
+    )
+
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
+    val result = webTestClient.getWaitingListsBy(1)
+
+    assertThat(result).extracting<Boolean> { w -> w.nonAssociations }.containsExactly(true)
   }
 
   @Sql(

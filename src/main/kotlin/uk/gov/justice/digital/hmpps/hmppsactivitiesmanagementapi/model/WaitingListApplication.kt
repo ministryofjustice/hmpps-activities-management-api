@@ -118,4 +118,7 @@ data class WaitingListApplication(
 
   @Schema(description = "The earliest release date of the prisoner")
   val earliestReleaseDate: EarliestReleaseDate,
+
+  @Schema(description = "Does the prisoner have non-associations?")
+  var nonAssociations: Boolean? = null,
 )
