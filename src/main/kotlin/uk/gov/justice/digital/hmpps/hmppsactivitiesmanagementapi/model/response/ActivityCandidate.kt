@@ -19,4 +19,7 @@ data class ActivityCandidate(
 
   @Schema(description = "The candidate's earliest release date")
   val earliestReleaseDate: EarliestReleaseDate,
+
+  @Schema(description = "Does the prisoner have non-associations?")
+  var nonAssociations: Boolean? = null,
 )

@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -38,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Wait
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.determineEarliestReleaseDate
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAssociations
 import java.time.LocalDate
 
 @Service
@@ -104,7 +107,7 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
     search: String?,
     pageable: Pageable,
-  ): Page<ActivityCandidate> {
+  ): Page<ActivityCandidate> = runBlocking {
     val schedule = activityScheduleRepository.findOrThrowNotFound(scheduleId)
     val prisonCode = schedule.activity.prisonCode
     checkCaseloadAccess(prisonCode)
@@ -131,23 +134,30 @@ class CandidatesService(
     val start = pageable.offset.toInt()
     val end = (start + pageable.pageSize).coerceAtMost(prisonerCount)
 
-    return PageImpl(
-      prisoners
-        .sortedBy { it.lastName }
-        .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
-        .map { prisoner ->
-          val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
-            allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
-          }
+    val candidates = prisoners
+      .sortedBy { it.lastName }
+      .filterIndexed { index, _ -> index >= start.coerceAtMost(end) && index < end }
+      .toList()
 
-          ActivityCandidate(
-            name = "${prisoner.firstName} ${prisoner.lastName}",
-            prisonerNumber = prisoner.prisonerNumber,
-            cellLocation = prisoner.cellLocation,
-            otherAllocations = thisPersonsAllocations ?: emptyList(),
-            earliestReleaseDate = determineEarliestReleaseDate(prisoner),
-          )
-        }.toList(),
+    val candidatePrisonerNumbers = candidates.map { it.prisonerNumber }
+
+    val nonAssociations = async { nonAssociationsApiClient.getNonAssociationsInvolving(prisonCode, candidatePrisonerNumbers) }
+
+    PageImpl(
+      candidates.map { prisoner ->
+        val thisPersonsAllocations = prisonerAllocations[prisoner.prisonerNumber]?.map { it.getAllocationId() }?.let { ids ->
+          allocationRepository.findByAllocationIdIn(ids).map { it.toModel() }
+        }
+
+        ActivityCandidate(
+          name = "${prisoner.firstName} ${prisoner.lastName}",
+          prisonerNumber = prisoner.prisonerNumber,
+          cellLocation = prisoner.cellLocation,
+          otherAllocations = thisPersonsAllocations ?: emptyList(),
+          earliestReleaseDate = determineEarliestReleaseDate(prisoner),
+          nonAssociations = nonAssociations.await().hasNonAssociations(prisoner.prisonerNumber),
+        )
+      },
       pageable,
       prisonerCount.toLong(),
     )

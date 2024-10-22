@@ -1,12 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.persistence.EntityNotFoundException
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Pageable
 import reactor.core.publisher.Mono
@@ -14,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -608,13 +615,40 @@ class CandidatesServiceTest {
       )
     }
 
+    @BeforeEach
+    fun setUp() {
+      nonAssociationsApiClient.stub {
+        on {
+          runBlocking {
+            nonAssociationsApiClient.getNonAssociationsInvolving(anyString(), anyList())
+          }
+        } doReturn emptyList()
+      }
+    }
+
     @Test
     fun `fetch list of suitable candidates`() {
       val activity = activityEntity()
-      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison", "A1234BI" to "Allen"))
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison", "A1234BI" to "Allen", "D3333DD" to "Jones"))
       val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
 
       candidatesSetup(activity, allPrisoners, waitingList)
+
+      val nonAssociation1: NonAssociation = mock {
+        on { firstPrisonerNumber } doReturn "A1234BC"
+      }
+
+      val nonAssociation2: NonAssociation = mock {
+        on { secondPrisonerNumber } doReturn "A1234BI"
+      }
+
+      nonAssociationsApiClient.stub {
+        on {
+          runBlocking {
+            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BI", "A1234BC", "D3333DD"))
+          }
+        } doReturn listOf(nonAssociation1, nonAssociation2)
+      }
 
       val candidates = service.getActivityCandidates(
         activity.schedules().first().activityScheduleId,
@@ -633,6 +667,7 @@ class CandidatesServiceTest {
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
             earliestReleaseDate = EarliestReleaseDate(null),
+            nonAssociations = true,
           ),
           ActivityCandidate(
             name = "Tim Harrison",
@@ -640,6 +675,15 @@ class CandidatesServiceTest {
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
             earliestReleaseDate = EarliestReleaseDate(null),
+            nonAssociations = true,
+          ),
+          ActivityCandidate(
+            name = "Tim Jones",
+            prisonerNumber = "D3333DD",
+            cellLocation = "1-2-3",
+            otherAllocations = emptyList(),
+            earliestReleaseDate = EarliestReleaseDate(null),
+            nonAssociations = false,
           ),
         ),
       )
@@ -838,6 +882,19 @@ class CandidatesServiceTest {
           TestCandidate(it.allocationId, it.prisonerNumber, it.activitySchedule.activity.activityCategory.code, 99)
         },
       )
+
+      val nonAssociation: NonAssociation = mock {
+        on { firstPrisonerNumber } doReturn "A1234BC"
+      }
+
+      nonAssociationsApiClient.stub {
+        on {
+          runBlocking {
+            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
+          }
+        } doReturn listOf(nonAssociation)
+      }
+
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
         null,
