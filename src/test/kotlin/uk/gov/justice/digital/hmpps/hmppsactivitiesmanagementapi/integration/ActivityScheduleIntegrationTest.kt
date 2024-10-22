@@ -614,15 +614,23 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `should be able to fetch a paged list of candidates for an activity`() {
     prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
     prisonApiMockServer.stubGetEducationLevels()
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("PVI")
 
-    val response = webTestClient.getCandidates(1, 0, 5)
+    webTestClient.getCandidates(1, 0, 5)
       .expectStatus().isOk
-      .expectBody(typeReference<LinkedHashMap<String, Any>>())
-      .returnResult().responseBody!!
-
-    assertThat((response["content"] as List<*>).asListOfType<ActivityCandidate>()).hasSize(5)
-    assertThat(response["totalPages"]).isEqualTo(4)
-    assertThat(response["totalElements"]).isEqualTo(20)
+      .expectBody()
+      .jsonPath("$.totalPages").isEqualTo(4)
+      .jsonPath("$.totalElements").isEqualTo(20)
+      .jsonPath("$.content[0].prisonerNumber").isEqualTo("A1446DZ")
+      .jsonPath("$.content[0].nonAssociations").isEqualTo(true)
+      .jsonPath("$.content[1].prisonerNumber").isEqualTo("A1718DZ")
+      .jsonPath("$.content[1].nonAssociations").isEqualTo(true)
+      .jsonPath("$.content[2].prisonerNumber").isEqualTo("A5015DY")
+      .jsonPath("$.content[2].nonAssociations").isEqualTo(false)
+      .jsonPath("$.content[3].prisonerNumber").isEqualTo("A2226DZ")
+      .jsonPath("$.content[3].nonAssociations").isEqualTo(false)
+      .jsonPath("$.content[4].prisonerNumber").isEqualTo("A5089DY")
+      .jsonPath("$.content[4].nonAssociations").isEqualTo(false)
   }
 
   @Sql(
