@@ -66,6 +66,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
     "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.attendance-created=true",
     "feature.event.activities.prisoner.attendance-deleted=true",
+    "feature.non.association.enabled=true",
   ],
 )
 class ActivityScheduleIntegrationTest : IntegrationTestBase() {

@@ -46,6 +46,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
       "feature.event.prisoner-offender-search.prisoner.received=true",
       "feature.event.prisoner-offender-search.prisoner.released=true",
+      "feature.non.association.enabled=true",
     ],
   )
   @Nested
