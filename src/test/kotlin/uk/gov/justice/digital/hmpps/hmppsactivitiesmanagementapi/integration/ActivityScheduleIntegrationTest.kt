@@ -13,7 +13,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
@@ -501,7 +500,6 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `should be able to fetch suitability of a candidate for an activity`() {
     prisonApiMockServer.stubGetEducationLevels()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1143DZ")
-    nonAssociationsApiMockServer.stubGetNonAssociations("A1143DZ")
     caseNotesApiMockServer.stubGetCaseNote("A1143DZ", 1)
 
     val response = webTestClient.getCandidateSuitability(1, "A1143DZ")
@@ -521,29 +519,6 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
       assertThat(releaseDate!!.suitable).isTrue
       assertThat(releaseDate.earliestReleaseDate).isEqualTo(EarliestReleaseDate(releaseDate = LocalDate.parse("2045-04-12")))
-
-      assertThat(nonAssociation!!.suitable).isFalse
-      assertThat(nonAssociation.nonAssociations).isEqualTo(
-        listOf(
-          NonAssociationDetails(
-            allocated = true,
-            reasonCode = PrisonerNonAssociation.Reason.LEGAL_REQUEST.toString(),
-            reasonDescription = "Police or legal request",
-            roleCode = "PERPETRATOR",
-            roleDescription = "Perpetrator",
-            restrictionType = "LANDING",
-            restrictionTypeDescription = "Cell and landing",
-            otherPrisonerDetails = OtherPrisonerDetails(
-              prisonerNumber = "A11111A",
-              firstName = "YZRIRATIF",
-              lastName = "AMBENTINO",
-              cellLocation = "A-3-08S",
-            ),
-            whenUpdated = LocalDateTime.parse("2023-10-03T14:08:07"),
-            comments = "Comment 1",
-          ),
-        ),
-      )
 
       assertThat(allocations.size).isEqualTo(1)
       with(allocations.first()) {
