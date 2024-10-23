@@ -78,3 +78,7 @@ online:
 applications:
   max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES:20000}
   max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS:500}
+
+migrate:
+  ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI
+  APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI
