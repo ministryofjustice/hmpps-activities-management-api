@@ -19,7 +19,6 @@ import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.NonAssociationsApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.NonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
@@ -55,7 +54,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.AllocationPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
@@ -416,125 +414,6 @@ class CandidatesServiceTest {
         ReleaseDateSuitability(
           suitable = true,
           earliestReleaseDate = EarliestReleaseDate(null),
-        ),
-      )
-    }
-
-    @Test
-    fun `nonAssociation - suitable (no non-associations)`() {
-      val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
-
-      candidateSuitabilitySetup(activity, candidate)
-      val suitability = service.candidateSuitability(
-        activity.schedules().first().activityScheduleId,
-        candidate.prisonerNumber,
-      )
-
-      assertThat(suitability.nonAssociation).isEqualTo(
-        NonAssociationSuitability(
-          suitable = true,
-          nonAssociations = emptyList(),
-        ),
-      )
-    }
-
-    @Test
-    fun `nonAssociation - suitable (no conflicting non-associations)`() {
-      val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
-
-      candidateSuitabilitySetup(activity, candidate)
-
-      whenever(nonAssociationsApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
-        listOf(
-          PrisonerNonAssociation(
-            id = 1,
-            role = PrisonerNonAssociation.Role.VICTIM,
-            roleDescription = "Victim",
-            reason = PrisonerNonAssociation.Reason.BULLYING,
-            reasonDescription = "Bullying",
-            restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
-            restrictionTypeDescription = "Landing",
-            comment = "Bullying",
-            authorisedBy = "ADMIN",
-            whenCreated = "2022-04-02",
-            whenUpdated = "2022-04-02",
-            updatedBy = "ADMIN",
-            isClosed = false,
-            isOpen = true,
-            otherPrisonerDetails = OtherPrisonerDetails(
-              prisonerNumber = "A1234ZY",
-              role = OtherPrisonerDetails.Role.PERPETRATOR,
-              roleDescription = "Perpetrator",
-              firstName = "Joseph",
-              lastName = "Bloggs",
-              prisonId = "MDI",
-              prisonName = "HMP Moorland",
-            ),
-          ),
-        ),
-      )
-
-      val suitability = service.candidateSuitability(
-        activity.schedules().first().activityScheduleId,
-        candidate.prisonerNumber,
-      )
-
-      assertThat(suitability.nonAssociation).isEqualTo(
-        NonAssociationSuitability(
-          suitable = true,
-          nonAssociations = emptyList(),
-        ),
-      )
-    }
-
-    @Test
-    fun `nonAssociation - not suitable`() {
-      val activity = activityEntity()
-      val candidate = PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC")
-
-      candidateSuitabilitySetup(activity, candidate)
-
-      val offenderNonAssociation = PrisonerNonAssociation(
-        id = 1,
-        role = PrisonerNonAssociation.Role.VICTIM,
-        roleDescription = "Victim",
-        reason = PrisonerNonAssociation.Reason.BULLYING,
-        reasonDescription = "Bullying",
-        restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
-        restrictionTypeDescription = "Landing",
-        comment = "Bullying",
-        authorisedBy = "ADMIN",
-        whenCreated = "2022-04-02T00:00:00",
-        whenUpdated = "2022-04-02T00:00:00",
-        updatedBy = "ADMIN",
-        isClosed = false,
-        isOpen = true,
-        otherPrisonerDetails = OtherPrisonerDetails(
-          prisonerNumber = "A1234AA",
-          role = OtherPrisonerDetails.Role.PERPETRATOR,
-          roleDescription = "Perpetrator",
-          firstName = "Joseph",
-          lastName = "Bloggs",
-          prisonId = "MDI",
-          prisonName = "HMP Moorland",
-        ),
-      )
-
-      whenever(nonAssociationsApiClient.getOffenderNonAssociations(candidate.prisonerNumber)).thenReturn(
-        listOf(offenderNonAssociation),
-      )
-
-      val suitability = service.candidateSuitability(
-        activity.schedules().first().activityScheduleId,
-        candidate.prisonerNumber,
-      )
-
-      assertThat(suitability.nonAssociation).isEqualTo(
-        NonAssociationSuitability(
-          suitable = false,
-          nonAssociations = listOf(offenderNonAssociation.toModel()),
         ),
       )
     }
@@ -1010,7 +889,7 @@ class CandidatesServiceTest {
       restrictionTypeDescription = "Landing",
       comment = "Bullying comment",
       authorisedBy = "ADMIN",
-      whenCreated = "2022-04-02",
+      whenCreated = "2022-04-02T11:11:16",
       whenUpdated = "2022-04-14T12:37:16",
       updatedBy = "ADMIN",
       isClosed = false,
