@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.DeallocationCaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
@@ -61,7 +60,6 @@ class CandidatesService(
       ?: throw IllegalArgumentException("Prisoner number '$prisonerNumber' not found")
 
     val prisonerEducation = prisonApiClient.getEducationLevels(listOf(prisonerNumber))
-    val prisonerNumbers = schedule.allocations(true).map { it.prisonerNumber }
 
     val candidateAllocations = allocationRepository.findByPrisonCodeAndPrisonerNumber(
       candidateDetails.prisonId!!,
@@ -94,7 +92,6 @@ class CandidatesService(
       incentiveLevel = incentiveLevelSuitability(schedule.activity, candidateDetails.currentIncentive),
       education = educationSuitability(schedule.activity.activityMinimumEducationLevel(), prisonerEducation),
       releaseDate = releaseDateSuitability(schedule.startDate, candidateDetails),
-      nonAssociation = nonAssociationSuitability(prisonerNumber, prisonerNumbers),
       allocations = currentAllocations,
       previousDeallocations = previousDeallocations,
     )
@@ -304,19 +301,6 @@ class CandidatesService(
     return EducationSuitability(
       suitable = suitable,
       education = prisonerEducations,
-    )
-  }
-
-  private fun nonAssociationSuitability(
-    prisonerNumber: String,
-    allocatedPrisoners: List<String>,
-  ): NonAssociationSuitability {
-    val allocationNonAssociations = nonAssociationsApiClient.getOffenderNonAssociations(prisonerNumber)
-      .filter { allocatedPrisoners.contains(it.otherPrisonerDetails.prisonerNumber) }
-
-    return NonAssociationSuitability(
-      allocationNonAssociations.isEmpty(),
-      allocationNonAssociations.map { it.toModel(true) },
     )
   }
 
