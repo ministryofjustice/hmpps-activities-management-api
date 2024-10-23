@@ -5,7 +5,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitabili
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.DeallocationCaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.EducationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.IncentiveLevelSuitability
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.NonAssociationSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.ReleaseDateSuitability
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.WRASuitability
 
@@ -22,9 +21,6 @@ data class AllocationSuitability(
 
   @Schema(description = "The prisoner's release date suitability")
   val releaseDate: ReleaseDateSuitability? = null,
-
-  @Schema(description = "The prisoner's non-association suitability")
-  val nonAssociation: NonAssociationSuitability? = null,
 
   @Schema(description = "The prisoner's currently active allocations with pay rates")
   val allocations: List<AllocationPayRate> = emptyList(),
