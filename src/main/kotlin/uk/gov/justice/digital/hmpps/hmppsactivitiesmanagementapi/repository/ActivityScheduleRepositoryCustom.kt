@@ -40,13 +40,11 @@ class ActivityScheduleRepositoryCustomImpl : ActivityScheduleRepositoryCustom {
     query.setParameter("activityScheduleId", activityScheduleId)
 
     if (earliestSessionDate != null) {
-      log.info("Enabling filter $SESSION_DATE_FILTER with earliestSessionDate: $earliestSessionDate")
       val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
       sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
     }
 
     if (allocationsActiveOnDate != null) {
-      log.info("Enabling filter $ALLOCATION_DATE_FILTER with allocationsActiveOnDate: $allocationsActiveOnDate")
       val allocationsDateFilter = session.enableFilter(ALLOCATION_DATE_FILTER)
       allocationsDateFilter.setParameter("allocationsActiveOnDate", allocationsActiveOnDate)
     }
