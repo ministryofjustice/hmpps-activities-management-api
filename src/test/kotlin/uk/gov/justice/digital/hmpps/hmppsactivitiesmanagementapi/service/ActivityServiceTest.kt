@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -43,6 +44,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleFemale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
@@ -86,6 +88,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.temporal.TemporalAdjusters
 import java.util.Optional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule as EligibilityRuleEntity
@@ -1759,6 +1762,74 @@ class ActivityServiceTest {
     schedule.instances() hasSize 2
     assertThat(schedule.instances()).doesNotContain(instance1)
     assertThat(schedule.instances()).contains(instance2)
+  }
+
+  @Test
+  fun `updateActivity - update existing slot (adds & removes instances) with custom times and different time slots`() {
+    val activity = activityEntity(noSchedules = true).also {
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          it.activityId,
+          it.prisonCode,
+          LocalDate.now(),
+        ),
+      ) doReturn (it)
+    }
+
+    val schedule = activity.addSchedule(activitySchedule(activity, noInstances = true, noSlots = true))
+    // original slot was for the wrong timeSlot
+    val slot1 = schedule.addSlot(
+      1,
+      Pair<LocalTime, LocalTime>(LocalTime.of(9, 45), LocalTime.of(11, 45)),
+      setOf(DayOfWeek.WEDNESDAY),
+      TimeSlot.PM,
+    )
+
+    val nextWed = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.WEDNESDAY))
+    val instance1 = schedule.addInstance(nextWed, slot1)
+    // val instance2 = schedule.addInstance(tomorrow.plusDays(1), slot2)
+
+    assertThat(schedule.slots()).containsAll(listOf(slot1))
+    assertThat(schedule.instances()).containsAll(listOf(instance1))
+
+    // updating to change the timeslot only
+    service().updateActivity(
+      activity.prisonCode,
+      activity.activityId,
+      ActivityUpdateRequest(
+        slots = listOf(
+          Slot(
+            weekNumber = 1,
+            timeSlot = TimeSlot.AM,
+            monday = false,
+            tuesday = false,
+            wednesday = true,
+            thursday = false,
+            friday = false,
+            saturday = false,
+            sunday = false,
+            customStartTime = LocalTime.of(9, 45),
+            customEndTime = LocalTime.of(11, 45),
+          ),
+        ),
+      ),
+      "TEST",
+    )
+
+    val expectedScheduledInstance = ScheduledInstance(
+      activitySchedule = schedule,
+      sessionDate = nextWed,
+      startTime = LocalTime.of(9, 45),
+      endTime = LocalTime.of(11, 45),
+      timeSlot = TimeSlot.AM,
+    )
+
+    // One slot and instance should be removed and replaced with one new slot and instance
+    schedule.slots() hasSize 1
+    assertThat(schedule.slots().first().timeSlot).isEqualTo(TimeSlot.AM)
+    schedule.instances() hasSize 1
+    assertThat(schedule.instances()).doesNotContain(instance1)
+    assertThat(schedule.instances() containsExactly listOf(expectedScheduledInstance))
   }
 
   @Test
