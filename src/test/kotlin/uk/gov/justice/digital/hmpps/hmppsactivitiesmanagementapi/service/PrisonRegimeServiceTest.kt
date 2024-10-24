@@ -74,6 +74,44 @@ class PrisonRegimeServiceTest {
     ),
   )
 
+  private val bciRegime = listOf(
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.MONDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.TUESDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.WEDNESDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.THURSDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.FRIDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SATURDAY),
+      ),
+    ),
+    createRegime(
+      daysOfWeek = listOf(
+        PrisonRegimeDaysOfWeek(dayOfWeek = DayOfWeek.SUNDAY),
+      ),
+    ),
+  )
+
   @Test
   fun `default priorities are returned when no priorities for prison`() {
     whenever(eventPriorityRepository.findByPrisonCode("PVI")).thenReturn(emptyList())
@@ -402,6 +440,19 @@ class PrisonRegimeServiceTest {
     assertThat(result).isNotNull
     assertThat(result!!.first).isEqualTo(now.plusHours(7))
     assertThat(result.second).isEqualTo(now.plusHours(9))
+  }
+
+  @Test
+  fun `get prison regime time for partial days of the week`() {
+    whenever(prisonRegimeRepository.findByPrisonCode(code = "BCI")).thenReturn(bciRegime)
+
+    assertThat(
+      service.getSlotTimesForTimeSlot(
+        prisonCode = "BCI",
+        daysOfWeek = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY),
+        timeSlot = TimeSlot.PM,
+      ),
+    ).isNotNull
   }
 
   @CsvSource("13, PM", "1, AM", "17, ED", "23, ED", "9, AM", "14, PM")
