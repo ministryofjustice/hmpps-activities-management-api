@@ -99,8 +99,12 @@ class PrisonRegimeService(
       prisonCode = prisonCode, daysOfWeek = daysOfWeek,
     ) ?: return null
 
-    val key = regimeTimes.keys.firstOrNull { it.containsAll(daysOfWeek) } ?: return null
-    return regimeTimes[key]?.get(timeSlot)
+    if (regimeTimes.keys.flatten().containsAll(daysOfWeek)) {
+      if (regimeTimes.values.map { it[timeSlot] }.distinct().size == 1) {
+        return regimeTimes[regimeTimes.keys.first()]?.get(timeSlot)
+      }
+    }
+    return null
   }
 
   @Transactional(readOnly = true)
