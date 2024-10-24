@@ -18,7 +18,7 @@ SELECT a.appointment_id,
        et.code AS event_tier
 FROM appointment a
 LEFT JOIN event_tier et on et.event_tier_id = a.appointment_tier_id
-LEFT JOIN (
+LEFT JOIN LATERAL (
             SELECT
                 aa.appointment_id,
                 COUNT(aa.appointment_attendee_id) as attendee_count,
@@ -26,7 +26,7 @@ LEFT JOIN (
                 SUM(CASE WHEN aa.attended IS FALSE THEN 1 ELSE 0 END) AS non_attended_count,
                 SUM(CASE WHEN aa.attended IS NULL THEN 1 ELSE 0 END) AS not_recorded_count
             FROM appointment_attendee aa
-            WHERE aa.removal_reason_id IS NULL
+            WHERE a.appointment_id = aa.appointment_id AND aa.removal_reason_id IS NULL
             GROUP BY aa.appointment_id
         ) AS at ON at.appointment_id = a.appointment_id
 WHERE NOT a.is_deleted AND at.attendee_count > 0;
