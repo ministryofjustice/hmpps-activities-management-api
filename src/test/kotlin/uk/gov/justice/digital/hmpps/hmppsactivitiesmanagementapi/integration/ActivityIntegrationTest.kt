@@ -1498,4 +1498,83 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       pay.isNotEmpty() isBool true
     }
   }
+
+  @Test
+  fun `updateActivity - change only the timeslot of a custom times schedule`() {
+    prisonApiMockServer.stubGetReferenceCode(
+      "EDU_LEVEL",
+      "1",
+      "prisonapi/education-level-code-1.json",
+    )
+
+    prisonApiMockServer.stubGetReferenceCode(
+      "STUDY_AREA",
+      "ENGLA",
+      "prisonapi/study-area-code-ENGLA.json",
+    )
+
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val startDate = TimeSource.tomorrow()
+
+    val pmSlot = Slot(
+      weekNumber = 1,
+      timeSlot = TimeSlot.PM,
+      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
+      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
+      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
+      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
+      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
+      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
+      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+      customStartTime = LocalTime.of(9, 45),
+      customEndTime = LocalTime.of(11, 45),
+    )
+
+    val createActivityRequest: ActivityCreateRequest =
+      mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(
+        startDate = startDate,
+        scheduleWeeks = 1,
+        slots = listOf(pmSlot),
+      )
+
+    val activity = webTestClient.createActivity(createActivityRequest)!!
+
+    activity.schedules.flatMap { it.instances } hasSize 2
+
+    val amSlot = Slot(
+      weekNumber = 1,
+      timeSlot = TimeSlot.AM,
+      monday = startDate.dayOfWeek == DayOfWeek.MONDAY,
+      tuesday = startDate.dayOfWeek == DayOfWeek.TUESDAY,
+      wednesday = startDate.dayOfWeek == DayOfWeek.WEDNESDAY,
+      thursday = startDate.dayOfWeek == DayOfWeek.THURSDAY,
+      friday = startDate.dayOfWeek == DayOfWeek.FRIDAY,
+      saturday = startDate.dayOfWeek == DayOfWeek.SATURDAY,
+      sunday = startDate.dayOfWeek == DayOfWeek.SUNDAY,
+      customStartTime = LocalTime.of(9, 45),
+      customEndTime = LocalTime.of(11, 45),
+    )
+
+    val updatedActivity = webTestClient.updateActivity(
+      activity.prisonCode,
+      activity.id,
+      ActivityUpdateRequest(
+        slots = listOf(amSlot),
+      ),
+    )
+
+    updatedActivity.schedules.flatMap { it.instances } hasSize 2
+
+    with(updatedActivity.schedules.first().instances) {
+      this.forEach {
+        assertThat(it.startTime == LocalTime.of(9, 45))
+        assertThat(it.endTime == LocalTime.of(11, 45))
+        assertThat(it.timeSlot == TimeSlot.AM)
+      }
+    }
+  }
 }

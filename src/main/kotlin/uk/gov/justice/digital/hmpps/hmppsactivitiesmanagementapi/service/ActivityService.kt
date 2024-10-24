@@ -308,7 +308,7 @@ class ActivityService(
 
       this.slots(weekNumber = scheduleWeekNumber).forEach { slot ->
         if (activeDay.dayOfWeek in slot.getDaysOfWeek() &&
-          this.hasNoInstancesOnDate(activeDay, slot.slotTimes()) &&
+          this.hasNoInstancesOnDate(activeDay, slot) &&
           (runsOnBankHoliday || !bankHolidayService.isEnglishBankHoliday(activeDay))
         ) {
           this.addInstance(sessionDate = activeDay, slot = slot)
@@ -504,6 +504,7 @@ class ActivityService(
 
   private fun ActivitySchedule.updateInstances() {
     this.removeRedundantInstances()
+    activityRepository.flush()
     this.addInstances()
   }
 
@@ -518,6 +519,7 @@ class ActivityService(
           weekNumber = this.getWeekNumber(it.sessionDate),
           dayOfWeek = it.dayOfWeek(),
           slotTimes = it.slotTimes(),
+          timeSlot = it.timeSlot,
 
         ).isEmpty() ||
         !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)

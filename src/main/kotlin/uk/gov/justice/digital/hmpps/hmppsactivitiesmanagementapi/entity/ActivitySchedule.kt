@@ -152,9 +152,9 @@ data class ActivitySchedule(
 
   fun slots(weekNumber: Int): List<ActivityScheduleSlot> = slots().filter { it.weekNumber == weekNumber }
 
-  fun slots(weekNumber: Int, slotTimes: Pair<LocalTime, LocalTime>, dayOfWeek: DayOfWeek): List<ActivityScheduleSlot> =
+  fun slots(weekNumber: Int, slotTimes: Pair<LocalTime, LocalTime>, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): List<ActivityScheduleSlot> =
     this.slots().filter {
-      it.weekNumber == weekNumber && it.slotTimes() == slotTimes && it.getDaysOfWeek().contains(dayOfWeek)
+      it.weekNumber == weekNumber && it.slotTimes() == slotTimes && it.timeSlot == timeSlot && it.getDaysOfWeek().contains(dayOfWeek)
     }
 
   fun allocations(excludeEnded: Boolean = false): List<Allocation> =
@@ -214,11 +214,12 @@ data class ActivitySchedule(
     return (daysIntoThisSchedulePeriod / daysInWeek).toInt() + 1
   }
 
-  fun hasNoInstancesOnDate(day: LocalDate, startEndTime: SlotTimes) =
+  fun hasNoInstancesOnDate(day: LocalDate, activityScheduleSlot: ActivityScheduleSlot) =
     instances.none { instance ->
       instance.sessionDate == day &&
-        instance.startTime == startEndTime.first &&
-        instance.endTime == startEndTime.second
+        instance.startTime == activityScheduleSlot.slotTimes().first &&
+        instance.endTime == activityScheduleSlot.slotTimes().second &&
+        instance.timeSlot == activityScheduleSlot.timeSlot
     }
 
   fun addInstance(

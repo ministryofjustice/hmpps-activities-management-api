@@ -1058,11 +1058,11 @@ class ActivityScheduleTest {
     schedule.addInstance(tomorrow, slotTwo)
 
     with(schedule) {
-      assertThat(hasNoInstancesOnDate(yesterday, slotOne.startTime to slotOne.endTime)).isTrue
-      assertThat(hasNoInstancesOnDate(today, slotOne.startTime to slotOne.endTime)).isFalse
-      assertThat(hasNoInstancesOnDate(tomorrow, slotTwo.startTime to slotTwo.endTime)).isFalse
-      assertThat(hasNoInstancesOnDate(today, slotTwo.startTime to slotTwo.endTime)).isTrue
-      assertThat(hasNoInstancesOnDate(tomorrow, slotOne.startTime to slotOne.endTime)).isTrue
+      assertThat(hasNoInstancesOnDate(yesterday, slotOne)).isTrue
+      assertThat(hasNoInstancesOnDate(today, slotOne)).isFalse
+      assertThat(hasNoInstancesOnDate(tomorrow, slotTwo)).isFalse
+      assertThat(hasNoInstancesOnDate(today, slotTwo)).isTrue
+      assertThat(hasNoInstancesOnDate(tomorrow, slotOne)).isTrue
     }
   }
 
