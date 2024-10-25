@@ -152,7 +152,7 @@ class CandidatesService(
           cellLocation = prisoner.cellLocation,
           otherAllocations = thisPersonsAllocations ?: emptyList(),
           earliestReleaseDate = determineEarliestReleaseDate(prisoner),
-          nonAssociations = nonAssociations.await().hasNonAssociations(prisoner.prisonerNumber),
+          nonAssociations = nonAssociations.await()?.hasNonAssociations(prisoner.prisonerNumber),
         )
       },
       pageable,

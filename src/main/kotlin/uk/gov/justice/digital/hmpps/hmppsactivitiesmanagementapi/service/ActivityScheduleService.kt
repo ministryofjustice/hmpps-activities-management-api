@@ -96,7 +96,7 @@ class ActivityScheduleService(
             it.prisonerPrisonCode = prisoner.prisonId
             it.cellLocation = prisoner.cellLocation
             it.earliestReleaseDate = determineEarliestReleaseDate(prisoner)
-            it.nonAssociations = nonAssociations.await().hasNonAssociations(it.prisonerNumber)
+            it.nonAssociations = nonAssociations.await()?.hasNonAssociations(it.prisonerNumber)
           }
         }
       }

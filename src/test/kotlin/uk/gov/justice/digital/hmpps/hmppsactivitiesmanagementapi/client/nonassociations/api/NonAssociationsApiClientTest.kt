@@ -54,13 +54,24 @@ class NonAssociationsApiClientTest {
   }
 
   @Test
-  fun `getNonAssociationsInvolving - success`() {
+  fun `getNonAssociationsInvolving - success when non-associations api succeeds`() {
     nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("RSI")
 
     runBlocking {
       val result = nonAssociationsApiWebClient.getNonAssociationsInvolving("RSI", listOf("A22222A"))
 
       assertThat(result).extracting("id").containsOnly(1111L, 2222L, 3333L, 4444L)
+    }
+  }
+
+  @Test
+  fun `getNonAssociationsInvolving - success when non-associations api fails`() {
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolvingError()
+
+    runBlocking {
+      val result = nonAssociationsApiWebClient.getNonAssociationsInvolving("RSI", listOf("A22222A"))
+
+      assertThat(result).isNull()
     }
   }
 }
