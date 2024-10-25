@@ -286,7 +286,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       .andExpect {
         content {
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }

@@ -158,7 +158,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
         .andExpect {
           content {
             jsonPath("$.userMessage") {
-              value("Error converting 'startDate' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+              value("Error converting 'startDate' (invalid): Method parameter 'startDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
             }
           }
         }

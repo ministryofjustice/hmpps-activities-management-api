@@ -12,7 +12,6 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
@@ -109,7 +108,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'startDate' (01/10/2022): Method parameter 'startDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -129,7 +128,7 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'endDate' (01/10/2022): Method parameter 'endDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
