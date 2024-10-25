@@ -115,12 +115,36 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
 
-    // response will be in random order
     assertThat(response)
       .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
       .containsOnly(
         tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), false),
         tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), true),
+      )
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-1.sql",
+  )
+  @Test
+  fun `get only active allocations whe non-associations api returns an error`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A11111A", "A22222A"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A", firstName = "Joe", releaseDate = LocalDate.now()),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A", firstName = "Tim", releaseDate = LocalDate.now().plusDays(1)),
+      ),
+    )
+
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolvingError()
+
+    val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
+
+    assertThat(response)
+      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
+      .containsOnly(
+        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), null),
+        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), null),
       )
   }
 
@@ -608,6 +632,32 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .jsonPath("$.content[4].nonAssociations").isEqualTo(false)
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/seed-candidates.sql",
+  )
+  fun `should be able to fetch a paged list of candidates for an activity when non-associations api returns an error`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
+    prisonApiMockServer.stubGetEducationLevels()
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolvingError()
+
+    webTestClient.getCandidates(1, 0, 5)
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.totalPages").isEqualTo(4)
+      .jsonPath("$.totalElements").isEqualTo(20)
+      .jsonPath("$.content[0].prisonerNumber").isEqualTo("A1446DZ")
+      .jsonPath("$.content[0].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[1].prisonerNumber").isEqualTo("A1718DZ")
+      .jsonPath("$.content[1].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[2].prisonerNumber").isEqualTo("A5015DY")
+      .jsonPath("$.content[2].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[3].prisonerNumber").isEqualTo("A2226DZ")
+      .jsonPath("$.content[3].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[4].prisonerNumber").isEqualTo("A5089DY")
+      .jsonPath("$.content[4].nonAssociations").isEqualTo(null)
+  }
+
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
@@ -851,6 +901,25 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val result = webTestClient.getWaitingListsBy(1)
 
     assertThat(result).extracting<Boolean> { w -> w.nonAssociations }.containsExactly(true)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
+  fun `get all waiting lists when non-associations api returns an error`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A4065DZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+      ),
+    )
+
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolvingError()
+
+    val result = webTestClient.getWaitingListsBy(1)
+
+    assertThat(result).extracting<Boolean> { w -> w.nonAssociations }.containsExactly(null)
   }
 
   @Sql(

@@ -81,7 +81,7 @@ class WaitingListService(
       val prisoner = prisoners.await().find { p -> it.prisonerNumber == p.prisonerNumber }
         ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
 
-      val nonAssociations = nonAssociations.await().hasNonAssociations(it.prisonerNumber)
+      val nonAssociations = nonAssociations.await()?.hasNonAssociations(it.prisonerNumber)
 
       it.toModel(determineEarliestReleaseDate(prisoner), nonAssociations)
     }
@@ -192,7 +192,7 @@ class WaitingListService(
       "Prisoner ${request.prisonerNumber} has no booking id at prison $prisonCode"
     }
 
-    return prisonerDetails.bookingId.toLong()
+    return prisonerDetails.bookingId!!.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {

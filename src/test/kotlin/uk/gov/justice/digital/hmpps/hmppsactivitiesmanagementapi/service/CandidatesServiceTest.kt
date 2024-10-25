@@ -569,6 +569,45 @@ class CandidatesServiceTest {
     }
 
     @Test
+    fun `fetch list of suitable candidates when non-associations returns null`() {
+      val activity = activityEntity()
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResultWithSurnames(prisonerNumberAndSurnames = listOf("A1234BC" to "Harrison"))
+      val waitingList = listOf(waitingList(prisonCode = activity.prisonCode, prisonerNumber = "A1234BC", initialStatus = WaitingListStatus.REMOVED))
+
+      candidatesSetup(activity, allPrisoners, waitingList)
+
+      nonAssociationsApiClient.stub {
+        on {
+          runBlocking {
+            nonAssociationsApiClient.getNonAssociationsInvolving("MDI", listOf("A1234BC"))
+          }
+        } doReturn null
+      }
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        null,
+        null,
+        pageable,
+      )
+
+      assertThat(candidates.content).isEqualTo(
+        listOf(
+          ActivityCandidate(
+            name = "Tim Harrison",
+            prisonerNumber = "A1234BC",
+            cellLocation = "1-2-3",
+            otherAllocations = emptyList(),
+            earliestReleaseDate = EarliestReleaseDate(null),
+            nonAssociations = null,
+          ),
+        ),
+      )
+    }
+
+    @Test
     fun `Employment filter should filter candidates without allocations or those with only 'not in work' activities when inWork == false`() {
       val activity = activityEntity()
 

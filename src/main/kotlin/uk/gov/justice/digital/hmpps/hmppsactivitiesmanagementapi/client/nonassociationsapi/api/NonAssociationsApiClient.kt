@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
@@ -17,6 +19,10 @@ class NonAssociationsApiClient(
 ) {
   private val nonAssociationEnabled = features.isEnabled(Feature.NON_ASSOCIATIONS_ENABLED)
 
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   fun getOffenderNonAssociations(prisonerNumber: String): List<PrisonerNonAssociation> {
     return nonAssociationsApiWebClient.get()
       .uri("/prisoner/{prisonerNumber}/non-associations", prisonerNumber)
@@ -25,18 +31,24 @@ class NonAssociationsApiClient(
       .block()?.nonAssociations ?: emptyList()
   }
 
-  suspend fun getNonAssociationsInvolving(prisonCode: String, prisonerNumbers: List<String>): List<NonAssociation> {
+  suspend fun getNonAssociationsInvolving(prisonCode: String, prisonerNumbers: List<String>): List<NonAssociation>? {
     if (!nonAssociationEnabled) return emptyList()
+
     if (prisonerNumbers.isEmpty()) return emptyList()
-    return nonAssociationsApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/non-associations/involving")
-          .queryParam("prisonId", prisonCode)
-          .build()
-      }
-      .bodyValue(prisonerNumbers)
-      .retrieve()
-      .awaitBody()
+
+    return runCatching {
+      nonAssociationsApiWebClient.post()
+        .uri { uriBuilder: UriBuilder ->
+          uriBuilder
+            .path("/non-associations/involving")
+            .queryParam("prisonId", prisonCode)
+            .build()
+        }
+        .bodyValue(prisonerNumbers)
+        .retrieve()
+        .awaitBody<List<NonAssociation>>()
+    }.onFailure {
+      log.warn("Failed to retrieve non-associations for $prisonCode and involving prisoner numbers $prisonerNumbers", it)
+    }.getOrNull()
   }
 }
