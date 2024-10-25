@@ -28,4 +28,15 @@ class NonAssociationsApiMockServer : MockServer(8555) {
         ),
     )
   }
+
+  fun stubGetNonAssociationsInvolvingError() {
+    stubFor(
+      WireMock.post(WireMock.urlPathEqualTo("/non-associations/involving"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withStatus(500),
+        ),
+    )
+  }
 }
