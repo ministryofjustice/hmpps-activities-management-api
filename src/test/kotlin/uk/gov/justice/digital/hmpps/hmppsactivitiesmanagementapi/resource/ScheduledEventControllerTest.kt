@@ -194,7 +194,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (20/12/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'date' (20/12/2022): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -218,7 +218,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (AF): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+            value("Error converting 'timeSlot' (AF): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
           }
         }
       }
@@ -389,7 +389,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'startDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'startDate' (01/10/2022): Method parameter 'startDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -410,7 +410,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.userMessage") {
-            value("Error converting 'endDate' (01/10/2022): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'endDate' (01/10/2022): Method parameter 'endDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -504,7 +504,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       .andExpect {
         content {
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -526,7 +526,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       .andExpect {
         content {
           jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (no): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
           }
         }
       }

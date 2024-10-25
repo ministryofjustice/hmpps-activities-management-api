@@ -225,7 +225,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       .andExpect {
         content {
           jsonPath("$.userMessage") {
-            value("Error converting 'date' (invalid): Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
           }
         }
       }
@@ -241,7 +241,7 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
       .andExpect {
         content {
           jsonPath("$.userMessage") {
-            value("Error converting 'timeSlot' (no): Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
           }
         }
       }
