@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.0.21"
   jacoco
   id("org.openapi.generator") version "7.9.0"
-  id("io.sentry.jvm.gradle") version "4.12.0"
+  id("io.sentry.jvm.gradle") version "4.13.0"
 }
 
 allOpen {
@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.0.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.1.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
   // Spring framework retryable dependencies
