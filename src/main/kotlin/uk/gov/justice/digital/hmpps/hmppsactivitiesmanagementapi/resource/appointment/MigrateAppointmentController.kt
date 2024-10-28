@@ -135,7 +135,7 @@ class MigrateAppointmentController(
       ),
     ],
   )
-  @PreAuthorize("hasRole('NOMIS_APPOINTMENTS')")
+  @PreAuthorize("hasAnyRole('NOMIS_APPOINTMENTS', 'ACTIVITY_ADMIN')")
   fun deleteMigratedAppointments(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
