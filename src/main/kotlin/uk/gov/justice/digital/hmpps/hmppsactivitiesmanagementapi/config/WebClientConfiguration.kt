@@ -161,7 +161,7 @@ class WebClientConfiguration(
       .also { log.info("WEB CLIENT CONFIG: creating prisoner search api app web client") }
 
   @Bean
-  fun bankHolidayApiWebClient(): WebClient = webClientBuilder.baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
+  fun bankHolidayApiWebClient(): WebClient = WebClient.builder().baseUrl(bankHolidayApiUrl).timeout(apiTimeout).build()
     .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
   @Bean
