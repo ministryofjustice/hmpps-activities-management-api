@@ -37,7 +37,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 @ActiveProfiles("experimental")
-class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
+class MigrateIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   lateinit var clock: Clock
@@ -74,6 +74,58 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
           tuesday = true,
           wednesday = true,
           thursday = true,
+        ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(13, 40, 0),
+          endTime = LocalTime.of(16, 50, 0),
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+        ),
+        NomisScheduleRule(
+          startTime = regimeStartTimeAM,
+          endTime = regimeEndTimeAM,
+          friday = true,
+        ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(13, 40, 0),
+          endTime = LocalTime.of(16, 0, 0),
+          friday = true,
+        ),
+        NomisScheduleRule(
+          startTime = LocalTime.of(6, 40, 0),
+          endTime = LocalTime.of(7, 0, 0),
+          saturday = true,
+          sunday = true,
+        ),
+      ),
+      payRates = emptyList(),
+    )
+
+  private val customSlotRequest =
+    ActivityMigrateRequest(
+      programServiceCode = "INT_NOM",
+      prisonCode = "IWI",
+      startDate = LocalDate.of(2024, 7, 9),
+      endDate = null,
+      internalLocationId = 468492,
+      internalLocationCode = "SITE 3",
+      internalLocationDescription = "IWI-ESTAB-SITE 3",
+      capacity = 1,
+      description = "BNM + 27 PK",
+      payPerSession = "H",
+      runsOnBankHoliday = true,
+      outsideWork = false,
+      scheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = customStartTimeAM,
+          endTime = regimeEndTimeAM,
+          monday = true,
+          tuesday = true,
+          wednesday = true,
+          thursday = true,
+          timeSlot = TimeSlot.PM,
         ),
         NomisScheduleRule(
           startTime = LocalTime.of(13, 40, 0),
@@ -259,6 +311,35 @@ class ExperimentalMigrateIntegrationTest : IntegrationTestBase() {
 
     assertThat(activity.schedules.size).isEqualTo(1)
     assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.AM.name)
+    assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
+    assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
+    assertThat(weekendAm.startTime == LocalTime.of(6, 40, 0)).isTrue()
+    assertThat(weekendAm.endTime == LocalTime.of(7, 0, 0)).isTrue()
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-iwi-prison-regime.sql",
+  )
+  @Test
+  fun `import activity with timeslot should set custom times and preserve the supplied slot`() {
+    val activityId = migrateActivity(request = customSlotRequest)
+    val activity = getActivity(activityId = activityId)
+
+    val mondayAm = activity.schedules.first().slots.first {
+      it.mondayFlag && it.endTime == regimeEndTimeAM
+    }
+
+    val fridayAm = activity.schedules.first().slots.first {
+      it.fridayFlag && it.endTime == regimeEndTimeAM
+    }
+
+    val weekendAm = activity.schedules.first().slots.first {
+      it.saturdayFlag && it.sundayFlag
+    }
+
+    assertThat(activity.schedules.size).isEqualTo(1)
+    assertThat(mondayAm.timeSlot.name).isEqualTo(TimeSlot.PM.name)
     assertThat(mondayAm.startTime == customStartTimeAM).isTrue()
     assertThat(fridayAm.startTime == regimeStartTimeAM).isTrue()
     assertThat(weekendAm.startTime == LocalTime.of(6, 40, 0)).isTrue()
