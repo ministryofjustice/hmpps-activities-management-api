@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -98,6 +99,9 @@ data class NomisScheduleRule(
 
   @Schema(description = "Runs on a Sunday", example = "true")
   val sunday: Boolean = false,
+
+  @Schema(description = "Time slot")
+  val timeSlot: TimeSlot? = null,
 )
 
 @Schema(description = "Describes a pay rate for an activity.")

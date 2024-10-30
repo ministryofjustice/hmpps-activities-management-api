@@ -154,7 +154,7 @@ class MigrateActivityService(
     val activity = buildActivityEntity(request)
     request.scheduleRules.consolidateMatchingScheduleSlots().forEach { scheduleRule ->
       val daysOfWeek = getRequestDaysOfWeek(scheduleRule)
-      val regimeTimeSlot = prisonRegimes.getSlotForDayAndTime(day = daysOfWeek.first(), time = scheduleRule.startTime)
+      val regimeTimeSlot = scheduleRule.timeSlot ?: prisonRegimes.getSlotForDayAndTime(day = daysOfWeek.first(), time = scheduleRule.startTime)
 
       if (usePrisonRegimeTimeForActivity) {
         val prisonRegime = scheduleRule.getPrisonRegime(prisonCode = request.prisonCode, timeSlot = regimeTimeSlot)
@@ -541,7 +541,7 @@ class MigrateActivityService(
   }
 
   private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() =
-    groupBy { it.startTime to it.endTime }
+    groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }
       .let { rulesBySlotTimes ->
         rulesBySlotTimes.map { (slotTimes, groupedRules) ->
           NomisScheduleRule(
@@ -554,6 +554,7 @@ class MigrateActivityService(
             friday = groupedRules.any { it.friday },
             saturday = groupedRules.any { it.saturday },
             sunday = groupedRules.any { it.sunday },
+            timeSlot = slotTimes.third,
           )
         }
       }
