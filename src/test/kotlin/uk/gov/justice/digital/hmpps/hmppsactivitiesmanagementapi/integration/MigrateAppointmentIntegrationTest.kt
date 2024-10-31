@@ -3,6 +3,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
@@ -16,14 +19,14 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
@@ -39,7 +42,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.deleted=true",
   ],
 )
-class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
+class MigrateAppointmentIntegrationTest : AppointmentIntegrationBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -49,6 +52,33 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   @MockBean
   private lateinit var auditService: AuditService
   private val auditableEventCaptor = argumentCaptor<AppointmentDeletedEvent>()
+
+  @BeforeEach
+  fun setUp() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("A1234BC")
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("B2345CD")
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("C3456DE")
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "RSI",
+      listOf(
+        appointmentLocation(123, "RSI", userDescription = "Location 123"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+  }
 
   @Test
   fun `migrate appointment forbidden`() {
@@ -177,19 +207,21 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   fun `delete migrated appointments - success`() {
     webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
 
-    // Appointments starting earlier than supplied date should not have been deleted
-    setOf(10L, 11L, 12L, 13L).forEach {
-      webTestClient.getAppointmentById(it).isDeleted isBool false
+    await untilAsserted {
+      // Appointments starting earlier than supplied date should not have been deleted
+      setOf(10L, 11L, 12L, 13L).forEach {
+        webTestClient.getAppointmentDetailsById(it).isDeleted isBool false
+      }
     }
 
     // Not migrated
-    webTestClient.getAppointmentById(14).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(14).isDeleted isBool false
     // On start date
-    webTestClient.getAppointmentById(15).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(15).isDeleted isBool true
     // Different prison
-    webTestClient.getAppointmentById(16).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(16).isDeleted isBool false
     // On start date
-    webTestClient.getAppointmentById(17).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(17).isDeleted isBool true
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -215,19 +247,21 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   fun `delete migrated chaplaincy appointments - success`() {
     webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1), "CHAP")
 
-    // Appointments starting earlier than supplied date should not have been deleted
-    setOf(10L, 11L, 12L, 13L).forEach {
-      webTestClient.getAppointmentById(it).isDeleted isBool false
+    await untilAsserted {
+      // Appointments starting earlier than supplied date should not have been deleted
+      setOf(10L, 11L, 12L, 13L).forEach {
+        webTestClient.getAppointmentDetailsById(it).isDeleted isBool false
+      }
     }
 
     // Not migrated
-    webTestClient.getAppointmentById(14).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(14).isDeleted isBool false
     // On start date with matching category code
-    webTestClient.getAppointmentById(15).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(15).isDeleted isBool true
     // Different prison
-    webTestClient.getAppointmentById(16).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(16).isDeleted isBool false
     // On start date with different category code
-    webTestClient.getAppointmentById(17).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(17).isDeleted isBool false
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -252,9 +286,11 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
   fun `delete migrated appointments that have been subsequently cancelled, deleted or had their attendees removed - success`() {
     webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
 
-    // All appointments in the seed data should have been deleted
-    setOf(10L, 11L, 12L, 13L).forEach {
-      webTestClient.getAppointmentById(it).isDeleted isEqualTo true
+    await untilAsserted {
+      // Appointments starting earlier than supplied date should not have been deleted
+      setOf(10L, 11L, 12L, 13L).forEach {
+        webTestClient.getAppointmentDetailsById(it).isDeleted isEqualTo true
+      }
     }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
@@ -298,17 +334,5 @@ class MigrateAppointmentIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
       .exchange()
       .expectStatus().isAccepted
-
-    Thread.sleep(1000)
   }
-
-  private fun WebTestClient.getAppointmentById(id: Long) =
-    get()
-      .uri("/appointments/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
-      .returnResult().responseBody!!
 }

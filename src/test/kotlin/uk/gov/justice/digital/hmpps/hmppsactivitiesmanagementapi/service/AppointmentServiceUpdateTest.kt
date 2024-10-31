@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
@@ -36,7 +35,6 @@ class AppointmentServiceUpdateTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService = mock()
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
@@ -48,7 +46,6 @@ class AppointmentServiceUpdateTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    prisonApiClient,
     appointmentUpdateDomainService,
     appointmentCancelDomainService,
     updateAppointmentsJob,

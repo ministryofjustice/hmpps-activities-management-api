@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
@@ -38,7 +37,6 @@ class AppointmentServiceTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService = mock()
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
@@ -51,7 +49,6 @@ class AppointmentServiceTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    prisonApiClient,
     appointmentUpdateDomainService,
     appointmentCancelDomainService,
     updateAppointmentsJob,

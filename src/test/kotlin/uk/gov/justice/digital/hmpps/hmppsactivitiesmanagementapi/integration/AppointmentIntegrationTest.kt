@@ -18,11 +18,8 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
@@ -78,150 +75,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private lateinit var telemetryClient: TelemetryClient
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
-
-  @Test
-  fun `get appointment authorisation required`() {
-    webTestClient.get()
-      .uri("/appointments/1")
-      .exchange()
-      .expectStatus().isUnauthorized
-  }
-
-  @Test
-  fun `get appointment by unknown id returns 404 not found`() {
-    webTestClient.get()
-      .uri("/appointments/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-single-id-1.sql",
-  )
-  @Test
-  fun `get single appointment details`() {
-    val appointment = webTestClient.getAppointmentById(2)!!
-
-    assertThat(appointment).isEqualTo(
-      Appointment(
-        2,
-        1,
-        "TPR",
-        "AC1",
-        EventTier(
-          id = 2,
-          code = "TIER_2",
-          description = "Tier 2",
-        ),
-        EventOrganiser(
-          id = 1,
-          code = "PRISON_STAFF",
-          description = "Prison staff",
-        ),
-        "Appointment description",
-        123,
-        false,
-        LocalDate.now().plusDays(1),
-        LocalTime.of(9, 0),
-        LocalTime.of(10, 30),
-        "Appointment level comment",
-        appointment.createdTime,
-        "TEST.USER",
-        null,
-        null,
-        null,
-        null,
-        null,
-        false,
-        attendees = listOf(
-          AppointmentAttendee(
-            3,
-            "A1234BC",
-            456,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-          ),
-        ),
-      ),
-    )
-
-    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-set-id-6.sql",
-  )
-  @Test
-  fun `get appointment details from an appointment set`() {
-    val appointment = webTestClient.getAppointmentById(6)!!
-
-    assertThat(appointment).isEqualTo(
-      Appointment(
-        6,
-        1,
-        "TPR",
-        "AC1",
-        EventTier(
-          id = 2,
-          code = "TIER_2",
-          description = "Tier 2",
-        ),
-        EventOrganiser(
-          id = 1,
-          code = "PRISON_STAFF",
-          description = "Prison staff",
-        ),
-        "Appointment description",
-        123,
-        false,
-        LocalDate.now().plusDays(1),
-        LocalTime.of(9, 0),
-        LocalTime.of(9, 15),
-        "Medical appointment for A1234BC",
-        appointment.createdTime,
-        "TEST.USER",
-        null,
-        null,
-        null,
-        null,
-        null,
-        false,
-        attendees = listOf(
-          AppointmentAttendee(
-            6,
-            "A1234BC",
-            456,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-          ),
-        ),
-      ),
-    )
-
-    assertThat(appointment.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-  }
-
-  @Test
-  fun `update appointment authorisation required`() {
-    webTestClient.patch()
-      .uri("/appointments/1")
-      .bodyValue(AppointmentUpdateRequest())
-      .exchange()
-      .expectStatus().isUnauthorized
-  }
 
   @Test
   fun `update appointment by unknown id returns 404 not found`() {
@@ -1112,16 +965,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verifyNoMoreInteractions(telemetryClient)
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
-
-  private fun WebTestClient.getAppointmentById(id: Long) =
-    get()
-      .uri("/appointments/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
-      .returnResult().responseBody
 
   private fun WebTestClient.getAppointmentSeriesById(id: Long) =
     get()

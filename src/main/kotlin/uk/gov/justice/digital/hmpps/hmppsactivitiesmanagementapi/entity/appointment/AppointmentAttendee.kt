@@ -89,5 +89,3 @@ data class AppointmentAttendee(
 }
 
 fun List<AppointmentAttendee>.toModel() = map { it.toModel() }
-
-fun List<AppointmentAttendee>.toSummary(prisonerMap: Map<String, Prisoner>) = map { it.toSummary(prisonerMap) }
