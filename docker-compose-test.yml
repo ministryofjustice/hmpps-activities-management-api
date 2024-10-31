@@ -1,0 +1,11 @@
+version: "3"
+services:
+  test-db:
+    image: postgres:latest
+    container_name: activities-test-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: activities
+      POSTGRES_USER: activities
+      POSTGRES_PASSWORD: activities

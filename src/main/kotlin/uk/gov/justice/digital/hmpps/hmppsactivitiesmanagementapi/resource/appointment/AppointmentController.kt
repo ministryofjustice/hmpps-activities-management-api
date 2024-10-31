@@ -51,51 +51,6 @@ class AppointmentController(
   private val appointmentAttendanceService: AppointmentAttendanceService,
   private val appointmentSearchService: AppointmentSearchService,
 ) {
-  @GetMapping(value = ["/{appointmentId}"])
-  @ResponseBody
-  @Operation(
-    summary = "Get an appointment by its id",
-    description = "Returns an appointment with its properties and references to NOMIS by its unique identifier.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Appointment found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = Appointment::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The appointment for this id was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentById(@PathVariable("appointmentId") appointmentId: Long): Appointment =
-    appointmentService.getAppointmentById(appointmentId)
-
   @GetMapping(value = ["/{appointmentId}/details"])
   @ResponseBody
   @Operation(
