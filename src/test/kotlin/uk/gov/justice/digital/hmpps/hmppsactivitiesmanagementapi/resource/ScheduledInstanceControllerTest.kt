@@ -24,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -106,36 +105,6 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     assertThat(response.contentAsString).contains("Not found")
 
     verify(scheduledInstanceService).getAttendeesForScheduledInstance(2)
-  }
-
-  @Test
-  fun `200 response when get attendances by schedule ID found`() {
-    val attendances = activityEntity().schedules().first().instances().first().attendances.map { transform(it, null) }
-
-    whenever(attendancesService.findAttendancesByScheduledInstance(1)).thenReturn(attendances)
-
-    val response = mockMvc.getAttendancesByScheduledInstance("1")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendances))
-
-    verify(attendancesService).findAttendancesByScheduledInstance(1)
-  }
-
-  @Test
-  fun `404 response when get attendances by scheduled instance ID not found`() {
-    whenever(attendancesService.findAttendancesByScheduledInstance(2)).thenThrow(EntityNotFoundException("not found"))
-
-    val response = mockMvc.getAttendancesByScheduledInstance("2")
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(attendancesService).findAttendancesByScheduledInstance(2)
   }
 
   @Test
@@ -276,9 +245,6 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   private fun MockMvc.getScheduledAttendeesByScheduledInstance(instanceId: String) =
     get("/scheduled-instances/$instanceId/scheduled-attendees")
-
-  private fun MockMvc.getAttendancesByScheduledInstance(instanceId: String) =
-    get("/scheduled-instances/$instanceId/attendances")
 
   private fun MockMvc.getAttendancesSummary(prisonCode: String, date: LocalDate) =
     get("/scheduled-instances/attendance-summary?prisonCode=$prisonCode&date=$date")

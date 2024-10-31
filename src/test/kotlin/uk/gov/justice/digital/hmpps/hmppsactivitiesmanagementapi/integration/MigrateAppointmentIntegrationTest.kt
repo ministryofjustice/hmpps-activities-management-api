@@ -42,7 +42,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.deleted=true",
   ],
 )
-class MigrateAppointmentIntegrationTest : AppointmentIntegrationBase() {
+class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 

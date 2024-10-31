@@ -43,7 +43,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.activities.prisoner.attendance-amended=true",
   ],
 )
-class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
+class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -566,18 +566,6 @@ class ActivityScheduleInstanceIntegrationTest : IntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(ActivityScheduleInstance::class.java)
-    .returnResult().responseBody
-
-  private fun WebTestClient.getScheduledInstancesByIds(vararg ids: Long) = post()
-    .uri("/scheduled-instances")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, "PVI")
-    .bodyValue(ids)
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
 
   private fun WebTestClient.getScheduledAttendeesByInstanceId(id: Long) = get()

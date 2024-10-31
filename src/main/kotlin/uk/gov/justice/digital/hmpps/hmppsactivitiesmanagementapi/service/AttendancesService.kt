@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -33,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
 
 @Service
 class AttendancesService(
-  private val scheduledInstanceRepository: ScheduledInstanceRepository,
   private val allAttendanceRepository: AllAttendanceRepository,
   private val attendanceRepository: AttendanceRepository,
   private val attendanceReasonRepository: AttendanceReasonRepository,
@@ -46,9 +44,6 @@ class AttendancesService(
   companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
-
-  fun findAttendancesByScheduledInstance(instanceId: Long) =
-    scheduledInstanceRepository.findOrThrowNotFound(instanceId).attendances.map { transform(it, null) }
 
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     log.info("Attendance marking in progress")
