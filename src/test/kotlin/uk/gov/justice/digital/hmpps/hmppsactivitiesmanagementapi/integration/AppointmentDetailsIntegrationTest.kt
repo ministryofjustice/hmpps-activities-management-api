@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
+class AppointmentDetailsIntegrationTest : AppointmentIntegrationBase() {
   @Test
   fun `get appointment details authorisation required`() {
     webTestClient.get()

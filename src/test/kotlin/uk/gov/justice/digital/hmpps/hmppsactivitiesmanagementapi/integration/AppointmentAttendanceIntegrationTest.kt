@@ -50,7 +50,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.cancelled=true",
   ],
 )
-class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
+class AppointmentAttendanceIntegrationTest : AppointmentIntegrationBase() {
 
   @MockBean
   private lateinit var auditService: AuditService
