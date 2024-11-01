@@ -12,9 +12,6 @@ import java.time.LocalDate
 
 @Repository
 interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepositoryCustom {
-  @Query(value = "from Activity a where a.prisonCode = :prison and a.startDate <= :date and (a.endDate is null or a.endDate >= :date)")
-  fun getAllForPrisonAndDate(@Param("prison") prison: String, @Param("date") date: LocalDate): List<Activity>
-
   @Query(
     value =
     """
@@ -44,12 +41,6 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
   fun existingLiveActivity(prisonCode: String, summary: String, endDate: LocalDate): Boolean
 
   fun findByPrisonCodeAndActivityTierAndActivityCategory(prisonCode: String, activityTier: EventTier, activityCategory: ActivityCategory): List<Activity>
-
-  @Query(value = "SELECT ab from ActivityBasic ab WHERE ab.activityId = :activityId")
-  fun getActivityBasicById(@Param("activityId") activityId: Long): ActivityBasic?
-
-  @Query(value = "SELECT ab FROM ActivityBasic ab WHERE ab.prisonCode = :prisonCode")
-  fun getActivityBasicByPrisonCode(@Param("prisonCode") prisonCode: String): List<ActivityBasic>
 
   @Query(
     value =
