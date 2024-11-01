@@ -31,7 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.LocalDateTime
 
 class PrisonerReleasedEventHandlerTest {
-  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val appointmentAttendeeService: AppointmentAttendeeService = mock()
   private val waitingListService: WaitingListService = mock()

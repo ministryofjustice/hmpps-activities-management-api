@@ -63,7 +63,7 @@ class ActivityMetricsJob(
         log.info("Generating daily activities metrics")
 
         val elapsed = measureTimeMillis {
-          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
+          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons(true).map { it.prisonCode }
           val allEventTiers = eventTierRepository.findAll()
           val allActivityCategories = activityCategoryRepository.findAll()
 
