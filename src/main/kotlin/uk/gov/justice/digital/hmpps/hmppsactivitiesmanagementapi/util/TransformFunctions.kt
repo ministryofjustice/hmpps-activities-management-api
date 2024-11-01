@@ -478,10 +478,6 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
   )
   )
 
-fun List<EntityActivityBasic>.toActivityBasicList() = map {
-  transform(it)
-}
-
 fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate, nonAssociations: Boolean? = false) = ModelWaitingListApplication(
   id = waitingListId,
   prisonCode = prisonCode,
