@@ -699,59 +699,90 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Any unrecognised incentive level codes in pay rates will fail`() {
+    fun `Any unrecognised incentive level codes in pay rates will be ignored`() {
       val nomisPayRates = listOf(
-        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
-        // Unrecognised IEP
-        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 110),
-      )
-
-      val nomisScheduleRules = listOf(
-        NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
-          monday = true,
-        ),
-      )
-
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
-
-      val exception = assertThrows<ValidationException> {
-        service.migrateActivity(request)
-      }
-
-      assertThat(exception.message).contains("Failed to migrate activity ${request.description}. Activity incentive level XXX is not active in this prison")
-      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
-    }
-
-    @Test
-    fun `Any inactive incentive level codes in pay rates will fail`() {
-      val nomisPayRates = listOf(
-        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "STD", nomisPayBand = "1", rate = 100),
-        NomisPayRate(incentiveLevel = "ENH", nomisPayBand = "1", rate = 100),
+        NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110),
         // Inactive IEP
-        NomisPayRate(incentiveLevel = "EN2", nomisPayBand = "1", rate = 120),
+        NomisPayRate(incentiveLevel = "XXX", nomisPayBand = "1", rate = 120),
       )
 
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
+          startTime = LocalTime.of(8, 30),
+          endTime = LocalTime.of(9, 30),
           monday = true,
         ),
       )
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      val exception = assertThrows<ValidationException> {
-        service.migrateActivity(request)
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(rolloutPrisonService).getByPrisonCode("MDI")
+      verify(eventTierRepository).findAll()
+      verify(activityCategoryRepository).findAll()
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      // Check the content of the Activity entity that was passed into saveAndFlush
+      with(activityCaptor.firstValue[0]) {
+        assertThat(summary).isEqualTo("An activity")
+        assertThat(description).isEqualTo("An activity")
+        assertThat(inCell).isFalse
+        assertThat(onWing).isFalse
+        assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+        assertThat(endDate).isNull()
+        assertThat(eligibilityRules()).hasSize(0)
+        assertThat(activityMinimumEducationLevel()).hasSize(0)
+        assertThat(activityCategory).isEqualTo(getCategory("SAA_PRISON_JOBS"))
+        assertThat(activityTier).isEqualTo(getTier("TIER_1"))
+        assertThat(isPaid()).isTrue
+
+        // Check the pay rates for this activity
+        assertThat(activityPay()).hasSize(1)
+        with(activityPay().first()) {
+          assertThat(incentiveNomisCode).isEqualTo("BAS")
+          assertThat(incentiveLevel).isEqualTo("Basic")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(110)
+        }
+
+        // Check the schedule attributes
+        assertThat(schedules()).hasSize(1)
+        with(schedules().first()) {
+          assertThat(description).isEqualTo("An activity")
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+          assertThat(endDate).isNull()
+          assertThat(capacity).isEqualTo(10)
+          assertThat(runsOnBankHoliday).isFalse
+          assertThat(internalLocationId).isEqualTo(1)
+          assertThat(internalLocationCode).isEqualTo("011")
+          assertThat(internalLocationDescription).isEqualTo("MDI-1-1-011")
+          assertThat(scheduleWeeks).isEqualTo(1)
+
+          // Check the slots created
+          assertThat(slots()).hasSize(1)
+          with(slots().first()) {
+            assertThat(startTime).isEqualTo(LocalTime.of(8, 30))
+            assertThat(endTime).isEqualTo(LocalTime.of(9, 30))
+            assertThat(mondayFlag).isTrue
+            assertThat(tuesdayFlag).isFalse
+            assertThat(wednesdayFlag).isFalse
+            assertThat(thursdayFlag).isFalse
+            assertThat(fridayFlag).isFalse
+            assertThat(saturdayFlag).isFalse
+            assertThat(sundayFlag).isFalse
+          }
+        }
       }
 
-      assertThat(exception.message).contains("Failed to migrate activity ${request.description}. Activity incentive level EN2 is not active in this prison")
-      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 1)
     }
 
     @Test
