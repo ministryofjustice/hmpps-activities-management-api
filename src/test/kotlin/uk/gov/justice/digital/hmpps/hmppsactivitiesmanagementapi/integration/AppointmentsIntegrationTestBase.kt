@@ -5,7 +5,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 
-abstract class AppointmentIntegrationBase : IntegrationTestBase() {
+abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
 
   fun WebTestClient.getAppointmentDetailsById(id: Long) =
     get()
