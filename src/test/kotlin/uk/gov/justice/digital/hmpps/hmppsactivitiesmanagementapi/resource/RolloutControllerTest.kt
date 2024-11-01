@@ -70,7 +70,7 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
       appointmentsRolledOut = true,
       appointmentsRolloutDate = originalRolloutDate,
     )
-    whenever(prisonService.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
+    whenever(prisonService.getRolloutPrisons(prisonsLive = true)).thenReturn(listOf(rolloutPrison))
 
     val response = mockMvc.getRolledOutPrisons()
       .andExpect { status { isOk() } }

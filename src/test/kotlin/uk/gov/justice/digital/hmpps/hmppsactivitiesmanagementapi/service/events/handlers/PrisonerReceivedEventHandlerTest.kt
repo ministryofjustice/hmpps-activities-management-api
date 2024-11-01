@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.LocalDateTime
 
 class PrisonerReceivedEventHandlerTest {
-  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()

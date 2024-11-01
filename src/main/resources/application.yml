@@ -151,3 +151,4 @@ springdoc:
 migrate:
   activities-live: ${ACTIVITIES_LIVE:***}
   appointments-live: ${APPOINTMENTS_LIVE:***}
+  prisons-live: ${PRISONS_LIVE:***}

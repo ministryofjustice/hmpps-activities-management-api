@@ -17,6 +17,8 @@ data class PrisonPlan(
 class RolloutPrisonService(
   @Value("\${migrate.activities-live}") private val activitiesLive: String,
   @Value("\${migrate.appointments-live}") private val appointmentsLive: String,
+  @Value("\${migrate.prisons-live}") private val prisonsLive: String,
+
 ) {
 
   private fun getPrison(code: String): PrisonPlan {
@@ -46,8 +48,13 @@ class RolloutPrisonService(
 
   fun isActivitiesRolledOutAt(prisonCode: String): Boolean = getPrison(code = prisonCode).activities
 
-  fun getRolloutPrisons(): List<RolloutPrisonPlan> =
-    activitiesLive.split(",").map { getByPrisonCode(it) }
+  fun getRolloutPrisons(prisonsLive: Boolean = false): List<RolloutPrisonPlan> {
+    return if (prisonsLive) {
+      this.prisonsLive.split(",").map { getByPrisonCode(it) }
+    } else {
+      activitiesLive.split(",").map { getByPrisonCode(it) }
+    }
+  }
 
   companion object {
     fun RolloutPrisonPlan.hasExpired(predicate: () -> LocalDate?) =

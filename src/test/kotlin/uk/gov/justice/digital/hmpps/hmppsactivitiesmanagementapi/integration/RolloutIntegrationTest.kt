@@ -22,6 +22,18 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `get prisons that are rolled out for users`() {
+    var prisonPlanList = webTestClient.getRolledOutPrisons()!!
+
+    assertThat(prisonPlanList).hasSize(3)
+    with(prisonPlanList) {
+      this.single { it.prisonCode == "RSI" }
+      this.single { it.prisonCode == "PVI" }
+      this.single { it.prisonCode == "MDI" }
+    }
+  }
+
+  @Test
   fun `create a regime, then overwrite it`() {
     val created = webTestClient.createRegime(
       slots = DayOfWeek.entries.map {
@@ -74,5 +86,16 @@ class RolloutIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(RolloutPrisonPlan::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getRolledOutPrisons() =
+    get()
+      .uri("/rollout")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(RolloutPrisonPlan::class.java)
       .returnResult().responseBody
 }
