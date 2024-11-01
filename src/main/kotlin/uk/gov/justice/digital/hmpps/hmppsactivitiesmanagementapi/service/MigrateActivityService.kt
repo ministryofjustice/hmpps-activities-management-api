@@ -123,9 +123,10 @@ class MigrateActivityService(
               ?: logAndThrowValidationException("Failed to migrate activity ${request.description}. No prison pay band for Nomis pay band ${it.nomisPayBand}")
 
             val iep = prisonIncentiveLevels.find { iep -> iep.levelCode == it.incentiveLevel && iep.active }
-              ?: logAndThrowValidationException("Failed to migrate activity ${request.description}. Activity incentive level ${it.incentiveLevel} is not active in this prison")
 
-            activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null, null)
+            if (iep != null) {
+              activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null, null)
+            }
           }
         }
       }
