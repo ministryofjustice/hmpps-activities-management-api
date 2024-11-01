@@ -49,13 +49,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toActivityBasicList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityBasic as ModelActivityBasic
 
 typealias AllocationIds = Set<Long>
 
@@ -89,10 +87,6 @@ class ActivityService(
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
       ?: throw (EntityNotFoundException("Activity $activityId not found"))
     return transform(activity)
-  }
-
-  fun getActivityBasicByPrisonCode(prisonCode: String): List<ModelActivityBasic> {
-    return activityRepository.getActivityBasicByPrisonCode(prisonCode).toActivityBasicList()
   }
 
   fun getActivitiesByCategoryInPrison(
