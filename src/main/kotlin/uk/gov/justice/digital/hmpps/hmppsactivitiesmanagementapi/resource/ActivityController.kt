@@ -96,61 +96,6 @@ class ActivityController(
     earliestSessionDate: LocalDate?,
   ) = activityService.getActivityByIdWithFilters(activityId, earliestSessionDate)
 
-  @GetMapping(value = ["/{activityId}/basic"])
-  @ResponseBody
-  @Operation(
-    summary = "Returns the basic activity ids and descriptions without its child collections",
-    description = "Returns basic activity IDs and attributes without its child collections.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activity found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ActivityBasic::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The activity for this ID was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
-  fun getActivityKeyIds(
-    @PathVariable("activityId") activityId: Long,
-  ) = activityService.getActivityBasicById(activityId)
-
   @GetMapping(value = ["/{prisonCode}/basic-list"])
   @ResponseBody
   @Operation(
