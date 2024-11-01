@@ -6,7 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPr
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class RolloutPrisonServiceTest {
-  private val service = RolloutPrisonService("PVI", "PVI")
+  private val service = RolloutPrisonService("PVI", "PVI", "PVI")
 
   @Test
   fun `returns an rollout prison plan for known prison code`() {

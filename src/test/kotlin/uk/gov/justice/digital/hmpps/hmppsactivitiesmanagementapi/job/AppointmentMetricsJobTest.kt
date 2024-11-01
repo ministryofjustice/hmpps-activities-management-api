@@ -42,7 +42,7 @@ class AppointmentMetricsJobTest : JobsTestBase() {
   @Test
   fun `job calls service to manage appointment attendees`() {
     val rolloutPrison = rolloutPrison()
-    whenever(rolloutPrisonRepository.getRolloutPrisons()).thenReturn(listOf(rolloutPrison))
+    whenever(rolloutPrisonRepository.getRolloutPrisons(true)).thenReturn(listOf(rolloutPrison))
     val appointmentCategory = appointmentCategoryReferenceCode()
     whenever(prisonApiClient.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT.value)).thenReturn(listOf(appointmentCategory))
 

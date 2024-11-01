@@ -33,7 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 
 class ActivitiesChangedEventHandlerTest {
 
-  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI")
+  private val rolloutPrisonService = RolloutPrisonService("MDI", "MDI", "MDI")
 
   private val allocationRepository: AllocationRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiApplicationClient = mock()

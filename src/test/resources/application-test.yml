@@ -81,5 +81,6 @@ manage:
      url: http://localhost:8777
 
 migrate:
-  activities-live: PVI,RSI,MDI
-  appointments-live: PVI,RSI,MDI
+  activities-live: PVI,RSI,MDI,IWI,FMI
+  appointments-live: PVI,RSI,MDI,IWI,FMI
+  prisons-live: PVI,RSI,MDI

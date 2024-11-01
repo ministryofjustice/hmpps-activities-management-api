@@ -31,7 +31,7 @@ class AppointmentMetricsJob(
         log.info("Generating daily appointments metrics")
 
         val elapsed = measureTimeMillis {
-          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
+          val allPrisonCodes = rolloutPrisonService.getRolloutPrisons(true).map { it.prisonCode }
           val allAppointmentCategories = prisonApiClient.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT.value).map { it.code }
           val yesterday = LocalDate.now().minusDays(1)
 

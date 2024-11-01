@@ -129,7 +129,7 @@ class RolloutController(
     ],
   )
   fun getRolledOutPrisons(): List<RolloutPrisonPlan> =
-    rolloutService.getRolloutPrisons()
+    rolloutService.getRolloutPrisons(prisonsLive = true)
 
   @Operation(
     summary = "Creates a prison regime for a given prison",

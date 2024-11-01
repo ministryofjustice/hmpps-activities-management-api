@@ -7,7 +7,6 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
-import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -36,7 +35,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 
-@ActiveProfiles("experimental")
 class MigrateIntegrationTest : IntegrationTestBase() {
 
   @MockBean
