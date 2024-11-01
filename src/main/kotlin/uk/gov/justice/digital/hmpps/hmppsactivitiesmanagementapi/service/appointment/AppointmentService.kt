@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
@@ -22,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDateTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Service
@@ -32,7 +30,6 @@ class AppointmentService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val prisonApiClient: PrisonApiClient,
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val updateAppointmentsJob: UpdateAppointmentsJob,
@@ -41,14 +38,6 @@ class AppointmentService(
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
 ) {
-  @Transactional(readOnly = true)
-  fun getAppointmentById(appointmentId: Long): AppointmentModel {
-    val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)
-    checkCaseloadAccess(appointment.prisonCode)
-
-    return appointment.toModel()
-  }
-
   @Transactional(readOnly = true)
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
     val appointment = appointmentRepository.findOrThrowNotFound(appointmentId)

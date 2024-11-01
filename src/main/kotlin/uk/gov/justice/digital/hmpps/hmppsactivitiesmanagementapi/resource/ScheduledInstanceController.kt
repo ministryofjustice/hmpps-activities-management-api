@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
@@ -205,61 +204,6 @@ class ScheduledInstanceController(
   fun getScheduledAttendeesByScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
   ): List<ScheduledAttendee> = scheduledInstanceService.getAttendeesForScheduledInstance(instanceId)
-
-  @GetMapping(value = ["/{instanceId}/attendances"])
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of attendances for a scheduled instance",
-    description = "Returns one or more attendance records for a particular scheduled activity for a given scheduled instance.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Attendance records found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = Attendance::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The scheduled instance was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAttendancesByScheduledInstance(
-    @PathVariable("instanceId") instanceId: Long,
-  ): List<Attendance> = attendancesService.findAttendancesByScheduledInstance(instanceId)
 
   @PutMapping(value = ["/{instanceId}/uncancel"])
   @ResponseStatus(HttpStatus.NO_CONTENT)

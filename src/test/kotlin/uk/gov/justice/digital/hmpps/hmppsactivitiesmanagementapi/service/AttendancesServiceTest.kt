@@ -61,7 +61,6 @@ class AttendancesServiceTest {
 
   private val service =
     AttendancesService(
-      scheduledInstanceRepository,
       allAttendanceRepository,
       attendanceRepository,
       attendanceReasonRepository,

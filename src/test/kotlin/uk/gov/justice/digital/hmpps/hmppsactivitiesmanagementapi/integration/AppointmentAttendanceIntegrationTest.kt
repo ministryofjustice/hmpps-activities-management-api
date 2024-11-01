@@ -50,7 +50,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.cancelled=true",
   ],
 )
-class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
+class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @MockBean
   private lateinit var auditService: AuditService
@@ -562,7 +562,22 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       nonAttendedPrisonNumbers = listOf("B2345CD"),
     )
 
-    val currentAttendance = webTestClient.getAppointmentById(2)!!.attendees
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("A1234BC", "B2345CD", "C3456DE")
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "RSI",
+      listOf(
+        appointmentLocation(123, "RSI", userDescription = "Location 123"),
+      ),
+    )
+
+    val currentAttendance = webTestClient.getAppointmentDetailsById(2)!!.attendees
 
     val appointment = webTestClient.markAppointmentAttendance(2, request)!!
 
@@ -571,7 +586,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       assertThat(attendanceRecordedTime).isNull()
       assertThat(attendanceRecordedBy).isNull()
     }
-    with(currentAttendance.single { it.prisonerNumber == "B2345CD" }) {
+    with(currentAttendance.single { it.prisoner.prisonerNumber == "B2345CD" }) {
       assertThat(attended).isTrue()
       assertThat(attendanceRecordedTime).isBefore(LocalDateTime.now().minusDays(1))
       assertThat(attendanceRecordedBy).isEqualTo("PREV.ATTENDANCE.RECORDED.BY")
@@ -581,7 +596,7 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
       assertThat(attendanceRecordedBy).isEqualTo("test-client")
     }
-    with(currentAttendance.single { it.prisonerNumber == "C3456DE" }) {
+    with(currentAttendance.single { it.prisoner.prisonerNumber == "C3456DE" }) {
       assertThat(attended).isFalse()
       assertThat(attendanceRecordedTime).isBefore(LocalDateTime.now().minusDays(1))
       assertThat(attendanceRecordedBy).isEqualTo("PREV.ATTENDANCE.RECORDED.BY")
@@ -633,16 +648,6 @@ class AppointmentAttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(AppointmentAttendanceSummary::class.java)
-      .returnResult().responseBody
-
-  private fun WebTestClient.getAppointmentById(id: Long) =
-    get()
-      .uri("/appointments/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
       .returnResult().responseBody
 
   private fun WebTestClient.markAppointmentAttendance(

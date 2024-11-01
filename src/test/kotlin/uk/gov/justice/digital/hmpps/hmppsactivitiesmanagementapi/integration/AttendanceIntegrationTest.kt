@@ -39,7 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
     "feature.event.activities.prisoner.attendance-amended=true",
   ],
 )
-class AttendanceIntegrationTest : IntegrationTestBase() {
+class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
@@ -51,7 +51,7 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get morning attendances for a scheduled activity instance`() {
-    val attendances = webTestClient.getAttendancesForInstance(1)!!
+    val attendances = webTestClient.getScheduledInstancesByIds(1)!!.first().attendances
 
     assertThat(attendances.prisonerAttendanceReason("A11111A").attendanceReason).isNull()
     assertThat(attendances.prisonerAttendanceReason("A22222A").attendanceReason).isNull()
@@ -224,17 +224,6 @@ class AttendanceIntegrationTest : IntegrationTestBase() {
       .jsonPath("$.[0].attendance[0].scheduledInstanceId").isEqualTo(1)
       .jsonPath("$.[0].attendance[0].activitySummary").isEqualTo("Maths")
   }
-
-  private fun WebTestClient.getAttendancesForInstance(instanceId: Long) =
-    get()
-      .uri("/scheduled-instances/$instanceId/attendances")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ModelAttendance::class.java)
-      .returnResult().responseBody
 
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) =
     get()

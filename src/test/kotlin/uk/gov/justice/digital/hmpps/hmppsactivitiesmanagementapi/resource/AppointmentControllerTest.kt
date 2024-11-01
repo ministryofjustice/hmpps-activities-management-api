@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -61,36 +60,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     appointmentAttendanceService,
     appointmentSearchService,
   )
-
-  @Test
-  fun `200 response when get appointment by valid id`() {
-    val model = appointmentModel()
-
-    whenever(appointmentService.getAppointmentById(1)).thenReturn(model)
-
-    val response = mockMvc.getAppointmentById(1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(model))
-
-    verify(appointmentService).getAppointmentById(1)
-  }
-
-  @Test
-  fun `404 response when get appointment by invalid id`() {
-    whenever(appointmentService.getAppointmentById(-1)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
-
-    val response = mockMvc.getAppointmentById(-1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
-
-    verify(appointmentService).getAppointmentById(-1)
-  }
 
   @Test
   fun `200 response when get appointment details by valid id`() {
@@ -392,8 +361,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       ).andExpect(MockMvcResultMatchers.status().isForbidden)
     }
   }
-
-  private fun MockMvc.getAppointmentById(id: Long) = get("/appointments/{appointmentId}", id)
 
   private fun MockMvc.getAppointmentDetailsById(id: Long) = get("/appointments/{appointmentId}/details", id)
 

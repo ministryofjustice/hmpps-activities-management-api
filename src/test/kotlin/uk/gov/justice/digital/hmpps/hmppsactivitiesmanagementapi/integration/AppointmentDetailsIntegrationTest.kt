@@ -3,9 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
-import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
-import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -30,7 +28,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
-class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
+class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `get appointment details authorisation required`() {
     webTestClient.get()
@@ -209,14 +207,4 @@ class AppointmentDetailsIntegrationTest : IntegrationTestBase() {
 
     assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
   }
-
-  private fun WebTestClient.getAppointmentDetailsById(id: Long) =
-    get()
-      .uri("/appointments/$id/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentDetails::class.java)
-      .returnResult().responseBody
 }

@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  hmpps: ministryofjustice/hmpps@9
+  hmpps: ministryofjustice/hmpps@10
   codecov: codecov/codecov@3.2.4
 
 parameters:
@@ -179,6 +179,7 @@ workflows:
           slack_channel: << pipeline.parameters.alerts-slack-channel >>
           context:
             - hmpps-common-vars
+          additional_args: --java-db-repository "ghcr.io/aquasecurity/trivy-java-db:1","public.ecr.aws/aquasecurity/trivy-java-db:1","aquasec/trivy-java-db:1"
       - hmpps/veracode_pipeline_scan:
           slack_channel: << pipeline.parameters.alerts-slack-channel >>
           context:
