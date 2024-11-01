@@ -31,36 +31,6 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
   override fun controller() = AppointmentSetController(appointmentSetService)
 
   @Test
-  fun `200 response when get appointment set by valid id`() {
-    val model = appointmentSetEntity().toModel()
-
-    whenever(appointmentSetService.getAppointmentSetById(1)).thenReturn(model)
-
-    val response = mockMvc.getAppointmentSetById(1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(model))
-
-    verify(appointmentSetService).getAppointmentSetById(1)
-  }
-
-  @Test
-  fun `404 response when get appointment set by invalid id`() {
-    whenever(appointmentSetService.getAppointmentSetById(-1)).thenThrow(EntityNotFoundException("Appointment Set -1 not found"))
-
-    val response = mockMvc.getAppointmentSetById(-1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Appointment Set -1 not found")
-
-    verify(appointmentSetService).getAppointmentSetById(-1)
-  }
-
-  @Test
   fun `200 response when get appointment set details by valid id`() {
     val details = appointmentSetDetails()
 
@@ -160,8 +130,6 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
   }
-
-  private fun MockMvc.getAppointmentSetById(id: Long) = get("/appointment-set/{appointmentSetId}", id)
 
   private fun MockMvc.getAppointmentSetDetailsById(id: Long) = get("/appointment-set/{appointmentSetId}/details", id)
 }

@@ -18,7 +18,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
@@ -67,7 +66,6 @@ class AppointmentSetServiceTest {
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
@@ -79,7 +77,6 @@ class AppointmentSetServiceTest {
     referenceCodeService,
     locationService,
     prisonerSearchApiClient,
-    prisonApiClient,
     TransactionHandler(),
     outboundEventsService,
     telemetryClient,
@@ -118,27 +115,6 @@ class AppointmentSetServiceTest {
   @AfterEach
   fun tearDown() {
     clearCaseloadIdFromRequestHeader()
-  }
-
-  @Test
-  fun `getAppointmentSetById returns mapped appointment details for known appointment set id`() {
-    val entity = appointmentSetEntity()
-    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
-    assertThat(service.getAppointmentSetById(1)).isEqualTo(entity.toModel())
-  }
-
-  @Test
-  fun `getAppointmentSetById throws entity not found exception for unknown appointment set id`() {
-    assertThatThrownBy { service.getAppointmentSetById(-1) }.isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Appointment Set -1 not found")
-  }
-
-  @Test
-  fun `getAppointmentSetById throws caseload access exception when caseload id header is different`() {
-    addCaseloadIdToRequestHeader("WRONG")
-    val entity = appointmentSetEntity()
-    whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
-    assertThatThrownBy { service.getAppointmentSetById(entity.appointmentSetId) }.isInstanceOf(CaseloadAccessException::class.java)
   }
 
   @Test

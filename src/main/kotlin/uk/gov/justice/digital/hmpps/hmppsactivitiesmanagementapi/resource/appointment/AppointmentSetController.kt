@@ -31,51 +31,6 @@ import java.security.Principal
 class AppointmentSetController(
   private val appointmentSetService: AppointmentSetService,
 ) {
-  @GetMapping(value = ["/{appointmentSetId}"])
-  @ResponseBody
-  @Operation(
-    summary = "Get an appointment set by its id",
-    description = "Returns an appointment set with its properties and references to NOMIS by its unique identifier.",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Appointment set found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = AppointmentSet::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "The appointment set for this id was not found.",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentSetById(@PathVariable("appointmentSetId") appointmentSetId: Long): AppointmentSet =
-    appointmentSetService.getAppointmentSetById(appointmentSetId)
-
   @GetMapping(value = ["/{appointmentSetId}/details"])
   @ResponseBody
   @Operation(

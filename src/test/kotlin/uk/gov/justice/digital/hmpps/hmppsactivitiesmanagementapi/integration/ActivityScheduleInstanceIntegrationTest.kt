@@ -448,22 +448,25 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
 
       verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
-      with(eventCaptor.firstValue) {
+      val allEvents = eventCaptor.allValues
+      assertThat(allEvents.size).isEqualTo(3)
+      val scheduledInstanceAmendedEvent = allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }
+      val attendance1AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(1) }
+      val attendance2AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(2) }
+
+      with(scheduledInstanceAmendedEvent) {
         assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
-        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
         assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
       }
 
-      with(eventCaptor.secondValue) {
+      with(attendance1AmendedEvent) {
         eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
         occurredAt isCloseTo TimeSource.now()
       }
 
-      with(eventCaptor.thirdValue) {
+      with(attendance2AmendedEvent) {
         eventType isEqualTo "activities.prisoner.attendance-amended"
-        additionalInformation isEqualTo PrisonerAttendanceInformation(2)
         occurredAt isCloseTo TimeSource.now()
       }
     }
