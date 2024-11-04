@@ -31,7 +31,6 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
   override fun getActivityByIdWithFilters(activityId: Long, earliestSessionDate: LocalDate): Activity? {
     val session = entityManager.unwrap(Session::class.java)
 
-    log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
     val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 
@@ -53,7 +52,6 @@ class ActivityRepositoryImpl : ActivityRepositoryCustom {
   ): Activity? {
     val session = entityManager.unwrap(Session::class.java)
 
-    log.info("Enabling filter SessionDateFilter with earliestSessionDate: $earliestSessionDate")
     val sessionDateFilter = session.enableFilter(SESSION_DATE_FILTER)
     sessionDateFilter.setParameter("earliestSessionDate", earliestSessionDate)
 

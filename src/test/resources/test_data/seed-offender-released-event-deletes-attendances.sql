@@ -48,3 +48,16 @@ values (3, 1, current_date + 1, '00:01:00', '00:02:00', true, current_timestamp,
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (3, 3, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (4, 2, current_date, '23:58:00', '23:59:00', false, null, null, null, null, 'ED');
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (4, 4, 'A11111A', 9, null, current_timestamp - interval '1 hour', 'TEST_USER', 'COMPLETED', 75, null, null);
+
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (5, 2, current_date + 1, '23:58:00', '23:59:00', false, null, null, null, null, 'ED');
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
+values (5, 5, 'A11111A', 2, null, current_timestamp - interval '1 hour', 'TEST_USER', 'COMPLETED', 75, null, null);
+

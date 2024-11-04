@@ -221,16 +221,18 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-offender-released-event-deletes-attendances.sql")
-  fun `permanent release of prisoner removes any future attendances at time of event being raised`() {
+  fun `permanent release of prisoner removes any unattended future attendances at time of event being raised`() {
     // Fixture necessary for the release event handler
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(permanentlyReleasedPrisonerToday.copy(prisonerNumber = "A11111A"))
 
     assertThatAllocationsAreActiveFor("A11111A")
 
-    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsExactlyInAnyOrder(
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L, 5L)).map { it.attendanceId }).containsExactlyInAnyOrder(
       1L,
       2L,
       3L,
+      4L,
+      5L,
     )
 
     service.process(prisonerReleasedEvent(prisonerNumber = "A11111A"))
@@ -243,7 +245,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10021, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
-    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L, 5L)).map { it.attendanceId }).containsOnly(1L, 4L, 5L)
   }
 
   @Test
