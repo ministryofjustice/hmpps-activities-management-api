@@ -85,6 +85,7 @@ class PrisonerAllocationHandler(
         prisonerNumber = allocation.prisonerNumber,
       )
         .filter { attendance -> attendance.scheduledInstance.isEndFuture(now) }
+        .filterNot { attendance -> attendance.attendanceReason?.attended == true }
         .onEach { futureAttendance ->
           log.info("Removing future attendance ${futureAttendance.attendanceId} for allocation ${allocation.allocationId}")
           futureAttendance.scheduledInstance.remove(futureAttendance)
