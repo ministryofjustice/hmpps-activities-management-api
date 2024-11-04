@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
@@ -42,20 +41,11 @@ class AppointmentSetService(
   private val referenceCodeService: ReferenceCodeService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
-  private val prisonApiClient: PrisonApiClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
 ) {
-  @Transactional(readOnly = true)
-  fun getAppointmentSetById(appointmentSetId: Long): AppointmentSetModel {
-    val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
-    checkCaseloadAccess(appointmentSet.prisonCode)
-
-    return appointmentSet.toModel()
-  }
-
   @Transactional(readOnly = true)
   fun getAppointmentSetDetailsById(appointmentSetId: Long): AppointmentSetDetails {
     val appointmentSet = appointmentSetRepository.findOrThrowNotFound(appointmentSetId)
