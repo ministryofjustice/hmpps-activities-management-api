@@ -227,11 +227,12 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
 
     assertThatAllocationsAreActiveFor("A11111A")
 
-    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L)).map { it.attendanceId }).containsExactlyInAnyOrder(
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L, 5L)).map { it.attendanceId }).containsExactlyInAnyOrder(
       1L,
       2L,
       3L,
       4L,
+      5L,
     )
 
     service.process(prisonerReleasedEvent(prisonerNumber = "A11111A"))
@@ -244,7 +245,7 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(PRISONER_ATTENDANCE_DELETED, 10021, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
-    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L)).map { it.attendanceId }).containsOnly(1L, 4L)
+    assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L, 4L, 5L)).map { it.attendanceId }).containsOnly(1L, 4L, 5L)
   }
 
   @Test
