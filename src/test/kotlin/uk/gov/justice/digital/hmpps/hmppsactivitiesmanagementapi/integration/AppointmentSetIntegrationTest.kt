@@ -16,15 +16,11 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentSetCreatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSetCreateRequest
@@ -44,7 +40,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.appointments.appointment-instance.created=true",
   ],
 )
-class AppointmentSetIntegrationTest : IntegrationTestBase() {
+class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @MockBean
   private lateinit var auditService: AuditService
@@ -53,197 +49,6 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
 
   @MockBean
   private lateinit var telemetryClient: TelemetryClient
-
-  @Test
-  fun `get appointment set authorisation required`() {
-    webTestClient.get()
-      .uri("/appointment-set/1")
-      .exchange()
-      .expectStatus().isUnauthorized
-  }
-
-  @Test
-  fun `get appointment set by unknown id returns 404 not found`() {
-    webTestClient.get()
-      .uri("/appointment-set/-1")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isNotFound
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-set-id-6.sql",
-  )
-  @Test
-  fun `get appointment set`() {
-    val appointmentSet = webTestClient.getAppointmentSetById(6)!!
-
-    assertThat(appointmentSet).isEqualTo(
-      AppointmentSet(
-        6,
-        "TPR",
-        "AC1",
-        EventTier(
-          id = 2,
-          code = "TIER_2",
-          description = "Tier 2",
-        ),
-        EventOrganiser(
-          id = 1,
-          code = "PRISON_STAFF",
-          description = "Prison staff",
-        ),
-        "Appointment description",
-        123,
-        false,
-        LocalDate.now().plusDays(1),
-        appointments = listOf(
-          Appointment(
-            6,
-            1,
-            "TPR",
-            "AC1",
-            EventTier(
-              id = 2,
-              code = "TIER_2",
-              description = "Tier 2",
-            ),
-            EventOrganiser(
-              id = 1,
-              code = "PRISON_STAFF",
-              description = "Prison staff",
-            ),
-            "Appointment description",
-            123,
-            false,
-            LocalDate.now().plusDays(1),
-            LocalTime.of(9, 0),
-            LocalTime.of(9, 15),
-            "Medical appointment for A1234BC",
-            appointmentSet.appointments[0].createdTime,
-            "TEST.USER",
-            null,
-            null,
-            null,
-            null,
-            null,
-            isDeleted = false,
-            attendees = listOf(
-              AppointmentAttendee(
-                6,
-                "A1234BC",
-                456,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-              ),
-            ),
-          ),
-          Appointment(
-            7,
-            1,
-            "TPR",
-            "AC1",
-            EventTier(
-              id = 2,
-              code = "TIER_2",
-              description = "Tier 2",
-            ),
-            EventOrganiser(
-              id = 1,
-              code = "PRISON_STAFF",
-              description = "Prison staff",
-            ),
-            "Appointment description",
-            123,
-            false,
-            LocalDate.now().plusDays(1),
-            LocalTime.of(9, 15),
-            LocalTime.of(9, 30),
-            "Medical appointment for B2345CD",
-            appointmentSet.appointments[1].createdTime,
-            "TEST.USER",
-            null,
-            null,
-            null,
-            null,
-            null,
-            isDeleted = false,
-            attendees = listOf(
-              AppointmentAttendee(
-                7,
-                "B2345CD",
-                457,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-              ),
-            ),
-          ),
-          Appointment(
-            8,
-            1,
-            "TPR",
-            "AC1",
-            EventTier(
-              id = 2,
-              code = "TIER_2",
-              description = "Tier 2",
-            ),
-            EventOrganiser(
-              id = 1,
-              code = "PRISON_STAFF",
-              description = "Prison staff",
-            ),
-            "Appointment description",
-            123,
-            false,
-            LocalDate.now().plusDays(1),
-            LocalTime.of(9, 30),
-            LocalTime.of(9, 45),
-            "Medical appointment for C3456DE",
-            appointmentSet.appointments[2].createdTime,
-            "TEST.USER",
-            null,
-            null,
-            null,
-            null,
-            null,
-            isDeleted = false,
-            attendees = listOf(
-              AppointmentAttendee(
-                8,
-                "C3456DE",
-                458,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-              ),
-            ),
-          ),
-        ),
-        appointmentSet.createdTime,
-        "TEST.USER",
-      ),
-    )
-
-    assertThat(appointmentSet.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
-  }
 
   @Test
   fun `get appointment set details authorisation required`() {
@@ -464,26 +269,6 @@ class AppointmentSetIntegrationTest : IntegrationTestBase() {
       assertThat(it.customName).isEqualTo("Appointment description")
     }
   }
-
-  private fun WebTestClient.getAppointmentSetById(id: Long) =
-    get()
-      .uri("/appointment-set/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSet::class.java)
-      .returnResult().responseBody
-
-  private fun WebTestClient.getAppointmentSetDetailsById(id: Long) =
-    get()
-      .uri("/appointment-set/$id/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSetDetails::class.java)
-      .returnResult().responseBody
 
   private fun WebTestClient.createAppointmentSet(
     request: AppointmentSetCreateRequest,

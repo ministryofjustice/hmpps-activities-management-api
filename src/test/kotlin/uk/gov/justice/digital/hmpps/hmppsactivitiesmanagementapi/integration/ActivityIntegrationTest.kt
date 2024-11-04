@@ -1054,28 +1054,30 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
     with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newPay).schedules.first()) {
       assertThat(allocations).hasSize(3)
-      assertThat(allocations[0].prisonPayBand?.id).isEqualTo(3)
-      assertThat(allocations[1].prisonPayBand?.id).isEqualTo(3)
-      assertThat(allocations[2].prisonPayBand?.id).isEqualTo(2)
+      assertThat(allocations.filter { a -> a.prisonPayBand?.id == 3L }).hasSize(2)
+      assertThat(allocations.filter { a -> a.prisonPayBand?.id == 2L }).hasSize(1)
     }
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
 
-    with(eventCaptor.firstValue) {
+    val allEvents = eventCaptor.allValues
+    assertThat(allEvents.size).isEqualTo(3)
+    val scheduleUpdateEvent = allEvents.first { it.additionalInformation == ScheduleCreatedInformation(1) }
+    val allocation1AmendEvent = allEvents.first { it.additionalInformation == PrisonerAllocatedInformation(1) }
+    val allocation12mendEvent = allEvents.first { it.additionalInformation == PrisonerAllocatedInformation(2) }
+
+    with(scheduleUpdateEvent) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.amended")
-      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An activity schedule has been updated in the activities management service")
     }
-    with(eventCaptor.secondValue) {
+    with(allocation1AmendEvent) {
       assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(1))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
     }
-    with(eventCaptor.thirdValue) {
+    with(allocation12mendEvent) {
       assertThat(eventType).isEqualTo("activities.prisoner.allocation-amended")
-      assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(2))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("A prisoner allocation has been amended in the activities management service")
     }
@@ -1107,13 +1109,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
       with(schedules.first()) {
         assertThat(allocations).hasSize(3)
-        assertThat(allocations[0].prisonPayBand?.id).isEqualTo(1)
-        assertThat(allocations[1].prisonPayBand?.id).isEqualTo(2)
-        assertThat(allocations[2].prisonPayBand?.id).isEqualTo(2)
+        assertThat(allocations.filter { a -> a.prisonPayBand?.id == 2L }).hasSize(2)
+        assertThat(allocations.filter { a -> a.prisonPayBand?.id == 1L }).hasSize(1)
       }
     }
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("activities.activity-schedule.amended")

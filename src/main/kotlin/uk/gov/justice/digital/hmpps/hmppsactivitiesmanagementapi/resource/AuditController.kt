@@ -26,6 +26,7 @@ class AuditController(
   private val auditService: AuditService,
 ) {
 
+  // Todo: Keep in case we need. See SAA-2160
   @PostMapping(value = ["/search"])
   @ResponseBody
   @Operation(
