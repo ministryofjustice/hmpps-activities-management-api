@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
-import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.times
@@ -17,8 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -39,67 +36,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   private lateinit var prisonRegimeService: PrisonRegimeService
 
   override fun controller() = PrisonController(activityService, prisonRegimeService)
-
-  @Test
-  fun `200 response when get category activities`() {
-    val expectedModel = listOf(
-      ActivityLite(
-        id = 1,
-        prisonCode = MOORLAND_PRISON_CODE,
-        attendanceRequired = true,
-        inCell = false,
-        onWing = false,
-        offWing = false,
-        pieceWork = false,
-        outsideWork = false,
-        payPerSession = PayPerSession.H,
-        summary = "activity summary",
-        description = "activity description",
-        riskLevel = "High",
-        category = ActivityCategory(
-          id = 1L,
-          code = "LEISURE_SOCIAL",
-          name = "Leisure and social",
-          description = "Such as association, library time and social clubs, like music or art",
-        ),
-        capacity = 20,
-        allocated = 10,
-        createdTime = LocalDateTime.now(),
-        activityState = ActivityState.LIVE,
-        paid = true,
-      ),
-    )
-
-    whenever(activityService.getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 1)).thenReturn(
-      expectedModel,
-    )
-
-    val response = mockMvc.getActivitiesInCategory(MOORLAND_PRISON_CODE, 1)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }.andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
-
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 1)
-  }
-
-  @Test
-  fun `404 response when get category activities and category does not exist`() {
-    whenever(activityService.getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 2)).thenThrow(
-      EntityNotFoundException("not found"),
-    )
-
-    val response = mockMvc.getActivitiesInCategory(MOORLAND_PRISON_CODE, 2)
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }.andReturn().response
-
-    assertThat(response.contentAsString).contains("Not found")
-
-    verify(activityService, times(1)).getActivitiesByCategoryInPrison(MOORLAND_PRISON_CODE, 2)
-  }
-
-  private fun MockMvc.getActivitiesInCategory(prisonCode: String, categoryId: Long) =
-    get("/prison/{prisonCode}/activity-categories/{categoryId}/activities", prisonCode, categoryId)
 
   @Test
   fun `200 response when get activities`() {

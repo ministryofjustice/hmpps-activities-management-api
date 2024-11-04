@@ -31,7 +31,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
@@ -88,14 +87,6 @@ class ActivityService(
       ?: throw (EntityNotFoundException("Activity $activityId not found"))
     return transform(activity)
   }
-
-  fun getActivitiesByCategoryInPrison(
-    prisonCode: String,
-    categoryId: Long,
-  ) =
-    activityCategoryRepository.findOrThrowNotFound(categoryId).let {
-      activityRepository.getAllByPrisonCodeAndActivityCategory(prisonCode, it).toModelLite()
-    }
 
   fun getActivitiesInPrison(
     prisonCode: String,

@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
@@ -74,61 +73,6 @@ class PrisonController(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
   ): List<ActivitySummary> = activityService.getActivitiesInPrison(prisonCode, excludeArchived)
-
-  @Operation(
-    summary = "Get list of activities within a category at a specified prison",
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Activities within the category",
-        content = [
-          Content(
-            mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityLite::class)),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Category ID not found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = ErrorResponse::class),
-          ),
-        ],
-      ),
-    ],
-  )
-  @GetMapping(value = ["/{prisonCode}/activity-categories/{categoryId}/activities"])
-  @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getActivitiesInCategory(
-    @PathVariable("prisonCode") prisonCode: String,
-    @PathVariable("categoryId") categoryId: Long,
-  ): List<ActivityLite> = activityService.getActivitiesByCategoryInPrison(prisonCode, categoryId)
 
   @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
   @ResponseBody
