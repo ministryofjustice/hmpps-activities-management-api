@@ -27,8 +27,6 @@ interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepository
     @Param("toDate") toDate: LocalDate,
   ): List<Activity>
 
-  fun getAllByPrisonCodeAndActivityCategory(prisonCode: String, category: ActivityCategory): List<Activity>
-
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?
 
   @Query(

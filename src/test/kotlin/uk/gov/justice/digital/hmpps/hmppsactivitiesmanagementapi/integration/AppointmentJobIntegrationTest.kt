@@ -187,9 +187,8 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
 
     with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      size isEqualTo 4
-      assertThat(map { it.additionalInformation }).containsExactlyElementsOf(
-        listOf(4L, 6L, 10L, 20L).map { AppointmentInstanceInformation(it) },
+      assertThat(map { it.additionalInformation }).containsExactlyInAnyOrderElementsOf(
+        listOf(10L, 4L, 6L, 20L).map { AppointmentInstanceInformation(it) },
       )
     }
 

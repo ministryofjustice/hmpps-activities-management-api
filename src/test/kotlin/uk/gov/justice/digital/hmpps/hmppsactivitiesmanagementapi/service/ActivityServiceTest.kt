@@ -600,33 +600,6 @@ class ActivityServiceTest {
   }
 
   @Test
-  fun `getActivitiesByCategoryInPrison returns list of activities`() {
-    val category = activityCategory()
-
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(category))
-    whenever(activityRepository.getAllByPrisonCodeAndActivityCategory("MDI", category))
-      .thenReturn(listOf(activityEntity()))
-
-    assertThat(
-      service().getActivitiesByCategoryInPrison(
-        "MDI",
-        1,
-      ),
-    ).isEqualTo(listOf(activityEntity()).toModelLite())
-
-    verify(activityRepository, times(1)).getAllByPrisonCodeAndActivityCategory("MDI", category)
-  }
-
-  @Test
-  fun `getActivitiesByCategoryInPrison throws entity not found exception for unknown category ID`() {
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.empty())
-
-    assertThatThrownBy { service().getActivitiesByCategoryInPrison("MDI", 1) }
-      .isInstanceOf(EntityNotFoundException::class.java)
-      .hasMessage("Activity Category 1 not found")
-  }
-
-  @Test
   fun `getActivitiesInPrison only returns list of live activities`() {
     whenever(activitySummaryRepository.findAllByPrisonCode("MDI"))
       .thenReturn(
