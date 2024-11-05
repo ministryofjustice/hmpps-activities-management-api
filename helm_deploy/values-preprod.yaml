@@ -39,3 +39,10 @@ generic-service:
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service-dev
 
+cron:
+  fixZeroPayDeallocate: "0 22 5 11 *"
+  fixZeroPayReallocate: "0 5 6 11 *"
+
+  datafix:
+    prisonCode: "MTI"
+    activityScheduleId: "2446"

@@ -49,3 +49,11 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service
+
+cron:
+  fixZeroPayDeallocate: "0 22 6 11 *"
+  fixZeroPayReallocate: "0 5 7 11 *"
+
+  datafix:
+    prisonCode: "MTI"
+    activityScheduleId: "2446"
