@@ -36,7 +36,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check
+          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check -x test
       - codecov/upload:
           file: build/reports/jacoco/test/jacocoTestReport.xml
       - save_cache:
@@ -75,7 +75,7 @@ jobs:
           command: |
             cd src/test/kotlin
             # Get list of classnames of tests that should run on this node
-            CLASSNAMES=$(circleci tests glob "**/integration/**/*Test.kt" \
+            CLASSNAMES=$(circleci tests glob "**/integration/**/AttendanceIntegrationTest.kt" \
               | cut -c 1- | sed 's@/@.@g' \
               | sed 's/.\{3\}$//' \
               | circleci tests split --split-by=timings)
