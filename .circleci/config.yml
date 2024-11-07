@@ -36,7 +36,7 @@ jobs:
             - gradle-{{ checksum "build.gradle.kts" }}
             - gradle-
       - run:
-          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check -x test
+          command: ./gradlew -Dorg.gradle.jvmargs="--illegal-access=permit" -Dkotlin.daemon.jvm.options="--illegal-access=permit" check
       - codecov/upload:
           file: build/reports/jacoco/test/jacocoTestReport.xml
       - save_cache:
@@ -58,9 +58,10 @@ jobs:
       localstack_tag: << pipeline.parameters.localstack-version >>
       services: "sns,sqs"
       postgres_tag: << pipeline.parameters.postgres-version >>
+      postgres_db: "activities"
       postgres_username: "activities"
       postgres_password: "activities"
-    resource_class: medium+
+    resource_class: large
     environment:
       _JAVA_OPTIONS: -Xmx2048m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
@@ -75,7 +76,7 @@ jobs:
           command: |
             cd src/test/kotlin
             # Get list of classnames of tests that should run on this node
-            CLASSNAMES=$(circleci tests glob "**/integration/**/AttendanceIntegrationTest.kt" \
+            CLASSNAMES=$(circleci tests glob "**/integration/**/*Test.kt" \
               | cut -c 1- | sed 's@/@.@g' \
               | sed 's/.\{3\}$//' \
               | circleci tests split --split-by=timings)

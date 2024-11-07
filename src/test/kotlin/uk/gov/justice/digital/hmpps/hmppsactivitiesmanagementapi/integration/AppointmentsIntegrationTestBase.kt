@@ -35,7 +35,6 @@ abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isAccepted
-    Thread.sleep(3000)
   }
 
   fun WebTestClient.getAppointmentSeriesById(id: Long) =

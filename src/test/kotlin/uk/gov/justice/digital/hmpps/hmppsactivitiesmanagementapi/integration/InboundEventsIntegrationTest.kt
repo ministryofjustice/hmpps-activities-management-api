@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
@@ -45,6 +48,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.convert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
@@ -53,6 +57,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ReleaseInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.SQSMessage
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
@@ -71,9 +76,10 @@ import java.time.temporal.ChronoUnit
     "feature.audit.service.hmpps.enabled=true",
     "feature.audit.service.local.enabled=true",
     "feature.offender.merge.enabled=true",
+    "feature.event.prison-offender-events.prisoner.merged=true",
   ],
 )
-class InboundEventsIntegrationTest : IntegrationTestBase() {
+class InboundEventsIntegrationTest : LocalStackTestBase() {
 
   @MockBean
   private lateinit var outboundEventsService: OutboundEventsService
@@ -806,17 +812,40 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking)
     appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(oldPrisonNumberAndOldBooking, newPrisonerNumberAndOldBooking)
 
-    service.process(offenderMergedEvent(prisonerNumber = newPrisonerNumber, removedPrisonerNumber = oldPrisonerNumber))
+    val event = offenderMergedEvent(prisonerNumber = newPrisonerNumber, removedPrisonerNumber = oldPrisonerNumber)
 
-    val newPrisonerNumberAndNewBooking = newPrisonerNumber to newBookingId
+    this.sendMessage(InboundEventType.OFFENDER_MERGED, event.additionalInformation)
 
-    // Check all set to the new prisoner number after event is processed
-    allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
-    attendanceRepository.findAll().single().prisonerNumber isEqualTo newPrisonerNumber
-    waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
-    auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
-    eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
-    appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
+    await untilAsserted {
+      val newPrisonerNumberAndNewBooking = newPrisonerNumber to newBookingId
+
+      // Check all set to the new prisoner number after event is processed
+      allocationRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(
+        newPrisonerNumberAndNewBooking,
+        newPrisonerNumberAndNewBooking,
+      )
+
+      attendanceRepository.findAll().single().prisonerNumber isEqualTo newPrisonerNumber
+
+      waitingListRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(
+        newPrisonerNumberAndNewBooking,
+        newPrisonerNumberAndNewBooking,
+      )
+
+      auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
+
+      eventReviewRepository.findAll()
+        .map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(
+        newPrisonerNumberAndNewBooking,
+        newPrisonerNumberAndNewBooking,
+      )
+
+      appointmentAttendeeRepository.findAll()
+        .map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(
+        newPrisonerNumberAndNewBooking,
+        newPrisonerNumberAndNewBooking,
+      )
+    }
   }
 
   @Test
@@ -881,5 +910,20 @@ class InboundEventsIntegrationTest : IntegrationTestBase() {
     auditRepository.findAll().map { it.prisonerNumber }.all { it == newPrisonerNumber } isBool true
     eventReviewRepository.findAll().map { it.prisonerNumber to it.bookingId?.toLong() } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking, newPrisonerNumberAndNewBooking)
     appointmentAttendeeRepository.findAll().map { it.prisonerNumber to it.bookingId } containsExactlyInAnyOrder listOf(newPrisonerNumberAndNewBooking)
+  }
+
+  data class RawMessage(val eventType: String, val additionalInformation: Any)
+
+  private fun sendMessage(eventType: InboundEventType, additionalInformation: Any) {
+    val e = RawMessage(eventType.eventType, additionalInformation)
+
+    val sqsMessage = SQSMessage("Notification", mapper.writeValueAsString(e))
+
+    activitiesQueue.sqsClient.sendMessage(
+      SendMessageRequest.builder()
+        .queueUrl("activities")
+        .messageBody(mapper.writeValueAsString(sqsMessage))
+        .build(),
+    )
   }
 }
