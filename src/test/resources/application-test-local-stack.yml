@@ -92,15 +92,6 @@ hmpps.sqs:
       queueName: activities
       dlqName: activities_dlq
       subscribeTopicId: inboundtopic
-      subscribeFilter: '{"eventType":[ "prison-offender-events.prisoner.merged" ] }'
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:inboundtopic
-
-
-#feature:
-#  audit.service:
-#    hmpps.enabled: true
-#    local.enabled: true
-#  offender.merge.enabled: true
-#  event.prison-offender-events.prisoner.merged: true
