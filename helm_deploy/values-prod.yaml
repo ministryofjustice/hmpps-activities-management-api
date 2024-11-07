@@ -51,8 +51,8 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service
 
 cron:
-  fixZeroPayDeallocate: "0 22 10 11 *"
-  fixZeroPayReallocate: "0 5 11 11 *"
+  fixZeroPayDeallocate: "0 22 7 11 *"
+  fixZeroPayReallocate: "0 5 8 11 *"
 
   datafix:
     prisonCode: "MTI"
