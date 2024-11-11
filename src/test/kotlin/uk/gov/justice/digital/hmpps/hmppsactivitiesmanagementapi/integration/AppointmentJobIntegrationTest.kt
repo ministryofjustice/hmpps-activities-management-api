@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -102,12 +104,14 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(0)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 10
-    }
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 10
+      }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 3
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 3
+      }
     }
 
     verifyNoInteractions(eventsPublisher)
@@ -121,23 +125,28 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 7
-      single { it.id == 1L }.attendees.map { it.prisonerNumber } containsExactlyInAnyOrder listOf(prisonNumber, "B2345CD")
-      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
-    }
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 7
+        single { it.id == 1L }.attendees.map { it.prisonerNumber } containsExactlyInAnyOrder listOf(
+          prisonNumber,
+          "B2345CD",
+        )
+        filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+      }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 2
-      flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
-    }
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 2
+        flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      }
 
-    verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(map { it.additionalInformation }).hasSameElementsAs(
-        listOf(20L, 6L, 10L, 4L).map { AppointmentInstanceInformation(it) },
-      )
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+        assertThat(map { it.additionalInformation }).hasSameElementsAs(
+          listOf(20L, 6L, 10L, 4L).map { AppointmentInstanceInformation(it) },
+        )
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -153,12 +162,14 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 10
-    }
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 10
+      }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 3
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 3
+      }
     }
 
     verifyNoInteractions(eventsPublisher)
@@ -173,15 +184,17 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
 
     webTestClient.manageAppointmentAttendees(1)
 
-    with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 7
-      single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
-      filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
-    }
+    await untilAsserted {
+      with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 7
+        single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
+        filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
+      }
 
-    with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
-      flatMap { it.attendees } hasSize 2
-      flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      with(webTestClient.getAppointmentSetDetailsById(1)!!.appointments.filterNot { it.isDeleted }) {
+        flatMap { it.attendees } hasSize 2
+        flatMap { it.attendees }.map { it.prisoner.prisonerNumber }.toSet() isEqualTo setOf("B2345CD", "C3456DE")
+      }
     }
 
     verify(eventsPublisher, times(4)).send(eventCaptor.capture())
