@@ -21,7 +21,7 @@ generic-service:
     SENTRY_ENVIRONMENT: production
     ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI
     APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI
-    PRISONS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI
+    PRISONS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,FSI
 
   resources:
     requests:
@@ -49,11 +49,3 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service
-
-cron:
-  fixZeroPayDeallocate: "0 22 7 11 *"
-  fixZeroPayReallocate: "0 5 8 11 *"
-
-  datafix:
-    prisonCode: "MTI"
-    activityScheduleId: "2430"

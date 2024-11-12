@@ -47,7 +47,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
   @Query(
     value = """
-      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount(al.bookingId, count(att)) from Attendance att 
+      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount(al.bookingId, count(distinct(att))) from Attendance att 
       join ScheduledInstance si on att.scheduledInstance = si
       join ActivitySchedule asch on si.activitySchedule = asch
       join Allocation al on al.activitySchedule = asch and att.prisonerNumber = al.prisonerNumber and al.startDate <= : date and (al.endDate is null or al.endDate >= :date)
