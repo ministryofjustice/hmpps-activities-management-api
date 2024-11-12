@@ -50,8 +50,11 @@ insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, sess
 values (6, 2, current_date, '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
 -- allocation for prisoner 1 on activity 1 is active so will be included
+-- note we end and re-allocate on the same day to expose a bug found in the reconciliation
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (1, 1, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'any', null, null, null, null, null, null, 'ACTIVE');
+values (1, 1, 'A11111A', 10001, 1, '2022-10-10', current_date -1, '2022-10-10 09:00:00', 'any', current_date - 1, null, null, null, null, null, 'ACTIVE');
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (8, 1, 'A11111A', 10001, 1, current_date - 1, null, current_date - 1, 'any', null, null, null, null, null, null, 'ACTIVE');
 
 -- allocation for prisoner 1 on activity 2 is active so will be included
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
