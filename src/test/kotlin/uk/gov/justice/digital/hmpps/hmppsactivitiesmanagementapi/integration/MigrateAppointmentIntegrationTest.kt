@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCountSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -311,6 +312,47 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoMoreInteractions(auditService)
   }
 
+  @Sql(
+    "classpath:test_data/seed-migrated-appointments-summary.sql",
+  )
+  @Test
+  fun `migrate appointment summary for several categories - success`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    val summary = webTestClient.migratedAppointmentsSummary("RSI", LocalDate.now().plusDays(1), "GOVE,CHAP,ACTI,OIC,AC3")
+
+    assertThat(summary).hasSize(5)
+
+    with(summary) {
+      this.single { it.appointmentCategorySummary.code == "GOVE" && it.count == 1L }
+      this.single { it.appointmentCategorySummary.code == "CHAP" && it.count == 0L }
+      this.single { it.appointmentCategorySummary.code == "ACTI" && it.count == 8L }
+      this.single { it.appointmentCategorySummary.code == "OIC" && it.count == 1L }
+      this.single { it.appointmentCategorySummary.code == "AC3" && it.appointmentCategorySummary.description == "Appointment Category 3" && it.count == 5L }
+    }
+  }
+
+  @Test
+  fun `migrate appointment summary forbidden`() {
+    val startDate = LocalDate.now().plusDays(1)
+    val categoryCodes = "GOVE,CHAP,ACTI,OIC,AC3"
+    val error = webTestClient.get()
+      .uri("/migrate-appointment/RSI/summary?startDate=$startDate&categoryCodes=$categoryCodes")
+      .headers(setAuthorisation(roles = listOf()))
+      .exchange()
+      .expectStatus().isForbidden
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(403)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
+      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
   private fun WebTestClient.migrateAppointment(
     request: AppointmentMigrateRequest,
   ) =
@@ -335,4 +377,19 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       .exchange()
       .expectStatus().isAccepted
   }
+
+  private fun WebTestClient.migratedAppointmentsSummary(
+    prisonCode: String,
+    startDate: LocalDate,
+    categoryCodes: String,
+  ) =
+    get()
+      .uri("/migrate-appointment/$prisonCode/summary?startDate=$startDate&categoryCodes=$categoryCodes")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(AppointmentCountSummary::class.java)
+      .returnResult().responseBody
 }
