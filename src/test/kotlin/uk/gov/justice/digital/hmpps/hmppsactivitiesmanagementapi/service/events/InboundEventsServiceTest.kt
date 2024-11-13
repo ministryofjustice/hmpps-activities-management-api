@@ -81,7 +81,7 @@ class InboundEventsServiceTest {
 
   @Test
   fun `inbound interesting event is processed by interesting event handler`() {
-    val cellMoveEvent = cellMoveEvent("123456")
+    val cellMoveEvent = prisonerUpdatedEvent("123456")
     service.process(cellMoveEvent)
     verify(interestingEventHandler).handle(cellMoveEvent)
   }

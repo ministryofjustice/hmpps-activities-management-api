@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.awaitility.Awaitility.await
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
@@ -47,7 +48,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.activeInPentonvillePrisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.convert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.APPOINTMENT_INSTANCE_DELETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ALLOCATION_AMENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent.PRISONER_ATTENDANCE_AMENDED
@@ -61,7 +61,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.permanentlyReleasedPrisonerToday
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
@@ -76,6 +78,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.prison-offender-events.prisoner.activities-changed=true",
     "feature.event.prison-offender-events.prisoner.appointments-changed=true",
     "feature.event.prisoner-offender-search.prisoner.received=true",
+    "feature.event.prisoner-offender-search.prisoner.updated=true",
   ],
 )
 class InboundEventsIntegrationTest : LocalStackTestBase() {
@@ -108,9 +111,6 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   private lateinit var auditRepository: AuditRepository
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
-
-  @Autowired
-  private lateinit var service: InboundEventsService
 
   @BeforeEach
   fun initMocks() {
@@ -238,6 +238,40 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.alerts-updated")
       assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
       assertThat(interestingEvent.eventData).isEqualTo("Alerts updated")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner update including LOCATION is recorded`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "LOCATION", "SENTENCE"))
+
+    this.sendInboundEvent(event)
+
+    await untilAsserted {
+      assertThat(eventReviewRepository.findAll()).isNotEmpty
+
+      val interestingEvent = eventReviewRepository.findAll().last()
+
+      assertThat(interestingEvent.eventType).isEqualTo("prisoner-offender-search.prisoner.updated")
+      assertThat(interestingEvent.prisonerNumber).isEqualTo("A11111A")
+      assertThat(interestingEvent.eventData).isEqualTo("Cell move")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-1.sql")
+  fun `prisoner update other than LOCATION is not recorded`() {
+    stubPrisonerForInterestingEvent(prisoner = activeInPentonvilleInmate.copy(offenderNo = "A11111A"))
+
+    val event = prisonerUpdatedEvent(prisonerNumber = "A11111A", listOf("STATUS", "SENTENCE"))
+
+    this.sendInboundEvent(event)
+
+    await().during(Duration.ofMillis(200)).atMost(Duration.ofMillis(400)).until {
+      eventReviewRepository.findAll().isEmpty()
     }
   }
 

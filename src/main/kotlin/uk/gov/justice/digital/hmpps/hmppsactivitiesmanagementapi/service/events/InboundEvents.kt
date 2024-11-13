@@ -29,9 +29,9 @@ enum class InboundEventType(val eventType: String) {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
       mapper.readValue<IncentivesDeletedEvent>(message)
   },
-  CELL_MOVE("prison-offender-events.prisoner.cell.move") {
+  PRISONER_UPDATED("prisoner-offender-search.prisoner.updated") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
-      mapper.readValue<CellMoveEvent>(message)
+      mapper.readValue<PrisonerUpdatedEvent>(message)
   },
   NON_ASSOCIATIONS("prison-offender-events.prisoner.non-association-detail.changed") {
     override fun toInboundEvent(mapper: ObjectMapper, message: String) =
@@ -59,6 +59,8 @@ interface InboundEvent {
 
   @JsonGetter
   fun eventType(): String
+  fun eventMessage(): String? = "Unknown event"
+  fun isMeaningful() = true
 }
 
 interface InboundReleaseEvent : InboundEvent {
@@ -72,6 +74,7 @@ data class PrisonerReleasedEvent(val additionalInformation: ReleaseInformation) 
   override fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RELEASED.eventType
+  override fun eventMessage() = "Prisoner released"
   fun isTemporary() = listOf("TEMPORARY_ABSENCE_RELEASE", "SENT_TO_COURT").contains(additionalInformation.reason)
   fun isPermanent() = listOf("RELEASED", "RELEASED_TO_HOSPITAL").contains(additionalInformation.reason)
 }
@@ -83,6 +86,7 @@ data class PrisonerReceivedEvent(val additionalInformation: ReceivedInformation)
   fun prisonCode() = additionalInformation.prisonId
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.PRISONER_RECEIVED.eventType
+  override fun eventMessage() = "Prisoner received"
 }
 
 data class ReceivedInformation(val nomsNumber: String, val reason: String, val prisonId: String)
@@ -93,6 +97,7 @@ data class OffenderMergedEvent(val additionalInformation: MergeInformation) : In
   override fun prisonerNumber() = additionalInformation.nomsNumber
   fun removedPrisonerNumber() = additionalInformation.removedNomsNumber
   override fun eventType() = InboundEventType.OFFENDER_MERGED.eventType
+  override fun eventMessage() = "Prisoner merged from '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
 }
 
 data class MergeInformation(val nomsNumber: String, val removedNomsNumber: String)
@@ -102,35 +107,49 @@ data class MergeInformation(val nomsNumber: String, val removedNomsNumber: Strin
 data class IncentivesInsertedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_INSERTED.eventType
+  override fun eventMessage() = "Incentive review created"
 }
 
 data class IncentivesUpdatedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_UPDATED.eventType
+  override fun eventMessage() = "Incentive review updated"
 }
 
 data class IncentivesDeletedEvent(val additionalInformation: IncentivesInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.INCENTIVES_DELETED.eventType
+  override fun eventMessage() = "Incentive review deleted"
 }
 
 data class IncentivesInformation(val nomsNumber: String, val reason: String?, val prisonId: String?)
 
-// ------------ Cell move events ------------------------------------------------------------------
+// ------------ Prisoner updated events ------------------------------------------------------------------
 
-data class CellMoveEvent(val additionalInformation: CellMoveInformation) : InboundEvent, EventOfInterest {
+data class PrisonerUpdatedEvent(val additionalInformation: PrisonerUpdatedInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
-  override fun eventType() = InboundEventType.CELL_MOVE.eventType
-  fun bookingId() = additionalInformation.bookingId
+
+  override fun eventType() = InboundEventType.PRISONER_UPDATED.eventType
+
+  override fun eventMessage(): String? =
+    with(additionalInformation.categoriesChanged) {
+      when {
+        contains("LOCATION") -> "Cell move"
+        else -> null
+      }
+    }
+
+  override fun isMeaningful() = eventMessage() != null
 }
 
-data class CellMoveInformation(val nomsNumber: String, val livingUnitId: Long, val bookingId: Long)
+data class PrisonerUpdatedInformation(val nomsNumber: String, val categoriesChanged: List<String>)
 
 // ------------ Non associations changed events ----------------------------------------------------
 
 data class NonAssociationsChangedEvent(val additionalInformation: NonAssociationInformation) : InboundEvent, EventOfInterest {
   override fun prisonerNumber() = additionalInformation.nomsNumber
   override fun eventType() = InboundEventType.NON_ASSOCIATIONS.eventType
+  override fun eventMessage() = "Non-associations changed"
   fun bookingId() = additionalInformation.bookingId
 }
 
@@ -146,6 +165,8 @@ data class AppointmentsChangedEvent(
     personReference.identifiers.first { it.type == "NOMS" }.value
 
   override fun eventType() = InboundEventType.APPOINTMENTS_CHANGED.eventType
+
+  override fun eventMessage() = "Appointments changed '${additionalInformation.action}'"
 
   override fun prisonCode() = additionalInformation.prisonId
 
@@ -164,6 +185,8 @@ data class ActivitiesChangedEvent(
     personReference.identifiers.first { it.type == "NOMS" }.value
 
   override fun eventType() = InboundEventType.ACTIVITIES_CHANGED.eventType
+
+  override fun eventMessage() = "Activities changed"
 }
 
 data class PersonReference(val identifiers: List<Identifier>)
@@ -185,6 +208,8 @@ data class AlertsUpdatedEvent(val additionalInformation: AlertsUpdatedInformatio
   override fun prisonerNumber(): String = additionalInformation.nomsNumber
 
   override fun eventType() = InboundEventType.ALERTS_UPDATED.eventType
+
+  override fun eventMessage() = "Alerts updated"
 }
 
 data class AlertsUpdatedInformation(
