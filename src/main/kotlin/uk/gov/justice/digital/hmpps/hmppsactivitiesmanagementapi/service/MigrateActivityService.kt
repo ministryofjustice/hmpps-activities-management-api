@@ -88,7 +88,7 @@ class MigrateActivityService(
 
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
 
-  @Transactional
+  // @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
     // Check the prison is rolled out for activities
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
@@ -414,7 +414,7 @@ class MigrateActivityService(
     return tier ?: throw ValidationException("Could not map $programServiceCode to a tier")
   }
 
-  @Transactional
+  // @Transactional
   fun migrateAllocation(request: AllocationMigrateRequest): AllocationMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
       logAndThrowValidationException("Prison ${request.prisonCode} is not rolled out for activities")
