@@ -225,7 +225,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
         .andExpect { status { isOk() } }
 
-      verify(migrateAppointmentService).getAppointmentSummary ("MDI", startDate, listOf("AC1"))
+      verify(migrateAppointmentService).getAppointmentSummary("MDI", startDate, listOf("AC1"))
     }
 
     @Test
