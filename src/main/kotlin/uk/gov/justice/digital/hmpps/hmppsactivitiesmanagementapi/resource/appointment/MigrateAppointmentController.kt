@@ -187,7 +187,7 @@ class MigrateAppointmentController(
     @Parameter(description = "Inclusive start date of migrated appointments. Must be today or in the future")
     startDate: LocalDate,
     @RequestParam(value = "categoryCodes", required = true)
-    @Parameter(description = "The category code assigned to migrated appointments")
+    @Parameter(description = "A list of category codes to retrieve summaries appointments")
     categoryCodes: List<String>,
   ): List<AppointmentCountSummary> {
     require(startDate.isAfter(LocalDate.now().minusDays(1))) {
