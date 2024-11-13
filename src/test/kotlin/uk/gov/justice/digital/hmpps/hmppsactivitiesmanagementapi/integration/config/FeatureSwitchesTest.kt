@@ -38,7 +38,6 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.incentives.iep-review.inserted=true",
       "feature.event.incentives.iep-review.updated=true",
       "feature.event.incentives.iep-review.deleted=true",
-      "feature.event.prison-offender-events.prisoner.cell.move=true",
       "feature.event.prison-offender-events.prisoner.non-association-detail.changed=true",
       "feature.event.prison-offender-events.prisoner.activities-changed=true",
       "feature.event.prison-offender-events.prisoner.appointments-changed=true",
@@ -46,6 +45,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
       "feature.event.prisoner-offender-search.prisoner.received=true",
       "feature.event.prisoner-offender-search.prisoner.released=true",
+      "feature.event.prisoner-offender-search.prisoner.updated=true",
       "feature.non.associations.enabled=true",
     ],
   )

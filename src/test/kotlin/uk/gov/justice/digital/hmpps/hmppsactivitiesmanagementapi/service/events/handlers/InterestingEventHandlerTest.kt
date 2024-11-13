@@ -6,6 +6,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -29,7 +30,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.activitiesChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.alertsUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.appointmentsChangedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.cellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewInsertedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.iepReviewUpdatedEvent
@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReceivedFromTemporaryAbsence
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerReleasedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.prisonerUpdatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
 class InterestingEventHandlerTest {
@@ -66,7 +67,7 @@ class InterestingEventHandlerTest {
       listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.ACTIVE))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
 
-    val inboundEvent = cellMoveEvent("123456")
+    val inboundEvent = prisonerUpdatedEvent("123456")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -77,7 +78,7 @@ class InterestingEventHandlerTest {
       bookingId isEqualTo 1
       eventData isEqualTo "Cell move"
       eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.CELL_MOVE.eventType
+      eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "123456"
     }
@@ -91,7 +92,7 @@ class InterestingEventHandlerTest {
       listOf(allocation().copy(allocationId = 1, prisonerNumber = "123456", prisonerStatus = PrisonerStatus.PENDING))
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", activeAllocations)
 
-    val inboundEvent = cellMoveEvent("123456")
+    val inboundEvent = prisonerUpdatedEvent("123456", listOf("LOCATION", "SENTENCE"))
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
@@ -102,7 +103,7 @@ class InterestingEventHandlerTest {
       bookingId isEqualTo 2
       eventData isEqualTo "Cell move"
       eventTime isCloseTo TimeSource.now()
-      eventType isEqualTo InboundEventType.CELL_MOVE.eventType
+      eventType isEqualTo InboundEventType.PRISONER_UPDATED.eventType
       prisonCode isEqualTo PENTONVILLE_PRISON_CODE
       prisonerNumber isEqualTo "123456"
     }
@@ -428,7 +429,7 @@ class InterestingEventHandlerTest {
   @Test
   fun `ignores prisoners in prisons which are not rolled out`() {
     mockPrisoner(prisonCode = "RSI")
-    val inboundEvent = cellMoveEvent("123456")
+    val inboundEvent = prisonerUpdatedEvent("123456")
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool false }
 
@@ -440,12 +441,21 @@ class InterestingEventHandlerTest {
   fun `ignores events for a prisoner with no active allocations`() {
     mockPrisoner()
     mockAllocations(PENTONVILLE_PRISON_CODE, "123456", emptyList())
-    val inboundEvent = cellMoveEvent("123456")
+    val inboundEvent = prisonerUpdatedEvent("123456", listOf("LOCATION", "SENTENCE"))
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool false }
 
     verify(allocationRepository).findByPrisonCodePrisonerNumberPrisonerStatus(PENTONVILLE_PRISON_CODE, "123456", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING)
     verifyNoInteractions(eventReviewRepository)
+  }
+
+  @Test
+  fun `ignores prisoner update event that is not meaningful`() {
+    val inboundEvent = prisonerUpdatedEvent("123456", listOf("SENTENCE", "STATUS"))
+
+    handler.handle(inboundEvent).also { it.isSuccess() isBool true }
+
+    verify(eventReviewRepository, never()).saveAndFlush(any())
   }
 
   private fun mockAllocations(prisonCode: String, prisonerNumber: String, allocations: List<Allocation>) {

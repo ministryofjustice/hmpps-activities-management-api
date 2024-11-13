@@ -10,17 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Allo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.EventReviewRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.Action
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ActivitiesChangedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AlertsUpdatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentsChangedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.CellMoveEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.InboundReleaseEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesDeletedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesInsertedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.IncentivesUpdatedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.NonAssociationsChangedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OffenderMergedEvent
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReceivedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerReleasedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.LocalDateTime
@@ -43,6 +35,11 @@ class InterestingEventHandler(
   override fun handle(event: InboundEvent): Outcome {
     log.debug("Checking for interesting event: {}", event)
 
+    if (!event.isMeaningful()) {
+      log.debug("Event is not meaningful: ${event.eventType()} ${event.eventMessage()}")
+      return Outcome.success()
+    }
+
     if (event is InboundReleaseEvent) return recordRelease(event)
     if (event is OffenderMergedEvent) return recordMerge(event)
 
@@ -59,7 +56,7 @@ class InterestingEventHandler(
               EventReview(
                 eventTime = LocalDateTime.now(),
                 eventType = event.eventType(),
-                eventData = event.getEventMessage(),
+                eventData = event.eventMessage(),
                 prisonCode = agencyId,
                 prisonerNumber = event.prisonerNumber(),
                 bookingId = it.bookingId?.toInt(),
@@ -85,7 +82,7 @@ class InterestingEventHandler(
           EventReview(
             eventTime = LocalDateTime.now(),
             eventType = releaseEvent.eventType(),
-            eventData = releaseEvent.getEventMessage(),
+            eventData = releaseEvent.eventMessage(),
             // Release events use the prison code from the release event. The prisoner prison code could be different because they are released!
             prisonCode = releaseEvent.prisonCode(),
             prisonerNumber = releaseEvent.prisonerNumber(),
@@ -112,7 +109,7 @@ class InterestingEventHandler(
             EventReview(
               eventTime = LocalDateTime.now(),
               eventType = mergedEvent.eventType(),
-              eventData = mergedEvent.getEventMessage(),
+              eventData = mergedEvent.eventMessage(),
               prisonCode = agencyId,
               prisonerNumber = mergedEvent.prisonerNumber(),
               bookingId = it.bookingId?.toInt(),
@@ -127,23 +124,6 @@ class InterestingEventHandler(
     }
 
     return Outcome.success()
-  }
-
-  private fun InboundEvent.getEventMessage(): String {
-    return when (this) {
-      is ActivitiesChangedEvent -> "Activities changed"
-      is AlertsUpdatedEvent -> "Alerts updated"
-      is AppointmentsChangedEvent -> "Appointments changed '${additionalInformation.action}'"
-      is CellMoveEvent -> "Cell move"
-      is NonAssociationsChangedEvent -> "Non-associations changed"
-      is IncentivesInsertedEvent -> "Incentive review created"
-      is IncentivesUpdatedEvent -> "Incentive review updated"
-      is IncentivesDeletedEvent -> "Incentive review deleted"
-      is PrisonerReceivedEvent -> "Prisoner received"
-      is PrisonerReleasedEvent -> "Prisoner released"
-      is OffenderMergedEvent -> "Prisoner merged from '${this.removedPrisonerNumber()}' to '${this.prisonerNumber()}'"
-      else -> "Unknown event"
-    }
   }
 
   private fun InboundEvent.getEventDesc(): EventReviewDescription? {

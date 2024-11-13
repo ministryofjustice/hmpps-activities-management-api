@@ -2,17 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 
-fun prisonerTemporaryReleasedEvent(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-) = PrisonerReleasedEvent(
-  ReleaseInformation(
-    prisonerNumber,
-    "TEMPORARY_ABSENCE_RELEASE",
-    prisonCode,
-  ),
-)
-
 fun prisonerReleasedEvent(
   prisonCode: String = PENTONVILLE_PRISON_CODE,
   prisonerNumber: String = "XXXXXX",
@@ -21,17 +10,6 @@ fun prisonerReleasedEvent(
   ReleaseInformation(
     prisonerNumber,
     reason,
-    prisonCode,
-  ),
-)
-
-fun prisonerTransferReleasedEvent(
-  prisonCode: String = PENTONVILLE_PRISON_CODE,
-  prisonerNumber: String = "XXXXXX",
-) = PrisonerReleasedEvent(
-  ReleaseInformation(
-    prisonerNumber,
-    "TRANSFERRED",
     prisonCode,
   ),
 )
@@ -47,12 +25,11 @@ fun prisonerReceivedFromTemporaryAbsence(
   ),
 )
 
-fun cellMoveEvent(prisonerNumber: String = "XXXXXX") =
-  CellMoveEvent(
-    CellMoveInformation(
+fun prisonerUpdatedEvent(prisonerNumber: String = "XXXXXX", categoriesChanged: List<String> = listOf<String>("LOCATION")) =
+  PrisonerUpdatedEvent(
+    PrisonerUpdatedInformation(
       nomsNumber = prisonerNumber,
-      bookingId = 123L,
-      livingUnitId = 234L,
+      categoriesChanged = categoriesChanged,
     ),
   )
 
