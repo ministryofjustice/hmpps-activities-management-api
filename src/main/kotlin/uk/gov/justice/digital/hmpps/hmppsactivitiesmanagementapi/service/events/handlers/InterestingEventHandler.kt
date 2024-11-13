@@ -36,7 +36,6 @@ class InterestingEventHandler(
     log.debug("Checking for interesting event: {}", event)
 
     if (!event.isMeaningful()) {
-      log.debug("Event is not meaningful: ${event.eventType()} ${event.eventMessage()}")
       return Outcome.success()
     }
 
