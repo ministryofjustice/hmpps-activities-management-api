@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.DeleteMigratedAppointmentsJob
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCountSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
@@ -166,7 +165,7 @@ class MigrateAppointmentController(
       ApiResponse(
         responseCode = "200",
         description = "Appointment summary details",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = AppointmentCategorySummary::class)))],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = AppointmentCountSummary::class)))],
       ),
       ApiResponse(
         responseCode = "401",
