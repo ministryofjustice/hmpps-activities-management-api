@@ -12,7 +12,6 @@ data class AppointmentCountSummary(
 
   @Schema(
     description = "The appointment category",
-    example = "3",
   )
   val appointmentCategorySummary: AppointmentCategorySummary,
 
