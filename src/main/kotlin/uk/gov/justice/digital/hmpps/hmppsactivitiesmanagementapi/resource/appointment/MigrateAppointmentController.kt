@@ -152,7 +152,7 @@ class MigrateAppointmentController(
     @Parameter(description = "The category code assigned to migrated appointments to be deleted.")
     categoryCode: String? = null,
   ) {
-    require(startDate.isAfter(LocalDate.now().minusDays(1))) {
+    require(startDate >= LocalDate.now()) {
       "Start date must not be in the past"
     }
     deleteMigratedAppointmentsJob.execute(prisonCode, startDate, categoryCode)
@@ -190,7 +190,7 @@ class MigrateAppointmentController(
     @Parameter(description = "A list of category codes to retrieve summaries appointments")
     categoryCodes: List<String>,
   ): List<AppointmentCountSummary> {
-    require(startDate.isAfter(LocalDate.now().minusDays(1))) {
+    require(startDate >= LocalDate.now()) {
       "Start date must not be in the past"
     }
     return migrateAppointmentService.getAppointmentSummary(prisonCode, startDate, categoryCodes)
