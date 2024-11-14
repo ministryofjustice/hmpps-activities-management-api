@@ -64,6 +64,8 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
     @Param("isCancelled") isCancelled: Boolean,
     @Param("organiserCode") organiserCode: String?,
   ): List<AppointmentAndAttendee>
+
+  fun countAppointmentByPrisonCodeAndCategoryCodeAndStartDateGreaterThanEqualAndIsDeleted(prisonCode: String, categoryCode: String, startDate: LocalDate, isDeleted: Boolean = false): Long
 }
 
 interface AppointmentAndAttendee {
