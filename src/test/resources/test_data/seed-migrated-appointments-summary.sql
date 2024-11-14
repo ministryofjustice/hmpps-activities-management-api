@@ -34,6 +34,10 @@ VALUES(28, 'INDIVIDUAL', 'RSI', 'ACTI', 'b2b', 67128, NULL, false, false, true, 
 INSERT INTO appointment_series
 (appointment_series_id, appointment_type, prison_code, category_code, custom_name, internal_location_id, custom_location, in_cell, on_wing, off_wing, start_date, start_time, end_time, appointment_series_schedule_id, unlock_notes, extra_information, created_time, created_by, updated_time, updated_by, is_migrated, appointment_tier_id, appointment_organiser_id, cancelled_by, cancelled_time, cancellation_start_date, cancellation_start_time)
 VALUES(25, 'GROUP', 'RSI', 'ACTI', NULL, 67128, NULL, false, false, true, now()::date + 1, '10:00:00', '11:00:00', NULL, NULL, NULL, '2024-06-05 09:13:03.207', 'DHOUSTON_GEN', '2024-06-12 08:42:36.128', 'DHOUSTON_GEN', false, 3, NULL, 'DHOUSTON_GEN', '2024-06-05 15:59:28.278', '2024-06-13', '10:00:00');
+INSERT INTO appointment_series
+(appointment_series_id, appointment_type, prison_code, category_code, custom_name, internal_location_id, custom_location, in_cell, on_wing, off_wing, start_date, start_time, end_time, appointment_series_schedule_id, unlock_notes, extra_information, created_time, created_by, updated_time, updated_by, is_migrated, appointment_tier_id, appointment_organiser_id, cancelled_by, cancelled_time, cancellation_start_date, cancellation_start_time)
+VALUES(24, 'GROUP', 'MDI', 'ACTI', NULL, 67128, NULL, false, false, true, now()::date + 1, '10:00:00', '11:00:00', NULL, NULL, NULL, '2024-06-05 09:13:03.207', 'DHOUSTON_GEN', '2024-06-12 08:42:36.128', 'DHOUSTON_GEN', false, 3, NULL, 'DHOUSTON_GEN', '2024-06-05 15:59:28.278', '2024-06-13', '10:00:00');
+
 
 INSERT INTO appointment
 (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, custom_name, internal_location_id, custom_location, in_cell, on_wing, off_wing, start_date, start_time, end_time, unlock_notes, extra_information, created_time, created_by, updated_time, updated_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted, appointment_tier_id, appointment_organiser_id)
@@ -95,3 +99,6 @@ VALUES(101, 19, 4, 'RSI', 'ACTI', NULL, 67128, NULL, false, false, true, now()::
 INSERT INTO appointment
 (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, custom_name, internal_location_id, custom_location, in_cell, on_wing, off_wing, start_date, start_time, end_time, unlock_notes, extra_information, created_time, created_by, updated_time, updated_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted, appointment_tier_id, appointment_organiser_id)
 VALUES(102, 19, 5, 'RSI', 'ACTI', NULL, 67128, NULL, false, false, true, now()::date - 1, '10:00:00', '11:00:00', NULL, NULL, '2024-05-24 14:33:12.801', 'DHOUSTON_GEN', NULL, NULL, NULL, NULL, NULL, false, 1, NULL);
+INSERT INTO appointment
+(appointment_id, appointment_series_id, sequence_number, prison_code, category_code, custom_name, internal_location_id, custom_location, in_cell, on_wing, off_wing, start_date, start_time, end_time, unlock_notes, extra_information, created_time, created_by, updated_time, updated_by, cancelled_time, cancellation_reason_id, cancelled_by, is_deleted, appointment_tier_id, appointment_organiser_id)
+VALUES(88889, 24, 1, 'MDI', 'AC3', NULL, 67128, NULL, false, false, true, now()::date + 1, '10:00:00', '11:00:00', NULL, NULL, '2024-06-05 09:13:03.207', 'DHOUSTON_GEN', NULL, NULL, NULL, NULL, NULL, false, 3, NULL);

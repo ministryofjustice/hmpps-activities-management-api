@@ -331,6 +331,21 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     }
   }
 
+  @Sql(
+    "classpath:test_data/seed-migrated-appointments-summary.sql",
+  )
+  @Test
+  fun `migrate appointment summary for single category different prison - success`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    val summary = webTestClient.migratedAppointmentsSummary("MDI", LocalDate.now().plusDays(1), "AC3")
+
+    assertThat(summary).hasSize(1)
+
+    with(summary) {
+      this.single { it.appointmentCategorySummary.code == "AC3" && it.appointmentCategorySummary.description == "Appointment Category 3" && it.count == 1L }
+    }
+  }
+
   @Test
   fun `migrate appointment summary forbidden`() {
     val startDate = LocalDate.now().plusDays(1)
