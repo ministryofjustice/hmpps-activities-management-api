@@ -98,6 +98,13 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       }
 
       @Test
+      @WithMockUser(roles = ["MIGRATE_APPOINTMENTS"])
+      fun `Migrate appointment summary (ROLE_MIGRATE_APPOINTMENTS) - 202`() {
+        mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
+          .andExpect { status { isAccepted() } }
+      }
+
+      @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate appointment (ROLE_NOMIS_ACTIVITIES) - 403`() {
         mockMvcWithSecurity.delete("/migrate-appointment/MDI?startDate=${LocalDate.now()}")
@@ -198,8 +205,8 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       }
 
       @Test
-      @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
-      fun `Migrate appointment summary (ROLE_NOMIS_APPOINTMENTS) - 403`() {
+      @WithMockUser(roles = ["MIGRATE_APPOINTMENTS"])
+      fun `Migrate appointment summary (ROLE_MIGRATE_APPOINTMENTS) - 202`() {
         mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
           .andExpect { status { isOk() } }
       }

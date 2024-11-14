@@ -139,7 +139,7 @@ class MigrateAppointmentController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('NOMIS_APPOINTMENTS', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('NOMIS_APPOINTMENTS', 'ACTIVITY_ADMIN', 'MIGRATE_APPOINTMENTS')")
   fun deleteMigratedAppointments(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code.")
@@ -177,7 +177,7 @@ class MigrateAppointmentController(
   )
   @GetMapping(value = ["/{prisonCode}/summary"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('NOMIS_APPOINTMENTS', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('NOMIS_APPOINTMENTS', 'MIGRATE_APPOINTMENTS')")
   fun migratedAppointmentsSummary(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-digit prison code")

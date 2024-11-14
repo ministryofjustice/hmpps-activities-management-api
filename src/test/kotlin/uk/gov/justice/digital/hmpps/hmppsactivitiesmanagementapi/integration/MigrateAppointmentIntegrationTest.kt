@@ -386,7 +386,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     get()
       .uri("/migrate-appointment/$prisonCode/summary?startDate=$startDate&categoryCodes=$categoryCodes")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+      .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_APPOINTMENTS")))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
