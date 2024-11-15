@@ -7,16 +7,21 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCountSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -28,6 +33,8 @@ class MigrateAppointmentService(
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
+  private val appointmentRepository: AppointmentRepository,
+  private val referenceCodeService: ReferenceCodeService,
   private val transactionHandler: TransactionHandler,
 ) {
   companion object {
@@ -113,5 +120,17 @@ class MigrateAppointmentService(
       }
       log.warn("Soft deleted $count migrated appointments for '$prisonCode' that started on or after $startDate{}", (categoryCode?.let { " with category code '$categoryCode'" } ?: ""))
     }
+  }
+
+  fun getAppointmentSummary(prisonCode: String, startDate: LocalDate, categoryCodes: List<String>): List<AppointmentCountSummary> {
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+    val summary = mutableListOf<AppointmentCountSummary>()
+    categoryCodes.forEach { categoryCode ->
+      val count = appointmentRepository.countAppointmentByPrisonCodeAndCategoryCodeAndStartDateGreaterThanEqualAndIsDeleted(prisonCode, categoryCode, startDate)
+      val categorySummary = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode)
+      summary.add(AppointmentCountSummary(count = count, appointmentCategorySummary = categorySummary))
+    }
+    return summary
   }
 }
