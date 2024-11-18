@@ -62,7 +62,7 @@ dependencies {
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit:3.5.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.5.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:4.0.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
