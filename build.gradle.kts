@@ -60,7 +60,7 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:3.5.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:4.0.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.0.0")
   testImplementation("net.javacrumbs.json-unit:json-unit-json-path:3.5.0")
   testImplementation("org.springframework.security:spring-security-test")
