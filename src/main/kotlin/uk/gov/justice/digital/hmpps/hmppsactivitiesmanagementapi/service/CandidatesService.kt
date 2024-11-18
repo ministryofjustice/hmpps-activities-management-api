@@ -102,6 +102,7 @@ class CandidatesService(
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
     suitableForEmployed: Boolean?,
+    noAllocations: Boolean?,
     search: String?,
     pageable: Pageable,
   ): Page<ActivityCandidate> = runBlocking {
@@ -124,6 +125,7 @@ class CandidatesService(
       suitableForEmployed = suitableForEmployed,
       suitableRiskLevels = suitableRiskLevels,
       suitableIncentiveLevels = suitableIncentiveLevels,
+      noAllocations = noAllocations,
       search = search,
     )
 
@@ -180,6 +182,7 @@ class CandidatesService(
     suitableIncentiveLevels: List<String>?,
     suitableRiskLevels: List<String>?,
     suitableForEmployed: Boolean?,
+    noAllocations: Boolean?,
     search: String?,
   ): Sequence<Prisoner> =
     prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
@@ -193,6 +196,7 @@ class CandidatesService(
           filterByIncentiveLevel(it, suitableIncentiveLevels) &&
           filterBySearchString(it, search) &&
           !prisonerAllocation.any { p -> p.getActivityScheduleId() == activityScheduleId } &&
+          (noAllocations != true || prisonerAllocation.isEmpty()) &&
           !waitingList.any { w -> w.prisonerNumber == it.prisonerNumber } &&
           filterByEmployment(
             prisonerAllocations = prisonerAllocation,

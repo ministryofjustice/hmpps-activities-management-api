@@ -658,6 +658,27 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .jsonPath("$.content[4].nonAssociations").isEqualTo(null)
   }
 
+  @Test
+  @Sql(
+    "classpath:test_data/seed-candidates.sql",
+  )
+  fun `should be able to fetch a paged list of candidates with no other allocations`() {
+    prisonerSearchApiMockServer.stubGetAllPrisonersInPrison("PVI")
+    prisonApiMockServer.stubGetEducationLevels()
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("PVI")
+
+    webTestClient.getCandidates(1, 0, 5, noAllocations = true)
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.totalPages").isEqualTo(4)
+      .jsonPath("$.totalElements").isEqualTo(19)
+      .jsonPath("$.content[0].prisonerNumber").isEqualTo("A1718DZ")
+      .jsonPath("$.content[1].prisonerNumber").isEqualTo("A5015DY")
+      .jsonPath("$.content[2].prisonerNumber").isEqualTo("A2226DZ")
+      .jsonPath("$.content[3].prisonerNumber").isEqualTo("A5089DY")
+      .jsonPath("$.content[4].prisonerNumber").isEqualTo("A3062DZ")
+  }
+
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
@@ -979,9 +1000,10 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     pageNum: Long = 0,
     pageSize: Long = 10,
     caseLoadId: String = "PVI",
+    noAllocations: Boolean = false,
   ) =
     get()
-      .uri("/schedules/$scheduleId/candidates?size=$pageSize&page=$pageNum")
+      .uri("/schedules/$scheduleId/candidates?noAllocations=$noAllocations&size=$pageSize&page=$pageNum")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .header(CASELOAD_ID, caseLoadId)
