@@ -535,6 +535,7 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        null,
         pageable,
       )
 
@@ -590,6 +591,7 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        null,
         pageable,
       )
 
@@ -639,6 +641,7 @@ class CandidatesServiceTest {
         null,
         false,
         null,
+        null,
         pageable,
       )
 
@@ -676,11 +679,44 @@ class CandidatesServiceTest {
         null,
         null,
         true,
+        false,
         null,
         pageable,
       )
 
       candidates.content.map { it.prisonerNumber } containsExactly listOf("B2345CD")
+    }
+
+    @Test
+    fun `No allocations filter should filter candidates with allocations when noAllocations=true`() {
+      val activity = activityEntity()
+
+      val allocation = allocation().copy(prisonerNumber = "B2345CD")
+
+      // A1234BC – Has no allocations
+      // B2345CD – Has allocations
+      // C3456DE – Has no allocations
+      val allPrisoners = PrisonerSearchPrisonerFixture.pagedResult(
+        prisonerNumbers = listOf(
+          "A1234BC",
+          "B2345CD",
+          "C3456DE",
+        ),
+      )
+
+      candidatesSetup(activity, allPrisoners, candidateAllocations = listOf(allocation))
+
+      val candidates = service.getActivityCandidates(
+        activity.schedules().first().activityScheduleId,
+        null,
+        null,
+        false,
+        true,
+        null,
+        pageable,
+      )
+
+      candidates.content.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")
     }
 
     @Test
@@ -693,6 +729,7 @@ class CandidatesServiceTest {
 
       val candidates = service.getActivityCandidates(
         activity.schedules().first().activityScheduleId,
+        null,
         null,
         null,
         null,
@@ -713,6 +750,7 @@ class CandidatesServiceTest {
 
       val candidates = service.getActivityCandidates(
         activity.schedules().first().activityScheduleId,
+        null,
         null,
         null,
         null,
@@ -739,6 +777,7 @@ class CandidatesServiceTest {
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
+        null,
         null,
         null,
         null,
@@ -771,6 +810,7 @@ class CandidatesServiceTest {
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
+        null,
         null,
         null,
         null,
@@ -819,6 +859,7 @@ class CandidatesServiceTest {
         null,
         null,
         null,
+        null,
         pageable,
       )
 
@@ -848,6 +889,7 @@ class CandidatesServiceTest {
 
       val candidates = service.getActivityCandidates(
         schedule.activityScheduleId,
+        null,
         null,
         null,
         null,

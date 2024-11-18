@@ -310,6 +310,7 @@ class ActivityScheduleController(
     ) suitableIncentiveLevels: List<String>?,
     @RequestParam(value = "suitableRiskLevel", required = false) suitableRiskLevels: List<String>?,
     @RequestParam(value = "suitableForEmployed", required = false) suitableForEmployed: Boolean?,
+    @RequestParam(value = "noAllocations", required = false) noAllocations: Boolean?,
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
@@ -319,6 +320,7 @@ class ActivityScheduleController(
       suitableIncentiveLevels = suitableIncentiveLevels,
       suitableRiskLevels = suitableRiskLevels,
       suitableForEmployed = suitableForEmployed,
+      noAllocations = noAllocations,
       search = search,
       pageable = pageable,
     )
