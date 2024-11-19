@@ -253,7 +253,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   fun `create appointment series single appointment single prisoner success for internal location`() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -295,7 +294,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   fun `create appointment series single appointment single prisoner success for in cell`() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -340,7 +338,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
     )
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -388,7 +385,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   fun `create appointment series duplicated from an original appointment`() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true, originalAppointmentId = 789L)
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -430,7 +426,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     val request =
       appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -481,7 +476,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 2),
     )
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -533,7 +527,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 4),
     )
 
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(

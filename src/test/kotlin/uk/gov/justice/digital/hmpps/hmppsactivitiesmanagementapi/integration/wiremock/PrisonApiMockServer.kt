@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.userCaseLoads
 import java.time.LocalDate
 
 class PrisonApiMockServer : MockServer(8999) {
@@ -353,18 +352,6 @@ class PrisonApiMockServer : MockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(locations))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetUserCaseLoads(prisonCode: String) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/users/me/caseLoads?allCaseloads=false"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(userCaseLoads(prisonCode)))
             .withStatus(200),
         ),
     )

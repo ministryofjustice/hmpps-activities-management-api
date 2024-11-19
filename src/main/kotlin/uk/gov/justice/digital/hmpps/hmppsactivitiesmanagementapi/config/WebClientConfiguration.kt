@@ -68,21 +68,6 @@ class WebClientConfiguration(
   fun manageAdjudicationsApiHealthWebClient(): WebClient = WebClient.builder().baseUrl(manageAdjudicationsApiUrl).timeout(healthTimeout).build()
 
   @Bean
-  fun prisonApiUserWebClient(): WebClient {
-    val exchangeStrategies = ExchangeStrategies.builder()
-      .codecs { configurer: ClientCodecConfigurer -> configurer.defaultCodecs().maxInMemorySize(-1) }
-      .build()
-
-    return WebClient.builder()
-      .baseUrl(prisonApiUrl)
-      .timeout(apiTimeout)
-      .filter(addAuthHeaderFilterFunction())
-      .exchangeStrategies(exchangeStrategies)
-      .build()
-      .also { log.info("WEB CLIENT CONFIG: creating prison api user web client") }
-  }
-
-  @Bean
   @RequestScope
   fun prisonApiWebClient(
     clientRegistrationRepository: ClientRegistrationRepository,
