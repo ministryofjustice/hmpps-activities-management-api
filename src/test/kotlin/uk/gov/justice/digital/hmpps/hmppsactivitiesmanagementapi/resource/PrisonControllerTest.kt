@@ -8,6 +8,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
@@ -153,6 +154,36 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
 
     verify(prisonRegimeService).updatePrisonPayBand(MOORLAND_PRISON_CODE, 1, request)
+  }
+
+  @Test
+  @WithMockUser(roles = ["ACTIVITY_HUB"])
+  fun `Create payband (ROLE_ACTIVITY_HUB) - 403`() {
+    val request = PrisonPayBandCreateRequest(
+      displaySequence = 1,
+      nomisPayBand = 1,
+      alias = "test",
+      description = "test",
+    )
+    mockMvcWithSecurity.post("/prison/MDI/prison-pay-band") {
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }.andExpect { status { isForbidden() } }
+  }
+
+  @Test
+  @WithMockUser(roles = ["ACTIVITY_HUB"])
+  fun `Update payband (ROLE_ACTIVITY_HUB) - 403`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 1,
+      nomisPayBand = 1,
+      alias = "test",
+      description = "test",
+    )
+    mockMvcWithSecurity.patch("/prison/MDI/prison-pay-band/1") {
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }.andExpect { status { isForbidden() } }
   }
 
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
