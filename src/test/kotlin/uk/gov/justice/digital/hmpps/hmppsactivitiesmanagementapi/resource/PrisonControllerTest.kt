@@ -11,11 +11,15 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.patch
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -105,8 +109,70 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     verify(prisonRegimeService).getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
   }
 
+  @Test
+  fun `201 response when create pay band with Moorland prison code`() {
+    val prisonPayBands = prisonPayBandsLowMediumHigh().map { it.toModelPrisonPayBand() }
+
+    val request = PrisonPayBandCreateRequest(
+      displaySequence = prisonPayBands.first().displaySequence,
+      nomisPayBand = prisonPayBands.first().nomisPayBand,
+      alias = prisonPayBands.first().alias,
+      description = prisonPayBands.first().alias,
+    )
+
+    whenever(prisonRegimeService.createPrisonPayBand(MOORLAND_PRISON_CODE, request)).thenReturn(prisonPayBands.first())
+
+    val response = mockMvc.createPayBand(MOORLAND_PRISON_CODE, request)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isCreated() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
+
+    verify(prisonRegimeService).createPrisonPayBand(MOORLAND_PRISON_CODE, request)
+  }
+
+  @Test
+  fun `200 response when update pay band with Moorland prison code`() {
+    val prisonPayBands = prisonPayBandsLowMediumHigh().map { it.toModelPrisonPayBand() }
+
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = prisonPayBands.first().displaySequence,
+      nomisPayBand = prisonPayBands.first().nomisPayBand,
+      alias = prisonPayBands.first().alias,
+      description = prisonPayBands.first().alias,
+    )
+
+    whenever(prisonRegimeService.updatePrisonPayBand(MOORLAND_PRISON_CODE, 1, request)).thenReturn(prisonPayBands.first())
+
+    val response = mockMvc.updatePayBand(MOORLAND_PRISON_CODE, 1, request)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
+
+    verify(prisonRegimeService).updatePrisonPayBand(MOORLAND_PRISON_CODE, 1, request)
+  }
+
   private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
     get("/prison/$prisonCode/prison-pay-bands")
+
+  private fun MockMvc.createPayBand(prisonCode: String, request: PrisonPayBandCreateRequest) =
+    post("/prison/$prisonCode/prison-pay-band") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }
+
+  private fun MockMvc.updatePayBand(prisonCode: String, prisonPayBandId: Int, request: PrisonPayBandUpdateRequest) =
+    patch("/prison/$prisonCode/prison-pay-band/$prisonPayBandId") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }
 
   private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) =
     get("/prison/prison-regime/$prisonCode")

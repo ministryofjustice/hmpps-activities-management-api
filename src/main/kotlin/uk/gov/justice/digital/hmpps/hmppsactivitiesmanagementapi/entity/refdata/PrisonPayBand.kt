@@ -20,16 +20,16 @@ data class PrisonPayBand(
   val prisonCode: String,
 
   @Column(nullable = false)
-  val displaySequence: Int,
+  var displaySequence: Int,
 
   @Column(length = 30, nullable = false)
-  val payBandAlias: String,
+  var payBandAlias: String,
 
   @Column(length = 100, nullable = false)
-  val payBandDescription: String,
+  var payBandDescription: String,
 
   @Column(name = "nomis_pay_band", nullable = false)
-  val nomisPayBand: Int,
+  var nomisPayBand: Int,
 ) {
   fun toModel() = ModelPrisonPayBand(
 
