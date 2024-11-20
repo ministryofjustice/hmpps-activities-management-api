@@ -449,6 +449,90 @@ class PrisonRegimeServiceTest {
   }
 
   @Test
+  fun `partial update of an existing prison pay band, display sesquence and description`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 2,
+      description = "description2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 2,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description2",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.saveAndFlush(updatedMoorlandPrisonPayBand)).thenReturn(updatedMoorlandPrisonPayBand)
+
+    val response = service.updatePrisonPayBand("MDI", 1, request)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 2,
+        nomisPayBand = 1,
+        alias = "alias",
+        description = "description2",
+        prisonCode = "MDI",
+      ),
+    )
+  }
+
+  @Test
+  fun `partial update of an existing prison pay band, nomis pay band and alias`() {
+    val request = PrisonPayBandUpdateRequest(
+      nomisPayBand = 2,
+      alias = "alias2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 2,
+      payBandAlias = "alias2",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.saveAndFlush(updatedMoorlandPrisonPayBand)).thenReturn(updatedMoorlandPrisonPayBand)
+
+    val response = service.updatePrisonPayBand("MDI", 1, request)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 1,
+        nomisPayBand = 2,
+        alias = "alias2",
+        description = "description",
+        prisonCode = "MDI",
+      ),
+    )
+  }
+
+  @Test
   fun `fails to update an existing prison pay band when the nomis pay band exists for the prison`() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
