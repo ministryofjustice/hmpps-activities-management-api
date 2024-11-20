@@ -173,7 +173,6 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `create appointment set success for internal location`() {
     val request = appointmentSetCreateRequest(categoryCode = "AC1")
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -214,7 +213,6 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `create appointment set success for in cell`() {
     val request = appointmentSetCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
-    prisonApiMockServer.stubGetUserCaseLoads(request.prisonCode!!)
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
