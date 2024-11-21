@@ -180,8 +180,8 @@ class PrisonController(
     @Valid
     @RequestBody
     @Parameter(description = "The create request with the new pay band details", required = true)
-    prisonPayBand: PrisonPayBandCreateRequest,
-  ): PrisonPayBand = prisonRegimeService.createPrisonPayBand(prisonCode, prisonPayBand)
+    request: PrisonPayBandCreateRequest,
+  ): PrisonPayBand = prisonRegimeService.createPrisonPayBand(prisonCode, request, principal)
 
   @PatchMapping(value = ["/{prisonCode}/prison-pay-band/{prisonPayBandId}"])
   @CaseloadHeader
@@ -228,11 +228,12 @@ class PrisonController(
   fun updatePayBand(
     @PathVariable("prisonCode") prisonCode: String,
     @PathVariable("prisonPayBandId") prisonPayBandId: Long,
+    principal: Principal,
     @Valid
     @RequestBody
     @Parameter(description = "The prison pay band to update", required = true)
-    prisonPayBandUpdateRequest: PrisonPayBandUpdateRequest,
-  ): PrisonPayBand = prisonRegimeService.updatePrisonPayBand(prisonCode, prisonPayBandId, prisonPayBandUpdateRequest)
+    request: PrisonPayBandUpdateRequest,
+  ): PrisonPayBand = prisonRegimeService.updatePrisonPayBand(prisonCode, prisonPayBandId, request, principal)
 
   @GetMapping(value = ["/prison-regime/{prisonCode}"])
   @ResponseBody

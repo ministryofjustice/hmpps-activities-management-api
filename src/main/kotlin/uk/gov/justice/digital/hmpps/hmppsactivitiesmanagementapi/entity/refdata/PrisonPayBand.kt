@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
 
 @Entity
@@ -30,6 +31,14 @@ data class PrisonPayBand(
 
   @Column(name = "nomis_pay_band", nullable = false)
   var nomisPayBand: Int,
+
+  val createdTime: LocalDateTime? = null,
+
+  val createdBy: String? = null,
+
+  var updatedTime: LocalDateTime? = null,
+
+  var updatedBy: String? = null,
 ) {
   fun toModel() = ModelPrisonPayBand(
 
@@ -39,5 +48,9 @@ data class PrisonPayBand(
     description = payBandDescription,
     nomisPayBand = nomisPayBand,
     prisonCode = prisonCode,
+    createdTime = createdTime,
+    createdBy = createdBy,
+    updatedTime = updatedTime,
+    updatedBy = updatedBy,
   )
 }

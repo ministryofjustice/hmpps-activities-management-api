@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -121,7 +123,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       description = prisonPayBands.first().alias,
     )
 
-    whenever(prisonRegimeService.createPrisonPayBand(MOORLAND_PRISON_CODE, request)).thenReturn(prisonPayBands.first())
+    whenever(prisonRegimeService.createPrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(request), eq(user), any())).thenReturn(prisonPayBands.first())
 
     val response = mockMvc.createPayBand(MOORLAND_PRISON_CODE, request)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
@@ -130,7 +132,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
 
-    verify(prisonRegimeService).createPrisonPayBand(MOORLAND_PRISON_CODE, request)
+    verify(prisonRegimeService).createPrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(request), eq(user), any())
   }
 
   @Test
@@ -144,16 +146,17 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
       description = prisonPayBands.first().alias,
     )
 
-    whenever(prisonRegimeService.updatePrisonPayBand(MOORLAND_PRISON_CODE, 1, request)).thenReturn(prisonPayBands.first())
+    whenever(prisonRegimeService.updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), eq(user), any())).thenReturn(prisonPayBands.first())
 
     val response = mockMvc.updatePayBand(MOORLAND_PRISON_CODE, 1, request)
+      .andDo { print() }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands.first()))
 
-    verify(prisonRegimeService).updatePrisonPayBand(MOORLAND_PRISON_CODE, 1, request)
+    verify(prisonRegimeService).updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), eq(user), any())
   }
 
   @Test
@@ -199,7 +202,8 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
   private fun MockMvc.updatePayBand(prisonCode: String, prisonPayBandId: Int, request: PrisonPayBandUpdateRequest) =
     patch("/prison/$prisonCode/prison-pay-band/$prisonPayBandId") {
-      principal = user
+      this.principal = user
+      contentType = MediaType.APPLICATION_JSON
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(request)

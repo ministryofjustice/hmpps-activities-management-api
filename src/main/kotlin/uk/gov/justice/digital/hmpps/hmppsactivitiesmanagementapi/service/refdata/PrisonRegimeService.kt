@@ -21,7 +21,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Prison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.security.Principal
 import java.time.DayOfWeek
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as PrisonPayBandEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime as PrisonRegimeEntity
@@ -59,7 +61,7 @@ class PrisonRegimeService(
       .map { it.toModelPrisonPayBand() }
 
   @Transactional
-  fun createPrisonPayBand(prisonCode: String, request: PrisonPayBandCreateRequest): PrisonPayBand {
+  fun createPrisonPayBand(prisonCode: String, request: PrisonPayBandCreateRequest, principal: Principal, createdTime: LocalDateTime? = LocalDateTime.now()): PrisonPayBand {
     checkCaseloadAccess(prisonCode)
 
     val currentPrisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonCode)
@@ -71,13 +73,15 @@ class PrisonRegimeService(
       nomisPayBand = request.nomisPayBand,
       payBandAlias = request.alias,
       displaySequence = request.displaySequence,
+      createdBy = principal.name,
+      createdTime = createdTime,
     )
     val prisonPayBandEntity = prisonPayBandRepository.saveAndFlush(prisonPayBand)
     return prisonPayBandEntity.toModel()
   }
 
   @Transactional
-  fun updatePrisonPayBand(prisonCode: String, prisonPayBandId: Long, request: PrisonPayBandUpdateRequest): PrisonPayBand {
+  fun updatePrisonPayBand(prisonCode: String, prisonPayBandId: Long, request: PrisonPayBandUpdateRequest, principal: Principal, updatedTime: LocalDateTime? = LocalDateTime.now()): PrisonPayBand {
     checkCaseloadAccess(prisonCode)
 
     var prisonPayBand = prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(prisonPayBandId, prisonCode)
@@ -90,6 +94,8 @@ class PrisonRegimeService(
     val otherPrisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonPayBand.prisonCode).filterNot { it.prisonPayBandId == prisonPayBandId }
     duplicateCheck(otherPrisonPayBands, nomisPayBand = prisonPayBand.nomisPayBand, displaySequence = prisonPayBand.displaySequence)
 
+    prisonPayBand.updatedBy = principal.name
+    prisonPayBand.updatedTime = updatedTime
     val prisonPayBandEntity = prisonPayBandRepository.saveAndFlush(prisonPayBand)
     return prisonPayBandEntity.toModel()
   }
