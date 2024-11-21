@@ -7,4 +7,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 @Repository
 interface PrisonPayBandRepository : JpaRepository<PrisonPayBand, Long> {
   fun findByPrisonCode(code: String): List<PrisonPayBand>
+
+  fun findPrisonPayBandByPrisonPayBandIdAndPrisonCode(prisonPayBandId: Long, prisonCode: String): PrisonPayBand?
 }

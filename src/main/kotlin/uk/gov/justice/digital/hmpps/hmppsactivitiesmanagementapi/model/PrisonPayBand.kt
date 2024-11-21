@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.LocalDateTime
 
 @Schema(description = "Describes one instance of a prison pay band")
 data class PrisonPayBand(
@@ -22,4 +24,18 @@ data class PrisonPayBand(
 
   @Schema(description = "The prison code for the pay band. Can also be 'DEFAULT' if none set up for prison", example = "MDI")
   val prisonCode: String,
+
+  @Schema(description = "The date and time this pay band was created")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val createdTime: LocalDateTime? = null,
+
+  @Schema(description = "The username of the user authenticated via HMPPS auth that created the pay band")
+  val createdBy: String? = null,
+
+  @Schema(description = "The date and time the pay band was last changed")
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedTime: LocalDateTime? = null,
+
+  @Schema(description = "The username of the user authenticated via HMPPS auth that last edited the pay band")
+  val updatedBy: String? = null,
 )
