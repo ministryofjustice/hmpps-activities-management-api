@@ -403,6 +403,10 @@ fun EntityPrisonPayBand.toModelPrisonPayBand() =
     displaySequence = this.displaySequence,
     nomisPayBand = this.nomisPayBand,
     prisonCode = this.prisonCode,
+    createdTime = this.createdTime,
+    createdBy = this.createdBy,
+    updatedTime = this.updatedTime,
+    updatedBy = this.updatedBy,
   )
 
 fun transform(prisonRegime: EntityPrisonRegime, dayOfWeek: DayOfWeek) = ModelPrisonRegime(
