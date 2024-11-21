@@ -3,11 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -17,7 +20,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventPriorityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
@@ -25,7 +31,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.Prison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
+import java.security.Principal
 import java.time.DayOfWeek
+import java.time.LocalDateTime
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand as EntityPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand as ModelPrisonPayBand
@@ -35,6 +45,7 @@ class PrisonRegimeServiceTest {
   private val eventPriorityRepository: EventPriorityRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val prisonRegimeRepository: PrisonRegimeRepository = mock()
+  val principal: Principal = mock { on { name } doReturn "TEST_USER" }
 
   private val service = PrisonRegimeService(eventPriorityRepository, prisonPayBandRepository, prisonRegimeRepository)
 
@@ -111,6 +122,16 @@ class PrisonRegimeServiceTest {
       ),
     ),
   )
+
+  @BeforeEach
+  fun setUp() {
+    addCaseloadIdToRequestHeader(MOORLAND_PRISON_CODE)
+  }
+
+  @AfterEach
+  fun tearDown() {
+    clearCaseloadIdFromRequestHeader()
+  }
 
   @Test
   fun `default priorities are returned when no priorities for prison`() {
@@ -290,6 +311,319 @@ class PrisonRegimeServiceTest {
         prisonCode = "MDI",
       ),
     )
+  }
+
+  @Test
+  fun `create a new prison pay band`() {
+    val request = PrisonPayBandCreateRequest(
+      displaySequence = 1,
+      nomisPayBand = 1,
+      alias = "alias",
+      description = "description",
+    )
+
+    val now = LocalDateTime.now()
+    val moorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 0,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+      createdBy = "TEST_USER",
+      createdTime = now,
+    )
+
+    val persistedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.saveAndFlush(moorlandPrisonPayBand)).thenReturn(persistedMoorlandPrisonPayBand)
+
+    val response = service.createPrisonPayBand("MDI", request, principal, now)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 1,
+        alias = "alias",
+        description = "description",
+        nomisPayBand = 1,
+        prisonCode = "MDI",
+      ),
+    )
+  }
+
+  @Test
+  fun `fails to create a new prison pay band when the nomis pay band exists for the prison`() {
+    val moorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(moorlandPrisonPayBand))
+
+    val request = PrisonPayBandCreateRequest(
+      displaySequence = 2,
+      nomisPayBand = 1,
+      alias = "alias",
+      description = "description",
+    )
+
+    assertThatThrownBy {
+      service.createPrisonPayBand("MDI", request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Nomis pay band 1 already exists in the prison pay band list")
+  }
+
+  @Test
+  fun `fails to create a new prison pay band when the display sequence exists for the prison`() {
+    val moorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(moorlandPrisonPayBand))
+
+    val request = PrisonPayBandCreateRequest(
+      displaySequence = 1,
+      nomisPayBand = 2,
+      alias = "alias",
+      description = "description",
+    )
+
+    assertThatThrownBy {
+      service.createPrisonPayBand("MDI", request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Display sequence 1 already exists in the prison pay band list")
+  }
+
+  @Test
+  fun `update an existing prison pay band`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 2,
+      nomisPayBand = 2,
+      alias = "alias2",
+      description = "description2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val now = LocalDateTime.now()
+    val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 2,
+      nomisPayBand = 2,
+      payBandAlias = "alias2",
+      payBandDescription = "description2",
+      prisonCode = "MDI",
+      updatedBy = "TEST_USER",
+      updatedTime = now,
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.saveAndFlush(updatedMoorlandPrisonPayBand)).thenReturn(updatedMoorlandPrisonPayBand)
+
+    val response = service.updatePrisonPayBand("MDI", 1, request, principal, now)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 2,
+        alias = "alias2",
+        description = "description2",
+        nomisPayBand = 2,
+        prisonCode = "MDI",
+        updatedBy = "TEST_USER",
+        updatedTime = now,
+      ),
+    )
+  }
+
+  @Test
+  fun `partial update of an existing prison pay band, display sesquence and description`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 2,
+      description = "description2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val now = LocalDateTime.now()
+    val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 2,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description2",
+      prisonCode = "MDI",
+      updatedBy = "TEST_USER",
+      updatedTime = now,
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.saveAndFlush(updatedMoorlandPrisonPayBand)).thenReturn(updatedMoorlandPrisonPayBand)
+
+    val response = service.updatePrisonPayBand("MDI", 1, request, principal, now)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 2,
+        nomisPayBand = 1,
+        alias = "alias",
+        description = "description2",
+        prisonCode = "MDI",
+        updatedBy = "TEST_USER",
+        updatedTime = now,
+      ),
+    )
+  }
+
+  @Test
+  fun `partial update of an existing prison pay band, nomis pay band and alias`() {
+    val request = PrisonPayBandUpdateRequest(
+      nomisPayBand = 2,
+      alias = "alias2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val now = LocalDateTime.now()
+    val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 2,
+      payBandAlias = "alias2",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+      updatedBy = "TEST_USER",
+      updatedTime = now,
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.saveAndFlush(updatedMoorlandPrisonPayBand)).thenReturn(updatedMoorlandPrisonPayBand)
+
+    val response = service.updatePrisonPayBand("MDI", 1, request, principal, now)
+
+    assertThat(response).isEqualTo(
+      ModelPrisonPayBand(
+        id = 1,
+        displaySequence = 1,
+        nomisPayBand = 2,
+        alias = "alias2",
+        description = "description",
+        prisonCode = "MDI",
+        updatedBy = "TEST_USER",
+        updatedTime = now,
+      ),
+    )
+  }
+
+  @Test
+  fun `fails to update an existing prison pay band when the nomis pay band exists for the prison`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 2,
+      nomisPayBand = 2,
+      alias = "alias2",
+      description = "description2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val otherPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 2,
+      displaySequence = 1,
+      nomisPayBand = 2,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(existingPrisonPayBand, otherPrisonPayBand))
+
+    assertThatThrownBy {
+      service.updatePrisonPayBand("MDI", 1, request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Nomis pay band 2 already exists in the prison pay band list")
+  }
+
+  @Test
+  fun `fails to update an existing prison pay band when the display sequence exists for the prison`() {
+    val request = PrisonPayBandUpdateRequest(
+      displaySequence = 2,
+      nomisPayBand = 1,
+      alias = "alias2",
+      description = "description2",
+    )
+
+    val existingPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 1,
+      displaySequence = 1,
+      nomisPayBand = 1,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    val otherPrisonPayBand = EntityPrisonPayBand(
+      prisonPayBandId = 2,
+      displaySequence = 2,
+      nomisPayBand = 2,
+      payBandAlias = "alias",
+      payBandDescription = "description",
+      prisonCode = "MDI",
+    )
+
+    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
+    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(existingPrisonPayBand, otherPrisonPayBand))
+
+    assertThatThrownBy {
+      service.updatePrisonPayBand("MDI", 1, request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Display sequence 2 already exists in the prison pay band list")
   }
 
   @Test
