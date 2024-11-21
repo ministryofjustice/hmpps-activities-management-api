@@ -32,10 +32,10 @@ data class PrisonPayBand(
   @Schema(description = "The username of the user authenticated via HMPPS auth that created the pay band")
   val createdBy: String? = null,
 
-  @Schema(description = "The date and time one or more appointments in this series was last changed")
+  @Schema(description = "The date and time the pay band was last changed")
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val updatedTime: LocalDateTime? = null,
 
-  @Schema(description = "The username of the user authenticated via HMPPS auth that last edited one or more appointments in this series")
+  @Schema(description = "The username of the user authenticated via HMPPS auth that last edited the pay band")
   val updatedBy: String? = null,
 )
