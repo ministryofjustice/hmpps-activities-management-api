@@ -1,25 +1,35 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonPayBandUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import java.security.Principal
 
 @RestController
 @RequestMapping("/prison", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -119,6 +129,111 @@ class PrisonController(
     @PathVariable("prisonCode")
     prisonCode: String,
   ): List<PrisonPayBand> = prisonRegimeService.getPayBandsForPrison(prisonCode)
+
+  @PostMapping(value = ["/{prisonCode}/prison-pay-band"])
+  @CaseloadHeader
+  @ResponseStatus(HttpStatus.CREATED)
+  @ResponseBody
+  @Operation(
+    summary = "Create a pay band for a given prison",
+    description = "Returns the newly created pay band.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "201",
+        description = "Prison pay band created",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = PrisonPayBand::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('MIGRATE_ACTIVITIES', 'ACTIVITY_ADMIN')")
+  fun createPayBand(
+    @PathVariable("prisonCode")
+    prisonCode: String,
+    principal: Principal,
+    @Valid
+    @RequestBody
+    @Parameter(description = "The create request with the new pay band details", required = true)
+    request: PrisonPayBandCreateRequest,
+  ): PrisonPayBand = prisonRegimeService.createPrisonPayBand(prisonCode, request, principal)
+
+  @PatchMapping(value = ["/{prisonCode}/prison-pay-band/{prisonPayBandId}"])
+  @CaseloadHeader
+  @ResponseBody
+  @Operation(
+    summary = "Update a pay band for a given prison",
+    description = "Returns the updated pay band.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prison pay band updated",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = PrisonPayBand::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('MIGRATE_ACTIVITIES', 'ACTIVITY_ADMIN')")
+  fun updatePayBand(
+    @PathVariable("prisonCode") prisonCode: String,
+    @PathVariable("prisonPayBandId") prisonPayBandId: Long,
+    principal: Principal,
+    @Valid
+    @RequestBody
+    @Parameter(description = "The prison pay band to update", required = true)
+    request: PrisonPayBandUpdateRequest,
+  ): PrisonPayBand = prisonRegimeService.updatePrisonPayBand(prisonCode, prisonPayBandId, request, principal)
 
   @GetMapping(value = ["/prison-regime/{prisonCode}"])
   @ResponseBody
