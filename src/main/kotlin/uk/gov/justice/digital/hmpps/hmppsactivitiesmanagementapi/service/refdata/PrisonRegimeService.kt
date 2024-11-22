@@ -86,16 +86,23 @@ class PrisonRegimeService(
 
     var prisonPayBand = prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(prisonPayBandId, prisonCode)
       ?: throw EntityNotFoundException("Prison pay band $prisonPayBandId not found")
-    if (request.nomisPayBand != null) prisonPayBand.nomisPayBand = request.nomisPayBand
-    if (request.alias != null) prisonPayBand.payBandAlias = request.alias
-    if (request.description != null) prisonPayBand.payBandDescription = request.description
-    if (request.displaySequence != null) prisonPayBand.displaySequence = request.displaySequence
 
     val otherPrisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonPayBand.prisonCode).filterNot { it.prisonPayBandId == prisonPayBandId }
-    duplicateCheck(otherPrisonPayBands, nomisPayBand = prisonPayBand.nomisPayBand, displaySequence = prisonPayBand.displaySequence)
+
+    if (request.nomisPayBand != null) {
+      require(otherPrisonPayBands.none { it.nomisPayBand == request.nomisPayBand }) { "Nomis pay band ${request.nomisPayBand} already exists in the prison pay band list" }
+      prisonPayBand.nomisPayBand = request.nomisPayBand
+    }
+    if (request.displaySequence != null) {
+      require(otherPrisonPayBands.none { it.displaySequence == request.displaySequence }) { "Display sequence ${request.displaySequence} already exists in the prison pay band list" }
+      prisonPayBand.displaySequence = request.displaySequence
+    }
+    if (request.alias != null) prisonPayBand.payBandAlias = request.alias
+    if (request.description != null) prisonPayBand.payBandDescription = request.description
 
     prisonPayBand.updatedBy = principal.name
     prisonPayBand.updatedTime = updatedTime
+
     val prisonPayBandEntity = prisonPayBandRepository.saveAndFlush(prisonPayBand)
     return prisonPayBandEntity.toModel()
   }
