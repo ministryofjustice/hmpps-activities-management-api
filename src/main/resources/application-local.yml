@@ -14,7 +14,7 @@ spring:
     password: ${DB_PASS}
 
   jpa:
-    show-sql: false
+    show-sql: true
     properties:
       hibernate:
         generate_statistics: false
@@ -39,8 +39,7 @@ hmpps:
 
 prison:
   api:
-    url: http://localhost:8083
-#    url: https://prison-api-dev.prison.service.justice.gov.uk
+    url: https://prison-api-dev.prison.service.justice.gov.uk
     timeout: 10s
 
 prisoner-search:
