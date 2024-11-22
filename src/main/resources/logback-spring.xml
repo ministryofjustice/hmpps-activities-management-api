@@ -24,6 +24,11 @@
         <appender-ref ref="consoleAppender"/>
     </logger>
 
+
+    <logger name="reactor.netty.http.client" additivity="false" level="DEBUG">
+        <appender-ref ref="consoleAppender"/>
+    </logger>
+
     <logger name="com.microsoft.applicationinsights" additivity="false" level="INFO">
         <appender-ref ref="consoleAppender"/>
     </logger>

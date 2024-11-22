@@ -146,17 +146,17 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
   suspend fun getScheduledVisitsAsync(
     bookingId: Long,
     dateRange: LocalDateRange,
-  ): List<PrisonApiScheduledEvent> =
-    prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/visits")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .awaitBody()
+  ): List<PrisonApiScheduledEvent> = emptyList()
+//    prisonApiWebClient.get()
+//      .uri { uriBuilder: UriBuilder ->
+//        uriBuilder
+//          .path("/api/bookings/{bookingId}/visits")
+//          .queryParam("fromDate", dateRange.start)
+//          .queryParam("toDate", dateRange.endInclusive)
+//          .build(bookingId)
+//      }
+//      .retrieve()
+//      .awaitBody()
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
     prisonCode: String,

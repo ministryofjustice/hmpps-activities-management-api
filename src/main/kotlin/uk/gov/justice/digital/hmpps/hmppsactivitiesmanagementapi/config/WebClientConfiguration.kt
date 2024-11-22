@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config
 
+import io.netty.handler.logging.LogLevel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
@@ -26,7 +27,10 @@ import org.springframework.web.reactive.function.client.ExchangeFilterFunction
 import org.springframework.web.reactive.function.client.ExchangeFunction
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
+import reactor.netty.transport.logging.AdvancedByteBufFormat
+import uk.gov.justice.hmpps.kotlin.auth.authorisedWebClient
 import java.time.Duration
 
 @Configuration
@@ -101,9 +105,15 @@ class WebClientConfiguration(
     @Qualifier(value = "authorizedClientManagerAppScope") authorizedClientManager: OAuth2AuthorizedClientManager,
     builder: WebClient.Builder,
   ): WebClient =
-    getOAuthWebClient(authorizedClientManager, builder, prisonApiUrl, "prison-api", apiTimeout)
+    builder
+      .filter(logRequest())
+      .authorisedWebClient(authorizedClientManager, "prison-api", prisonApiUrl, apiTimeout)
       .also { log.info("WEB CLIENT CONFIG: creating prison api app web client") }
 
+//    WebClient =
+//    getOAuthWebClient(authorizedClientManager, builder, prisonApiUrl, "prison-api", apiTimeout)
+//      .also { log.info("WEB CLIENT CONFIG: creating prison api app web client") }
+//
   @Bean
   fun prisonerSearchApiHealthWebClient(): WebClient =
     WebClient.builder().baseUrl(prisonerSearchApiUrl).timeout(apiTimeout).build()
@@ -185,6 +195,7 @@ class WebClientConfiguration(
     val oauth2Client = ServletOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager)
     oauth2Client.setDefaultClientRegistrationId(clientRegistrationId)
     return builder.baseUrl(rootUri)
+      .filter(logRequest())
       .timeout(timeout)
       .apply(oauth2Client.oauth2Configuration())
       .build()
@@ -202,6 +213,7 @@ class WebClientConfiguration(
     defaultClientCredentialsTokenResponseClient.setRequestEntityConverter { grantRequest: OAuth2ClientCredentialsGrantRequest? ->
       val converter = CustomOAuth2ClientCredentialsGrantRequestEntityConverter()
       val username = authentication.name
+      log.info("UUUU: $username")
       converter.enhanceWithUsername(grantRequest, username)
     }
 
@@ -233,5 +245,22 @@ class WebClientConfiguration(
     }
 
   private fun WebClient.Builder.timeout(duration: Duration) =
-    this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
+    this.clientConnector(
+      ReactorClientHttpConnector(
+        HttpClient.create()
+          .wiretap("reactor.netty.http.client.HttpClient", LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL)
+          .responseTimeout(duration),
+      ),
+    )
+
+  private fun logRequest(): ExchangeFilterFunction =
+    ExchangeFilterFunction.ofRequestProcessor { request ->
+      if (log.isDebugEnabled) {
+        val sb = StringBuilder("Request: \n")
+        // append clientRequest method and url
+        request.headers().forEach { (name, values) -> values.forEach { value -> sb.append(value).append(System.lineSeparator()) } }
+        log.debug(sb.toString())
+      }
+      Mono.just(request)
+    }
 }
