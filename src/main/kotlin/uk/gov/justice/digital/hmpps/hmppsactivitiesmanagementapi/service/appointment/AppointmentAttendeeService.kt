@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isOutOfPrison
@@ -37,7 +37,7 @@ class AppointmentAttendeeService(
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository,
   private val rolloutPrisonService: RolloutPrisonService,
   private val prisonerSearch: PrisonerSearchApiApplicationClient,
-  private val prisonApi: PrisonApiApplicationClient,
+  private val prisonApiClient: PrisonApiClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val auditService: AuditService,
@@ -117,7 +117,7 @@ class AppointmentAttendeeService(
       .filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonCode) }
 
   private fun List<Prisoner>.getExpiredMoves(prisonPlan: RolloutPrisonPlan) =
-    prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, this.map { it.prisonerNumber }.toSet())
+    prisonApiClient.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, this.map { it.prisonerNumber }.toSet())
       .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { prisonPlan.hasExpired { it.value.movementDate } }
 }

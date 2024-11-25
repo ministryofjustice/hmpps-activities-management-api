@@ -8,7 +8,7 @@ import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Transac
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.offenderMergedEvent
 
 class OffenderMergedEventHandlerTest {
-  private val prisonerApiClient: PrisonApiApplicationClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val allocationRepository: AllocationRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val waitingListRepository: WaitingListRepository = mock()
@@ -48,7 +48,7 @@ class OffenderMergedEventHandlerTest {
   )
 
   private val handler = OffenderMergedEventHandler(
-    prisonerApiClient,
+    prisonApiClient,
     allocationRepository,
     attendanceRepository,
     waitingListRepository,
@@ -61,7 +61,7 @@ class OffenderMergedEventHandlerTest {
 
   @BeforeEach
   fun beforeTests() {
-    prisonerApiClient.stub {
+    prisonApiClient.stub {
       on { getPrisonerDetailsLite(newNumber) } doReturn prisonerSearchResult
     }
 
@@ -78,7 +78,7 @@ class OffenderMergedEventHandlerTest {
 
     handler.handle(inboundEvent).also { it.isSuccess() isBool true }
 
-    verify(prisonerApiClient).getPrisonerDetailsLite(newNumber)
+    verify(prisonApiClient).getPrisonerDetailsLite(newNumber)
 
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, newNumber)
     verify(allocationRepository).findByPrisonCodeAndPrisonerNumber(MOORLAND_PRISON_CODE, oldNumber)
