@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isActiveInPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isAtDifferentLocationTo
@@ -36,7 +36,7 @@ class ManageAllocationsService(
   private val waitingListService: WaitingListService,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
-  private val prisonApi: PrisonApiApplicationClient,
+  private val prisonApiClient: PrisonApiClient,
   private val monitoringService: MonitoringService,
 ) {
 
@@ -153,9 +153,6 @@ class ManageAllocationsService(
   private fun forEachRolledOutPrison() =
     rolloutPrisonService.getRolloutPrisons()
 
-  private fun List<Allocation>.ending(date: LocalDate) =
-    filterNot { it.status(PrisonerStatus.ENDED) }.filter { it.endsOn(date) }
-
   private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
       .forEach { prison ->
@@ -216,7 +213,7 @@ class ManageAllocationsService(
     val prisonersNotInExpectedPrison =
       prisoners.filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonPlan.prisonCode) }
 
-    return prisonApi.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
+    return prisonApiClient.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, prisonersNotInExpectedPrison.map { it.prisonerNumber }.toSet())
       .groupBy { it.offenderNo }
       .mapValues { it -> it.value.maxBy { it.movementDateTime() } }
       .filter { prisonPlan.hasExpired { it.value.movementDate } }

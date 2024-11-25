@@ -8,7 +8,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -19,7 +19,7 @@ import java.time.LocalDate
 
 class AppointmentMetricsJobTest : JobsTestBase() {
   private val rolloutPrisonRepository: RolloutPrisonService = mock()
-  private val prisonApiClient: PrisonApiApplicationClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val service: DailyAppointmentMetricsService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
   private val job = AppointmentMetricsJob(safeJobRunner, rolloutPrisonRepository, prisonApiClient, service)

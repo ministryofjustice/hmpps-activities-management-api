@@ -3,7 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.LocalAuditRecord
@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 @Component
 @Transactional(readOnly = true)
 class OffenderMergedEventHandler(
-  private val prisonApi: PrisonApiApplicationClient,
+  private val prisonApiClient: PrisonApiClient,
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
   private val waitingListRepository: WaitingListRepository,
@@ -47,7 +47,7 @@ class OffenderMergedEventHandler(
     val newNumber = event.prisonerNumber()
     val oldNumber = event.removedPrisonerNumber()
 
-    prisonApi.getPrisonerDetailsLite(newNumber).let { prisoner ->
+    prisonApiClient.getPrisonerDetailsLite(newNumber).let { prisoner ->
       prisoner.agencyId?.let { prisonCode ->
         transactionHandler.newSpringTransaction {
           processMergeEvent(

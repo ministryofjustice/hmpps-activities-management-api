@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.DailyAppointmentMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
@@ -16,7 +16,7 @@ import kotlin.system.measureTimeMillis
 class AppointmentMetricsJob(
   private val jobRunner: SafeJobRunner,
   private val rolloutPrisonService: RolloutPrisonService,
-  private val prisonApiClient: PrisonApiApplicationClient,
+  private val prisonApiClient: PrisonApiClient,
   private val service: DailyAppointmentMetricsService,
 
 ) {

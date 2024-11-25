@@ -16,7 +16,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
@@ -52,7 +52,7 @@ class AppointmentAttendeeServiceTest {
   private val appointmentInstanceRepository = mock<AppointmentInstanceRepository>()
   private val appointmentAttendeeRemovalReasonRepository = mock<AppointmentAttendeeRemovalReasonRepository>()
   private val prisonerSearch = mock<PrisonerSearchApiApplicationClient>()
-  private val prisonApi = mock<PrisonApiApplicationClient>()
+  private val prisonApi = mock<PrisonApiClient>()
   private val outboundEventsService: OutboundEventsService = mock()
   private val auditService = mock<AuditService>()
   private val rolloutPrisonService = mock<RolloutPrisonService>()

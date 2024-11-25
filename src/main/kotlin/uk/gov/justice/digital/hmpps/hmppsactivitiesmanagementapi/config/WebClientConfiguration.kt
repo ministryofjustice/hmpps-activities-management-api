@@ -67,21 +67,6 @@ class WebClientConfiguration(
   fun manageAdjudicationsApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(manageAdjudicationsApiUrl, healthTimeout)
 
   @Bean
-  @RequestScope
-  fun prisonApiWebClient(
-    clientRegistrationRepository: ClientRegistrationRepository,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository,
-    builder: WebClient.Builder,
-  ): WebClient =
-    getOAuthWebClient(
-      authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
-      builder,
-      prisonApiUrl,
-      "prison-api",
-      apiTimeout,
-    ).also { log.info("WEB CLIENT CONFIG: creating prison api request scope web client") }
-
-  @Bean
   fun incentivesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
     .authorisedWebClient(authorizedClientManager, "incentives-api", incentivesApiUrl, apiTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating incentives api web client") }
@@ -92,9 +77,9 @@ class WebClientConfiguration(
     .also { log.info("WEB CLIENT CONFIG: creating manage adjudications api web client") }
 
   @Bean
-  fun prisonApiAppWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
+  fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
     .authorisedWebClient(authorizedClientManager, "prison-api", prisonApiUrl, apiTimeout)
-    .also { log.info("WEB CLIENT CONFIG: creating prison api app web client") }
+    .also { log.info("WEB CLIENT CONFIG: creating prison api web client") }
 
   @Bean
   fun prisonerSearchApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(prisonerSearchApiUrl, healthTimeout)

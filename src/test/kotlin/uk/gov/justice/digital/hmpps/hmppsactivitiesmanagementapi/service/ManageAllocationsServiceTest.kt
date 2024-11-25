@@ -10,7 +10,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiApplicationClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiApplicationClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -40,7 +40,7 @@ class ManageAllocationsServiceTest {
   private val searchApiClient: PrisonerSearchApiApplicationClient = mock()
   private val waitingListService: WaitingListService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
-  private val prisonApi: PrisonApiApplicationClient = mock()
+  private val prisonApiClient: PrisonApiClient = mock()
   private val monitoringService: MonitoringService = mock()
 
   private val service =
@@ -52,7 +52,7 @@ class ManageAllocationsServiceTest {
       waitingListService,
       TransactionHandler(),
       outboundEventsService,
-      prisonApi,
+      prisonApiClient,
       monitoringService,
     )
   private val yesterday = LocalDate.now().minusDays(1)
@@ -164,7 +164,7 @@ class ManageAllocationsServiceTest {
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
+    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
@@ -190,7 +190,7 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
+    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
 
@@ -215,7 +215,7 @@ class ManageAllocationsServiceTest {
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
 
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
+    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
@@ -244,7 +244,7 @@ class ManageAllocationsServiceTest {
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
 
     // Multiple moves to demonstrate takes the latest move for an offender
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
+    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn
       listOf(
         movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()),
         movement(prisonerNumber = allocation.prisonerNumber, fromPrisonCode = prison.prisonCode, movementDate = TimeSource.today()),
@@ -270,7 +270,7 @@ class ManageAllocationsServiceTest {
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode)) doReturn listOf(waitingList(prisonerNumber = "A1234AA"))
-    whenever(prisonApi.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
+    whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf("A1234AA"))) doReturn
       listOf(movement(prisonerNumber = "A1234AA", movementDate = TimeSource.yesterday()))
 
     service.allocations(AllocationOperation.EXPIRING_TODAY)
