@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.http.Fault
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
@@ -63,6 +64,16 @@ class PrisonApiMockServer : MockServer(8999) {
             .withHeader("Content-Type", "application/json")
             .withBodyFile("prisonapi/scheduled-event-activity-1.json")
             .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetScheduledActivitiesWithConnectionReset(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
+        .willReturn(
+          WireMock.aResponse()
+            .withFault(Fault.CONNECTION_RESET_BY_PEER)
         ),
     )
   }

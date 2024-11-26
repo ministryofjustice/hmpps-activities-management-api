@@ -148,6 +148,18 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledActivitiesAsync - will retry`(): Unit = runBlocking {
+    val bookingId = 10001L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
+    prisonApiMockServer.stubGetScheduledActivitiesWithConnectionReset(bookingId, dateRange.start, dateRange.endInclusive)
+
+    val scheduledActivities = prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
+    assertThat(scheduledActivities).hasSize(2)
+    assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
+  }
+
+  @Test
   fun `getScheduledActivitiesAsync - not found`(): Unit = runBlocking {
     val bookingId = 0L
     val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
