@@ -92,6 +92,8 @@ class ActivityScheduleService(
           map {
             val prisoner = prisoners.await().find { p -> it.prisonerNumber == p.prisonerNumber } ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for allocation id ${it.id}")
             it.prisonerName = "${prisoner.firstName} ${prisoner.lastName}"
+            it.prisonerFirstName = prisoner.firstName
+            it.prisonerLastName = prisoner.lastName
             it.prisonerStatus = prisoner.status
             it.prisonerPrisonCode = prisoner.prisonId
             it.cellLocation = prisoner.cellLocation

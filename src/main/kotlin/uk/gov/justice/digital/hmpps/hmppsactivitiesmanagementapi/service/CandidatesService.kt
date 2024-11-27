@@ -150,6 +150,8 @@ class CandidatesService(
 
         ActivityCandidate(
           name = "${prisoner.firstName} ${prisoner.lastName}",
+          firstName = prisoner.firstName,
+          lastName = prisoner.lastName,
           prisonerNumber = prisoner.prisonerNumber,
           cellLocation = prisoner.cellLocation,
           otherAllocations = thisPersonsAllocations ?: emptyList(),

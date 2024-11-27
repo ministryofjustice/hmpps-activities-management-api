@@ -543,6 +543,8 @@ class CandidatesServiceTest {
         listOf(
           ActivityCandidate(
             name = "Tim Allen",
+            firstName = "Tim",
+            lastName = "Allen",
             prisonerNumber = "A1234BI",
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
@@ -551,6 +553,8 @@ class CandidatesServiceTest {
           ),
           ActivityCandidate(
             name = "Tim Harrison",
+            firstName = "Tim",
+            lastName = "Harrison",
             prisonerNumber = "A1234BC",
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
@@ -559,6 +563,8 @@ class CandidatesServiceTest {
           ),
           ActivityCandidate(
             name = "Tim Jones",
+            firstName = "Tim",
+            lastName = "Jones",
             prisonerNumber = "D3333DD",
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
@@ -599,6 +605,8 @@ class CandidatesServiceTest {
         listOf(
           ActivityCandidate(
             name = "Tim Harrison",
+            firstName = "Tim",
+            lastName = "Harrison",
             prisonerNumber = "A1234BC",
             cellLocation = "1-2-3",
             otherAllocations = emptyList(),
