@@ -93,6 +93,8 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val response = webTestClient.getAllocationsBy(1)!!.also { assertThat(it).hasSize(2) }
     response.forEach {
       assertThat(it.prisonerName).isNull()
+      assertThat(it.prisonerFirstName).isNull()
+      assertThat(it.prisonerLastName).isNull()
       assertThat(it.cellLocation).isNull()
       assertThat(it.earliestReleaseDate).isNull()
     }
@@ -116,10 +118,10 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
 
     assertThat(response)
-      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
+      .extracting(Allocation::prisonerFirstName, Allocation::prisonerLastName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
       .containsOnly(
-        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), false),
-        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), true),
+        tuple("Tim", "Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), false),
+        tuple("Joe", "Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), true),
       )
   }
 
@@ -141,10 +143,10 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     val response = webTestClient.getAllocationsBy(1, includePrisonerSummary = true)!!
 
     assertThat(response)
-      .extracting(Allocation::prisonerName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
+      .extracting(Allocation::prisonerFirstName, Allocation::prisonerLastName, Allocation::cellLocation, Allocation::earliestReleaseDate, Allocation::nonAssociations)
       .containsOnly(
-        tuple("Tim Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), null),
-        tuple("Joe Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), null),
+        tuple("Tim", "Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now().plusDays(1)), null),
+        tuple("Joe", "Harrison", "1-2-3", EarliestReleaseDate(LocalDate.now()), null),
       )
   }
 

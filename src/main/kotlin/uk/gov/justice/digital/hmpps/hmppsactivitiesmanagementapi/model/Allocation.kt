@@ -90,7 +90,14 @@ data class Allocation(
   val exclusions: List<Slot>,
 
   @Schema(description = "The name of the prisoner. Included only if includePrisonerSummary = true")
+  @Deprecated(message = "Superseded by prisonerFirstName and prisonerLastName")
   var prisonerName: String? = null,
+
+  @Schema(description = "The prisoner's first name. Included only if includePrisonerSummary = true", example = "Joe")
+  var prisonerFirstName: String? = null,
+
+  @Schema(description = "The prisoner's last name. Included only if includePrisonerSummary = true", example = "Bloggs")
+  var prisonerLastName: String? = null,
 
   @Schema(description = "The status of the prisoner. Included only if includePrisonerSummary = true", example = "ACTIVE IN")
   var prisonerStatus: String? = null,

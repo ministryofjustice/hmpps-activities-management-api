@@ -190,6 +190,8 @@ class ActivityScheduleServiceTest {
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {
         it.prisonerName = "JOE BLOGGS"
+        it.prisonerFirstName = "JOE"
+        it.prisonerLastName = "BLOGGS"
         it.cellLocation = "MDI-1-1-001"
         it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
         it.prisonerStatus = "ACTIVE IN"
@@ -245,6 +247,8 @@ class ActivityScheduleServiceTest {
     val expectedResponse = schedule.allocations().toModelAllocations().apply {
       map {
         it.prisonerName = "JOE BLOGGS"
+        it.prisonerFirstName = "JOE"
+        it.prisonerLastName = "BLOGGS"
         it.cellLocation = "MDI-1-1-001"
         it.earliestReleaseDate = EarliestReleaseDate(LocalDate.now())
         it.prisonerStatus = "ACTIVE IN"

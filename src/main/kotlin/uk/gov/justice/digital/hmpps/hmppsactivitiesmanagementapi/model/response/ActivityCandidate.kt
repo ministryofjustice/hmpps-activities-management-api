@@ -6,7 +6,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 @Schema(description = "Describes a candidate for allocation to an activity")
 data class ActivityCandidate(
   @Schema(description = "The candidate's name", example = "Joe Bloggs")
+  @Deprecated(message = "Superseded by firstName and lastName")
   val name: String,
+
+  @Schema(description = "The candidate's first name", example = "Joe")
+  val firstName: String,
+
+  @Schema(description = "The candidate's last name", example = "Bloggs")
+  val lastName: String,
 
   @Schema(description = "The candidate's prisoner number", example = "GF10101")
   val prisonerNumber: String,
