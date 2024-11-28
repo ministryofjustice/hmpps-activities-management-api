@@ -1,7 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import jakarta.validation.ValidationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -9,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -147,8 +152,31 @@ class InternalLocationService(
    * Until then, this function is named correctly but both returns all locations with events not just those with visits and
    * does not return the visits data required to produce valid capacity data.
    */
-  private suspend fun getLocationVisitsMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, LocationSummary> =
-    prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, timeSlot).associateBy { it.locationId }
+  private suspend fun getLocationVisitsMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, LocationSummary> {
+    val allLocations = prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, timeSlot)
+
+    val locationIdsWithVisits = withContext(Dispatchers.IO) {
+      allLocations.map {
+        async {
+          val locationVisits: List<PrisonerSchedule> = prisonApiClient.getScheduledVisitsForLocationAsync(
+            prisonCode,
+            it.locationId,
+            date,
+            timeSlot,
+          )
+
+          it.locationId to locationVisits.isNotEmpty()
+        }
+      }.awaitAll()
+        .filter { it.second }
+        .map { it.first }
+        .toSet()
+    }
+
+    return allLocations
+      .filter { locationIdsWithVisits.contains(it.locationId) }
+      .associateBy { it.locationId }
+  }
 
   fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) =
     runBlocking {

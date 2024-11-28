@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
 
 class LocationIntegrationTest : IntegrationTestBase() {
@@ -23,6 +24,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
   private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
   private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
+  private val activityLocation3 = internalLocation(3L, prisonCode = prisonCode, description = "MDI-ACT-LOC3", userDescription = "Activity Location 3")
   private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
   private val socialVisitsLocation = internalLocation(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
   private val socialVisitsLocationSummary = LocationSummary(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
@@ -212,7 +214,20 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val date = LocalDate.of(2022, 10, 1)
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, listOf(socialVisitsLocationSummary))
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, activityLocation3, appointmentLocation1, socialVisitsLocation))
+
+    val activityLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation1.locationId, date = date)
+    val activityLocation2Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation2.locationId, date = date)
+    val activityLocation3Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation3.locationId, date = date)
+    val appointmentLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = appointmentLocation1.locationId, date = date)
+    val socialVisitInstance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = socialVisitsLocation.locationId, date = date)
+
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, listOf(activityLocation1Instance))
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, listOf(activityLocation2Instance))
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation3.locationId, date, null, listOf(activityLocation3Instance))
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, listOf(appointmentLocation1Instance))
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, socialVisitsLocation.locationId, date, null, listOf(socialVisitInstance))
+
     manageAdjudicationsApiMockServer.stubHearingsForDate(
       agencyId = prisonCode,
       date = date,
