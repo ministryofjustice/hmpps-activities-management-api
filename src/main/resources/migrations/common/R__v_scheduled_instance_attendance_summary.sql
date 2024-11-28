@@ -29,7 +29,7 @@ SELECT
 FROM scheduled_instance si
          JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
          JOIN activity act ON act.activity_id = acts.activity_id
-         LEFT JOIN (
+         LEFT JOIN LATERAL (
     SELECT
         att.scheduled_instance_id,
         COUNT(att.attendance_id) as attendees,
@@ -39,5 +39,6 @@ FROM scheduled_instance si
         SUM(CASE WHEN att.issue_payment THEN 1 ELSE 0 END) AS paid
     FROM attendance att
              LEFT JOIN attendance_reason ar ON ar.attendance_reason_id = att.attendance_reason_id
+    WHERE att.scheduled_instance_id = si.scheduled_instance_id
     GROUP BY att.scheduled_instance_id
 ) AS att ON att.scheduled_instance_id = si.scheduled_instance_id
