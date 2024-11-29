@@ -5,9 +5,8 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationIdAndDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
-import java.util.Properties
+import java.util.*
 
 @Service
 class LocationService(
@@ -29,14 +28,9 @@ class LocationService(
     prisonApiClient
       .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
 
-  fun getLocationsForAppointmentsMap(agencyId: String) =
+  fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> =
     getLocationsForAppointments(agencyId)
       .associateBy { it.locationId }
-
-  fun getVideoLinkRoomsForPrison(agencyId: String): List<LocationIdAndDescription>? =
-    getLocationsForAppointments(agencyId)
-      .filter { it.locationType == "VIDE" }
-      .map { LocationIdAndDescription(it.locationId, it.userDescription ?: it.description) }
 
   fun getCellLocationsForGroup(agencyId: String, groupName: String): List<Location>? =
     prisonApiClient.getLocationsForType(agencyId, "CELL").block()

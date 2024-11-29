@@ -9,9 +9,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -25,7 +25,7 @@ import java.security.Principal
 @WebMvcTest(controllers = [AppointmentSetController::class])
 @ContextConfiguration(classes = [AppointmentSetController::class])
 class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController>() {
-  @MockBean
+  @MockitoBean
   private lateinit var appointmentSetService: AppointmentSetService
 
   override fun controller() = AppointmentSetController(appointmentSetService)

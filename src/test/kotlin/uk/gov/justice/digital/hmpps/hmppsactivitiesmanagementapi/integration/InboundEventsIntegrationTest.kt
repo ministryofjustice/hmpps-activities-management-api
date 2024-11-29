@@ -15,8 +15,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
@@ -83,7 +83,7 @@ import java.time.temporal.ChronoUnit
 )
 class InboundEventsIntegrationTest : LocalStackTestBase() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired

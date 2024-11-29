@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
@@ -21,7 +21,7 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [ActivityScheduleInstanceController::class])
 class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivityScheduleInstanceController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
   override fun controller() = ActivityScheduleInstanceController(scheduledInstanceService)

@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 @WebMvcTest(controllers = [AppointmentInstanceController::class])
 @ContextConfiguration(classes = [AppointmentInstanceController::class])
 class AppointmentInstanceControllerTest : ControllerTestBase<AppointmentInstanceController>() {
-  @MockBean
+  @MockitoBean
   private lateinit var appointmentInstanceService: AppointmentInstanceService
 
   override fun controller() = AppointmentInstanceController(appointmentInstanceService)
