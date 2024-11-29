@@ -4,7 +4,7 @@ select a.activity_id                                           id,
        a.activity_category_id,
        a.prison_code,
        a.description                                           activity_name,
-       s.capacity,
+       max(s.capacity)                                         capacity,
        count(alloc.allocation_id)                              allocated,
        (select count(*)
         from waiting_list w
@@ -18,5 +18,5 @@ select a.activity_id                                           id,
 from activity a
          join activity_schedule s on a.activity_id = s.activity_id
          left join allocation alloc on s.activity_schedule_id = alloc.activity_schedule_id and alloc.prisoner_status != 'ENDED'
-group by a.activity_id, a.description, a.prison_code, s.capacity
+group by a.activity_id, a.description, a.prison_code
 order by activity_name, a.activity_id;
