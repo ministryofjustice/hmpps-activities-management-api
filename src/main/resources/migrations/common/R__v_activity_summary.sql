@@ -1,4 +1,4 @@
-create or replace view v_activity_summary_1
+create or replace view v_activity_summary
 AS
 select a.activity_id                                           id,
        a.activity_category_id,
