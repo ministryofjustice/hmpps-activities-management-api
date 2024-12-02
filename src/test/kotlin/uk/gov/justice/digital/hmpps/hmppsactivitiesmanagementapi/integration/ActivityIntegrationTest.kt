@@ -11,9 +11,9 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -78,7 +78,7 @@ import java.time.temporal.ChronoUnit
   ],
 )
 class ActivityIntegrationTest : IntegrationTestBase() {
-  @MockBean
+  @MockitoBean
   private lateinit var bankHolidayService: BankHolidayService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()

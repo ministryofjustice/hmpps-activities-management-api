@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPri
 @ContextConfiguration(classes = [PrisonerAllocationController::class])
 class PrisonerAllocationControllerTest : ControllerTestBase<PrisonerAllocationController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var service: AllocationsService
 
   override fun controller() = PrisonerAllocationController(service)

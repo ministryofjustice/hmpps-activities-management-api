@@ -9,9 +9,9 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -31,25 +31,25 @@ import java.time.ZoneOffset
 @ContextConfiguration(classes = [JobTriggerController::class])
 class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var createScheduledInstancesJob: CreateScheduledInstancesJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var manageAttendanceRecordsJob: ManageAttendanceRecordsJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var manageAllocationsJob: ManageAllocationsJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var activityMetricsJob: ActivityMetricsJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var fixZeroPayJob: FixZeroPayJob
 
-  @MockBean
+  @MockitoBean
   private lateinit var clock: Clock
 
   @BeforeEach
