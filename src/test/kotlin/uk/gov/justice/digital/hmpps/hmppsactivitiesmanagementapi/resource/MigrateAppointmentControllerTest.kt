@@ -8,10 +8,10 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -25,10 +25,10 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [MigrateAppointmentController::class])
 class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var migrateAppointmentService: MigrateAppointmentService
 
-  @MockBean
+  @MockitoBean
   private lateinit var deleteMigratedAppointmentsJob: DeleteMigratedAppointmentsJob
 
   override fun controller() = MigrateAppointmentController(migrateAppointmentService, deleteMigratedAppointmentsJob)

@@ -12,9 +12,9 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -47,10 +47,10 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
-  @MockBean
+  @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
 
-  @MockBean
+  @MockitoBean
   private lateinit var auditService: AuditService
   private val auditableEventCaptor = argumentCaptor<AppointmentDeletedEvent>()
 

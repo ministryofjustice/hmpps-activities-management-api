@@ -11,9 +11,9 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
@@ -52,10 +52,10 @@ import java.time.temporal.ChronoUnit
 )
 class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var auditService: AuditService
 
-  @MockBean
+  @MockitoBean
   private lateinit var telemetryClient: TelemetryClient
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()

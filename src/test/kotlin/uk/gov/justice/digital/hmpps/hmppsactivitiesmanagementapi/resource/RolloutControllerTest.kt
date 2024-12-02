@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -22,10 +22,10 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [RolloutController::class])
 class RolloutControllerTest : ControllerTestBase<RolloutController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var prisonService: RolloutPrisonService
 
-  @MockBean
+  @MockitoBean
   private lateinit var prisonRegimeService: PrisonRegimeService
 
   override fun controller() = RolloutController(prisonService, prisonRegimeService)

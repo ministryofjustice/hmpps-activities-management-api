@@ -4,9 +4,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.verify
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAppointmentAttendeesJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentJobController
@@ -14,7 +14,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appoin
 @WebMvcTest(controllers = [AppointmentJobController::class])
 @ContextConfiguration(classes = [AppointmentJobController::class])
 class AppointmentJobControllerTest : ControllerTestBase<AppointmentJobController>() {
-  @MockBean
+  @MockitoBean
   private lateinit var manageAppointmentAttendeesJob: ManageAppointmentAttendeesJob
 
   override fun controller() = AppointmentJobController(manageAppointmentAttendeesJob)

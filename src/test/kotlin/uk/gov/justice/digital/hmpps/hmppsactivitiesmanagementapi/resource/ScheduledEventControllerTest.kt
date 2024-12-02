@@ -8,9 +8,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -31,16 +31,16 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [ScheduledEventController::class])
 class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var scheduledEventService: ScheduledEventService
 
-  @MockBean
+  @MockitoBean
   private lateinit var referenceCodeService: ReferenceCodeService
 
-  @MockBean
+  @MockitoBean
   private lateinit var locationService: LocationService
 
-  @MockBean
+  @MockitoBean
   private lateinit var internalLocationService: InternalLocationService
 
   override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, locationService, internalLocationService)
