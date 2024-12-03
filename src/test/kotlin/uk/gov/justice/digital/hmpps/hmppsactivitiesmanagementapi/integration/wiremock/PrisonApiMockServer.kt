@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.http.Fault
+import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
@@ -58,6 +60,33 @@ class PrisonApiMockServer : MockServer(8999) {
   fun stubGetScheduledActivities(bookingId: Long, startDate: LocalDate, endDate: LocalDate) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonapi/scheduled-event-activity-1.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetScheduledActivitiesWithConnectionReset(bookingId: Long, startDate: LocalDate, endDate: LocalDate, numFails: Int = 1) {
+    for (i in 1..numFails) {
+      stubFor(
+        WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
+          .inScenario("Network fail")
+          .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
+          .willReturn(
+            WireMock.aResponse()
+              .withFault(Fault.CONNECTION_RESET_BY_PEER),
+          )
+          .willSetStateTo("Fail $i"),
+      )
+    }
+
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/bookings/$bookingId/activities?fromDate=$startDate&toDate=$endDate"))
+        .inScenario("Network fail")
+        .whenScenarioStateIs("Fail $numFails")
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")

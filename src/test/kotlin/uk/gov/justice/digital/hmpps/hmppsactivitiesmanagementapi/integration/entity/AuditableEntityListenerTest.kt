@@ -10,7 +10,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AuditableEntityListener
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
@@ -29,7 +29,7 @@ import java.time.temporal.ChronoUnit
 @ExtendWith(FakeSecurityContext::class)
 class AuditableEntityListenerTest(@Autowired private val listener: AuditableEntityListener) : IntegrationTestBase() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var auditService: AuditService
   private val activity = activityEntity()
   private val allocation = allocation()

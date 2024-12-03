@@ -12,13 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpHeaders
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.queryForObject
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlMergeMode
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -36,7 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wir
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsPublisher
-import java.util.Optional
+import java.util.*
 
 @SqlMergeMode(SqlMergeMode.MergeMode.MERGE)
 @ExtendWith(OAuthExtension::class, BankHolidayApiExtension::class)
@@ -61,10 +61,10 @@ abstract class IntegrationTestBase {
   @Autowired
   lateinit var mapper: ObjectMapper
 
-  @MockBean
+  @MockitoBean
   protected lateinit var eventsPublisher: OutboundEventsPublisher
 
-  @MockBean
+  @MockitoBean
   protected lateinit var hmppsAuditApiClient: HmppsAuditApiClient
 
   companion object {

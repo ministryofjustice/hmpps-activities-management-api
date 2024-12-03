@@ -9,10 +9,10 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
@@ -35,13 +35,13 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [AllocationController::class])
 class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var allocationsService: AllocationsService
 
-  @MockBean
+  @MockitoBean
   private lateinit var waitingListService: WaitingListService
 
-  @MockBean
+  @MockitoBean
   private lateinit var prisonerSuspensionsService: PrisonerSuspensionsService
 
   override fun controller() = AllocationController(allocationsService, waitingListService, prisonerSuspensionsService)

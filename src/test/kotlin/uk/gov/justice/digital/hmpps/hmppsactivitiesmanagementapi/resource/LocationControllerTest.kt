@@ -6,9 +6,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -25,13 +25,13 @@ import java.time.LocalDate
 @ContextConfiguration(classes = [LocationController::class])
 class LocationControllerTest : ControllerTestBase<LocationController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var locationService: LocationService
 
-  @MockBean
+  @MockitoBean
   private lateinit var locationGroupServiceSelector: LocationGroupServiceSelector
 
-  @MockBean
+  @MockitoBean
   private lateinit var internalLocationService: InternalLocationService
 
   private val groupName = "Houseblock 1"

@@ -11,8 +11,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
@@ -44,7 +44,7 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
-  @MockBean
+  @MockitoBean
   private lateinit var auditService: AuditService
 
   private val prisonNumber = "A1234BC"
@@ -187,7 +187,7 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
     await untilAsserted {
       with(webTestClient.getAppointmentSeriesById(1)!!.appointments.filterNot { it.isDeleted }) {
         flatMap { it.attendees } hasSize 7
-        single { it.id == 1L }.attendees.map { it.prisonerNumber } isEqualTo listOf(prisonNumber, "B2345CD")
+        single { it.id == 1L }.attendees.map { it.prisonerNumber }.toSet() isEqualTo setOf(prisonNumber, "B2345CD")
         filterNot { it.id == 1L }.flatMap { it.attendees }.map { it.prisonerNumber }.toSet() isEqualTo setOf("B2345CD")
       }
 

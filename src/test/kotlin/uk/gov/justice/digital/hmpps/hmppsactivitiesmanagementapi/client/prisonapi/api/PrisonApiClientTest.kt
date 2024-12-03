@@ -8,16 +8,18 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -145,6 +147,54 @@ class PrisonApiClientTest {
     val scheduledActivities = prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
     assertThat(scheduledActivities).hasSize(2)
     assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
+  }
+
+  @Nested
+  @DisplayName("Retrying failed api calls")
+  inner class RetryFailedCalls {
+    val bookingId = 10001L
+    val dateRange = LocalDateRange(LocalDate.of(2022, 10, 1), LocalDate.of(2022, 11, 5))
+
+    @Test
+    fun `will succeed if number of fails is not less than maximum allowed`(): Unit = runBlocking {
+      prisonApiMockServer.stubGetScheduledActivitiesWithConnectionReset(
+        bookingId,
+        dateRange.start,
+        dateRange.endInclusive,
+      )
+
+      val scheduledActivities = prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
+      assertThat(scheduledActivities).hasSize(2)
+      assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
+    }
+
+    @Test
+    fun `will succeed if number of fails is maximum allowed`(): Unit = runBlocking {
+      prisonApiMockServer.stubGetScheduledActivitiesWithConnectionReset(
+        bookingId,
+        dateRange.start,
+        dateRange.endInclusive,
+        2,
+      )
+
+      val scheduledActivities = prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
+      assertThat(scheduledActivities).hasSize(2)
+      assertThat(scheduledActivities.first().bookingId).isEqualTo(10001L)
+    }
+
+    @Test
+    fun `will fail if number of fails is more than maximum allowed`(): Unit = runBlocking {
+      prisonApiMockServer.stubGetScheduledActivitiesWithConnectionReset(
+        bookingId,
+        dateRange.start,
+        dateRange.endInclusive,
+        3,
+      )
+
+      assertThrows<WebClientRequestException> {
+        prisonApiClient.getScheduledActivitiesAsync(bookingId, dateRange)
+      }
+    }
   }
 
   @Test

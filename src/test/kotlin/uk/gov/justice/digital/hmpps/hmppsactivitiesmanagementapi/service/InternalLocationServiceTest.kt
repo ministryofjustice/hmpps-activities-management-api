@@ -119,6 +119,11 @@ class InternalLocationServiceTest {
     description = "SOCIAL VISITS",
     userDescription = "Social Visits",
   )
+  private val education3LocationSummary = LocationSummary(
+    locationId = 6L,
+    description = "EDUC-ED1-ED3",
+    userDescription = "Education 3",
+  )
 
   private val adjudicationLocation = internalLocation(
     locationId = 1000L,
@@ -196,6 +201,11 @@ class InternalLocationServiceTest {
   private val noLocationVisit = PrisonApiPrisonerScheduleFixture.visitInstance(
     eventId = 9,
     locationId = null,
+    date = LocalDate.now(),
+  )
+  private val socialVisit = PrisonApiPrisonerScheduleFixture.visitInstance(
+    eventId = 10,
+    locationId = socialVisitsLocationSummary.locationId,
     date = LocalDate.now(),
   )
 
@@ -344,7 +354,15 @@ class InternalLocationServiceTest {
       ).thenReturn(listOf(education2Activity))
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
-        .thenReturn(listOf(education1LocationSummary, education2LocationSummary, socialVisitsLocationSummary))
+        .thenReturn(listOf(education1LocationSummary, education2LocationSummary, education3LocationSummary, socialVisitsLocationSummary))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education1LocationSummary.locationId, date, null))
+        .thenReturn(listOf(education1Visit))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education2LocationSummary.locationId, date, null))
+        .thenReturn(listOf(education2Visit))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education3LocationSummary.locationId, date, null))
+        .thenReturn(emptyList())
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, null))
+        .thenReturn(listOf(socialVisit))
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
       )
@@ -401,6 +419,8 @@ class InternalLocationServiceTest {
           socialVisitsLocationSummary,
         ),
       )
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, TimeSlot.PM))
+        .thenReturn(listOf(socialVisit))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,

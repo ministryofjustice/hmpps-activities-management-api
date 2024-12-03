@@ -7,11 +7,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithAnonymousUser
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SubjectAccessRequestService
@@ -23,7 +23,7 @@ import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestController
 @WithMockUser(roles = ["SAR_DATA_ACCESS"])
 class SubjectAccessRequestControllerTest : ControllerTestBase<HmppsSubjectAccessRequestController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var service: SubjectAccessRequestService
 
   private val content: HmppsSubjectAccessRequestContent = mock()

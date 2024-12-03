@@ -13,10 +13,10 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -46,13 +46,13 @@ import java.time.LocalDateTime
 @ContextConfiguration(classes = [ActivityScheduleController::class])
 class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleController>() {
 
-  @MockBean
+  @MockitoBean
   private lateinit var activityScheduleService: ActivityScheduleService
 
-  @MockBean
+  @MockitoBean
   private lateinit var candidatesService: CandidatesService
 
-  @MockBean
+  @MockitoBean
   private lateinit var waitingListService: WaitingListService
 
   override fun controller() = ActivityScheduleController(activityScheduleService, candidatesService, waitingListService)
