@@ -1,12 +1,18 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.awaitBody
+import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
+import reactor.util.retry.Retry
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -19,8 +25,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
+import java.time.Duration
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
 typealias PrisonLocations = Map<Long, Location>
@@ -33,7 +40,15 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
  * It should be noted where possible we should be using the prisoner search API in favour of prison API.
  */
 @Service
-class PrisonApiClient(private val prisonApiWebClient: WebClient) {
+class PrisonApiClient(
+  private val prisonApiWebClient: WebClient,
+  @Value("\${prison.api.retry.max-attempts:2}") private val retryMaxAttempts: Long = 2,
+  @Value("\${prison.api.retry.min-backoff-millis:250}") private val retryMinBackoffMillis: Long = 250,
+) {
+
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
   /**
    * Returns a minimal view of the prisoner's attributes in the [InmateDetail].
@@ -52,7 +67,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonerNumber)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(InmateDetail::class.java)
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledActivitiesAsync(
@@ -68,7 +85,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(bookingId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+      .withRetryPolicy()
+      .awaitSingle()
 
   suspend fun getScheduledAppointmentsAsync(
     bookingId: Long,
@@ -83,7 +102,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(bookingId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -103,7 +124,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .bodyValue(prisonerNumbers)
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledCourtHearingsAsync(
@@ -120,7 +143,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(bookingId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(CourtHearings::class.java)
+      .withRetryPolicy()
+      .awaitSingleOrNull()
   }
 
   suspend fun getScheduledCourtEventsForPrisonerNumbersAsync(
@@ -140,7 +165,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .bodyValue(prisonerNumbers)
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledVisitsAsync(
@@ -156,7 +183,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(bookingId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
+      .withRetryPolicy()
+      .awaitSingle()
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
     prisonCode: String,
@@ -175,7 +204,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .bodyValue(prisonerNumbers)
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledVisitsForLocationAsync(
@@ -193,7 +224,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonCode, locationId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
@@ -213,7 +246,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .bodyValue(prisonerNumbers)
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getExternalTransfersOnDateAsync(
@@ -231,7 +266,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .bodyValue(prisonerNumbers)
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<PrisonerSchedule>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   fun getLocationsForType(agencyId: String, locationType: String): Mono<List<Location>> {
@@ -243,6 +280,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<Location>>())
+      .withRetryPolicy()
   }
 
   // Does not check that the invoker has the selected agency in their caseload.
@@ -259,6 +297,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<Location>>())
+      .withRetryPolicy()
   }
 
   fun getLocationGroups(agencyId: String): Mono<List<LocationGroup>> {
@@ -270,6 +309,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<LocationGroup>>())
+      .withRetryPolicy()
   }
 
   fun getLocation(locationId: Long): Mono<Location> =
@@ -281,6 +321,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<Location>())
+      .withRetryPolicy()
 
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations =
     getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
@@ -294,7 +335,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(locationId)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(Location::class.java)
+      .withRetryPolicy()
+      .awaitSingle()
 
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
     this.queryParamIfPresent(name, Optional.ofNullable(type))
@@ -308,6 +351,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<ReferenceCode>())
+      .withRetryPolicy()
 
   fun getReferenceCodes(domain: String): List<ReferenceCode> =
     prisonApiWebClient.get()
@@ -318,6 +362,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<ReferenceCode>>())
+      .withRetryPolicy()
       .block() ?: emptyList()
 
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> =
@@ -336,6 +381,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       }
       .retrieve()
       .bodyToMono(typeReference<List<ReferenceCode>>())
+      .withRetryPolicy()
       .block() ?: emptyList()
   }
 
@@ -349,6 +395,7 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<Education>>())
+      .withRetryPolicy()
       .block() ?: emptyList()
 
     return educations
@@ -368,7 +415,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonCode)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<Location>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   suspend fun getEventLocationsBookedAsync(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): List<LocationSummary> {
@@ -381,7 +430,9 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
           .build(prisonCode)
       }
       .retrieve()
-      .awaitBody()
+      .bodyToMono(typeReference<List<LocationSummary>>())
+      .withRetryPolicy()
+      .awaitSingle()
   }
 
   fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) =
@@ -397,6 +448,29 @@ class PrisonApiClient(private val prisonApiWebClient: WebClient) {
         .bodyValue(prisonerNumbers)
         .retrieve()
         .bodyToMono(typeReference<List<Movement>>())
+        .withRetryPolicy()
         .block()
     }?.filter { it.fromAgency == prisonCode } ?: emptyList()
+
+  private fun <T> Mono<T>.withRetryPolicy(): Mono<T> {
+    return this
+      .retryWhen(
+        Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryMinBackoffMillis))
+          .filter { isRetryable(it) }
+          .doBeforeRetry { logRetrySignal(it) }
+          .onRetryExhaustedThrow { _, signal ->
+            signal.failure()
+          },
+      )
+  }
+
+  private fun isRetryable(it: Throwable): Boolean {
+    return it is WebClientRequestException || it.cause is WebClientRequestException
+  }
+
+  private fun logRetrySignal(retrySignal: Retry.RetrySignal) {
+    val exception = retrySignal.failure()?.cause ?: retrySignal.failure()
+    val message = exception.message ?: exception.javaClass.canonicalName
+    log.debug("Retrying due to {}, totalRetries: {}", message, retrySignal.totalRetries())
+  }
 }
