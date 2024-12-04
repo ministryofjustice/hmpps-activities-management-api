@@ -78,7 +78,7 @@ class WebClientConfiguration(
 
   @Bean
   fun prisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
-    .authorisedWebClient(authorizedClientManager, "prison-api", prisonApiUrl, apiTimeout)
+    .authorisedWebClient(authorizedClientManager, "prison-api", prisonApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating prison api web client") }
 
   @Bean
