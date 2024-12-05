@@ -51,7 +51,8 @@ class DailyActivityMetricsServiceTest {
 
   private val allocationEnded: Allocation = mock()
   private val allocationActive: Allocation = mock()
-  private val allocationSuspended: Allocation = mock()
+  private val allocationSuspendedWithoutPay: Allocation = mock()
+  private val allocationSuspendedWithPay: Allocation = mock()
   private val allocationAutoSuspended: Allocation = mock()
   private val allocationPending: Allocation = mock()
 
@@ -115,7 +116,8 @@ class DailyActivityMetricsServiceTest {
     whenever(allocationEnded.prisonerStatus).thenReturn(PrisonerStatus.ENDED)
     whenever(allocationEnded.deallocatedTime).thenReturn(LocalDateTime.now().minusDays(1))
     whenever(allocationActive.prisonerStatus).thenReturn(PrisonerStatus.ACTIVE)
-    whenever(allocationSuspended.prisonerStatus).thenReturn(PrisonerStatus.SUSPENDED)
+    whenever(allocationSuspendedWithoutPay.prisonerStatus).thenReturn(PrisonerStatus.SUSPENDED)
+    whenever(allocationSuspendedWithPay.prisonerStatus).thenReturn(PrisonerStatus.SUSPENDED_WITH_PAY)
     whenever(allocationAutoSuspended.prisonerStatus).thenReturn(PrisonerStatus.AUTO_SUSPENDED)
     whenever(allocationPending.prisonerStatus).thenReturn(PrisonerStatus.PENDING)
 
@@ -123,19 +125,21 @@ class DailyActivityMetricsServiceTest {
       allocationEnded,
       allocationActive,
       allocationActive,
-      allocationSuspended,
-      allocationSuspended,
-      allocationSuspended,
+      allocationSuspendedWithoutPay,
+      allocationSuspendedWithoutPay,
+      allocationSuspendedWithoutPay,
       allocationPending,
       allocationPending,
+      allocationSuspendedWithPay,
       allocationAutoSuspended,
+      allocationSuspendedWithPay,
     )
 
     dailyActivityMetricsService.generateAllocationMetrics(LocalDate.now(), metricsMap, allocations)
 
     assertThat(metricsMap[ALLOCATIONS_ENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
     assertThat(metricsMap[ALLOCATIONS_ACTIVE_COUNT_METRIC_KEY]).isEqualTo(2.0)
-    assertThat(metricsMap[ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY]).isEqualTo(3.0)
+    assertThat(metricsMap[ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY]).isEqualTo(5.0)
     assertThat(metricsMap[ALLOCATIONS_PENDING_COUNT_METRIC_KEY]).isEqualTo(2.0)
     assertThat(metricsMap[ALLOCATIONS_AUTO_SUSPENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
     assertThat(metricsMap[ALLOCATIONS_DELETED_COUNT_METRIC_KEY]).isEqualTo(1.0)

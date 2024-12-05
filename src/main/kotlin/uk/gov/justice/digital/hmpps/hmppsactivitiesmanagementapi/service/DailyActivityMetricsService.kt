@@ -81,7 +81,7 @@ class DailyActivityMetricsService(
       when (it.prisonerStatus) {
         PrisonerStatus.ENDED -> incrementMetric(metricsMap, ALLOCATIONS_ENDED_COUNT_METRIC_KEY)
         PrisonerStatus.ACTIVE -> incrementMetric(metricsMap, ALLOCATIONS_ACTIVE_COUNT_METRIC_KEY)
-        PrisonerStatus.SUSPENDED -> incrementMetric(metricsMap, ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY)
+        PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY -> incrementMetric(metricsMap, ALLOCATIONS_SUSPENDED_COUNT_METRIC_KEY)
         PrisonerStatus.AUTO_SUSPENDED -> incrementMetric(metricsMap, ALLOCATIONS_AUTO_SUSPENDED_COUNT_METRIC_KEY)
         PrisonerStatus.PENDING -> incrementMetric(metricsMap, ALLOCATIONS_PENDING_COUNT_METRIC_KEY)
       }
