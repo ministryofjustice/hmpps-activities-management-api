@@ -470,6 +470,7 @@ enum class PrisonerStatus {
   SUSPENDED,
   AUTO_SUSPENDED,
   ENDED,
+  SUSPENDED_WITH_PAY,
   ;
 
   companion object {
