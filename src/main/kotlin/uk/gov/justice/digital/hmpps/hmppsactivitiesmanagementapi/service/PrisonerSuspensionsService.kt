@@ -69,6 +69,7 @@ class PrisonerSuspensionsService(
                 plannedBy = byWhom,
                 plannedAt = now,
                 caseNoteId = mayBeCaseNoteId,
+                paid = PrisonerStatus.SUSPENDED_WITH_PAY == request.status,
               ),
             )
         }

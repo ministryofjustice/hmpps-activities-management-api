@@ -326,7 +326,11 @@ data class Allocation(
       require(plannedSuspension != null && plannedSuspension.hasStarted()) { "Failed to activate planned suspension for allocation with id $allocationId - no suspensions planned at this time" }
       failWithMessageIfAllocationIsNotStatus("You can only suspend active or auto-suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.AUTO_SUSPENDED)
 
-      prisonerStatus = prisonStatus
+      if (plannedSuspension.paid() == true) {
+        prisonerStatus = PrisonerStatus.SUSPENDED_WITH_PAY
+      } else {
+        prisonerStatus = prisonStatus
+      }
       suspendedTime = LocalDateTime.now()
       suspendedReason = "Planned suspension"
       suspendedBy = plannedSuspension.plannedBy()

@@ -559,6 +559,7 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first()) {
       prisonerStatus == PrisonerStatus.SUSPENDED
+      plannedSuspension()!!.paid() isEqualTo false
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -587,7 +588,9 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first()) {
       prisonerStatus == PrisonerStatus.SUSPENDED_WITH_PAY
+      plannedSuspension()!!.paid() isEqualTo true
     }
+
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
     verifyNoInteractions(caseNotesApiClient)
