@@ -42,6 +42,11 @@ class PrisonerSuspensionsService(
       require(it.onOrAfter(LocalDate.now())) { "Suspension start date must be on or after today's date" }
     }
 
+    // TODO: make status mandatory after integration with the UI
+    require(request.status == null || listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(request.status)) {
+      "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status"
+    }
+
     val impactedAttendanceIds = transactionHandler.newSpringTransaction {
       val allocations = allocationRepository.findAllById(allocationIds)
         .also { allocations ->
@@ -69,7 +74,7 @@ class PrisonerSuspensionsService(
         }
 
         allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
-          alloc.activatePlannedSuspension()
+          alloc.activatePlannedSuspension(request.status ?: PrisonerStatus.SUSPENDED)
           attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
         } ?: emptyList()
       }

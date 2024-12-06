@@ -536,4 +536,82 @@ class PrisonerSuspensionsServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
   }
+
+  @Test
+  fun `suspension with prisoner status SUSPENDED gets created`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val suspendPrisonerRequest = SuspendPrisonerRequest(
+      prisonerNumber = "A1234AA",
+      allocationIds = listOf(allocation.allocationId),
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      status = PrisonerStatus.SUSPENDED,
+    )
+
+    whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
+
+    service.suspend(prisonCode, suspendPrisonerRequest, "user")
+
+    verify(allocationRepository).saveAllAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.first()) {
+      prisonerStatus == PrisonerStatus.SUSPENDED
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+    verifyNoInteractions(caseNotesApiClient)
+  }
+
+  @Test
+  fun `suspension with prisoner status SUSPENDED_WITH_PAY gets set`() {
+    val allocation = allocation()
+    val allocationId = allocation.allocationId
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    val suspendPrisonerRequest = SuspendPrisonerRequest(
+      prisonerNumber = "A1234AA",
+      allocationIds = listOf(allocation.allocationId),
+      suspendFrom = allocation.startDate.plusWeeks(1),
+      status = PrisonerStatus.SUSPENDED_WITH_PAY,
+    )
+
+    whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
+
+    service.suspend(prisonCode, suspendPrisonerRequest, "user")
+
+    verify(allocationRepository).saveAllAndFlush(allocationCaptor.capture())
+
+    assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
+    with(allocationCaptor.firstValue.first()) {
+      prisonerStatus == PrisonerStatus.SUSPENDED_WITH_PAY
+    }
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
+    verifyNoMoreInteractions(outboundEventsService)
+    verifyNoInteractions(caseNotesApiClient)
+  }
+
+  @Test
+  fun `suspension with any prisoner status that is not SUSPENDED or SUSPENDED_WITH_PAY fails validation`() {
+    val allocation = allocation()
+    val prisonCode = allocation.activitySchedule.activity.prisonCode
+
+    PrisonerStatus.allExcuding(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).forEach { status ->
+      val suspendPrisonerRequest = SuspendPrisonerRequest(
+        prisonerNumber = "A1234AA",
+        allocationIds = listOf(allocation.allocationId),
+        suspendFrom = LocalDate.now(),
+        status = status,
+      )
+
+      assertThatThrownBy {
+        service.suspend(prisonCode, suspendPrisonerRequest, "user")
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status")
+    }
+    verifyNoInteractions(outboundEventsService)
+  }
 }
