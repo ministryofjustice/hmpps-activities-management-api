@@ -582,6 +582,89 @@ class ManageAttendancesServiceTest {
   }
 
   @Test
+  fun `attendance is created and marked suspended and paid when an allocation is suspended with pay`() {
+    whenever(attendanceCreationDataRepository.findBy(MOORLAND_PRISON_CODE, LocalDate.now())).thenReturn(
+      listOf(
+        AttendanceCreationData(
+          id = UUID.randomUUID(),
+          scheduledInstanceId = 0L,
+          sessionDate = LocalDate.now(),
+          timeSlot = TimeSlot.AM,
+          prisonerNumber = "A1234AA",
+          paid = true,
+          prisonPayBandId = 1L,
+          prisonCode = MOORLAND_PRISON_CODE,
+          activityId = 1L,
+          prisonerStatus = PrisonerStatus.SUSPENDED_WITH_PAY,
+          allocationId = 1L,
+          allocStart = LocalDate.now(),
+          allocEnd = null,
+          scheduleStart = LocalDate.now(),
+          scheduleEnd = null,
+          scheduleWeeks = 1,
+          possibleExclusion = false,
+          plannedDeallocationDate = null,
+        ),
+      ),
+    )
+
+    whenever(scheduledInstanceRepository.findAllById(listOf(0L))).thenReturn(listOf(instance))
+    whenever(activityRepository.findAllById(listOf(1L))).thenReturn(listOf(activity))
+    whenever(prisonPayBandRepository.findAllById(listOf(1L))).thenReturn(listOf(lowPayBand))
+
+    allocation.apply {
+      addPlannedSuspension(
+        PlannedSuspension(
+          allocation = this,
+          plannedStartDate = this.startDate,
+          plannedBy = "Test",
+        ),
+      )
+    }.activatePlannedSuspension()
+
+    whenever(allocationRepository.findById(1L)).thenReturn(Optional.of(allocation))
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)).thenReturn(attendanceReasons()["SUSPENDED"])
+
+    val attendees = instance.attendances.map { it.prisonerNumber }
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(attendees))
+      .thenReturn(
+        attendees.map {
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = it)
+        },
+      )
+
+    whenever(attendanceRepository.saveAllAndFlush(anyList()))
+      .thenReturn(
+        listOf(
+          Attendance(
+            attendanceId = 1L,
+            scheduledInstance = instance,
+            prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
+            status = AttendanceStatus.COMPLETED,
+            attendanceReason = attendanceReasons()["SUSPENDED"],
+            initialIssuePayment = false,
+            recordedTime = LocalDateTime.now(),
+            recordedBy = "Activities Management Service",
+          ),
+        ),
+      )
+
+    service.createAttendances(today, MOORLAND_PRISON_CODE)
+
+    verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
+
+    with(attendanceListCaptor.firstValue.first()) {
+      assertThat(attendanceReason).isEqualTo(attendanceReasons()["SUSPENDED"])
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+      assertThat(issuePayment).isTrue
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+    }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+  }
+
+  @Test
   fun `attendance is created and marked cancelled and paid when the scheduled instance is cancelled`() {
     whenever(attendanceCreationDataRepository.findBy(MOORLAND_PRISON_CODE, LocalDate.now())).thenReturn(
       listOf(

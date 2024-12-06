@@ -272,6 +272,9 @@ class ManageAttendancesService(
       attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED -> {
         suspendedAttendance(instance, attendanceCreate.prisonerNumber)
       }
+      attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED_WITH_PAY -> {
+        suspendedWithPayAttendance(instance, attendanceCreate.prisonerNumber)
+      }
       attendanceCreate.prisonerStatus == PrisonerStatus.AUTO_SUSPENDED -> {
         autoSuspendedAttendance(instance, attendanceCreate.prisonerNumber)
       }
@@ -296,6 +299,16 @@ class ManageAttendancesService(
     prisonerNumber = prisonerNumber,
     attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
     initialIssuePayment = false,
+    status = AttendanceStatus.COMPLETED,
+    recordedTime = LocalDateTime.now(),
+    recordedBy = ServiceName.SERVICE_NAME.value,
+  )
+
+  private fun suspendedWithPayAttendance(instance: ScheduledInstance, prisonerNumber: String) = Attendance(
+    scheduledInstance = instance,
+    prisonerNumber = prisonerNumber,
+    attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED),
+    initialIssuePayment = instance.isPaid(),
     status = AttendanceStatus.COMPLETED,
     recordedTime = LocalDateTime.now(),
     recordedBy = ServiceName.SERVICE_NAME.value,
