@@ -339,9 +339,10 @@ data class Allocation(
   fun reactivateSuspension() =
     this.apply {
       failWithMessageIfAllocationIsNotStatus(
-        "You can only reactivate suspended or auto-suspended allocations",
+        "You can only reactivate suspended, suspended with pay or auto-suspended allocations",
         PrisonerStatus.SUSPENDED,
         PrisonerStatus.AUTO_SUSPENDED,
+        PrisonerStatus.SUSPENDED_WITH_PAY,
       )
       prisonerStatus = PrisonerStatus.ACTIVE
       suspendedTime = null

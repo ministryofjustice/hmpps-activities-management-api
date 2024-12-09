@@ -152,7 +152,7 @@ class PrisonerSuspensionsService(
 
         allocation.plannedSuspension()!!.endOn(maxOf(suspendUntil, plannedSuspensionStartDate), byWhom)
 
-        allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
+        allocation.takeIf { (it.status(PrisonerStatus.SUSPENDED) || it.status(PrisonerStatus.SUSPENDED_WITH_PAY)) && !it.isCurrentlySuspended() }?.let { alloc ->
           alloc.reactivateSuspension()
           attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
         } ?: emptyList()
