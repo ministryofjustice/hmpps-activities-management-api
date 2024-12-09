@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.annotation.Nullable
 import jakarta.validation.Valid
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.FutureOrPresent
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import java.time.LocalDate
 
 data class SuspendPrisonerRequest(
@@ -35,4 +37,18 @@ data class SuspendPrisonerRequest(
   @field:Valid
   @field:Nullable
   val suspensionCaseNote: AddCaseNoteRequest? = null,
-)
+
+  // TODO: make status mandatory after integration with the UI
+  @Schema(
+    description = "The type of suspension. Only SUSPENDED or SUSPENDED_WITH_PAY are allowed when suspending",
+    allowableValues = ["SUSPENDED", "SUSPENDED_WITH_PAY"],
+    example = "SUSPENDED_WITH_PAY",
+  )
+  @field:Valid
+  @field:Nullable
+  val status: PrisonerStatus? = null,
+) {
+  @AssertTrue(message = "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status")
+  private fun isStatus() =
+    status == null || listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(status)
+}

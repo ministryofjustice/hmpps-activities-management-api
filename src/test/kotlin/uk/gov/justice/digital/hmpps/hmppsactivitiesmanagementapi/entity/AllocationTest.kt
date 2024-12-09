@@ -192,12 +192,28 @@ class AllocationTest {
   }
 
   @Test
+  fun `check can unsuspend a paid suspension allocation`() {
+    val allocation = allocation(withPlannedSuspensions = true, withPaidSuspension = true)
+      .apply { activatePlannedSuspension(PrisonerStatus.SUSPENDED_WITH_PAY) }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED_WITH_PAY) }
+
+    allocation.reactivateSuspension()
+
+    with(allocation) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      assertThat(suspendedBy).isNull()
+      assertThat(suspendedTime).isNull()
+      assertThat(suspendedReason).isNull()
+    }
+  }
+
+  @Test
   fun `check cannot unsuspend an active allocation`() {
     val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended, suspended with pay or auto-suspended allocations")
   }
 
   @Test
@@ -207,7 +223,7 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended, suspended with pay or auto-suspended allocations")
   }
 
   @Test
