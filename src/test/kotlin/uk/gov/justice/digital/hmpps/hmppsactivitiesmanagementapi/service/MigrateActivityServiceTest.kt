@@ -518,6 +518,7 @@ class MigrateActivityServiceTest {
       with(activityCaptor.firstValue[0]) {
         assertThat(inCell).isFalse
         assertThat(onWing).isTrue
+        assertThat(schedules().first().internalLocationId).isNull()
       }
     }
 
