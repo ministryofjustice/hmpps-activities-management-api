@@ -73,7 +73,7 @@ data class Allocation(
   )
   val suspendedReason: String? = null,
 
-  @Schema(description = "The status of the allocation", example = "ACTIVE")
+  @Schema(description = "The status of the allocation. Note that SUSPENDED is suspended without pay.", example = "ACTIVE")
   val status: PrisonerStatus,
 
   @Schema(description = "Where an allocation end date has been set, this includes the details of the planned de-allocation")
