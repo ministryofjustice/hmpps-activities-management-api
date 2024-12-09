@@ -223,7 +223,7 @@ class MigrateActivityService(
     }.apply {
       addSchedule(
         description = this.summary,
-        internalLocation = request.internalLocationId?.let { prisonApiClient.getLocation(it).block() },
+        internalLocation = if (!onWing) request.internalLocationId?.let { prisonApiClient.getLocation(it).block() } else null,
         capacity = if (request.capacity == 0) 1 else request.capacity,
         startDate = this.startDate,
         endDate = this.endDate,
