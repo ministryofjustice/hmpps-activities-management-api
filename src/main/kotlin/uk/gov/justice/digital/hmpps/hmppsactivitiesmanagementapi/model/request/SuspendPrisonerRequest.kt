@@ -41,7 +41,6 @@ data class SuspendPrisonerRequest(
   // TODO: make status mandatory after integration with the UI
   @Schema(
     description = "The type of suspension. Only SUSPENDED or SUSPENDED_WITH_PAY are allowed when suspending",
-    allowableValues = ["SUSPENDED", "SUSPENDED_WITH_PAY"],
     example = "SUSPENDED_WITH_PAY",
   )
   @field:Valid
