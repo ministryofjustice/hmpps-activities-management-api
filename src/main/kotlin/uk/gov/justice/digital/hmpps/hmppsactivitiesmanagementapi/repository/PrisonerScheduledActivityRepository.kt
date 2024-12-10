@@ -69,6 +69,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     SELECT sa FROM PrisonerScheduledActivity sa 
     WHERE (sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date
+    AND sa.onWing = false
     AND sa.internalLocationId in :internalLocationIds)
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     """,

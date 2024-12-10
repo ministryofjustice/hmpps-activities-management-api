@@ -175,6 +175,20 @@ class InternalLocationServiceTest {
     endTime = LocalTime.of(19, 15),
   )
 
+  private val education3Location = internalLocation(
+    locationId = 6L,
+    description = "EDUC-ED1-ED3",
+    userDescription = "Education 3",
+  )
+
+  private val onWingActivity = activityFromDbInstance(
+    scheduledInstanceId = 5,
+    internalLocationId = education3Location.locationId.toInt(),
+    startTime = LocalTime.of(17, 30),
+    endTime = LocalTime.of(19, 15),
+    onWing = true,
+  )
+
   private val education1AppointmentInstance = appointmentInstanceEntity(
     appointmentInstanceId = 5,
     internalLocationId = education1Location.locationId,
@@ -238,6 +252,7 @@ class InternalLocationServiceTest {
         noUserDescriptionLocation,
         socialVisitsLocation,
         adjudicationLocation,
+        education3Location,
       )
 
       on {
@@ -477,6 +492,67 @@ class InternalLocationServiceTest {
         date,
         TimeSlot.AM,
       ) isEqualTo emptySet()
+    }
+
+    @Test
+    fun `ignores activities that is on-wing and activity schedule has a locations set`() = runBlocking {
+      whenever(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(
+          prisonCode,
+          date,
+          null,
+        ),
+      ).thenReturn(listOf(education2Activity, onWingActivity))
+      whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
+      whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
+        .thenReturn(listOf(education1LocationSummary, education2LocationSummary, education3LocationSummary, socialVisitsLocationSummary))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education1LocationSummary.locationId, date, null))
+        .thenReturn(listOf(education1Visit))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education2LocationSummary.locationId, date, null))
+        .thenReturn(listOf(education2Visit))
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education3LocationSummary.locationId, date, null))
+        .thenReturn(emptyList())
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, null))
+        .thenReturn(listOf(socialVisit))
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
+        mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
+      )
+
+      service.getInternalLocationEventsSummaries(
+        prisonCode,
+        date,
+        null,
+      ) isEqualTo setOf(
+        InternalLocationEventsSummary(
+          education1Location.locationId,
+          prisonCode,
+          education1Location.description,
+          education1Location.userDescription!!,
+        ),
+        InternalLocationEventsSummary(
+          education2Location.locationId,
+          prisonCode,
+          education2Location.description,
+          education2Location.userDescription!!,
+        ),
+        InternalLocationEventsSummary(
+          socialVisitsLocation.locationId,
+          prisonCode,
+          socialVisitsLocation.description,
+          socialVisitsLocation.userDescription!!,
+        ),
+        InternalLocationEventsSummary(
+          adjudicationLocation.locationId,
+          prisonCode,
+          adjudicationLocation.description,
+          adjudicationLocation.userDescription!!,
+        ),
+      )
+
+      verify(appointmentSearchSpecification).prisonCodeEquals(prisonCode)
+      verify(appointmentSearchSpecification).startDateEquals(date)
+      verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
+      verifyNoMoreInteractions(appointmentSearchSpecification)
     }
   }
 

@@ -621,6 +621,52 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-id-3-on-wing.sql")
+    @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
+    fun `get location events ignores activities with location id and on-wing is true`() {
+      val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId, visitsLocation.locationId)
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, visitsLocation))
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, emptyList())
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, visitsLocation.locationId, date, null, listOf(visit))
+      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+
+      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
+
+      with(result) {
+        size isEqualTo 4
+        with(this.single { it.id == activityLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation1.description
+          description isEqualTo activityLocation1.userDescription
+          events.filter { it.eventType == "ACTIVITY" } hasSize 2
+        }
+        with(this.single { it.id == activityLocation2.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityLocation2.description
+          description isEqualTo activityLocation2.userDescription
+          events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
+        }
+        with(this.single { it.id == appointmentLocation1.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo appointmentLocation1.description
+          description isEqualTo appointmentLocation1.userDescription
+          events.single { it.appointmentAttendeeId == 5L }.eventType isEqualTo "APPOINTMENT"
+        }
+        with(this.single { it.id == visitsLocation.locationId }) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo visitsLocation.description
+          description isEqualTo visitsLocation.userDescription
+          events.single { it.eventId == visit.eventId }.eventType isEqualTo "VISIT"
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
     @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
     fun `get location events for date and time slot with one activity only - 200 success`() {
       val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId)
