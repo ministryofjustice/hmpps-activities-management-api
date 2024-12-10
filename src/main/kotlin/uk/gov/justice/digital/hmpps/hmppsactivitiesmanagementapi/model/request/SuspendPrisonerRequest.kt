@@ -38,16 +38,14 @@ data class SuspendPrisonerRequest(
   @field:Nullable
   val suspensionCaseNote: AddCaseNoteRequest? = null,
 
-  // TODO: make status mandatory after integration with the UI
   @Schema(
     description = "The type of suspension. Only SUSPENDED or SUSPENDED_WITH_PAY are allowed when suspending",
     example = "SUSPENDED_WITH_PAY",
   )
   @field:Valid
-  @field:Nullable
-  val status: PrisonerStatus? = null,
+  @field:NotNull
+  val status: PrisonerStatus,
 ) {
   @AssertTrue(message = "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status")
-  private fun isStatus() =
-    status == null || listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(status)
+  private fun isStatus() = listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(status)
 }

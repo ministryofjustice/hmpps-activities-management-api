@@ -158,6 +158,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
         prisonerNumber = "ABC123",
         allocationIds = listOf(1),
         suspendFrom = LocalDate.now().plusDays(1),
+        status = PrisonerStatus.SUSPENDED,
       )
 
       private val requestWithPay = SuspendPrisonerRequest(

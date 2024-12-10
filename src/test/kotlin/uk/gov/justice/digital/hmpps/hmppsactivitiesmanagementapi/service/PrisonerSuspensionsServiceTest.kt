@@ -89,6 +89,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = LocalDate.now().minusDays(1),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     assertThatThrownBy {
@@ -110,6 +111,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(2),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -134,6 +136,7 @@ class PrisonerSuspensionsServiceTest {
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
       suspensionCaseNote = AddCaseNoteRequest(type = CaseNoteType.GEN, text = "test case note"),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -172,6 +175,7 @@ class PrisonerSuspensionsServiceTest {
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
       suspensionCaseNote = AddCaseNoteRequest(type = CaseNoteType.NEG, text = "test case note"),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -210,6 +214,7 @@ class PrisonerSuspensionsServiceTest {
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
       suspensionCaseNote = AddCaseNoteRequest(type = CaseNoteType.GEN, text = "test case note"),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation(), allocation()))
@@ -247,6 +252,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -283,6 +289,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate,
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -315,6 +322,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate,
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -345,6 +353,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = LocalDate.now(),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -372,6 +381,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
@@ -396,6 +406,7 @@ class PrisonerSuspensionsServiceTest {
       prisonerNumber = "A1234AA",
       allocationIds = listOf(allocation.allocationId),
       suspendFrom = allocation.startDate.plusWeeks(1),
+      status = PrisonerStatus.SUSPENDED,
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))

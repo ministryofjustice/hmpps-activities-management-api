@@ -42,8 +42,7 @@ class PrisonerSuspensionsService(
       require(it.onOrAfter(LocalDate.now())) { "Suspension start date must be on or after today's date" }
     }
 
-    // TODO: make status mandatory after integration with the UI
-    require(request.status == null || listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(request.status)) {
+    require(listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(request.status)) {
       "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status"
     }
 
@@ -75,7 +74,7 @@ class PrisonerSuspensionsService(
         }
 
         allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
-          alloc.activatePlannedSuspension(request.status ?: PrisonerStatus.SUSPENDED)
+          alloc.activatePlannedSuspension(request.status)
           attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
         } ?: emptyList()
       }
