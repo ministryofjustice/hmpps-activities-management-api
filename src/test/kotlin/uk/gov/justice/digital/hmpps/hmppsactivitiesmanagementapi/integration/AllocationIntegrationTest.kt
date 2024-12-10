@@ -274,6 +274,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
         prisonerNumber = "A11111A",
         allocationIds = listOf(1, 4),
         suspendFrom = 5.daysFromNow(),
+        status = PrisonerStatus.SUSPENDED,
       ),
       "PVI",
     )
@@ -313,6 +314,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
         prisonerNumber = "A11111A",
         allocationIds = listOf(1, 2),
         suspendFrom = TimeSource.today(),
+        status = PrisonerStatus.SUSPENDED,
       ),
       "PVI",
     )
