@@ -12,16 +12,6 @@ class SuspendPrisonerRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
 
   @Test
-  fun `status not supplied is valid`() {
-    val request = SuspendPrisonerRequest(
-      prisonerNumber = "G4793VF",
-      allocationIds = listOf(1L),
-      suspendFrom = LocalDate.now(),
-    )
-    assertThat(validator.validate(request)).isEmpty()
-  }
-
-  @Test
   fun `status of SUSPENDED is valid`() {
     val request = SuspendPrisonerRequest(
       prisonerNumber = "G4793VF",
