@@ -25,6 +25,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
   private val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
   private val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
   private val activityLocation3 = internalLocation(3L, prisonCode = prisonCode, description = "MDI-ACT-LOC3", userDescription = "Activity Location 3")
+  private val onWingActivity = internalLocation(4L, prisonCode = prisonCode, description = "MDI-ACT-LOC4", userDescription = "Activity Location 4")
   private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
   private val socialVisitsLocation = internalLocation(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
   private val socialVisitsLocationSummary = LocationSummary(locationId = 5L, description = "SOCIAL VISITS", userDescription = "Social Visits")
@@ -209,22 +210,25 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-3.sql")
+  @Sql("classpath:test_data/seed-activity-id-3-on-wing.sql")
   @Sql("classpath:test_data/seed-appointment-single-id-3.sql")
   fun `get location events summaries for date with activities, appointments and visits - 200 success`() {
     val date = LocalDate.of(2022, 10, 1)
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, listOf(socialVisitsLocationSummary))
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, activityLocation3, appointmentLocation1, socialVisitsLocation))
+    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, activityLocation3, appointmentLocation1, socialVisitsLocation, onWingActivity))
 
     val activityLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation1.locationId, date = date)
     val activityLocation2Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation2.locationId, date = date)
     val activityLocation3Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation3.locationId, date = date)
+    val onWingLocation4Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = onWingActivity.locationId, date = date)
     val appointmentLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = appointmentLocation1.locationId, date = date)
     val socialVisitInstance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = socialVisitsLocation.locationId, date = date)
 
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, listOf(activityLocation1Instance))
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, listOf(activityLocation2Instance))
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation3.locationId, date, null, listOf(activityLocation3Instance))
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, onWingActivity.locationId, date, null, listOf(onWingLocation4Instance))
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, listOf(appointmentLocation1Instance))
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, socialVisitsLocation.locationId, date, null, listOf(socialVisitInstance))
 

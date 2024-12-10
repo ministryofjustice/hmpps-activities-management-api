@@ -109,6 +109,7 @@ class InternalLocationService(
 
   private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> =
     prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
+      .filterNot { it.onWing }
       .filterNot { it.internalLocationId == null }
       .associateBy { it.internalLocationId!!.toLong() }
 
