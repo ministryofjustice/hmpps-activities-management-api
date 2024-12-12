@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
 import java.time.LocalTime
@@ -34,10 +33,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
   @MockitoBean
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
-  @MockitoBean
-  private lateinit var attendancesService: AttendancesService
-
-  override fun controller() = ScheduledInstanceController(scheduledInstanceService, attendancesService)
+  override fun controller() = ScheduledInstanceController(scheduledInstanceService)
 
   @Test
   fun `200 response when get instance by ID found`() {

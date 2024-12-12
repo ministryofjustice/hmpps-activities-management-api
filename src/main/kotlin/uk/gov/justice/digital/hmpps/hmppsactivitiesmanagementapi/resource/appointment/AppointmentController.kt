@@ -96,6 +96,47 @@ class AppointmentController(
   fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetails =
     appointmentService.getAppointmentDetailsById(appointmentId)
 
+  @PostMapping(value = ["/details"])
+  @ResponseBody
+  @Operation(
+    summary = "Get the details of appointments for display purposes by their ids",
+    description = "Returns the displayable details of appointments by their unique identifiers.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentDetails::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentDetailsById(
+    @RequestBody
+    @Parameter(
+      description = "The appointment ids",
+      required = true,
+    )
+    appointmentIds: List<Long>,
+  ) = appointmentService.getAppointmentDetailsByIds(appointmentIds)
+
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{appointmentId}"])
   @Operation(

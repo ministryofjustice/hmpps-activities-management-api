@@ -52,6 +52,27 @@ class AppointmentService(
     return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap)
   }
 
+  @Transactional(readOnly = true)
+  fun getAppointmentDetailsByIds(appointmentIds: List<Long>): List<AppointmentDetails> {
+    val appointments = appointmentRepository.findByIds(appointmentIds)
+
+    appointments.forEach { checkCaseloadAccess(it.appointmentSeries.prisonCode) }
+
+    val prisonerNumbers = appointments.map { it.prisonerNumbers() }.flatten().distinct()
+
+    val prisonCodes = appointments.map { it.prisonCode }.distinct()
+
+    require(prisonCodes.size == 1) { "Only one prison code is supported" }
+
+    val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
+
+    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+    val locationMap = locationService.getLocationsForAppointmentsMap(prisonCodes.first())
+
+    return appointments.map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
+  }
+
   fun updateAppointment(appointmentId: Long, request: AppointmentUpdateRequest, principal: Principal): AppointmentSeriesModel {
     val startTimeInMs = System.currentTimeMillis()
     val now = LocalDateTime.now()

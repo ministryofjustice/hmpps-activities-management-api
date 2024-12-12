@@ -112,8 +112,6 @@ data class AppointmentSeries(
       field = value
     }
 
-  fun isIndividualAppointment() = appointmentType == AppointmentType.INDIVIDUAL
-
   fun scheduleIterator() =
     schedule?.let { AppointmentSeriesScheduleIterator(startDate, schedule!!.frequency, schedule!!.numberOfAppointments) }
       ?: AppointmentSeriesScheduleIterator(startDate, AppointmentFrequency.DAILY, 1)
