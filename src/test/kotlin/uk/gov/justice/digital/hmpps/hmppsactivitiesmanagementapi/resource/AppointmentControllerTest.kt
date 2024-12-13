@@ -362,7 +362,29 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     }
   }
 
+  @Test
+  fun `200 response when get appointments with ids`() {
+    val appointments = listOf(appointmentDetails(1), appointmentDetails(2), appointmentDetails(3))
+
+    whenever(appointmentService.getAppointmentDetailsByIds(listOf(1, 2, 3))).thenReturn(appointments)
+
+    val response = mockMvc.getAppointmentDetailsByIds(listOf(1, 2, 3))
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointments))
+
+    verify(appointmentService).getAppointmentDetailsByIds(listOf(1, 2, 3))
+  }
+
   private fun MockMvc.getAppointmentDetailsById(id: Long) = get("/appointments/{appointmentId}/details", id)
+
+  private fun MockMvc.getAppointmentDetailsByIds(ids: List<Long>) = post("/appointments/details") {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(ids)
+  }
 
   private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
     patch("/appointments/{appointmentId}", id) {

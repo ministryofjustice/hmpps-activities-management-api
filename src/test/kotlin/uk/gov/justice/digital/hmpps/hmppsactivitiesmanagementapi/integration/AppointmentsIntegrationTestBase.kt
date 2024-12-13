@@ -19,6 +19,17 @@ abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
       .expectBody(AppointmentDetails::class.java)
       .returnResult().responseBody
 
+  fun WebTestClient.getAppointmentDetailsByIds(ids: List<Long>) =
+    post()
+      .uri("/appointments/details")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .bodyValue(ids)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(AppointmentDetails::class.java)
+      .returnResult().responseBody
+
   fun WebTestClient.getAppointmentSetDetailsById(id: Long) =
     get()
       .uri("/appointment-set/$id/details")
