@@ -20,4 +20,7 @@ data class PlannedSuspension(
 
   @Schema(description = "The system time when the suspension plan was made", example = "2023-07-10 14:54")
   val plannedAt: LocalDateTime,
+
+  @Schema(description = "Is the suspension paid or not")
+  val paid: Boolean? = null,
 )
