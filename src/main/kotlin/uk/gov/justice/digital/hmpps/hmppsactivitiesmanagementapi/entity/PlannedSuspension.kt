@@ -59,5 +59,6 @@ data class PlannedSuspension(
     caseNoteId = this.caseNoteId,
     plannedBy = this.plannedBy,
     plannedAt = this.plannedAt,
+    paid = this.paid,
   )
 }
