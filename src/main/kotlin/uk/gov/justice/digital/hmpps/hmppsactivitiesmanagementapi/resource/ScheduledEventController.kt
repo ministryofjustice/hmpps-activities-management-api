@@ -211,6 +211,7 @@ class ScheduledEventController(
       Returns scheduled events for the prison, internal location ids, single date and an optional time slot.
       This endpoint only returns activities and appointments and these come from the local database.
       This endpoint supports the creation of movement lists.
+      Note that activities are only scheduled 60 days in advance. Appointments may be scheduled for any date in the future.
     """,
   )
   @ApiResponses(
@@ -263,9 +264,6 @@ class ScheduledEventController(
     @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
     internalLocationIds: Set<Long>,
   ): Set<InternalLocationEvents> {
-    require(date.isBefore(LocalDate.now().plusDays(61))) {
-      "Supply a date up to 60 days in the future"
-    }
     return internalLocationService.getInternalLocationEvents(
       prisonCode,
       internalLocationIds,

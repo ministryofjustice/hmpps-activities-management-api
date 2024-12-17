@@ -535,23 +535,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   }
 
   @Test
-  fun `getScheduledEventsForMultipleLocations - 400 response when date is 61 days in the future`() {
-    val prisonCode = "MDI"
-    val date = LocalDate.now().plusDays(61)
-    mockMvc.getInternalLocationEvents(prisonCode, setOf(1L), date, null)
-      .andExpect { status { isBadRequest() } }
-      .andExpect {
-        content {
-          jsonPath("$.userMessage") {
-            value("Exception: Supply a date up to 60 days in the future")
-          }
-        }
-      }
-
-    verifyNoInteractions(internalLocationService)
-  }
-
-  @Test
   fun `getScheduledEventsForMultipleLocations - 500 response when service throws exception`() {
     val prisonCode = "MDI"
     val date = LocalDate.now()
