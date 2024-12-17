@@ -3,11 +3,16 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -23,11 +28,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceAction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
@@ -477,21 +486,9 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     telemetryPropertyMap.allValues hasSize 1
     telemetryMetricsMap.allValues hasSize 1
 
-    with(telemetryPropertyMap.firstValue) {
-      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
-      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("RSI")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointment.id.toString())
-    }
-
-    with(telemetryMetricsMap.firstValue) {
-      assertThat(this[PRISONERS_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isGreaterThan(0.0)
-    }
-
+    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
+    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 0)
     verifyNoMoreInteractions(telemetryClient)
-
     verifyNoInteractions(auditService)
   }
 
@@ -534,22 +531,253 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     telemetryPropertyMap.allValues hasSize 1
     telemetryMetricsMap.allValues hasSize 1
 
-    with(telemetryPropertyMap.firstValue) {
-      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
-      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("RSI")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointment.id.toString())
-    }
-
-    with(telemetryMetricsMap.firstValue) {
-      assertThat(this[PRISONERS_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY]).isEqualTo(0.0)
-      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isGreaterThan(0.0)
-    }
-
+    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
+    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 0)
     verifyNoMoreInteractions(telemetryClient)
-
     verifyNoInteractions(auditService)
+  }
+
+  @Nested
+  @DisplayName("Mark Multiple Attendances")
+  inner class MarkMultipleAttendances() {
+
+    val prisonerA1234BC = PrisonerSearchPrisonerFixture.instance(
+      prisonerNumber = "A1234BC",
+      bookingId = 1,
+      prisonId = "RSI",
+    )
+
+    val prisonerB2345CD = prisonerA1234BC.copy(prisonerNumber = "B2345CD")
+    val prisonerC3456DE = prisonerA1234BC.copy(prisonerNumber = "C3456DE")
+    val prisonerXX1111X = prisonerA1234BC.copy(prisonerNumber = "XX1111X")
+    val prisonerYY1111Y = prisonerA1234BC.copy(prisonerNumber = "YY1111Y")
+
+    @BeforeEach
+    fun beforeEach() {
+      prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+        listOf(
+          appointmentCategoryReferenceCode("EDUC", "Education"),
+          appointmentCategoryReferenceCode("CANT", "Canteen"),
+        ),
+      )
+
+      prisonApiMockServer.stubGetLocationsForAppointments(
+        "RSI",
+        listOf(
+          appointmentLocation(123, "RSI", userDescription = "Location 123"),
+        ),
+      )
+    }
+
+    @AfterEach
+    fun afterEach() {
+      verifyNoMoreInteractions(telemetryClient)
+      verifyNoInteractions(auditService)
+      verifyNoInteractions(eventsPublisher)
+    }
+
+    @Sql("classpath:test_data/seed-appointment-attendance.sql")
+    @Test
+    fun `Mark attendances`() {
+      val requests = listOf(
+        MultipleAppointmentAttendanceRequest(1, listOf("A1234BC")),
+        MultipleAppointmentAttendanceRequest(2, listOf("A1234BC", "B2345CD", "C3456DE")),
+        MultipleAppointmentAttendanceRequest(101, listOf("XX1111X", "YY1111Y", "XXXXXX")),
+        MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
+      )
+
+      webTestClient.markMultipleAttendances(requests, AttendanceAction.ATTENDED)!!
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC"),
+        listOf(prisonerA1234BC),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC", "B2345CD", "C3456DE"),
+        listOf(prisonerA1234BC, prisonerB2345CD, prisonerC3456DE),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("XX1111X", "YY1111Y"),
+        listOf(prisonerXX1111X, prisonerYY1111Y),
+      )
+
+      val appointments = webTestClient.getAppointmentDetailsByIds(listOf(1, 2, 101))!!
+
+      verifyAttendance(appointments, 1, "A1234BC")
+      verifyAttendance(appointments, 2, "A1234BC")
+      verifyAttendance(appointments, 2, "B2345CD")
+      verifyAttendance(appointments, 2, "C3456DE")
+      verifyAttendance(appointments, 2, "A1234BC")
+      verifyAttendance(appointments, 101, "XX1111X")
+      verifyAttendance(appointments, 101, "YY1111Y")
+
+      verifyResetAttendance(appointments, 1, "B2345CD")
+
+      verify(telemetryClient, times(3)).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      telemetryPropertyMap.allValues hasSize 3
+      telemetryMetricsMap.allValues hasSize 3
+
+      verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, 1)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.secondValue, 2)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.thirdValue, 101)
+
+      verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 0, 0)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.secondValue, 3, 0, 1)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.thirdValue, 2, 0, 0)
+    }
+
+    @Sql("classpath:test_data/seed-appointment-attendance.sql")
+    @Test
+    fun `Mark attendances as non-attended`() {
+      val requests = listOf(
+        MultipleAppointmentAttendanceRequest(1, listOf("A1234BC")),
+        MultipleAppointmentAttendanceRequest(2, listOf("A1234BC", "B2345CD", "C3456DE")),
+        MultipleAppointmentAttendanceRequest(101, listOf("XX1111X", "YY1111Y", "XXXXXX")),
+        MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
+      )
+
+      webTestClient.markMultipleAttendances(requests, AttendanceAction.NOT_ATTENDED)!!
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC"),
+        listOf(prisonerA1234BC),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC", "B2345CD", "C3456DE"),
+        listOf(prisonerA1234BC, prisonerB2345CD, prisonerC3456DE),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("XX1111X", "YY1111Y"),
+        listOf(prisonerXX1111X, prisonerYY1111Y),
+      )
+
+      val appointments = webTestClient.getAppointmentDetailsByIds(listOf(1, 2, 101))!!
+
+      verifyAttendance(appointments, 1, "A1234BC", false)
+      verifyAttendance(appointments, 2, "A1234BC", false)
+      verifyAttendance(appointments, 2, "B2345CD", false)
+      verifyAttendance(appointments, 2, "C3456DE", false)
+      verifyAttendance(appointments, 2, "A1234BC", false)
+      verifyAttendance(appointments, 101, "XX1111X", false)
+      verifyAttendance(appointments, 101, "YY1111Y", false)
+
+      verifyResetAttendance(appointments, 1, "B2345CD")
+
+      verify(telemetryClient, times(3)).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      telemetryPropertyMap.allValues hasSize 3
+      telemetryMetricsMap.allValues hasSize 3
+
+      verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, 1)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.secondValue, 2)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.thirdValue, 101)
+
+      verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 0, 1, 0)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.secondValue, 0, 3, 1)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.thirdValue, 0, 2, 0)
+    }
+
+    @Sql("classpath:test_data/seed-appointment-attendance.sql")
+    @Test
+    fun `Reset attendances`() {
+      val requests = listOf(
+        MultipleAppointmentAttendanceRequest(1, listOf("A1234BC")),
+        MultipleAppointmentAttendanceRequest(2, listOf("A1234BC", "B2345CD", "C3456DE")),
+        MultipleAppointmentAttendanceRequest(101, listOf("XX1111X", "YY1111Y", "XXXXXX")),
+        MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
+      )
+
+      webTestClient.markMultipleAttendances(requests, AttendanceAction.RESET)!!
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC"),
+        listOf(prisonerA1234BC),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A1234BC", "B2345CD", "C3456DE"),
+        listOf(prisonerA1234BC, prisonerB2345CD, prisonerC3456DE),
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("XX1111X", "YY1111Y"),
+        listOf(prisonerXX1111X, prisonerYY1111Y),
+      )
+
+      val appointments = webTestClient.getAppointmentDetailsByIds(listOf(1, 2, 101))!!
+
+      verifyResetAttendance(appointments, 1, "A1234BC")
+      verifyResetAttendance(appointments, 1, "B2345CD")
+      verifyResetAttendance(appointments, 2, "A1234BC")
+      verifyResetAttendance(appointments, 2, "B2345CD")
+      verifyResetAttendance(appointments, 2, "C3456DE")
+      verifyResetAttendance(appointments, 1, "B2345CD")
+      verifyResetAttendance(appointments, 101, "XX1111X")
+      verifyResetAttendance(appointments, 101, "YY1111Y")
+
+      verify(telemetryClient, times(3)).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      telemetryPropertyMap.allValues hasSize 3
+      telemetryMetricsMap.allValues hasSize 3
+
+      verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, 1)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.secondValue, 2)
+      verifyTelemetryPropertyMap(telemetryPropertyMap.thirdValue, 101)
+
+      verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 0, 0, 0)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.secondValue, 0, 0, 2)
+      verifyTelemetryMetricsMap(telemetryMetricsMap.thirdValue, 0, 0, 0)
+    }
+  }
+
+  private fun verifyResetAttendance(appointments: List<AppointmentDetails>, id: Long, prisonerNumber: String) {
+    with(appointments.first { it.id == id }) {
+      with(attendees.first { it.prisoner.prisonerNumber == prisonerNumber }) {
+        assertThat(attended).isNull()
+        assertThat(attendanceRecordedTime).isNull()
+        assertThat(attendanceRecordedBy).isNull()
+      }
+    }
+  }
+
+  private fun verifyAttendance(appointments: List<AppointmentDetails>, id: Long, prisonerNumber: String, attended: Boolean = true) {
+    with(appointments.first { it.id == id }) {
+      with(attendees.first { it.prisoner.prisonerNumber == prisonerNumber }) {
+        assertThat(attended).isEqualTo(attended)
+        assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
+        assertThat(attendanceRecordedBy).isEqualTo("test-client")
+      }
+    }
+  }
+
+  private fun verifyTelemetryPropertyMap(map: Map<String, String>, appointmentId: Long, prisonCode: String = "RSI") {
+    assertThat(map[USER_PROPERTY_KEY]).isEqualTo("test-client")
+    assertThat(map[PRISON_CODE_PROPERTY_KEY]).isEqualTo(prisonCode)
+    assertThat(map[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
+  }
+
+  private fun verifyTelemetryMetricsMap(map: Map<String, Double>, attended: Int, nonAttended: Int, changed: Int) {
+    assertThat(map[PRISONERS_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(attended.toDouble())
+    assertThat(map[PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(nonAttended.toDouble())
+    assertThat(map[PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY]).isEqualTo(changed.toDouble())
+    assertThat(map[EVENT_TIME_MS_METRIC_KEY]).isGreaterThan(0.0)
   }
 
   @Sql(
@@ -618,18 +846,8 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     telemetryPropertyMap.allValues hasSize 1
     telemetryMetricsMap.allValues hasSize 1
 
-    with(telemetryPropertyMap.firstValue) {
-      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
-      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("RSI")
-      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointment.id.toString())
-    }
-
-    with(telemetryMetricsMap.firstValue) {
-      assertThat(this[PRISONERS_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY]).isEqualTo(1.0)
-      assertThat(this[PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY]).isEqualTo(2.0)
-      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isGreaterThan(0.0)
-    }
+    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
+    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 2)
 
     verifyNoMoreInteractions(telemetryClient)
 
@@ -663,4 +881,15 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(Appointment::class.java)
       .returnResult().responseBody
+
+  private fun WebTestClient.markMultipleAttendances(
+    requests: List<MultipleAppointmentAttendanceRequest>,
+    action: AttendanceAction?,
+  ) =
+    put()
+      .uri("/appointments/markAttendances?action=$action")
+      .bodyValue(requests)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNoContent
 }

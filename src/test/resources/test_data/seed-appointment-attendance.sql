@@ -43,3 +43,14 @@ VALUES (3, 'GROUP', 'LPI', 'CANT', 1, 456, false, now()::date - 1, '09:00', '10:
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (5, 3, 1, 'LPI', 'CANT', 1, 456, false, now()::date, '09:00', '10:30', now()::timestamp, 'TEST.USER');
+
+INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
+VALUES (4, 'GROUP', 'RSI', 'CANT', 1, 123, false, now()::date - 1, '09:00', '10:30', 1, (now()::date - 2)::timestamp, 'TEST.USER');
+
+INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
+VALUES  (101, 4, 1, 'RSI', 'CANT', 1, 123, false, now()::date - 1, '09:00', '10:30', now()::timestamp, 'TEST.USER');
+
+INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
+VALUES  (101, 101, 'XX1111X', 1),
+        (102, 101, 'YY1111Y', 2);
+

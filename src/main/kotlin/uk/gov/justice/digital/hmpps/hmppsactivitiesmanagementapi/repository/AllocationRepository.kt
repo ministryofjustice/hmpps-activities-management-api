@@ -23,6 +23,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
 
   fun findByAllocationIdIn(ids: List<Long>): List<Allocation>
 
+  // HERE
   @Query(
     value =
     "FROM Allocation a " +

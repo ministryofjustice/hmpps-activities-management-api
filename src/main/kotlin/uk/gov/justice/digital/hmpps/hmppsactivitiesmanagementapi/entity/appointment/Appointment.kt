@@ -203,8 +203,6 @@ data class Appointment(
 
   fun usernames() = listOfNotNull(createdBy, updatedBy, cancelledBy).distinct()
 
-  fun attendeeUsernames() = attendees().flatMap { it.usernames() }.distinct()
-
   fun toModel() = AppointmentModel(
     id = appointmentId,
     sequenceNumber = sequenceNumber,
