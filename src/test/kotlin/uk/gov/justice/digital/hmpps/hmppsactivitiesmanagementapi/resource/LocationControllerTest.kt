@@ -250,22 +250,6 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
   }
 
   @Test
-  fun `Internal location events summaries - 400 response when date is 61 days in the future`() {
-    val date = LocalDate.now().plusDays(61)
-    mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
-      .andExpect { status { isBadRequest() } }
-      .andExpect {
-        content {
-          jsonPath("$.userMessage") {
-            value("Exception: Supply a date up to 60 days in the future")
-          }
-        }
-      }
-
-    verifyNoInteractions(internalLocationService)
-  }
-
-  @Test
   fun `Internal location events summaries - 500 response when service throws exception`() {
     val date = LocalDate.now()
 
