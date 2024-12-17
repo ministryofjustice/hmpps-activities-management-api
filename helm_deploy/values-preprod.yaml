@@ -40,9 +40,9 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service-dev
 
 cron:
-  fixZeroPayDeallocate: "0 22 16 12 *"
-  fixZeroPayReallocate: "0 5 17 12 *"
+  fixZeroPayDeallocate: "0 22 17 12 *"
+  fixZeroPayReallocate: "0 5 18 12 *"
 
   datafix:
     prisonCode: "WII"
-    activityScheduleId: "3703"
+    activityScheduleId: "3705"
