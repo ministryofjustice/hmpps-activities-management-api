@@ -367,7 +367,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
-  fun `202 accepted response when marking multiple appointments`() {
+  fun `204 accepted response when marking multiple appointments`() {
     val request = listOf(MultipleAppointmentAttendanceRequest(1, listOf("AA11111A")))
 
     val mockPrincipal: Principal = mock()

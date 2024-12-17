@@ -443,7 +443,7 @@ class AppointmentController(
   @ApiResponses(
     value = [
       ApiResponse(
-        responseCode = "202",
+        responseCode = "204",
         description = "Attendance for the appointment was recorded.",
         content = [
           Content(
