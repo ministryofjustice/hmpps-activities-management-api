@@ -586,7 +586,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.markMultipleAttendances(requests, AttendanceAction.ATTENDED)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.ATTENDED)!!
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),
@@ -643,7 +643,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.markMultipleAttendances(requests, AttendanceAction.NOT_ATTENDED)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.NOT_ATTENDED)!!
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),
@@ -700,7 +700,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.markMultipleAttendances(requests, AttendanceAction.RESET)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.RESET)!!
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),
@@ -882,12 +882,12 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
       .expectBody(Appointment::class.java)
       .returnResult().responseBody
 
-  private fun WebTestClient.markMultipleAttendances(
+  private fun WebTestClient.updateAttendances(
     requests: List<MultipleAppointmentAttendanceRequest>,
     action: AttendanceAction?,
   ) =
     put()
-      .uri("/appointments/markAttendances?action=$action")
+      .uri("/appointments/updateAttendances?action=$action")
       .bodyValue(requests)
       .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
       .exchange()

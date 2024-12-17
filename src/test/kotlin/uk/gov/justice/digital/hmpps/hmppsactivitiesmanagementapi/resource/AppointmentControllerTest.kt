@@ -320,7 +320,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    mockMvc.markMultipleAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
       .andDo { print() }
       .andExpect { status { isBadRequest() } }
 
@@ -333,7 +333,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    mockMvc.markMultipleAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
       .andDo { print() }
       .andExpect { status { isBadRequest() } }
 
@@ -346,7 +346,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    mockMvc.markMultipleAttendances(request, null, mockPrincipal)
+    mockMvc.updateAttendances(request, null, mockPrincipal)
       .andDo { print() }
       .andExpect { status { isBadRequest() } }
 
@@ -359,7 +359,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    mockMvc.markMultipleAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
       .andDo { print() }
       .andExpect { status { isBadRequest() } }
 
@@ -372,7 +372,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
     val mockPrincipal: Principal = mock()
 
-    mockMvc.markMultipleAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
       .andDo { print() }
       .andExpect { status { isNoContent() } }
 
@@ -496,8 +496,8 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
       )
     }
 
-  private fun MockMvc.markMultipleAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) =
-    put("/appointments/markAttendances?action=$action") {
+  private fun MockMvc.updateAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) =
+    put("/appointments/updateAttendances?action=$action") {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(

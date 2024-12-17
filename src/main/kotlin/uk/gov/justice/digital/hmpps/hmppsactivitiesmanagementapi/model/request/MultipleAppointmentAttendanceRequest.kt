@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull
 @Schema(
   description =
   """
-  Describes how to mark attendance for multiple appointments.
+  Describes how to update attendances for multiple appointments.
   """,
 )
 data class MultipleAppointmentAttendanceRequest(
@@ -19,6 +19,6 @@ data class MultipleAppointmentAttendanceRequest(
   val appointmentId: Long?,
 
   @field:NotEmpty(message = "Prisoner numbers must be supplied")
-  @Schema(description = "The list of prisoner numbers to mark")
+  @Schema(description = "The list of prisoner numbers to update")
   val prisonerNumbers: List<String> = emptyList(),
 )

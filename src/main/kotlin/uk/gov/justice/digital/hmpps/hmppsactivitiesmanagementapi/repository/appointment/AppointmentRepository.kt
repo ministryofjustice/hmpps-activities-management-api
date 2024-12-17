@@ -10,7 +10,7 @@ import java.time.LocalTime
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
-  @Query("from Appointment a where a.appointmentId in :ids")
+  @Query("from Appointment a left join fetch a.attendees where a.appointmentId in :ids")
   fun findByIds(ids: List<Long>): List<Appointment>
 
   fun findAllByPrisonCodeAndStartDate(prisonCode: String, startDate: LocalDate): List<Appointment>

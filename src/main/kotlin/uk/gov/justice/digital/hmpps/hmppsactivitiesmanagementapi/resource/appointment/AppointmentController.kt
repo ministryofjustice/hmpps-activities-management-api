@@ -429,9 +429,9 @@ class AppointmentController(
   ): Appointment = appointmentAttendanceService.markAttendance(appointmentId, request, principal)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
-  @PutMapping(value = ["/markAttendances"])
+  @PutMapping(value = ["/updateAttendances"])
   @Operation(
-    summary = "Mark the attendance for multiple appointments",
+    summary = "Update the attendances for multiple appointments",
     description =
     """
     Update the attendance records for attendees on multiple appointments. This sets the current attendance records
