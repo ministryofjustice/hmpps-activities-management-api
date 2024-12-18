@@ -428,7 +428,6 @@ class AppointmentController(
     principal: Principal,
   ): Appointment = appointmentAttendanceService.markAttendance(appointmentId, request, principal)
 
-  @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/updateAttendances"])
   @Operation(
     summary = "Update the attendances for multiple appointments",

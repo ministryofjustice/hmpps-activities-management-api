@@ -22,13 +22,13 @@ class CacheConfiguration {
     return ConcurrentMapCacheManager(BANK_HOLIDAYS_CACHE_NAME, PRISON_INCENTIVE_LEVELS_CACHE_NAME)
   }
 
-  @CacheEvict(value = [PRISON_INCENTIVE_LEVELS_CACHE_NAME])
+  @CacheEvict(value = [PRISON_INCENTIVE_LEVELS_CACHE_NAME], allEntries = true)
   @Scheduled(fixedDelay = TTL_HOURS_PRISONER_INCENTIVE_LEVELS, timeUnit = TimeUnit.DAYS)
   fun cacheEvictPrisonerIncentiveLevels() {
     log.info("Evicting cache: $PRISON_INCENTIVE_LEVELS_CACHE_NAME after $TTL_HOURS_PRISONER_INCENTIVE_LEVELS day")
   }
 
-  @CacheEvict(value = [BANK_HOLIDAYS_CACHE_NAME])
+  @CacheEvict(value = [BANK_HOLIDAYS_CACHE_NAME], allEntries = true)
   @Scheduled(fixedDelay = TTL_HOURS_BANK_HOLIDAYS, timeUnit = TimeUnit.DAYS)
   fun cacheEvictBankHolidays() {
     log.info("Evicting cache: $BANK_HOLIDAYS_CACHE_NAME after $TTL_HOURS_BANK_HOLIDAYS days")
