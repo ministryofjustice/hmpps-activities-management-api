@@ -100,11 +100,11 @@ values (4, '2022-10-10', '09:00:00', '11:00:00', false, null, null, null, null, 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (7, 4, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (8, 4, 'A22222A', null, null, null, null, 'WAITING', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued)
+values (8, 4, 'A22222A', null, null, null, null, 'WAITING', null, null, null, false);
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
 values (5, '2022-10-10', '13:00:00', '15:00:00', false, null, null, null, null, 'PM');
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
-values (9, 5, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued)
+values (9, 5, 'A11111A', null, null, null, null, 'WAITING', null, null, null, true);
