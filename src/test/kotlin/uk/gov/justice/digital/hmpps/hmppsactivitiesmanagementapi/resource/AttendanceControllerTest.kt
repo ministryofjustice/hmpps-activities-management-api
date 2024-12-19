@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -31,7 +30,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.security.Principal
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [AttendanceController::class])
 @ContextConfiguration(classes = [AttendanceController::class])
@@ -140,28 +138,6 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
   private fun MockMvc.getAttendanceById(attendanceId: String) =
     get("/attendances/$attendanceId")
 
-  private fun MockMvc.getAttendanceSummaryByDate(prisonCode: String, sessionDate: LocalDate) =
-    get("/attendances/summary/$prisonCode/$sessionDate")
-
   private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) =
     get("/attendances/$prisonCode/$sessionDate")
-
-  companion object {
-    val caseNote = CaseNote(
-      caseNoteId = "1",
-      offenderIdentifier = "A1234AA",
-      type = "NEG",
-      typeDescription = "Negative",
-      subType = "sub type",
-      subTypeDescription = "sub type description",
-      source = "source",
-      creationDateTime = LocalDateTime.now(),
-      occurrenceDateTime = LocalDateTime.now(),
-      authorName = "author",
-      authorUserId = "author id",
-      text = "Case Note Text",
-      eventId = 1,
-      sensitive = false,
-    )
-  }
 }

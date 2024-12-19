@@ -122,7 +122,7 @@ class ScheduledInstanceTest {
   @Test
   fun `cancelling scheduled instance ignores suspended attendances`() {
     val cancelableInstance = instance.copy()
-      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
+      .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
 
     cancelableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
@@ -145,7 +145,7 @@ class ScheduledInstanceTest {
   @Test
   fun `cancelling scheduled instance ignores auto-suspended attendances`() {
     val cancelableInstance = instance.copy()
-      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
+      .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
 
     cancelableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
@@ -194,7 +194,7 @@ class ScheduledInstanceTest {
   @Test
   fun `uncancelling scheduled instance ignores suspended attendances`() {
     val cancelledInstance = instance.copy(cancelled = true, cancelledReason = "cancelled reason", cancelledBy = "cancelled by", cancelledTime = LocalDateTime.now())
-      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
+      .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
 
     cancelledInstance.uncancelSessionAndAttendances()
 
@@ -211,7 +211,7 @@ class ScheduledInstanceTest {
   @Test
   fun `uncancelling scheduled instance ignores auto-suspended attendances`() {
     val cancelledInstance = instance.copy(cancelled = true, cancelledReason = "cancelled reason", cancelledBy = "cancelled by", cancelledTime = LocalDateTime.now())
-      .also { it.attendances.first().completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
+      .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
 
     cancelledInstance.uncancelSessionAndAttendances()
 

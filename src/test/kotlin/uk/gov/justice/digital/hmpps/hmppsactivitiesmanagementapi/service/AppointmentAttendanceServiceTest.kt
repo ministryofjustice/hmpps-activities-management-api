@@ -1,39 +1,64 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.mockito.ArgumentCaptor
+import org.mockito.Captor
+import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.firstValue
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.secondValue
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAndAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceAction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ATTENDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.USER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -41,21 +66,32 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
+@ExtendWith(MockitoExtension::class)
 class AppointmentAttendanceServiceTest {
   private val appointmentAttendanceSummaryRepository: AppointmentAttendanceSummaryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val locationService: LocationService = mock()
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
+  private val telemetryClient: TelemetryClient = mock()
 
-  private val service = AppointmentAttendanceService(appointmentAttendanceSummaryRepository, appointmentRepository, referenceCodeService, locationService, appointmentAttendeeSearchRepository)
+  private val service = AppointmentAttendanceService(appointmentAttendanceSummaryRepository, appointmentRepository, referenceCodeService, locationService, appointmentAttendeeSearchRepository, telemetryClient, TransactionHandler())
 
   private val principal: Principal = mock()
   private val username = "ATTENDANCE.RECORDED.BY"
   private val entity = appointmentAttendanceSummaryEntity()
+
+  @Captor
+  private lateinit var appointmentCaptor: ArgumentCaptor<Appointment>
+
+  @Captor
+  private lateinit var telemetryPropertyMapCaptor: ArgumentCaptor<Map<String, String>>
+
+  @Captor
+  private lateinit var telemetryMetricsMapCaptor: ArgumentCaptor<Map<String, Double>>
 
   @BeforeEach
   fun setUp() {
@@ -180,6 +216,240 @@ class AppointmentAttendanceServiceTest {
       verify(entity).markPrisonerAttendance(eq(request.attendedPrisonNumbers), eq(request.nonAttendedPrisonNumbers), any<LocalDateTime>(), eq(username))
       verify(appointmentRepository).saveAndFlush(entity)
       assertThat(appointment).isInstanceOf(AppointmentModel::class.java)
+    }
+  }
+
+  @Nested
+  @DisplayName("Mark Multiple Attendances")
+  inner class MarkMultipleAttendances {
+    @ParameterizedTest
+    @EnumSource(AttendanceAction::class)
+    fun `throws caseload access exception if caseload id header does not match`(action: AttendanceAction) {
+      val appointment1 = appointmentEntity(mockAppointmentSeries("RSI"), appointmentId = 1, sequenceNumber = 1, prisonerNumberToBookingIdMap = mapOf("AA1111A" to 1))
+      val appointment2 = appointmentEntity(mockAppointmentSeries(), appointmentId = 2, sequenceNumber = 2, prisonerNumberToBookingIdMap = mapOf("CC1111C" to 3))
+
+      whenever(appointmentRepository.findByIds(listOf(1, 2))).thenReturn((listOf(appointment1, appointment2)))
+
+      val appointment1Request = MultipleAppointmentAttendanceRequest(1, listOf("AA1111A"))
+      val appointment2Request = MultipleAppointmentAttendanceRequest(2, listOf("CC1111C"))
+
+      assertThatThrownBy { service.markMultipleAttendances(listOf(appointment1Request, appointment2Request), action, principal) }
+        .isInstanceOf(CaseloadAccessException::class.java)
+
+      verify(appointmentRepository, never()).saveAndFlush(any())
+      verifyNoInteractions(telemetryClient)
+    }
+
+    @Test
+    fun `Will mark attendances for appointments that exist`() {
+      val appointment1 = appointmentEntity(mockAppointmentSeries(), appointmentId = 1, sequenceNumber = 1, prisonerNumberToBookingIdMap = mapOf("AA1111A" to 1, "BB1111B" to 2))
+      val appointment2 = appointmentEntity(mockAppointmentSeries(), appointmentId = 2, sequenceNumber = 2, prisonerNumberToBookingIdMap = mapOf("CC1111C" to 3))
+
+      whenever(appointmentRepository.findByIds(listOf(1, 2, 3))).thenReturn((listOf(appointment1, appointment2)))
+
+      val appointment1Request = MultipleAppointmentAttendanceRequest(1, listOf("AA1111A", "BB1111B"))
+      val appointment2Request = MultipleAppointmentAttendanceRequest(2, listOf("CC1111C", "DD1111D"))
+      val appointment3Request = MultipleAppointmentAttendanceRequest(3, listOf("EE1111E"))
+
+      val startTimeInMs = System.currentTimeMillis()
+
+      service.markMultipleAttendances(
+        listOf(appointment1Request, appointment2Request, appointment3Request),
+        AttendanceAction.ATTENDED,
+        principal,
+      )
+
+      verify(appointmentRepository, times(2)).saveAndFlush<Appointment>(appointmentCaptor.capture())
+
+      val savedEntities = appointmentCaptor.allValues
+
+      val recordedTime = savedEntities.first().attendees().first().attendanceRecordedTime!!
+
+      with(savedEntities.first { appointment -> appointment.appointmentId == appointment1.appointmentId }) {
+        with(attendees().first { attendee -> attendee.prisonerNumber == "AA1111A" }) {
+          prisonerNumber isEqualTo "AA1111A"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = true
+        }
+        with(attendees().first { attendee -> attendee.prisonerNumber == "BB1111B" }) {
+          prisonerNumber isEqualTo "BB1111B"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = true
+        }
+      }
+
+      with(savedEntities.first { appointment -> appointment.appointmentId == appointment2.appointmentId }) {
+        with(attendees().first { attendee -> attendee.prisonerNumber == "CC1111C" }) {
+          prisonerNumber isEqualTo "CC1111C"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = true
+        }
+      }
+
+      verify(telemetryClient, times(2)).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMapCaptor.capture(),
+        telemetryMetricsMapCaptor.capture(),
+      )
+
+      verifyTelemetryProperties(telemetryPropertyMapCaptor.firstValue, appointment1.appointmentId)
+      verifyTelemetryMetrics(telemetryMetricsMapCaptor.firstValue, startTimeInMs, 2, 0, 0)
+
+      verifyTelemetryProperties(telemetryPropertyMapCaptor.secondValue, appointment2.appointmentId)
+      verifyTelemetryMetrics(telemetryMetricsMapCaptor.secondValue, startTimeInMs, 1, 0, 0)
+    }
+
+    @Test
+    fun `Will mark attendances where attendance has already been set`() {
+      val appointment1 = appointmentEntity(mockAppointmentSeries(), appointmentId = 1, sequenceNumber = 1, prisonerNumberToBookingIdMap = mapOf("AA1111A" to 1, "BB1111B" to 2))
+
+      appointment1.attendees().first().attended = false
+
+      whenever(appointmentRepository.findByIds(listOf(1))).thenReturn((listOf(appointment1)))
+
+      val appointment1Request = MultipleAppointmentAttendanceRequest(1, listOf("AA1111A", "BB1111B"))
+
+      val startTimeInMs = System.currentTimeMillis()
+
+      service.markMultipleAttendances(listOf(appointment1Request), AttendanceAction.ATTENDED, principal)
+
+      verify(appointmentRepository).saveAndFlush<Appointment>(appointmentCaptor.capture())
+
+      with(appointmentCaptor.value) {
+        val recordedTime = attendees().first().attendanceRecordedTime!!
+
+        with(attendees().first { attendee -> attendee.prisonerNumber == "AA1111A" }) {
+          prisonerNumber isEqualTo "AA1111A"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = true
+        }
+        with(attendees().first { attendee -> attendee.prisonerNumber == "BB1111B" }) {
+          prisonerNumber isEqualTo "BB1111B"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = true
+        }
+      }
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMapCaptor.capture(),
+        telemetryMetricsMapCaptor.capture(),
+      )
+
+      verifyTelemetryProperties(telemetryPropertyMapCaptor.value, appointment1.appointmentId)
+      verifyTelemetryMetrics(telemetryMetricsMapCaptor.value, startTimeInMs, 2, 0, 1)
+    }
+
+    @Test
+    fun `Will mark non-attendances for appointments that exist`() {
+      val appointment1 = appointmentEntity(mockAppointmentSeries(), appointmentId = 1, sequenceNumber = 1, prisonerNumberToBookingIdMap = mapOf("AA1111A" to 1, "BB1111B" to 2))
+
+      appointment1.attendees().first().attended = true
+
+      whenever(appointmentRepository.findByIds(listOf(1))).thenReturn((listOf(appointment1)))
+
+      val appointment1Request = MultipleAppointmentAttendanceRequest(1, listOf("AA1111A", "BB1111B"))
+
+      val startTimeInMs = System.currentTimeMillis()
+
+      service.markMultipleAttendances(listOf(appointment1Request), AttendanceAction.NOT_ATTENDED, principal)
+
+      verify(appointmentRepository).saveAndFlush<Appointment>(appointmentCaptor.capture())
+
+      with(appointmentCaptor.value) {
+        val recordedTime = attendees().first().attendanceRecordedTime!!
+
+        with(attendees().first { attendee -> attendee.prisonerNumber == "AA1111A" }) {
+          prisonerNumber isEqualTo "AA1111A"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = false
+        }
+        with(attendees().first { attendee -> attendee.prisonerNumber == "BB1111B" }) {
+          prisonerNumber isEqualTo "BB1111B"
+          attendanceRecordedTime isEqualTo recordedTime
+          attendanceRecordedBy isEqualTo username
+          attended = false
+        }
+      }
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMapCaptor.capture(),
+        telemetryMetricsMapCaptor.capture(),
+      )
+
+      verifyTelemetryProperties(telemetryPropertyMapCaptor.value, appointment1.appointmentId)
+      verifyTelemetryMetrics(telemetryMetricsMapCaptor.value, startTimeInMs, 0, 2, 1)
+    }
+
+    @Test
+    fun `Will reset attendances for appointments that exist`() {
+      val appointment1 = appointmentEntity(mockAppointmentSeries(), appointmentId = 1, sequenceNumber = 1, prisonerNumberToBookingIdMap = mapOf("AA1111A" to 1, "BB1111B" to 2))
+
+      appointment1.attendees().first().attended = true
+
+      whenever(appointmentRepository.findByIds(listOf(1))).thenReturn((listOf(appointment1)))
+
+      val appointment1Request = MultipleAppointmentAttendanceRequest(1, listOf("AA1111A", "BB1111B"))
+
+      val startTimeInMs = System.currentTimeMillis()
+
+      service.markMultipleAttendances(listOf(appointment1Request), AttendanceAction.RESET, principal)
+
+      verify(appointmentRepository).saveAndFlush<Appointment>(appointmentCaptor.capture())
+
+      with(appointmentCaptor.value) {
+        with(attendees().first { attendee -> attendee.prisonerNumber == "AA1111A" }) {
+          prisonerNumber isEqualTo "AA1111A"
+          attendanceRecordedTime isEqualTo null
+          attendanceRecordedBy isEqualTo null
+          attended = null
+        }
+        with(attendees().first { attendee -> attendee.prisonerNumber == "BB1111B" }) {
+          prisonerNumber isEqualTo "BB1111B"
+          attendanceRecordedTime isEqualTo null
+          attendanceRecordedBy isEqualTo null
+          attended = null
+        }
+      }
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
+        telemetryPropertyMapCaptor.capture(),
+        telemetryMetricsMapCaptor.capture(),
+      )
+
+      verifyTelemetryProperties(telemetryPropertyMapCaptor.value, appointment1.appointmentId)
+      verifyTelemetryMetrics(telemetryMetricsMapCaptor.value, startTimeInMs, 0, 0, 1)
+    }
+
+    private fun mockAppointmentSeries(prisonCode: String = MOORLAND_PRISON_CODE): AppointmentSeries {
+      val appointmentSeries = mock<AppointmentSeries>()
+      whenever(appointmentSeries.startTime).thenReturn(LocalTime.now())
+      whenever(appointmentSeries.prisonCode).thenReturn(prisonCode)
+      whenever(appointmentSeries.categoryCode).thenReturn("CANT")
+      whenever(appointmentSeries.createdTime).thenReturn(LocalDateTime.now())
+      whenever(appointmentSeries.createdBy).thenReturn("A_USER")
+      return appointmentSeries
+    }
+
+    private fun verifyTelemetryProperties(properties: Map<String, String>, appointmentId: Long) {
+      properties[USER_PROPERTY_KEY] isEqualTo username
+      properties[PRISON_CODE_PROPERTY_KEY] isEqualTo MOORLAND_PRISON_CODE
+      properties[APPOINTMENT_ID_PROPERTY_KEY] isEqualTo appointmentId.toString()
+    }
+
+    private fun verifyTelemetryMetrics(metrics: Map<String, Double>, startTimeInMs: Long, numAttended: Long, numNonAttended: Long, numChanged: Long) {
+      metrics[PRISONERS_ATTENDED_COUNT_METRIC_KEY] isEqualTo numAttended.toDouble()
+      metrics[PRISONERS_NON_ATTENDED_COUNT_METRIC_KEY] isEqualTo numNonAttended.toDouble()
+      metrics[PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY] isEqualTo numChanged.toDouble()
+      assertThat(metrics[EVENT_TIME_MS_METRIC_KEY]).isCloseTo((System.currentTimeMillis() - startTimeInMs).toDouble(), within(1000.0))
     }
   }
 

@@ -38,22 +38,28 @@ insert into scheduled_instance(activity_schedule_id, session_date, start_time, e
 values (2, current_date, '00:00:00', '00:01:00', false, null, null, null, null, 'AM');
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (2, current_date + 1, '00:00:00', '00:01:00', false, null, null, null, null, 'AM');
+values (2, current_date + 1, '00:00:00', '00:01:00', false, null, null, null, null,'AM');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (1, 1, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (1, 1, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'SUSPENDED_WITH_PAY');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (2, 2, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (2, 2, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'SUSPENDED_WITH_PAY');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null);
-
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment, pay_amount)
-values (2, 2, 'A11111A', null, null, null, null, 'WAITING', null, 50);
+values (1, 1, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', true);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (3, 3, 'A11111A', null, null, null, null, 'WAITING', null);
+values (2, 2, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment, pay_amount)
-values (4, 4, 'A11111A', null, null, null, null, 'WAITING', null, 50);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
+values (3, 3, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', true);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
+values (4, 4, 'A11111A', 7, null, current_timestamp, 'Activities Management Service', 'COMPLETED', false);
+
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at, paid)
+values (1, 1, current_date - 2, current_date + 2, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp, true);
+
+insert into planned_suspension(planned_suspension_id, allocation_id, planned_start_date, planned_end_date, planned_by, planned_at, updated_by, updated_at, paid)
+values (2, 2, current_date - 2, current_date + 2, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp, true);

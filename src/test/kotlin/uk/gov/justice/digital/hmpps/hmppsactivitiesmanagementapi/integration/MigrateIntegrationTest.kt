@@ -274,6 +274,22 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     val activity = getActivity(activityId = activityId, agencyId = "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
+    with(activity.schedules.first().internalLocation!!) {
+      assertThat(id).isEqualTo(1)
+      assertThat(description).isEqualTo("House_block_7-1-002")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-fmi-prison-regime.sql",
+  )
+  @Test
+  fun `import location code containing 'WOW'`() {
+    val activityId = migrateActivity(request = felthamRegimeTimeRequest.copy(internalLocationCode = "junkWOWkal"))
+    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+
+    assertThat(activity.onWing).isTrue()
+    assertThat(activity.schedules.first().internalLocation).isNull()
   }
 
   @Sql(

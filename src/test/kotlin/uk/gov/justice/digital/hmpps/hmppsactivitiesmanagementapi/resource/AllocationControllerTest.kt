@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.allocation
@@ -157,6 +158,14 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
         prisonerNumber = "ABC123",
         allocationIds = listOf(1),
         suspendFrom = LocalDate.now().plusDays(1),
+        status = PrisonerStatus.SUSPENDED,
+      )
+
+      private val requestWithPay = SuspendPrisonerRequest(
+        prisonerNumber = "ABC123",
+        allocationIds = listOf(1),
+        suspendFrom = LocalDate.now().plusDays(1),
+        status = PrisonerStatus.SUSPENDED_WITH_PAY,
       )
 
       @Test
@@ -165,6 +174,15 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
         mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/suspend") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(request)
+        }.andExpect { status { isAccepted() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Suspend allocation with pay (ROLE_ACTIVITY_ADMIN) - 202`() {
+        mockMvcWithSecurity.post("/allocations/$PENTONVILLE_PRISON_CODE/suspend") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(requestWithPay)
         }.andExpect { status { isAccepted() } }
       }
 

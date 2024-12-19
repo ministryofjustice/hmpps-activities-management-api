@@ -5,14 +5,15 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import java.time.LocalDate
 import java.time.LocalTime
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
+  @Query("from Appointment a left join fetch a.attendees where a.appointmentId in :ids")
+  fun findByIds(ids: List<Long>): List<Appointment>
+
   fun findAllByPrisonCodeAndStartDate(prisonCode: String, startDate: LocalDate): List<Appointment>
-  fun findByAppointmentSeriesAndSequenceNumber(appointmentSeries: AppointmentSeries, sequenceNumber: Int): Appointment?
 
   @Query(
     value =

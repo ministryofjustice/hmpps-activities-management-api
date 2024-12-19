@@ -8,9 +8,11 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
+import jakarta.validation.constraints.NotEmpty
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -34,12 +36,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeByStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CaseloadHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceAction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
 import java.security.Principal
 import java.time.LocalDate
@@ -95,6 +99,47 @@ class AppointmentController(
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentDetailsById(@PathVariable("appointmentId") appointmentId: Long): AppointmentDetails =
     appointmentService.getAppointmentDetailsById(appointmentId)
+
+  @PostMapping(value = ["/details"])
+  @ResponseBody
+  @Operation(
+    summary = "Get the details of appointments for display purposes by their ids",
+    description = "Returns the displayable details of appointments by their unique identifiers.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Appointment found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentDetails::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getAppointmentDetailsById(
+    @RequestBody
+    @Parameter(
+      description = "The appointment ids",
+      required = true,
+    )
+    appointmentIds: List<Long>,
+  ) = appointmentService.getAppointmentDetailsByIds(appointmentIds)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{appointmentId}"])
@@ -382,6 +427,68 @@ class AppointmentController(
     request: AppointmentAttendanceRequest,
     principal: Principal,
   ): Appointment = appointmentAttendanceService.markAttendance(appointmentId, request, principal)
+
+  @PutMapping(value = ["/updateAttendances"])
+  @Operation(
+    summary = "Update the attendances for multiple appointments",
+    description =
+    """
+    Update the attendance records for attendees on multiple appointments. This sets the current attendance records
+    for the supplied prison numbers, replacing any existing records. This supports both the initial recording of attendances
+    and changing that attendance records. There are no restrictions on when attendances can be recorded. It can be done
+    for past and future appointments.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Attendance for the appointment was recorded.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = AppointmentSeries::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun markMultipleAttendances(
+    @RequestParam(value = "action", required = true)
+    @Parameter(description = "How to mark the attendance records.")
+    action: AttendanceAction? = null,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The lists of prison numbers to mark as attended and non-attended",
+      required = true,
+    )
+    @NotEmpty
+    requests: List<MultipleAppointmentAttendanceRequest>,
+    principal: Principal,
+  ): ResponseEntity<Any> = appointmentAttendanceService.markMultipleAttendances(requests, action!!, principal).let { ResponseEntity.noContent().build() }
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PutMapping(value = ["/{appointmentId}/cancel"])

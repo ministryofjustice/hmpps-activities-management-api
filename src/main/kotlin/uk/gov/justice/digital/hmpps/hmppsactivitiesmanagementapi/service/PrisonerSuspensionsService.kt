@@ -42,6 +42,12 @@ class PrisonerSuspensionsService(
       require(it.onOrAfter(LocalDate.now())) { "Suspension start date must be on or after today's date" }
     }
 
+    require(listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY).contains(request.status)) {
+      "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status"
+    }
+
+    val issuePayment = request.status == PrisonerStatus.SUSPENDED_WITH_PAY
+
     val impactedAttendanceIds = transactionHandler.newSpringTransaction {
       val allocations = allocationRepository.findAllById(allocationIds)
         .also { allocations ->
@@ -64,13 +70,16 @@ class PrisonerSuspensionsService(
                 plannedBy = byWhom,
                 plannedAt = now,
                 caseNoteId = mayBeCaseNoteId,
+                paid = issuePayment,
               ),
             )
         }
 
         allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
-          alloc.activatePlannedSuspension()
-          attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
+          alloc.activatePlannedSuspension(request.status)
+          attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(
+            dateTime = LocalDateTime.now(), allocation = alloc, issuePayment = issuePayment,
+          ).map(Attendance::attendanceId)
         } ?: emptyList()
       }
 
@@ -146,7 +155,7 @@ class PrisonerSuspensionsService(
 
         allocation.plannedSuspension()!!.endOn(maxOf(suspendUntil, plannedSuspensionStartDate), byWhom)
 
-        allocation.takeIf { it.status(PrisonerStatus.SUSPENDED) && !it.isCurrentlySuspended() }?.let { alloc ->
+        allocation.takeIf { (it.status(PrisonerStatus.SUSPENDED) || it.status(PrisonerStatus.SUSPENDED_WITH_PAY)) && !it.isCurrentlySuspended() }?.let { alloc ->
           alloc.reactivateSuspension()
           attendanceSuspensionDomainService.resetSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
         } ?: emptyList()

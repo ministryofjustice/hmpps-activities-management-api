@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
 
@@ -39,7 +38,6 @@ import java.time.LocalDate
 @RequestMapping("/scheduled-instances", produces = [MediaType.APPLICATION_JSON_VALUE])
 class ScheduledInstanceController(
   private val scheduledInstanceService: ScheduledInstanceService,
-  private val attendancesService: AttendancesService,
 ) {
 
   @GetMapping(value = ["/{instanceId}"])

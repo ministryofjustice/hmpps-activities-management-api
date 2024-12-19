@@ -192,12 +192,28 @@ class AllocationTest {
   }
 
   @Test
+  fun `check can unsuspend a paid suspension allocation`() {
+    val allocation = allocation(withPlannedSuspensions = true, withPaidSuspension = true)
+      .apply { activatePlannedSuspension(PrisonerStatus.SUSPENDED_WITH_PAY) }
+      .also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED_WITH_PAY) }
+
+    allocation.reactivateSuspension()
+
+    with(allocation) {
+      assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE)
+      assertThat(suspendedBy).isNull()
+      assertThat(suspendedTime).isNull()
+      assertThat(suspendedReason).isNull()
+    }
+  }
+
+  @Test
   fun `check cannot unsuspend an active allocation`() {
     val allocation = allocation().also { assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.ACTIVE) }
 
     assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended, suspended with pay or auto-suspended allocations")
   }
 
   @Test
@@ -207,7 +223,7 @@ class AllocationTest {
 
     assertThatThrownBy { allocation.reactivateSuspension() }
       .isInstanceOf(IllegalStateException::class.java)
-      .hasMessage("You can only reactivate suspended or auto-suspended allocations")
+      .hasMessage("You can only reactivate suspended, suspended with pay or auto-suspended allocations")
   }
 
   @Test
@@ -960,6 +976,24 @@ class AllocationTest {
   fun `isCurrentlySuspended - returns false when a suspension is not planned`() {
     val allocation = allocation(startDate = TimeSource.yesterday())
     allocation.isCurrentlySuspended() isBool false
+  }
+
+  @Test
+  fun `isCurrentlySuspended and paid - returns true when a planned suspension is active and paid`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = true)
+    allocation.isCurrentlyPaidSuspension() isBool true
+  }
+
+  @Test
+  fun `isCurrentlySuspended and not paid - returns false when a planned suspension is active and not paid`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = false)
+    allocation.isCurrentlyPaidSuspension() isBool false
+  }
+
+  @Test
+  fun `isCurrentlySuspended and not paid - returns false when a planned suspension is active and paid flag not set`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = null)
+    allocation.isCurrentlyPaidSuspension() isBool false
   }
 
   @Test

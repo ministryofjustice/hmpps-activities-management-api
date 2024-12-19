@@ -24,6 +24,7 @@ class PlannedSuspensionTest {
       caseNoteId = null,
       plannedBy = "Unit test",
       plannedAt = now,
+      paid = false,
     )
   }
 
@@ -37,6 +38,7 @@ class PlannedSuspensionTest {
       caseNoteId = null,
       plannedBy = "Unit test",
       plannedAt = now,
+      paid = false,
     )
   }
 
@@ -50,6 +52,21 @@ class PlannedSuspensionTest {
       caseNoteId = 56789,
       plannedBy = "Unit test",
       plannedAt = now,
+      paid = false,
+    )
+  }
+
+  @Test
+  fun `check planned suspension with pay to model transformation`() {
+    val plannedSuspensionNoEnd = plannedSuspensionNoEndOrCaseNote.copy(paid = true)
+
+    plannedSuspensionNoEnd.toModel() isEqualTo PlannedSuspension(
+      plannedStartDate = TimeSource.today(),
+      plannedEndDate = null,
+      caseNoteId = null,
+      plannedBy = "Unit test",
+      plannedAt = now,
+      paid = true,
     )
   }
 }

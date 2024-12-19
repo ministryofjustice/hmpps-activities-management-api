@@ -125,6 +125,27 @@ class AllocationTest : ModelTest() {
   }
 
   @Test
+  fun `check user suspended paid allocation transformation`() {
+    val now = LocalDateTime.now()
+
+    val allocation = allocation(withPlannedSuspensions = true, withPaidSuspension = true).also {
+      it.activatePlannedSuspension()
+      assertThat(it.prisonerStatus).isEqualTo(PrisonerStatus.SUSPENDED_WITH_PAY)
+    }
+
+    with(allocation.toModel()) {
+      assertOnCommonModalTransformation(this, allocation)
+      suspendedBy isEqualTo "Test"
+      suspendedReason isEqualTo "Planned suspension"
+      suspendedTime isCloseTo now
+      assertThat(deallocatedBy).isNull()
+      assertThat(deallocatedReason).isNull()
+      assertThat(deallocatedTime).isNull()
+      plannedSuspension isEqualTo allocation.plannedSuspension()?.toModel()
+    }
+  }
+
+  @Test
   fun `check deallocated allocation transformation`() {
     val allocation = allocation().also {
       it.deallocateNowWithReason(DeallocationReason.ENDED)

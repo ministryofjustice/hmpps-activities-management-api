@@ -189,6 +189,7 @@ class LocationController(
       Will contain summary information about the events taking place at the location as well as the total number of
       prisoners due to arrive at the location. This endpoint supports the creation of movement lists allowing
       users to select from a sublist of only the internal locations that have events scheduled there.
+      Note that activities are only scheduled 60 days in advance. Appointments may be scheduled for any date in the future.
     """,
   )
   @ApiResponses(
@@ -232,15 +233,12 @@ class LocationController(
     prisonCode: String,
     @RequestParam(value = "date", required = true)
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Date of scheduled events (required). Format YYYY-MM-DD. Up to 60 days in the future")
+    @Parameter(description = "Date of scheduled events (required). Format YYYY-MM-DD")
     date: LocalDate,
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the scheduled events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
   ): Set<InternalLocationEventsSummary> {
-    require(date.isBefore(LocalDate.now().plusDays(61))) {
-      "Supply a date up to 60 days in the future"
-    }
     return internalLocationService.getInternalLocationEventsSummaries(
       prisonCode,
       date,

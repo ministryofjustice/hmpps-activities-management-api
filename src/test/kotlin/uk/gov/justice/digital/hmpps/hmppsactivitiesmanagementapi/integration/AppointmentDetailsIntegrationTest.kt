@@ -15,9 +15,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendeeSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -206,5 +209,181 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
     )
 
     assertThat(appointmentDetails.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+  }
+
+  @Test
+  fun `get multiple appointments by ids authorisation required`() {
+    webTestClient.post()
+      .uri("/appointments/details")
+      .exchange()
+      .expectStatus().isUnauthorized
+  }
+
+  @Sql("classpath:test_data/seed-appointment-attendance.sql")
+  @Test
+  fun `get multiple appointments by ids should return 400 if appointments are from different prisons`() {
+    webTestClient.post()
+      .uri("/appointments/details")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .bodyValue(listOf(2, 5))
+      .exchange()
+      .expectStatus().isBadRequest
+      .expectBody()
+      .jsonPath("$.userMessage").isEqualTo("Exception: Only one prison code is supported")
+      .jsonPath("$.developerMessage").isEqualTo("Only one prison code is supported")
+  }
+
+  @Sql("classpath:test_data/seed-appointment-attendance.sql")
+  @Test
+  fun `get multiple appointments by ids succeeds`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+        appointmentCategoryReferenceCode("CANT", "Canteen"),
+      ),
+    )
+
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      RISLEY_PRISON_CODE,
+      listOf(
+        appointmentLocation(123, RISLEY_PRISON_CODE, userDescription = "Education 1"),
+        appointmentLocation(456, RISLEY_PRISON_CODE, userDescription = "Canteen A"),
+      ),
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A1234BC", "B2345CD", "C3456DE", "Z3333ZZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", firstName = "A", lastName = "A", bookingId = 1, prisonId = RISLEY_PRISON_CODE),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", firstName = "B", lastName = "B", bookingId = 2, prisonId = RISLEY_PRISON_CODE),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", firstName = "C", lastName = "C", bookingId = 3, prisonId = RISLEY_PRISON_CODE),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "Z3333ZZ", firstName = "Z", lastName = "Z", bookingId = 6, prisonId = RISLEY_PRISON_CODE),
+      ),
+    )
+
+    val appointments = webTestClient.getAppointmentDetailsByIds(listOf(2, 4))
+
+    assertThat(appointments[0]).isEqualTo(
+      AppointmentDetails(
+        2,
+        AppointmentSeriesSummary(1, AppointmentSeriesSchedule(frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3), 3, 1),
+        null,
+        AppointmentType.GROUP,
+        2,
+        "RSI",
+        "Education",
+        attendees = listOf(
+          AppointmentAttendeeSummary(
+            4,
+            PrisonerSummary("A1234BC", 1, "A", "A", "ACTIVE IN", "RSI", "1-2-3", "P"),
+            null,
+            null,
+            null,
+          ),
+          AppointmentAttendeeSummary(
+            5,
+            PrisonerSummary("B2345CD", 2, "B", "B", "ACTIVE IN", "RSI", "1-2-3", "P"),
+            true,
+            appointments[0].createdTime.plusDays(1),
+            "PREV.ATTENDANCE.RECORDED.BY",
+          ),
+          AppointmentAttendeeSummary(
+            6,
+            PrisonerSummary("C3456DE", 3, "C", "C", "ACTIVE IN", "RSI", "1-2-3", "P"),
+            false,
+            appointments[0].createdTime.plusDays(1),
+            "PREV.ATTENDANCE.RECORDED.BY",
+          ),
+        ),
+        AppointmentCategorySummary("EDUC", "Education"),
+        EventTier(1, "TIER_1", "Tier 1"),
+        null,
+        null,
+        AppointmentLocationSummary(123, "RSI", "Education 1"),
+        false,
+        LocalDate.now(),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        false,
+        null,
+        appointments[0].createdTime,
+        "TEST.USER",
+        false,
+        null,
+        null,
+        false,
+        false,
+        null,
+        null,
+      ),
+    )
+
+    assertThat(appointments[1]).isEqualTo(
+      AppointmentDetails(
+        4,
+        AppointmentSeriesSummary(2, AppointmentSeriesSchedule(frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3), 1, 0),
+        null,
+        AppointmentType.GROUP,
+        1,
+        "RSI",
+        "Canteen",
+        attendees = listOf(
+          AppointmentAttendeeSummary(
+            12,
+            PrisonerSummary("Z3333ZZ", 6, "Z", "Z", "ACTIVE IN", "RSI", "1-2-3", "P"),
+            null,
+            null,
+            null,
+          ),
+        ),
+        AppointmentCategorySummary("CANT", "Canteen"),
+        EventTier(1, "TIER_1", "Tier 1"),
+        null,
+        null,
+        AppointmentLocationSummary(456, "RSI", "Canteen A"),
+        false,
+        LocalDate.now(),
+        LocalTime.of(9, 0),
+        LocalTime.of(10, 30),
+        false,
+        null,
+        appointments[1].createdTime,
+        "TEST.USER",
+        false,
+        null,
+        null,
+        false,
+        false,
+        null,
+        null,
+      ),
+    )
+
+    val appointment1Attendees = appointments[0].attendees.associateBy { it.id }
+    val appointment2Attendees = appointments[1].attendees.associateBy { it.id }
+
+    with(appointment1Attendees[4]!!) {
+      attended isEqualTo null
+      attendanceRecordedTime isEqualTo null
+      attendanceRecordedBy isEqualTo null
+    }
+    with(appointment1Attendees[5]!!) {
+      attended!! isBool true
+      attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
+      attendanceRecordedBy isEqualTo "PREV.ATTENDANCE.RECORDED.BY"
+    }
+    with(appointment1Attendees[6]!!) {
+      attended!! isBool false
+      attendanceRecordedTime!!.toLocalDate() isEqualTo LocalDate.now().minusDays(1)
+      attendanceRecordedBy isEqualTo "PREV.ATTENDANCE.RECORDED.BY"
+    }
+
+    appointment2Attendees.values.forEach {
+      with(it) {
+        attended isEqualTo null
+        attendanceRecordedTime isEqualTo null
+        attendanceRecordedBy isEqualTo null
+      }
+    }
   }
 }

@@ -28,6 +28,7 @@ data class PlannedSuspension(
   private var plannedAt: LocalDateTime = LocalDateTime.now(),
   private var plannedEndDate: LocalDate? = null,
   private var caseNoteId: Long? = null,
+  private var paid: Boolean? = false,
 ) {
   private var updatedBy: String? = null
   private var updatedAt: LocalDateTime? = null
@@ -36,6 +37,7 @@ data class PlannedSuspension(
   fun endDate() = plannedEndDate
   fun plannedBy() = plannedBy
   fun caseNoteId() = caseNoteId
+  fun paid() = paid
 
   fun hasStarted() = plannedStartDate.onOrBefore(LocalDate.now())
   fun endOn(date: LocalDate, byWhom: String) = apply {
@@ -57,5 +59,6 @@ data class PlannedSuspension(
     caseNoteId = this.caseNoteId,
     plannedBy = this.plannedBy,
     plannedAt = this.plannedAt,
+    paid = this.paid,
   )
 }

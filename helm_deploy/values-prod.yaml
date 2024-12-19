@@ -19,9 +19,9 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_NON_ASSOCIATIONS_ENABLED: true
     SENTRY_ENVIRONMENT: production
-    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII
-    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII
-    PRISONS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,FSI,DMI,HII,WII,RCI
+    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI
+    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI
+    PRISONS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,FSI,DMI,HII,WII,RCI,RNI
 
   resources:
     requests:
@@ -49,3 +49,11 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service
+
+cron:
+  fixZeroPayDeallocate: "0 22 18 12 *"
+  fixZeroPayReallocate: "0 5 19 12 *"
+
+  datafix:
+    prisonCode: "WII"
+    activityScheduleId: "3705"

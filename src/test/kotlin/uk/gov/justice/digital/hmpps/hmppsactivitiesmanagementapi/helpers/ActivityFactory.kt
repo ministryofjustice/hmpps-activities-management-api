@@ -316,7 +316,7 @@ internal fun activitySchedule(
     }
   }
 
-internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false, withPlannedSuspensions: Boolean = false): Allocation {
+internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false, withPlannedSuspensions: Boolean = false, withPaidSuspension: Boolean? = false): Allocation {
   val allocation = startDate
     ?.let { activitySchedule(activityEntity(startDate = it), noExclusions = true).allocations().first() }
     ?: activitySchedule(activityEntity(), noExclusions = true).allocations().first()
@@ -355,6 +355,7 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
           allocation = this,
           plannedStartDate = this.startDate,
           plannedBy = "Test",
+          paid = withPaidSuspension,
         ),
       )
     }
@@ -439,6 +440,7 @@ fun attendanceList(): List<AllAttendance> = listOf(
     recordedTime = null,
     attendanceRequired = true,
     eventTier = null,
+    incentiveLevelWarningIssued = false,
   ),
 )
 

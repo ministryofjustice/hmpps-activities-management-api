@@ -34,10 +34,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceAction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
 import java.security.Principal
 import java.time.LocalDate
@@ -313,6 +315,71 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
+  fun `400 response when empty attendance requests marking multiple appointments`() {
+    val request = emptyList<MultipleAppointmentAttendanceRequest>()
+
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isBadRequest() } }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `400 response when missing appointment id marking multiple appointments`() {
+    val request = listOf(MultipleAppointmentAttendanceRequest(null, listOf("AA1111A")))
+
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isBadRequest() } }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `400 response when action is missing marking multiple appointments`() {
+    val request = listOf(MultipleAppointmentAttendanceRequest(1, listOf("AA11111A")))
+
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.updateAttendances(request, null, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isBadRequest() } }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `400 response when missing prisoner numbers marking multiple appointments`() {
+    val request = listOf(MultipleAppointmentAttendanceRequest(1, emptyList()))
+
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isBadRequest() } }
+
+    verifyNoInteractions(appointmentAttendanceService)
+  }
+
+  @Test
+  fun `204 accepted response when marking multiple appointments`() {
+    val request = listOf(MultipleAppointmentAttendanceRequest(1, listOf("AA11111A")))
+
+    val mockPrincipal: Principal = mock()
+
+    mockMvc.updateAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+      .andDo { print() }
+      .andExpect { status { isNoContent() } }
+
+    verify(appointmentAttendanceService).markMultipleAttendances(request, AttendanceAction.ATTENDED, mockPrincipal)
+  }
+
+  @Test
   fun `202 accepted response when search appointments with valid json`() {
     val request = AppointmentSearchRequest(startDate = LocalDate.now())
     val expectedResponse = listOf(appointmentSearchResultModel())
@@ -362,7 +429,29 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     }
   }
 
+  @Test
+  fun `200 response when get appointments with ids`() {
+    val appointments = listOf(appointmentDetails(1), appointmentDetails(2), appointmentDetails(3))
+
+    whenever(appointmentService.getAppointmentDetailsByIds(listOf(1, 2, 3))).thenReturn(appointments)
+
+    val response = mockMvc.getAppointmentDetailsByIds(listOf(1, 2, 3))
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(appointments))
+
+    verify(appointmentService).getAppointmentDetailsByIds(listOf(1, 2, 3))
+  }
+
   private fun MockMvc.getAppointmentDetailsById(id: Long) = get("/appointments/{appointmentId}/details", id)
+
+  private fun MockMvc.getAppointmentDetailsByIds(ids: List<Long>) = post("/appointments/details") {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(ids)
+  }
 
   private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
     patch("/appointments/{appointmentId}", id) {
@@ -400,6 +489,15 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
 
   private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) =
     put("/appointments/{appointmentId}/attendance", id) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
+      )
+    }
+
+  private fun MockMvc.updateAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) =
+    put("/appointments/updateAttendances?action=$action") {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
