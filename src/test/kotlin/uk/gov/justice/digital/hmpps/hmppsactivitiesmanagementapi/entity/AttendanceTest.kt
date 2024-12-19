@@ -346,7 +346,7 @@ class AttendanceTest {
 
     val reason = mock<AttendanceReason>()
 
-    with(attendance.completeWithoutPayment(reason)) {
+    with(attendance.complete(reason)) {
       assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
       assertThat(issuePayment).isFalse()
       assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
@@ -365,7 +365,7 @@ class AttendanceTest {
     ).also { assertThat(it.editable()).isFalse() }
 
     assertThatThrownBy {
-      attendance.completeWithoutPayment(mock())
+      attendance.complete(mock())
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance record for prisoner '123456' can no longer be modified")
@@ -413,7 +413,7 @@ class AttendanceTest {
   fun `can unsuspend an auto-suspended attendance to waiting and history records are created`() {
     Attendance(scheduledInstance = instance, prisonerNumber = "123456")
       .also { assertThat(it.history()).isEmpty() }
-      .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED))
+      .complete(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED))
       .also { assertThat(it.history()).hasSize(1) }
       .unsuspend()
       .also {
@@ -430,7 +430,7 @@ class AttendanceTest {
   fun `can unsuspend a suspended attendance to waiting and history records are created`() {
     Attendance(scheduledInstance = instance, prisonerNumber = "123456")
       .also { assertThat(it.history()).isEmpty() }
-      .completeWithoutPayment(attendanceReason(AttendanceReasonEnum.SUSPENDED))
+      .complete(attendanceReason(AttendanceReasonEnum.SUSPENDED))
       .also { assertThat(it.history()).hasSize(1) }
       .unsuspend()
       .also {
@@ -438,6 +438,38 @@ class AttendanceTest {
         assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
         assertThat(it.attendanceReason).isNull()
         assertThat(it.issuePayment).isNull()
+        assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+        assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+      }
+  }
+
+  @Test
+  fun `can unsuspend a suspended attendance with a planned paid suspension`() {
+    Attendance(scheduledInstance = instance, prisonerNumber = "123456")
+      .also { assertThat(it.history()).isEmpty() }
+      .complete(attendanceReason(AttendanceReasonEnum.SUSPENDED), issuePayment = true)
+      .also { assertThat(it.history()).hasSize(1) }
+      .also {
+        assertThat(it.history()).hasSize(1)
+        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(it.attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.SUSPENDED))
+        assertThat(it.issuePayment).isTrue()
+        assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+        assertThat(it.recordedBy).isEqualTo("Activities Management Service")
+      }
+  }
+
+  @Test
+  fun `can unsuspend a suspended attendance with a planned unpaid suspension`() {
+    Attendance(scheduledInstance = instance, prisonerNumber = "123456")
+      .also { assertThat(it.history()).isEmpty() }
+      .complete(attendanceReason(AttendanceReasonEnum.SUSPENDED), issuePayment = false)
+      .also { assertThat(it.history()).hasSize(1) }
+      .also {
+        assertThat(it.history()).hasSize(1)
+        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(it.attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.SUSPENDED))
+        assertThat(it.issuePayment).isFalse()
         assertThat(it.recordedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
         assertThat(it.recordedBy).isEqualTo("Activities Management Service")
       }

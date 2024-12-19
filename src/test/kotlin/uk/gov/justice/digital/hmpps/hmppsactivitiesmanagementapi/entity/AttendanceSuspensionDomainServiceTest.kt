@@ -58,7 +58,7 @@ class AttendanceSuspensionDomainServiceTest {
 
     @Test
     fun `only future attendances are suspended`() {
-      service.suspendFutureAttendancesForAllocation(LocalDateTime.now(), allocation()).let { updatedAttendances ->
+      service.suspendFutureAttendancesForAllocation(LocalDateTime.now(), allocation(), issuePayment = false).let { updatedAttendances ->
         updatedAttendances hasSize 1
         with(updatedAttendances.first()) {
           status() isEqualTo AttendanceStatus.COMPLETED

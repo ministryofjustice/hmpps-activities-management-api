@@ -979,6 +979,24 @@ class AllocationTest {
   }
 
   @Test
+  fun `isCurrentlySuspended and paid - returns true when a planned suspension is active and paid`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = true)
+    allocation.isCurrentlyPaidSuspension() isBool true
+  }
+
+  @Test
+  fun `isCurrentlySuspended and not paid - returns false when a planned suspension is active and not paid`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = false)
+    allocation.isCurrentlyPaidSuspension() isBool false
+  }
+
+  @Test
+  fun `isCurrentlySuspended and not paid - returns false when a planned suspension is active and paid flag not set`() {
+    val allocation = allocation(startDate = TimeSource.yesterday(), withPlannedSuspensions = true, withPaidSuspension = null)
+    allocation.isCurrentlyPaidSuspension() isBool false
+  }
+
+  @Test
   fun `check cannot deallocated in future`() {
     val allocation = allocation().apply { endDate = TimeSource.today() }
 

@@ -642,7 +642,7 @@ class ManageAttendancesServiceTest {
             prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
             status = AttendanceStatus.COMPLETED,
             attendanceReason = attendanceReasons()["SUSPENDED"],
-            initialIssuePayment = false,
+            initialIssuePayment = true,
             recordedTime = LocalDateTime.now(),
             recordedBy = "Activities Management Service",
           ),
