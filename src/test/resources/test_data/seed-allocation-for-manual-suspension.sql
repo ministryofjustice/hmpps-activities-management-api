@@ -49,11 +49,11 @@ values (2, 2, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'M
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
 values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (2, 2, 'A11111A', null, null, null, null, 'WAITING', null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment, pay_amount)
+values (2, 2, 'A11111A', null, null, null, null, 'WAITING', null, 50);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
 values (3, 3, 'A11111A', null, null, null, null, 'WAITING', null);
 
-insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment)
-values (4, 4, 'A11111A', null, null, null, null, 'WAITING', null);
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, issue_payment, pay_amount)
+values (4, 4, 'A11111A', null, null, null, null, 'WAITING', null, 50);

@@ -46,6 +46,8 @@ class PrisonerSuspensionsService(
       "Only 'SUSPENDED' or 'SUSPENDED_WITH_PAY' are allowed for status"
     }
 
+    val issuePayment = request.status == PrisonerStatus.SUSPENDED_WITH_PAY
+
     val impactedAttendanceIds = transactionHandler.newSpringTransaction {
       val allocations = allocationRepository.findAllById(allocationIds)
         .also { allocations ->
@@ -68,14 +70,16 @@ class PrisonerSuspensionsService(
                 plannedBy = byWhom,
                 plannedAt = now,
                 caseNoteId = mayBeCaseNoteId,
-                paid = PrisonerStatus.SUSPENDED_WITH_PAY == request.status,
+                paid = issuePayment,
               ),
             )
         }
 
         allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
           alloc.activatePlannedSuspension(request.status)
-          attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(LocalDateTime.now(), alloc).map(Attendance::attendanceId)
+          attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(
+            dateTime = LocalDateTime.now(), allocation = alloc, issuePayment = issuePayment,
+          ).map(Attendance::attendanceId)
         } ?: emptyList()
       }
 

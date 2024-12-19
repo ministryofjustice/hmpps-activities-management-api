@@ -326,7 +326,7 @@ class PrisonerSuspensionsServiceTest {
     )
 
     whenever(allocationRepository.findAllById(setOf(allocationId))).thenReturn(listOf(allocation))
-    whenever(attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(any(), eq(allocation))).thenReturn(
+    whenever(attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(any(), eq(allocation), eq(false))).thenReturn(
       listOf(attendance(1), attendance(2)),
     )
 
@@ -336,7 +336,7 @@ class PrisonerSuspensionsServiceTest {
 
     allocationCaptor.firstValue.first().status(PrisonerStatus.SUSPENDED) isBool true
 
-    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation))
+    verify(attendanceSuspensionDomainService).suspendFutureAttendancesForAllocation(any(), eq(allocation), eq(false))
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 2L)

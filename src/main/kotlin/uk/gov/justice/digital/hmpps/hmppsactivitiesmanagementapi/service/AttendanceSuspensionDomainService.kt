@@ -21,9 +21,9 @@ class AttendanceSuspensionDomainService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun suspendFutureAttendancesForAllocation(dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {
+  fun suspendFutureAttendancesForAllocation(dateTime: LocalDateTime, allocation: Allocation, issuePayment: Boolean): List<Attendance> {
     val reason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.SUSPENDED)
-    return completeFutureAttendances(reason, dateTime, allocation).also {
+    return completeFutureAttendances(reason, dateTime, allocation, issuePayment).also {
       log.info("Suspended ($reason) ${it.size} attendances for allocation with ID ${allocation.allocationId}.")
     }
   }
@@ -53,8 +53,10 @@ class AttendanceSuspensionDomainService(
     return resetFutureAttendances(AttendanceReasonEnum.AUTO_SUSPENDED, dateTime, allocation)
       .onEach { attendance ->
         if (allocation.isCurrentlySuspended()) {
-          // If we are resetting auto suspensions and the prisoner currently has a planned suspension, then we need to set the attendances as suspended
-          attendance.completeWithoutPayment(suspendedReason).also { log.info("Suspended attendance ${attendance.attendanceId}") }
+          // If we are resetting auto suspensions and the prisoner currently has a planned suspension,
+          // then we need to set the attendances as suspended
+          val paidSuspension = allocation.isCurrentlyPaidSuspension()
+          attendance.complete(reason = suspendedReason, issuePayment = paidSuspension).also { log.info("Suspended attendance ${attendance.attendanceId}") }
         }
       }
       .also {
@@ -62,7 +64,7 @@ class AttendanceSuspensionDomainService(
       }
   }
 
-  private fun completeFutureAttendances(reason: AttendanceReason, dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {
+  private fun completeFutureAttendances(reason: AttendanceReason, dateTime: LocalDateTime, allocation: Allocation, issuePayment: Boolean = false): List<Attendance> {
     return attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
       dateTime.toLocalDate(),
       allocation.activitySchedule.activityScheduleId,
@@ -70,7 +72,7 @@ class AttendanceSuspensionDomainService(
       allocation.prisonerNumber,
     )
       .filter { attendance -> attendance.editable() && attendance.scheduledInstance.isFuture(dateTime) }
-      .onEach { attendance -> attendance.completeWithoutPayment(reason) }
+      .onEach { attendance -> attendance.complete(reason = reason, issuePayment = issuePayment) }
   }
 
   private fun resetFutureAttendances(reasonToReset: AttendanceReasonEnum, dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {

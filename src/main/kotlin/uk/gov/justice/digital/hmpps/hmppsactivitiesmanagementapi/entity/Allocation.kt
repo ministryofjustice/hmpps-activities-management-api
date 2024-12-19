@@ -131,6 +131,8 @@ data class Allocation(
 
   fun isCurrentlySuspended() = plannedSuspension()?.hasStarted() == true
 
+  fun isCurrentlyPaidSuspension() = plannedSuspension()?.hasStarted() ?: false && plannedSuspension()?.paid() ?: false
+
   fun addPlannedSuspension(suspension: PlannedSuspension) = run {
     require(suspension.allocation == this) { "Cannot add this suspension associated to the allocation with id ${suspension.allocation.allocationId} to allocation with id $allocationId" }
     require(plannedSuspension() == null) { "Cannot add this planned suspension to allocation with id $allocationId because another planned suspension already exists" }

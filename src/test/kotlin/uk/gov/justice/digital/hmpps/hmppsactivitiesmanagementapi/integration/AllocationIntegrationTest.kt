@@ -485,7 +485,7 @@ class AllocationIntegrationTest : IntegrationTestBase() {
         status(AttendanceStatus.COMPLETED) isBool true
         attendanceReason isNotEqualTo null
         attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED
-        issuePayment isEqualTo false
+        issuePayment isEqualTo true
       }
     }
 

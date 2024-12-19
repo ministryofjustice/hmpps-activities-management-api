@@ -119,12 +119,12 @@ data class Attendance(
     newOtherAbsenceReason = null,
   )
 
-  fun completeWithoutPayment(reason: AttendanceReason) =
+  fun complete(reason: AttendanceReason, issuePayment: Boolean = false) =
     mark(
       principalName = ServiceName.SERVICE_NAME.value,
       reason = reason,
       newStatus = AttendanceStatus.COMPLETED,
-      newIssuePayment = false,
+      newIssuePayment = issuePayment,
       newCaseNoteId = null,
       newComment = null,
       newIncentiveLevelWarningIssued = null,
