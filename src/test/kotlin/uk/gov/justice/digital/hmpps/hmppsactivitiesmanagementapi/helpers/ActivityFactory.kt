@@ -440,6 +440,7 @@ fun attendanceList(): List<AllAttendance> = listOf(
     recordedTime = null,
     attendanceRequired = true,
     eventTier = null,
+    incentiveLevelWarningIssued = false,
   ),
 )
 

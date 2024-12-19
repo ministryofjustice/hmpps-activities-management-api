@@ -92,6 +92,7 @@ class SubjectAccessRequestServiceTest {
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
     eventTier = null,
+    incentiveLevelWarningIssued = false,
   )
 
   private val allAttendance2 = AllAttendance(
@@ -112,6 +113,7 @@ class SubjectAccessRequestServiceTest {
     recordedTime = TimeSource.now(),
     attendanceRequired = true,
     eventTier = null,
+    incentiveLevelWarningIssued = true,
   )
 
   @Test

@@ -48,6 +48,8 @@ data class AllAttendance(
   val attendanceRequired: Boolean,
 
   val eventTier: String?,
+
+  var incentiveLevelWarningIssued: Boolean?,
 ) {
   fun toModel() =
     AllAttendanceModel(
@@ -68,6 +70,7 @@ data class AllAttendance(
       recordedTime = recordedTime,
       attendanceRequired = attendanceRequired,
       eventTier = eventTier?.let { EventTierType.valueOf(it) },
+      incentiveLevelWarningIssued = incentiveLevelWarningIssued,
     )
 }
 

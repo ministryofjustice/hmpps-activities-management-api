@@ -16,7 +16,8 @@ SELECT att.attendance_id,
        act.attendance_required,
        et.code AS event_tier,
        si.start_time,
-       si.end_time
+       si.end_time,
+       att.incentive_level_warning_issued
 FROM scheduled_instance si
          JOIN activity_schedule asch ON si.activity_schedule_id = asch.activity_schedule_id
          JOIN activity act ON asch.activity_id = act.activity_id
