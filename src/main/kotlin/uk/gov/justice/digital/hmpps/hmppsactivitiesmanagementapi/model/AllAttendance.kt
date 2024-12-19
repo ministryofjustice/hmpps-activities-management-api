@@ -74,4 +74,7 @@ data class AllAttendance(
 
   @Schema(description = "event tier")
   val eventTier: EventTierType?,
+
+  @Schema(description = "Was an incentive level warning issued for REFUSED", example = "true")
+  val incentiveLevelWarningIssued: Boolean?,
 )

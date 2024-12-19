@@ -182,6 +182,9 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     val attendanceList = webTestClient.getAllAttendanceByDate(MOORLAND_PRISON_CODE, LocalDate.of(2022, 10, 10))!!
     assertThat(attendanceList.size).isEqualTo(9)
     assertThat(attendanceList.any { it.eventTier == EventTierType.TIER_1 }).isTrue()
+    assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == null }.map { it.attendanceId }).containsOnly(1, 2, 3, 4, 5, 6, 7)
+    assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == false }.map { it.attendanceId }).containsOnly(8)
+    assertThat(attendanceList.filter { it.incentiveLevelWarningIssued == true }.map { it.attendanceId }).containsOnly(9)
   }
 
   @Sql(
