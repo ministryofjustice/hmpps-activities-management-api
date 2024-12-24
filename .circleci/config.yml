@@ -56,7 +56,7 @@ jobs:
       name: hmpps/java_localstack_postgres
       jdk_tag: << pipeline.parameters.java-version >>
       localstack_tag: << pipeline.parameters.localstack-version >>
-      services: "sns,sqs"
+      services: "sns,sqs,s3"
       postgres_tag: << pipeline.parameters.postgres-version >>
       postgres_username: "activities"
       postgres_password: "activities"
