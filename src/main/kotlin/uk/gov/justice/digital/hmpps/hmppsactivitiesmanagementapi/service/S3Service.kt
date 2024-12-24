@@ -14,10 +14,10 @@ class S3Service(
   private val s3ClientAnalyticalPlatform: S3Client,
 ) {
   @Value("\${aws.s3.ap.bucket}")
-  private val awsApS3BucketName: String = "defaultbucket"
+  private var awsApS3BucketName: String = "default-bucket"
 
   @Value("\${aws.s3.ap.project}")
-  private val awsApS3ProjectName: String = "test-ap-s3-project"
+  private var awsApS3ProjectName: String = "default-project"
 
   /**
    * Pushes a report to the Analytical Platform's S3 bucket with a specified naming convention.

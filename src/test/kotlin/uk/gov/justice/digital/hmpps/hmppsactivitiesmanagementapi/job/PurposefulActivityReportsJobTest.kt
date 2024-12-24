@@ -9,16 +9,16 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.PURPOSEFUL_ACTIVITY_REPORTS
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepositoryCustom
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PurposefulActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.S3Service
 
 @ExtendWith(MockitoExtension::class)
 class PurposefulActivityReportsJobTest : JobsTestBase() {
   // private val service: ManageScheduledInstancesService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
-  private val reportRepo: PurposefulActivityRepositoryCustom = mock()
+  private val purposefulActivityService: PurposefulActivityService = mock()
   private val s3Service: S3Service = mock()
-  private val job = PurposefulActivityReportsJob(safeJobRunner, reportRepo, s3Service)
+  private val job = PurposefulActivityReportsJob(safeJobRunner, purposefulActivityService, s3Service)
 
   @Test
   fun `Create purposeful activity reports`() {
