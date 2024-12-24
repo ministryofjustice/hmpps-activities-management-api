@@ -31,14 +31,14 @@ object LocalStackContainer {
       DockerImageName.parse("localstack/localstack").withTag("3"),
     ).apply {
       // You can do things here like setup default buckets as shown
-      // the bucket shown here (some-other-bucket) isn't used anywhere, that's because none of this config will
+      // the bucket shown here (default-localstack-bucket) isn't used anywhere, that's because none of this config will
       // be incldued in the container set up in the circleCI pipeline
       // Instead, the default bucket is created in the AWSLocalStackConfig file using the aws kotlin sdk
       withCopyToContainer(
         Transferable.of(
           """
           #!/usr/bin/env bash
-          awslocal s3 mb s3://some-other-bucket
+          awslocal s3 mb s3://default-localstack-bucket
           """.trimIndent(),
           775,
         ),

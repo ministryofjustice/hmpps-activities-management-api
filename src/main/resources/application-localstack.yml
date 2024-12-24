@@ -111,5 +111,5 @@ feature:
 aws:
   s3:
     ap:
-      bucket: moj-reg-dev
-      project: hmpps-activities-management-dev
+      bucket: default-localstack-bucket
+      project: default-localstack-project
