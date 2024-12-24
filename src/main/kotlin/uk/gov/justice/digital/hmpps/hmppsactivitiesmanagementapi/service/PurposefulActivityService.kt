@@ -4,10 +4,12 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
+import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
+import java.util.Date
 
 @Service
 class PurposefulActivityService(
@@ -15,10 +17,14 @@ class PurposefulActivityService(
   private val s3Service: S3Service,
 ) {
   @Value("\${aws.s3.ap.bucket}")
-  private val awsApS3BucketName: String = "defaultbucket"
+  val awsApS3BucketName: String = "defaultbucket"
 
   @Value("\${aws.s3.ap.project}")
   private val awsApS3ProjectName: String = "test-ap-s3-project"
+
+  val purposefulActivityActivityTableName = "activities"
+  val purposefulActivityAppointmentsTableName = "appointments"
+  val purposefulActivityRolloutTableName = "rollout_prison"
 
   /**
    * Executes appointment report, activity report and prison rollout reports against Activities DB
@@ -31,51 +37,119 @@ class PurposefulActivityService(
   fun executeAndUploadAllPurposefulActivityReports(
     weekOffset: Int = 1,
   ) {
+    executeActivitiesReport(weekOffset)
+    executeAppointmentsReport(weekOffset)
+    executePrisonRolloutReport(weekOffset)
+  }
+
+  fun executeActivitiesReport(weekOffset: Int): String {
     val activityData = purposefulActivityRepository.getPurposefulActivityActivitiesReport(weekOffset)
-    val appointmentData = purposefulActivityRepository.getPurposefulActivityAppointmentsReport(weekOffset)
-    val rolloutData = purposefulActivityRepository.getPurposefulActivityPrisonRolloutReport()
 
     if (activityData.isNullOrEmpty()) {
       throw RuntimeException("Purposeful Activity Report data failed to find any relevant activity data")
     }
 
+    // convert to csv
+    val csvActivitiesReport = getResultsAsCsv(activityData)
+
+    val reportDate = getNthPreviousSunday(weekOffset)
+    val csvActivitiesFileName = "activities_$reportDate.csv"
+
+    var pushedFileKey: String
+    // upload to s3 bucket
+    runBlocking {
+      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvActivitiesReport.toByteArray(), purposefulActivityActivityTableName, csvActivitiesFileName)
+    }
+    return pushedFileKey
+  }
+
+  fun executeAppointmentsReport(
+    weekOffset: Int = 1,
+  ): String {
+    val appointmentData = purposefulActivityRepository.getPurposefulActivityAppointmentsReport(weekOffset)
+
     if (appointmentData.isNullOrEmpty()) {
       throw RuntimeException("Purposeful Activity Report data failed to find any relevant appointment data")
     }
+
+    val csvAppointmentsReport = getResultsAsCsv(appointmentData)
+
+    val reportDate = getNthPreviousSunday(weekOffset)
+    val csvAppointmentsFileName = "appointments_$reportDate.csv"
+
+    var pushedFileKey: String
+    // upload to s3 bucket
+    runBlocking {
+      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport.toByteArray(), purposefulActivityAppointmentsTableName, csvAppointmentsFileName)
+    }
+    return pushedFileKey
+  }
+
+  fun executePrisonRolloutReport(
+    weekOffset: Int = 1,
+  ): String {
+    val rolloutData = purposefulActivityRepository.getPurposefulActivityPrisonRolloutReport()
 
     if (rolloutData.isNullOrEmpty()) {
       throw RuntimeException("Purposeful Activity Report data failed to find any prison rollout data")
     }
 
     // convert to csv
-    val csvActivitiesReport = getResultsAsCsvByteStream(activityData)
-    val csvAppointmentsReport = getResultsAsCsvByteStream(appointmentData)
-    val csvRolloutReport = getResultsAsCsvByteStream(rolloutData)
+    val csvRolloutReport = getResultsAsCsv(rolloutData)
 
     val reportDate = getNthPreviousSunday(weekOffset)
-    val csvActivitiesFileName = "activities_$reportDate.csv"
-    val csvAppointmentsFileName = "appointments_$reportDate.csv"
     val csvRolloutFileName = "rollout_prisons_$reportDate.csv"
 
+    var pushedFileKey: String
     // upload to s3 bucket
     runBlocking {
-      s3Service.pushReportToAnalyticalPlatformS3(csvActivitiesReport, "activities", csvActivitiesFileName)
-      s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport, "appointments", csvAppointmentsFileName)
-      s3Service.pushReportToAnalyticalPlatformS3(csvRolloutReport, "rollout_prison", csvRolloutFileName)
+      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvRolloutReport.toByteArray(), purposefulActivityRolloutTableName, csvRolloutFileName)
+    }
+    return pushedFileKey
+  }
+
+  internal fun getResultsAsCsv(results: MutableList<Any?>?): String {
+    if (results.isNullOrEmpty()) throw IllegalArgumentException("Can't convert resultset to CSV because the result set is empty")
+
+    val csvBuilder = StringBuilder(results.size * 100) // Estimated initial capacity
+
+    results.forEach { row ->
+      val myRealRow = row as? Array<Any?>
+        ?: throw IllegalStateException("Expected an Array<Any?> but got ${row?.javaClass?.simpleName}")
+
+      val rowString = myRealRow.joinToString(",") { item ->
+        formatCsvValue(item)
+      }
+      csvBuilder.append(rowString).append("\n")
+    }
+
+    return csvBuilder.toString().trimEnd()
+  }
+
+  private fun formatCsvValue(item: Any?): String {
+    return when (item) {
+      is String -> escapeCsvString(item)
+      is Date -> "\"${formatDate(item)}\"" // Format and quote dates
+      is Long, is Int, is Double -> item.toString()
+      is Boolean -> item.toString() // Handle boolean values (true/false)
+      null -> ""
+      else -> "\"Unsupported type: ${item::class.simpleName}\""
     }
   }
 
-  private fun getResultsAsCsvByteStream(results: MutableList<Any?>?): ByteArray {
-    // Serialize the list to a CSV format string
-    return buildString {
-      results?.forEachIndexed { index, item ->
-        if (index > 0) append("\n") // Add newline between records
-        append(item.toString()) // Convert each item to string
-      }
-    }.toByteArray()
+  private fun formatDate(date: Date): String {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss") // Customize the date format as needed
+    return dateFormat.format(date)
   }
 
-  private fun getNthPreviousSunday(n: Int): String {
+  private fun escapeCsvString(value: String): String {
+    // Escape double quotes by doubling them
+    val escapedValue = value.replace("\"", "\"\"")
+    // Enclose the value in quotes
+    return "\"$escapedValue\""
+  }
+
+  fun getNthPreviousSunday(n: Int): String {
     // Get the current date
     val today = LocalDate.now()
 

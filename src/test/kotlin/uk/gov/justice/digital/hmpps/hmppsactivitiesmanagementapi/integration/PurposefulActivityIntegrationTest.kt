@@ -5,19 +5,28 @@ import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.model.PutObjectResponse
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PurposefulActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.S3Service
+import java.io.BufferedReader
 
 class PurposefulActivityIntegrationTest : IntegrationTestBase() {
   private val amazonS3: S3Client = mockk(relaxed = true)
 
   @Autowired
   private lateinit var purposefulActivityRepo: PurposefulActivityRepository
+
+  @Autowired
+  private lateinit var purposefulActivityService: PurposefulActivityService
+
+  @Autowired
+  private lateinit var s3Service: S3Service
 
   private fun WebTestClient.executePurposefulActivityReportJob() {
     post()
@@ -40,7 +49,27 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-purposeful-activity-activities.sql",
   )
   @Test
+  fun `Purposeful Activity Report activities report is uploaded to s3, downloaded again and verified`() {
+    val fileKey = purposefulActivityService.executeActivitiesReport(1)
+
+    runBlocking {
+      val file = s3Service.getFileFromS3(fileKey, "activities", purposefulActivityService.awsApS3BucketName)
+
+      val bufferedReader: BufferedReader = file.bufferedReader()
+      val csvContent = bufferedReader.use { it.readText() }
+
+      println(csvContent)
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-purposeful-activity-activities.sql",
+  )
+  @Test
   fun `Purposeful Activity Repo runs activity report and data is validated`() {
+    // This is really just a PurposefulActivityRepo test and could be moved to a dedicated
+    // class for testing repos. At time of writing there was no general pattern for
+    // creating test classes just for Repository classes.
     val activityData = purposefulActivityRepo.getPurposefulActivityActivitiesReport(1)
     assertThat(activityData).isNotNull
     assertThat(activityData).isNotEmpty
