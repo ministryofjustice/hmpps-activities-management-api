@@ -72,10 +72,7 @@ jobs:
       - hmpps/wait_till_ready_postgres
       - hmpps/wait_till_ready
       - run:
-          command: |
-            awslocal s3 mb s3://moj-reg-dev
-            awslocal s3 ls
-            ./gradlew integrationTest
+          command: ./gradlew integrationTest
             cd src/test/kotlin
             # Get list of classnames of tests that should run on this node
             CLASSNAMES=$(circleci tests glob "**/integration/**/*Test.kt" \
