@@ -50,10 +50,6 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
 
   @MockitoBean
-  override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob)
-
-  @MockitoBean
   private lateinit var fixZeroPayJob: FixZeroPayJob
 
   @MockitoBean
