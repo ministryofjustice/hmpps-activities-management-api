@@ -45,8 +45,4 @@ class AWSLocalStackConfig {
 
     return s3Client
   }
-
-
-
-
 }
