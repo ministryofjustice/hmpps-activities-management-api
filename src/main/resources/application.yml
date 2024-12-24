@@ -157,4 +157,5 @@ aws:
   s3:
     ap:
       region: eu-west-2
-      bucket: moj-reg-prod
+      bucket: ${AWS_S3_AP_BUCKET}
+      project: ${AWS_S3_AP_PROJECT}

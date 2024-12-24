@@ -107,3 +107,9 @@ feature:
     activities:
       prisoner:
         allocation-amended: true
+
+aws:
+  s3:
+    ap:
+      bucket: moj-reg-dev
+      project: hmpps-activities-management-dev

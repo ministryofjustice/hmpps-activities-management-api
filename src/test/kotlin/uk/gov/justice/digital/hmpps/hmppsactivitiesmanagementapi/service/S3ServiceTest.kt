@@ -22,7 +22,7 @@ class S3ServiceTest {
 
     coEvery { amazonS3.putObject(any()) } returns putObjectResponse
 
-    service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), mockBucketName)
+    service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName)
   }
 
   @Test
@@ -32,7 +32,7 @@ class S3ServiceTest {
     coEvery { amazonS3.putObject(any()) } throws S3Exception("S3 Exception")
 
     assertThrows<S3Exception> {
-      runBlocking { service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), mockBucketName) }
+      runBlocking { service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName) }
     }
   }
 }
