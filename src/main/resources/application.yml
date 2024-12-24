@@ -152,3 +152,9 @@ migrate:
   activities-live: ${ACTIVITIES_LIVE:***}
   appointments-live: ${APPOINTMENTS_LIVE:***}
   prisons-live: ${PRISONS_LIVE:***}
+
+aws:
+  s3:
+    ap:
+      region: eu-west-2
+      bucket: moj-reg-prod

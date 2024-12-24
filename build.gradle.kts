@@ -45,6 +45,9 @@ dependencies {
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
+  // AWS
+  implementation("aws.sdk.kotlin:s3:1.2.34")
+
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
 
@@ -68,6 +71,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
+  testImplementation("io.mockk:mockk:1.12.0")
 }
 
 kotlin {
