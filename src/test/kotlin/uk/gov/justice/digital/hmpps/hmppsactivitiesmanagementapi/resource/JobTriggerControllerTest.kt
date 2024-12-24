@@ -8,7 +8,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
+import org.springframewosrk.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -48,6 +48,10 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
 
   private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
+
+  @MockitoBean
+  override fun controller() =
+    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, purposefulActivityReportsJob)
 
   @MockitoBean
   private lateinit var fixZeroPayJob: FixZeroPayJob
