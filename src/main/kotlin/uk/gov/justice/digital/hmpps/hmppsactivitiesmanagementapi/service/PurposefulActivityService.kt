@@ -24,10 +24,9 @@ class PurposefulActivityService(
 
   val purposefulActivityActivityTableName = "activities"
   val purposefulActivityAppointmentsTableName = "appointments"
-  val purposefulActivityRolloutTableName = "rollout_prison"
 
   /**
-   * Executes appointment report, activity report and prison rollout reports against Activities DB
+   * Executes appointment report and activity report against Activities DB
    * Then Uploads to the Analytical Platform S3 bucket for consumption by Prison Performance Reporting
    * weekOffset defaults to 1, which means it takes data up to the Saturday just passed.
    * increase the offset to go back in time more weeks, e.g. 3 = data up to third prior Saturday
@@ -39,7 +38,6 @@ class PurposefulActivityService(
   ) {
     executeActivitiesReport(weekOffset)
     executeAppointmentsReport(weekOffset)
-    executePrisonRolloutReport(weekOffset)
   }
 
   fun executeActivitiesReport(weekOffset: Int): String {
@@ -81,29 +79,6 @@ class PurposefulActivityService(
     // upload to s3 bucket
     runBlocking {
       pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport.toByteArray(), purposefulActivityAppointmentsTableName, csvAppointmentsFileName)
-    }
-    return pushedFileKey
-  }
-
-  fun executePrisonRolloutReport(
-    weekOffset: Int = 1,
-  ): String {
-    val rolloutData = purposefulActivityRepository.getPurposefulActivityPrisonRolloutReport()
-
-    if (rolloutData.isNullOrEmpty()) {
-      throw RuntimeException("Purposeful Activity Report data failed to find any prison rollout data")
-    }
-
-    // convert to csv
-    val csvRolloutReport = getResultsAsCsv(rolloutData)
-
-    val reportDate = getNthPreviousSunday(weekOffset)
-    val csvRolloutFileName = "rollout_prisons_$reportDate.csv"
-
-    var pushedFileKey: String
-    // upload to s3 bucket
-    runBlocking {
-      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvRolloutReport.toByteArray(), purposefulActivityRolloutTableName, csvRolloutFileName)
     }
     return pushedFileKey
   }

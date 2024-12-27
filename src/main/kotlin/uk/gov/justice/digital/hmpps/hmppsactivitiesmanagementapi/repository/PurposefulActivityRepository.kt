@@ -11,7 +11,6 @@ interface PurposefulActivityRepository {
 
   fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>?
 
-  fun getPurposefulActivityPrisonRolloutReport(): MutableList<Any?>?
 }
 
 @Repository
@@ -142,17 +141,6 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
          (SELECT end_date FROM date_range);
   """
 
-  private val rolloutPrisonQuery = """
-    select
-    rollout_prison.rollout_prison_id as "rollout_prison.rollout_prison_id",
-    rollout_prison.code as "rollout_prison.code",
-    rollout_prison.description as "rollout_prison.description",
-    rollout_prison.activities_to_be_rolled_out as "rollout_prison.activities_to_be_rolled_out",
-    rollout_prison.activities_rollout_date as "rollout_prison.activities_rollout_date",
-    rollout_prison.appointments_to_be_rolled_out as "rollout_prison.appointments_to_be_rolled_out",
-    rollout_prison.appointments_rollout_date as "rollout_prison.appointments_rollout_date"
-    from rollout_prison rollout_prison
-  """
 
   @Transactional
   @Override
@@ -170,14 +158,6 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     val results = entityManager.createNativeQuery(
       appointmentsQuery.replace(":weekOffset", weekOffset.toString()),
     ).resultList
-
-    return results
-  }
-
-  @Transactional
-  @Override
-  override fun getPurposefulActivityPrisonRolloutReport(): MutableList<Any?>? {
-    val results = entityManager.createNativeQuery(rolloutPrisonQuery).resultList
 
     return results
   }
