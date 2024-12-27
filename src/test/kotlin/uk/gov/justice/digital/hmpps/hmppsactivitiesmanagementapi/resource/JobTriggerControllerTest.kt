@@ -14,7 +14,6 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
-import org.springframewosrk.boot.test.autoconfigure.web.servlet.WebMvcTest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
@@ -48,6 +47,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @MockitoBean
   private lateinit var appointmentsMetricsJob: AppointmentMetricsJob
 
+  @MockitoBean
   private lateinit var purposefulActivityReportsJob: PurposefulActivityReportsJob
 
   @MockitoBean
