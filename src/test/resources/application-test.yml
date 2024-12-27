@@ -51,7 +51,7 @@ hmpps:
   auth:
     url: http://localhost:8090/auth
   s3:
-    localstackUrl: http://s3.localhost.localstack.cloud:4566
+    localstackUrl: http://localhost:4566
     region: eu-west-2
 
 prison:
@@ -91,5 +91,5 @@ migrate:
 aws:
   s3:
     ap:
-      bucket: dummy-bucket
+      bucket: defaultbucket
       project: dummy-project
