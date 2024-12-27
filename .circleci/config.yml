@@ -73,7 +73,6 @@ jobs:
       - hmpps/wait_till_ready
       - run:
           command: |
-            ./gradlew integrationTest 
             cd src/test/kotlin 
             # Get list of classnames of tests that should run on this node
             CLASSNAMES=$(circleci tests glob "**/integration/**/*Test.kt" \
