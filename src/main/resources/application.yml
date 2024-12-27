@@ -157,8 +157,5 @@ aws:
   s3:
     ap:
       region: eu-west-2
-      bucket: ${AWS_S3_AP_BUCKET}
-      project: ${AWS_S3_AP_PROJECT}
-
-migrate:
-  experimental-mode: ${MIGRATE_EXPERIMENTAL_MODE:false}
+      bucket: ${AWS_S3_AP_BUCKET:dummy-bucket}
+      project: ${AWS_S3_AP_PROJECT:dummy-project}
