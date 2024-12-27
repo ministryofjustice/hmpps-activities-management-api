@@ -10,7 +10,6 @@ interface PurposefulActivityRepository {
   fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>?
 
   fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>?
-
 }
 
 @Repository
@@ -140,7 +139,6 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
          (SELECT start_date FROM date_range) AND
          (SELECT end_date FROM date_range);
   """
-
 
   @Transactional
   @Override
