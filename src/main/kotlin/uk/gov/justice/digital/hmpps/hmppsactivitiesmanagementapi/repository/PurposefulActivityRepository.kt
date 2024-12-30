@@ -25,7 +25,8 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     WITH date_range AS (
         SELECT
             (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7 + 7))::timestamp AS start_date,
-            ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
+            (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7))::timestamp AS mid_date,
+            (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + (:weekOffset - 1) * 7))::timestamp AS end_date
     )
     select
     act.activity_id as "activity.activity_id",
@@ -72,7 +73,12 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     att.pay_amount as "attendance.pay_amount",
     att.bonus_amount as "attendance.bonus_amount",
     att.pieces as "attendance.pieces",
-    att.issue_payment as "attendance.issue_payment"
+    att.issue_payment as "attendance.issue_payment",
+    CASE
+      WHEN si.session_date < (select mid_date from date_range) THEN 'Final'
+    ELSE
+      'Provisional'
+    END AS "record_status"
     from attendance att
     inner join scheduled_instance si on att.scheduled_instance_id = si.scheduled_instance_id
     	and (si.session_date || ' ' || si.start_time)::timestamp BETWEEN
@@ -90,7 +96,8 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
   WITH date_range AS (
           SELECT
               (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7 + 7))::timestamp AS start_date,
-              ((CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + COALESCE(:weekOffset, 1) * 7) + INTERVAL '23:59:59')::timestamp + INTERVAL '6 day') AS end_date
+              (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + :weekOffset * 7))::timestamp AS mid_date,
+              (CURRENT_DATE - (EXTRACT(DOW FROM CURRENT_DATE)::integer + (:weekOffset - 1) * 7))::timestamp AS end_date
       )
       SELECT
       a.appointment_id as "appointment.appointment_id",
@@ -127,7 +134,12 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
       aa.attended as "appointment_attendee.attended",
       aa.attendance_recorded_time as "appointment_attendee.attendance_recorded_time",
       aa.removed_time as "appointment_attendee.removed_time",
-      aa.is_deleted as "appointment_attendee.is_deleted"
+      aa.is_deleted as "appointment_attendee.is_deleted",
+      CASE
+        WHEN a.start_date < (select mid_date FROM date_range) THEN 'Final'
+      ELSE
+        'Provisional'
+      END AS "record_status"
       FROM appointment a
       inner join appointment_series apse on apse.appointment_series_id = a.appointment_series_id
       left outer join event_tier tier on tier.event_tier_id = a.appointment_tier_id
