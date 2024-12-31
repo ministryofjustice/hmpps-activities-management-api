@@ -84,7 +84,7 @@ data class SarAllocation(
 
 data class SarAttendanceSummary(
   @Schema(description = "The summary reason for a recorded prisoner attendance", example = "Attended")
-  val attendanceReasonCode: String,
+  val attendanceReason: String,
 
   @Schema(description = "A count of attendance for a given reason", example = "3")
   val count: Int,

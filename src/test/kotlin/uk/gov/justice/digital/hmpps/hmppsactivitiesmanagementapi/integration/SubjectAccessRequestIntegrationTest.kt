@@ -221,7 +221,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactly listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "Attended",
+        attendanceReason = "Attended",
         count = 1,
       ),
     )
@@ -234,11 +234,11 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "Other absence reason not listed",
+        attendanceReason = "Other absence reason not listed",
         count = 1,
       ),
       SarAttendanceSummary(
-        attendanceReasonCode = "Prisoner's schedule shows another activity",
+        attendanceReason = "Prisoner's schedule shows another activity",
         count = 1,
       ),
     )
@@ -251,7 +251,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "Other absence reason not listed",
+        attendanceReason = "Other absence reason not listed",
         count = 1,
       ),
     )
@@ -264,7 +264,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "Attended",
+        attendanceReason = "Attended",
         count = 1,
       ),
     )
@@ -277,11 +277,11 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "Suspended",
+        attendanceReason = "Suspended",
         count = 1,
       ),
       SarAttendanceSummary(
-        attendanceReasonCode = "Attended",
+        attendanceReason = "Attended",
         count = 2,
       ),
     )

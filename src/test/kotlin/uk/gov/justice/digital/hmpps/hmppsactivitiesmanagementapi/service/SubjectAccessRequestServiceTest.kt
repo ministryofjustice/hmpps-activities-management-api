@@ -73,7 +73,7 @@ class SubjectAccessRequestServiceTest {
   )
 
   private val modelSarAttendanceSummary = ModelSarAttendanceSummary(
-    attendanceReasonCode = "Attended",
+    attendanceReason = "Attended",
     count = 2,
   )
 
