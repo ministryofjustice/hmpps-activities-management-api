@@ -31,6 +31,8 @@ data class AllAttendance(
 
   val attendanceReasonCode: String?,
 
+  val attendanceReasonDescription: String?,
+
   val issuePayment: Boolean?,
 
   val prisonerNumber: String,

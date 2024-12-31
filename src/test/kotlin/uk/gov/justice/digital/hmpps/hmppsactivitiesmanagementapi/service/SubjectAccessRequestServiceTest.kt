@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
 import java.time.LocalDate
 import java.time.LocalTime
@@ -27,8 +28,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitin
 class SubjectAccessRequestServiceTest {
 
   private val repository: SarRepository = mock()
+  private val referenceCodeService: ReferenceCodeService = mock()
 
-  private val service = SubjectAccessRequestService(repository)
+  private val service = SubjectAccessRequestService(repository, referenceCodeService)
 
   private val sarAllocation = SarAllocation(
     allocationId = 1,
@@ -67,10 +69,11 @@ class SubjectAccessRequestServiceTest {
     extraInformation = "Prayer session",
     attended = "Yes",
     createdDate = TimeSource.yesterday(),
+    category = "Activity",
   )
 
   private val modelSarAttendanceSummary = ModelSarAttendanceSummary(
-    attendanceReasonCode = "ATTENDED",
+    attendanceReasonCode = "Attended",
     count = 2,
   )
 
@@ -84,6 +87,7 @@ class SubjectAccessRequestServiceTest {
     endTime = LocalTime.of(11, 45),
     status = "COMPLETED",
     attendanceReasonCode = "ATTENDED",
+    attendanceReasonDescription = "Attended",
     prisonerNumber = "A4745DZ",
     scheduledInstanceId = 12,
     summary = "QAtestingKitchenActivity",
@@ -105,6 +109,7 @@ class SubjectAccessRequestServiceTest {
     endTime = LocalTime.of(11, 45),
     status = "COMPLETED",
     attendanceReasonCode = "ATTENDED",
+    attendanceReasonDescription = "Attended",
     prisonerNumber = "A4745DZ",
     scheduledInstanceId = 12,
     summary = "QAtestingKitchenActivity",

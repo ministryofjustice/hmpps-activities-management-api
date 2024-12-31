@@ -1,12 +1,11 @@
 -- =================================================================================================
 -- Creates the allocations view necessary to support subject access requests on behalf of a prisoner
 -- =================================================================================================
-
 CREATE OR REPLACE VIEW v_sar_allocation AS
 SELECT act.prison_code AS prison_code,
        allo.allocation_id AS allocation_id,
        allo.prisoner_number AS prisoner_number,
-       allo.prisoner_status AS prisoner_status,
+       initcap(replace(allo.prisoner_status, '_', ' ')) AS prisoner_status,
        allo.start_date AS start_date,
        allo.end_date AS end_date,
        act.activity_id AS activity_id,

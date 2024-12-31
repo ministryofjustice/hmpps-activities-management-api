@@ -431,6 +431,7 @@ fun attendanceList(): List<AllAttendance> = listOf(
     endTime = LocalTime.of(11, 0),
     status = "WAITING",
     attendanceReasonCode = null,
+    attendanceReasonDescription = null,
     issuePayment = null,
     prisonerNumber = "A11111A",
     scheduledInstanceId = 1,

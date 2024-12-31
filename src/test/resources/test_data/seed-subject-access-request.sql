@@ -32,10 +32,10 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (3, 2, '111222', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by)
-values (2, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-10 09:00:00', 'SEED USER');
+values (2, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'PRISON_STAFF', 'APPROVED', '2022-10-10 09:00:00', 'SEED USER');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, status_updated_time, comments)
-values (3, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'Prison staff', 'APPROVED', '2022-10-12 09:00:00', 'SEED USER', '2022-11-12 09:00:00', 'added to the waiting list');
+values (3, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'PRISON_STAFF', 'APPROVED', '2022-10-12 09:00:00', 'SEED USER', '2022-11-12 09:00:00', 'added to the waiting list');
 
 insert into appointment_series_schedule (appointment_series_schedule_id, frequency, number_of_appointments)
 VALUES (1, 'DAILY', 3);
@@ -47,12 +47,12 @@ insert into appointment_series (appointment_series_id, appointment_type, prison_
 VALUES (2, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, (now()::date - 2)::timestamp, 'TEST.USER');
 
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, appointment_series_schedule_id, created_time, created_by)
-VALUES (3, 'GROUP', 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, (now()::date - 2)::timestamp, 'TEST.USER');
+VALUES (3, 'GROUP', 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-12', '09:00:00', '10:30:00', 1, (now()::date - 2)::timestamp, 'TEST.USER');
 
 insert into appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (1, 1, 1, 'PVI', 'EDUC', 1, 123, false, '2022-10-12', '09:30:00', '11:45:00', '2022-10-11 09:00:00', 'TEST.USER'),
         (2, 2, 2, 'PVI', 'EDUC', 1, 123, false, '2022-10-13', '14:00:00', '15:30:00', '2022-10-08 09:00:00', 'TEST.USER'),
-        (3, 3, 3, 'PVI', 'EDUC', 1, 123, false, '2022-10-14', '06:00:00', '08:30:00', '2022-10-09 09:00:00', 'TEST.USER');
+        (3, 3, 3, 'PVI', 'NOT_KNOWN', 1, 123, false, '2022-10-14', '06:00:00', '08:30:00', '2022-10-09 09:00:00', 'TEST.USER');
 
 insert into appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id, attended, attendance_recorded_time, attendance_recorded_by)
 VALUES  (1, 1, '111222', 1, null, null, null),
@@ -83,5 +83,5 @@ values (9, 14, 'A4743DZ', 9, null, '2023-07-21 16:55:34.057591', 'MR BLOGS', 'CO
        (19, 16, 'A4743DZ', 7, null, '2023-07-21 16:58:21.231139', 'MR BLOGS', 'COMPLETED', null, null, null),
        (60, 18, 'A4745DZ', 9, null, '2023-07-24 17:51:29.304927', 'MR BLOGS', 'COMPLETED', null, null, null),
        (74, 19, 'A4745DZ', 9, null, null, null, 'WAITING', null, null, null),
-       (26, 71, 'G9372GQ', 9, null, '2023-07-21 15:51:39.824964', 'MR BLOGS', 'COMPLETED', null, null, null),
-       (30, 72, 'G9372GQ', 8, null, '2023-07-21 17:37:52.403630', 'MR BLOGS', 'COMPLETED', null, null, null);
+       (26, 71, 'G9372GQ', 5, null, '2023-07-21 15:51:39.824964', 'MR BLOGS', 'COMPLETED', null, null, null),
+       (30, 72, 'G9372GQ', 6, null, '2023-07-21 17:37:52.403630', 'MR BLOGS', 'COMPLETED', null, null, null);
