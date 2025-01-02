@@ -29,6 +29,7 @@ jobs:
     resource_class: medium+
     environment:
       AWS_S3_AP_BUCKET: dummy-bucket
+      AWS_S3_AP_PROJECT: dummy-project
       _JAVA_OPTIONS: -Xmx2048m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - checkout
