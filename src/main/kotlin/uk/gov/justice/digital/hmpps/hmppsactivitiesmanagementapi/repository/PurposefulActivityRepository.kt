@@ -92,6 +92,22 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
   
   """
 
+  private val activitiesQueryHeaders = listOf(
+    "activity.activity_id", "activity.prison_code", "activity.activity_category_id", "activity_category.code",
+    "activity_category.name", "activity.activity_tier_id", "activity_tier.code", "activity_tier.description",
+    "activity.attendance_required", "activity.in_cell", "activity.piece_work", "activity.outside_work",
+    "activity.summary", "activity.description", "activity.start_date", "activity.end_date",
+    "activity.created_time", "activity.updated_time", "activity.on_wing", "activity.off_wing", "activity.paid",
+    "activity_schedule.activity_schedule_id", "activity_schedule.description", "activity_schedule.start_date",
+    "activity_schedule.end_date", "activity_schedule.updated_time", "scheduled_instance.scheduled_instance_id",
+    "scheduled_instance.session_date", "scheduled_instance.start_time", "scheduled_instance.end_time",
+    "scheduled_instance.cancelled", "scheduled_instance.cancelled_time", "scheduled_instance.cancelled_reason",
+    "attendance.attendance_id", "attendance.prisoner_number", "attendance.attendance_reason_id",
+    "attendance_reason.code", "attendance_reason.description", "attendance_reason.attended",
+    "attendance.recorded_time", "attendance.status", "attendance.pay_amount", "attendance.bonus_amount",
+    "attendance.pieces", "attendance.issue_payment", "record_status",
+  ).toTypedArray<Any?>()
+
   private val appointmentsQuery = """
   WITH date_range AS (
           SELECT
@@ -152,23 +168,40 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
          (SELECT end_date FROM date_range);
   """
 
+  private val appointmentQueryHeaders = listOf(
+    "appointment.appointment_id", "appointment.appointment_series_id", "appointment_series.appointment_type",
+    "appointment.sequence_number", "appointment_set.appointment_set_id", "appointment.prison_code",
+    "appointment.category_code", "appointment.custom_name", "appointment.appointment_tier_id",
+    "appointment_tier.description", "appointment.appointment_organiser_id", "event_organiser.event_organiser_description",
+    "appointment.internal_location_id", "appointment.custom_location", "appointment.in_cell", "appointment.on_wing",
+    "appointment.off_wing", "appointment.start_date", "appointment.start_time", "appointment.end_time",
+    "appointment.created_time", "appointment.updated_time", "appointment.cancelled_time",
+    "appointment.cancellation_reason_id", "appointment_cancellation_reason.description",
+    "appointment_cancellation_reason.is_delete", "appointment.is_deleted", "appointment_attendee.appointment_attendee_id",
+    "appointment_attendee.prisoner_number", "appointment_attendee.booking_id", "appointment_attendee.added_time",
+    "appointment_attendee.attended", "appointment_attendee.attendance_recorded_time", "appointment_attendee.removed_time",
+    "appointment_attendee.is_deleted", "record_status",
+  ).toTypedArray<Any?>()
+
   @Transactional
   @Override
   override fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>? {
-    val results = entityManager.createNativeQuery(
-      activitiesQuery.replace(":weekOffset", weekOffset.toString()),
-    ).resultList
+    val query = entityManager.createNativeQuery(activitiesQuery)
+    query.setParameter("weekOffset", weekOffset)
 
-    return results
+    val result = query.resultList
+    result.add(0, activitiesQueryHeaders)
+    return result
   }
 
   @Transactional
   @Override
   override fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>? {
-    val results = entityManager.createNativeQuery(
-      appointmentsQuery.replace(":weekOffset", weekOffset.toString()),
-    ).resultList
+    val query = entityManager.createNativeQuery(appointmentsQuery)
+    query.setParameter("weekOffset", weekOffset)
 
-    return results
+    val result = query.resultList
+    result.add(0, appointmentQueryHeaders)
+    return result
   }
 }

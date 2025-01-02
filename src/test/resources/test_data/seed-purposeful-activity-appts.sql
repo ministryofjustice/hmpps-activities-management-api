@@ -19,7 +19,7 @@ VALUES (1, 'GROUP', 'RSI', 'EDUC', 1, 123, false, (SELECT earliest_date FROM tem
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
 VALUES  (1, 1, 1, 'RSI', 'EDUC', 1, 123, false, (SELECT earliest_date FROM temp_earliest_date) + INTERVAL '1 day', '09:00', '10:30', now()::timestamp, 'TEST.USER'),
         (2, 1, 2, 'RSI', 'EDUC', 1, 123, false, (SELECT earliest_date FROM temp_earliest_date) + INTERVAL '2 day', '09:00', '10:30', now()::timestamp, 'TEST.USER'),
-        (3, 1, 3, 'RSI', 'EDUC', 1, 123, false, (SELECT earliest_date FROM temp_earliest_date) + INTERVAL '3 day', '09:00', '10:30', now()::timestamp, 'TEST.USER');
+        (3, 1, 3, 'RSI', 'EDUC', 1, 123, false, (SELECT earliest_date FROM temp_earliest_date) + INTERVAL '9 day', '09:00', '10:30', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (1, 1, 'A1234BC', 1),

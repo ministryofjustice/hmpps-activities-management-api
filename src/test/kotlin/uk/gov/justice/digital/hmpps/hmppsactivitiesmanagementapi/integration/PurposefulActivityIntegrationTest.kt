@@ -58,7 +58,37 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
       val bufferedReader: BufferedReader = file.bufferedReader()
       val csvContent = bufferedReader.use { it.readText() }
 
-      println(csvContent)
+      assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
+
+      val expectedHeader = "activity.activity_id,activity.prison_code,activity.activity_category_id"
+      assert(csvContent.replace("\"", "").startsWith(expectedHeader)) { "CSV header does not match expected format" }
+
+      val rows = csvContent.split("\n")
+      assert(rows.size == 3) { "Output of this test should produce 3 rows" }
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-purposeful-activity-appts.sql",
+  )
+  @Test
+  fun `Purposeful Activity Report appointments report is uploaded to s3, downloaded again and verified`() {
+    val fileKey = purposefulActivityService.executeAppointmentsReport(1)
+
+    runBlocking {
+      val file = s3Service.getFileFromS3(fileKey, "appointments", purposefulActivityService.awsApS3BucketName)
+
+      val bufferedReader: BufferedReader = file.bufferedReader()
+      val csvContent = bufferedReader.use { it.readText() }
+
+      assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
+
+      // Example of checking specific content
+      val expectedHeader = "appointment.appointment_id,appointment.appointment_series_id,appointment_series.appointment_type,appointment.sequence_number"
+      assert(csvContent.replace("\"", "").startsWith(expectedHeader)) { "CSV header does not match expected format" }
+
+      val rows = csvContent.split("\n")
+      assert(rows.size == 10) { "Output of this test should produce 3 rows" }
     }
   }
 
@@ -73,13 +103,13 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     val activityData = purposefulActivityRepo.getPurposefulActivityActivitiesReport(1)
     assertThat(activityData).isNotNull
     assertThat(activityData).isNotEmpty
-    assertThat(activityData).hasSize(2)
+    assertThat(activityData).hasSize(3)
 
     assertThat(activityData).first().isNotNull
 
     // Assuming activityData has two arrays of objects
-    val purposefulActivityRow1 = activityData?.first() as Array<*>
-    val purposefulActivityRow2 = activityData[1] as Array<*>
+    val purposefulActivityRow1 = activityData?.get(1) as Array<*>
+    val purposefulActivityRow2 = activityData[2] as Array<*>
 
     // Check some of the data is as expected for first attendance
     // These index numbers are going to be horrendous to maintain as the report changes

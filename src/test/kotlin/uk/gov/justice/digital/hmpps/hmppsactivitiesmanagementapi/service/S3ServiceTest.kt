@@ -4,8 +4,10 @@ import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.PutObjectResponse
 import aws.sdk.kotlin.services.s3.model.S3Exception
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -22,7 +24,13 @@ class S3ServiceTest {
 
     coEvery { amazonS3.putObject(any()) } returns putObjectResponse
 
-    service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName)
+    val filePath = service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName)
+
+    val expectedPathPrefix = "landing/dummy project/data/database_name=activities_reports/table_name=testTable/extraction_timestamp="
+
+    assertTrue(filePath.startsWith(expectedPathPrefix), "FilePath should start with $expectedPathPrefix")
+
+    coVerify { amazonS3.putObject(any()) }
   }
 
   @Test

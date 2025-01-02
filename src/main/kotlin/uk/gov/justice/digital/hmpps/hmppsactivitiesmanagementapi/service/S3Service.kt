@@ -76,7 +76,7 @@ class S3Service(
 
     // This function could ideally load the file into memory as saving to disk may not be necessary
     // If doing this though, care needs to be taken if the target file is of significant size
-    val myFile = File("activity-pa-test.csv")
+    val myFile = File("$tableName-pa-test.csv")
 
     runBlocking {
       s3ClientAnalyticalPlatform.getObject(request, {

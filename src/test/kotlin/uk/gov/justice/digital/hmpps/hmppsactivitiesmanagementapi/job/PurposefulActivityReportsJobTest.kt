@@ -29,7 +29,7 @@ class PurposefulActivityReportsJobTest : JobsTestBase() {
     }
 
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
-    // verify(service).create()
+    verify(purposefulActivityService).executeAndUploadAllPurposefulActivityReports()
 
     assertThat(jobDefinitionCaptor.firstValue.jobType).isEqualTo(PURPOSEFUL_ACTIVITY_REPORTS)
   }

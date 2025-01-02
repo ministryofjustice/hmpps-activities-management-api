@@ -43,7 +43,7 @@ class PurposefulActivityService(
   fun executeActivitiesReport(weekOffset: Int): String {
     val activityData = purposefulActivityRepository.getPurposefulActivityActivitiesReport(weekOffset)
 
-    if (activityData.isNullOrEmpty()) {
+    if (activityData.isNullOrEmpty() || activityData.size <= 1) {
       throw RuntimeException("Purposeful Activity Report data failed to find any relevant activity data")
     }
 
@@ -66,7 +66,7 @@ class PurposefulActivityService(
   ): String {
     val appointmentData = purposefulActivityRepository.getPurposefulActivityAppointmentsReport(weekOffset)
 
-    if (appointmentData.isNullOrEmpty()) {
+    if (appointmentData.isNullOrEmpty() || appointmentData.size <= 1) {
       throw RuntimeException("Purposeful Activity Report data failed to find any relevant appointment data")
     }
 
