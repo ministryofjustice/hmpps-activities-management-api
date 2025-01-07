@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
@@ -72,7 +73,7 @@ data class SarAllocation(
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
     allocation.prisonCode,
-    allocation.prisonerStatus,
+    allocation.prisonerStatus.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
     allocation.startDate,
     allocation.endDate,
     allocation.activityId,
@@ -127,8 +128,8 @@ data class SarWaitingList(
     waitingList.prisonCode,
     waitingList.activitySummary,
     waitingList.applicationDate,
-    waitingList.originator,
-    waitingList.status,
+    waitingList.originator.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
+    waitingList.status.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
     waitingList.statusDate,
     waitingList.comments,
     waitingList.createdDate,
