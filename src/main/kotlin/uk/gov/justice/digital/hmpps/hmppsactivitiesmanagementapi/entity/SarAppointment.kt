@@ -22,4 +22,7 @@ data class SarAppointment(
   val extraInformation: String?,
   val attended: String,
   val createdDate: LocalDate,
+
+  @Transient
+  var category: String,
 )

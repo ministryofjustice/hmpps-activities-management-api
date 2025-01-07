@@ -1,11 +1,13 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAllocation
@@ -19,6 +21,15 @@ import java.time.LocalTime
 
 class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
+  @BeforeEach
+  fun `init`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
+      listOf(
+        appointmentCategoryReferenceCode("EDUC", "Education"),
+      ),
+    )
+  }
+
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
   fun `should return single allocation for a same day date boundary subject access request`() {
@@ -28,7 +39,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAllocation(
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        prisonerStatus = "ENDED",
+        prisonerStatus = "Ended",
         startDate = LocalDate.of(2020, 1, 2),
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
@@ -48,7 +59,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAllocation(
         allocationId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        prisonerStatus = "ENDED",
+        prisonerStatus = "Ended",
         startDate = LocalDate.of(2020, 1, 2),
         endDate = LocalDate.of(2020, 12, 1),
         activityId = 1,
@@ -59,7 +70,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAllocation(
         allocationId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        prisonerStatus = "ACTIVE",
+        prisonerStatus = "Active",
         startDate = TimeSource.today(),
         endDate = null,
         activityId = 1,
@@ -82,7 +93,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "In progress",
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
@@ -102,7 +113,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "In progress",
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
@@ -122,7 +133,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "In progress",
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
@@ -133,7 +144,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "Approved",
         statusDate = LocalDate.of(2022, 11, 12),
         comments = "added to the waiting list",
         createdDate = LocalDate.of(2022, 10, 12),
@@ -143,14 +154,14 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
-  fun `should return 3 appointments for a subject access request (Attended, Not attended and Unknown Attendance)`() {
+  fun `should return 3 appointments for a subject access request (Attended, Not attended and Unknown Attendance with one unknown category)`() {
     val response = webTestClient.getSarContent("111222", LocalDate.of(2022, 10, 8), LocalDate.of(2024, 10, 10))
 
     response.content.appointments containsExactlyInAnyOrder listOf(
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        categoryCode = "EDUC",
+        category = "Education",
         startDate = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),
@@ -161,7 +172,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAppointment(
         appointmentId = 2,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        categoryCode = "EDUC",
+        category = "Education",
         startDate = LocalDate.of(2022, 10, 13),
         startTime = LocalTime.of(14, 0),
         endTime = LocalTime.of(15, 30),
@@ -172,7 +183,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAppointment(
         appointmentId = 3,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        categoryCode = "EDUC",
+        category = "Unknown category",
         startDate = LocalDate.of(2022, 10, 14),
         startTime = LocalTime.of(6, 0),
         endTime = LocalTime.of(8, 30),
@@ -192,7 +203,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        categoryCode = "EDUC",
+        category = "Education",
         startDate = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),
@@ -210,7 +221,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactly listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "ATTENDED",
+        attendanceReason = "Attended",
         count = 1,
       ),
     )
@@ -223,11 +234,11 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "ATTENDED",
+        attendanceReason = "Other absence reason not listed",
         count = 1,
       ),
       SarAttendanceSummary(
-        attendanceReasonCode = "CANCELLED",
+        attendanceReason = "Prisoner's schedule shows another activity",
         count = 1,
       ),
     )
@@ -240,7 +251,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "CANCELLED",
+        attendanceReason = "Other absence reason not listed",
         count = 1,
       ),
     )
@@ -253,7 +264,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "ATTENDED",
+        attendanceReason = "Attended",
         count = 1,
       ),
     )
@@ -266,11 +277,11 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
     response.content.attendanceSummary containsExactlyInAnyOrder listOf(
       SarAttendanceSummary(
-        attendanceReasonCode = "SUSPENDED",
+        attendanceReason = "Suspended",
         count = 1,
       ),
       SarAttendanceSummary(
-        attendanceReasonCode = "ATTENDED",
+        attendanceReason = "Attended",
         count = 2,
       ),
     )
@@ -285,7 +296,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAllocation(
         allocationId = 3,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        prisonerStatus = "ACTIVE",
+        prisonerStatus = "Suspended with pay",
         startDate = LocalDate.of(2022, 10, 10),
         endDate = null,
         activityId = 2,
@@ -302,7 +313,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "In progress",
         statusDate = null,
         comments = null,
         createdDate = LocalDate.of(2022, 10, 10),
@@ -313,7 +324,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
         activitySummary = "Activity Summary WL",
         applicationDate = LocalDate.of(2023, 8, 8),
         originator = "Prison staff",
-        status = "APPROVED",
+        status = "Approved",
         statusDate = LocalDate.of(2022, 11, 12),
         comments = "added to the waiting list",
         createdDate = LocalDate.of(2022, 10, 12),
@@ -324,7 +335,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       SarAppointment(
         appointmentId = 1,
         prisonCode = PENTONVILLE_PRISON_CODE,
-        categoryCode = "EDUC",
+        category = "Education",
         startDate = LocalDate.of(2022, 10, 12),
         startTime = LocalTime.of(9, 30),
         endTime = LocalTime.of(11, 45),

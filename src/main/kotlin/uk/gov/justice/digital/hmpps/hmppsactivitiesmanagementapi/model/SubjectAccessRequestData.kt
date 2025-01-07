@@ -4,10 +4,16 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Locale
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAllocation as EntitySarAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarAppointment as EntitySarAppointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SarWaitingList as EntitySarWaitingList
 
+@Schema(
+  description = """
+    Describes Subject Access Request Data
+  """,
+)
 data class SubjectAccessRequestData(
   @Schema(description = "The prisoner number (Nomis ID)", example = "A1234AA")
   val prisonerNumber: String,
@@ -40,7 +46,7 @@ data class SarAllocation(
   @Schema(description = "The prison code where this activity takes place", example = "PVI")
   val prisonCode: String,
 
-  @Schema(description = "The status of the allocation", example = "ACTIVE")
+  @Schema(description = "The status of the allocation", example = "Active")
   val prisonerStatus: String,
 
   @Schema(description = "The start date of the allocation", example = "2022-01-01")
@@ -67,7 +73,7 @@ data class SarAllocation(
   constructor(allocation: EntitySarAllocation) : this(
     allocation.allocationId,
     allocation.prisonCode,
-    allocation.prisonerStatus,
+    allocation.prisonerStatus.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
     allocation.startDate,
     allocation.endDate,
     allocation.activityId,
@@ -78,8 +84,8 @@ data class SarAllocation(
 }
 
 data class SarAttendanceSummary(
-  @Schema(description = "The summary reason for a recorded prisoner attendance", example = "ATTENDED")
-  val attendanceReasonCode: String,
+  @Schema(description = "The summary reason for a recorded prisoner attendance", example = "Attended")
+  val attendanceReason: String,
 
   @Schema(description = "A count of attendance for a given reason", example = "3")
   val count: Int,
@@ -102,7 +108,7 @@ data class SarWaitingList(
   @Schema(description = "The identity of the requester of the activity", example = "Prison staff")
   val originator: String,
 
-  @Schema(description = "The status of the waiting list entry", example = "ACTIVE")
+  @Schema(description = "The status of the waiting list entry", example = "Active")
   val status: String,
 
   @Schema(description = "The date the waiting list entry was last updated, can be null", example = "2022-01-01")
@@ -122,8 +128,8 @@ data class SarWaitingList(
     waitingList.prisonCode,
     waitingList.activitySummary,
     waitingList.applicationDate,
-    waitingList.originator,
-    waitingList.status,
+    waitingList.originator.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
+    waitingList.status.lowercase().replaceFirstChar { it.titlecase(Locale.getDefault()) },
     waitingList.statusDate,
     waitingList.comments,
     waitingList.createdDate,
@@ -137,8 +143,8 @@ data class SarAppointment(
   @Schema(description = "The prison code where this appointment takes place", example = "PVI")
   val prisonCode: String,
 
-  @Schema(description = "The category code of the appointment", example = "CHAP")
-  val categoryCode: String,
+  @Schema(description = "The category of the appointment", example = "Education")
+  val category: String,
 
   @Schema(description = "The start date of the appointment", example = "2022-01-01")
   @JsonFormat(pattern = "yyyy-MM-dd")
@@ -165,7 +171,7 @@ data class SarAppointment(
   constructor(appointment: EntitySarAppointment) : this(
     appointment.appointmentId,
     appointment.prisonCode,
-    appointment.categoryCode,
+    appointment.category,
     appointment.startDate,
     appointment.startTime,
     appointment.endTime,
