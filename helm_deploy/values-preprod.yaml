@@ -41,7 +41,7 @@ generic-prometheus-alerts:
 
 cron:
   fixZeroPayDeallocate: "0 22 07 01 *"
-  fixZeroPayReallocate: "0 5 08 02 *"
+  fixZeroPayReallocate: "0 5 08 01 *"
 
   datafix:
     prisonCode: "WII"
