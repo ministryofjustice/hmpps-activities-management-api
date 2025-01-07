@@ -29,10 +29,10 @@ insert into allocation(allocation_id, activity_schedule_id, prisoner_number, boo
 values (2, 1, '111111', 10001, 1, current_date, null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
-values (3, 2, '111222', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'ACTIVE');
+values (3, 2, '111222', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MRS BLOGS', null, null, null, null, null, null, 'SUSPENDED_WITH_PAY');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by)
-values (2, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'PRISON_STAFF', 'APPROVED', '2022-10-10 09:00:00', 'SEED USER');
+values (2, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'PRISON_STAFF', 'IN_PROGRESS', '2022-10-10 09:00:00', 'SEED USER');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, status_updated_time, comments)
 values (3, 'PVI', '111222', 10001, '2023-08-08', 2, 1, 'PRISON_STAFF', 'APPROVED', '2022-10-12 09:00:00', 'SEED USER', '2022-11-12 09:00:00', 'added to the waiting list');
