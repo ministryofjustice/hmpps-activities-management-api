@@ -171,7 +171,7 @@ class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
       ),
       SarAppointment(
         appointmentId = 2,
-        prisonCode = "PVI",
+        prisonCode = PENTONVILLE_PRISON_CODE,
         category = "Education",
         startDate = LocalDate.of(2022, 10, 13),
         startTime = LocalTime.of(14, 0),
