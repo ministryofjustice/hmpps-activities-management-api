@@ -2,7 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.model.GetObjectRequest
+import aws.sdk.kotlin.services.s3.model.ObjectCannedAcl
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
+import aws.sdk.kotlin.services.s3.model.ServerSideEncryption
 import aws.smithy.kotlin.runtime.content.ByteStream
 import aws.smithy.kotlin.runtime.content.writeToFile
 import kotlinx.coroutines.runBlocking
@@ -54,6 +56,8 @@ class S3Service(
       bucket = bucketName
       key = filePath
       body = ByteStream.fromBytes(report)
+      serverSideEncryption = ServerSideEncryption.Aes256
+      acl = ObjectCannedAcl.BucketOwnerFullControl
     }
 
     s3ClientAnalyticalPlatform.putObject(request)
