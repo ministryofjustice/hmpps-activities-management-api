@@ -25,6 +25,8 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.health.JwtAuthHelper
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.LocalStackContainer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.PostgresContainer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
@@ -76,6 +78,7 @@ abstract class IntegrationTestBase {
     internal val incentivesApiMockServer = IncentivesApiMockServer()
     internal val manageAdjudicationsApiMockServer = ManageAdjudicationsApiMockServer()
     internal val db = PostgresContainer.instance
+    internal val localStackContainer = LocalStackContainer.instance
 
     @JvmStatic
     @DynamicPropertySource
@@ -85,6 +88,7 @@ abstract class IntegrationTestBase {
         registry.add("spring.datasource.username", db::getUsername)
         registry.add("spring.datasource.password", db::getPassword)
       }
+      localStackContainer?.also { setLocalStackProperties(it, registry) }
     }
 
     @BeforeAll

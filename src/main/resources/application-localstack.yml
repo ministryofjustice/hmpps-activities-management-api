@@ -107,3 +107,9 @@ feature:
     activities:
       prisoner:
         allocation-amended: true
+
+aws:
+  s3:
+    ap:
+      bucket: default-localstack-bucket
+      project: default-localstack-project
