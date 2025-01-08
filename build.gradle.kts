@@ -45,6 +45,14 @@ dependencies {
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
+  // AWS
+  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
+    version {
+      strictly("5.0.0-alpha.14")
+    }
+  }
+  implementation("aws.sdk.kotlin:s3:1.2.46")
+
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
 
@@ -68,6 +76,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
+  testImplementation("io.mockk:mockk:1.12.0")
 }
 
 kotlin {
@@ -118,6 +127,16 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("listrepos") {
+  doLast {
+    println("Repositories:")
+    project.repositories.map { it as MavenArtifactRepository }
+      .forEach {
+        println("Name: ${it.name}; url: ${it.url}")
+      }
+  }
 }
 
 tasks.register("copyPreCommitHook", Copy::class) {

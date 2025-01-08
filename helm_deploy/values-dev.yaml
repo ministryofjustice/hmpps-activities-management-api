@@ -26,6 +26,8 @@ generic-service:
     ACTIVITIES_LIVE: RSI,LPI,WDI,IWI,FKI,FMI,WMI,GTI,LTI,BCI,LEI,FNI,WII,RCI,HII,FSI,DMI,MTI,RNI,SLI,MDI,EEI,EYI
     APPOINTMENTS_LIVE: RSI,LPI,WDI,IWI,FKI,FMI,WMI,GTI,LTI,BCI,LEI,FNI,WII,RCI,HII,FSI,DMI,MTI,RNI,SLI,MDI,EEI,EYI
     PRISONS_LIVE: RSI,LPI,WDI,IWI,FKI,FMI,WMI,GTI,LTI,BCI,LEI,FNI,RNI
+    AWS_S3_AP_BUCKET: moj-reg-dev
+    AWS_S3_AP_PROJECT: hmpps-activities-management-dev
 
   resources:
     requests:
@@ -48,3 +50,4 @@ cron:
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"
   attendanceRecords: "15 7 * * *"
+  purposefulActivityReports: "30 8 * * 2"

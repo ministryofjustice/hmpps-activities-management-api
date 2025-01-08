@@ -56,12 +56,14 @@ jobs:
       name: hmpps/java_localstack_postgres
       jdk_tag: << pipeline.parameters.java-version >>
       localstack_tag: << pipeline.parameters.localstack-version >>
-      services: "sns,sqs"
+      services: "sns,sqs,s3"
       postgres_tag: << pipeline.parameters.postgres-version >>
       postgres_username: "activities"
       postgres_password: "activities"
     resource_class: large
     environment:
+      AWS_S3_AP_BUCKET: defaultbucket
+      AWS_S3_AP_PROJECT: defaultproject
       _JAVA_OPTIONS: -Xmx2048m -XX:ParallelGCThreads=2 -XX:ConcGCThreads=2 -Djava.util.concurrent.ForkJoinPool.common.parallelism=2 -Dorg.gradle.daemon=false -Dkotlin.compiler.execution.strategy=in-process
     steps:
       - checkout
@@ -73,7 +75,7 @@ jobs:
       - hmpps/wait_till_ready
       - run:
           command: |
-            cd src/test/kotlin
+            cd src/test/kotlin 
             # Get list of classnames of tests that should run on this node
             CLASSNAMES=$(circleci tests glob "**/integration/**/*Test.kt" \
               | cut -c 1- | sed 's@/@.@g' \
