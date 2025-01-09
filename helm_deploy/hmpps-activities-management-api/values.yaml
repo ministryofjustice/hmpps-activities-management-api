@@ -129,6 +129,7 @@ cron:
   attendanceRecords: "0 4 * * *"
   fixZeroPayDeallocate: "0 22 1 8 *"
   fixZeroPayReallocate: "0 5 2 8 *"
+  purposefulActivityReports: "30 1 * * 2"
 
   datafix:
     prisonCode: "xxx"

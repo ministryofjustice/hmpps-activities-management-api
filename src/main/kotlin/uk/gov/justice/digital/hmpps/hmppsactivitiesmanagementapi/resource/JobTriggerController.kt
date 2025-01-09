@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import kotlinx.coroutines.runBlocking
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PostMapping
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateSched
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PurposefulActivityReportsJob
 import java.time.Clock
 import java.time.LocalDate
 
@@ -33,6 +35,7 @@ class JobTriggerController(
   private val appointmentMetricsJob: AppointmentMetricsJob,
   private val fixZeroPayJob: FixZeroPayJob,
   private val clock: Clock,
+  private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -74,7 +77,7 @@ class JobTriggerController(
     summary = "Trigger the job to manage allocations",
     description = """
         One or more operations to trigger for managing allocations.
-        
+
         Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
     """,
   )
@@ -149,5 +152,32 @@ class JobTriggerController(
     fixZeroPayJob.execute(deallocate = deallocate, makeUnpaid = makeUnpaid, allocate = allocate, activityScheduleId = activityScheduleId, prisonCode = prisonCode)
 
     return "Fix zero pay job triggered"
+  }
+
+  @PostMapping(value = ["/purposeful-activity-reports"])
+  @Operation(
+    summary = "Trigger the job to generate purposeful activity reports and upload to s3",
+    description = """
+      Generates 3 csv reports which are uploaded to an s3 bucket for prison performance reporting team to process for
+      purposeful activity generation purposes and to display on the prison regime dashboard in the performance hub.
+
+      Report 1) Details of attended purposeful-activity activities
+      Report 2) Details of attended purposeful-activity appointments
+      Report 3) Prison rollout table
+
+      Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.
+      """,
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerPurposefulActivityReportsJob(
+    @RequestParam(value = "weekOffset", required = false, defaultValue = "1")
+    @Parameter(description = "Report is calculated for the week up to the prior saturday. increase offset to generate reports for weeks prior to that")
+    weekOffset: Int,
+  ): String {
+    runBlocking {
+      purposefulActivityReportsJob.execute(weekOffset)
+    }
+    return "Purposeful Activity Reports job triggered"
   }
 }

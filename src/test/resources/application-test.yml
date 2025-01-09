@@ -50,6 +50,9 @@ applications:
 hmpps:
   auth:
     url: http://localhost:8090/auth
+  s3:
+    localstackUrl: http://localhost:4566
+    region: eu-west-2
 
 prison:
   api:
@@ -84,3 +87,9 @@ migrate:
   activities-live: PVI,RSI,MDI,IWI,FMI
   appointments-live: PVI,RSI,MDI,IWI,FMI
   prisons-live: PVI,RSI,MDI
+
+aws:
+  s3:
+    ap:
+      bucket: defaultbucket
+      project: dummy-project

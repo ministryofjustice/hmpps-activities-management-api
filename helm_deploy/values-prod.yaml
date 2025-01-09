@@ -19,9 +19,11 @@ generic-service:
     FEATURE_EVENTS_SNS_ENABLED: true
     FEATURE_NON_ASSOCIATIONS_ENABLED: true
     SENTRY_ENVIRONMENT: production
-    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI
-    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI
+    ACTIVITIES_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI,MDI,PDI,EYI,LHI
+    APPOINTMENTS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,RCI,FSI,DMI,WII,HII,RNI,MDI,PDI,EYI,LHI
     PRISONS_LIVE: RSI,LPI,WDI,FMI,FKI,IWI,WMI,GTI,LTI,BCI,FNI,MTI,LEI,FSI,DMI,HII,WII,RCI,RNI
+    AWS_S3_AP_BUCKET: moj-reg-prod
+    AWS_S3_AP_PROJECT: hmpps-activities-management-prod
 
   resources:
     requests:
@@ -51,9 +53,9 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service
 
 cron:
-  fixZeroPayDeallocate: "0 22 18 12 *"
-  fixZeroPayReallocate: "0 5 19 12 *"
+  fixZeroPayDeallocate: "0 22 08 01 *"
+  fixZeroPayReallocate: "0 5 09 01 *"
 
   datafix:
     prisonCode: "WII"
-    activityScheduleId: "3705"
+    activityScheduleId: "3714"

@@ -1,9 +1,9 @@
-import org.gradle.kotlin.dsl.exclude
+
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.2"
   kotlin("plugin.spring") version "2.1.0"
   kotlin("plugin.jpa") version "2.1.0"
   jacoco
@@ -24,7 +24,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.1")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.2.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.2.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
 
@@ -40,10 +40,18 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.10.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.11.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+
+  // AWS
+  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
+    version {
+      strictly("5.0.0-alpha.14")
+    }
+  }
+  implementation("aws.sdk.kotlin:s3:1.2.46")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.12.0")
@@ -68,6 +76,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
+  testImplementation("io.mockk:mockk:1.12.0")
 }
 
 kotlin {
@@ -118,6 +127,16 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
   modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.model")
   configOptions.set(configValues)
   globalProperties.set(mapOf("models" to ""))
+}
+
+tasks.register("listrepos") {
+  doLast {
+    println("Repositories:")
+    project.repositories.map { it as MavenArtifactRepository }
+      .forEach {
+        println("Name: ${it.name}; url: ${it.url}")
+      }
+  }
 }
 
 tasks.register("copyPreCommitHook", Copy::class) {
