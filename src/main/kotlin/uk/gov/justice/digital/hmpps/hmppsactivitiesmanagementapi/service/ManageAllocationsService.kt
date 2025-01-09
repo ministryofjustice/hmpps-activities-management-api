@@ -59,13 +59,13 @@ class ManageAllocationsService(
   }
 
   fun suspendAllocationsDueToBeSuspended(prisonCode: String) {
-    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.ACTIVE)
+    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.ACTIVE))
       .filter { it.isCurrentlySuspended() }
       .suspend()
   }
 
   fun unsuspendAllocationsDueToBeUnsuspended(prisonCode: String) {
-    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, PrisonerStatus.SUSPENDED)
+    val suspended = allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY))
       .filterNot { it.isCurrentlySuspended() }
       .unsuspend()
   }
@@ -158,11 +158,11 @@ class ManageAllocationsService(
       .forEach { prison ->
         log.info("Checking for expired allocations at ${prison.prisonCode}.")
 
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING).ifNotEmpty {
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING)).ifNotEmpty {
           log.info("Checking for expired pending allocations at ${prison.prisonCode}.")
           deallocateIfExpired(it, prison)
         }
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.AUTO_SUSPENDED).ifNotEmpty {
+        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.AUTO_SUSPENDED)).ifNotEmpty {
           log.info("Checking for expired auto-suspended allocations at ${prison.prisonCode}.")
           deallocateIfExpired(it, prison)
         }
