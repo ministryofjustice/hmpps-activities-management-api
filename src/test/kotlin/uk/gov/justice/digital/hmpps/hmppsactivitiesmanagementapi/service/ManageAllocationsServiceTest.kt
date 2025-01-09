@@ -159,7 +159,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
@@ -188,7 +188,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(allocation)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(allocation)
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
     whenever(prisonApiClient.getMovementsForPrisonersFromPrison(prison.prisonCode, setOf(allocation.prisonerNumber))) doReturn listOf(movement(prisonerNumber = allocation.prisonerNumber, movementDate = TimeSource.yesterday()))
 
@@ -210,7 +210,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisonerInAtOtherPrison.prisonerNumber))) doReturn listOf(prisonerInAtOtherPrison)
@@ -238,7 +238,7 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(prison)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.PENDING)) doReturn listOf(
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING))) doReturn listOf(
       allocation,
     )
     whenever(searchApiClient.findByPrisonerNumbers(listOf(prisoner.prisonerNumber))) doReturn listOf(prisoner)
@@ -410,7 +410,7 @@ class ManageAllocationsServiceTest {
     val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
 
     whenever(
-      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.ACTIVE),
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.ACTIVE)),
     ) doReturn listOf(activeAllocation)
 
     activeAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
@@ -428,7 +428,7 @@ class ManageAllocationsServiceTest {
     doThrow(exception).whenever(allocationRepository).saveAndFlush(any())
     val prison = rolloutPrison().also { whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it) }
     val activeAllocation: Allocation = allocation(withPlannedSuspensions = true)
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.ACTIVE)) doReturn listOf(activeAllocation)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.ACTIVE))) doReturn listOf(activeAllocation)
 
     service.suspendAllocationsDueToBeSuspended(prison.prisonCode)
 
@@ -445,7 +445,7 @@ class ManageAllocationsServiceTest {
       plannedSuspension()!!.endOn(LocalDate.now(), "TEST")
     }
 
-    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.SUSPENDED)) doReturn listOf(suspendedAllocation)
+    whenever(allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY))) doReturn listOf(suspendedAllocation)
 
     service.unsuspendAllocationsDueToBeUnsuspended(prison.prisonCode)
     verify(monitoringService).capture("An error occurred while unsuspending allocations due to be unsuspended today", exception)
@@ -463,10 +463,34 @@ class ManageAllocationsServiceTest {
     }
 
     whenever(
-      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, PrisonerStatus.SUSPENDED),
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY)),
     ) doReturn listOf(suspendedAllocation)
 
     suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED
+
+    service.unsuspendAllocationsDueToBeUnsuspended(prison.prisonCode)
+
+    suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+
+    verify(allocationRepository).saveAndFlush(suspendedAllocation)
+  }
+
+  @Test
+  fun `suspended with pay allocations with a suspension due to end today are activated`() {
+    val prison = rolloutPrison().also {
+      whenever(rolloutPrisonService.getRolloutPrisons()) doReturn listOf(it)
+    }
+
+    val suspendedAllocation: Allocation = allocation(withPlannedSuspensions = true, withPaidSuspension = true).apply {
+      activatePlannedSuspension()
+      plannedSuspension()!!.endOn(LocalDate.now(), "TEST")
+    }
+
+    whenever(
+      allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY)),
+    ) doReturn listOf(suspendedAllocation)
+
+    suspendedAllocation.prisonerStatus isEqualTo PrisonerStatus.SUSPENDED_WITH_PAY
 
     service.unsuspendAllocationsDueToBeUnsuspended(prison.prisonCode)
 
