@@ -24,7 +24,12 @@ class S3ServiceTest {
 
     coEvery { amazonS3.putObject(any()) } returns putObjectResponse
 
-    val filePath = service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName)
+    val filePath = service.pushReportToAnalyticalPlatformS3(
+      report = "test-file".toByteArray(),
+      fileName = "test-file.csv",
+      tableName = "testTable",
+      bucketName = mockBucketName,
+    )
 
     val expectedPathPrefix = "landing/dummy project/data/database_name=activities_reports/table_name=testTable/extraction_timestamp="
 
@@ -40,7 +45,14 @@ class S3ServiceTest {
     coEvery { amazonS3.putObject(any()) } throws S3Exception("S3 Exception")
 
     assertThrows<S3Exception> {
-      runBlocking { service.pushReportToAnalyticalPlatformS3("test-file".toByteArray(), "test-file.csv", "testTable", mockBucketName) }
+      runBlocking {
+        service.pushReportToAnalyticalPlatformS3(
+          report = "test-file".toByteArray(),
+          fileName = "test-file.csv",
+          tableName = "testTable",
+          bucketName = mockBucketName,
+        )
+      }
     }
   }
 }
