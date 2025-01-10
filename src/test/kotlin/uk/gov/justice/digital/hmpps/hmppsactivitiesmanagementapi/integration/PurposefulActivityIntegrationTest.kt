@@ -60,7 +60,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
 
       assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
 
-      val expectedHeader = "activity.activity_id,activity.prison_code,activity.activity_category_id"
+      val expectedHeader = "activity_activity_id,activity_prison_code,activity_activity_category_id"
       assert(csvContent.replace("\"", "").startsWith(expectedHeader)) { "CSV header does not match expected format" }
 
       val rows = csvContent.split("\n")
@@ -84,7 +84,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
       assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
 
       // Example of checking specific content
-      val expectedHeader = "appointment.appointment_id,appointment.appointment_series_id,appointment_series.appointment_type,appointment.sequence_number"
+      val expectedHeader = "appointment_appointment_id,appointment_appointment_series_id,appointment_series_appointment_type,appointment_sequence_number"
       assert(csvContent.replace("\"", "").startsWith(expectedHeader)) { "CSV header does not match expected format" }
 
       val rows = csvContent.split("\n")
