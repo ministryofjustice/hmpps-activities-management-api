@@ -25,25 +25,22 @@ class ManageAttendanceRecordsJobTest : JobsTestBase() {
       RolloutPrisonPlan(
         MOORLAND_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
         appointmentsRolledOut = false,
-        appointmentsRolloutDate = null,
+        prisonLive = true,
       ),
       RolloutPrisonPlan(
         PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
         appointmentsRolledOut = false,
-        appointmentsRolloutDate = null,
+        prisonLive = true,
       ),
     )
     on { getByPrisonCode(PENTONVILLE_PRISON_CODE) } doReturn
       RolloutPrisonPlan(
         PENTONVILLE_PRISON_CODE,
         activitiesRolledOut = true,
-        activitiesRolloutDate = TimeSource.today(),
         appointmentsRolledOut = false,
-        appointmentsRolloutDate = null,
+        prisonLive = true,
       )
   }
 

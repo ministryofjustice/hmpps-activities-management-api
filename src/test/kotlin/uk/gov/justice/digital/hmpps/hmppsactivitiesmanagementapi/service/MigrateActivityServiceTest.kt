@@ -127,10 +127,9 @@ class MigrateActivityServiceTest {
   private fun rolledOutPrison(prisonCode: String) = RolloutPrisonPlan(
     prisonCode = prisonCode,
     activitiesRolledOut = true,
-    activitiesRolloutDate = LocalDate.now().minusDays(1),
     appointmentsRolledOut = false,
-    appointmentsRolloutDate = null,
     maxDaysToExpiry = 21,
+    prisonLive = false,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
