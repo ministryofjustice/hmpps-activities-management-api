@@ -16,16 +16,16 @@ data class RolloutPrisonPlan(
   var activitiesRolledOut: Boolean,
 
   @Schema(description = "The date activities rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
-  @Deprecated(message = "Not populated")
   @JsonFormat(pattern = "yyyy-MM-dd")
+  @Deprecated(message = "Not populated")
   val activitiesRolloutDate: LocalDate? = null,
 
-  @Schema(description = "Flag to indicate if this appointments are enabled", example = "true")
+  @Schema(description = "Flag to indicate if appointments are enabled", example = "true")
   var appointmentsRolledOut: Boolean,
 
   @Schema(description = "The date appointments rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
-  @Deprecated(message = "Not populated")
   @JsonFormat(pattern = "yyyy-MM-dd")
+  @Deprecated(message = "Not populated")
   val appointmentsRolloutDate: LocalDate? = null,
 
   @Schema(description = "max days to expire events based on prisoner movement, default is 21")
