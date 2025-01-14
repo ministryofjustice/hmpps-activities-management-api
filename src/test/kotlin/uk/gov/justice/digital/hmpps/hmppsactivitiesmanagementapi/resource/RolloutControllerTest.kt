@@ -12,11 +12,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ModelTest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import java.time.LocalDate
 
 @WebMvcTest(controllers = [RolloutController::class])
 @ContextConfiguration(classes = [RolloutController::class])
@@ -62,13 +60,11 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
 
   @Test
   fun `get list of all rolled out prisons`() {
-    val originalRolloutDate = LocalDate.parse("01 Feb 2023", ModelTest.dateFormatter)
     val rolloutPrison = RolloutPrisonPlan(
       prisonCode = "LPI",
       activitiesRolledOut = true,
-      activitiesRolloutDate = originalRolloutDate,
       appointmentsRolledOut = true,
-      appointmentsRolloutDate = originalRolloutDate,
+      prisonLive = true,
     )
     whenever(prisonService.getRolloutPrisons(prisonsLive = true)).thenReturn(listOf(rolloutPrison))
 

@@ -111,7 +111,7 @@ class ScheduledEventServiceSinglePrisonerTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean) {
+  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean, prisonLive: Boolean = true) {
     val prisonCode = "MDI"
     whenever(rolloutPrisonRepository.getByPrisonCode(prisonCode))
       .thenReturn(
@@ -120,6 +120,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           activitiesRolledOut = activitiesRolledOut,
           appointmentsRolledOut = appointmentsRolledOut,
           maxDaysToExpiry = 21,
+          prisonLive = prisonLive,
         ),
       )
   }

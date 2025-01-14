@@ -104,7 +104,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   // --- Private utility functions used to set up the mocked responses ---
 
-  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean) {
+  private fun setupRolledOutPrisonMock(activitiesRolledOut: Boolean, appointmentsRolledOut: Boolean, prisonLive: Boolean) {
     val prisonCode = "MDI"
 
     whenever(rolloutPrisonRepository.getByPrisonCode(prisonCode))
@@ -114,6 +114,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           activitiesRolledOut = activitiesRolledOut,
           appointmentsRolledOut = appointmentsRolledOut,
           maxDaysToExpiry = 21,
+          prisonLive = prisonLive,
         ),
       )
   }
@@ -346,7 +347,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(true, false)
+      setupRolledOutPrisonMock(true, false, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -500,7 +501,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, tomorrow, timeSlot)
-      setupRolledOutPrisonMock(true, false)
+      setupRolledOutPrisonMock(true, false, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = tomorrow)
       whenever(
@@ -621,7 +622,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
       val timeSlot: TimeSlot = TimeSlot.AM
 
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
-      setupRolledOutPrisonMock(true, true)
+      setupRolledOutPrisonMock(true, true, true)
 
       val activityEntity = activityFromDbInstance(sessionDate = today)
       whenever(
@@ -747,7 +748,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
     @BeforeEach
     fun beforeEach() {
-      setupRolledOutPrisonMock(true, true)
+      setupRolledOutPrisonMock(true, true, true)
 
       whenever(prisonRegimeService.getPrisonRegimesByDaysOfWeek(any())).thenReturn(
         mapOf(
