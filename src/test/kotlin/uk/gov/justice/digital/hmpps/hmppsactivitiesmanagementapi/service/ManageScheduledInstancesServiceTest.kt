@@ -251,9 +251,9 @@ class ManageScheduledInstancesServiceTest {
   companion object {
 
     val rolledOutPrisons = listOf(
-      RolloutPrisonPlan("MDI", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21, prisonLive = true),
-      RolloutPrisonPlan("LEI", true, LocalDate.of(2022, 11, 1), true, LocalDate.of(2022, 11, 1), 21, prisonLive = true),
-      RolloutPrisonPlan("XXX", false, null, true, LocalDate.of(2022, 11, 1), 21, prisonLive = false),
+      RolloutPrisonPlan("MDI", true, true, 21, prisonLive = true),
+      RolloutPrisonPlan("LEI", true, true, 21, prisonLive = true),
+      RolloutPrisonPlan("XXX", false, true, 21, prisonLive = false),
     )
 
     val yesterday: LocalDate = LocalDate.now().minusDays(1)
