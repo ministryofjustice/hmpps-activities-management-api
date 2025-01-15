@@ -95,3 +95,9 @@ hmpps.sqs:
   topics:
     inboundtopic:
       arn: arn:aws:sns:eu-west-2:000000000000:inboundtopic
+
+aws:
+  s3:
+    ap:
+      bucket: defaultbucket
+      project: dummy-project
