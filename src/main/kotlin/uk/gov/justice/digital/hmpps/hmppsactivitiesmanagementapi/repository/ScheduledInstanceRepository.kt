@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import java.time.LocalDate
 
@@ -38,4 +39,9 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
       "where si.scheduledInstanceId in :ids",
   )
   fun findByIds(ids: List<Long>): List<ScheduledInstance>
+
+  fun findByActivityScheduleAndSessionDateEquals(
+    activitySchedule: ActivitySchedule,
+    sessionDate: LocalDate,
+  ): List<ScheduledInstance>
 }
