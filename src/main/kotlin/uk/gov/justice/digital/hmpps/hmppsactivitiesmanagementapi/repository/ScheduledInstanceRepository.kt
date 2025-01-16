@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import java.time.LocalDate
+import java.time.LocalTime
 
 interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   @Query(
@@ -40,8 +41,9 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   )
   fun findByIds(ids: List<Long>): List<ScheduledInstance>
 
-  fun findByActivityScheduleAndSessionDateEquals(
+  fun findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
     activitySchedule: ActivitySchedule,
     sessionDate: LocalDate,
+    startTime: LocalTime,
   ): List<ScheduledInstance>
 }

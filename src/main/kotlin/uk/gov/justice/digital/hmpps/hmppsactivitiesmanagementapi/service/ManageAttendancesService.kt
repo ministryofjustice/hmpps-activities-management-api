@@ -183,12 +183,13 @@ class ManageAttendancesService(
       "Allocation does not belong to same activity schedule as selected instance"
     }
 
-    val scheduledInstances = scheduledInstanceRepository.findByActivityScheduleAndSessionDateEquals(
+    val scheduledInstances = scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
       activitySchedule = allocation.activitySchedule,
       sessionDate = LocalDate.now(clock),
+      startTime = nextAvailableInstance.startTime,
     )
 
-    // Need to create attendances for today?
+    // Create any attendances for today
     return scheduledInstances.filter {
       allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
     }.mapNotNull {
