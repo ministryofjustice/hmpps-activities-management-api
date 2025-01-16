@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -43,6 +44,9 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
+
+  @Autowired
+  private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -161,7 +165,9 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val updatedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(1) }
     assertThat(updatedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo(AttendanceReasonEnum.SICK)
-    assertThat(updatedAttendances[0].history()).hasSize(1)
+
+    val history = attendanceHistoryRepository.findAll()
+    assertThat(history.filter { it.attendance.attendanceId == updatedAttendances[0].attendanceId }).hasSize(1)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
