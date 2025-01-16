@@ -12,8 +12,6 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
@@ -34,9 +32,7 @@ data class ScheduledInstance(
   @JoinColumn(name = "activity_schedule_id", nullable = false)
   val activitySchedule: ActivitySchedule,
 
-  // TODO ideally should be private
-  @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val attendances: MutableList<Attendance> = mutableListOf(),
 
   val sessionDate: LocalDate,

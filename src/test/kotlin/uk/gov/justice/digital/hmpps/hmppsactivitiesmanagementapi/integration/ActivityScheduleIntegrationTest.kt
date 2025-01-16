@@ -349,7 +349,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
-  fun `204 (no content) response when successfully allocate prisoner to an activity schedule that starts today`() {
+  fun `204 (no content) response when successfully allocate prisoner to an activity schedule that starts today (2 sessions, one is earlier, so only one attendance record should be created)`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
         prisonId = MOORLAND_PRISON_CODE,
@@ -367,7 +367,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         prisonerNumber = "G4793VF",
         payBandId = 11,
         startDate = TimeSource.today(),
-        scheduleInstanceId = 1L,
+        scheduleInstanceId = 2L,
       ),
     ).expectStatus().isNoContent
 

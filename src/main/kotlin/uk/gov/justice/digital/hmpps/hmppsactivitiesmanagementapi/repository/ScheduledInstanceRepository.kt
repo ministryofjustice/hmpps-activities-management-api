@@ -3,8 +3,10 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import java.time.LocalDate
+import java.time.LocalTime
 
 interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   @Query(
@@ -38,4 +40,10 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
       "where si.scheduledInstanceId in :ids",
   )
   fun findByIds(ids: List<Long>): List<ScheduledInstance>
+
+  fun findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
+    activitySchedule: ActivitySchedule,
+    sessionDate: LocalDate,
+    startTime: LocalTime,
+  ): List<ScheduledInstance>
 }

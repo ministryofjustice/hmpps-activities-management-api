@@ -1099,6 +1099,13 @@ class ManageAttendancesServiceTest {
     @Test
     fun `should create an attendance record`() {
       whenever(scheduledInstanceRepository.findById(1)).thenReturn(Optional.of(allocation.activitySchedule.instances()[0]))
+      whenever(
+        scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
+          allocation.activitySchedule,
+          TimeSource.today(),
+          activitySchedule.slots().first().startTime,
+        ),
+      ).thenReturn(listOf(allocation.activitySchedule.instances()[0]))
 
       val attendances = service.createAnyAttendancesForToday(1, allocation)
 
@@ -1130,6 +1137,13 @@ class ManageAttendancesServiceTest {
 
       whenever(scheduledInstanceRepository.findById(1)).thenReturn(Optional.of(allocation.activitySchedule.instances()[1]))
       whenever(scheduledInstanceRepository.findById(2)).thenReturn(Optional.of(allocation.activitySchedule.instances()[2]))
+      whenever(
+        scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
+          allocation.activitySchedule,
+          TimeSource.today(),
+          firstSlot.startTime.plusHours(1),
+        ),
+      ).thenReturn(listOf(allocation.activitySchedule.instances()[1], allocation.activitySchedule.instances()[2]))
 
       val attendances = service.createAnyAttendancesForToday(1, allocation)
 
