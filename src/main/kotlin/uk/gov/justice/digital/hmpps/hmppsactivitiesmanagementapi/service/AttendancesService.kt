@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
@@ -143,8 +144,9 @@ class AttendancesService(
   private fun AttendanceUpdateRequest.maybeAttendanceReason() =
     attendanceReason?.let { AttendanceReasonEnum.valueOf(it.trim().uppercase()) }
 
+  @Transactional(readOnly = true)
   fun getAttendanceById(id: Long) =
-    transform(attendanceRepository.findOrThrowNotFound(id), caseNotesApiClient)
+    transform(attendance = attendanceRepository.findOrThrowNotFound(id), caseNotesApiClient = caseNotesApiClient, includeHistory = true)
 
   fun getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTier: EventTierType? = null): List<ModelAllAttendance> {
     eventTier ?: return allAttendanceRepository.findByPrisonCodeAndSessionDate(
