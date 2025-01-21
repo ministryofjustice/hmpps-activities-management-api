@@ -53,8 +53,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as ModelAttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser as ModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as ModelEventTier
@@ -125,30 +123,7 @@ class TransformFunctionsTest {
                   recordedBy = "Joe Bloggs",
                   editable = true,
                   payable = true,
-                  attendanceHistory = listOf(
-                    ModelAttendanceHistory(
-                      id = 1,
-                      attendanceReason = ModelAttendanceReason(
-                        9,
-                        code = "ATTENDED",
-                        description = "Previous Desc",
-                        attended = false,
-                        capturePay = true,
-                        captureMoreDetail = true,
-                        captureCaseNote = false,
-                        captureIncentiveLevelWarning = false,
-                        captureOtherText = false,
-                        displayInAbsence = true,
-                        displaySequence = 1,
-                        notes = "some note",
-                      ),
-                      issuePayment = null,
-                      incentiveLevelWarningIssued = null,
-                      comment = "previous comment",
-                      recordedBy = "Joe Bloggs",
-                      recordedTime = LocalDate.now().atStartOfDay(),
-                    ),
-                  ),
+                  attendanceHistory = null,
                 ),
               ),
             ),

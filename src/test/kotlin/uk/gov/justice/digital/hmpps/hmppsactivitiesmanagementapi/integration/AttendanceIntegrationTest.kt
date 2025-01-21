@@ -51,6 +51,46 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
   @Sql(
+    "classpath:test_data/seed-activity-id-18.sql",
+  )
+  @Test
+  fun `get attendance and attendance history`() {
+    attendanceRepository.findAll().also { assertThat(it).hasSize(1) }
+
+    webTestClient
+      .put()
+      .uri("/attendances")
+      .bodyValue(
+        listOf(
+          AttendanceUpdateRequest(1, MOORLAND_PRISON_CODE, AttendanceStatus.COMPLETED, "SICK", null, true, null, null, null),
+        ),
+      )
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isNoContent
+
+    val attendance = webTestClient
+      .get()
+      .uri("attendances/1")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ModelAttendance::class.java)
+      .returnResult().responseBody
+
+    with(attendance!!) {
+      assertThat(attendance.id).isEqualTo(1L)
+      assertThat(attendance.prisonerNumber).isEqualTo("A11111A")
+      assertThat(attendance.attendanceReason!!.code).isEqualTo("SICK")
+      assertThat(attendanceHistory).hasSize(1)
+      assertThat(attendanceHistory!!.first().recordedBy).isEqualTo("MR BLOGS")
+    }
+  }
+
+  @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
   )
   @Test
