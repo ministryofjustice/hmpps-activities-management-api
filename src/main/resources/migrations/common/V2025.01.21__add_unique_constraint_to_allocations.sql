@@ -1,1 +1,3 @@
-ALTER TABLE allocation ADD UNIQUE (activity_schedule_id, prisoner_number, booking_id, allocated_time, prisoner_status);
+ALTER TABLE allocation ADD CONSTRAINT unique_non_ended_prisoner_allocation_key
+    EXCLUDE (activity_schedule_id WITH =, prisoner_number WITH =, start_date WITH =, prisoner_status WITH =)
+    WHERE (prisoner_status != 'ENDED');
