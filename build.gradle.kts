@@ -7,7 +7,7 @@ plugins {
   kotlin("plugin.spring") version "2.1.0"
   kotlin("plugin.jpa") version "2.1.0"
   jacoco
-  id("org.openapi.generator") version "7.10.0"
+  id("org.openapi.generator") version "7.11.0"
   id("io.sentry.jvm.gradle") version "4.14.1"
 }
 
@@ -33,17 +33,17 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.2.2")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
 
   // Spring framework retryable dependencies
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.11.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.12.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.3")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
@@ -51,10 +51,10 @@ dependencies {
       strictly("5.0.0-alpha.14")
     }
   }
-  implementation("aws.sdk.kotlin:s3:1.2.46")
+  implementation("aws.sdk.kotlin:s3:1.4.5")
 
   // Other dependencies
-  implementation("org.apache.commons:commons-text:1.12.0")
+  implementation("org.apache.commons:commons-text:1.13.0")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
@@ -62,21 +62,21 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.9.2")
+  testImplementation("org.wiremock:wiremock-standalone:3.10.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.20.4")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:4.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.0.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:4.0.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:4.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:4.1.0")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
-  testImplementation("io.mockk:mockk:1.12.0")
+  testImplementation("io.mockk:mockk:1.13.16")
 }
 
 kotlin {
