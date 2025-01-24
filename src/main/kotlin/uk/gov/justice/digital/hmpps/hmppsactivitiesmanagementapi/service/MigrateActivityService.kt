@@ -315,7 +315,7 @@ class MigrateActivityService(
       programServiceCode.startsWith("INDUCTION") -> activityCategories.isInduction()
       programServiceCode.startsWith("IAG") -> activityCategories.isInduction()
 
-      // Activities in NOMIS with exiting SAA codes
+      // Activities in NOMIS with exiting SAA* codes
       programServiceCode.startsWith("SAA") -> activityCategories.firstOrNull { it.code == programServiceCode }
 
       // Everything else is Other
