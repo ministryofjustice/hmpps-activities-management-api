@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -307,8 +308,23 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
   )
 }
 
-fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
-  ModelAttendance(
+fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?, includeHistory: Boolean = false): ModelAttendance {
+  var history: List<AttendanceHistory>? = null
+
+  if (includeHistory) {
+    history = attendance.history()
+      .sortedWith(compareBy { attendance.recordedTime })
+      .reversed()
+      .map { attendanceHistory: EntityAttendanceHistory ->
+        transform(
+          attendanceHistory,
+          attendance.prisonerNumber,
+          caseNotesApiClient,
+        )
+      }
+  }
+
+  return ModelAttendance(
     id = attendance.attendanceId,
     scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
     prisonerNumber = attendance.prisonerNumber,
@@ -344,19 +360,11 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
       )?.text
     },
     otherAbsenceReason = attendance.otherAbsenceReason,
-    attendanceHistory = attendance.history()
-      .sortedWith(compareBy { attendance.recordedTime })
-      .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory ->
-        transform(
-          attendanceHistory,
-          attendance.prisonerNumber,
-          caseNotesApiClient,
-        )
-      },
+    attendanceHistory = history,
     editable = attendance.editable(),
     payable = attendance.isPayable(),
   )
+}
 
 fun transform(
   attendanceHistory: EntityAttendanceHistory,

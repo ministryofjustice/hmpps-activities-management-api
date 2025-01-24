@@ -14,10 +14,20 @@ import java.time.LocalTime
 class RolloutIntegrationTest : IntegrationTestBase() {
 
   @Test
-  fun `get inactive rollout prison HMP Moorland - both active activities and appointments`() {
+  fun `get active rollout prison HMP Moorland - both active activities and appointments and the prison is live`() {
     with(webTestClient.getPrisonByCode("MDI")!!) {
       assertThat(activitiesRolledOut).isTrue
       assertThat(appointmentsRolledOut).isTrue
+      assertThat(prisonLive).isTrue
+    }
+  }
+
+  @Test
+  fun `get active rollout prison - both active activities and appointments and the prison not live`() {
+    with(webTestClient.getPrisonByCode("IWI")!!) {
+      assertThat(activitiesRolledOut).isTrue
+      assertThat(appointmentsRolledOut).isTrue
+      assertThat(prisonLive).isFalse
     }
   }
 
@@ -27,9 +37,9 @@ class RolloutIntegrationTest : IntegrationTestBase() {
 
     assertThat(prisonPlanList).hasSize(3)
     with(prisonPlanList) {
-      this.single { it.prisonCode == "RSI" }
-      this.single { it.prisonCode == "PVI" }
-      this.single { it.prisonCode == "MDI" }
+      this.single { it.prisonCode == "RSI" && it.prisonLive }
+      this.single { it.prisonCode == "PVI" && it.prisonLive }
+      this.single { it.prisonCode == "MDI" && it.prisonLive }
     }
   }
 

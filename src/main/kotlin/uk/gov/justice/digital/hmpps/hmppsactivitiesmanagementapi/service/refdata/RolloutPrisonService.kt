@@ -11,6 +11,7 @@ data class PrisonPlan(
   val code: String,
   val activities: Boolean,
   val appointments: Boolean,
+  val prisonLive: Boolean,
 )
 
 @Service
@@ -24,11 +25,13 @@ class RolloutPrisonService(
   private fun getPrison(code: String): PrisonPlan {
     val activities = activitiesLive.split(",").contains(code)
     val appointments = appointmentsLive.split(",").contains(code)
+    val prisonLive = prisonsLive.split(",").contains(code)
 
     return PrisonPlan(
       code = code,
       activities = activities,
       appointments = appointments,
+      prisonLive = prisonLive,
     )
   }
 
@@ -39,6 +42,7 @@ class RolloutPrisonService(
       prisonCode = code,
       activitiesRolledOut = prisonPlan.activities,
       appointmentsRolledOut = prisonPlan.appointments,
+      prisonLive = prisonPlan.prisonLive,
     )
   }
 

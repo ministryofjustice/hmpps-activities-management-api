@@ -11,7 +11,10 @@ insert into activity_schedule_slot(activity_schedule_slot_id, activity_schedule_
 values (1, 1, '09:00:00', '12:00:00', true, 'AM');
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (1, current_timestamp, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
+values (1, current_timestamp, current_time - interval '2 hour', current_time - interval '1 hour', false, null, null, null, null, 'AM');
+
+insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, current_timestamp, current_time, current_time + interval '1 hour', false, null, null, null, null, 'AM');
 
 insert into waiting_list(waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by)
 values (1, 'MDI', 'G4793VF', 1134676, '2023-08-08', 1, 1, 'Prison staff', 'APPROVED', '2023-08-10', 'SEED USER')

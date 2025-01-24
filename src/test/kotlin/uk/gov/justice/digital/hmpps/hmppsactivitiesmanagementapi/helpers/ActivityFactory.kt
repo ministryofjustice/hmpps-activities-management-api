@@ -374,6 +374,7 @@ internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = Rollo
   activitiesRolledOut = true,
   appointmentsRolledOut = true,
   maxDaysToExpiry = 1,
+  prisonLive = true,
 )
 
 internal fun prisonRegime(

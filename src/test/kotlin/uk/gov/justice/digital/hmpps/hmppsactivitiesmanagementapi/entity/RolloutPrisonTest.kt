@@ -13,6 +13,7 @@ class RolloutPrisonTest {
     maxDaysToExpiry = 5,
     activitiesRolledOut = true,
     appointmentsRolledOut = true,
+    prisonLive = true,
   )
 
   @Test

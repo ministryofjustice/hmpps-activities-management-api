@@ -76,3 +76,5 @@ sonar-project.properties
 
 # MacOS files
 .DS_Store
+/activities-pa-test.csv
+/appointments-pa-test.csv

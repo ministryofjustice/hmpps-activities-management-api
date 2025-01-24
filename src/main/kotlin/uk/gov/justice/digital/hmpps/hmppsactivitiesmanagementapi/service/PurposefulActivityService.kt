@@ -56,7 +56,11 @@ class PurposefulActivityService(
     var pushedFileKey: String
     // upload to s3 bucket
     runBlocking {
-      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvActivitiesReport.toByteArray(), purposefulActivityActivityTableName, csvActivitiesFileName)
+      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
+        report = csvActivitiesReport.toByteArray(),
+        tableName = purposefulActivityActivityTableName,
+        fileName = csvActivitiesFileName,
+      )
     }
     return pushedFileKey
   }
@@ -78,7 +82,11 @@ class PurposefulActivityService(
     var pushedFileKey: String
     // upload to s3 bucket
     runBlocking {
-      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(csvAppointmentsReport.toByteArray(), purposefulActivityAppointmentsTableName, csvAppointmentsFileName)
+      pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
+        report = csvAppointmentsReport.toByteArray(),
+        tableName = purposefulActivityAppointmentsTableName,
+        fileName = csvAppointmentsFileName,
+      )
     }
     return pushedFileKey
   }
