@@ -190,6 +190,12 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
 }
 
 ktlint {
+  version.set("1.4.1")
+  additionalEditorconfig.set(
+    mapOf(
+      "ktlint_standard" to "disabled"
+    )
+  )
   filter {
     generatedProjectDirs.forEach { generatedProject ->
       exclude { element ->
