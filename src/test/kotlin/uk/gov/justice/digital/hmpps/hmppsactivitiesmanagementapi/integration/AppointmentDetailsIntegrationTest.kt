@@ -263,7 +263,10 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
 
     val appointments = webTestClient.getAppointmentDetailsByIds(listOf(2, 4))
 
-    assertThat(appointments[0]).isEqualTo(
+    val appointment2 = appointments.first { it.id == 2L }
+    val appointment4 = appointments.first { it.id == 4L }
+
+    assertThat(appointment2).isEqualTo(
       AppointmentDetails(
         2,
         AppointmentSeriesSummary(1, AppointmentSeriesSchedule(frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3), 3, 1),
@@ -318,7 +321,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    assertThat(appointments[1]).isEqualTo(
+    assertThat(appointment4).isEqualTo(
       AppointmentDetails(
         4,
         AppointmentSeriesSummary(2, AppointmentSeriesSchedule(frequency = AppointmentFrequency.DAILY, numberOfAppointments = 3), 1, 0),
