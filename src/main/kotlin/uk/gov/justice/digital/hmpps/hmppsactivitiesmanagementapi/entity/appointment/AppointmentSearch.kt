@@ -74,6 +74,10 @@ data class AppointmentSearch(
   val createdTime: LocalDateTime,
 
   val updatedTime: LocalDateTime?,
+
+  val cancelledTime: LocalDateTime?,
+
+  val cancelledBy: String?,
 ) {
   @OneToMany(mappedBy = "appointmentSearch", fetch = FetchType.LAZY)
   var attendees: List<AppointmentAttendeeSearch> = listOf()
@@ -110,6 +114,8 @@ data class AppointmentSearch(
     timeSlot = prisonRegime.getSlotForDayAndTime(day = startDate.dayOfWeek, time = startTime),
     createdTime = createdTime,
     updatedTime = updatedTime,
+    cancelledTime = cancelledTime,
+    cancelledBy = cancelledBy
   )
 
   private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)

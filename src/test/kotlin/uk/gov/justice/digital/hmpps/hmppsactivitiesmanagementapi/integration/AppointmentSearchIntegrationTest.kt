@@ -368,6 +368,14 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isCancelled }).isNotEmpty
+    results.forEach { result ->
+      result.createdTime isCloseTo LocalDateTime.now()
+
+      if (result.isCancelled) {
+        result.cancelledTime isCloseTo LocalDateTime.now()
+        result.cancelledBy isEqualTo "DIFFERENT.USER"
+      }
+    }
   }
 
   private fun WebTestClient.searchAppointments(
