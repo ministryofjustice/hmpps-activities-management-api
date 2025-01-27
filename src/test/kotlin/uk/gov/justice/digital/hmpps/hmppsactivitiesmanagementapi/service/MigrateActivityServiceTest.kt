@@ -1444,6 +1444,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("IND_ASA")).isEqualTo(getCategory("SAA_INDUSTRIES"))
       assertThat(service.mapProgramToCategory("IND_CRTY")).isEqualTo(getCategory("SAA_INDUSTRIES"))
       assertThat(service.mapProgramToCategory("IND_LAU")).isEqualTo(getCategory("SAA_INDUSTRIES"))
+      assertThat(service.mapProgramToCategory("SAA_INDUSTRIES")).isEqualTo(getCategory("SAA_INDUSTRIES"))
     }
 
     @Test
@@ -1456,6 +1457,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("LIBRARY")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("FG")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("SAFE")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
+      assertThat(service.mapProgramToCategory("SAA_PRISON_JOBS")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
     }
 
     @Test
@@ -1465,12 +1467,14 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("KEY_SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("PE_TYPE1")).isEqualTo(getCategory("SAA_EDUCATION"))
+      assertThat(service.mapProgramToCategory("SAA_EDUCATION")).isEqualTo(getCategory("SAA_EDUCATION"))
     }
 
     @Test
     fun `Not in work`() {
       assertThat(service.mapProgramToCategory("UNEMP")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
       assertThat(service.mapProgramToCategory("OTH_UNE")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
+      assertThat(service.mapProgramToCategory("SAA_NOT_IN_WORK")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
     }
 
     @Test
@@ -1478,6 +1482,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("INT_")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
       assertThat(service.mapProgramToCategory("GROUP")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
       assertThat(service.mapProgramToCategory("ABUSE")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
+      assertThat(service.mapProgramToCategory("SAA_INTERVENTIONS")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
     }
 
     @Test
@@ -1486,12 +1491,14 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("SPORT")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("HEALTH")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("OTH_PER")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
+      assertThat(service.mapProgramToCategory("SAA_GYM_SPORTS_FITNESS")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
     }
 
     @Test
     fun `Induction activities`() {
       assertThat(service.mapProgramToCategory("INDUCTION")).isEqualTo(getCategory("SAA_INDUCTION"))
       assertThat(service.mapProgramToCategory("IAG")).isEqualTo(getCategory("SAA_INDUCTION"))
+      assertThat(service.mapProgramToCategory("SAA_INDUCTION")).isEqualTo(getCategory("SAA_INDUCTION"))
     }
 
     @Test
@@ -1499,6 +1506,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("CHAP")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
       assertThat(service.mapProgramToCategory("T2CFA")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
       assertThat(service.mapProgramToCategory("OTH_CFR")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
+      assertThat(service.mapProgramToCategory("SAA_FAITH_SPIRITUALITY")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
     }
 
     @Test
@@ -1506,6 +1514,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("RANDOM TYPE")).isEqualTo(getCategory("SAA_OTHER"))
       assertThat(service.mapProgramToCategory("T2ICA")).isEqualTo(getCategory("SAA_OTHER"))
       assertThat(service.mapProgramToCategory("OTRESS")).isEqualTo(getCategory("SAA_OTHER"))
+      assertThat(service.mapProgramToCategory("SAA_OTHER")).isEqualTo(getCategory("SAA_OTHER"))
     }
   }
 
@@ -1615,6 +1624,27 @@ class MigrateActivityServiceTest {
     @Test
     fun `Unrecognised program services default to tier 2`() {
       assertThat(service.mapProgramToTier("ANY")).isEqualTo(getTier("TIER_2"))
+    }
+
+    @Test
+    fun `SAA_ coded program services map to tier 1`() {
+      assertThat(service.mapProgramToTier("SAA_INDUSTRIES")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_PRISON_JOBS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_EDUCATION")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_INTERVENTIONS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_GYM_SPORTS_FITNESS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_FAITH_SPIRITUALITY")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_INDUCTION")).isEqualTo(getTier("TIER_1"))
+    }
+
+    @Test
+    fun `SAA_NOT_IN_WORK program services map to foundation`() {
+      assertThat(service.mapProgramToTier("SAA_NOT_IN_WORK")).isEqualTo(getTier("FOUNDATION"))
+    }
+
+    @Test
+    fun `SAA_OTHER program services default to tier 2`() {
+      assertThat(service.mapProgramToTier("SAA_OTHER")).isEqualTo(getTier("TIER_2"))
     }
   }
 
