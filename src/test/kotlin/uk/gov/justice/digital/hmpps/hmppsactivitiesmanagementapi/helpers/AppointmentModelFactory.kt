@@ -331,6 +331,8 @@ fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = Appointment
   false,
   LocalDate.now().atStartOfDay(),
   null,
+  null,
+  null,
 )
 
 fun appointmentSetDetails(

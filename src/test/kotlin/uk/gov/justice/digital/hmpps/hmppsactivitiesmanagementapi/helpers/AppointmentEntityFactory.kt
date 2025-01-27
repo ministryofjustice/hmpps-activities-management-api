@@ -224,6 +224,8 @@ internal fun appointmentSearchEntity(
     isCancelled = false,
     createdTime = LocalDate.now().atStartOfDay(),
     updatedTime = null,
+    cancelledTime = null,
+    cancelledBy = null,
   ).apply {
     attendees = listOf(
       appointmentAttendeeSearchEntity(

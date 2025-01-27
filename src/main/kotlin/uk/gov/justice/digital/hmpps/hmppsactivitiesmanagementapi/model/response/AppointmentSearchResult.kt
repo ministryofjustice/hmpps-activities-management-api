@@ -176,4 +176,24 @@ data class AppointmentSearchResult(
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
   val updatedTime: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment was cancelled.
+    Will be null if this appointment has not been cancelled
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  var cancelledTime: LocalDateTime?,
+
+  @Schema(
+    description =
+    """
+    The username of the user authenticated via HMPPS auth that cancelled this appointment.
+    Will be null if this appointment has not been cancelled
+    """,
+    example = "AAA01U",
+  )
+  val cancelledBy: String?,
 )
