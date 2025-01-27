@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Schema(
@@ -159,4 +160,20 @@ data class AppointmentSearchResult(
     example = "false",
   )
   val isExpired: Boolean,
+
+  @Schema(
+    description = "The date and time this appointment was created. Will not change",
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val createdTime: LocalDateTime,
+
+  @Schema(
+    description =
+    """
+    The date and time this appointment was last changed.
+    Will be null if this appointment has not been altered since it was created
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+  val updatedTime: LocalDateTime?,
 )

@@ -13,8 +13,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
@@ -73,8 +71,7 @@ data class Attendance(
     issuePayment = initialIssuePayment
   }
 
-  @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "attendance", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun status() = status
