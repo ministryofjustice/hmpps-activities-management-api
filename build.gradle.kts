@@ -51,7 +51,7 @@ dependencies {
       strictly("5.0.0-alpha.14")
     }
   }
-  implementation("aws.sdk.kotlin:s3:1.4.6")
+  implementation("aws.sdk.kotlin:s3:1.4.7")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
