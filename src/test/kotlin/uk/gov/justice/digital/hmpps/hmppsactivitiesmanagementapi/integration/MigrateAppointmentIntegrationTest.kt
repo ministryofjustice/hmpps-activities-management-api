@@ -7,6 +7,8 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -128,6 +130,53 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @Test
+  fun `migrate appointment success with long comment`() {
+    val request = appointmentMigrateRequest(categoryCode = "AC1", comment = "This is a long comment over 40 characters")
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+    verifyAppointmentInstance(response)
+
+    verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM"])
+  fun `migrate appointment success with BVLS category custom name is blank`(categoryCode: String) {
+    val request = appointmentMigrateRequest(categoryCode = categoryCode)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+    verifyAppointmentInstance(response, setCustomName = false )
+
+    verifyNoInteractions(eventsPublisher)
+    verifyNoInteractions(telemetryClient)
+    verifyNoInteractions(auditService)
+  }
+
+  @Test
   fun `migrate appointment with comment over 40 characters success`() {
     val request = appointmentMigrateRequest(
       categoryCode = "AC1",
@@ -156,7 +205,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoInteractions(auditService)
   }
 
-  private fun verifyAppointmentInstance(response: AppointmentInstance) {
+  private fun verifyAppointmentInstance(response: AppointmentInstance, comment: String? = null, setCustomName: Boolean = true) {
     with(response) {
       assertThat(id).isNotNull
       assertThat(appointmentSeriesId).isNotNull
@@ -169,13 +218,18 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(prisonerNumber).isEqualTo("A1234BC")
       assertThat(bookingId).isEqualTo(123)
       assertThat(categoryCode).isEqualTo("AC1")
-      assertThat(customName).isEqualTo("Appointment level comment")
+      var name: String? = null
+      if(setCustomName) {
+        name = comment?.take(40) ?:"Appointment level comment"
+      }
+      assertThat(customName).isEqualTo(name)
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
       assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
-      assertThat(extraInformation).isNull()
+      val extraInformation: String = comment ?: "Appointment level comment"
+      assertThat(extraInformation).isEqualTo(extraInformation)
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("CREATE.USER")
       assertThat(updatedTime).isNull()
