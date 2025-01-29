@@ -30,7 +30,6 @@ data class PrisonerDeallocationRequest(
     example = "RELEASED",
     allowableValues = ['COMPLETED', 'TRANSFERRED', 'WITHDRAWN_STAFF', 'WITHDRAWN_OWN', 'DISMISSED', 'HEALTH', 'OTHER', 'SECURITY'],
   )
-
   @field:NotEmpty(message = "The reason code for the deallocation request must supplied.")
   val reasonCode: String?,
 
