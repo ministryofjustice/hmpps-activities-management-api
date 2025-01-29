@@ -41,6 +41,10 @@ class MigrateAppointmentService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  val categoryCodeIgnoreList = listOf("VLLA", "VLB", "VLOO", "VLPA", "VLPM")
+
+  private fun ignoreCustomName(categoryCode: String) = categoryCodeIgnoreList.contains(categoryCode)
+
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance {
     val appointmentSeries =
       transactionHandler.newSpringTransaction {
@@ -49,13 +53,13 @@ class MigrateAppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
             categoryCode = request.categoryCode!!,
-            customName = request.comment?.trim()?.takeUnless(String::isBlank)?.take(40),
+            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCustomName(request.categoryCode!!).not() }?.take(40),
             appointmentTier = null,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,
             startTime = request.startTime!!,
             endTime = request.endTime,
-            extraInformation = request.comment?.trim()?.takeIf { it.length > 40 },
+            extraInformation = request.comment?.trim()?.takeIf { it.isNotEmpty() },
             createdTime = request.created!!,
             createdBy = request.createdBy!!,
             updatedTime = request.updated,

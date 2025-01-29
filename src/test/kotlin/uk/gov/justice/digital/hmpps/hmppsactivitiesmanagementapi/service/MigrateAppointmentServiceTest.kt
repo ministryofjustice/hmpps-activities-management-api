@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.AdditionalAnswers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -223,27 +225,29 @@ class MigrateAppointmentServiceTest {
       }
     }
 
-    @Test
-    fun `under 40 characters comment`() {
-      val request = appointmentMigrateRequest(comment = "Appointments custom name")
+    @ParameterizedTest
+    @ValueSource(strings = ["Appointments comment", "Appointments comment which is 41 characts"])
+    fun `characters comment is copied to customName with first 40 chars and extra information the whole comment`(requestComment: String) {
+      val request = appointmentMigrateRequest(comment = requestComment)
 
       service.migrateAppointment(request)
 
       with(appointmentSeriesCaptor.firstValue) {
-        customName isEqualTo request.comment
-        extraInformation isEqualTo null
+        customName isEqualTo requestComment.take(40)
+        extraInformation isEqualTo requestComment
       }
     }
 
-    @Test
-    fun `40 character comment`() {
-      val request = appointmentMigrateRequest(comment = "Appointment custom name as it's 40 chars")
+    @ParameterizedTest
+    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM"])
+    fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
+      val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 
       service.migrateAppointment(request)
 
       with(appointmentSeriesCaptor.firstValue) {
-        customName isEqualTo request.comment
-        extraInformation isEqualTo null
+        customName isEqualTo null
+        extraInformation isEqualTo "appointment comment"
       }
     }
 

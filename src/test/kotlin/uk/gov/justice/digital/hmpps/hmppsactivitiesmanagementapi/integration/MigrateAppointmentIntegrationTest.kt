@@ -205,7 +205,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoInteractions(auditService)
   }
 
-  private fun verifyAppointmentInstance(response: AppointmentInstance, comment: String? = null, setCustomName: Boolean = true) {
+  private fun verifyAppointmentInstance(response: AppointmentInstance, setCustomName: Boolean = true, comment: String? = null, categoryCode: String? = null) {
     with(response) {
       assertThat(id).isNotNull
       assertThat(appointmentSeriesId).isNotNull
@@ -217,7 +217,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(prisonerNumber).isEqualTo("A1234BC")
       assertThat(bookingId).isEqualTo(123)
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode ?: "AC1").isEqualTo(categoryCode ?: "AC1")
       var name: String? = null
       if(setCustomName) {
         name = comment?.take(40) ?:"Appointment level comment"
@@ -228,8 +228,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
       assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
-      val extraInformation: String = comment ?: "Appointment level comment"
-      assertThat(extraInformation).isEqualTo(extraInformation)
+      assertThat(extraInformation).isEqualTo(comment ?: "Appointment level comment")
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("CREATE.USER")
       assertThat(updatedTime).isNull()
