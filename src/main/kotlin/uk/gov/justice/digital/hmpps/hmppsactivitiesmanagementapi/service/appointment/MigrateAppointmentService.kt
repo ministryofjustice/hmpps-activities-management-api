@@ -53,7 +53,7 @@ class MigrateAppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
             categoryCode = request.categoryCode!!,
-            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCustomName(request.categoryCode!!).not() }?.take(40),
+            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCustomName(request.categoryCode).not() }?.take(40),
             appointmentTier = null,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,

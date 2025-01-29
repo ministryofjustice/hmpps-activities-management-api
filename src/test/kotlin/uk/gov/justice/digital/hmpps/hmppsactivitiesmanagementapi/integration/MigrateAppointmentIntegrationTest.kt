@@ -145,7 +145,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     )
 
     val response = webTestClient.migrateAppointment(request)!!
-    verifyAppointmentInstance(response)
+    verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
 
     verifyNoInteractions(eventsPublisher)
     verifyNoInteractions(telemetryClient)
