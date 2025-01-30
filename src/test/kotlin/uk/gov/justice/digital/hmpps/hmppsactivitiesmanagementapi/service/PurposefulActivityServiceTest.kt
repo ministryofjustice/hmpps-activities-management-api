@@ -39,7 +39,10 @@ class PurposefulActivityServiceTest {
             ,"${dateFormat.format(mockDate)}",161718,192021
     """.trimIndent()
 
-    val csvOutput = paService.getResultsAsCsv(reportData)
-    assertThat(csvOutput).isEqualTo(expectedCsv)
+    val csvOutput = paService.getResultsAsCsv(reportData.stream())
+
+    val actualCsv = csvOutput.readText()
+
+    assertThat(actualCsv).isEqualTo(expectedCsv)
   }
 }
