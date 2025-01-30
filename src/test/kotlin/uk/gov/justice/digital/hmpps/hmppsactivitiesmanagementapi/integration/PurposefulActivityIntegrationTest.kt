@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PurposefulActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.S3Service
@@ -49,6 +50,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-purposeful-activity-activities.sql",
   )
   @Test
+  @Transactional
   fun `Purposeful Activity Report activities report is uploaded to s3, downloaded again and verified`() {
     val fileKey = purposefulActivityService.executeActivitiesReport(1)
 
@@ -72,6 +74,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-purposeful-activity-appts.sql",
   )
   @Test
+  @Transactional
   fun `Purposeful Activity Report appointments report is uploaded to s3, downloaded again and verified`() {
     val fileKey = purposefulActivityService.executeAppointmentsReport(1)
 
@@ -96,11 +99,13 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-purposeful-activity-activities.sql",
   )
   @Test
+  @Transactional
   fun `Purposeful Activity Repo runs activity report and data is validated`() {
     // This is really just a PurposefulActivityRepo test and could be moved to a dedicated
     // class for testing repos. At time of writing there was no general pattern for
     // creating test classes just for Repository classes.
-    val activityData = purposefulActivityRepo.getPurposefulActivityActivitiesReport(1)
+    val activityData = purposefulActivityRepo.getPurposefulActivityActivitiesReport(1).toList()
+
     assertThat(activityData).isNotNull
     assertThat(activityData).isNotEmpty
     assertThat(activityData).hasSize(3)
@@ -108,7 +113,7 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     assertThat(activityData).first().isNotNull
 
     // Assuming activityData has two arrays of objects
-    val purposefulActivityRow1 = activityData?.get(1) as Array<*>
+    val purposefulActivityRow1 = activityData[1] as Array<*>
     val purposefulActivityRow2 = activityData[2] as Array<*>
 
     // Check some of the data is as expected for first attendance
