@@ -1,15 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
-import java.util.Date
+import java.util.*
+import java.util.stream.Stream
+import kotlin.system.measureTimeMillis
 
 @Service
 class PurposefulActivityService(
@@ -25,6 +30,10 @@ class PurposefulActivityService(
   val purposefulActivityActivityTableName = "activities"
   val purposefulActivityAppointmentsTableName = "appointments"
 
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
+
   /**
    * Executes appointment report and activity report against Activities DB
    * Then Uploads to the Analytical Platform S3 bucket for consumption by Prison Performance Reporting
@@ -33,6 +42,7 @@ class PurposefulActivityService(
    *
    * @param weekOffset How many weeks back to fetch data for, default 1 (most recent data set)
    */
+  @Transactional(readOnly = true)
   fun executeAndUploadAllPurposefulActivityReports(
     weekOffset: Int = 1,
   ) {
@@ -41,14 +51,11 @@ class PurposefulActivityService(
   }
 
   fun executeActivitiesReport(weekOffset: Int): String {
-    val activityData = purposefulActivityRepository.getPurposefulActivityActivitiesReport(weekOffset)
+    log.info("Starting export of activity records")
 
-    if (activityData.isNullOrEmpty() || activityData.size <= 1) {
-      throw RuntimeException("Purposeful Activity Report data failed to find any relevant activity data")
-    }
+    val dataStream = purposefulActivityRepository.getPurposefulActivityActivitiesReport(weekOffset)
 
-    // convert to csv
-    val csvActivitiesReport = getResultsAsCsv(activityData)
+    val csvReport = getResultsAsCsv(dataStream)
 
     val reportDate = getNthPreviousSunday(weekOffset)
     val csvActivitiesFileName = "activities_$reportDate.csv"
@@ -57,7 +64,7 @@ class PurposefulActivityService(
     // upload to s3 bucket
     runBlocking {
       pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
-        report = csvActivitiesReport.toByteArray(),
+        report = csvReport.toString().toByteArray(),
         tableName = purposefulActivityActivityTableName,
         fileName = csvActivitiesFileName,
       )
@@ -65,16 +72,12 @@ class PurposefulActivityService(
     return pushedFileKey
   }
 
-  fun executeAppointmentsReport(
-    weekOffset: Int = 1,
-  ): String {
-    val appointmentData = purposefulActivityRepository.getPurposefulActivityAppointmentsReport(weekOffset)
+  fun executeAppointmentsReport(weekOffset: Int): String {
+    log.info("Starting export of appointment records")
 
-    if (appointmentData.isNullOrEmpty() || appointmentData.size <= 1) {
-      throw RuntimeException("Purposeful Activity Report data failed to find any relevant appointment data")
-    }
+    val dataStream = purposefulActivityRepository.getPurposefulActivityAppointmentsReport(weekOffset)
 
-    val csvAppointmentsReport = getResultsAsCsv(appointmentData)
+    val csvReport = getResultsAsCsv(dataStream)
 
     val reportDate = getNthPreviousSunday(weekOffset)
     val csvAppointmentsFileName = "appointments_$reportDate.csv"
@@ -83,7 +86,7 @@ class PurposefulActivityService(
     // upload to s3 bucket
     runBlocking {
       pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
-        report = csvAppointmentsReport.toByteArray(),
+        report = csvReport.toString().toByteArray(),
         tableName = purposefulActivityAppointmentsTableName,
         fileName = csvAppointmentsFileName,
       )
@@ -91,22 +94,47 @@ class PurposefulActivityService(
     return pushedFileKey
   }
 
-  internal fun getResultsAsCsv(results: MutableList<Any?>?): String {
-    if (results.isNullOrEmpty()) throw IllegalArgumentException("Can't convert resultset to CSV because the result set is empty")
+  internal fun getResultsAsCsv(results: Stream<*>): String {
 
-    val csvBuilder = StringBuilder(results.size * 100) // Estimated initial capacity
+    val csvBuilder = StringBuilder()
 
-    results.forEach { row ->
-      val myRealRow = row as? Array<Any?>
-        ?: throw IllegalStateException("Expected an Array<Any?> but got ${row?.javaClass?.simpleName}")
+    var rowNum = 0
 
-      val rowString = myRealRow.joinToString(",") { item ->
-        formatCsvValue(item)
+    val csvAsString: String
+
+    val elapsedMs = measureTimeMillis {
+
+      results.forEach {
+
+        val row = it as Array<*>
+
+        val rowString: String
+
+        rowString = row.joinToString(",") { item ->
+          formatCsvValue(item)
+        }
+
+        if (rowNum > 0) {
+          csvBuilder.append('\n')
+        }
+
+        csvBuilder.append(rowString)
+
+        rowNum += 1
       }
-      csvBuilder.append(rowString).append("\n")
+
+      log.info("$rowNum database rows converted to CSV")
+
+      if (rowNum <= 1) {
+        throw RuntimeException("Purposeful Activity Report data failed to find any relevant data")
+      }
+
+      csvAsString = csvBuilder.toString()
     }
 
-    return csvBuilder.toString().trimEnd()
+    log.debug("Data took ${elapsedMs}ms to convert to CSV")
+
+    return csvAsString
   }
 
   private fun formatCsvValue(item: Any?): String {
