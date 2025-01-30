@@ -28,7 +28,7 @@ data class PrisonerDeallocationRequest(
   @Schema(
     description = "The reason code for the deallocation",
     example = "RELEASED",
-    allowableValues = ["OTHER", "PERSONAL", "PROBLEM", "REMOVED", "SECURITY", "UNACCEPTABLE_ATTENDANCE", "UNACCEPTABLE_BEHAVIOUR", "WITHDRAWN"],
+    allowableValues = ["COMPLETED", "TRANSFERRED", "WITHDRAWN_STAFF", "WITHDRAWN_OWN", "DISMISSED", "HEALTH", "OTHER", "SECURITY"],
   )
   @field:NotEmpty(message = "The reason code for the deallocation request must supplied.")
   val reasonCode: String?,
