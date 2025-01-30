@@ -9,7 +9,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 import java.util.stream.Stream
-import kotlin.system.measureTimeMillis
 
 @Repository
 class PurposefulActivityRepository {
@@ -195,14 +194,6 @@ class PurposefulActivityRepository {
     query.setHint(HINT_CACHEABLE, "false")
     query.setHint(HINT_READONLY, "false")
 
-    val dataStream: Stream<*>
-
-    val elapsedMs = measureTimeMillis {
-      dataStream = Stream.concat(Stream.of(headers.toTypedArray()), query.resultStream)
-    }
-
-    log.debug("Data took ${elapsedMs}ms to return")
-
-    return dataStream
+    return Stream.concat(Stream.of(headers.toTypedArray()), query.resultStream)
   }
 }
