@@ -2,23 +2,22 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
-import jakarta.transaction.Transactional
+import org.hibernate.jpa.HibernateHints.HINT_CACHEABLE
+import org.hibernate.jpa.QueryHints.HINT_FETCH_SIZE
+import org.hibernate.jpa.QueryHints.HINT_READONLY
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
-
-interface PurposefulActivityRepository {
-  fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>?
-
-  fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>?
-}
+import java.util.stream.Stream
+import kotlin.system.measureTimeMillis
 
 @Repository
-class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
+class PurposefulActivityRepository {
   @PersistenceContext
   private lateinit var entityManager: EntityManager
 
   companion object {
-    private val log = LoggerFactory.getLogger(PurposefulActivityRepositoryImpl::class.java)
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   private val activitiesQuery = """
@@ -106,7 +105,7 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     "attendance_reason_code", "attendance_reason_description", "attendance_reason_attended",
     "attendance_recorded_time", "attendance_status", "attendance_pay_amount", "attendance_bonus_amount",
     "attendance_pieces", "attendance_issue_payment", "record_status",
-  ).toTypedArray<Any?>()
+  )
 
   private val appointmentsQuery = """
   WITH date_range AS (
@@ -181,27 +180,29 @@ class PurposefulActivityRepositoryImpl : PurposefulActivityRepository {
     "appointment_attendee_prisoner_number", "appointment_attendee_booking_id", "appointment_attendee_added_time",
     "appointment_attendee_attended", "appointment_attendee_attendance_recorded_time", "appointment_attendee_removed_time",
     "appointment_attendee_is_deleted", "record_status",
-  ).toTypedArray<Any?>()
+  )
 
-  @Transactional
-  @Override
-  override fun getPurposefulActivityActivitiesReport(weekOffset: Int): MutableList<Any?>? {
-    val query = entityManager.createNativeQuery(activitiesQuery)
+  fun getPurposefulActivityActivitiesReport(weekOffset: Int) = getData(weekOffset, activitiesQuery, activitiesQueryHeaders)
+
+  fun getPurposefulActivityAppointmentsReport(weekOffset: Int) = getData(weekOffset, appointmentsQuery, appointmentQueryHeaders)
+
+  private fun getData(weekOffset: Int, query: String, headers: List<String>): Stream<*> {
+    val query = entityManager.createNativeQuery(query)
+
     query.setParameter("weekOffset", weekOffset)
 
-    val result = query.resultList
-    result.add(0, activitiesQueryHeaders)
-    return result
-  }
+    query.setHint(HINT_FETCH_SIZE, "500")
+    query.setHint(HINT_CACHEABLE, "false")
+    query.setHint(HINT_READONLY, "false")
 
-  @Transactional
-  @Override
-  override fun getPurposefulActivityAppointmentsReport(weekOffset: Int): MutableList<Any?>? {
-    val query = entityManager.createNativeQuery(appointmentsQuery)
-    query.setParameter("weekOffset", weekOffset)
+    val dataStream: Stream<*>
 
-    val result = query.resultList
-    result.add(0, appointmentQueryHeaders)
-    return result
+    val elapsedMs = measureTimeMillis {
+      dataStream = Stream.concat(Stream.of(headers.toTypedArray()), query.resultStream)
+    }
+
+    log.debug("Data took ${elapsedMs}ms to return")
+
+    return dataStream
   }
 }

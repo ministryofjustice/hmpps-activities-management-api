@@ -16,7 +16,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
@@ -336,6 +338,13 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isEdited }).isNotEmpty
+    results.forEach { result ->
+      result.createdTime isCloseTo LocalDateTime.now()
+
+      if (result.isEdited) {
+        result.updatedTime isCloseTo LocalDateTime.now()
+      }
+    }
   }
 
   @Sql(
@@ -359,6 +368,14 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isCancelled }).isNotEmpty
+    results.forEach { result ->
+      result.createdTime isCloseTo LocalDateTime.now()
+
+      if (result.isCancelled) {
+        result.cancelledTime isCloseTo LocalDateTime.now()
+        result.cancelledBy isEqualTo "DIFFERENT.USER"
+      }
+    }
   }
 
   private fun WebTestClient.searchAppointments(

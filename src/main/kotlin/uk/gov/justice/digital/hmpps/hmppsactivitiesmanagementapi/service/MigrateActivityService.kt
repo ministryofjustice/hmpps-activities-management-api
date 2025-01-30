@@ -315,6 +315,9 @@ class MigrateActivityService(
       programServiceCode.startsWith("INDUCTION") -> activityCategories.isInduction()
       programServiceCode.startsWith("IAG") -> activityCategories.isInduction()
 
+      // Activities in NOMIS with exiting SAA* codes
+      programServiceCode.startsWith("SAA") -> activityCategories.firstOrNull { it.code == programServiceCode }
+
       // Everything else is Other
       else -> activityCategories.isOther()
     }
@@ -343,6 +346,7 @@ class MigrateActivityService(
     val tier = when {
       // Prison industries
       programServiceCode.startsWith("IND_") -> tiers.isTierOne()
+      programServiceCode == "SAA_INDUSTRIES" -> tiers.isTierOne()
 
       // Prison jobs
       programServiceCode.startsWith("SER_") -> tiers.isTierOne()
@@ -353,26 +357,31 @@ class MigrateActivityService(
       programServiceCode.startsWith("WORKS") -> tiers.isTierOne()
       programServiceCode.startsWith("RECYCLE") -> tiers.isTierOne()
       programServiceCode.startsWith("OTHOCC") -> tiers.isTierOne()
+      programServiceCode == "SAA_PRISON_JOBS" -> tiers.isTierOne()
 
       // Education
       programServiceCode.startsWith("EDU") -> tiers.isTierOne()
       programServiceCode.startsWith("CORECLASS") -> tiers.isTierOne()
       programServiceCode.startsWith("SKILLS") -> tiers.isTierOne()
       programServiceCode.startsWith("KEY_SKILLS") -> tiers.isTierOne()
+      programServiceCode == "SAA_EDUCATION" -> tiers.isTierOne()
 
       // Not in work
       programServiceCode.startsWith("UNEMP") -> tiers.isFoundation()
       programServiceCode.startsWith("OTH_UNE") -> tiers.isFoundation()
+      programServiceCode == "SAA_NOT_IN_WORK" -> tiers.isFoundation()
 
       // Interventions/courses
       programServiceCode.startsWith("INT_") -> tiers.isTierOne()
       programServiceCode.startsWith("GROUP") -> tiers.isTierOne()
       programServiceCode.startsWith("ABUSE") -> tiers.isTierOne()
+      programServiceCode == "SAA_INTERVENTIONS" -> tiers.isTierOne()
 
       // Sports and fitness & other T2 services
       programServiceCode.startsWith("PE_TYPE1") -> tiers.isTierOne()
       programServiceCode.startsWith("HEALTH") -> tiers.isTierOne()
       programServiceCode.startsWith("OTH_PER") -> tiers.isTierOne()
+      programServiceCode == "SAA_GYM_SPORTS_FITNESS" -> tiers.isTierOne()
 
       // Specific tier 2 services
       programServiceCode.startsWith("T2") -> tiers.isTierTwo()
@@ -380,12 +389,14 @@ class MigrateActivityService(
       // Faith and spirituality
       programServiceCode.startsWith("CHAP") -> tiers.isTierOne()
       programServiceCode.startsWith("OTH_CFR") -> tiers.isTierOne()
+      programServiceCode == "SAA_FAITH_SPIRITUALITY" -> tiers.isTierOne()
 
       // Induction/guidance
       programServiceCode.startsWith("INDUCTION") -> tiers.isTierOne()
       programServiceCode.startsWith("IAG") -> tiers.isTierOne()
       programServiceCode.startsWith("SAFE") -> tiers.isTierOne()
       programServiceCode.startsWith("ASSESS") -> tiers.isTierOne()
+      programServiceCode == "SAA_INDUCTION" -> tiers.isTierOne()
 
       // Other miscellaneous
       programServiceCode.startsWith("OTH_DOM") -> tiers.isFoundation()
