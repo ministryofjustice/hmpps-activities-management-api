@@ -5,8 +5,6 @@ import jakarta.persistence.PersistenceContext
 import org.hibernate.jpa.HibernateHints.HINT_CACHEABLE
 import org.hibernate.jpa.QueryHints.HINT_FETCH_SIZE
 import org.hibernate.jpa.QueryHints.HINT_READONLY
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 import java.util.stream.Stream
 
@@ -14,10 +12,6 @@ import java.util.stream.Stream
 class PurposefulActivityRepository {
   @PersistenceContext
   private lateinit var entityManager: EntityManager
-
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
 
   private val activitiesQuery = """
     WITH date_range AS (
