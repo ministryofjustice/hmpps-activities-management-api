@@ -19,7 +19,6 @@ import java.util.*
 import java.util.stream.Stream
 import kotlin.system.measureTimeMillis
 
-
 @Service
 class PurposefulActivityService(
   private val purposefulActivityRepository: PurposefulActivityRepository,
