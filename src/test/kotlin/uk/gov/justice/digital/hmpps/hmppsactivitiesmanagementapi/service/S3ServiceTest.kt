@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.io.File
 
 class S3ServiceTest {
   private val amazonS3: S3Client = mockk(relaxed = true)
@@ -18,14 +19,16 @@ class S3ServiceTest {
 
   @Test
   fun `Push a file to AP AWS S3`(): Unit = runBlocking {
+    val file = File.createTempFile("exp", "csv")
+    file.deleteOnExit()
+
     val mockBucketName = "aws-s3-ap-mock-bucket"
-    val putObjectResponse = PutObjectResponse {
-    }
+    val putObjectResponse = PutObjectResponse {}
 
     coEvery { amazonS3.putObject(any()) } returns putObjectResponse
 
     val filePath = service.pushReportToAnalyticalPlatformS3(
-      report = "test-file".toByteArray(),
+      report = file,
       fileName = "test-file.csv",
       tableName = "testTable",
       bucketName = mockBucketName,
@@ -40,6 +43,9 @@ class S3ServiceTest {
 
   @Test
   fun `Push a file to AP AWS S3 with S3 error cascades error`(): Unit = runBlocking {
+    val file = File.createTempFile("exp", "csv")
+    file.deleteOnExit()
+
     val mockBucketName = "aws-s3-ap-mock-bucket"
 
     coEvery { amazonS3.putObject(any()) } throws S3Exception("S3 Exception")
@@ -47,7 +53,7 @@ class S3ServiceTest {
     assertThrows<S3Exception> {
       runBlocking {
         service.pushReportToAnalyticalPlatformS3(
-          report = "test-file".toByteArray(),
+          report = file,
           fileName = "test-file.csv",
           tableName = "testTable",
           bucketName = mockBucketName,

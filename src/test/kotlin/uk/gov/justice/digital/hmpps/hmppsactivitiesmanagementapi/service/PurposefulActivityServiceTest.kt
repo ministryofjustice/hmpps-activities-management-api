@@ -40,6 +40,9 @@ class PurposefulActivityServiceTest {
     """.trimIndent()
 
     val csvOutput = paService.getResultsAsCsv(reportData)
-    assertThat(csvOutput).isEqualTo(expectedCsv)
+
+    val actualCsv = csvOutput.readText()
+
+    assertThat(actualCsv).isEqualTo(expectedCsv)
   }
 }

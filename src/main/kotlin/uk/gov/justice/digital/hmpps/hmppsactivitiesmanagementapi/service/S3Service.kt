@@ -5,9 +5,11 @@ import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.sdk.kotlin.services.s3.model.ObjectCannedAcl
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.model.ServerSideEncryption
-import aws.smithy.kotlin.runtime.content.ByteStream
+import aws.smithy.kotlin.runtime.content.asByteStream
 import aws.smithy.kotlin.runtime.content.writeToFile
 import kotlinx.coroutines.runBlocking
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.io.File
@@ -15,12 +17,16 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
+
 @Service
 class S3Service(
   private val s3ClientAnalyticalPlatform: S3Client,
   @Value("\${aws.s3.ap.bucket}") private val awsApS3BucketName: String,
   @Value("\${aws.s3.ap.project}") private val awsApS3ProjectName: String,
 ) {
+  companion object {
+    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+  }
 
   /**
    * Pushes a report to the Analytical Platform's S3 bucket with a specified naming convention.
@@ -41,7 +47,7 @@ class S3Service(
    * @param bucketName The name of the S3 bucket, for AP this is of the form moj-reg-<env> see the env vars in helm charts
    */
   suspend fun pushReportToAnalyticalPlatformS3(
-    report: ByteArray,
+    report: File,
     fileName: String,
     tableName: String,
     bucketName: String = awsApS3BucketName,
@@ -49,18 +55,21 @@ class S3Service(
     val extractionTimestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmss'Z'")
       .withZone(ZoneOffset.UTC)
       .format(Instant.now())
+
     val filePath =
       "landing/$awsApS3ProjectName/data/database_name=activities_reports/table_name=$tableName/extraction_timestamp=$extractionTimestamp/$fileName"
 
     val request = PutObjectRequest {
       bucket = bucketName
       key = filePath
-      body = ByteStream.fromBytes(report)
+      body = report.asByteStream()
       serverSideEncryption = ServerSideEncryption.Aes256
       acl = ObjectCannedAcl.BucketOwnerFullControl
     }
 
     s3ClientAnalyticalPlatform.putObject(request)
+
+    log.info("File uploaded to $filePath")
 
     return filePath
   }
@@ -83,10 +92,13 @@ class S3Service(
     val myFile = File("$tableName-pa-test.csv")
 
     runBlocking {
-      s3ClientAnalyticalPlatform.getObject(request, {
-        it.body?.writeToFile(myFile)
-        println("saved file $fileName taken from aws s3")
-      })
+      s3ClientAnalyticalPlatform.getObject(
+        request,
+        {
+          it.body?.writeToFile(myFile)
+          println("saved file $fileName taken from aws s3")
+        },
+      )
     }
 
     return myFile
