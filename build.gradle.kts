@@ -51,7 +51,7 @@ dependencies {
       strictly("5.0.0-alpha.14")
     }
   }
-  implementation("aws.sdk.kotlin:s3:1.4.7")
+  implementation("aws.sdk.kotlin:s3:1.4.10")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -190,7 +190,6 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
 }
 
 ktlint {
-  version.set("1.4.1")
   additionalEditorconfig.set(
     mapOf(
       "ktlint_standard" to "disabled"
