@@ -52,5 +52,3 @@ generic-service:
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service
 
-cron:
-  purposefulActivityReports: "30 1 * 12 2"
