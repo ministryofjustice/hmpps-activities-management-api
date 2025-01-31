@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "6.1.2"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.0.0"
   kotlin("plugin.spring") version "2.1.10"
   kotlin("plugin.jpa") version "2.1.10"
   jacoco
@@ -51,7 +51,7 @@ dependencies {
       strictly("5.0.0-alpha.14")
     }
   }
-  implementation("aws.sdk.kotlin:s3:1.4.7")
+  implementation("aws.sdk.kotlin:s3:1.4.10")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -190,7 +190,6 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
 }
 
 ktlint {
-  version.set("1.4.1")
   additionalEditorconfig.set(
     mapOf(
       "ktlint_standard" to "disabled"
