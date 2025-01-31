@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
@@ -128,8 +130,12 @@ class RolloutController(
       ),
     ],
   )
-  fun getRolledOutPrisons(): List<RolloutPrisonPlan> =
-    rolloutService.getRolloutPrisons(prisonsLive = true)
+  fun getRolledOutPrisons(
+    @RequestParam(value = "prisonsLive", required = false)
+    @Parameter(description = "Restrict the list of rolled out prisons to prisons live to users")
+    prisonsLive: Boolean = false,
+  ): List<RolloutPrisonPlan> =
+    rolloutService.getRolloutPrisons(prisonsLive = prisonsLive)
 
   @Operation(
     summary = "Creates a prison regime for a given prison",

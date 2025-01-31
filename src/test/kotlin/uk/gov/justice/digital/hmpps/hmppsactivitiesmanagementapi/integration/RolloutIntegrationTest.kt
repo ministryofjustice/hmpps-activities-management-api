@@ -32,8 +32,22 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `get prisons that are rolled out for users`() {
+  fun `get prisons that are rolled out`() {
     var prisonPlanList = webTestClient.getRolledOutPrisons()!!
+
+    assertThat(prisonPlanList).hasSize(5)
+    with(prisonPlanList) {
+      this.single { it.prisonCode == "RSI" && it.prisonLive }
+      this.single { it.prisonCode == "PVI" && it.prisonLive }
+      this.single { it.prisonCode == "MDI" && it.prisonLive }
+      this.single { it.prisonCode == "IWI" && !it.prisonLive }
+      this.single { it.prisonCode == "FMI" && !it.prisonLive }
+    }
+  }
+
+  @Test
+  fun `get prisons that are rolled out and live for users`() {
+    var prisonPlanList = webTestClient.getLiveRolledOutPrisons()!!
 
     assertThat(prisonPlanList).hasSize(3)
     with(prisonPlanList) {
@@ -101,6 +115,17 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.getRolledOutPrisons() =
     get()
       .uri("/rollout")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(RolloutPrisonPlan::class.java)
+      .returnResult().responseBody
+
+  private fun WebTestClient.getLiveRolledOutPrisons() =
+    get()
+      .uri("/rollout?prisonsLive=true")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
       .exchange()
