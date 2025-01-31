@@ -25,12 +25,12 @@ class PurposefulActivityServiceTest {
 
   @Test
   fun `test convertToCsv with valid input`() {
-    val reportData: MutableList<Any?> = mutableListOf(
+    val reportData = mutableListOf(
       arrayOf("John", mockDate, 123L, 456),
       arrayOf("Jane", mockDate, 789L, 101112),
       arrayOf("Alice", mockDate, null, 131415),
       arrayOf(null, mockDate, 161718L, 192021),
-    )
+    ).stream()
 
     val expectedCsv = """
             "John","${dateFormat.format(mockDate)}",123,456
@@ -40,6 +40,9 @@ class PurposefulActivityServiceTest {
     """.trimIndent()
 
     val csvOutput = paService.getResultsAsCsv(reportData)
-    assertThat(csvOutput).isEqualTo(expectedCsv)
+
+    val actualCsv = csvOutput.readText()
+
+    assertThat(actualCsv).isEqualTo(expectedCsv)
   }
 }

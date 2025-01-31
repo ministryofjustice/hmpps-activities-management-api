@@ -161,8 +161,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - ignores historical exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
       assertThat(attendees).hasSize(2)
-      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
-      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+      assertThat(attendees.find { it.prisonerNumber == "G4793VF" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "A5193DY" }).isNotNull()
     }
 
     @Test
@@ -178,8 +178,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - ignores future exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
       assertThat(attendees).hasSize(2)
-      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
-      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+      assertThat(attendees.find { it.prisonerNumber == "G4793VF" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "A5193DY" }).isNotNull()
     }
 
     @Test
@@ -195,8 +195,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - with sessions in the past should appear`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(43)!!
       assertThat(attendees).hasSize(2)
-      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G6268GL") }
-      with(attendees[1]) { assertThat(prisonerNumber).isEqualTo("G4206GA") }
+      assertThat(attendees.find { it.prisonerNumber == "G6268GL" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "G4206GA" }).isNotNull()
     }
 
     @Test

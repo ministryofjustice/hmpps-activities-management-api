@@ -26,7 +26,9 @@ SELECT a.appointment_series_id,
            WHEN a.cancellation_reason_id IS NULL THEN false
            ELSE NOT acr.is_delete END                                               AS is_cancelled,
        a.created_time,
-       a.updated_time
+       a.updated_time,
+       a.cancelled_time,
+       a.cancelled_by
 FROM appointment a
          JOIN appointment_series asrs on asrs.appointment_series_id = a.appointment_series_id
          LEFT JOIN appointment_series_schedule asch on asrs.appointment_series_schedule_id = asch.appointment_series_schedule_id
