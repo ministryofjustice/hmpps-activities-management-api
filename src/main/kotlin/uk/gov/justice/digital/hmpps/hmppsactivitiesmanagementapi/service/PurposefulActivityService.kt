@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PurposefulActivityRepository
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -61,14 +64,17 @@ class PurposefulActivityService(
     val csvActivitiesFileName = "activities_$reportDate.csv"
 
     var pushedFileKey: String
-    // upload to s3 bucket
+
     runBlocking {
       pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
-        report = csvReport.toString().toByteArray(),
+        report = csvReport,
         tableName = purposefulActivityActivityTableName,
         fileName = csvActivitiesFileName,
       )
     }
+
+    csvReport.delete()
+
     return pushedFileKey
   }
 
@@ -86,55 +92,54 @@ class PurposefulActivityService(
     // upload to s3 bucket
     runBlocking {
       pushedFileKey = s3Service.pushReportToAnalyticalPlatformS3(
-        report = csvReport.toString().toByteArray(),
+        report = csvReport,
         tableName = purposefulActivityAppointmentsTableName,
         fileName = csvAppointmentsFileName,
       )
     }
+
+    csvReport.delete()
+
     return pushedFileKey
   }
 
-  internal fun getResultsAsCsv(results: Stream<*>): String {
+  internal fun getResultsAsCsv(results: Stream<*>): File {
 
-    val csvBuilder = StringBuilder()
+    val file = File.createTempFile("exp", "csv")
+
+    val writer = BufferedWriter(FileWriter(file), 32768)
 
     var rowNum = 0
 
-    val csvAsString: String
-
     val elapsedMs = measureTimeMillis {
+      writer.use {
+        results.forEach {
+          val row = it as Array<*>
 
-      results.forEach {
+          val rowString: String
 
-        val row = it as Array<*>
+          rowString = row.joinToString(",") { item ->
+            formatCsvValue(item)
+          }
 
-        val rowString: String
+          if (rowNum > 0) {
+            writer.write("\n")
+          }
 
-        rowString = row.joinToString(",") { item ->
-          formatCsvValue(item)
+          writer.write(rowString)
+
+          rowNum += 1
         }
-
-        if (rowNum > 0) {
-          csvBuilder.append('\n')
-        }
-
-        csvBuilder.append(rowString)
-
-        rowNum += 1
       }
-
-      log.info("$rowNum database rows converted to CSV")
-
-      if (rowNum <= 1) {
-        throw RuntimeException("Purposeful Activity Report data failed to find any relevant data")
-      }
-
-      csvAsString = csvBuilder.toString()
     }
 
-    log.debug("Data took ${elapsedMs}ms to convert to CSV")
+    log.info("$rowNum rows written to a temporary file in ${elapsedMs}ms")
 
-    return csvAsString
+    if (rowNum <= 1) {
+      throw RuntimeException("Purposeful Activity Report data failed to find any relevant data")
+    }
+
+    return file
   }
 
   private fun formatCsvValue(item: Any?): String {
