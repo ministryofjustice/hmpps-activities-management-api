@@ -123,9 +123,10 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
     assertThat(purposefulActivityRow1[22]).isEqualTo("Maths AM")
 
     // Check some fields as expected for second attendance
-    assertThat(purposefulActivityRow2).hasSize(46) // confirm total columns as expected
+    assertThat(purposefulActivityRow2).hasSize(47) // confirm total columns as expected
     assertThat(purposefulActivityRow2[12]).isEqualTo("Maths")
     assertThat(purposefulActivityRow2[7]).isEqualTo("Tier 1")
+    assertThat(purposefulActivityRow2[46]).isEqualTo("AM")
   }
 
   @Sql(
