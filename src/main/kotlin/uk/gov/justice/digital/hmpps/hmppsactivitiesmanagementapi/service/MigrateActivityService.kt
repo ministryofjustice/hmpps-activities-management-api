@@ -209,7 +209,7 @@ class MigrateActivityService(
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
-      startDate = request.startDate ?: LocalDate.now().plusDays(1),
+      startDate = if (request.startDate != null && request.startDate.isAfter(LocalDate.now())) request.startDate else LocalDate.now().plusDays(1),
       riskLevel = DEFAULT_RISK_LEVEL,
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,
