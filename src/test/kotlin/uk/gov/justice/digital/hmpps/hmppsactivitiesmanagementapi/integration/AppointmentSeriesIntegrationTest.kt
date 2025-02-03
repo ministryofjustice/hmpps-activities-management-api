@@ -658,7 +658,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   }
 
   private fun assertSingleAppointmentTwoPrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {
-    assertThat(appointmentSeries).isEqualTo(
+    assertThat(appointmentSeries)
+      .usingRecursiveComparison()
+      .ignoringCollectionOrder().isEqualTo(
       AppointmentSeries(
         appointmentSeries.id,
         request.appointmentType!!,
@@ -718,8 +720,8 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             null,
             isDeleted = false,
             attendees = listOf(
-              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null, null),
               AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2, null, null, null, null, null, null, null, null),
+              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null, null),
             ),
           ),
         ),
