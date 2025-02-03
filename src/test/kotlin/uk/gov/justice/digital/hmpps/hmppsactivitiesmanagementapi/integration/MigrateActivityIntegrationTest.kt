@@ -343,7 +343,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     ActivityMigrateRequest(
       programServiceCode = "CLNR",
       prisonCode = "MDI",
-      startDate = LocalDate.now().minusDays(1),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 1,
       internalLocationCode = "011",
