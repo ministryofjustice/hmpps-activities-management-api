@@ -587,6 +587,38 @@ class MigrateActivityServiceTest {
     }
 
     @Test
+    fun `An activity with a start date in the future`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now().plusDays(2),
+      )
+
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        with(schedules().first()) {
+          assertThat(slots()).hasSize(1)
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(2))
+        }
+      }
+    }
+
+    @Test
     fun `An activity with the outside work flag set will be flagged as such`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(

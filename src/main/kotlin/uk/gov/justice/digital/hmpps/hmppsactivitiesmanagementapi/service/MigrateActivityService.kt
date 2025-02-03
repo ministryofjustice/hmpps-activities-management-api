@@ -194,8 +194,6 @@ class MigrateActivityService(
     scheduledWeeks: Int = 1,
     cohort: Int? = null,
   ): Activity {
-    val tomorrow = LocalDate.now().plusDays(1)
-
     // For tier two activities we need a default value for the organiser
     val defaultOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument("OTHER")
 
@@ -211,7 +209,7 @@ class MigrateActivityService(
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
-      startDate = tomorrow,
+      startDate = request.startDate ?: LocalDate.now().plusDays(1),
       riskLevel = DEFAULT_RISK_LEVEL,
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,
