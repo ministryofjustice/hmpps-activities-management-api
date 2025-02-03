@@ -619,6 +619,75 @@ class MigrateActivityServiceTest {
     }
 
     @Test
+    fun `Fails when no start date is provided`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = null,
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Fails when provided start date is in the past`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now().minusDays(2),
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Fails when provided start date is today`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now(),
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
     fun `An activity with the outside work flag set will be flagged as such`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
@@ -883,7 +952,7 @@ class MigrateActivityServiceTest {
       ActivityMigrateRequest(
         programServiceCode = "CLNR",
         prisonCode = "MDI",
-        startDate = LocalDate.now().minusDays(1),
+        startDate = LocalDate.now().plusDays(1),
         endDate = null,
         internalLocationId = 1,
         internalLocationCode = "011",
