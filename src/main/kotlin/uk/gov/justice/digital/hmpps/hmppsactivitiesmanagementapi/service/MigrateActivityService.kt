@@ -101,7 +101,7 @@ class MigrateActivityService(
       throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
     }
 
-    if (request.startDate == null || request.startDate.isEqual(LocalDate.now()) || request.startDate.isBefore(LocalDate.now())) {
+    if (request.startDate == null || !request.startDate.isAfter(LocalDate.now())) {
       throw ValidationException("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
     }
 
