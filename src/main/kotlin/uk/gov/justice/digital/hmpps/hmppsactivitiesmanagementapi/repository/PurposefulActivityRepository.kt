@@ -70,7 +70,8 @@ class PurposefulActivityRepository {
       WHEN si.session_date < (select mid_date from date_range) THEN 'Final'
     ELSE
       'Provisional'
-    END AS "record_status"
+    END AS "record_status",
+    si.time_slot as "scheduled_instance_time_slot"
     from attendance att
     inner join scheduled_instance si on att.scheduled_instance_id = si.scheduled_instance_id
     	and (si.session_date || ' ' || si.start_time)::timestamp BETWEEN
@@ -81,7 +82,7 @@ class PurposefulActivityRepository {
     inner join activity_category actcat on actcat.activity_category_id = act.activity_category_id
     left outer join event_tier tier on tier.event_tier_id = act.activity_tier_id
     left outer join attendance_reason atre on atre.attendance_reason_id = att.attendance_reason_id
-  
+ 
   """
 
   private val activitiesQueryHeaders = listOf(
@@ -97,7 +98,7 @@ class PurposefulActivityRepository {
     "attendance_attendance_id", "attendance_prisoner_number", "attendance_attendance_reason_id",
     "attendance_reason_code", "attendance_reason_description", "attendance_reason_attended",
     "attendance_recorded_time", "attendance_status", "attendance_pay_amount", "attendance_bonus_amount",
-    "attendance_pieces", "attendance_issue_payment", "record_status",
+    "attendance_pieces", "attendance_issue_payment", "record_status", "session",
   )
 
   private val appointmentsQuery = """
