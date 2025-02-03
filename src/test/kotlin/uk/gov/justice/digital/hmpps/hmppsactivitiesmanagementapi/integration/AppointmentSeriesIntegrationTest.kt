@@ -368,8 +368,9 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       eventCaptor.allValues.map { it.eventType }.distinct().single(),
     ).isEqualTo("appointments.appointment-instance.created")
 
-    assertThat(eventCaptor.allValues.map { it.additionalInformation }).containsAll(
-      listOf(AppointmentInstanceInformation(attendeeIds[0]), AppointmentInstanceInformation(attendeeIds[1]))
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceInformation(attendeeIds[0]),
+      AppointmentInstanceInformation(attendeeIds[1]),
     )
 
     verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
