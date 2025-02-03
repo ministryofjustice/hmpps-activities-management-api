@@ -105,7 +105,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     ActivityMigrateRequest(
       programServiceCode = "INT_NOM",
       prisonCode = "IWI",
-      startDate = LocalDate.of(2024, 7, 9),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 468492,
       internalLocationCode = "SITE 3",
@@ -157,7 +157,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     ActivityMigrateRequest(
       programServiceCode = "INT_NOM",
       prisonCode = "FMI",
-      startDate = LocalDate.of(2024, 7, 9),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 468492,
       internalLocationCode = "SITE 3",
@@ -186,7 +186,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     ActivityMigrateRequest(
       programServiceCode = "INT_NOM",
       prisonCode = "FMI",
-      startDate = LocalDate.of(2024, 7, 9),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 468492,
       internalLocationCode = "SITE 3",
@@ -215,7 +215,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     ActivityMigrateRequest(
       programServiceCode = "INT_NOM",
       prisonCode = "IWI",
-      startDate = LocalDate.of(2024, 7, 9),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 468492,
       internalLocationCode = "SITE 3",
