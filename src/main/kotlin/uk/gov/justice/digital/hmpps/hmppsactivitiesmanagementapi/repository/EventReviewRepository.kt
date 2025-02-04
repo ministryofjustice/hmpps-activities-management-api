@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 
 @Repository
-interface EventReviewRepository : JpaRepository<EventReview, Long>, JpaSpecificationExecutor<EventReview> {
+interface EventReviewRepository :
+  JpaRepository<EventReview, Long>,
+  JpaSpecificationExecutor<EventReview> {
   fun findByPrisonCodeAndPrisonerNumber(prisonCode: String, prisonerNumber: String): List<EventReview>
 
   @Query(value = "UPDATE EventReview e SET e.prisonerNumber = :newNumber, e.bookingId = coalesce(:newBookingId, e.bookingId) WHERE e.prisonerNumber = :oldNumber")

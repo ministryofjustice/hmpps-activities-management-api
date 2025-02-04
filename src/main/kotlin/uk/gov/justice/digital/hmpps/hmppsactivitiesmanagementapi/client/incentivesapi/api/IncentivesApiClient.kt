@@ -19,6 +19,5 @@ class IncentivesApiClient(private val incentivesApiWebClient: WebClient) {
   }
 
   @Cacheable(CacheConfiguration.PRISON_INCENTIVE_LEVELS_CACHE_NAME)
-  fun getIncentiveLevelsCached(prisonId: String): List<PrisonIncentiveLevel> =
-    getIncentiveLevels(prisonId)
+  fun getIncentiveLevelsCached(prisonId: String): List<PrisonIncentiveLevel> = getIncentiveLevels(prisonId)
 }

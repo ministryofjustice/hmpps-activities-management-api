@@ -18,26 +18,23 @@ class SynchronisationService(
   private val allocationRepository: AllocationRepository,
   private val attendanceRepository: AttendanceRepository,
 ) {
-  fun findAttendanceSync(attendanceId: Long): AttendanceSync? =
-    attendanceSyncRepository.findAllByAttendanceId(attendanceId)
-      ?.toModel()
+  fun findAttendanceSync(attendanceId: Long): AttendanceSync? = attendanceSyncRepository.findAllByAttendanceId(attendanceId)
+    ?.toModel()
 
-  fun findActiveAllocationsSummary(prisonCode: String): AllocationReconciliationResponse =
-    allocationRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonCode, PrisonerStatus.ACTIVE)
-      .let {
-        AllocationReconciliationResponse(
-          prisonCode = prisonCode,
-          bookings = it,
-        )
-      }
+  fun findActiveAllocationsSummary(prisonCode: String): AllocationReconciliationResponse = allocationRepository.findBookingAllocationCountsByPrisonAndPrisonerStatus(prisonCode, PrisonerStatus.ACTIVE)
+    .let {
+      AllocationReconciliationResponse(
+        prisonCode = prisonCode,
+        bookings = it,
+      )
+    }
 
-  fun findAttendancePaidSummary(prisonCode: String, date: LocalDate): AttendanceReconciliationResponse =
-    attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonCode, date)
-      .let {
-        AttendanceReconciliationResponse(
-          prisonCode = prisonCode,
-          date = date,
-          bookings = it,
-        )
-      }
+  fun findAttendancePaidSummary(prisonCode: String, date: LocalDate): AttendanceReconciliationResponse = attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonCode, date)
+    .let {
+      AttendanceReconciliationResponse(
+        prisonCode = prisonCode,
+        date = date,
+        bookings = it,
+      )
+    }
 }

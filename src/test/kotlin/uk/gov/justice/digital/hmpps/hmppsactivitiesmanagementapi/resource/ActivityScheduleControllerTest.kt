@@ -119,11 +119,9 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     response.contentAsString isEqualTo mapper.writeValueAsString(expected)
   }
 
-  private fun MockMvc.getAllocationsByScheduleId(scheduleId: Long) =
-    get("/schedules/$scheduleId/allocations")
+  private fun MockMvc.getAllocationsByScheduleId(scheduleId: Long) = get("/schedules/$scheduleId/allocations")
 
-  private fun MockMvc.getNonAssociations(scheduleId: Long, prisonerNumber: String) =
-    get("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
+  private fun MockMvc.getNonAssociations(scheduleId: Long, prisonerNumber: String) = get("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
 
   @Test
   fun `200 response when get schedule by schedule identifier with earliest session date default`() {
@@ -165,8 +163,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     assertThat(response.contentAsString).contains("not found")
   }
 
-  private fun MockMvc.getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate? = null) =
-    get("/schedules/$scheduleId${earliestSessionDate?.let { "?earliestSessionDate=$it" } ?: ""}")
+  private fun MockMvc.getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate? = null) = get("/schedules/$scheduleId${earliestSessionDate?.let { "?earliestSessionDate=$it" } ?: ""}")
 
   @Test
   fun `204 response when allocate offender to a schedule`() {
@@ -224,19 +221,17 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     verify(activityScheduleService).deallocatePrisoners(1, request, "USERNAME")
   }
 
-  private fun MockMvc.allocate(scheduleId: Long, request: PrisonerAllocationRequest) =
-    post("/schedules/$scheduleId/allocations") {
-      principal = Principal { "USERNAME" }
-      content = mapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.allocate(scheduleId: Long, request: PrisonerAllocationRequest) = post("/schedules/$scheduleId/allocations") {
+    principal = Principal { "USERNAME" }
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+  }
 
-  private fun MockMvc.deallocate(scheduleId: Long, request: PrisonerDeallocationRequest) =
-    put("/schedules/$scheduleId/deallocate") {
-      principal = Principal { "USERNAME" }
-      content = mapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.deallocate(scheduleId: Long, request: PrisonerDeallocationRequest) = put("/schedules/$scheduleId/deallocate") {
+    principal = Principal { "USERNAME" }
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+  }
 
   @Test
   fun `200 response when get waiting lists by schedule identifier`() {
@@ -255,10 +250,10 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Allocate offender tests")
-    inner class AllocateOffenderTests() {
+    inner class AllocateOffenderTests {
       private var prisonerAllocationRequest = PrisonerAllocationRequest(
         prisonerNumber = "A1234CB",
         payBandId = 1,
@@ -295,7 +290,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
     @Nested
     @DisplayName("Deallocate offender tests")
-    inner class DeallocateOffenderTests() {
+    inner class DeallocateOffenderTests {
       private var prisonerDeallocateRequest = PrisonerDeallocationRequest(
         prisonerNumbers = listOf("654321"),
         reasonCode = DeallocationReason.RELEASED.name,
@@ -333,7 +328,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
 
     @Nested
     @DisplayName("Get schedule by id")
-    inner class GetScheduleByIdTests() {
+    inner class GetScheduleByIdTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get schedule by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -345,6 +340,5 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     }
   }
 
-  private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) =
-    get("/schedules/$scheduleId/waiting-list-applications")
+  private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) = get("/schedules/$scheduleId/waiting-list-applications")
 }

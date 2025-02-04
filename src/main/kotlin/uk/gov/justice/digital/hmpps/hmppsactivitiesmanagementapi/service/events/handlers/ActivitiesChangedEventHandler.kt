@@ -66,57 +66,52 @@ class ActivitiesChangedEventHandler(
     return Outcome.success()
   }
 
-  private fun prisonerHasAllocationsOfInterestFor(event: ActivitiesChangedEvent) =
-    allocationRepository.existAtPrisonForPrisoner(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
-    )
+  private fun prisonerHasAllocationsOfInterestFor(event: ActivitiesChangedEvent) = allocationRepository.existAtPrisonForPrisoner(
+    event.prisonCode(),
+    event.prisonerNumber(),
+    PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+  )
 
-  private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) =
-    LocalDateTime.now().let { now ->
-      transactionHandler.newSpringTransaction {
-        allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
-          event.prisonCode(),
-          event.prisonerNumber(),
-          PrisonerStatus.ACTIVE,
-          PrisonerStatus.PENDING,
-          PrisonerStatus.SUSPENDED,
-        )
-          .excludingFuturePendingAllocations()
-          .autoSuspendPrisonersAllocations(now, event)
-          .map { it to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, it) }
-      }.let { suspendedAllocations ->
-        suspendedAllocations.forEach {
-          outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
-          it.second.forEach { attendance ->
-            outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-          }
-        }.also { log.info("Sending allocation amended events.") }
-      }
+  private fun suspendPrisonerAllocationsAndAttendances(event: ActivitiesChangedEvent) = LocalDateTime.now().let { now ->
+    transactionHandler.newSpringTransaction {
+      allocationRepository.findByPrisonCodePrisonerNumberPrisonerStatus(
+        event.prisonCode(),
+        event.prisonerNumber(),
+        PrisonerStatus.ACTIVE,
+        PrisonerStatus.PENDING,
+        PrisonerStatus.SUSPENDED,
+      )
+        .excludingFuturePendingAllocations()
+        .autoSuspendPrisonersAllocations(now, event)
+        .map { it to attendanceSuspensionDomainService.autoSuspendFutureAttendancesForAllocation(now, it) }
+    }.let { suspendedAllocations ->
+      suspendedAllocations.forEach {
+        outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it.first.allocationId)
+        it.second.forEach { attendance ->
+          outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+        }
+      }.also { log.info("Sending allocation amended events.") }
     }
+  }
 
-  private fun List<Allocation>.excludingFuturePendingAllocations() =
-    filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
+  private fun List<Allocation>.excludingFuturePendingAllocations() = filterNot { it.prisonerStatus == PrisonerStatus.PENDING && it.startDate.isAfter(LocalDate.now()) }
 
-  private fun List<Allocation>.autoSuspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) =
-    onEach { it.autoSuspend(suspendedAt, "Temporarily released or transferred") }
-      .also { log.info("Auto suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
+  private fun List<Allocation>.autoSuspendPrisonersAllocations(suspendedAt: LocalDateTime, event: ActivitiesChangedEvent) = onEach { it.autoSuspend(suspendedAt, "Temporarily released or transferred") }
+    .also { log.info("Auto suspended ${it.size} allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.") }
 
-  private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) =
-    prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
-      .throwNullPointerIfNotFound { "Prisoner search lookup failed for prisoner ${event.prisonerNumber()}" }
-      .let { prisoner ->
-        when {
-          prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
-          prisoner.isAtDifferentLocationTo(event.prisonCode()) -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
-          // The user has explicitly chosen END, so we know they want to end but cannot easily determine a reason. If we don't it causes issues for the prisons.
-          else -> OTHER.also {
-            log.info("Prisoner prison code '${prisoner.prisonId}', prisoner '${prisoner.prisonerNumber}', status '${prisoner.status}', last movement type code '${prisoner.lastMovementType()}'")
-            log.info("Defaulting to OTHER for deallocation reason for prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}")
-          }
+  private fun getDeallocationReasonFor(event: ActivitiesChangedEvent) = prisonerSearchApiClient.findByPrisonerNumber(event.prisonerNumber())
+    .throwNullPointerIfNotFound { "Prisoner search lookup failed for prisoner ${event.prisonerNumber()}" }
+    .let { prisoner ->
+      when {
+        prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+        prisoner.isAtDifferentLocationTo(event.prisonCode()) -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+        // The user has explicitly chosen END, so we know they want to end but cannot easily determine a reason. If we don't it causes issues for the prisons.
+        else -> OTHER.also {
+          log.info("Prisoner prison code '${prisoner.prisonId}', prisoner '${prisoner.prisonerNumber}', status '${prisoner.status}', last movement type code '${prisoner.lastMovementType()}'")
+          log.info("Defaulting to OTHER for deallocation reason for prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}")
         }
       }
+    }
 
   private fun Prisoner?.throwNullPointerIfNotFound(message: () -> String): Prisoner {
     if (this == null) {

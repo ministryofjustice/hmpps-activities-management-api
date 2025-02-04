@@ -146,15 +146,14 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
-  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity =
-    webTestClient.get()
-      .uri("/activities/$activityId/filtered")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, agencyId)
-      .exchange()
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity = webTestClient.get()
+    .uri("/activities/$activityId/filtered")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, agencyId)
+    .exchange()
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-23-1.sql")
@@ -339,90 +338,83 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   private fun buildActivityMigrateRequest(
     payRates: List<NomisPayRate> = emptyList(),
     scheduleRules: List<NomisScheduleRule> = emptyList(),
-  ) =
-    ActivityMigrateRequest(
-      programServiceCode = "CLNR",
-      prisonCode = "MDI",
-      startDate = LocalDate.now().minusDays(1),
-      endDate = null,
-      internalLocationId = 1,
-      internalLocationCode = "011",
-      internalLocationDescription = "MDI-1-1-011",
-      capacity = 10,
-      description = "An activity",
-      payPerSession = "H",
-      runsOnBankHoliday = false,
-      outsideWork = false,
-      scheduleRules,
-      payRates,
-    )
+  ) = ActivityMigrateRequest(
+    programServiceCode = "CLNR",
+    prisonCode = "MDI",
+    startDate = LocalDate.now().minusDays(1),
+    endDate = null,
+    internalLocationId = 1,
+    internalLocationCode = "011",
+    internalLocationDescription = "MDI-1-1-011",
+    capacity = 10,
+    description = "An activity",
+    payPerSession = "H",
+    runsOnBankHoliday = false,
+    outsideWork = false,
+    scheduleRules,
+    payRates,
+  )
 
-  private fun buildAllocationMigrateRequest() =
-    AllocationMigrateRequest(
-      prisonCode = "MDI",
-      activityId = 1,
-      splitRegimeActivityId = null,
-      prisonerNumber = "A1234BB",
-      bookingId = 1,
-      cellLocation = "MDI-1-1-001",
-      nomisPayBand = "1",
-      startDate = LocalDate.now().minusDays(1),
-      endDate = null,
-      endComment = null,
-      suspendedFlag = false,
-      exclusions = listOf(
-        Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
+  private fun buildAllocationMigrateRequest() = AllocationMigrateRequest(
+    prisonCode = "MDI",
+    activityId = 1,
+    splitRegimeActivityId = null,
+    prisonerNumber = "A1234BB",
+    bookingId = 1,
+    cellLocation = "MDI-1-1-001",
+    nomisPayBand = "1",
+    startDate = LocalDate.now().minusDays(1),
+    endDate = null,
+    endComment = null,
+    suspendedFlag = false,
+    exclusions = listOf(
+      Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true),
+    ),
+  )
+
+  private fun buildAllocationMigrateRequestWithMultipleExclusions() = AllocationMigrateRequest(
+    prisonCode = "MDI",
+    activityId = 1,
+    splitRegimeActivityId = null,
+    prisonerNumber = "A1234BB",
+    bookingId = 1,
+    cellLocation = "MDI-1-1-001",
+    nomisPayBand = "1",
+    startDate = LocalDate.now().minusDays(1),
+    endDate = null,
+    endComment = null,
+    suspendedFlag = false,
+    exclusions = listOf(
+      Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, wednesday = true, thursday = true, friday = true),
+    ),
+  )
+
+  private fun WebTestClient.migrateActivity(request: ActivityMigrateRequest, roles: List<String>) = post()
+    .uri("/migrate/activity")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = roles))
+    .exchange()
+
+  private fun WebTestClient.migrateAllocation(request: AllocationMigrateRequest, roles: List<String>) = post()
+    .uri("/migrate/allocation")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = roles))
+    .exchange()
+
+  private fun WebTestClient.deleteCascade(prisonCode: String, activityId: Long, roles: List<String>) = delete()
+    .uri("/migrate/delete-activity/prison/$prisonCode/id/$activityId")
+    .headers(setAuthorisation(roles = roles))
+    .exchange()
+
+  private fun stubPrisonerSearch(prisonCode: String, prisonerNumber: String, active: Boolean = true) = prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+    listOf(prisonerNumber),
+    listOf(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonerNumber = prisonerNumber,
+        bookingId = 1,
+        prisonId = prisonCode,
+        status = if (active) "ACTIVE IN" else "INACTIVE OUT",
       ),
-    )
-
-  private fun buildAllocationMigrateRequestWithMultipleExclusions() =
-    AllocationMigrateRequest(
-      prisonCode = "MDI",
-      activityId = 1,
-      splitRegimeActivityId = null,
-      prisonerNumber = "A1234BB",
-      bookingId = 1,
-      cellLocation = "MDI-1-1-001",
-      nomisPayBand = "1",
-      startDate = LocalDate.now().minusDays(1),
-      endDate = null,
-      endComment = null,
-      suspendedFlag = false,
-      exclusions = listOf(
-        Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true, tuesday = true, wednesday = true, thursday = true, friday = true),
-      ),
-    )
-
-  private fun WebTestClient.migrateActivity(request: ActivityMigrateRequest, roles: List<String>) =
-    post()
-      .uri("/migrate/activity")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = roles))
-      .exchange()
-
-  private fun WebTestClient.migrateAllocation(request: AllocationMigrateRequest, roles: List<String>) =
-    post()
-      .uri("/migrate/allocation")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = roles))
-      .exchange()
-
-  private fun WebTestClient.deleteCascade(prisonCode: String, activityId: Long, roles: List<String>) =
-    delete()
-      .uri("/migrate/delete-activity/prison/$prisonCode/id/$activityId")
-      .headers(setAuthorisation(roles = roles))
-      .exchange()
-
-  private fun stubPrisonerSearch(prisonCode: String, prisonerNumber: String, active: Boolean = true) =
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(prisonerNumber),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = prisonerNumber,
-          bookingId = 1,
-          prisonId = prisonCode,
-          status = if (active) "ACTIVE IN" else "INACTIVE OUT",
-        ),
-      ),
-    )
+    ),
+  )
 }

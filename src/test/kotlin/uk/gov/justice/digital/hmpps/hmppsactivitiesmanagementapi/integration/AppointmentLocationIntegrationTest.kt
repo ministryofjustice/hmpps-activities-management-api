@@ -25,13 +25,12 @@ class AppointmentLocationIntegrationTest : IntegrationTestBase() {
       .expectStatus().isUnauthorized
   }
 
-  private fun WebTestClient.getAppointmentLocations() =
-    get()
-      .uri("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentLocationSummary::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentLocations() = get()
+    .uri("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentLocationSummary::class.java)
+    .returnResult().responseBody
 }

@@ -659,68 +659,63 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     allocationId: Long,
     request: AllocationUpdateRequest,
     caseloadId: String? = CASELOAD_ID,
-  ) =
-    patch()
-      .uri("/allocations/$prisonCode/allocationId/$allocationId")
-      .bodyValue(request)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, caseloadId)
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Allocation::class.java)
-      .returnResult().responseBody!!
+  ) = patch()
+    .uri("/allocations/$prisonCode/allocationId/$allocationId")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Allocation::class.java)
+    .returnResult().responseBody!!
 
   private fun WebTestClient.suspendAllocation(
     prisonCode: String,
     request: SuspendPrisonerRequest,
     caseloadId: String? = CASELOAD_ID,
-  ) =
-    post()
-      .uri("/allocations/$prisonCode/suspend")
-      .bodyValue(request)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, caseloadId)
-      .exchange()
-      .expectStatus().isAccepted
+  ) = post()
+    .uri("/allocations/$prisonCode/suspend")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
+    .expectStatus().isAccepted
 
   private fun WebTestClient.unsuspendAllocation(
     prisonCode: String,
     request: UnsuspendPrisonerRequest,
     caseloadId: String? = CASELOAD_ID,
-  ) =
-    post()
-      .uri("/allocations/$prisonCode/unsuspend")
-      .bodyValue(request)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, caseloadId)
-      .exchange()
-      .expectStatus().isAccepted
+  ) = post()
+    .uri("/allocations/$prisonCode/unsuspend")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
+    .expectStatus().isAccepted
 
   private fun WebTestClient.waitingListApplication(
     prisonCode: String,
     application: WaitingListApplicationRequest,
     caseloadId: String? = CASELOAD_ID,
-  ) =
-    post()
-      .uri("/allocations/$prisonCode/waiting-list-application")
-      .bodyValue(application)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, caseloadId)
-      .exchange()
+  ) = post()
+    .uri("/allocations/$prisonCode/waiting-list-application")
+    .bodyValue(application)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
 
-  private fun WebTestClient.getAllocationBy(allocationId: Long) =
-    get()
-      .uri("/allocations/id/$allocationId")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Allocation::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAllocationBy(allocationId: Long) = get()
+    .uri("/allocations/id/$allocationId")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Allocation::class.java)
+    .returnResult().responseBody
 }

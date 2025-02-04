@@ -23,13 +23,11 @@ class NonAssociationsApiClient(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getOffenderNonAssociations(prisonerNumber: String): List<PrisonerNonAssociation> {
-    return nonAssociationsApiWebClient.get()
-      .uri("/prisoner/{prisonerNumber}/non-associations", prisonerNumber)
-      .retrieve()
-      .bodyToMono(PrisonerNonAssociations::class.java)
-      .block()?.nonAssociations ?: emptyList()
-  }
+  fun getOffenderNonAssociations(prisonerNumber: String): List<PrisonerNonAssociation> = nonAssociationsApiWebClient.get()
+    .uri("/prisoner/{prisonerNumber}/non-associations", prisonerNumber)
+    .retrieve()
+    .bodyToMono(PrisonerNonAssociations::class.java)
+    .block()?.nonAssociations ?: emptyList()
 
   suspend fun getNonAssociationsInvolving(prisonCode: String, prisonerNumbers: List<String>): List<NonAssociation>? {
     if (!nonAssociationEnabled) return emptyList()

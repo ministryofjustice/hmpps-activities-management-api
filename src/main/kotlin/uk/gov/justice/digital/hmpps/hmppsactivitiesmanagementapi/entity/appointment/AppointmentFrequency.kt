@@ -30,24 +30,16 @@ enum class AppointmentFrequency {
     }
   },
   DAILY {
-    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate {
-      return startDate.plusDays(sequenceNumber - 1L)
-    }
+    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate = startDate.plusDays(sequenceNumber - 1L)
   },
   WEEKLY {
-    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate {
-      return startDate.plusWeeks(sequenceNumber - 1L)
-    }
+    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate = startDate.plusWeeks(sequenceNumber - 1L)
   },
   FORTNIGHTLY {
-    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate {
-      return startDate.plusWeeks(sequenceNumber * 2L - 2L)
-    }
+    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate = startDate.plusWeeks(sequenceNumber * 2L - 2L)
   },
   MONTHLY {
-    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate {
-      return startDate.plusMonths(sequenceNumber - 1L)
-    }
+    override fun appointmentDate(startDate: LocalDate, sequenceNumber: Int): LocalDate = startDate.plusMonths(sequenceNumber - 1L)
   },
   ;
 

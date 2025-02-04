@@ -94,10 +94,10 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Waiting list application")
-    inner class WaitingListApplicationTests() {
+    inner class WaitingListApplicationTests {
       @Test
       @WithMockUser(roles = ["ACTIVITY_ADMIN"])
       fun `Update waiting list application (ROLE_ACTIVITY_ADMIN) - 202`() {
@@ -127,11 +127,10 @@ class WaitingListApplicationControllerTest : ControllerTestBase<WaitingListAppli
     }
   }
 
-  private fun MockMvc.updatedWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, user: Principal) =
-    mockMvc.patch("/waiting-list-applications/$id") {
-      principal = user
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(request)
-    }
+  private fun MockMvc.updatedWaitingList(id: Long, request: WaitingListApplicationUpdateRequest, user: Principal) = mockMvc.patch("/waiting-list-applications/$id") {
+    principal = user
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(request)
+  }
 }

@@ -158,7 +158,6 @@ class EventReviewController(private val eventReviewService: EventReviewService) 
     @Parameter(description = "The prisoner allocation request details", required = true)
     @RequestBody
     eventReviewAcknowledgeRequest: EventAcknowledgeRequest,
-  ): ResponseEntity<Any> =
-    eventReviewService.acknowledgeEvents(prisonCode, eventReviewAcknowledgeRequest, principal.name)
-      .let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = eventReviewService.acknowledgeEvents(prisonCode, eventReviewAcknowledgeRequest, principal.name)
+    .let { ResponseEntity.noContent().build() }
 }

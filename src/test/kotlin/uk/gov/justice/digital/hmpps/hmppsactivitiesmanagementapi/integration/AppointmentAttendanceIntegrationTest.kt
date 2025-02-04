@@ -539,7 +539,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Nested
   @DisplayName("Mark Multiple Attendances")
-  inner class MarkMultipleAttendances() {
+  inner class MarkMultipleAttendances {
 
     val prisonerA1234BC = PrisonerSearchPrisonerFixture.instance(
       prisonerNumber = "A1234BC",
@@ -858,38 +858,35 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     prisonCode: String,
     date: LocalDate,
     additionalFilters: String = "",
-  ) =
-    get()
-      .uri("/appointments/$prisonCode/attendance-summaries?date=$date$additionalFilters")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentAttendanceSummary::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri("/appointments/$prisonCode/attendance-summaries?date=$date$additionalFilters")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentAttendanceSummary::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.markAppointmentAttendance(
     id: Long,
     request: AppointmentAttendanceRequest,
-  ) =
-    put()
-      .uri("/appointments/$id/attendance")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Appointment::class.java)
-      .returnResult().responseBody
+  ) = put()
+    .uri("/appointments/$id/attendance")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Appointment::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.updateAttendances(
     requests: List<MultipleAppointmentAttendanceRequest>,
     action: AttendanceAction?,
-  ) =
-    put()
-      .uri("/appointments/updateAttendances?action=$action")
-      .bodyValue(requests)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isNoContent
+  ) = put()
+    .uri("/appointments/updateAttendances?action=$action")
+    .bodyValue(requests)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isNoContent
 }

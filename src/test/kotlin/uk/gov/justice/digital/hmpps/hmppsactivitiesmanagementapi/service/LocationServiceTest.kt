@@ -98,25 +98,21 @@ class LocationServiceTest {
     assertThat(locations).isEqualTo(mapOf(1L to appointmentLocation(1, "TPR"), 2L to appointmentLocation(2, "TPR")))
   }
 
-  private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> {
-    return listOf(*cells)
-      .map { s -> Predicate { l: Location -> s == l.locationPrefix } }
-      .reduce(Predicate<Location>::or)
-  }
+  private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> = listOf(*cells)
+    .map { s -> Predicate { l: Location -> s == l.locationPrefix } }
+    .reduce(Predicate<Location>::or)
 
-  private fun aLocation(locationPrefix: String, description: String = ""): Location {
-    return Location(
-      locationPrefix = locationPrefix,
-      locationId = 0L,
-      description = description,
-      parentLocationId = null,
-      userDescription = null,
-      currentOccupancy = 0,
-      operationalCapacity = 0,
-      agencyId = "",
-      internalLocationCode = "",
-      locationUsage = "",
-      locationType = "",
-    )
-  }
+  private fun aLocation(locationPrefix: String, description: String = ""): Location = Location(
+    locationPrefix = locationPrefix,
+    locationId = 0L,
+    description = description,
+    parentLocationId = null,
+    userDescription = null,
+    currentOccupancy = 0,
+    operationalCapacity = 0,
+    agencyId = "",
+    internalLocationCode = "",
+    locationUsage = "",
+    locationType = "",
+  )
 }

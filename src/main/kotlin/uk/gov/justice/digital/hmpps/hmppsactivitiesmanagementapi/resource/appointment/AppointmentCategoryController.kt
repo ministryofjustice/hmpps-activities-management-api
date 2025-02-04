@@ -42,6 +42,5 @@ class AppointmentCategoryController(private val referenceCodeService: ReferenceC
   @GetMapping
   @ResponseBody
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentCategories(): List<AppointmentCategorySummary> =
-    referenceCodeService.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT).toAppointmentCategorySummary()
+  fun getAppointmentCategories(): List<AppointmentCategorySummary> = referenceCodeService.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT).toAppointmentCategorySummary()
 }

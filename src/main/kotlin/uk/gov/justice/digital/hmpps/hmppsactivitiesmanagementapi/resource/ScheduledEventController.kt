@@ -188,16 +188,14 @@ class ScheduledEventController(
     @RequestBody(required = true)
     @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
     prisonerNumbers: Set<String>,
-  ): PrisonerScheduledEvents? {
-    return scheduledEventService.getScheduledEventsForMultiplePrisoners(
-      prisonCode,
-      prisonerNumbers,
-      date,
-      timeSlot,
-      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap(prisonCode),
-    )
-  }
+  ): PrisonerScheduledEvents? = scheduledEventService.getScheduledEventsForMultiplePrisoners(
+    prisonCode,
+    prisonerNumbers,
+    date,
+    timeSlot,
+    referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+    locationService.getLocationsForAppointmentsMap(prisonCode),
+  )
 
   @PostMapping(
     value = ["/prison/{prisonCode}/locations"],
@@ -263,12 +261,10 @@ class ScheduledEventController(
     @RequestBody(required = true)
     @Parameter(description = "Set of internal location ids (required). Example [123, 456].", required = true)
     internalLocationIds: Set<Long>,
-  ): Set<InternalLocationEvents> {
-    return internalLocationService.getInternalLocationEvents(
-      prisonCode,
-      internalLocationIds,
-      date,
-      timeSlot,
-    )
-  }
+  ): Set<InternalLocationEvents> = internalLocationService.getInternalLocationEvents(
+    prisonCode,
+    internalLocationIds,
+    date,
+    timeSlot,
+  )
 }

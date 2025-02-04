@@ -71,9 +71,8 @@ class SynchronisationController(private val synchronisationService: Synchronisat
   )
   fun getAttendanceSync(
     @Schema(description = "Attendance id", required = true) @PathVariable attendanceId: Long,
-  ) =
-    synchronisationService.findAttendanceSync(attendanceId)
-      ?: throw EntityNotFoundException("Attendance sync not found: $attendanceId")
+  ) = synchronisationService.findAttendanceSync(attendanceId)
+    ?: throw EntityNotFoundException("Attendance sync not found: $attendanceId")
 
   @PreAuthorize("hasRole('NOMIS_ACTIVITIES')")
   @GetMapping("/reconciliation/allocations/{prisonId}")

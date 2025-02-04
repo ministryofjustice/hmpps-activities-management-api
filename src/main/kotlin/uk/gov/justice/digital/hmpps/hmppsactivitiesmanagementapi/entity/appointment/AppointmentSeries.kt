@@ -112,9 +112,8 @@ data class AppointmentSeries(
       field = value
     }
 
-  fun scheduleIterator() =
-    schedule?.let { AppointmentSeriesScheduleIterator(startDate, schedule!!.frequency, schedule!!.numberOfAppointments) }
-      ?: AppointmentSeriesScheduleIterator(startDate, AppointmentFrequency.DAILY, 1)
+  fun scheduleIterator() = schedule?.let { AppointmentSeriesScheduleIterator(startDate, schedule!!.frequency, schedule!!.numberOfAppointments) }
+    ?: AppointmentSeriesScheduleIterator(startDate, AppointmentFrequency.DAILY, 1)
 
   @OneToMany(mappedBy = "appointmentSeries", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @OrderBy("sequenceNumber ASC")
@@ -231,33 +230,32 @@ data class AppointmentSeries(
   fun toDetails(
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ) =
-    AppointmentSeriesDetails(
-      appointmentSeriesId,
-      appointmentType,
-      prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentTier?.toModelEventTier(),
-      appointmentOrganiser?.toModelEventOrganiser(),
-      customName,
-      if (inCell) {
-        null
-      } else {
-        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
-      },
-      inCell,
-      startDate,
-      startTime,
-      endTime,
-      schedule?.toModel(),
-      extraInformation,
-      createdTime,
-      createdBy,
-      updatedTime,
-      updatedBy,
-      appointments(true).toSummary(),
-    )
+  ) = AppointmentSeriesDetails(
+    appointmentSeriesId,
+    appointmentType,
+    prisonCode,
+    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    appointmentTier?.toModelEventTier(),
+    appointmentOrganiser?.toModelEventOrganiser(),
+    customName,
+    if (inCell) {
+      null
+    } else {
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+    },
+    inCell,
+    startDate,
+    startTime,
+    endTime,
+    schedule?.toModel(),
+    extraInformation,
+    createdTime,
+    createdBy,
+    updatedTime,
+    updatedBy,
+    appointments(true).toSummary(),
+  )
 }
 
 fun List<AppointmentSeries>.toModel() = map { it.toModel() }

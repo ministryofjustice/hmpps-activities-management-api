@@ -53,27 +53,26 @@ data class AllAttendance(
 
   var incentiveLevelWarningIssued: Boolean?,
 ) {
-  fun toModel() =
-    AllAttendanceModel(
-      attendanceId = attendanceId,
-      prisonCode = prisonCode,
-      sessionDate = sessionDate,
-      timeSlot = timeSlot,
-      startTime = startTime,
-      endTime = endTime,
-      status = status,
-      attendanceReasonCode = attendanceReasonCode,
-      issuePayment = issuePayment,
-      prisonerNumber = prisonerNumber,
-      scheduledInstanceId = scheduledInstanceId,
-      activityId = activityId,
-      activitySummary = summary,
-      categoryName = categoryName,
-      recordedTime = recordedTime,
-      attendanceRequired = attendanceRequired,
-      eventTier = eventTier?.let { EventTierType.valueOf(it) },
-      incentiveLevelWarningIssued = incentiveLevelWarningIssued,
-    )
+  fun toModel() = AllAttendanceModel(
+    attendanceId = attendanceId,
+    prisonCode = prisonCode,
+    sessionDate = sessionDate,
+    timeSlot = timeSlot,
+    startTime = startTime,
+    endTime = endTime,
+    status = status,
+    attendanceReasonCode = attendanceReasonCode,
+    issuePayment = issuePayment,
+    prisonerNumber = prisonerNumber,
+    scheduledInstanceId = scheduledInstanceId,
+    activityId = activityId,
+    activitySummary = summary,
+    categoryName = categoryName,
+    recordedTime = recordedTime,
+    attendanceRequired = attendanceRequired,
+    eventTier = eventTier?.let { EventTierType.valueOf(it) },
+    incentiveLevelWarningIssued = incentiveLevelWarningIssued,
+  )
 }
 
 fun List<AllAttendance>.toModel() = map { it.toModel() }

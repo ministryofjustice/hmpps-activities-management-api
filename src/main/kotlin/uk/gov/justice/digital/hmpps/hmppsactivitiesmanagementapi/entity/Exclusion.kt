@@ -74,8 +74,7 @@ data class Exclusion(
   companion object {
     val tomorrow: LocalDate = LocalDate.now().plusDays(1)
 
-    fun List<ExclusionDaysOfWeek>.containsDay(day: DayOfWeek) =
-      this.map { it.dayOfWeek }.contains(day)
+    fun List<ExclusionDaysOfWeek>.containsDay(day: DayOfWeek) = this.map { it.dayOfWeek }.contains(day)
 
     fun valueOf(
       allocation: Allocation,

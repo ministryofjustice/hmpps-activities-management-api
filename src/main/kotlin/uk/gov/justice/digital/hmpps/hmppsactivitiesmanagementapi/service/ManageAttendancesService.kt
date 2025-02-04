@@ -105,8 +105,7 @@ class ManageAttendancesService(
 
     val attendancesList = mutableListOf<Attendance>()
 
-    possibleRecords.forEach {
-        attendanceCreationDataRecord ->
+    possibleRecords.forEach { attendanceCreationDataRecord ->
 
       var canAttend = true
 
@@ -344,8 +343,7 @@ class ManageAttendancesService(
     prisonerNumber = prisonerNumber,
   )
 
-  private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
-    attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
+  private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) = attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
 
   /**
    * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
@@ -373,6 +371,5 @@ class ManageAttendancesService(
     }
   }
 
-  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) =
-    rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
+  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) = rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
 }

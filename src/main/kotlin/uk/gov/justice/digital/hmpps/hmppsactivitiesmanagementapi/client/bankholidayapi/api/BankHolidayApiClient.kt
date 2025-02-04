@@ -13,11 +13,9 @@ class BankHolidayApiClient(@Qualifier("bankHolidayApiWebClient") private val web
   private inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>() {}
 
   @Cacheable(CacheConfiguration.BANK_HOLIDAYS_CACHE_NAME)
-  fun getBankHolidays(): BankHolidays {
-    return webClient.get()
-      .uri("/bank-holidays.json")
-      .retrieve()
-      .bodyToMono(typeReference<BankHolidays>())
-      .block()!!
-  }
+  fun getBankHolidays(): BankHolidays = webClient.get()
+    .uri("/bank-holidays.json")
+    .retrieve()
+    .bodyToMono(typeReference<BankHolidays>())
+    .block()!!
 }

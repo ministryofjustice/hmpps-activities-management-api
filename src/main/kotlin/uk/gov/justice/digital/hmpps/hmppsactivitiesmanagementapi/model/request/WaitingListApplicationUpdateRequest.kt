@@ -53,6 +53,5 @@ data class WaitingListApplicationUpdateRequest(
   private fun isApplicationDate() = applicationDate == null || applicationDate <= LocalDate.now()
 
   @AssertTrue(message = "Only PENDING, APPROVED or DECLINED are allowed for status")
-  private fun isStatus() =
-    status == null || listOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED).contains(status)
+  private fun isStatus() = status == null || listOf(WaitingListStatus.PENDING, WaitingListStatus.APPROVED, WaitingListStatus.DECLINED).contains(status)
 }

@@ -711,57 +711,53 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       .expectStatus().isAccepted
   }
 
-  private fun getActivitySchedule(scheduleId: Long): ActivitySchedule =
-    webTestClient.get()
-      .uri { builder ->
-        builder
-          .path("/schedules/$scheduleId")
-          .build(scheduleId)
-      }
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, "IWI")
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivitySchedule::class.java)
-      .returnResult().responseBody!!
+  private fun getActivitySchedule(scheduleId: Long): ActivitySchedule = webTestClient.get()
+    .uri { builder ->
+      builder
+        .path("/schedules/$scheduleId")
+        .build(scheduleId)
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, "IWI")
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(ActivitySchedule::class.java)
+    .returnResult().responseBody!!
 
-  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity =
-    webTestClient.get()
-      .uri("/activities/$activityId/filtered")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, agencyId)
-      .exchange()
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity = webTestClient.get()
+    .uri("/activities/$activityId/filtered")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, agencyId)
+    .exchange()
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 
-  private fun updateActivity(activityId: Long, slots: ActivityUpdateRequest): Activity =
-    webTestClient.patch()
-      .uri("/activities/IWI/activityId/$activityId")
-      .bodyValue(slots)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, "IWI")
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  private fun updateActivity(activityId: Long, slots: ActivityUpdateRequest): Activity = webTestClient.patch()
+    .uri("/activities/IWI/activityId/$activityId")
+    .bodyValue(slots)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, "IWI")
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 
   private fun createActivity(
     activityCreateRequest: ActivityCreateRequest,
-  ): Activity =
-    webTestClient.post()
-      .uri("/activities")
-      .bodyValue(activityCreateRequest)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, "IWI")
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  ): Activity = webTestClient.post()
+    .uri("/activities")
+    .bodyValue(activityCreateRequest)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, "IWI")
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 }

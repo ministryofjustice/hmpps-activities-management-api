@@ -9,5 +9,4 @@ interface EventOrganiserRepository : JpaRepository<EventOrganiser, Long> {
   fun findByCode(code: String): EventOrganiser?
 }
 
-fun EventOrganiserRepository.findByCodeOrThrowIllegalArgument(code: String) =
-  this.findByCode(code) ?: throw IllegalArgumentException("Event organiser \"$code\" not found")
+fun EventOrganiserRepository.findByCodeOrThrowIllegalArgument(code: String) = this.findByCode(code) ?: throw IllegalArgumentException("Event organiser \"$code\" not found")

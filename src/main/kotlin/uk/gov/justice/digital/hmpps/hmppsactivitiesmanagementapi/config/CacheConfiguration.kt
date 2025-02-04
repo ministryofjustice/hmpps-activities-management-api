@@ -18,9 +18,7 @@ import java.util.concurrent.TimeUnit
 class CacheConfiguration {
 
   @Bean
-  fun cacheManager(): CacheManager {
-    return ConcurrentMapCacheManager(BANK_HOLIDAYS_CACHE_NAME, PRISON_INCENTIVE_LEVELS_CACHE_NAME)
-  }
+  fun cacheManager(): CacheManager = ConcurrentMapCacheManager(BANK_HOLIDAYS_CACHE_NAME, PRISON_INCENTIVE_LEVELS_CACHE_NAME)
 
   @CacheEvict(value = [PRISON_INCENTIVE_LEVELS_CACHE_NAME], allEntries = true)
   @Scheduled(fixedDelay = TTL_HOURS_PRISONER_INCENTIVE_LEVELS, timeUnit = TimeUnit.DAYS)

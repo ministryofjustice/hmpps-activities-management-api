@@ -37,11 +37,10 @@ class AllocationsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) =
-    allocationRepository
-      .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
-      .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
-      .toModelPrisonerAllocations()
+  fun findByPrisonCodeAndPrisonerNumbers(prisonCode: String, prisonNumbers: Set<String>, activeOnly: Boolean = true) = allocationRepository
+    .findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonNumbers.toList())
+    .filter { !activeOnly || !it.status(PrisonerStatus.ENDED) }
+    .toModelPrisonerAllocations()
 
   fun getAllocationById(id: Long): ModelAllocation {
     val allocation = allocationRepository.findOrThrowNotFound(id).toModel()
@@ -201,8 +200,7 @@ class AllocationsService(
     }
   }
 
-  private fun String?.toDeallocationReason() =
-    DeallocationReason.entries
-      .filter(DeallocationReason::displayed)
-      .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
+  private fun String?.toDeallocationReason() = DeallocationReason.entries
+    .filter(DeallocationReason::displayed)
+    .firstOrNull { it.name == this } ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 }

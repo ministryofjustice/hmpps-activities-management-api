@@ -289,19 +289,18 @@ class LocationIntegrationTest : IntegrationTestBase() {
     )
   }
 
-  private fun WebTestClient.getLocationPrefix(prisonCode: String, groupName: String) =
-    get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/locations/prison/{prisonCode}/location-prefix")
-          .queryParam("groupName", groupName)
-          .build(prisonCode)
-      }
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody(LocationPrefixDto::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getLocationPrefix(prisonCode: String, groupName: String) = get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/locations/prison/{prisonCode}/location-prefix")
+        .queryParam("groupName", groupName)
+        .build(prisonCode)
+    }
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectBody(LocationPrefixDto::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.getInternalLocationEventsSummaries(
     prisonCode: String,

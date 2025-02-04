@@ -35,6 +35,5 @@ class PrisonerReleasedEventTest {
     releaseEvent("UNKNOWN").isPermanent() isBool false
   }
 
-  private fun releaseEvent(reason: String) =
-    PrisonerReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
+  private fun releaseEvent(reason: String) = PrisonerReleasedEvent(ReleaseInformation("123456", reason, MOORLAND_PRISON_CODE))
 }
