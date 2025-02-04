@@ -101,8 +101,8 @@ class MigrateActivityService(
       throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
     }
 
-    if (request.startDate == null || !request.startDate.isAfter(LocalDate.now())) {
-      throw ValidationException("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+    if (!request.startDate.isAfter(LocalDate.now())) {
+      throw ValidationException("Activity start date must be in the future for the requested prison ${request.prisonCode}")
     }
 
     mapper?.let {
@@ -213,7 +213,7 @@ class MigrateActivityService(
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
-      startDate = request.startDate ?: LocalDate.now().plusDays(1),
+      startDate = request.startDate,
       riskLevel = DEFAULT_RISK_LEVEL,
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,

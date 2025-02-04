@@ -619,29 +619,6 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Fails when no start date is provided`() {
-      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
-      val nomisScheduleRules = listOf(
-        NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
-          monday = true,
-        ),
-      )
-
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-        startDate = null,
-      )
-
-      val exception = assertThrows<ValidationException> {
-        service.migrateActivity(request)
-      }
-
-      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
-      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
-    }
-
-    @Test
     fun `Fails when provided start date is in the past`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
@@ -660,7 +637,7 @@ class MigrateActivityServiceTest {
         service.migrateActivity(request)
       }
 
-      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+      assertThat(exception.message).contains("Activity start date must be in the future for the requested prison ${request.prisonCode}")
       verify(activityRepository, times(0)).saveAllAndFlush(anyList())
     }
 
@@ -683,7 +660,7 @@ class MigrateActivityServiceTest {
         service.migrateActivity(request)
       }
 
-      assertThat(exception.message).contains("Start date must be populated and in the future for the requested prison ${request.prisonCode}")
+      assertThat(exception.message).contains("Activity start date must be in the future for the requested prison ${request.prisonCode}")
       verify(activityRepository, times(0)).saveAllAndFlush(anyList())
     }
 
