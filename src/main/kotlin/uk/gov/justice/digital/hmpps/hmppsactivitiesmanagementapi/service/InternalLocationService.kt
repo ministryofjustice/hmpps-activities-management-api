@@ -74,44 +74,42 @@ class InternalLocationService(
     return internalLocationsMap
   }
 
-  fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) =
-    runBlocking {
-      checkCaseloadAccess(prisonCode)
-      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
+  fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+    checkCaseloadAccess(prisonCode)
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
 
-      val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeSlot)
-      val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
-      val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(
-        agencyId = prisonCode,
-        date = date,
-        timeSlot = timeSlot,
-        prisonRegime = prisonRegime,
-      )
+    val locationActivitiesMap = getLocationActivitiesMap(prisonCode, date, timeSlot)
+    val locationVisitsMap = getLocationVisitsMap(prisonCode, date, timeSlot)
+    val adjudicationHearingsMap = adjudicationsHearingAdapter.getAdjudicationsByLocation(
+      agencyId = prisonCode,
+      date = date,
+      timeSlot = timeSlot,
+      prisonRegime = prisonRegime,
+    )
 
-      val timeRange = getTimeRange(
-        prisonCode = prisonCode,
-        timeSlot = timeSlot,
-        dayOfWeek = date.dayOfWeek,
-      )
-      val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
+    val timeRange = getTimeRange(
+      prisonCode = prisonCode,
+      timeSlot = timeSlot,
+      dayOfWeek = date.dayOfWeek,
+    )
+    val locationAppointmentsMap = getLocationAppointmentsMap(prisonCode, date, timeRange)
 
-      val internalLocationIds = locationActivitiesMap.keys
-        .union(locationAppointmentsMap.keys)
-        .union(locationVisitsMap.keys)
-        .union(adjudicationHearingsMap.keys)
+    val internalLocationIds = locationActivitiesMap.keys
+      .union(locationAppointmentsMap.keys)
+      .union(locationVisitsMap.keys)
+      .union(adjudicationHearingsMap.keys)
 
-      val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
+    val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
 
-      internalLocationsMap.map {
-        InternalLocationEventsSummary(it.key, it.value.agencyId, it.value.description, it.value.userDescription ?: it.value.description)
-      }.toSet()
-    }
+    internalLocationsMap.map {
+      InternalLocationEventsSummary(it.key, it.value.agencyId, it.value.description, it.value.userDescription ?: it.value.description)
+    }.toSet()
+  }
 
-  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> =
-    prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
-      .filterNot { it.onWing }
-      .filterNot { it.internalLocationId == null }
-      .associateBy { it.internalLocationId!!.toLong() }
+  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> = prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
+    .filterNot { it.onWing }
+    .filterNot { it.internalLocationId == null }
+    .associateBy { it.internalLocationId!!.toLong() }
 
   private fun getLocationAppointmentsMap(prisonCode: String, date: LocalDate, timeRange: LocalTimeRange): Map<Long, AppointmentSearch> {
     val appointmentsSpec = appointmentSearchSpecification.prisonCodeEquals(prisonCode)
@@ -179,99 +177,99 @@ class InternalLocationService(
       .associateBy { it.locationId }
   }
 
-  fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) =
-    runBlocking {
-      checkCaseloadAccess(prisonCode)
+  fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+    checkCaseloadAccess(prisonCode)
 
-      val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
-      val referenceCodesForAppointmentsMap =
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
-      val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
-      val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+    val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
+    val referenceCodesForAppointmentsMap =
+      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
+    val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
-      val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
+    val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
+      prisonCode,
+      internalLocationIds.map { it.toInt() }.toSet(),
+      date,
+      timeSlot,
+    )
+
+    val timeRange = getTimeRange(
+      prisonCode = prisonCode,
+      timeSlot = timeSlot,
+      dayOfWeek = date.dayOfWeek,
+    )
+
+    val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
+      prisonCode,
+      internalLocationIds,
+      date,
+      timeRange.start,
+      timeRange.end,
+    )
+
+    val visits = internalLocationIds.flatMap {
+      prisonApiClient.getScheduledVisitsForLocationAsync(
         prisonCode,
-        internalLocationIds.map { it.toInt() }.toSet(),
+        it,
         date,
         timeSlot,
       )
-
-      val timeRange = getTimeRange(
-        prisonCode = prisonCode,
-        timeSlot = timeSlot,
-        dayOfWeek = date.dayOfWeek,
-      )
-
-      val appointments = appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(
-        prisonCode,
-        internalLocationIds,
-        date,
-        timeRange.start,
-        timeRange.end,
-      )
-
-      val visits = internalLocationIds.flatMap {
-        prisonApiClient.getScheduledVisitsForLocationAsync(
-          prisonCode,
-          it,
-          date,
-          timeSlot,
-        )
-      }
-
-      val adjudicationHearings = adjudicationsHearingAdapter.getAdjudicationsByLocation(
-        agencyId = prisonCode,
-        date = date,
-        timeSlot = timeSlot,
-        prisonRegime = prisonRegime,
-      ).filter { internalLocationIds.contains(it.key) }.flatMap { it.value }
-
-      val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(
-        prisonCode,
-        eventPriorities,
-        activities,
-      ).union(
-        transformAppointmentInstanceToScheduledEvents(
-          prisonCode,
-          eventPriorities,
-          referenceCodesForAppointmentsMap,
-          internalLocationsMap,
-          appointments,
-        ),
-      ).union(
-        visits.multiplePrisonerVisitsToScheduledEvents(
-          prisonCode,
-          eventPriorities.getOrDefault(EventType.VISIT),
-        ),
-      ).union(
-        adjudicationHearings.nomisAdjudicationsToScheduledEvents(
-          prisonCode = prisonCode,
-          priority = eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
-          prisonLocations = emptyMap(),
-        ),
-      )
-        .filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
-
-      internalLocationsMap.map {
-        InternalLocationEvents(
-          it.key,
-          it.value.agencyId,
-          it.value.description,
-          it.value.userDescription ?: it.value.description,
-          scheduledEventsMap[it.key]?.toSet() ?: emptySet(),
-        )
-      }.toSet()
     }
 
-  private fun getTimeRange(prisonCode: String, timeSlot: TimeSlot?, dayOfWeek: DayOfWeek) =
-    timeSlot?.let {
-      val regime = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
-        prisonCode = prisonCode, timeSlot = it, dayOfWeek = dayOfWeek,
-      ) ?: throw ValidationException("no regime found for $prisonCode $dayOfWeek")
+    val adjudicationHearings = adjudicationsHearingAdapter.getAdjudicationsByLocation(
+      agencyId = prisonCode,
+      date = date,
+      timeSlot = timeSlot,
+      prisonRegime = prisonRegime,
+    ).filter { internalLocationIds.contains(it.key) }.flatMap { it.value }
 
-      regime.let { tr -> LocalTimeRange(tr.start, tr.end.minusMinutes(1)) }
-    } ?: LocalTimeRange(
-      LocalTime.of(0, 0),
-      LocalTime.of(23, 59),
+    val scheduledEventsMap = transformPrisonerScheduledActivityToScheduledEvents(
+      prisonCode,
+      eventPriorities,
+      activities,
+    ).union(
+      transformAppointmentInstanceToScheduledEvents(
+        prisonCode,
+        eventPriorities,
+        referenceCodesForAppointmentsMap,
+        internalLocationsMap,
+        appointments,
+      ),
+    ).union(
+      visits.multiplePrisonerVisitsToScheduledEvents(
+        prisonCode,
+        eventPriorities.getOrDefault(EventType.VISIT),
+      ),
+    ).union(
+      adjudicationHearings.nomisAdjudicationsToScheduledEvents(
+        prisonCode = prisonCode,
+        priority = eventPriorities.getOrDefault(EventType.ADJUDICATION_HEARING),
+        prisonLocations = emptyMap(),
+      ),
     )
+      .filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
+
+    internalLocationsMap.map {
+      InternalLocationEvents(
+        it.key,
+        it.value.agencyId,
+        it.value.description,
+        it.value.userDescription ?: it.value.description,
+        scheduledEventsMap[it.key]?.toSet() ?: emptySet(),
+      )
+    }.toSet()
+  }
+
+  private fun getTimeRange(prisonCode: String, timeSlot: TimeSlot?, dayOfWeek: DayOfWeek) = timeSlot?.let {
+    val regime = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
+      prisonCode = prisonCode,
+      timeSlot = it,
+      dayOfWeek = dayOfWeek,
+    ) ?: throw ValidationException("no regime found for $prisonCode $dayOfWeek")
+
+    regime.let { tr -> LocalTimeRange(tr.start, tr.end.minusMinutes(1)) }
+  } ?: LocalTimeRange(
+    LocalTime.of(0, 0),
+    LocalTime.of(23, 59),
+  )
 }

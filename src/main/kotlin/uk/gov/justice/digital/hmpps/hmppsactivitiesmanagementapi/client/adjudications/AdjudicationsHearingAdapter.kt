@@ -19,28 +19,28 @@ class AdjudicationsHearingAdapter(
     date: LocalDate,
     timeSlot: TimeSlot?,
     prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
-  ): Map<Long, List<OffenderAdjudicationHearing>> =
-    manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
-      agencyId = agencyId,
-      date = date,
-    ).hearings.filter {
-      timeSlot == null ||
-        prisonRegime.getSlotForDayAndTime(
-          day = date.dayOfWeek, time = it.dateTimeOfHearing.toLocalTime(),
-        ) == timeSlot
+  ): Map<Long, List<OffenderAdjudicationHearing>> = manageAdjudicationsApiFacade.getAdjudicationHearingsForDate(
+    agencyId = agencyId,
+    date = date,
+  ).hearings.filter {
+    timeSlot == null ||
+      prisonRegime.getSlotForDayAndTime(
+        day = date.dayOfWeek,
+        time = it.dateTimeOfHearing.toLocalTime(),
+      ) == timeSlot
+  }
+    .map {
+      OffenderAdjudicationHearing(
+        offenderNo = it.prisonerNumber,
+        hearingId = it.id!!,
+        agencyId = agencyId,
+        hearingType = it.oicHearingType.mapOicHearingType(),
+        internalLocationId = it.locationId,
+        internalLocationDescription = "Adjudication room",
+        startTime = it.dateTimeOfHearing.toIsoDateTime(),
+      )
     }
-      .map {
-        OffenderAdjudicationHearing(
-          offenderNo = it.prisonerNumber,
-          hearingId = it.id!!,
-          agencyId = agencyId,
-          hearingType = it.oicHearingType.mapOicHearingType(),
-          internalLocationId = it.locationId,
-          internalLocationDescription = "Adjudication room",
-          startTime = it.dateTimeOfHearing.toIsoDateTime(),
-        )
-      }
-      .groupBy { it.internalLocationId }
+    .groupBy { it.internalLocationId }
 
   suspend fun getAdjudicationHearings(
     agencyId: String,
@@ -60,7 +60,8 @@ class AdjudicationsHearingAdapter(
       .filter {
         timeSlot == null ||
           prisonRegime.getSlotForDayAndTime(
-            day = it.hearing.dateTimeOfHearing.dayOfWeek, time = it.hearing.dateTimeOfHearing.toLocalTime(),
+            day = it.hearing.dateTimeOfHearing.dayOfWeek,
+            time = it.hearing.dateTimeOfHearing.toLocalTime(),
           ) == timeSlot
       }
       .map {

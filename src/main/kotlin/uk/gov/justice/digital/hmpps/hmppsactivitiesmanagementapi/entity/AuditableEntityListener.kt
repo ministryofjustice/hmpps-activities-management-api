@@ -48,12 +48,11 @@ class AuditableEntityListener {
     }
   }
 
-  private fun Allocation.isDeallocatedToday() =
-    isEnded() &&
-      endDate == LocalDate.now() &&
-      deallocatedBy != null &&
-      deallocatedTime != null &&
-      deallocatedReason != null
+  private fun Allocation.isDeallocatedToday() = isEnded() &&
+    endDate == LocalDate.now() &&
+    deallocatedBy != null &&
+    deallocatedTime != null &&
+    deallocatedReason != null
 
   private fun audit(auditableEvent: AuditableEvent, failureMessage: String) {
     runCatching {

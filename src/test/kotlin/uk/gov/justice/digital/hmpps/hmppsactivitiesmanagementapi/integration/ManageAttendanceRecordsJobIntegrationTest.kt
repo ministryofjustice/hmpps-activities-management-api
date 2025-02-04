@@ -361,8 +361,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun List<ActivitySchedule>.findByDescription(description: String) =
-    first { it.description.uppercase() == description.uppercase() }
+  private fun List<ActivitySchedule>.findByDescription(description: String) = first { it.description.uppercase() == description.uppercase() }
 
   private fun WebTestClient.manageAttendanceRecords() {
     post()

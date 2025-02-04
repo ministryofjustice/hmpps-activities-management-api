@@ -238,11 +238,9 @@ class LocationController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the scheduled events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-  ): Set<InternalLocationEventsSummary> {
-    return internalLocationService.getInternalLocationEventsSummaries(
-      prisonCode,
-      date,
-      timeSlot,
-    )
-  }
+  ): Set<InternalLocationEventsSummary> = internalLocationService.getInternalLocationEventsSummaries(
+    prisonCode,
+    date,
+    timeSlot,
+  )
 }

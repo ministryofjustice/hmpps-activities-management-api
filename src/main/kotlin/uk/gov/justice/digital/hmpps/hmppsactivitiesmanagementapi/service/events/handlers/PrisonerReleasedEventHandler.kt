@@ -73,31 +73,27 @@ class PrisonerReleasedEventHandler(
     return Outcome.success()
   }
 
-  private fun releasedPrisonerHasAllocationsOfInterestFor(event: PrisonerReleasedEvent) =
-    allocationRepository.existAtPrisonForPrisoner(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
-    )
+  private fun releasedPrisonerHasAllocationsOfInterestFor(event: PrisonerReleasedEvent) = allocationRepository.existAtPrisonForPrisoner(
+    event.prisonCode(),
+    event.prisonerNumber(),
+    PrisonerStatus.allExcuding(PrisonerStatus.ENDED).toList(),
+  )
 
-  private fun cancelFutureOffenderAppointments(event: PrisonerReleasedEvent) =
-    appointmentAttendeeService.removePrisonerFromFutureAppointments(
-      event.prisonCode(),
-      event.prisonerNumber(),
-      LocalDateTime.now(),
-      PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-      "OFFENDER_RELEASED_EVENT",
-    )
+  private fun cancelFutureOffenderAppointments(event: PrisonerReleasedEvent) = appointmentAttendeeService.removePrisonerFromFutureAppointments(
+    event.prisonCode(),
+    event.prisonerNumber(),
+    LocalDateTime.now(),
+    PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+    "OFFENDER_RELEASED_EVENT",
+  )
 
-  private fun getDetailsForReleasedPrisoner(event: PrisonerReleasedEvent) =
-    prisonSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
-      ?: throw NullPointerException("Prisoner search lookup failed for prisoner ${event.prisonerNumber()}")
+  private fun getDetailsForReleasedPrisoner(event: PrisonerReleasedEvent) = prisonSearchApiClient.findByPrisonerNumber(prisonerNumber = event.prisonerNumber())
+    ?: throw NullPointerException("Prisoner search lookup failed for prisoner ${event.prisonerNumber()}")
 
-  private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: PrisonerReleasedEvent) =
-    when {
-      prisoner.isRestrictedPatient() -> RELEASED.also { log.info("Released restricted patient ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
-      prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
-      prisoner.isAtDifferentLocationTo(event.prisonCode()) -> RELEASED.also { log.info("Released prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()} now at ${prisoner.prisonId}") }
-      else -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
-    }
+  private fun getDeallocationReasonForReleasedPrisoner(prisoner: Prisoner, event: PrisonerReleasedEvent) = when {
+    prisoner.isRestrictedPatient() -> RELEASED.also { log.info("Released restricted patient ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+    prisoner.isInactiveOut() -> RELEASED.also { log.info("Released inactive out prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+    prisoner.isAtDifferentLocationTo(event.prisonCode()) -> RELEASED.also { log.info("Released prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()} now at ${prisoner.prisonId}") }
+    else -> TEMPORARILY_RELEASED.also { log.info("Temporary release or transfer of prisoner ${event.prisonerNumber()} from prison ${event.prisonCode()}") }
+  }
 }

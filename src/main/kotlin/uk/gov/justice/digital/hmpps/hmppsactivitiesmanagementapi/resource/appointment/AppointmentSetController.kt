@@ -73,8 +73,7 @@ class AppointmentSetController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentSetDetailsById(@PathVariable("appointmentSetId") appointmentSetId: Long): AppointmentSetDetails =
-    appointmentSetService.getAppointmentSetDetailsById(appointmentSetId)
+  fun getAppointmentSetDetailsById(@PathVariable("appointmentSetId") appointmentSetId: Long): AppointmentSetDetails = appointmentSetService.getAppointmentSetDetailsById(appointmentSetId)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping()

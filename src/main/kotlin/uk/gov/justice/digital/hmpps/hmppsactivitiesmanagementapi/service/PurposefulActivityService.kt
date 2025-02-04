@@ -104,7 +104,6 @@ class PurposefulActivityService(
   }
 
   internal fun getResultsAsCsv(results: Stream<*>): File {
-
     val file = File.createTempFile("exp", "csv")
 
     val writer = BufferedWriter(FileWriter(file), 32768)
@@ -142,15 +141,13 @@ class PurposefulActivityService(
     return file
   }
 
-  private fun formatCsvValue(item: Any?): String {
-    return when (item) {
-      is String -> escapeCsvString(item)
-      is Date -> "\"${formatDate(item)}\"" // Format and quote dates
-      is Long, is Int, is Double -> item.toString()
-      is Boolean -> item.toString() // Handle boolean values (true/false)
-      null -> ""
-      else -> "\"Unsupported type: ${item::class.simpleName}\""
-    }
+  private fun formatCsvValue(item: Any?): String = when (item) {
+    is String -> escapeCsvString(item)
+    is Date -> "\"${formatDate(item)}\"" // Format and quote dates
+    is Long, is Int, is Double -> item.toString()
+    is Boolean -> item.toString() // Handle boolean values (true/false)
+    null -> ""
+    else -> "\"Unsupported type: ${item::class.simpleName}\""
   }
 
   private fun formatDate(date: Date): String {

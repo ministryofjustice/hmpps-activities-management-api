@@ -966,51 +966,47 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     verify(auditService).logEvent(any<AppointmentEditedEvent>())
   }
 
-  private fun WebTestClient.getAppointmentSeriesById(id: Long) =
-    get()
-      .uri("/appointment-series/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
+    .uri("/appointment-series/$id")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.updateAppointment(
     id: Long,
     request: AppointmentUpdateRequest,
-  ) =
-    patch()
-      .uri("/appointments/$id")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  ) = patch()
+    .uri("/appointments/$id")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.cancelAppointment(
     id: Long,
     request: AppointmentCancelRequest,
-  ) =
-    put()
-      .uri("/appointments/$id/cancel")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  ) = put()
+    .uri("/appointments/$id/cancel")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.uncancelAppointment(
     id: Long,
     request: AppointmentUncancelRequest,
-  ) =
-    put()
-      .uri("/appointments/$id/uncancel")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
+  ) = put()
+    .uri("/appointments/$id/uncancel")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
 }

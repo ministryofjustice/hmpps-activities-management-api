@@ -104,11 +104,10 @@ class ActivityScheduleService(
       }
   }
 
-  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate, adminMode: Boolean? = false) =
-    repository.getActivityScheduleByIdWithFilters(
-      activityScheduleId = scheduleId,
-      earliestSessionDate = earliestSessionDate,
-    )?.checkCaseloadAccess(adminMode)?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
+  fun getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate, adminMode: Boolean? = false) = repository.getActivityScheduleByIdWithFilters(
+    activityScheduleId = scheduleId,
+    earliestSessionDate = earliestSessionDate,
+  )?.checkCaseloadAccess(adminMode)?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
   @Transactional
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String, adminMode: Boolean? = false) {
@@ -258,11 +257,10 @@ class ActivityScheduleService(
     }
   }
 
-  private fun String.toDeallocationReason() =
-    DeallocationReason.entries
-      .filter(DeallocationReason::displayed)
-      .firstOrNull { it.name == this }
-      ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
+  private fun String.toDeallocationReason() = DeallocationReason.entries
+    .filter(DeallocationReason::displayed)
+    .firstOrNull { it.name == this }
+    ?: throw IllegalArgumentException("Invalid deallocation reason specified '$this'")
 
   private fun ActivitySchedule.checkCaseloadAccess(adminMode: Boolean? = false) = also { if (adminMode == false) checkCaseloadAccess(activity.prisonCode) }
 

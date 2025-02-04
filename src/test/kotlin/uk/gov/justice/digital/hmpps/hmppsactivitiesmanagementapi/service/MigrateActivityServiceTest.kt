@@ -925,23 +925,22 @@ class MigrateActivityServiceTest {
     private fun buildActivityMigrateRequest(
       payRates: List<NomisPayRate> = emptyList(),
       scheduleRules: List<NomisScheduleRule> = emptyList(),
-    ) =
-      ActivityMigrateRequest(
-        programServiceCode = "CLNR",
-        prisonCode = "MDI",
-        startDate = LocalDate.now().plusDays(1),
-        endDate = null,
-        internalLocationId = 1,
-        internalLocationCode = "011",
-        internalLocationDescription = "MDI-1-1-011",
-        capacity = 10,
-        description = "An activity",
-        payPerSession = "H",
-        runsOnBankHoliday = false,
-        outsideWork = false,
-        scheduleRules,
-        payRates,
-      )
+    ) = ActivityMigrateRequest(
+      programServiceCode = "CLNR",
+      prisonCode = "MDI",
+      startDate = LocalDate.now().plusDays(1),
+      endDate = null,
+      internalLocationId = 1,
+      internalLocationCode = "011",
+      internalLocationDescription = "MDI-1-1-011",
+      capacity = 10,
+      description = "An activity",
+      payPerSession = "H",
+      runsOnBankHoliday = false,
+      outsideWork = false,
+      scheduleRules,
+      payRates,
+    )
   }
 
   @Nested
@@ -1489,20 +1488,19 @@ class MigrateActivityServiceTest {
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }
 
-    private fun buildAllocationMigrateRequest() =
-      AllocationMigrateRequest(
-        prisonCode = "MDI",
-        activityId = 1,
-        splitRegimeActivityId = null,
-        prisonerNumber = "A1234BB",
-        bookingId = 1,
-        cellLocation = "MDI-1-1-001",
-        nomisPayBand = "1",
-        startDate = LocalDate.now().minusDays(1),
-        endDate = null,
-        endComment = null,
-        suspendedFlag = false,
-      )
+    private fun buildAllocationMigrateRequest() = AllocationMigrateRequest(
+      prisonCode = "MDI",
+      activityId = 1,
+      splitRegimeActivityId = null,
+      prisonerNumber = "A1234BB",
+      bookingId = 1,
+      cellLocation = "MDI-1-1-001",
+      nomisPayBand = "1",
+      startDate = LocalDate.now().minusDays(1),
+      endDate = null,
+      endComment = null,
+      suspendedFlag = false,
+    )
   }
 
   @Nested

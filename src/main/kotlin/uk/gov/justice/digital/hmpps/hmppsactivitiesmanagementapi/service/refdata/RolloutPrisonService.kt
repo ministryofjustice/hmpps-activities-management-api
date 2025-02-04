@@ -52,16 +52,13 @@ class RolloutPrisonService(
 
   fun isActivitiesRolledOutAt(prisonCode: String): Boolean = getPrison(code = prisonCode).activities
 
-  fun getRolloutPrisons(prisonsLive: Boolean = false): List<RolloutPrisonPlan> {
-    return if (prisonsLive) {
-      this.prisonsLive.split(",").map { getByPrisonCode(it) }
-    } else {
-      activitiesLive.split(",").map { getByPrisonCode(it) }
-    }
+  fun getRolloutPrisons(prisonsLive: Boolean = false): List<RolloutPrisonPlan> = if (prisonsLive) {
+    this.prisonsLive.split(",").map { getByPrisonCode(it) }
+  } else {
+    activitiesLive.split(",").map { getByPrisonCode(it) }
   }
 
   companion object {
-    fun RolloutPrisonPlan.hasExpired(predicate: () -> LocalDate?) =
-      predicate()?.onOrBefore(LocalDate.now().minusDays(this.maxDaysToExpiry.toLong())) == true
+    fun RolloutPrisonPlan.hasExpired(predicate: () -> LocalDate?) = predicate()?.onOrBefore(LocalDate.now().minusDays(this.maxDaysToExpiry.toLong())) == true
   }
 }

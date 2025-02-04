@@ -72,19 +72,17 @@ class MigrateActivityService(
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-    fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean =
-      this.startTime == slotStartTime && this.endTime == slotEndTime
+    fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean = this.startTime == slotStartTime && this.endTime == slotEndTime
 
-    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> =
-      setOfNotNull(
-        DayOfWeek.MONDAY.takeIf { monday },
-        DayOfWeek.TUESDAY.takeIf { tuesday },
-        DayOfWeek.WEDNESDAY.takeIf { wednesday },
-        DayOfWeek.THURSDAY.takeIf { thursday },
-        DayOfWeek.FRIDAY.takeIf { friday },
-        DayOfWeek.SATURDAY.takeIf { saturday },
-        DayOfWeek.SUNDAY.takeIf { sunday },
-      )
+    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> = setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { monday },
+      DayOfWeek.TUESDAY.takeIf { tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { wednesday },
+      DayOfWeek.THURSDAY.takeIf { thursday },
+      DayOfWeek.FRIDAY.takeIf { friday },
+      DayOfWeek.SATURDAY.takeIf { saturday },
+      DayOfWeek.SUNDAY.takeIf { sunday },
+    )
   }
 
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
@@ -186,12 +184,11 @@ class MigrateActivityService(
     return listOf(activity)
   }
 
-  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? =
-    prisonRegimeService.getSlotTimesForTimeSlot(
-      prisonCode = prisonCode,
-      timeSlot = timeSlot,
-      daysOfWeek = this.daysOfWeek(),
-    )
+  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? = prisonRegimeService.getSlotTimesForTimeSlot(
+    prisonCode = prisonCode,
+    timeSlot = timeSlot,
+    daysOfWeek = this.daysOfWeek(),
+  )
 
   private fun buildActivityEntity(
     request: ActivityMigrateRequest,
@@ -257,17 +254,15 @@ class MigrateActivityService(
     }
   }
 
-  fun getRequestDaysOfWeek(nomisSchedule: NomisScheduleRule): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { nomisSchedule.monday },
-      DayOfWeek.TUESDAY.takeIf { nomisSchedule.tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { nomisSchedule.wednesday },
-      DayOfWeek.THURSDAY.takeIf { nomisSchedule.thursday },
-      DayOfWeek.FRIDAY.takeIf { nomisSchedule.friday },
-      DayOfWeek.SATURDAY.takeIf { nomisSchedule.saturday },
-      DayOfWeek.SUNDAY.takeIf { nomisSchedule.sunday },
-    )
-  }
+  fun getRequestDaysOfWeek(nomisSchedule: NomisScheduleRule): Set<DayOfWeek> = setOfNotNull(
+    DayOfWeek.MONDAY.takeIf { nomisSchedule.monday },
+    DayOfWeek.TUESDAY.takeIf { nomisSchedule.tuesday },
+    DayOfWeek.WEDNESDAY.takeIf { nomisSchedule.wednesday },
+    DayOfWeek.THURSDAY.takeIf { nomisSchedule.thursday },
+    DayOfWeek.FRIDAY.takeIf { nomisSchedule.friday },
+    DayOfWeek.SATURDAY.takeIf { nomisSchedule.saturday },
+    DayOfWeek.SUNDAY.takeIf { nomisSchedule.sunday },
+  )
 
   fun mapProgramToCategory(programServiceCode: String): ActivityCategory {
     val activityCategories = activityCategoryRepository.findAll()
@@ -555,22 +550,21 @@ class MigrateActivityService(
     activityRepository.delete(activity)
   }
 
-  private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() =
-    groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }
-      .let { rulesBySlotTimes ->
-        rulesBySlotTimes.map { (slotTimes, groupedRules) ->
-          NomisScheduleRule(
-            startTime = slotTimes.first,
-            endTime = slotTimes.second,
-            monday = groupedRules.any { it.monday },
-            tuesday = groupedRules.any { it.tuesday },
-            wednesday = groupedRules.any { it.wednesday },
-            thursday = groupedRules.any { it.thursday },
-            friday = groupedRules.any { it.friday },
-            saturday = groupedRules.any { it.saturday },
-            sunday = groupedRules.any { it.sunday },
-            timeSlot = slotTimes.third,
-          )
-        }
+  private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() = groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }
+    .let { rulesBySlotTimes ->
+      rulesBySlotTimes.map { (slotTimes, groupedRules) ->
+        NomisScheduleRule(
+          startTime = slotTimes.first,
+          endTime = slotTimes.second,
+          monday = groupedRules.any { it.monday },
+          tuesday = groupedRules.any { it.tuesday },
+          wednesday = groupedRules.any { it.wednesday },
+          thursday = groupedRules.any { it.thursday },
+          friday = groupedRules.any { it.friday },
+          saturday = groupedRules.any { it.saturday },
+          sunday = groupedRules.any { it.sunday },
+          timeSlot = slotTimes.third,
+        )
       }
+    }
 }

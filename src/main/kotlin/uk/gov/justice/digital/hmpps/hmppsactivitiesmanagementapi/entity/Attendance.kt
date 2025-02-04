@@ -84,26 +84,23 @@ data class Attendance(
   }
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(attendanceId = $attendanceId )"
+  override fun toString(): String = this::class.simpleName + "(attendanceId = $attendanceId )"
+
+  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) = apply {
+    require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
+    require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
+
+    mark(
+      principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
+      reason = reason,
+      newStatus = AttendanceStatus.COMPLETED,
+      newComment = cancelledReason,
+      newIssuePayment = isPayable(),
+      newIncentiveLevelWarningIssued = null,
+      newCaseNoteId = null,
+      newOtherAbsenceReason = null,
+    )
   }
-
-  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) =
-    apply {
-      require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
-      require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
-
-      mark(
-        principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
-        reason = reason,
-        newStatus = AttendanceStatus.COMPLETED,
-        newComment = cancelledReason,
-        newIssuePayment = isPayable(),
-        newIncentiveLevelWarningIssued = null,
-        newCaseNoteId = null,
-        newOtherAbsenceReason = null,
-      )
-    }
 
   fun uncancel() = mark(
     principalName = null,
@@ -116,32 +113,30 @@ data class Attendance(
     newOtherAbsenceReason = null,
   )
 
-  fun complete(reason: AttendanceReason, issuePayment: Boolean = false) =
+  fun complete(reason: AttendanceReason, issuePayment: Boolean = false) = mark(
+    principalName = ServiceName.SERVICE_NAME.value,
+    reason = reason,
+    newStatus = AttendanceStatus.COMPLETED,
+    newIssuePayment = issuePayment,
+    newCaseNoteId = null,
+    newComment = null,
+    newIncentiveLevelWarningIssued = null,
+    newOtherAbsenceReason = null,
+  ).also { addAttendanceToHistory() }
+
+  fun unsuspend() = apply {
+    require(hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
     mark(
       principalName = ServiceName.SERVICE_NAME.value,
-      reason = reason,
-      newStatus = AttendanceStatus.COMPLETED,
-      newIssuePayment = issuePayment,
+      reason = null,
+      newStatus = AttendanceStatus.WAITING,
+      newIssuePayment = null,
       newCaseNoteId = null,
       newComment = null,
       newIncentiveLevelWarningIssued = null,
       newOtherAbsenceReason = null,
-    ).also { addAttendanceToHistory() }
-
-  fun unsuspend() =
-    apply {
-      require(hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
-      mark(
-        principalName = ServiceName.SERVICE_NAME.value,
-        reason = null,
-        newStatus = AttendanceStatus.WAITING,
-        newIssuePayment = null,
-        newCaseNoteId = null,
-        newComment = null,
-        newIncentiveLevelWarningIssued = null,
-        newOtherAbsenceReason = null,
-      )
-    }
+    )
+  }
 
   fun mark(
     principalName: String?,

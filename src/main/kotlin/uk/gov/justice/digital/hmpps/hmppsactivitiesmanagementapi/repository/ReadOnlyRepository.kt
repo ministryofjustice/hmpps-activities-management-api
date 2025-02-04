@@ -10,5 +10,4 @@ interface ReadOnlyRepository<T, ID> : Repository<T, ID> {
   fun findById(id: ID): Optional<T>
 }
 
-inline fun <reified T, ID> ReadOnlyRepository<T, ID>.findOrThrowNotFound(id: ID): T =
-  this.findById(id).orElseThrow { EntityNotFoundException("${T::class.java.simpleName.spaceOut()} $id not found") }
+inline fun <reified T, ID> ReadOnlyRepository<T, ID>.findOrThrowNotFound(id: ID): T = this.findById(id).orElseThrow { EntityNotFoundException("${T::class.java.simpleName.spaceOut()} $id not found") }

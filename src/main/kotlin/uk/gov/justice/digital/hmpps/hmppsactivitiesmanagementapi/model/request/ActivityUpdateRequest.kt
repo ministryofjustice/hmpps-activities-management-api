@@ -107,10 +107,8 @@ data class ActivityUpdateRequest(
   private fun isPaid() = !pay.isNullOrEmpty() || (paid == null || !paid)
 
   @AssertTrue(message = "Activity pay rate effective date must not be more than 30 days in the future")
-  private fun isMaximumFuturePayDate() =
-    pay.isNullOrEmpty() || (pay.isNotEmpty() && !pay.any { it -> it.startDate?.isAfter(LocalDate.now().plusDays(30)) == true })
+  private fun isMaximumFuturePayDate() = pay.isNullOrEmpty() || (pay.isNotEmpty() && !pay.any { it -> it.startDate?.isAfter(LocalDate.now().plusDays(30)) == true })
 
   @AssertTrue(message = "Activity pay rate effective date must be unique for a given incentive level and pay band")
-  private fun isDuplicateFuturePayDate() =
-    pay.isNullOrEmpty() || (pay.isNotEmpty() && pay.groupingBy { it.incentiveLevel + it.startDate + it.payBandId }.eachCount().filter { it.value > 1 }.isEmpty())
+  private fun isDuplicateFuturePayDate() = pay.isNullOrEmpty() || (pay.isNotEmpty() && pay.groupingBy { it.incentiveLevel + it.startDate + it.payBandId }.eachCount().filter { it.value > 1 }.isEmpty())
 }

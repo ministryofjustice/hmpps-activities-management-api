@@ -10,6 +10,5 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 class AttendanceReasonService(
   private val attendanceReasonRepository: AttendanceReasonRepository,
 ) {
-  fun getAll() =
-    attendanceReasonRepository.findAll().toModel()
+  fun getAll() = attendanceReasonRepository.findAll().toModel()
 }

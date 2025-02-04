@@ -149,10 +149,9 @@ data class Appointment(
     return addAttendee(attendee)
   }
 
-  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) =
-    findAttendeeRecords(prisonerNumber).onEach {
-      it.remove(removedTime, removalReason, removedBy)
-    }
+  fun removeAttendee(prisonerNumber: String, removedTime: LocalDateTime = LocalDateTime.now(), removalReason: AppointmentAttendeeRemovalReason, removedBy: String?) = findAttendeeRecords(prisonerNumber).onEach {
+    it.remove(removedTime, removalReason, removedBy)
+  }
 
   fun markPrisonerAttendance(attendedPrisonNumbers: List<String>, nonAttendedPrisonNumbers: List<String>, attendanceRecordedTime: LocalDateTime = LocalDateTime.now(), attendanceRecordedBy: String) {
     require(!isCancelled()) {
@@ -228,57 +227,55 @@ data class Appointment(
     attendees = attendees().toModel(),
   )
 
-  fun toSummary() =
-    AppointmentSummary(
-      appointmentId,
-      sequenceNumber,
-      startDate,
-      startTime,
-      endTime,
-      isEdited = isEdited(),
-      isCancelled = isCancelled(),
-      isDeleted = isDeleted,
-    )
+  fun toSummary() = AppointmentSummary(
+    appointmentId,
+    sequenceNumber,
+    startDate,
+    startTime,
+    endTime,
+    isEdited = isEdited(),
+    isCancelled = isCancelled(),
+    isDeleted = isDeleted,
+  )
 
   fun toDetails(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ) =
-    AppointmentDetails(
-      appointmentId,
-      if (appointmentSeries.appointmentSet == null) appointmentSeries.toSummary() else null,
-      appointmentSeries.appointmentSet?.toSummary(),
-      appointmentSeries.appointmentType,
-      sequenceNumber,
-      prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      attendees().map { it.toSummary(prisonerMap) },
-      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      appointmentTier?.toModelEventTier(),
-      appointmentOrganiser?.toModelEventOrganiser(),
-      customName,
-      if (inCell) {
-        null
-      } else {
-        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
-      },
-      inCell,
-      startDate,
-      startTime,
-      endTime,
-      isExpired(),
-      extraInformation,
-      appointmentSeries.createdTime,
-      appointmentSeries.createdBy,
-      isEdited(),
-      updatedTime,
-      updatedBy,
-      isCancelled(),
-      isDeleted,
-      cancelledTime,
-      cancelledBy,
-    )
+  ) = AppointmentDetails(
+    appointmentId,
+    if (appointmentSeries.appointmentSet == null) appointmentSeries.toSummary() else null,
+    appointmentSeries.appointmentSet?.toSummary(),
+    appointmentSeries.appointmentType,
+    sequenceNumber,
+    prisonCode,
+    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    attendees().map { it.toSummary(prisonerMap) },
+    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    appointmentTier?.toModelEventTier(),
+    appointmentOrganiser?.toModelEventOrganiser(),
+    customName,
+    if (inCell) {
+      null
+    } else {
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+    },
+    inCell,
+    startDate,
+    startTime,
+    endTime,
+    isExpired(),
+    extraInformation,
+    appointmentSeries.createdTime,
+    appointmentSeries.createdBy,
+    isEdited(),
+    updatedTime,
+    updatedBy,
+    isCancelled(),
+    isDeleted,
+    cancelledTime,
+    cancelledBy,
+  )
 
   /**
    * Function exists for testing purposes. The AbstractAggregateRoot.domainEvents() function is protected so this

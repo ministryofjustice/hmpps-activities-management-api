@@ -6,8 +6,7 @@ import java.time.LocalDate
 
 fun Prisoner.isOutOfPrison() = inOutStatus == Prisoner.InOutStatus.OUT
 
-fun Prisoner.lastMovementType(): MovementType? =
-  MovementType.entries.firstOrNull { it.nomisShortCode == lastMovementTypeCode }
+fun Prisoner.lastMovementType(): MovementType? = MovementType.entries.firstOrNull { it.nomisShortCode == lastMovementTypeCode }
 
 fun Prisoner.isInactiveOut(): Boolean = status == "INACTIVE OUT"
 
@@ -23,11 +22,9 @@ fun Prisoner.isActiveInPrison(prisonCode: String) = prisonId == prisonCode && is
 
 fun Prisoner.isActiveIn(prisonCode: String): Boolean = isActiveIn() && prisonId == prisonCode
 
-fun Prisoner.isTemporarilyReleased() =
-  (confirmedReleaseDate == null || confirmedReleaseDate.isAfter(LocalDate.now())) && isActiveOut() && lastMovementType() != MovementType.RELEASE
+fun Prisoner.isTemporarilyReleased() = (confirmedReleaseDate == null || confirmedReleaseDate.isAfter(LocalDate.now())) && isActiveOut() && lastMovementType() != MovementType.RELEASE
 
-fun Prisoner.isPermanentlyReleased() =
-  isInactiveOut() && confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
+fun Prisoner.isPermanentlyReleased() = isInactiveOut() && confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE
 
 fun Prisoner.isAtDifferentLocationTo(prisonCode: String) = prisonCode != prisonId
 

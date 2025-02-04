@@ -53,9 +53,7 @@ data class ActivityPay(
   override fun hashCode(): Int = activityPayId.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityPayId = $activityPayId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(activityPayId = $activityPayId )"
 
   fun toModel() = ModelActivityPay(
     id = activityPayId,

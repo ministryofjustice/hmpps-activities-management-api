@@ -24,22 +24,18 @@ class LocationService(
     return LocationPrefixDto(locationPrefix)
   }
 
-  fun getLocationsForAppointments(agencyId: String): List<Location> =
-    prisonApiClient
-      .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
+  fun getLocationsForAppointments(agencyId: String): List<Location> = prisonApiClient
+    .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
 
-  fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> =
-    getLocationsForAppointments(agencyId)
-      .associateBy { it.locationId }
+  fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> = getLocationsForAppointments(agencyId)
+    .associateBy { it.locationId }
 
-  fun getCellLocationsForGroup(agencyId: String, groupName: String): List<Location>? =
-    prisonApiClient.getLocationsForType(agencyId, "CELL").block()
-      ?.filter(locationGroupService.locationGroupFilter(agencyId, groupName)::test)?.toMutableList()
-      ?.map { it.copy(description = it.description.formatLocation()) }
-      ?.toList()
+  fun getCellLocationsForGroup(agencyId: String, groupName: String): List<Location>? = prisonApiClient.getLocationsForType(agencyId, "CELL").block()
+    ?.filter(locationGroupService.locationGroupFilter(agencyId, groupName)::test)?.toMutableList()
+    ?.map { it.copy(description = it.description.formatLocation()) }
+    ?.toList()
 
-  private fun String.formatLocation(): String =
-    WordUtils.capitalizeFully(this)
-      .replace(Regex("hmp|Hmp"), "HMP")
-      .replace(Regex("yoi|Yoi"), "YOI")
+  private fun String.formatLocation(): String = WordUtils.capitalizeFully(this)
+    .replace(Regex("hmp|Hmp"), "HMP")
+    .replace(Regex("yoi|Yoi"), "YOI")
 }

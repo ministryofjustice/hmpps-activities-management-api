@@ -133,9 +133,7 @@ data class ActivityScheduleSlot(
   fun slotTimes(): SlotTimes = startTime to endTime
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityScheduleSlotId = $activityScheduleSlotId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(activityScheduleSlotId = $activityScheduleSlotId )"
 }
 
 fun List<ActivityScheduleSlot>.toModelLite() = map { it.toModel() }
