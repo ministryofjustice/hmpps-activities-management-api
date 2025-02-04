@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentiv
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
@@ -101,7 +102,7 @@ class MigrateActivityService(
       throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
     }
 
-    if (!request.startDate.isAfter(LocalDate.now())) {
+    if (request.startDate.onOrBefore(LocalDate.now())) {
       throw ValidationException("Activity start date must be in the future for the requested prison ${request.prisonCode}")
     }
 
