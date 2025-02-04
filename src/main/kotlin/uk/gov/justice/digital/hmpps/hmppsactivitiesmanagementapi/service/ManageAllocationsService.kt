@@ -98,14 +98,12 @@ class ManageAllocationsService(
     )
   }
 
-  private fun ActivitySchedule.deallocateAllocationsForScheduleEndingOn(date: LocalDate) =
-    allocations(excludeEnded = true).onEach { allocation -> allocation.deallocateNowOn(date) }.map(Allocation::allocationId)
+  private fun ActivitySchedule.deallocateAllocationsForScheduleEndingOn(date: LocalDate) = allocations(excludeEnded = true).onEach { allocation -> allocation.deallocateNowOn(date) }.map(Allocation::allocationId)
 
-  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) =
-    allocations(true)
-      .filter { activeAllocation -> activeAllocation.endsOn(date) }
-      .onEach { allocation -> allocation.deallocateNowOn(date) }
-      .map(Allocation::allocationId)
+  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) = allocations(true)
+    .filter { activeAllocation -> activeAllocation.endsOn(date) }
+    .onEach { allocation -> allocation.deallocateNowOn(date) }
+    .map(Allocation::allocationId)
 
   /*
    * We can consider pending allocations before today in the event we need to (re)run due to something out of our control
@@ -143,15 +141,13 @@ class ManageAllocationsService(
     }
   }
 
-  private fun pendingAllocationsStartingOnOrBefore(date: LocalDate, prisonCode: String) =
-    allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
-      prisonCode,
-      PrisonerStatus.PENDING,
-      date,
-    )
+  private fun pendingAllocationsStartingOnOrBefore(date: LocalDate, prisonCode: String) = allocationRepository.findByPrisonCodePrisonerStatusStartingOnOrBeforeDate(
+    prisonCode,
+    PrisonerStatus.PENDING,
+    date,
+  )
 
-  private fun forEachRolledOutPrison() =
-    rolloutPrisonService.getRolloutPrisons()
+  private fun forEachRolledOutPrison() = rolloutPrisonService.getRolloutPrisons()
 
   private fun deallocateAllocationsDueToExpire() {
     forEachRolledOutPrison()
@@ -240,35 +236,33 @@ class ManageAllocationsService(
     }
   }
 
-  private fun List<Allocation>.suspend() =
-    continueToRunOnFailure(
-      block = {
-        transactionHandler.newSpringTransaction {
-          onEach { allocation ->
-            run {
-              allocation.activatePlannedSuspension()
-              allocationRepository.saveAndFlush(allocation)
-            }
-          }.map(Allocation::allocationId)
-        }.let(::sendAllocationsAmendedEvents)
-      },
-      failure = "An error occurred while suspending allocations due to be suspended today",
-    )
+  private fun List<Allocation>.suspend() = continueToRunOnFailure(
+    block = {
+      transactionHandler.newSpringTransaction {
+        onEach { allocation ->
+          run {
+            allocation.activatePlannedSuspension()
+            allocationRepository.saveAndFlush(allocation)
+          }
+        }.map(Allocation::allocationId)
+      }.let(::sendAllocationsAmendedEvents)
+    },
+    failure = "An error occurred while suspending allocations due to be suspended today",
+  )
 
-  private fun List<Allocation>.unsuspend() =
-    continueToRunOnFailure(
-      block = {
-        transactionHandler.newSpringTransaction {
-          onEach { allocation ->
-            run {
-              allocation.reactivateSuspension()
-              allocationRepository.saveAndFlush(allocation)
-            }
-          }.map(Allocation::allocationId)
-        }.let(::sendAllocationsAmendedEvents)
-      },
-      failure = "An error occurred while unsuspending allocations due to be unsuspended today",
-    )
+  private fun List<Allocation>.unsuspend() = continueToRunOnFailure(
+    block = {
+      transactionHandler.newSpringTransaction {
+        onEach { allocation ->
+          run {
+            allocation.reactivateSuspension()
+            allocationRepository.saveAndFlush(allocation)
+          }
+        }.map(Allocation::allocationId)
+      }.let(::sendAllocationsAmendedEvents)
+    },
+    failure = "An error occurred while unsuspending allocations due to be unsuspended today",
+  )
 
   private fun sendAllocationsAmendedEvents(allocationIds: Collection<Long>) {
     log.info("Sending allocation amended events for allocation IDs ${allocationIds.joinToString(separator = ",")}.")

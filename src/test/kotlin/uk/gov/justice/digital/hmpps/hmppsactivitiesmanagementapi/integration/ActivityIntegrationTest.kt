@@ -915,66 +915,61 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.getSchedulesOfAnActivity(id: Long) =
-    get()
-      .uri("/activities/$id/schedules")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ActivityScheduleLite::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getSchedulesOfAnActivity(id: Long) = get()
+    .uri("/activities/$id/schedules")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivityScheduleLite::class.java)
+    .returnResult().responseBody
 
-  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") =
-    get()
-      .uri("/activities/$id/filtered")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") = get()
+    .uri("/activities/$id/filtered")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 
   private fun WebTestClient.createActivity(
     activityCreateRequest: ActivityCreateRequest,
-  ) =
-    post()
-      .uri("/activities")
-      .bodyValue(activityCreateRequest)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, "MDI")
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/activities")
+    .bodyValue(activityCreateRequest)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, "MDI")
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.updateActivity(
     prisonCode: String,
     id: Long,
     activityUpdateRequest: ActivityUpdateRequest,
-  ) =
-    patch()
-      .uri("/activities/$prisonCode/activityId/$id")
-      .bodyValue(activityUpdateRequest)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, prisonCode)
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(Activity::class.java)
-      .returnResult().responseBody!!
+  ) = patch()
+    .uri("/activities/$prisonCode/activityId/$id")
+    .bodyValue(activityUpdateRequest)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Activity::class.java)
+    .returnResult().responseBody!!
 
   private fun Activity.schedule(description: String) = schedules.schedule(description)
 
-  private fun List<ActivitySchedule>.schedule(description: String) =
-    firstOrNull { it.description.uppercase() == description.uppercase() }
-      ?: throw RuntimeException("Activity schedule $description not found.")
+  private fun List<ActivitySchedule>.schedule(description: String) = firstOrNull { it.description.uppercase() == description.uppercase() }
+    ?: throw RuntimeException("Activity schedule $description not found.")
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")

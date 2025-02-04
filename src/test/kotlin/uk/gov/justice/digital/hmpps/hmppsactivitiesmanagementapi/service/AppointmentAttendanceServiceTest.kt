@@ -458,8 +458,7 @@ class AppointmentAttendanceServiceTest {
 
     private val now = LocalTime.now()
 
-    inner class TestData(val didTheyAttend: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) :
-      AppointmentAndAttendee {
+    inner class TestData(val didTheyAttend: Boolean? = null, val tier: EventTierType = EventTierType.TIER_1) : AppointmentAndAttendee {
       override fun getPrisonerNumber(): String = "prisoner"
 
       override fun getBookingId(): Long = 1

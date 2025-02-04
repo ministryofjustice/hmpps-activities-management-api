@@ -10,7 +10,10 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import java.time.LocalDate
 
-class BankHolidayApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class BankHolidayApiExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
 
   companion object {
     @JvmField
@@ -30,7 +33,7 @@ class BankHolidayApiExtension : BeforeAllCallback, AfterAllCallback, BeforeEachC
   }
 }
 
-class BankHolidayApiMockServer() : WireMockServer(WIREMOCK_PORT) {
+class BankHolidayApiMockServer : WireMockServer(WIREMOCK_PORT) {
   companion object {
     private const val WIREMOCK_PORT = 8333
   }
@@ -39,14 +42,13 @@ class BankHolidayApiMockServer() : WireMockServer(WIREMOCK_PORT) {
     this.stubDayAsBankHoliday(LocalDate.now())
   }
 
-  fun stubDayAsBankHoliday(day: LocalDate): StubMapping =
-    stubFor(
-      get("/bank-holidays.json")
-        .willReturn(
-          aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """{
+  fun stubDayAsBankHoliday(day: LocalDate): StubMapping = stubFor(
+    get("/bank-holidays.json")
+      .willReturn(
+        aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withBody(
+            """{
                  "england-and-wales":{
                     "division":"england-and-wales",
                     "events":[
@@ -57,9 +59,9 @@ class BankHolidayApiMockServer() : WireMockServer(WIREMOCK_PORT) {
                     ]
                  }
               }
-              """.trimIndent(),
-            )
-            .withStatus(200),
-        ),
-    )
+            """.trimIndent(),
+          )
+          .withStatus(200),
+      ),
+  )
 }

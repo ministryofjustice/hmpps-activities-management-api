@@ -453,64 +453,57 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     content = mapper.writeValueAsBytes(ids)
   }
 
-  private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) =
-    patch("/appointments/{appointmentId}", id) {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.updateAppointment(id: Long, request: AppointmentUpdateRequest, principal: Principal) = patch("/appointments/{appointmentId}", id) {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 
-  private fun MockMvc.cancelAppointment(id: Long, request: AppointmentCancelRequest, principal: Principal) =
-    put("/appointments/{appointmentId}/cancel", id) {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.cancelAppointment(id: Long, request: AppointmentCancelRequest, principal: Principal) = put("/appointments/{appointmentId}/cancel", id) {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 
-  private fun MockMvc.uncancelAppointment(id: Long, request: AppointmentUncancelRequest, principal: Principal) =
-    put("/appointments/{appointmentId}/uncancel", id) {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.uncancelAppointment(id: Long, request: AppointmentUncancelRequest, principal: Principal) = put("/appointments/{appointmentId}/uncancel", id) {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 
-  private fun MockMvc.getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate?, principal: Principal) =
-    get("/appointments/$prisonCode/attendance-summaries?date=$date") {
-      this.principal = principal
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-    }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+  private fun MockMvc.getAppointmentAttendanceSummaries(prisonCode: String, date: LocalDate?, principal: Principal) = get("/appointments/$prisonCode/attendance-summaries?date=$date") {
+    this.principal = principal
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 
-  private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) =
-    put("/appointments/{appointmentId}/attendance", id) {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) = put("/appointments/{appointmentId}/attendance", id) {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 
-  private fun MockMvc.updateAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) =
-    put("/appointments/updateAttendances?action=$action") {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.updateAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) = put("/appointments/updateAttendances?action=$action") {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 
-  private fun MockMvc.searchAppointments(prisonCode: String, request: AppointmentSearchRequest, principal: Principal) =
-    post("/appointments/{prisonCode}/search", prisonCode) {
-      this.principal = principal
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        request,
-      )
-    }
+  private fun MockMvc.searchAppointments(prisonCode: String, request: AppointmentSearchRequest, principal: Principal) = post("/appointments/{prisonCode}/search", prisonCode) {
+    this.principal = principal
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      request,
+    )
+  }
 }

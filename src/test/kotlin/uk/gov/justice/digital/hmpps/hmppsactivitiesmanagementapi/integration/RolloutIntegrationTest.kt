@@ -64,48 +64,44 @@ class RolloutIntegrationTest : IntegrationTestBase() {
     assertThat(updated.first { it.dayOfWeek == DayOfWeek.MONDAY }.amStart).isEqualTo(LocalTime.of(9, 30))
   }
 
-  private fun createRegimeSlot(dayOfWeek: DayOfWeek, amStart: LocalTime): PrisonRegimeSlot =
-    PrisonRegimeSlot(
-      dayOfWeek = dayOfWeek,
-      amStart = amStart,
-      amFinish = LocalTime.now(),
-      pmStart = LocalTime.now(),
-      pmFinish = LocalTime.now(),
-      edStart = LocalTime.now(),
-      edFinish = LocalTime.now(),
-    )
+  private fun createRegimeSlot(dayOfWeek: DayOfWeek, amStart: LocalTime): PrisonRegimeSlot = PrisonRegimeSlot(
+    dayOfWeek = dayOfWeek,
+    amStart = amStart,
+    amFinish = LocalTime.now(),
+    pmStart = LocalTime.now(),
+    pmFinish = LocalTime.now(),
+    edStart = LocalTime.now(),
+    edFinish = LocalTime.now(),
+  )
 
-  private fun WebTestClient.createRegime(slots: List<PrisonRegimeSlot>): List<PrisonRegime> =
-    this.post()
-      .uri("/rollout/prison-regime/TST")
-      .bodyValue(slots)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_ACTIVITIES")))
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(PrisonRegime::class.java)
-      .returnResult().responseBody!!
+  private fun WebTestClient.createRegime(slots: List<PrisonRegimeSlot>): List<PrisonRegime> = this.post()
+    .uri("/rollout/prison-regime/TST")
+    .bodyValue(slots)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_ACTIVITIES")))
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(PrisonRegime::class.java)
+    .returnResult().responseBody!!
 
-  private fun WebTestClient.getPrisonByCode(code: String) =
-    get()
-      .uri("/rollout/$code")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(RolloutPrisonPlan::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getPrisonByCode(code: String) = get()
+    .uri("/rollout/$code")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(RolloutPrisonPlan::class.java)
+    .returnResult().responseBody
 
-  private fun WebTestClient.getRolledOutPrisons() =
-    get()
-      .uri("/rollout")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(RolloutPrisonPlan::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getRolledOutPrisons() = get()
+    .uri("/rollout")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(RolloutPrisonPlan::class.java)
+    .returnResult().responseBody
 }

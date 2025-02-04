@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 
 const val DEFAULT_CASELOAD_PENTONVILLE = PENTONVILLE_PRISON_CODE
 
-class FakeCaseLoad(private val caseloadId: String = DEFAULT_CASELOAD_PENTONVILLE) : BeforeEachCallback, AfterEachCallback {
+class FakeCaseLoad(private val caseloadId: String = DEFAULT_CASELOAD_PENTONVILLE) :
+  BeforeEachCallback,
+  AfterEachCallback {
 
   private val mockRequest = MockHttpServletRequest()
 

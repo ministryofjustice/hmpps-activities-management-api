@@ -44,16 +44,15 @@ class PrisonerDeallocatedEventTest : AuditableEventTestBase() {
     assertThat(createEvent().toLocalAuditRecord()).isEqualTo(expectedLocalAuditRecord)
   }
 
-  private fun createEvent() =
-    PrisonerDeallocatedEvent(
-      1,
-      "Some Activity",
-      "PBI",
-      "AA12346",
-      42,
-      deallocationTime = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
-      reason = "because",
-      deallocatedBy = "Bob",
-      createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
-    )
+  private fun createEvent() = PrisonerDeallocatedEvent(
+    1,
+    "Some Activity",
+    "PBI",
+    "AA12346",
+    42,
+    deallocationTime = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
+    reason = "because",
+    deallocatedBy = "Bob",
+    createdAt = LocalDateTime.of(2023, 3, 22, 9, 0, 3),
+  )
 }

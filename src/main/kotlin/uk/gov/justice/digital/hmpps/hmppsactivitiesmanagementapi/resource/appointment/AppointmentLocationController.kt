@@ -46,6 +46,5 @@ class AppointmentLocationController(private val locationService: LocationService
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getAppointmentLocations(
     @PathVariable("prisonCode") prisonCode: String,
-  ): List<AppointmentLocationSummary> =
-    locationService.getLocationsForAppointments(prisonCode).toAppointmentLocation()
+  ): List<AppointmentLocationSummary> = locationService.getLocationsForAppointments(prisonCode).toAppointmentLocation()
 }

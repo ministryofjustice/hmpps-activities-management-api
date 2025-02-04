@@ -330,8 +330,7 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
 
-  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) =
-    single { it.prisonerStatus == prisonerStatus }
+  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) = single { it.prisonerStatus == prisonerStatus }
 
   private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 

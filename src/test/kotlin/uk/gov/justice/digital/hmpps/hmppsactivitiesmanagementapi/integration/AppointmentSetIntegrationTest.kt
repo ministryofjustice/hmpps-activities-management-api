@@ -270,14 +270,13 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   private fun WebTestClient.createAppointmentSet(
     request: AppointmentSetCreateRequest,
-  ) =
-    post()
-      .uri("/appointment-set")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSet::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/appointment-set")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSet::class.java)
+    .returnResult().responseBody
 }

@@ -51,13 +51,11 @@ class PrisonerAllocationHandler(
       allocationRepository.saveAllAndFlush(allocations)
       allocations to updatedAttendances
     }.let { (allocations, updatedAttendances) ->
-      allocations.forEach {
-          endedAllocation ->
+      allocations.forEach { endedAllocation ->
         log.info("Sending prisoner allocation amended event for ended allocation ${endedAllocation.allocationId}")
         outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, endedAllocation.allocationId)
       }
-      updatedAttendances.forEach {
-          updatedAttendance ->
+      updatedAttendances.forEach { updatedAttendance ->
         outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_DELETED, updatedAttendance.first, updatedAttendance.second)
         log.info("Sending prisoner attendance deleted event for bookingId ${updatedAttendance.first} and scheduledInstance ${updatedAttendance.second}")
       }
@@ -68,11 +66,10 @@ class PrisonerAllocationHandler(
     reason: DeallocationReason,
     prisonCode: String,
     prisonerNumber: String,
-  ) =
-    onEach { it.deallocateNowWithReason(reason) }
-      .also {
-        log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
-      }
+  ) = onEach { it.deallocateNowWithReason(reason) }
+    .also {
+      log.info("Deallocated prisoner $prisonerNumber at prison $prisonCode from ${it.size} allocations.")
+    }
 
   private fun List<Allocation>.removeFutureAttendances(): Set<BookingIdScheduledInstanceId> {
     val updatedAttendanceIds = mutableSetOf<BookingIdScheduledInstanceId>()

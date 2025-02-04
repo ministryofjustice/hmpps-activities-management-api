@@ -35,14 +35,13 @@ class AttendanceReasonIntegrationTest : IntegrationTestBase() {
     )
   }
 
-  private fun WebTestClient.getAttendanceReasons() =
-    get()
-      .uri("/attendance-reasons")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AttendanceReason::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAttendanceReasons() = get()
+    .uri("/attendance-reasons")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AttendanceReason::class.java)
+    .returnResult().responseBody
 }

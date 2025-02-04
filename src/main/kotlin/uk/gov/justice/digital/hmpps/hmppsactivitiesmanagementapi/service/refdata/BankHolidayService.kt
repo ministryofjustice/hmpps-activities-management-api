@@ -14,12 +14,11 @@ class BankHolidayService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun isEnglishBankHoliday(day: LocalDate) =
-    bankHolidayApiClient.getBankHolidays().englandAndWales.events
-      .any { it.date == day }
-      .also { truthy ->
-        if (truthy) {
-          log.info("$day is a bank holiday")
-        }
+  fun isEnglishBankHoliday(day: LocalDate) = bankHolidayApiClient.getBankHolidays().englandAndWales.events
+    .any { it.date == day }
+    .also { truthy ->
+      if (truthy) {
+        log.info("$day is a bank holiday")
       }
+    }
 }

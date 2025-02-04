@@ -126,8 +126,7 @@ class PrisonApiClientTest {
     val prisonerNumbers = emptySet<String>()
     val date = LocalDate.of(2022, 12, 14)
 
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/appointments?date=$date")))
+    fun PrisonApiMockServer.verifyNoClientRequests() = verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/appointments?date=$date")))
 
     prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
 
@@ -229,8 +228,7 @@ class PrisonApiClientTest {
     val prisonerNumbers = emptySet<String>()
     val date = LocalDate.of(2022, 12, 14)
 
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/activities?date=$date")))
+    fun PrisonApiMockServer.verifyNoClientRequests() = verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/activities?date=$date")))
 
     prisonApiMockServer.stubGetScheduledActivitiesForPrisonerNumbers(prisonCode, date)
 
@@ -284,8 +282,7 @@ class PrisonApiClientTest {
     val prisonerNumbers = emptySet<String>()
     val date = LocalDate.of(2022, 12, 14)
 
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/courtEvents?date=$date")))
+    fun PrisonApiMockServer.verifyNoClientRequests() = verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/courtEvents?date=$date")))
 
     prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
 
@@ -338,8 +335,7 @@ class PrisonApiClientTest {
     val prisonerNumbers = emptySet<String>()
     val date = LocalDate.of(2022, 12, 14)
 
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/visits?date=$date")))
+    fun PrisonApiMockServer.verifyNoClientRequests() = verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/visits?date=$date")))
 
     prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
 
@@ -510,8 +506,7 @@ class PrisonApiClientTest {
     val prisonerNumbers = emptySet<String>()
     val date = LocalDate.now()
 
-    fun PrisonApiMockServer.verifyNoClientRequests() =
-      verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date")))
+    fun PrisonApiMockServer.verifyNoClientRequests() = verify(0, postRequestedFor(urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date")))
 
     prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers, date)
 

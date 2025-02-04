@@ -9,7 +9,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 
 @Repository
-interface ActivityScheduleRepository : JpaRepository<ActivitySchedule, Long>, ActivityScheduleRepositoryCustom {
+interface ActivityScheduleRepository :
+  JpaRepository<ActivitySchedule, Long>,
+  ActivityScheduleRepositoryCustom {
   fun findAllByActivityPrisonCode(prisonCode: String): List<ActivitySchedule>
 
   @EntityGraph(attributePaths = ["instances"], type = EntityGraph.EntityGraphType.LOAD)

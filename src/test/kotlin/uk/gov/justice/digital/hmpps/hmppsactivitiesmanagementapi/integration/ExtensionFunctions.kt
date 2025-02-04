@@ -5,6 +5,5 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 
 internal fun ActivitySchedule.allocatedPrisoner(prisonNumber: String) = allocations.allocatedPrisoner(prisonNumber)
 
-internal fun List<Allocation>.allocatedPrisoner(prisonNumber: String) =
-  singleOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
-    ?: throw AssertionError("Allocated $prisonNumber not found.")
+internal fun List<Allocation>.allocatedPrisoner(prisonNumber: String) = singleOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
+  ?: throw AssertionError("Allocated $prisonNumber not found.")

@@ -499,8 +499,7 @@ class ManageAllocationsServiceTest {
     verify(allocationRepository).saveAndFlush(suspendedAllocation)
   }
 
-  private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner =
-    PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
+  private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
 
   private fun Allocation.verifyIsActive() {
     prisonerStatus isEqualTo PrisonerStatus.ACTIVE

@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.1.10"
   jacoco
   id("org.openapi.generator") version "7.11.0"
-  id("io.sentry.jvm.gradle") version "5.0.0"
+  id("io.sentry.jvm.gradle") version "5.1.0"
 }
 
 allOpen {
@@ -51,7 +51,8 @@ dependencies {
       strictly("5.0.0-alpha.14")
     }
   }
-  implementation("aws.sdk.kotlin:s3:1.4.10")
+
+  implementation("aws.sdk.kotlin:s3:1.4.11")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -62,7 +63,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.10.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.11.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.20.4")
@@ -190,11 +191,6 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
 }
 
 ktlint {
-  additionalEditorconfig.set(
-    mapOf(
-      "ktlint_standard" to "disabled"
-    )
-  )
   filter {
     generatedProjectDirs.forEach { generatedProject ->
       exclude { element ->

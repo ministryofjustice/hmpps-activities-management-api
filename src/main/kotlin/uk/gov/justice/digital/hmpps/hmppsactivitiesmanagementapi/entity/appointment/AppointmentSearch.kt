@@ -115,7 +115,7 @@ data class AppointmentSearch(
     createdTime = createdTime,
     updatedTime = updatedTime,
     cancelledTime = cancelledTime,
-    cancelledBy = cancelledBy
+    cancelledBy = cancelledBy,
   )
 
   private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)

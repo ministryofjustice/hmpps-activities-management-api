@@ -27,13 +27,12 @@ object PostgresContainer {
     }
   }
 
-  private fun isPostgresRunning(): Boolean =
-    try {
-      val serverSocket = ServerSocket(5432)
-      serverSocket.localPort == 0
-    } catch (e: IOException) {
-      true
-    }
+  private fun isPostgresRunning(): Boolean = try {
+    val serverSocket = ServerSocket(5432)
+    serverSocket.localPort == 0
+  } catch (e: IOException) {
+    true
+  }
 
   private val log = LoggerFactory.getLogger(this::class.java)
 }

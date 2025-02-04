@@ -51,17 +51,16 @@ class PrisonRegimeServiceTest {
 
   private val now = LocalTime.of(9, 0, 0)
 
-  private fun createRegime(daysOfWeek: List<PrisonRegimeDaysOfWeek>): PrisonRegime =
-    PrisonRegime(
-      prisonCode = "IWI",
-      prisonRegimeDaysOfWeek = daysOfWeek,
-      amStart = now,
-      amFinish = now.plusHours(3),
-      pmStart = now.plusHours(4),
-      pmFinish = now.plusHours(6),
-      edStart = now.plusHours(7),
-      edFinish = now.plusHours(9),
-    )
+  private fun createRegime(daysOfWeek: List<PrisonRegimeDaysOfWeek>): PrisonRegime = PrisonRegime(
+    prisonCode = "IWI",
+    prisonRegimeDaysOfWeek = daysOfWeek,
+    amStart = now,
+    amFinish = now.plusHours(3),
+    pmStart = now.plusHours(4),
+    pmFinish = now.plusHours(6),
+    edStart = now.plusHours(7),
+    edFinish = now.plusHours(9),
+  )
 
   private val iwiRegime = listOf(
     createRegime(
@@ -285,8 +284,7 @@ class PrisonRegimeServiceTest {
     verify(eventPriorityRepository).findByPrisonCode("MDI")
   }
 
-  private fun priority(eventType: EventType, priority: Int) =
-    EventPriority(prisonCode = "MDI", eventType = eventType, priority = priority)
+  private fun priority(eventType: EventType, priority: Int) = EventPriority(prisonCode = "MDI", eventType = eventType, priority = priority)
 
   @Test
   fun `prison pay bands for Moorland are returned`() {
@@ -845,14 +843,13 @@ class PrisonRegimeServiceTest {
     assertThat(response.size).isEqualTo(7)
   }
 
-  private fun createRegimeSlot(dayOfWeek: DayOfWeek): PrisonRegimeSlot =
-    PrisonRegimeSlot(
-      dayOfWeek = dayOfWeek,
-      amStart = LocalTime.now(),
-      amFinish = LocalTime.now(),
-      pmStart = LocalTime.now(),
-      pmFinish = LocalTime.now(),
-      edStart = LocalTime.now(),
-      edFinish = LocalTime.now(),
-    )
+  private fun createRegimeSlot(dayOfWeek: DayOfWeek): PrisonRegimeSlot = PrisonRegimeSlot(
+    dayOfWeek = dayOfWeek,
+    amStart = LocalTime.now(),
+    amFinish = LocalTime.now(),
+    pmStart = LocalTime.now(),
+    pmFinish = LocalTime.now(),
+    edStart = LocalTime.now(),
+    edFinish = LocalTime.now(),
+  )
 }

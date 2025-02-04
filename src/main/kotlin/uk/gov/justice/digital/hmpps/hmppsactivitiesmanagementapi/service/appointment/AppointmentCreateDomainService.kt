@@ -225,29 +225,28 @@ class AppointmentCreateDomainService(
  * becoming the master record for that appointment so want to bring all the data we can over. When that appointment was
  * last updated and by whom is part of that data.
  */
-fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: LocalDate) =
-  Appointment(
-    appointmentSeries = this,
-    sequenceNumber = sequenceNumber,
-    prisonCode = this.prisonCode,
-    categoryCode = this.categoryCode,
-    customName = this.customName,
-    appointmentTier = this.appointmentTier,
-    internalLocationId = this.internalLocationId,
-    customLocation = this.customLocation,
-    inCell = this.inCell,
-    onWing = this.onWing,
-    offWing = this.offWing,
-    startDate = startDate,
-    startTime = this.startTime,
-    endTime = this.endTime,
-    unlockNotes = this.unlockNotes,
-    extraInformation = this.extraInformation,
-    createdTime = this.createdTime,
-    createdBy = this.createdBy,
-    updatedTime = this.updatedTime,
-    updatedBy = this.updatedBy,
-  ).also {
-    it.appointmentOrganiser = this.appointmentOrganiser
-    this.addAppointment(it)
-  }
+fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: LocalDate) = Appointment(
+  appointmentSeries = this,
+  sequenceNumber = sequenceNumber,
+  prisonCode = this.prisonCode,
+  categoryCode = this.categoryCode,
+  customName = this.customName,
+  appointmentTier = this.appointmentTier,
+  internalLocationId = this.internalLocationId,
+  customLocation = this.customLocation,
+  inCell = this.inCell,
+  onWing = this.onWing,
+  offWing = this.offWing,
+  startDate = startDate,
+  startTime = this.startTime,
+  endTime = this.endTime,
+  unlockNotes = this.unlockNotes,
+  extraInformation = this.extraInformation,
+  createdTime = this.createdTime,
+  createdBy = this.createdBy,
+  updatedTime = this.updatedTime,
+  updatedBy = this.updatedBy,
+).also {
+  it.appointmentOrganiser = this.appointmentOrganiser
+  this.addAppointment(it)
+}

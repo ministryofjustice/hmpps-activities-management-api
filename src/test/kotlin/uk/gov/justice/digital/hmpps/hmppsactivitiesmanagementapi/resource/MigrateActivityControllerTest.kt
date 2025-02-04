@@ -138,10 +138,10 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Migrate allocations")
-    inner class MigrateAllocationsTests() {
+    inner class MigrateAllocationsTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate allocation (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -181,7 +181,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
     @Nested
     @DisplayName("Migrate activity")
-    inner class MigrateActivityTests() {
+    inner class MigrateActivityTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Migrate activity (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -221,7 +221,7 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
 
     @Nested
     @DisplayName("Delete activity")
-    inner class DeleteActivityTests() {
+    inner class DeleteActivityTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Delete activity (ROLE_NOMIS_ACTIVITIES) - 200`() {

@@ -38,6 +38,5 @@ class EventListenerTest {
     )
   }
 
-  private fun String.readRawMessage() =
-    EventListenerTest::class.java.getResource(this)?.readText() ?: throw AssertionError("cannot find file $this")
+  private fun String.readRawMessage() = EventListenerTest::class.java.getResource(this)?.readText() ?: throw AssertionError("cannot find file $this")
 }

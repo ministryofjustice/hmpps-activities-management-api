@@ -66,7 +66,9 @@ class AppointmentSearchService(
 
       val timeSlotSpecs = timeSlots?.map { slot ->
         val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
-          prisonCode = prisonCode, timeSlot = slot, dayOfWeek = startDate.dayOfWeek,
+          prisonCode = prisonCode,
+          timeSlot = slot,
+          dayOfWeek = startDate.dayOfWeek,
         )
 
         appointmentSearchSpecification.startTimeBetween(

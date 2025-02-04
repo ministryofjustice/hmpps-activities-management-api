@@ -171,6 +171,5 @@ class ActivityScheduleInstanceControllerTest : ControllerTestBase<ActivitySchedu
       }
   }
 
-  private fun MockMvc.getPrisonerScheduledInstances(prisonCode: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot, cancelled: Boolean) =
-    get("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot&cancelled=$cancelled")
+  private fun MockMvc.getPrisonerScheduledInstances(prisonCode: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot, cancelled: Boolean) = get("/prisons/$prisonCode/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot&cancelled=$cancelled")
 }

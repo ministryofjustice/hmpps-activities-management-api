@@ -116,25 +116,23 @@ data class AppointmentSet(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ): AppointmentSetDetails {
-    return AppointmentSetDetails(
-      appointmentSetId,
-      prisonCode,
-      referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-      customName,
-      if (inCell) {
-        null
-      } else {
-        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
-      },
-      inCell,
-      startDate,
-      appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap) }.filterNot { it.attendees.isEmpty() },
-      createdTime,
-      createdBy,
-      updatedTime,
-      updatedBy,
-    )
-  }
+  ): AppointmentSetDetails = AppointmentSetDetails(
+    appointmentSetId,
+    prisonCode,
+    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    customName,
+    if (inCell) {
+      null
+    } else {
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+    },
+    inCell,
+    startDate,
+    appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap) }.filterNot { it.attendees.isEmpty() },
+    createdTime,
+    createdBy,
+    updatedTime,
+    updatedBy,
+  )
 }
