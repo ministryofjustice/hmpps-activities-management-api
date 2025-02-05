@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import java.time.LocalDate
 
 @Repository
-interface ActivityRepository : JpaRepository<Activity, Long>, ActivityRepositoryCustom {
+interface ActivityRepository :
+  JpaRepository<Activity, Long>,
+  ActivityRepositoryCustom {
   @Query(
     value =
     """

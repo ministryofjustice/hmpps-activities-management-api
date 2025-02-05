@@ -67,13 +67,12 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isNotFound
   }
 
-  private fun WebTestClient.getAppointmentInstanceById(id: Long) =
-    get()
-      .uri("/appointment-instances/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentInstance::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentInstanceById(id: Long) = get()
+    .uri("/appointment-instances/$id")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentInstance::class.java)
+    .returnResult().responseBody
 }

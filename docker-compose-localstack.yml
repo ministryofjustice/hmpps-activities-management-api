@@ -16,15 +16,16 @@ services:
       DPR_PASSWORD: dpr_password
 
   local-stack-aws:
-    image: localstack/localstack:3
+    image: localstack/localstack:4
     networks:
       - hmpps
     container_name: local-sqs
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=sns,sqs
+      - SERVICES=sns,sqs,s3
     volumes:
+      - "./localstack:/etc/localstack/init/ready.d"
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
 
   prison-api:

@@ -26,13 +26,12 @@ class AppointmentCategoryIntegrationTest : IntegrationTestBase() {
       .expectStatus().isUnauthorized
   }
 
-  private fun WebTestClient.getAppointmentCategories() =
-    get()
-      .uri("/appointment-categories")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentCategorySummary::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentCategories() = get()
+    .uri("/appointment-categories")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentCategorySummary::class.java)
+    .returnResult().responseBody
 }

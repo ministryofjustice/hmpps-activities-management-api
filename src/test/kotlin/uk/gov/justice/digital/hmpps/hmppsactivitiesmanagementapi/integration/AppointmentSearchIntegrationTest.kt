@@ -9,6 +9,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
@@ -18,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   @Autowired
@@ -381,15 +381,14 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
   private fun WebTestClient.searchAppointments(
     prisonCode: String,
     request: AppointmentSearchRequest,
-  ) =
-    post()
-      .uri("/appointments/$prisonCode/search")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, prisonCode)
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentSearchResult::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/appointments/$prisonCode/search")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentSearchResult::class.java)
+    .returnResult().responseBody
 }

@@ -130,19 +130,18 @@ data class Activity(
 
   fun activityPay() = activityPay.toList()
 
-  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? =
-    activityPay()
-      .filter {
-        it.payBand == payBand && it.incentiveNomisCode == incentiveLevelCode &&
-          (it.startDate.onOrBefore(LocalDate.now()) || it.startDate == null)
-      }
-      .sortedBy { it.startDate }
-      .lastOrNull()
+  fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? = activityPay()
+    .filter {
+      it.payBand == payBand &&
+        it.incentiveNomisCode == incentiveLevelCode &&
+        (it.startDate.onOrBefore(LocalDate.now()) || it.startDate == null)
+    }
+    .sortedBy { it.startDate }
+    .lastOrNull()
 
   fun activityMinimumEducationLevel() = activityMinimumEducationLevel.toList()
 
-  fun isActive(date: LocalDate): Boolean =
-    if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
+  fun isActive(date: LocalDate): Boolean = if (endDate != null) date.between(startDate, endDate) else (date.isEqual(startDate) || date.isAfter(startDate))
 
   fun state(vararg status: ActivityState) = status.any { it == getActivityState() }
 
@@ -246,22 +245,21 @@ data class Activity(
     runsOnBankHoliday: Boolean,
     scheduleWeeks: Int,
     usesPrisonRegimeTime: Boolean = true,
-  ) =
-    addSchedule(
-      ActivitySchedule.valueOf(
-        activity = this,
-        description = description,
-        internalLocationId = internalLocation?.locationId?.toInt(),
-        internalLocationCode = internalLocation?.internalLocationCode,
-        internalLocationDescription = internalLocation?.description,
-        capacity = capacity,
-        startDate = startDate,
-        endDate = endDate,
-        runsOnBankHoliday = runsOnBankHoliday,
-        scheduleWeeks = scheduleWeeks,
-        usesPrisonRegimeTime = usesPrisonRegimeTime,
-      ),
-    )
+  ) = addSchedule(
+    ActivitySchedule.valueOf(
+      activity = this,
+      description = description,
+      internalLocationId = internalLocation?.locationId?.toInt(),
+      internalLocationCode = internalLocation?.internalLocationCode,
+      internalLocationDescription = internalLocation?.description,
+      capacity = capacity,
+      startDate = startDate,
+      endDate = endDate,
+      runsOnBankHoliday = runsOnBankHoliday,
+      scheduleWeeks = scheduleWeeks,
+      usesPrisonRegimeTime = usesPrisonRegimeTime,
+    ),
+  )
 
   fun addSchedule(schedule: ActivitySchedule): ActivitySchedule {
     failIfScheduleDatesClashWithActivityDates(schedule.startDate, schedule.endDate)
@@ -331,16 +329,12 @@ data class Activity(
   fun isPaid() = paid
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityId = $activityId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(activityId = $activityId )"
 
-  private fun getActivityState(): ActivityState {
-    return if (endDate != null && endDate!! < LocalDate.now()) {
-      ActivityState.ARCHIVED
-    } else {
-      ActivityState.LIVE
-    }
+  private fun getActivityState(): ActivityState = if (endDate != null && endDate!! < LocalDate.now()) {
+    ActivityState.ARCHIVED
+  } else {
+    ActivityState.LIVE
   }
 }
 

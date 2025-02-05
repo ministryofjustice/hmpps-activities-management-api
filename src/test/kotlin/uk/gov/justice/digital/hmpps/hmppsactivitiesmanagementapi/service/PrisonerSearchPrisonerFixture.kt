@@ -51,39 +51,36 @@ object PrisonerSearchPrisonerFixture {
     alerts: List<PrisonerAlert> = emptyList(),
     legalStatus: Prisoner.LegalStatus? = null,
     category: String? = "P",
-  ) =
-    Prisoner(
-      prisonerNumber = prisonerNumber,
-      firstName = firstName,
-      lastName = lastName,
-      dateOfBirth = dateOfBirth,
-      gender = gender,
-      ethnicity = ethnicity,
-      youthOffender = youthOffender,
-      maritalStatus = maritalStatus,
-      religion = religion,
-      nationality = nationality,
-      status = status,
-      mostSeriousOffence = mostSeriousOffence,
-      restrictedPatient = restrictedPatient,
-      inOutStatus = inOutStatus,
-      bookingId = bookingId?.toString(),
-      bookNumber = bookNumber,
-      middleNames = middleNames,
-      prisonId = prisonId,
-      cellLocation = cellLocation,
-      currentIncentive = currentIncentive,
-      lastMovementTypeCode = lastMovementType?.nomisShortCode,
-      releaseDate = releaseDate,
-      confirmedReleaseDate = confirmedReleaseDate,
-      alerts = alerts,
-      legalStatus = legalStatus,
-      category = category,
-    )
+  ) = Prisoner(
+    prisonerNumber = prisonerNumber,
+    firstName = firstName,
+    lastName = lastName,
+    dateOfBirth = dateOfBirth,
+    gender = gender,
+    ethnicity = ethnicity,
+    youthOffender = youthOffender,
+    maritalStatus = maritalStatus,
+    religion = religion,
+    nationality = nationality,
+    status = status,
+    mostSeriousOffence = mostSeriousOffence,
+    restrictedPatient = restrictedPatient,
+    inOutStatus = inOutStatus,
+    bookingId = bookingId?.toString(),
+    bookNumber = bookNumber,
+    middleNames = middleNames,
+    prisonId = prisonId,
+    cellLocation = cellLocation,
+    currentIncentive = currentIncentive,
+    lastMovementTypeCode = lastMovementType?.nomisShortCode,
+    releaseDate = releaseDate,
+    confirmedReleaseDate = confirmedReleaseDate,
+    alerts = alerts,
+    legalStatus = legalStatus,
+    category = category,
+  )
 
-  fun pagedResultWithSurnames(prisonerNumberAndSurnames: List<Pair<String, String>> = listOf("G4793VF" to "Harrison")) =
-    PagedPrisoner(content = prisonerNumberAndSurnames.map { instance(prisonerNumber = it.first, lastName = it.second) })
+  fun pagedResultWithSurnames(prisonerNumberAndSurnames: List<Pair<String, String>> = listOf("G4793VF" to "Harrison")) = PagedPrisoner(content = prisonerNumberAndSurnames.map { instance(prisonerNumber = it.first, lastName = it.second) })
 
-  fun pagedResult(prisonerNumbers: List<String> = listOf("G4793VF")) =
-    PagedPrisoner(content = prisonerNumbers.map { instance(it) })
+  fun pagedResult(prisonerNumbers: List<String> = listOf("G4793VF")) = PagedPrisoner(content = prisonerNumbers.map { instance(it) })
 }

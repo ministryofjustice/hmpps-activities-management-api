@@ -169,7 +169,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     )
 
     val response = webTestClient.migrateAppointment(request)!!
-    verifyAppointmentInstance(response, setCustomName = false )
+    verifyAppointmentInstance(response, setCustomName = false)
 
     verifyNoInteractions(eventsPublisher)
     verifyNoInteractions(telemetryClient)
@@ -219,8 +219,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(bookingId).isEqualTo(123)
       assertThat(categoryCode ?: "AC1").isEqualTo(categoryCode ?: "AC1")
       var name: String? = null
-      if(setCustomName) {
-        name = comment?.take(40) ?:"Appointment level comment"
+      if (setCustomName) {
+        name = comment?.take(40) ?: "Appointment level comment"
       }
       assertThat(customName).isEqualTo(name)
       assertThat(internalLocationId).isEqualTo(123)
@@ -423,16 +423,15 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   private fun WebTestClient.migrateAppointment(
     request: AppointmentMigrateRequest,
-  ) =
-    post()
-      .uri("/migrate-appointment")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentInstance::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/migrate-appointment")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentInstance::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.deleteMigratedAppointments(
     prisonCode: String,
@@ -450,14 +449,13 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     prisonCode: String,
     startDate: LocalDate,
     categoryCodes: String,
-  ) =
-    get()
-      .uri("/migrate-appointment/$prisonCode/summary?startDate=$startDate&categoryCodes=$categoryCodes")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_APPOINTMENTS")))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentCountSummary::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri("/migrate-appointment/$prisonCode/summary?startDate=$startDate&categoryCodes=$categoryCodes")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf("ROLE_MIGRATE_APPOINTMENTS")))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentCountSummary::class.java)
+    .returnResult().responseBody
 }

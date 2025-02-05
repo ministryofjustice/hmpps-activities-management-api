@@ -62,11 +62,9 @@ class DailyAppointmentMetricsService(
 
   private fun List<AppointmentAttendee>.countNotAttended() = this.filter { it.attended == false }.size.toDouble()
 
-  private fun List<Appointment>.countUniqueRepeatingAppointmentSeries() =
-    this.map { it.appointmentSeries }.filter { (it.schedule?.numberOfAppointments ?: 0) > 1 }.map { it.appointmentSeriesId }.distinct().size.toDouble()
+  private fun List<Appointment>.countUniqueRepeatingAppointmentSeries() = this.map { it.appointmentSeries }.filter { (it.schedule?.numberOfAppointments ?: 0) > 1 }.map { it.appointmentSeriesId }.distinct().size.toDouble()
 
-  private fun List<Appointment>.countUniqueAppointmentSets() =
-    this.mapNotNull { it.appointmentSeries.appointmentSet }.map { it.appointmentSetId }.distinct().size.toDouble()
+  private fun List<Appointment>.countUniqueAppointmentSets() = this.mapNotNull { it.appointmentSeries.appointmentSet }.map { it.appointmentSetId }.distinct().size.toDouble()
 
   private fun List<Appointment>.countCancelledAppointments() = this.filter { it.isCancelled() && !it.isDeleted }.size.toDouble()
 

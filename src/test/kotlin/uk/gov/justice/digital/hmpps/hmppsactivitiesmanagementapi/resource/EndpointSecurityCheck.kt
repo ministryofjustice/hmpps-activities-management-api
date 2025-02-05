@@ -17,8 +17,7 @@ class EndpointSecurityCheck {
   private data class EndpointInfo(val method: String, val hasEndpointLevelProtection: Boolean)
 
   private data class ControllerInfo(val controller: String, val unprotectedEndpoints: List<EndpointInfo>) {
-    override fun toString() =
-      "\n$controller:".plus(unprotectedEndpoints.joinToString(separator = "\n * ", prefix = "\n * ") { it.method })
+    override fun toString() = "\n$controller:".plus(unprotectedEndpoints.joinToString(separator = "\n * ", prefix = "\n * ") { it.method })
   }
 
   @Test

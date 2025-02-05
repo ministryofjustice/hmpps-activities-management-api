@@ -263,21 +263,19 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
     assertThat(response.contentAsString + "\n").isEqualTo(result)
   }
 
-  private fun aLocation(locationPrefix: String, description: String = ""): Location {
-    return Location(
-      locationPrefix = locationPrefix,
-      locationId = 0L,
-      description = description,
-      parentLocationId = null,
-      userDescription = null,
-      currentOccupancy = 0,
-      operationalCapacity = 0,
-      agencyId = "",
-      internalLocationCode = "",
-      locationUsage = "",
-      locationType = "",
-    )
-  }
+  private fun aLocation(locationPrefix: String, description: String = ""): Location = Location(
+    locationPrefix = locationPrefix,
+    locationId = 0L,
+    description = description,
+    parentLocationId = null,
+    userDescription = null,
+    currentOccupancy = 0,
+    operationalCapacity = 0,
+    agencyId = "",
+    internalLocationCode = "",
+    locationUsage = "",
+    locationType = "",
+  )
 
   private fun MockMvc.getInternalLocationEventsSummaries(
     prisonCode: String,

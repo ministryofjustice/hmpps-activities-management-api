@@ -52,11 +52,10 @@ class ManageScheduledInstancesService(
       }
   }
 
-  private fun <R> continueToRunOnFailure(block: () -> R?, success: String, failure: String) =
-    runCatching { block() }.onSuccess { log.info(success) }.onFailure {
-      monitoringService.capture(failure, it)
-      log.error(failure, it)
-    }.getOrNull()
+  private fun <R> continueToRunOnFailure(block: () -> R?, success: String, failure: String) = runCatching { block() }.onSuccess { log.info(success) }.onFailure {
+    monitoringService.capture(failure, it)
+    log.error(failure, it)
+  }.getOrNull()
 }
 
 /**

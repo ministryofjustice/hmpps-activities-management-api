@@ -41,21 +41,20 @@ data class AttendanceSync(
 
   val issuePayment: Boolean?,
 ) {
-  fun toModel() =
-    AttendanceSyncModel(
-      attendanceId = attendanceId,
-      scheduledInstanceId = scheduledInstanceId,
-      activityScheduleId = activityScheduleId,
-      sessionDate = sessionDate,
-      sessionStartTime = sessionStartTime,
-      sessionEndTime = sessionEndTime,
-      prisonerNumber = prisonerNumber,
-      bookingId = bookingId,
-      attendanceReasonCode = attendanceReasonCode,
-      comment = comment,
-      status = status,
-      payAmount = payAmount,
-      bonusAmount = bonusAmount,
-      issuePayment = issuePayment,
-    )
+  fun toModel() = AttendanceSyncModel(
+    attendanceId = attendanceId,
+    scheduledInstanceId = scheduledInstanceId,
+    activityScheduleId = activityScheduleId,
+    sessionDate = sessionDate,
+    sessionStartTime = sessionStartTime,
+    sessionEndTime = sessionEndTime,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
+    attendanceReasonCode = attendanceReasonCode,
+    comment = comment,
+    status = status,
+    payAmount = payAmount,
+    bonusAmount = bonusAmount,
+    issuePayment = issuePayment,
+  )
 }

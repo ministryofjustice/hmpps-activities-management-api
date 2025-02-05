@@ -314,7 +314,8 @@ class InternalLocationServiceTest {
       service.getInternalLocationsMapByIds(
         prisonCode,
         setOf(
-          inactiveEducation1Location.locationId, adjudicationLocation.locationId,
+          inactiveEducation1Location.locationId,
+          adjudicationLocation.locationId,
         ),
       ) isEqualTo mapOf(
         inactiveEducation1Location.locationId to inactiveEducation1Location,

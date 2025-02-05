@@ -186,25 +186,24 @@ class CandidatesService(
     suitableForEmployed: Boolean?,
     noAllocations: Boolean?,
     search: String?,
-  ): Sequence<Prisoner> =
-    prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
-      .asSequence()
-      .filter {
-        val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
-        it.isActiveAtPrison(prisonCode) &&
-          it.legalStatus != Prisoner.LegalStatus.DEAD &&
-          it.currentIncentive != null &&
-          filterByRiskLevel(it, suitableRiskLevels) &&
-          filterByIncentiveLevel(it, suitableIncentiveLevels) &&
-          filterBySearchString(it, search) &&
-          !prisonerAllocation.any { p -> p.getActivityScheduleId() == activityScheduleId } &&
-          (noAllocations != true || prisonerAllocation.isEmpty()) &&
-          !waitingList.any { w -> w.prisonerNumber == it.prisonerNumber } &&
-          filterByEmployment(
-            prisonerAllocations = prisonerAllocation,
-            suitableForEmployed = suitableForEmployed,
-          )
-      }
+  ): Sequence<Prisoner> = prisonerSearchApiClient.getAllPrisonersInPrison(prisonCode).block()!!.content
+    .asSequence()
+    .filter {
+      val prisonerAllocation = prisonerAllocations[it.prisonerNumber] ?: emptyList()
+      it.isActiveAtPrison(prisonCode) &&
+        it.legalStatus != Prisoner.LegalStatus.DEAD &&
+        it.currentIncentive != null &&
+        filterByRiskLevel(it, suitableRiskLevels) &&
+        filterByIncentiveLevel(it, suitableIncentiveLevels) &&
+        filterBySearchString(it, search) &&
+        !prisonerAllocation.any { p -> p.getActivityScheduleId() == activityScheduleId } &&
+        (noAllocations != true || prisonerAllocation.isEmpty()) &&
+        !waitingList.any { w -> w.prisonerNumber == it.prisonerNumber } &&
+        filterByEmployment(
+          prisonerAllocations = prisonerAllocation,
+          suitableForEmployed = suitableForEmployed,
+        )
+    }
 
   private fun filterByRiskLevel(prisoner: Prisoner, suitableRiskLevels: List<String>?): Boolean {
     val riskAssessmentCodes = listOf("RLO", "RME", "RHI")
@@ -226,10 +225,8 @@ class CandidatesService(
   private fun filterByIncentiveLevel(
     prisoner: Prisoner,
     suitableIncentiveLevels: List<String>?,
-  ): Boolean {
-    return suitableIncentiveLevels == null ||
-      suitableIncentiveLevels.contains(prisoner.currentIncentive!!.level.description)
-  }
+  ): Boolean = suitableIncentiveLevels == null ||
+    suitableIncentiveLevels.contains(prisoner.currentIncentive!!.level.description)
 
   private fun filterByEmployment(
     prisonerAllocations: List<CandidateAllocation>,

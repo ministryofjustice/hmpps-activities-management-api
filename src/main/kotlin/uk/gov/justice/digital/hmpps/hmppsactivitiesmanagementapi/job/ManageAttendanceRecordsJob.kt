@@ -46,9 +46,8 @@ class ManageAttendanceRecordsJob(
     }
   }
 
-  private fun getRolledOutPrisonsForActivities(mayBePrisonCode: String?) =
-    (
-      mayBePrisonCode?.let { listOf(rolloutPrisonService.getByPrisonCode(it)) }
-        ?: rolloutPrisonService.getRolloutPrisons()
-      ).filter { it.activitiesRolledOut }.map(RolloutPrisonPlan::prisonCode)
+  private fun getRolledOutPrisonsForActivities(mayBePrisonCode: String?) = (
+    mayBePrisonCode?.let { listOf(rolloutPrisonService.getByPrisonCode(it)) }
+      ?: rolloutPrisonService.getRolloutPrisons()
+    ).filter { it.activitiesRolledOut }.map(RolloutPrisonPlan::prisonCode)
 }

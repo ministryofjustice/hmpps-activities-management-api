@@ -140,9 +140,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now())
   }
 
-  private fun MockMvc.getAttendanceById(attendanceId: String) =
-    get("/attendances/$attendanceId")
+  private fun MockMvc.getAttendanceById(attendanceId: String) = get("/attendances/$attendanceId")
 
-  private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) =
-    get("/attendances/$prisonCode/$sessionDate")
+  private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) = get("/attendances/$prisonCode/$sessionDate")
 }

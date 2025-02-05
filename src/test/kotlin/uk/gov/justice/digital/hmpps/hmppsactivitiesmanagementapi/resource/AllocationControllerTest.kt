@@ -115,10 +115,10 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Update allocation")
-    inner class UpdateAllocationTests() {
+    inner class UpdateAllocationTests {
       private val updateAllocation = AllocationUpdateRequest(
         startDate = LocalDate.now().plusDays(1),
       )
@@ -153,7 +153,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
     @Nested
     @DisplayName("Suspend allocation")
-    inner class SuspendAllocationTests() {
+    inner class SuspendAllocationTests {
       private val request = SuspendPrisonerRequest(
         prisonerNumber = "ABC123",
         allocationIds = listOf(1),
@@ -207,7 +207,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
     @Nested
     @DisplayName("Unsuspend allocation")
-    inner class UnsuspendAllocationTests() {
+    inner class UnsuspendAllocationTests {
       private val request = UnsuspendPrisonerRequest(
         prisonerNumber = "ABC123",
         allocationIds = listOf(1),
@@ -244,7 +244,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
     @Nested
     @DisplayName("Add to waiting list")
-    inner class WaitingListTests() {
+    inner class WaitingListTests {
       private val waitingListRequest = WaitingListApplicationRequest(
         prisonerNumber = "123456",
         activityScheduleId = 1L,
@@ -284,7 +284,7 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
 
     @Nested
     @DisplayName("Get allocation by id")
-    inner class GetAllocationByIdTests() {
+    inner class GetAllocationByIdTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get allocation by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -296,12 +296,11 @@ class AllocationControllerTest : ControllerTestBase<AllocationController>() {
     }
   }
 
-  private fun MockMvc.waitingListApplication(prisonCode: String, request: WaitingListApplicationRequest) =
-    post("/allocations/$prisonCode/waiting-list-application") {
-      principal = Principal { "USERNAME" }
-      content = mapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.waitingListApplication(prisonCode: String, request: WaitingListApplicationRequest) = post("/allocations/$prisonCode/waiting-list-application") {
+    principal = Principal { "USERNAME" }
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+  }
 
   private fun MockMvc.getAllocationById(id: Long) = get("/allocations/id/{allocationId}", id)
 }

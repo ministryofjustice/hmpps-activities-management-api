@@ -21,8 +21,6 @@ fun determineEarliestReleaseDate(prisoner: Prisoner): EarliestReleaseDate {
   )
 }
 
-private fun hasActualParoleDate(prisoner: Prisoner) =
-  prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE && prisoner.actualParoleDate != null
+private fun hasActualParoleDate(prisoner: Prisoner) = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE && prisoner.actualParoleDate != null
 
-private fun hasTariffDate(prisoner: Prisoner) =
-  prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE && prisoner.tariffDate != null
+private fun hasTariffDate(prisoner: Prisoner) = prisoner.legalStatus == Prisoner.LegalStatus.INDETERMINATE_SENTENCE && prisoner.tariffDate != null

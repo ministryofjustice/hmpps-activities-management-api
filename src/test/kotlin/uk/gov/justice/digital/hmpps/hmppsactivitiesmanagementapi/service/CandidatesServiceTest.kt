@@ -967,31 +967,30 @@ class CandidatesServiceTest {
     }
   }
 
-  fun nonAssociation(prisonerNumber: String) =
-    PrisonerNonAssociation(
-      id = 1,
-      role = PrisonerNonAssociation.Role.VICTIM,
-      roleDescription = "Victim",
-      reason = PrisonerNonAssociation.Reason.BULLYING,
-      reasonDescription = "Bullying",
-      restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
-      restrictionTypeDescription = "Landing",
-      comment = "Bullying comment",
-      authorisedBy = "ADMIN",
-      whenCreated = "2022-04-02T11:11:16",
-      whenUpdated = "2022-04-14T12:37:16",
-      updatedBy = "ADMIN",
-      isClosed = false,
-      isOpen = true,
-      otherPrisonerDetails = OtherPrisonerDetails(
-        prisonerNumber = prisonerNumber,
-        role = OtherPrisonerDetails.Role.PERPETRATOR,
-        roleDescription = "Perpetrator",
-        firstName = "Joseph",
-        lastName = "Bloggs",
-        prisonId = "MDI",
-        prisonName = "HMP Moorland",
-        cellLocation = "F-2-009",
-      ),
-    )
+  fun nonAssociation(prisonerNumber: String) = PrisonerNonAssociation(
+    id = 1,
+    role = PrisonerNonAssociation.Role.VICTIM,
+    roleDescription = "Victim",
+    reason = PrisonerNonAssociation.Reason.BULLYING,
+    reasonDescription = "Bullying",
+    restrictionType = PrisonerNonAssociation.RestrictionType.LANDING,
+    restrictionTypeDescription = "Landing",
+    comment = "Bullying comment",
+    authorisedBy = "ADMIN",
+    whenCreated = "2022-04-02T11:11:16",
+    whenUpdated = "2022-04-14T12:37:16",
+    updatedBy = "ADMIN",
+    isClosed = false,
+    isOpen = true,
+    otherPrisonerDetails = OtherPrisonerDetails(
+      prisonerNumber = prisonerNumber,
+      role = OtherPrisonerDetails.Role.PERPETRATOR,
+      roleDescription = "Perpetrator",
+      firstName = "Joseph",
+      lastName = "Bloggs",
+      prisonId = "MDI",
+      prisonName = "HMP Moorland",
+      cellLocation = "F-2-009",
+    ),
+  )
 }
