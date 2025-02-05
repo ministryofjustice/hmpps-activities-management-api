@@ -175,8 +175,7 @@ class ActivityScheduleController(
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Parameter(description = "If provided will filter earliest sessions >= the given date. Format YYYY-MM-DD, otherwise defaults to 4 weeks prior to the current date.")
     earliestSessionDate: LocalDate?,
-  ) =
-    scheduleService.getScheduleById(scheduleId, earliestSessionDate ?: 4.weeksAgo())
+  ) = scheduleService.getScheduleById(scheduleId, earliestSessionDate ?: 4.weeksAgo())
 
   @PostMapping(value = ["/{scheduleId}/allocations"])
   @Operation(
@@ -242,9 +241,8 @@ class ActivityScheduleController(
     )
     @Valid
     prisonerAllocationRequest: PrisonerAllocationRequest,
-  ): ResponseEntity<Any> =
-    scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
-      .let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = scheduleService.allocatePrisoner(scheduleId, prisonerAllocationRequest, principal.name)
+    .let { ResponseEntity.noContent().build() }
 
   @GetMapping(value = ["/{scheduleId}/candidates"])
   @Operation(
@@ -314,16 +312,15 @@ class ActivityScheduleController(
     @RequestParam(value = "search", required = false) search: String?,
     @ParameterObject @PageableDefault
     pageable: Pageable,
-  ): Page<ActivityCandidate> =
-    candidatesService.getActivityCandidates(
-      scheduleId = scheduleId,
-      suitableIncentiveLevels = suitableIncentiveLevels,
-      suitableRiskLevels = suitableRiskLevels,
-      suitableForEmployed = suitableForEmployed,
-      noAllocations = noAllocations,
-      search = search,
-      pageable = pageable,
-    )
+  ): Page<ActivityCandidate> = candidatesService.getActivityCandidates(
+    scheduleId = scheduleId,
+    suitableIncentiveLevels = suitableIncentiveLevels,
+    suitableRiskLevels = suitableRiskLevels,
+    suitableForEmployed = suitableForEmployed,
+    noAllocations = noAllocations,
+    search = search,
+    pageable = pageable,
+  )
 
   @GetMapping(value = ["/{scheduleId}/suitability"])
   @Operation(
@@ -515,8 +512,7 @@ class ActivityScheduleController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) =
-    waitingListService.getWaitingListsBySchedule(scheduleId)
+  fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) = waitingListService.getWaitingListsBySchedule(scheduleId)
 
   @GetMapping(value = ["/{scheduleId}/non-associations"])
   @ResponseBody

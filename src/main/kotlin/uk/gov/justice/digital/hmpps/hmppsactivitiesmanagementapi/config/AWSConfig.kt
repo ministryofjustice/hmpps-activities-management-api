@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile
 
 @Configuration
 @Profile("!test")
-class AWSConfig() {
+class AWSConfig {
   @Bean
   fun s3ClientAnalyticalPlatform(
     @Value("\${aws.s3.ap.region}") awsRegion: String,

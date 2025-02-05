@@ -21,14 +21,13 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .expectBodyList(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
 
-  fun WebTestClient.getActivities(prisonCode: String) =
-    get()
-      .uri("/prison/$prisonCode/activities")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ActivitySummary::class.java)
-      .returnResult().responseBody
+  fun WebTestClient.getActivities(prisonCode: String) = get()
+    .uri("/prison/$prisonCode/activities")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivitySummary::class.java)
+    .returnResult().responseBody
 }

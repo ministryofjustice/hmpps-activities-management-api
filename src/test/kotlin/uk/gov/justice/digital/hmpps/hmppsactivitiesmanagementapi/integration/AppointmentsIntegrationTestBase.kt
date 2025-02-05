@@ -9,36 +9,33 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 
 abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
 
-  fun WebTestClient.getAppointmentDetailsById(id: Long) =
-    get()
-      .uri("/appointments/$id/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentDetails::class.java)
-      .returnResult().responseBody
+  fun WebTestClient.getAppointmentDetailsById(id: Long) = get()
+    .uri("/appointments/$id/details")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentDetails::class.java)
+    .returnResult().responseBody
 
-  fun WebTestClient.getAppointmentDetailsByIds(ids: List<Long>) =
-    post()
-      .uri("/appointments/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .bodyValue(ids)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentDetails::class.java)
-      .returnResult().responseBody
+  fun WebTestClient.getAppointmentDetailsByIds(ids: List<Long>) = post()
+    .uri("/appointments/details")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .bodyValue(ids)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentDetails::class.java)
+    .returnResult().responseBody
 
-  fun WebTestClient.getAppointmentSetDetailsById(id: Long) =
-    get()
-      .uri("/appointment-set/$id/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSetDetails::class.java)
-      .returnResult().responseBody
+  fun WebTestClient.getAppointmentSetDetailsById(id: Long) = get()
+    .uri("/appointment-set/$id/details")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSetDetails::class.java)
+    .returnResult().responseBody
 
   fun WebTestClient.manageAppointmentAttendees(daysAfterNow: Long) {
     post()
@@ -48,13 +45,12 @@ abstract class AppointmentsIntegrationTestBase : IntegrationTestBase() {
       .expectStatus().isAccepted
   }
 
-  fun WebTestClient.getAppointmentSeriesById(id: Long) =
-    get()
-      .uri("/appointment-series/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
+    .uri("/appointment-series/$id")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 }

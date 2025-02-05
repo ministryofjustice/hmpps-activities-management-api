@@ -105,8 +105,7 @@ class ManageAttendancesService(
 
     val attendancesList = mutableListOf<Attendance>()
 
-    possibleRecords.forEach {
-        attendanceCreationDataRecord ->
+    possibleRecords.forEach { attendanceCreationDataRecord ->
 
       var canAttend = true
 
@@ -183,11 +182,15 @@ class ManageAttendancesService(
       "Allocation does not belong to same activity schedule as selected instance"
     }
 
-    // Need to create attendances for today?
-    return allocation.activitySchedule.instances().filter {
-      it.sessionDate == LocalDate.now(clock) &&
-        it.startTime >= nextAvailableInstance.startTime &&
-        allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
+    val scheduledInstances = scheduledInstanceRepository.findByActivityScheduleAndSessionDateEqualsAndStartTimeGreaterThanEqual(
+      activitySchedule = allocation.activitySchedule,
+      sessionDate = LocalDate.now(clock),
+      startTime = nextAvailableInstance.startTime,
+    )
+
+    // Create any attendances for today
+    return scheduledInstances.filter {
+      allocation.canAttendOn(date = it.sessionDate, timeSlot = it.timeSlot)
     }.mapNotNull {
       val prisonerDetails: Prisoner? = prisonerSearchApiClient.findByPrisonerNumber(allocation.prisonerNumber)
       createAttendance(it, allocation, prisonerDetails?.currentIncentive?.level?.code)
@@ -340,8 +343,7 @@ class ManageAttendancesService(
     prisonerNumber = prisonerNumber,
   )
 
-  private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) =
-    attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
+  private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) = attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
 
   /**
    * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
@@ -369,6 +371,5 @@ class ManageAttendancesService(
     }
   }
 
-  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) =
-    rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
+  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) = rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
 }

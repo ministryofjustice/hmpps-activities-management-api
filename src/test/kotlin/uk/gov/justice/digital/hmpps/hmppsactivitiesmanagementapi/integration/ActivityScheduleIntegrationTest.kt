@@ -201,24 +201,23 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     includePrisonerSummary: Boolean? = null,
     date: LocalDate? = null,
     caseLoadId: String = "PVI",
-  ) =
-    get()
-      .uri { builder ->
-        builder
-          .path("/schedules/$scheduleId/allocations")
-          .maybeQueryParam("activeOnly", activeOnly)
-          .maybeQueryParam("includePrisonerSummary", includePrisonerSummary)
-          .maybeQueryParam("date", date)
-          .build(scheduleId)
-      }
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(Allocation::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri { builder ->
+      builder
+        .path("/schedules/$scheduleId/allocations")
+        .maybeQueryParam("activeOnly", activeOnly)
+        .maybeQueryParam("includePrisonerSummary", includePrisonerSummary)
+        .maybeQueryParam("date", date)
+        .build(scheduleId)
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(Allocation::class.java)
+    .returnResult().responseBody
 
   @Sql(
     "classpath:test_data/seed-activity-id-1.sql",
@@ -262,33 +261,31 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       .expectStatus().isForbidden
   }
 
-  private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI", earliestSessionDate: LocalDate? = null) =
-    get()
-      .uri { builder ->
-        builder
-          .path("/schedules/$scheduleId")
-          .maybeQueryParam("earliestSessionDate", earliestSessionDate)
-          .build(scheduleId)
-      }
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(ActivitySchedule::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI", earliestSessionDate: LocalDate? = null) = get()
+    .uri { builder ->
+      builder
+        .path("/schedules/$scheduleId")
+        .maybeQueryParam("earliestSessionDate", earliestSessionDate)
+        .build(scheduleId)
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(ActivitySchedule::class.java)
+    .returnResult().responseBody
 
-  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) =
-    get()
-      .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ModelAllAttendance::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
+    .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ModelAllAttendance::class.java)
+    .returnResult().responseBody
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
@@ -349,7 +346,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-7.sql")
-  fun `204 (no content) response when successfully allocate prisoner to an activity schedule that starts today`() {
+  fun `204 (no content) response when successfully allocate prisoner to an activity schedule that starts today (2 sessions, one is earlier, so only one attendance record should be created)`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
       PrisonerSearchPrisonerFixture.instance(
         prisonId = MOORLAND_PRISON_CODE,
@@ -367,7 +364,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         prisonerNumber = "G4793VF",
         payBandId = 11,
         startDate = TimeSource.today(),
-        scheduleInstanceId = 1L,
+        scheduleInstanceId = 2L,
       ),
     ).expectStatus().isNoContent
 
@@ -968,34 +965,31 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     webTestClient.getScheduleBy(scheduleId = 1, earliestSessionDate = 7.daysAgo())!!.instances hasSize 7
   }
 
-  private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) =
-    post()
-      .uri("/schedules/$scheduleId/allocations")
-      .bodyValue(request)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .exchange()
+  private fun WebTestClient.allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest) = post()
+    .uri("/schedules/$scheduleId/allocations")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .exchange()
 
-  private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) =
-    put()
-      .uri("/schedules/$scheduleId/deallocate")
-      .bodyValue(request)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .exchange()
+  private fun WebTestClient.deallocatePrisoners(scheduleId: Long, request: PrisonerDeallocationRequest) = put()
+    .uri("/schedules/$scheduleId/deallocate")
+    .bodyValue(request)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .exchange()
 
   private fun WebTestClient.getCandidateSuitability(
     scheduleId: Long,
     prisonerNumber: String,
     caseLoadId: String = "PVI",
-  ) =
-    get()
-      .uri("/schedules/$scheduleId/suitability?prisonerNumber=$prisonerNumber")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+  ) = get()
+    .uri("/schedules/$scheduleId/suitability?prisonerNumber=$prisonerNumber")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
   private fun WebTestClient.getCandidates(
     scheduleId: Long,
@@ -1003,39 +997,36 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     pageSize: Long = 10,
     caseLoadId: String = "PVI",
     noAllocations: Boolean = false,
-  ) =
-    get()
-      .uri("/schedules/$scheduleId/candidates?noAllocations=$noAllocations&size=$pageSize&page=$pageNum")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+  ) = get()
+    .uri("/schedules/$scheduleId/candidates?noAllocations=$noAllocations&size=$pageSize&page=$pageNum")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
-  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) =
-    get()
-      .uri("/schedules/$scheduleId/waiting-list-applications")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(WaitingListApplication::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) = get()
+    .uri("/schedules/$scheduleId/waiting-list-applications")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(WaitingListApplication::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.getNonAssociations(
     scheduleId: Long,
     prisonerNumber: String,
     caseLoadId: String = "PVI",
-  ) =
-    get()
-      .uri("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .header(CASELOAD_ID, caseLoadId)
-      .exchange()
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(NonAssociationDetails::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri("/schedules/$scheduleId/non-associations?prisonerNumber=$prisonerNumber")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .header(CASELOAD_ID, caseLoadId)
+    .exchange()
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(NonAssociationDetails::class.java)
+    .returnResult().responseBody
 }

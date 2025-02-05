@@ -132,33 +132,27 @@ data class ActivitySchedule(
   @Deprecated(" used in one place now syncExclusionsWithScheduleSlots, ideally remove this / make private once sync code resolved")
   fun slots() = slots.toList()
 
-  fun noMatchingSlots(exclusion: Slot): Boolean =
-    slots().matchingSlots(daysOfWeek = exclusion.daysOfWeek, weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot).not()
+  fun noMatchingSlots(exclusion: Slot): Boolean = slots().matchingSlots(daysOfWeek = exclusion.daysOfWeek, weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot).not()
 
-  fun hasMatchingSlots(exclusion: Exclusion): Boolean =
-    slots().matchingSlots(daysOfWeek = exclusion.getDaysOfWeek(), weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot)
+  fun hasMatchingSlots(exclusion: Exclusion): Boolean = slots().matchingSlots(daysOfWeek = exclusion.getDaysOfWeek(), weekNumber = exclusion.weekNumber, timeSlot = exclusion.timeSlot)
 
-  private fun List<ActivityScheduleSlot>.matchingSlots(daysOfWeek: Set<DayOfWeek>, weekNumber: Int, timeSlot: TimeSlot): Boolean =
-    this.filter {
-      it.weekNumber == weekNumber && it.timeSlot == timeSlot
-    }.flatMap { it.getDaysOfWeek() }.containsAll(daysOfWeek)
+  private fun List<ActivityScheduleSlot>.matchingSlots(daysOfWeek: Set<DayOfWeek>, weekNumber: Int, timeSlot: TimeSlot): Boolean = this.filter {
+    it.weekNumber == weekNumber && it.timeSlot == timeSlot
+  }.flatMap { it.getDaysOfWeek() }.containsAll(daysOfWeek)
 
   fun slots(weekNumber: Int, timeSlot: TimeSlot) = slots().filter { s -> s.weekNumber == weekNumber && s.timeSlot == timeSlot }
 
   fun slot(weekNumber: Int, slotTimes: SlotTimes) = slots().singleOrNull { s -> s.weekNumber == weekNumber && s.slotTimes() == slotTimes }
 
-  fun hasSlot(dayOfWeek: DayOfWeek): Boolean =
-    slots().any { dayOfWeek in it.getDaysOfWeek() }
+  fun hasSlot(dayOfWeek: DayOfWeek): Boolean = slots().any { dayOfWeek in it.getDaysOfWeek() }
 
   fun slots(weekNumber: Int): List<ActivityScheduleSlot> = slots().filter { it.weekNumber == weekNumber }
 
-  fun slots(weekNumber: Int, slotTimes: Pair<LocalTime, LocalTime>, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): List<ActivityScheduleSlot> =
-    this.slots().filter {
-      it.weekNumber == weekNumber && it.slotTimes() == slotTimes && it.timeSlot == timeSlot && it.getDaysOfWeek().contains(dayOfWeek)
-    }
+  fun slots(weekNumber: Int, slotTimes: Pair<LocalTime, LocalTime>, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): List<ActivityScheduleSlot> = this.slots().filter {
+    it.weekNumber == weekNumber && it.slotTimes() == slotTimes && it.timeSlot == timeSlot && it.getDaysOfWeek().contains(dayOfWeek)
+  }
 
-  fun allocations(excludeEnded: Boolean = false): List<Allocation> =
-    allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
+  fun allocations(excludeEnded: Boolean = false): List<Allocation> = allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
 
   fun toModelActivityScheduleSlots() = this.slots().map { it.toModel() }
 
@@ -214,13 +208,12 @@ data class ActivitySchedule(
     return (daysIntoThisSchedulePeriod / daysInWeek).toInt() + 1
   }
 
-  fun hasNoInstancesOnDate(day: LocalDate, activityScheduleSlot: ActivityScheduleSlot) =
-    instances.none { instance ->
-      instance.sessionDate == day &&
-        instance.startTime == activityScheduleSlot.slotTimes().first &&
-        instance.endTime == activityScheduleSlot.slotTimes().second &&
-        instance.timeSlot == activityScheduleSlot.timeSlot
-    }
+  fun hasNoInstancesOnDate(day: LocalDate, activityScheduleSlot: ActivityScheduleSlot) = instances.none { instance ->
+    instance.sessionDate == day &&
+      instance.startTime == activityScheduleSlot.slotTimes().first &&
+      instance.endTime == activityScheduleSlot.slotTimes().second &&
+      instance.timeSlot == activityScheduleSlot.timeSlot
+  }
 
   fun addInstance(
     sessionDate: LocalDate,
@@ -330,9 +323,8 @@ data class ActivitySchedule(
     if (allocatedBy.isBlank()) throw IllegalArgumentException("Allocated by cannot be blank.")
   }
 
-  private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) =
-    allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
-      ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
+  private fun failIfAlreadyAllocated(prisonerNumber: PrisonerNumber) = allocations.firstOrNull { PrisonerNumber.valueOf(it.prisonerNumber) == prisonerNumber && it.prisonerStatus != PrisonerStatus.ENDED }
+    ?.let { throw IllegalArgumentException("Prisoner '$prisonerNumber' is already allocated to schedule $description.") }
 
   fun deallocatePrisonerOn(prisonerNumber: String, date: LocalDate, reason: DeallocationReason, by: String, caseNoteId: Long? = null): Allocation {
     val allocation = allocations(excludeEnded = true).firstOrNull { it.prisonerNumber == prisonerNumber }
@@ -367,19 +359,15 @@ data class ActivitySchedule(
   }
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(activityScheduleId = $activityScheduleId )"
 
-  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? =
-    instances()
-      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
-      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) - 1) }
+  fun previous(scheduledInstance: ScheduledInstance): ScheduledInstance? = instances()
+    .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+    .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) - 1) }
 
-  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? =
-    instances()
-      .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
-      .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
+  fun next(scheduledInstance: ScheduledInstance): ScheduledInstance? = instances()
+    .sortedWith(compareBy<ScheduledInstance> { it.sessionDate }.thenBy { it.startTime })
+    .let { sorted -> sorted.getOrNull(sorted.indexOf(scheduledInstance) + 1) }
 
   fun removeInstances(instancesToRemove: List<ScheduledInstance>) {
     instances.removeAll(instancesToRemove)

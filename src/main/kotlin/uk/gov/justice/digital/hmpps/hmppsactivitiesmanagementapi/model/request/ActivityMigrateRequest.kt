@@ -26,7 +26,7 @@ data class ActivityMigrateRequest(
   @field:NotNull
   @Schema(description = "Date on which this activity starts or started. Can not be null.", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-  val startDate: LocalDate?,
+  val startDate: LocalDate,
 
   @Schema(description = "Date when this activity ends. Can be null.", example = "2022-12-23")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

@@ -658,110 +658,109 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   }
 
   private fun assertSingleAppointmentTwoPrisoner(appointmentSeries: AppointmentSeries, request: AppointmentSeriesCreateRequest) {
-    assertThat(appointmentSeries).isEqualTo(
-      AppointmentSeries(
-        appointmentSeries.id,
-        request.appointmentType!!,
-        request.prisonCode!!,
-        request.categoryCode!!,
-        EventTier(
-          id = appointmentSeries.tier!!.id,
-          code = request.tierCode!!,
-          description = appointmentSeries.tier!!.description,
-        ),
-        EventOrganiser(
-          id = appointmentSeries.organiser!!.id,
-          code = request.organiserCode!!,
-          description = appointmentSeries.organiser!!.description,
-        ),
-        request.customName,
-        request.internalLocationId,
-        request.inCell,
-        request.startDate!!,
-        request.startTime!!,
-        request.endTime,
-        null,
-        request.extraInformation,
-        appointmentSeries.createdTime,
-        "test-client",
-        null,
-        null,
-        appointments = listOf(
-          Appointment(
-            appointmentSeries.appointments.first().id,
-            1,
-            request.prisonCode!!,
-            request.categoryCode!!,
-            EventTier(
-              id = appointmentSeries.tier!!.id,
-              code = request.tierCode!!,
-              description = appointmentSeries.tier!!.description,
-            ),
-            EventOrganiser(
-              id = appointmentSeries.organiser!!.id,
-              code = request.organiserCode!!,
-              description = appointmentSeries.organiser!!.description,
-            ),
-            request.customName,
-            request.internalLocationId,
-            request.inCell,
-            request.startDate!!,
-            request.startTime!!,
-            request.endTime,
-            request.extraInformation,
-            appointmentSeries.createdTime,
-            "test-client",
-            null,
-            null,
-            null,
-            null,
-            null,
-            isDeleted = false,
-            attendees = listOf(
-              AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null, null),
-              AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2, null, null, null, null, null, null, null, null),
+    assertThat(appointmentSeries)
+      .usingRecursiveComparison()
+      .ignoringCollectionOrder().isEqualTo(
+        AppointmentSeries(
+          appointmentSeries.id,
+          request.appointmentType!!,
+          request.prisonCode!!,
+          request.categoryCode!!,
+          EventTier(
+            id = appointmentSeries.tier!!.id,
+            code = request.tierCode!!,
+            description = appointmentSeries.tier!!.description,
+          ),
+          EventOrganiser(
+            id = appointmentSeries.organiser!!.id,
+            code = request.organiserCode!!,
+            description = appointmentSeries.organiser!!.description,
+          ),
+          request.customName,
+          request.internalLocationId,
+          request.inCell,
+          request.startDate!!,
+          request.startTime!!,
+          request.endTime,
+          null,
+          request.extraInformation,
+          appointmentSeries.createdTime,
+          "test-client",
+          null,
+          null,
+          appointments = listOf(
+            Appointment(
+              appointmentSeries.appointments.first().id,
+              1,
+              request.prisonCode!!,
+              request.categoryCode!!,
+              EventTier(
+                id = appointmentSeries.tier!!.id,
+                code = request.tierCode!!,
+                description = appointmentSeries.tier!!.description,
+              ),
+              EventOrganiser(
+                id = appointmentSeries.organiser!!.id,
+                code = request.organiserCode!!,
+                description = appointmentSeries.organiser!!.description,
+              ),
+              request.customName,
+              request.internalLocationId,
+              request.inCell,
+              request.startDate!!,
+              request.startTime!!,
+              request.endTime,
+              request.extraInformation,
+              appointmentSeries.createdTime,
+              "test-client",
+              null,
+              null,
+              null,
+              null,
+              null,
+              isDeleted = false,
+              attendees = listOf(
+                AppointmentAttendee(id = 2, prisonerNumber = "B23456CE", bookingId = 2, null, null, null, null, null, null, null, null),
+                AppointmentAttendee(id = 1, prisonerNumber = "A12345BC", bookingId = 1, null, null, null, null, null, null, null, null),
+              ),
             ),
           ),
         ),
-      ),
-    )
+      )
 
     assertThat(appointmentSeries.id).isGreaterThan(0)
     assertThat(appointmentSeries.createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
     assertThat(appointmentSeries.appointments.first().id).isGreaterThan(0)
   }
 
-  private fun WebTestClient.getAppointmentSeriesById(id: Long) =
-    get()
-      .uri("/appointment-series/$id")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentSeriesById(id: Long) = get()
+    .uri("/appointment-series/$id")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 
-  private fun WebTestClient.getAppointmentSeriesDetailsById(id: Long) =
-    get()
-      .uri("/appointment-series/$id/details")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeriesDetails::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAppointmentSeriesDetailsById(id: Long) = get()
+    .uri("/appointment-series/$id/details")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeriesDetails::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.createAppointmentSeries(
     request: AppointmentSeriesCreateRequest,
-  ) =
-    post()
-      .uri("/appointment-series")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, request.prisonCode)
-      .exchange()
-      .expectStatus().isCreated
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(AppointmentSeries::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/appointment-series")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, request.prisonCode)
+    .exchange()
+    .expectStatus().isCreated
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentSeries::class.java)
+    .returnResult().responseBody
 }

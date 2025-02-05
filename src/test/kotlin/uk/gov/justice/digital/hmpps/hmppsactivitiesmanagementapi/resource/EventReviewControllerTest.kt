@@ -108,15 +108,13 @@ class EventReviewControllerTest : ControllerTestBase<EventReviewController>() {
     verify(eventReviewService).acknowledgeEvents(prisonCode, request, "USERNAME")
   }
 
-  private fun MockMvc.getEventsForReview(date: LocalDate, prisonCode: String, page: Int, size: Int, sort: String = "ascending") =
-    get("/event-review/prison/{prisonCode}?date={date}&page={page}&size={size}&sort={sort}", prisonCode, date, page, size, sort)
+  private fun MockMvc.getEventsForReview(date: LocalDate, prisonCode: String, page: Int, size: Int, sort: String = "ascending") = get("/event-review/prison/{prisonCode}?date={date}&page={page}&size={size}&sort={sort}", prisonCode, date, page, size, sort)
 
-  private fun MockMvc.acknowledgeEvents(prison: String, request: EventAcknowledgeRequest) =
-    post("/event-review/prison/{prison}/acknowledge", prison) {
-      principal = Principal { "USERNAME" }
-      content = mapper.writeValueAsString(request)
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.acknowledgeEvents(prison: String, request: EventAcknowledgeRequest) = post("/event-review/prison/{prison}/acknowledge", prison) {
+    principal = Principal { "USERNAME" }
+    content = mapper.writeValueAsString(request)
+    contentType = MediaType.APPLICATION_JSON
+  }
 
   private fun buildEmptyResponse(): Page<EventReview> = Page.empty()
 
@@ -134,11 +132,9 @@ class EventReviewControllerTest : ControllerTestBase<EventReviewController>() {
     )
   }
 
-  private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {
-    return when (sortDirection) {
-      "ascending" -> Sort.by(sortField).ascending()
-      "descending" -> Sort.by(sortField).descending()
-      else -> null
-    }
+  private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? = when (sortDirection) {
+    "ascending" -> Sort.by(sortField).ascending()
+    "descending" -> Sort.by(sortField).descending()
+    else -> null
   }
 }

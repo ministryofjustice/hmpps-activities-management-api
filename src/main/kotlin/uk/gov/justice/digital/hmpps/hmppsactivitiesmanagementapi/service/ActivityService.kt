@@ -198,20 +198,17 @@ class ActivityService(
     }.also { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, it.schedules.single().id) }
   }
 
-  private fun ModelActivity.toTelemetryPropertiesMap() =
-    mutableMapOf(
-      PRISON_CODE_PROPERTY_KEY to this.prisonCode,
-      ACTIVITY_NAME_PROPERTY_KEY to this.summary,
-    ).also { propsMap ->
-      this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
-      this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
-    }
+  private fun ModelActivity.toTelemetryPropertiesMap() = mutableMapOf(
+    PRISON_CODE_PROPERTY_KEY to this.prisonCode,
+    ACTIVITY_NAME_PROPERTY_KEY to this.summary,
+  ).also { propsMap ->
+    this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
+    this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
+  }
 
-  private fun publishCreateTelemetryEvent(activity: ModelActivity) =
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
+  private fun publishCreateTelemetryEvent(activity: ModelActivity) = telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
 
-  private fun publishUpdateTelemetryEvent(activity: ModelActivity) =
-    telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
+  private fun publishUpdateTelemetryEvent(activity: ModelActivity) = telemetryClient.trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, activity.toTelemetryPropertiesMap(), activityMetricsMap())
 
   private fun checkEducationLevels(minimumEducationLevels: List<ActivityMinimumEducationLevelCreateRequest>) {
     minimumEducationLevels.forEach {
@@ -295,8 +292,7 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, locationId: Long?) =
-    prisonApiClient.getLocation(locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
+  private fun getLocationForSchedule(activity: Activity, locationId: Long?) = prisonApiClient.getLocation(locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
 
   private fun failIfPrisonsDiffer(activity: Activity, location: Location) {
     if (activity.prisonCode != location.agencyId) {
@@ -500,7 +496,8 @@ class ActivityService(
           timeSlot = it.timeSlot,
 
         ).isEmpty() ||
-        !this.runsOnBankHoliday && bankHolidayService.isEnglishBankHoliday(it.sessionDate)
+        !this.runsOnBankHoliday &&
+        bankHolidayService.isEnglishBankHoliday(it.sessionDate)
     }
 
     if (instancesToRemove.isNotEmpty()) this.removeInstances(instancesToRemove)
@@ -571,7 +568,8 @@ class ActivityService(
     request.attendanceRequired?.apply {
       activity.activityTier.let { tier ->
         val updateNotAllowed = !tier.isFoundation() &&
-          activity.attendanceRequired && request.attendanceRequired == false
+          activity.attendanceRequired &&
+          request.attendanceRequired == false
 
         require(!updateNotAllowed) {
           "Attendance cannot be from YES to NO for a '${activity.activityTier.description}' activity."

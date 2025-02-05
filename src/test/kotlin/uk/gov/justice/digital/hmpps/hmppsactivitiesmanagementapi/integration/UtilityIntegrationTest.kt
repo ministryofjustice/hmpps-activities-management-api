@@ -49,12 +49,11 @@ class UtilityIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun WebTestClient.publishEvents(model: PublishEventUtilityModel) =
-    post()
-      .uri("/utility/publish-events")
-      .bodyValue(model)
-      .exchange()
-      .expectStatus().isCreated
-      .expectBody(String::class.java)
-      .returnResult().responseBody!!
+  private fun WebTestClient.publishEvents(model: PublishEventUtilityModel) = post()
+    .uri("/utility/publish-events")
+    .bodyValue(model)
+    .exchange()
+    .expectStatus().isCreated
+    .expectBody(String::class.java)
+    .returnResult().responseBody!!
 }

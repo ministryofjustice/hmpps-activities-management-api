@@ -32,7 +32,7 @@ class RolloutIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `get prisons that are rolled out`() {
+  fun `get prisons that are rolled out for users`() {
     var prisonPlanList = webTestClient.getRolledOutPrisons()!!
 
     assertThat(prisonPlanList).hasSize(5)

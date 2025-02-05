@@ -199,8 +199,7 @@ class ActivityController(
   @GetMapping(value = ["/{activityId}/schedules"])
   @ResponseBody
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> =
-    activityService.getSchedulesForActivity(activityId)
+  fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> = activityService.getSchedulesForActivity(activityId)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PatchMapping(value = ["/{prisonCode}/activityId/{activityId}"])

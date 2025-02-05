@@ -41,18 +41,16 @@ data class LocalAuditRecord(
   val message: String,
 ) {
 
-  fun toModel(): ModelAuditRecord {
-    return ModelAuditRecord(
-      localAuditId,
-      username,
-      auditType,
-      detailType,
-      recordedTime,
-      prisonCode,
-      prisonerNumber,
-      activityId,
-      activityScheduleId,
-      message,
-    )
-  }
+  fun toModel(): ModelAuditRecord = ModelAuditRecord(
+    localAuditId,
+    username,
+    auditType,
+    detailType,
+    recordedTime,
+    prisonCode,
+    prisonerNumber,
+    activityId,
+    activityScheduleId,
+    message,
+  )
 }

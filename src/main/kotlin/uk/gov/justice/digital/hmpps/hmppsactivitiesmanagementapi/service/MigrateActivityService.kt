@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentiv
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
@@ -71,19 +72,17 @@ class MigrateActivityService(
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
 
-    fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean =
-      this.startTime == slotStartTime && this.endTime == slotEndTime
+    fun NomisScheduleRule.usesPrisonRegimeTime(slotStartTime: LocalTime, slotEndTime: LocalTime): Boolean = this.startTime == slotStartTime && this.endTime == slotEndTime
 
-    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> =
-      setOfNotNull(
-        DayOfWeek.MONDAY.takeIf { monday },
-        DayOfWeek.TUESDAY.takeIf { tuesday },
-        DayOfWeek.WEDNESDAY.takeIf { wednesday },
-        DayOfWeek.THURSDAY.takeIf { thursday },
-        DayOfWeek.FRIDAY.takeIf { friday },
-        DayOfWeek.SATURDAY.takeIf { saturday },
-        DayOfWeek.SUNDAY.takeIf { sunday },
-      )
+    fun NomisScheduleRule.daysOfWeek(): Set<DayOfWeek> = setOfNotNull(
+      DayOfWeek.MONDAY.takeIf { monday },
+      DayOfWeek.TUESDAY.takeIf { tuesday },
+      DayOfWeek.WEDNESDAY.takeIf { wednesday },
+      DayOfWeek.THURSDAY.takeIf { thursday },
+      DayOfWeek.FRIDAY.takeIf { friday },
+      DayOfWeek.SATURDAY.takeIf { saturday },
+      DayOfWeek.SUNDAY.takeIf { sunday },
+    )
   }
 
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
@@ -99,6 +98,10 @@ class MigrateActivityService(
     val prisonIncentiveLevels = incentivesApiClient.getIncentiveLevelsCached(request.prisonCode)
     if (prisonIncentiveLevels.isEmpty()) {
       throw ValidationException("No incentive levels found for the requested prison ${request.prisonCode}")
+    }
+
+    if (request.startDate.onOrBefore(LocalDate.now())) {
+      throw ValidationException("Activity start date must be in the future for the requested prison ${request.prisonCode}")
     }
 
     mapper?.let {
@@ -181,12 +184,11 @@ class MigrateActivityService(
     return listOf(activity)
   }
 
-  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? =
-    prisonRegimeService.getSlotTimesForTimeSlot(
-      prisonCode = prisonCode,
-      timeSlot = timeSlot,
-      daysOfWeek = this.daysOfWeek(),
-    )
+  private fun NomisScheduleRule.getPrisonRegime(prisonCode: String, timeSlot: TimeSlot): SlotTimes? = prisonRegimeService.getSlotTimesForTimeSlot(
+    prisonCode = prisonCode,
+    timeSlot = timeSlot,
+    daysOfWeek = this.daysOfWeek(),
+  )
 
   private fun buildActivityEntity(
     request: ActivityMigrateRequest,
@@ -194,8 +196,6 @@ class MigrateActivityService(
     scheduledWeeks: Int = 1,
     cohort: Int? = null,
   ): Activity {
-    val tomorrow = LocalDate.now().plusDays(1)
-
     // For tier two activities we need a default value for the organiser
     val defaultOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument("OTHER")
 
@@ -211,7 +211,7 @@ class MigrateActivityService(
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
       onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
-      startDate = tomorrow,
+      startDate = request.startDate,
       riskLevel = DEFAULT_RISK_LEVEL,
       createdTime = LocalDateTime.now(),
       createdBy = MIGRATION_USER,
@@ -254,17 +254,15 @@ class MigrateActivityService(
     }
   }
 
-  fun getRequestDaysOfWeek(nomisSchedule: NomisScheduleRule): Set<DayOfWeek> {
-    return setOfNotNull(
-      DayOfWeek.MONDAY.takeIf { nomisSchedule.monday },
-      DayOfWeek.TUESDAY.takeIf { nomisSchedule.tuesday },
-      DayOfWeek.WEDNESDAY.takeIf { nomisSchedule.wednesday },
-      DayOfWeek.THURSDAY.takeIf { nomisSchedule.thursday },
-      DayOfWeek.FRIDAY.takeIf { nomisSchedule.friday },
-      DayOfWeek.SATURDAY.takeIf { nomisSchedule.saturday },
-      DayOfWeek.SUNDAY.takeIf { nomisSchedule.sunday },
-    )
-  }
+  fun getRequestDaysOfWeek(nomisSchedule: NomisScheduleRule): Set<DayOfWeek> = setOfNotNull(
+    DayOfWeek.MONDAY.takeIf { nomisSchedule.monday },
+    DayOfWeek.TUESDAY.takeIf { nomisSchedule.tuesday },
+    DayOfWeek.WEDNESDAY.takeIf { nomisSchedule.wednesday },
+    DayOfWeek.THURSDAY.takeIf { nomisSchedule.thursday },
+    DayOfWeek.FRIDAY.takeIf { nomisSchedule.friday },
+    DayOfWeek.SATURDAY.takeIf { nomisSchedule.saturday },
+    DayOfWeek.SUNDAY.takeIf { nomisSchedule.sunday },
+  )
 
   fun mapProgramToCategory(programServiceCode: String): ActivityCategory {
     val activityCategories = activityCategoryRepository.findAll()
@@ -315,6 +313,9 @@ class MigrateActivityService(
       programServiceCode.startsWith("INDUCTION") -> activityCategories.isInduction()
       programServiceCode.startsWith("IAG") -> activityCategories.isInduction()
 
+      // Activities in NOMIS with exiting SAA* codes
+      programServiceCode.startsWith("SAA") -> activityCategories.firstOrNull { it.code == programServiceCode }
+
       // Everything else is Other
       else -> activityCategories.isOther()
     }
@@ -343,6 +344,7 @@ class MigrateActivityService(
     val tier = when {
       // Prison industries
       programServiceCode.startsWith("IND_") -> tiers.isTierOne()
+      programServiceCode == "SAA_INDUSTRIES" -> tiers.isTierOne()
 
       // Prison jobs
       programServiceCode.startsWith("SER_") -> tiers.isTierOne()
@@ -353,26 +355,31 @@ class MigrateActivityService(
       programServiceCode.startsWith("WORKS") -> tiers.isTierOne()
       programServiceCode.startsWith("RECYCLE") -> tiers.isTierOne()
       programServiceCode.startsWith("OTHOCC") -> tiers.isTierOne()
+      programServiceCode == "SAA_PRISON_JOBS" -> tiers.isTierOne()
 
       // Education
       programServiceCode.startsWith("EDU") -> tiers.isTierOne()
       programServiceCode.startsWith("CORECLASS") -> tiers.isTierOne()
       programServiceCode.startsWith("SKILLS") -> tiers.isTierOne()
       programServiceCode.startsWith("KEY_SKILLS") -> tiers.isTierOne()
+      programServiceCode == "SAA_EDUCATION" -> tiers.isTierOne()
 
       // Not in work
       programServiceCode.startsWith("UNEMP") -> tiers.isFoundation()
       programServiceCode.startsWith("OTH_UNE") -> tiers.isFoundation()
+      programServiceCode == "SAA_NOT_IN_WORK" -> tiers.isFoundation()
 
       // Interventions/courses
       programServiceCode.startsWith("INT_") -> tiers.isTierOne()
       programServiceCode.startsWith("GROUP") -> tiers.isTierOne()
       programServiceCode.startsWith("ABUSE") -> tiers.isTierOne()
+      programServiceCode == "SAA_INTERVENTIONS" -> tiers.isTierOne()
 
       // Sports and fitness & other T2 services
       programServiceCode.startsWith("PE_TYPE1") -> tiers.isTierOne()
       programServiceCode.startsWith("HEALTH") -> tiers.isTierOne()
       programServiceCode.startsWith("OTH_PER") -> tiers.isTierOne()
+      programServiceCode == "SAA_GYM_SPORTS_FITNESS" -> tiers.isTierOne()
 
       // Specific tier 2 services
       programServiceCode.startsWith("T2") -> tiers.isTierTwo()
@@ -380,12 +387,14 @@ class MigrateActivityService(
       // Faith and spirituality
       programServiceCode.startsWith("CHAP") -> tiers.isTierOne()
       programServiceCode.startsWith("OTH_CFR") -> tiers.isTierOne()
+      programServiceCode == "SAA_FAITH_SPIRITUALITY" -> tiers.isTierOne()
 
       // Induction/guidance
       programServiceCode.startsWith("INDUCTION") -> tiers.isTierOne()
       programServiceCode.startsWith("IAG") -> tiers.isTierOne()
       programServiceCode.startsWith("SAFE") -> tiers.isTierOne()
       programServiceCode.startsWith("ASSESS") -> tiers.isTierOne()
+      programServiceCode == "SAA_INDUCTION" -> tiers.isTierOne()
 
       // Other miscellaneous
       programServiceCode.startsWith("OTH_DOM") -> tiers.isFoundation()
@@ -541,22 +550,21 @@ class MigrateActivityService(
     activityRepository.delete(activity)
   }
 
-  private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() =
-    groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }
-      .let { rulesBySlotTimes ->
-        rulesBySlotTimes.map { (slotTimes, groupedRules) ->
-          NomisScheduleRule(
-            startTime = slotTimes.first,
-            endTime = slotTimes.second,
-            monday = groupedRules.any { it.monday },
-            tuesday = groupedRules.any { it.tuesday },
-            wednesday = groupedRules.any { it.wednesday },
-            thursday = groupedRules.any { it.thursday },
-            friday = groupedRules.any { it.friday },
-            saturday = groupedRules.any { it.saturday },
-            sunday = groupedRules.any { it.sunday },
-            timeSlot = slotTimes.third,
-          )
-        }
+  private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() = groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }
+    .let { rulesBySlotTimes ->
+      rulesBySlotTimes.map { (slotTimes, groupedRules) ->
+        NomisScheduleRule(
+          startTime = slotTimes.first,
+          endTime = slotTimes.second,
+          monday = groupedRules.any { it.monday },
+          tuesday = groupedRules.any { it.tuesday },
+          wednesday = groupedRules.any { it.wednesday },
+          thursday = groupedRules.any { it.thursday },
+          friday = groupedRules.any { it.friday },
+          saturday = groupedRules.any { it.saturday },
+          sunday = groupedRules.any { it.sunday },
+          timeSlot = slotTimes.third,
+        )
       }
+    }
 }

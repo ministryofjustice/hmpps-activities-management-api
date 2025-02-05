@@ -168,8 +168,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   fun markAttendances(
     principal: Principal,
     @RequestBody attendances: List<AttendanceUpdateRequest>,
-  ): ResponseEntity<Any> =
-    attendancesService.mark(principal.name ?: "", attendances).let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = attendancesService.mark(principal.name ?: "", attendances).let { ResponseEntity.noContent().build() }
 
   @GetMapping(value = ["/{prisonCode}/suspended"])
   @ResponseBody

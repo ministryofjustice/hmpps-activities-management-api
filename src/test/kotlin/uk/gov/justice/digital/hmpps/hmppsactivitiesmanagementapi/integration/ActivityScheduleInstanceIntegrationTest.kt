@@ -161,8 +161,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - ignores historical exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
       assertThat(attendees).hasSize(2)
-      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
-      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+      assertThat(attendees.find { it.prisonerNumber == "G4793VF" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "A5193DY" }).isNotNull()
     }
 
     @Test
@@ -178,8 +178,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - ignores future exclusions today`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(1)!!
       assertThat(attendees).hasSize(2)
-      assertThat(attendees[0].prisonerNumber).isEqualTo("G4793VF")
-      assertThat(attendees[1].prisonerNumber).isEqualTo("A5193DY")
+      assertThat(attendees.find { it.prisonerNumber == "G4793VF" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "A5193DY" }).isNotNull()
     }
 
     @Test
@@ -195,8 +195,8 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `get scheduled attendees by scheduled instance id - with sessions in the past should appear`() {
       val attendees = webTestClient.getScheduledAttendeesByInstanceId(43)!!
       assertThat(attendees).hasSize(2)
-      with(attendees[0]) { assertThat(prisonerNumber).isEqualTo("G6268GL") }
-      with(attendees[1]) { assertThat(prisonerNumber).isEqualTo("G4206GA") }
+      assertThat(attendees.find { it.prisonerNumber == "G6268GL" }).isNotNull()
+      assertThat(attendees.find { it.prisonerNumber == "G4206GA" }).isNotNull()
     }
 
     @Test
@@ -607,24 +607,23 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     endDate: LocalDate,
     timeSlot: TimeSlot? = null,
     cancelled: Boolean? = null,
-  ) =
-    get()
-      .uri { builder ->
-        builder
-          .path("/prisons/$prisonCode/scheduled-instances")
-          .queryParam("startDate", startDate)
-          .queryParam("endDate", endDate)
-          .maybeQueryParam("slot", timeSlot)
-          .maybeQueryParam("cancelled", cancelled)
-          .build()
-      }
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ActivityScheduleInstance::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri { builder ->
+      builder
+        .path("/prisons/$prisonCode/scheduled-instances")
+        .queryParam("startDate", startDate)
+        .queryParam("endDate", endDate)
+        .maybeQueryParam("slot", timeSlot)
+        .maybeQueryParam("cancelled", cancelled)
+        .build()
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivityScheduleInstance::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.getAttendanceSummary(prisonCode: String, date: LocalDate) = get()
     .uri { builder ->

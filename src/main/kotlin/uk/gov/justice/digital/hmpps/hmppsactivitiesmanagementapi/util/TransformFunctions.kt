@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventDescription
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -56,35 +57,34 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Suspensio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication as ModelWaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
-fun transform(activity: EntityActivity) =
-  ModelActivity(
-    id = activity.activityId,
-    prisonCode = activity.prisonCode,
-    category = activity.activityCategory.toModelActivityCategory(),
-    tier = activity.activityTier.toModelEventTier(),
-    organiser = activity.organiser?.toModelEventOrganiser(),
-    eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
-    schedules = activity.schedules().toModelSchedules(),
-    pay = activity.activityPay().toModelActivityPayList(),
-    attendanceRequired = activity.attendanceRequired,
-    inCell = activity.inCell,
-    onWing = activity.onWing,
-    offWing = activity.offWing,
-    pieceWork = activity.pieceWork,
-    outsideWork = activity.outsideWork,
-    payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
-    summary = activity.summary,
-    description = activity.description,
-    startDate = activity.startDate,
-    endDate = activity.endDate,
-    riskLevel = activity.riskLevel,
-    createdTime = activity.createdTime,
-    createdBy = activity.createdBy,
-    updatedTime = activity.updatedTime,
-    updatedBy = activity.updatedBy,
-    minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
-    paid = activity.paid,
-  )
+fun transform(activity: EntityActivity) = ModelActivity(
+  id = activity.activityId,
+  prisonCode = activity.prisonCode,
+  category = activity.activityCategory.toModelActivityCategory(),
+  tier = activity.activityTier.toModelEventTier(),
+  organiser = activity.organiser?.toModelEventOrganiser(),
+  eligibilityRules = activity.eligibilityRules().toModelEligibilityRules(),
+  schedules = activity.schedules().toModelSchedules(),
+  pay = activity.activityPay().toModelActivityPayList(),
+  attendanceRequired = activity.attendanceRequired,
+  inCell = activity.inCell,
+  onWing = activity.onWing,
+  offWing = activity.offWing,
+  pieceWork = activity.pieceWork,
+  outsideWork = activity.outsideWork,
+  payPerSession = PayPerSession.valueOf(activity.payPerSession.name),
+  summary = activity.summary,
+  description = activity.description,
+  startDate = activity.startDate,
+  endDate = activity.endDate,
+  riskLevel = activity.riskLevel,
+  createdTime = activity.createdTime,
+  createdBy = activity.createdBy,
+  updatedTime = activity.updatedTime,
+  updatedBy = activity.updatedBy,
+  minimumEducationLevel = activity.activityMinimumEducationLevel().toModel(),
+  paid = activity.paid,
+)
 
 /*
  Transforms a list of activities (view-based) from the local database into a list of
@@ -207,27 +207,24 @@ fun transformAppointmentInstanceToScheduledEvents(
   )
 }
 
-fun EntityActivityCategory.toModelActivityCategory() =
-  ModelActivityCategory(
-    this.activityCategoryId,
-    this.code,
-    this.name,
-    this.description,
-  )
+fun EntityActivityCategory.toModelActivityCategory() = ModelActivityCategory(
+  this.activityCategoryId,
+  this.code,
+  this.name,
+  this.description,
+)
 
-fun EntityEventTier.toModelEventTier() =
-  ModelEventTier(
-    id = this.eventTierId,
-    code = this.code,
-    description = this.description,
-  )
+fun EntityEventTier.toModelEventTier() = ModelEventTier(
+  id = this.eventTierId,
+  code = this.code,
+  description = this.description,
+)
 
-fun EntityEventOrganiser.toModelEventOrganiser() =
-  EventOrganiser(
-    id = this.eventOrganiserId,
-    code = this.code,
-    description = this.description,
-  )
+fun EntityEventOrganiser.toModelEventOrganiser() = EventOrganiser(
+  id = this.eventOrganiserId,
+  code = this.code,
+  description = this.description,
+)
 
 private fun List<EntityActivityEligibility>.toModelEligibilityRules() = map {
   ModelActivityEligibility(
@@ -240,25 +237,24 @@ fun transform(scheduleEntities: List<EntityActivitySchedule>) = scheduleEntities
 
 fun List<EntityActivitySchedule>.toModelSchedules() = map { it.toModelSchedule() }
 
-fun EntityActivitySchedule.toModelSchedule() =
-  ModelActivitySchedule(
-    id = this.activityScheduleId,
-    instances = this.instances().toModelScheduledInstances(),
-    allocations = this.allocations().toModelAllocations(),
-    description = this.description,
-    suspensions = this.suspensions.toModelSuspensions(),
-    internalLocation = this.toInternalLocation(),
-    capacity = this.capacity,
-    activity = this.activity.toModelLite(),
-    scheduleWeeks = this.scheduleWeeks,
-    slots = this.toModelActivityScheduleSlots(),
-    startDate = this.startDate,
-    endDate = this.endDate,
-    runsOnBankHoliday = this.runsOnBankHoliday,
-    updatedTime = this.updatedTime,
-    updatedBy = this.updatedBy,
-    usePrisonRegimeTime = this.usePrisonRegimeTime,
-  )
+fun EntityActivitySchedule.toModelSchedule() = ModelActivitySchedule(
+  id = this.activityScheduleId,
+  instances = this.instances().toModelScheduledInstances(),
+  allocations = this.allocations().toModelAllocations(),
+  description = this.description,
+  suspensions = this.suspensions.toModelSuspensions(),
+  internalLocation = this.toInternalLocation(),
+  capacity = this.capacity,
+  activity = this.activity.toModelLite(),
+  scheduleWeeks = this.scheduleWeeks,
+  slots = this.toModelActivityScheduleSlots(),
+  startDate = this.startDate,
+  endDate = this.endDate,
+  runsOnBankHoliday = this.runsOnBankHoliday,
+  updatedTime = this.updatedTime,
+  updatedBy = this.updatedBy,
+  usePrisonRegimeTime = this.usePrisonRegimeTime,
+)
 
 private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
   ModelScheduledInstance(
@@ -276,8 +272,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
 
 fun List<EntityAllocation>.toModelAllocations() = map { it.toModel() }
 
-fun List<EntityAllocation>.toModelPrisonerAllocations() =
-  toModelAllocations().groupBy { it.prisonerNumber }.map { PrisonerAllocations(it.key, it.value) }
+fun List<EntityAllocation>.toModelPrisonerAllocations() = toModelAllocations().groupBy { it.prisonerNumber }.map { PrisonerAllocations(it.key, it.value) }
 
 private fun List<EntitySuspension>.toModelSuspensions() = map {
   ModelSuspension(
@@ -307,8 +302,23 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
   )
 }
 
-fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?): ModelAttendance =
-  ModelAttendance(
+fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClient?, includeHistory: Boolean = false): ModelAttendance {
+  var history: List<AttendanceHistory>? = null
+
+  if (includeHistory) {
+    history = attendance.history()
+      .sortedWith(compareBy { attendance.recordedTime })
+      .reversed()
+      .map { attendanceHistory: EntityAttendanceHistory ->
+        transform(
+          attendanceHistory,
+          attendance.prisonerNumber,
+          caseNotesApiClient,
+        )
+      }
+  }
+
+  return ModelAttendance(
     id = attendance.attendanceId,
     scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
     prisonerNumber = attendance.prisonerNumber,
@@ -344,70 +354,60 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
       )?.text
     },
     otherAbsenceReason = attendance.otherAbsenceReason,
-    attendanceHistory = attendance.history()
-      .sortedWith(compareBy { attendance.recordedTime })
-      .reversed()
-      .map { attendanceHistory: EntityAttendanceHistory ->
-        transform(
-          attendanceHistory,
-          attendance.prisonerNumber,
-          caseNotesApiClient,
-        )
-      },
+    attendanceHistory = history,
     editable = attendance.editable(),
     payable = attendance.isPayable(),
   )
+}
 
 fun transform(
   attendanceHistory: EntityAttendanceHistory,
   prisonerNumber: String,
   caseNotesApiClient: CaseNotesApiClient?,
-): ModelAttendanceHistory =
-  ModelAttendanceHistory(
-    id = attendanceHistory.attendanceHistoryId,
-    attendanceReason = attendanceHistory.attendanceReason?.let {
-      ModelAttendanceReason(
-        id = it.attendanceReasonId,
-        code = it.code.toString(),
-        description = it.description,
-        attended = it.attended,
-        capturePay = it.capturePay,
-        captureMoreDetail = it.captureMoreDetail,
-        captureCaseNote = it.captureCaseNote,
-        captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
-        captureOtherText = it.captureOtherText,
-        displayInAbsence = it.displayInAbsence,
-        displaySequence = it.displaySequence,
-        notes = it.notes,
-      )
-    },
-    comment = attendanceHistory.comment,
-    recordedTime = attendanceHistory.recordedTime,
-    recordedBy = attendanceHistory.recordedBy,
-    issuePayment = attendanceHistory.issuePayment,
-    incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
-    otherAbsenceReason = attendanceHistory.otherAbsenceReason,
-    caseNoteText = attendanceHistory.caseNoteId?.let {
-      caseNotesApiClient?.getCaseNote(
-        prisonerNumber,
-        attendanceHistory.caseNoteId!!,
-      )?.text
-    },
-  )
+): ModelAttendanceHistory = ModelAttendanceHistory(
+  id = attendanceHistory.attendanceHistoryId,
+  attendanceReason = attendanceHistory.attendanceReason?.let {
+    ModelAttendanceReason(
+      id = it.attendanceReasonId,
+      code = it.code.toString(),
+      description = it.description,
+      attended = it.attended,
+      capturePay = it.capturePay,
+      captureMoreDetail = it.captureMoreDetail,
+      captureCaseNote = it.captureCaseNote,
+      captureIncentiveLevelWarning = it.captureIncentiveLevelWarning,
+      captureOtherText = it.captureOtherText,
+      displayInAbsence = it.displayInAbsence,
+      displaySequence = it.displaySequence,
+      notes = it.notes,
+    )
+  },
+  comment = attendanceHistory.comment,
+  recordedTime = attendanceHistory.recordedTime,
+  recordedBy = attendanceHistory.recordedBy,
+  issuePayment = attendanceHistory.issuePayment,
+  incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
+  otherAbsenceReason = attendanceHistory.otherAbsenceReason,
+  caseNoteText = attendanceHistory.caseNoteId?.let {
+    caseNotesApiClient?.getCaseNote(
+      prisonerNumber,
+      attendanceHistory.caseNoteId!!,
+    )?.text
+  },
+)
 
-fun EntityPrisonPayBand.toModelPrisonPayBand() =
-  ModelPrisonPayBand(
-    id = this.prisonPayBandId,
-    alias = this.payBandAlias,
-    description = this.payBandDescription,
-    displaySequence = this.displaySequence,
-    nomisPayBand = this.nomisPayBand,
-    prisonCode = this.prisonCode,
-    createdTime = this.createdTime,
-    createdBy = this.createdBy,
-    updatedTime = this.updatedTime,
-    updatedBy = this.updatedBy,
-  )
+fun EntityPrisonPayBand.toModelPrisonPayBand() = ModelPrisonPayBand(
+  id = this.prisonPayBandId,
+  alias = this.payBandAlias,
+  description = this.payBandDescription,
+  displaySequence = this.displaySequence,
+  nomisPayBand = this.nomisPayBand,
+  prisonCode = this.prisonCode,
+  createdTime = this.createdTime,
+  createdBy = this.createdBy,
+  updatedTime = this.updatedTime,
+  updatedBy = this.updatedBy,
+)
 
 fun transform(prisonRegime: EntityPrisonRegime, dayOfWeek: DayOfWeek) = ModelPrisonRegime(
   id = prisonRegime.prisonRegimeId,
@@ -435,18 +435,17 @@ fun transform(entityEventReview: EventReview) = ModelEventReview(
   eventDescription = enumValues<EventDescription>().firstOrNull { it.name == entityEventReview.eventDescription?.name },
 )
 
-fun transform(activityBasic: EntityActivityBasic) =
-  ModelActivityBasic(
-    activityId = activityBasic.activityId,
-    prisonCode = activityBasic.prisonCode,
-    activityScheduleId = activityBasic.activityScheduleId,
-    startDate = activityBasic.startDate,
-    endDate = activityBasic.endDate,
-    summary = activityBasic.summary,
-    categoryId = activityBasic.categoryId,
-    categoryCode = activityBasic.categoryCode,
-    categoryName = activityBasic.categoryName,
-  )
+fun transform(activityBasic: EntityActivityBasic) = ModelActivityBasic(
+  activityId = activityBasic.activityId,
+  prisonCode = activityBasic.prisonCode,
+  activityScheduleId = activityBasic.activityScheduleId,
+  startDate = activityBasic.startDate,
+  endDate = activityBasic.endDate,
+  summary = activityBasic.summary,
+  categoryId = activityBasic.categoryId,
+  categoryCode = activityBasic.categoryCode,
+  categoryName = activityBasic.categoryName,
+)
 
 fun ScheduledInstanceAttendanceSummary.toModel() = (
   ModelScheduledInstanceAttendanceSummary(

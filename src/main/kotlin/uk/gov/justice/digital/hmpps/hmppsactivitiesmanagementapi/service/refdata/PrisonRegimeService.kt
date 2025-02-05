@@ -41,24 +41,21 @@ class PrisonRegimeService(
    * If no priorities are found then defaults are provided, see [EventType] for the default order.
    */
   @Transactional(readOnly = true)
-  fun getEventPrioritiesForPrison(code: String) =
-    eventPriorityRepository.findByPrisonCode(code)
-      .groupBy { it.eventType }
-      .mapValues { it.value.map { ep -> Priority(ep.priority, ep.eventCategory) } }
-      .ifEmpty { defaultPriorities() }
-      .let(::EventPriorities)
+  fun getEventPrioritiesForPrison(code: String) = eventPriorityRepository.findByPrisonCode(code)
+    .groupBy { it.eventType }
+    .mapValues { it.value.map { ep -> Priority(ep.priority, ep.eventCategory) } }
+    .ifEmpty { defaultPriorities() }
+    .let(::EventPriorities)
 
-  private fun defaultPriorities() =
-    EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }
+  private fun defaultPriorities() = EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }
 
   /**
    * Returns the pay bands configured for a prison (if any), otherwise a default set of prison pay bands.
    */
   @Transactional(readOnly = true)
-  fun getPayBandsForPrison(code: String) =
-    prisonPayBandRepository.findByPrisonCode(code)
-      .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
-      .map { it.toModelPrisonPayBand() }
+  fun getPayBandsForPrison(code: String) = prisonPayBandRepository.findByPrisonCode(code)
+    .ifEmpty { prisonPayBandRepository.findByPrisonCode("DEFAULT") }
+    .map { it.toModelPrisonPayBand() }
 
   @Transactional
   fun createPrisonPayBand(prisonCode: String, request: PrisonPayBandCreateRequest, principal: Principal, createdTime: LocalDateTime? = LocalDateTime.now()): PrisonPayBand {
@@ -120,8 +117,7 @@ class PrisonRegimeService(
   }
 
   @Transactional(readOnly = true)
-  fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> =
-    getPrisonRegimeForDaysOfWeek(prisonCode = agencyId, daysOfWeek = DayOfWeek.entries.toSet()).associateBy { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() }
+  fun getPrisonRegimesByDaysOfWeek(agencyId: String): Map<Set<DayOfWeek>, PrisonRegimeEntity> = getPrisonRegimeForDaysOfWeek(prisonCode = agencyId, daysOfWeek = DayOfWeek.entries.toSet()).associateBy { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.toSet() }
 
   /**
    *  Converts a TimeSlot for a given Prison into a time range.
@@ -137,16 +133,15 @@ class PrisonRegimeService(
    */
 
   @Transactional(readOnly = true)
-  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): LocalTimeRange? =
-    getPrisonRegimeForDayOfWeek(prisonCode = prisonCode, dayOfWeek = dayOfWeek)?.let { pr ->
-      val (start, end) = when (timeSlot) {
-        TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
-        TimeSlot.PM -> pr.pmStart to pr.edStart
-        TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
-      }
-
-      LocalTimeRange(start, end)
+  fun getTimeRangeForPrisonAndTimeSlot(prisonCode: String, timeSlot: TimeSlot, dayOfWeek: DayOfWeek): LocalTimeRange? = getPrisonRegimeForDayOfWeek(prisonCode = prisonCode, dayOfWeek = dayOfWeek)?.let { pr ->
+    val (start, end) = when (timeSlot) {
+      TimeSlot.AM -> LocalTime.MIDNIGHT to pr.pmStart
+      TimeSlot.PM -> pr.pmStart to pr.edStart
+      TimeSlot.ED -> pr.edStart to LocalTime.of(23, 59)
     }
+
+    LocalTimeRange(start, end)
+  }
 
   @Transactional(readOnly = true)
   fun getSlotTimesForTimeSlot(
@@ -155,7 +150,8 @@ class PrisonRegimeService(
     timeSlot: TimeSlot,
   ): SlotTimes? {
     val regimeTimes = getSlotTimesForDaysOfWeek(
-      prisonCode = prisonCode, daysOfWeek = daysOfWeek,
+      prisonCode = prisonCode,
+      daysOfWeek = daysOfWeek,
     ) ?: return null
 
     if (regimeTimes.keys.flatten().containsAll(daysOfWeek)) {
@@ -235,16 +231,13 @@ class PrisonRegimeService(
   private fun getPrisonRegimeForDayOfWeek(
     prisonCode: String,
     dayOfWeek: DayOfWeek,
-  ): PrisonRegimeEntity? =
-    prisonRegimeRepository.findByPrisonCode(code = prisonCode)
-      .firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+  ): PrisonRegimeEntity? = prisonRegimeRepository.findByPrisonCode(code = prisonCode)
+    .firstOrNull { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
 
   companion object {
-    fun List<PrisonRegimeEntity>.matchesDays(daysOfWeek: Set<DayOfWeek>) =
-      this.filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
+    fun List<PrisonRegimeEntity>.matchesDays(daysOfWeek: Set<DayOfWeek>) = this.filter { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.containsAll(daysOfWeek) }
 
-    fun List<PrisonRegimeEntity>.matchesDaysAcrossRegimes(daysOfWeek: Set<DayOfWeek>) =
-      this.flatMap { it.prisonRegimeDaysOfWeek }.map { it.dayOfWeek }.containsAll(daysOfWeek)
+    fun List<PrisonRegimeEntity>.matchesDaysAcrossRegimes(daysOfWeek: Set<DayOfWeek>) = this.flatMap { it.prisonRegimeDaysOfWeek }.map { it.dayOfWeek }.containsAll(daysOfWeek)
 
     fun Map<Set<DayOfWeek>, PrisonRegimeEntity>.getSlotForDayAndTime(
       day: DayOfWeek,
@@ -255,16 +248,15 @@ class PrisonRegimeService(
       return this[key]!!.getTimeSlot(time = time)
     }
 
-    fun List<PrisonRegimeEntity>.transformRegime(): List<PrisonRegime> =
-      DayOfWeek.entries.map { dayOfWeek ->
-        val regime = this.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
-        transform(
-          prisonRegime = regime,
-          dayOfWeek = dayOfWeek,
-        )
-      }.sortedBy {
-        it.dayOfWeek.value
-      }
+    fun List<PrisonRegimeEntity>.transformRegime(): List<PrisonRegime> = DayOfWeek.entries.map { dayOfWeek ->
+      val regime = this.first { it.prisonRegimeDaysOfWeek.map { m -> m.dayOfWeek }.contains(dayOfWeek) }
+      transform(
+        prisonRegime = regime,
+        dayOfWeek = dayOfWeek,
+      )
+    }.sortedBy {
+      it.dayOfWeek.value
+    }
 
     private fun PrisonRegimeEntity.getTimeSlot(time: LocalTime): TimeSlot {
       if (time.isBefore(this.pmStart)) return TimeSlot.AM
@@ -281,25 +273,24 @@ data class EventPriorities(val priorities: Map<EventType, List<Priority>>) {
 
   fun getOrDefault(eventType: EventType, category: EventCategory): Int = getOrDefault(eventType, category.name)
 
-  fun getOrDefault(eventType: EventType, category: String? = null): Int =
-    priorities[eventType]?.fold(listOf<Priority>()) { acc, next ->
-      if (next.eventCategory == null && acc.isEmpty()) {
-        listOf(next)
-      } else {
-        when (next.eventCategory) {
-          EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
-          EventCategory.FAITH_SPIRITUALITY -> if (category?.startsWith("FAI") == true) listOf(next) else acc
-          EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
-          EventCategory.INDUCTION -> if (category?.startsWith("INDUC") == true) listOf(next) else acc
-          EventCategory.INDUSTRIES -> if (category?.startsWith("INDUS") == true) listOf(next) else acc
-          EventCategory.INTERVENTIONS -> if (category?.startsWith("INTERV") == true) listOf(next) else acc
-          EventCategory.NOT_IN_WORK -> if (category?.startsWith("NOT") == true) listOf(next) else acc
-          EventCategory.OTHER -> if (category?.startsWith("OTH") == true) listOf(next) else acc
-          EventCategory.PRISON_JOBS -> if (category?.startsWith("PRISON") == true) listOf(next) else acc
-          else -> {
-            acc
-          }
+  fun getOrDefault(eventType: EventType, category: String? = null): Int = priorities[eventType]?.fold(listOf<Priority>()) { acc, next ->
+    if (next.eventCategory == null && acc.isEmpty()) {
+      listOf(next)
+    } else {
+      when (next.eventCategory) {
+        EventCategory.EDUCATION -> if (category?.startsWith("EDU") == true) listOf(next) else acc
+        EventCategory.FAITH_SPIRITUALITY -> if (category?.startsWith("FAI") == true) listOf(next) else acc
+        EventCategory.GYM_SPORTS_FITNESS -> if (category?.startsWith("GYM") == true) listOf(next) else acc
+        EventCategory.INDUCTION -> if (category?.startsWith("INDUC") == true) listOf(next) else acc
+        EventCategory.INDUSTRIES -> if (category?.startsWith("INDUS") == true) listOf(next) else acc
+        EventCategory.INTERVENTIONS -> if (category?.startsWith("INTERV") == true) listOf(next) else acc
+        EventCategory.NOT_IN_WORK -> if (category?.startsWith("NOT") == true) listOf(next) else acc
+        EventCategory.OTHER -> if (category?.startsWith("OTH") == true) listOf(next) else acc
+        EventCategory.PRISON_JOBS -> if (category?.startsWith("PRISON") == true) listOf(next) else acc
+        else -> {
+          acc
         }
       }
-    }?.firstOrNull()?.priority ?: eventType.defaultPriority
+    }
+  }?.firstOrNull()?.priority ?: eventType.defaultPriority
 }

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.security.Principal
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @WebMvcTest(controllers = [AttendanceController::class])
 @ContextConfiguration(classes = [AttendanceController::class])
@@ -91,7 +93,10 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
   @Test
   fun `200 response when get attendance by ID found`() {
     val caseNotesApiClient: CaseNotesApiClient = mock()
-    val attendance = transform(attendance(), caseNotesApiClient)
+    val attendanceEntity = attendance()
+    val history = AttendanceHistory(attendanceHistoryId = 1L, attendance = attendanceEntity, recordedTime = LocalDateTime.now(), recordedBy = "TEST_USER", issuePayment = true, incentiveLevelWarningIssued = false)
+    attendanceEntity.addHistory(history)
+    val attendance = transform(attendanceEntity, caseNotesApiClient, true)
 
     whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
 
@@ -135,9 +140,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
     verify(attendancesService).getAllAttendanceByDate(PENTONVILLE_PRISON_CODE, LocalDate.now())
   }
 
-  private fun MockMvc.getAttendanceById(attendanceId: String) =
-    get("/attendances/$attendanceId")
+  private fun MockMvc.getAttendanceById(attendanceId: String) = get("/attendances/$attendanceId")
 
-  private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) =
-    get("/attendances/$prisonCode/$sessionDate")
+  private fun MockMvc.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate) = get("/attendances/$prisonCode/$sessionDate")
 }

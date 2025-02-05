@@ -13,8 +13,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.annotations.Fetch
-import org.hibernate.annotations.FetchMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
@@ -73,8 +71,7 @@ data class Attendance(
     issuePayment = initialIssuePayment
   }
 
-  @OneToMany(mappedBy = "attendance", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  @Fetch(FetchMode.SUBSELECT)
+  @OneToMany(mappedBy = "attendance", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   private var attendanceHistory: MutableList<AttendanceHistory> = mutableListOf()
 
   fun status() = status
@@ -87,26 +84,23 @@ data class Attendance(
   }
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(attendanceId = $attendanceId )"
+  override fun toString(): String = this::class.simpleName + "(attendanceId = $attendanceId )"
+
+  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) = apply {
+    require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
+    require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
+
+    mark(
+      principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
+      reason = reason,
+      newStatus = AttendanceStatus.COMPLETED,
+      newComment = cancelledReason,
+      newIssuePayment = isPayable(),
+      newIncentiveLevelWarningIssued = null,
+      newCaseNoteId = null,
+      newOtherAbsenceReason = null,
+    )
   }
-
-  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) =
-    apply {
-      require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
-      require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
-
-      mark(
-        principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
-        reason = reason,
-        newStatus = AttendanceStatus.COMPLETED,
-        newComment = cancelledReason,
-        newIssuePayment = isPayable(),
-        newIncentiveLevelWarningIssued = null,
-        newCaseNoteId = null,
-        newOtherAbsenceReason = null,
-      )
-    }
 
   fun uncancel() = mark(
     principalName = null,
@@ -119,32 +113,30 @@ data class Attendance(
     newOtherAbsenceReason = null,
   )
 
-  fun complete(reason: AttendanceReason, issuePayment: Boolean = false) =
+  fun complete(reason: AttendanceReason, issuePayment: Boolean = false) = mark(
+    principalName = ServiceName.SERVICE_NAME.value,
+    reason = reason,
+    newStatus = AttendanceStatus.COMPLETED,
+    newIssuePayment = issuePayment,
+    newCaseNoteId = null,
+    newComment = null,
+    newIncentiveLevelWarningIssued = null,
+    newOtherAbsenceReason = null,
+  ).also { addAttendanceToHistory() }
+
+  fun unsuspend() = apply {
+    require(hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
     mark(
       principalName = ServiceName.SERVICE_NAME.value,
-      reason = reason,
-      newStatus = AttendanceStatus.COMPLETED,
-      newIssuePayment = issuePayment,
+      reason = null,
+      newStatus = AttendanceStatus.WAITING,
+      newIssuePayment = null,
       newCaseNoteId = null,
       newComment = null,
       newIncentiveLevelWarningIssued = null,
       newOtherAbsenceReason = null,
-    ).also { addAttendanceToHistory() }
-
-  fun unsuspend() =
-    apply {
-      require(hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)) { "Attendance must be suspended to unsuspend it" }
-      mark(
-        principalName = ServiceName.SERVICE_NAME.value,
-        reason = null,
-        newStatus = AttendanceStatus.WAITING,
-        newIssuePayment = null,
-        newCaseNoteId = null,
-        newComment = null,
-        newIncentiveLevelWarningIssued = null,
-        newOtherAbsenceReason = null,
-      )
-    }
+    )
+  }
 
   fun mark(
     principalName: String?,

@@ -52,10 +52,10 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Get categories")
-    inner class GetCategoriesTests() {
+    inner class GetCategoriesTests {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get activity categories (ROLE_NOMIS_ACTIVITIES) - 200`() {

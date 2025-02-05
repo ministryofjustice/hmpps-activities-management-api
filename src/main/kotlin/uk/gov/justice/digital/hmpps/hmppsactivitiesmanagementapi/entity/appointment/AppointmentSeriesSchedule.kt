@@ -53,9 +53,7 @@ data class AppointmentSeriesSchedule(
     return result
   }
 
-  override fun toString(): String {
-    return "AppointmentSeriesSchedule(appointmentSeriesScheduleId=$appointmentSeriesScheduleId, frequency=$frequency, numberOfAppointments=$numberOfAppointments)"
-  }
+  override fun toString(): String = "AppointmentSeriesSchedule(appointmentSeriesScheduleId=$appointmentSeriesScheduleId, frequency=$frequency, numberOfAppointments=$numberOfAppointments)"
 }
 
 class AppointmentSeriesScheduleIterator(

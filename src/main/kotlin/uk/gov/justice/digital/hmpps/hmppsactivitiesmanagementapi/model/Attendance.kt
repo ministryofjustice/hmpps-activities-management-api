@@ -62,7 +62,7 @@ data class Attendance(
   val caseNoteText: String? = null,
 
   @Schema(description = "The attendance history records for this attendance")
-  val attendanceHistory: List<AttendanceHistory> = emptyList(),
+  val attendanceHistory: List<AttendanceHistory>? = emptyList(),
 
   @Schema(description = "Flag to show whether this attendance is editable", example = "true")
   val editable: Boolean = true,

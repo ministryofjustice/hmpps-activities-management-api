@@ -70,6 +70,14 @@ data class AppointmentSearch(
   val isEdited: Boolean,
 
   val isCancelled: Boolean,
+
+  val createdTime: LocalDateTime,
+
+  val updatedTime: LocalDateTime?,
+
+  val cancelledTime: LocalDateTime?,
+
+  val cancelledBy: String?,
 ) {
   @OneToMany(mappedBy = "appointmentSearch", fetch = FetchType.LAZY)
   var attendees: List<AppointmentAttendeeSearch> = listOf()
@@ -104,6 +112,10 @@ data class AppointmentSearch(
     isCancelled = isCancelled,
     isExpired = isExpired(),
     timeSlot = prisonRegime.getSlotForDayAndTime(day = startDate.dayOfWeek, time = startTime),
+    createdTime = createdTime,
+    updatedTime = updatedTime,
+    cancelledTime = cancelledTime,
+    cancelledBy = cancelledBy,
   )
 
   private fun startDateTime(): LocalDateTime = LocalDateTime.of(startDate, startTime)

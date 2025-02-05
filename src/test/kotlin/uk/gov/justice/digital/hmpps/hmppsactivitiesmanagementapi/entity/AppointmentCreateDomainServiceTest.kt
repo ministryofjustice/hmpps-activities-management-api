@@ -219,8 +219,7 @@ class AppointmentCreateDomainServiceTest {
     verifyNoMoreInteractions(outboundEventsService)
   }
 
-  private fun appointmentSeriesWithNoAppointment(isMigrated: Boolean = false) =
-    // Specify all non default values
+  private fun appointmentSeriesWithNoAppointment(isMigrated: Boolean = false) = // Specify all non default values
     AppointmentSeries(
       appointmentSeriesId = 1,
       appointmentType = AppointmentType.GROUP,
@@ -252,33 +251,32 @@ class AppointmentCreateDomainServiceTest {
       appointmentOrganiser = eventOrganiser()
     }
 
-  private fun appointmentSeriesWithOneAppointment() =
-    appointmentSeriesWithNoAppointment().apply {
-      addAppointment(
-        Appointment(
-          appointmentSeries = this,
-          sequenceNumber = 1,
-          prisonCode = this.prisonCode,
-          categoryCode = this.categoryCode,
-          customName = this.customName,
-          appointmentTier = this.appointmentTier,
-          internalLocationId = this.internalLocationId,
-          customLocation = this.customLocation,
-          inCell = this.inCell,
-          onWing = this.onWing,
-          offWing = this.offWing,
-          startDate = this.startDate,
-          startTime = this.startTime,
-          endTime = this.endTime,
-          unlockNotes = this.unlockNotes,
-          extraInformation = this.extraInformation,
-          createdTime = this.createdTime,
-          createdBy = this.createdBy,
-          updatedTime = this.updatedTime,
-          updatedBy = this.updatedBy,
-        ).also {
-          it.appointmentOrganiser = this.appointmentOrganiser
-        },
-      )
-    }
+  private fun appointmentSeriesWithOneAppointment() = appointmentSeriesWithNoAppointment().apply {
+    addAppointment(
+      Appointment(
+        appointmentSeries = this,
+        sequenceNumber = 1,
+        prisonCode = this.prisonCode,
+        categoryCode = this.categoryCode,
+        customName = this.customName,
+        appointmentTier = this.appointmentTier,
+        internalLocationId = this.internalLocationId,
+        customLocation = this.customLocation,
+        inCell = this.inCell,
+        onWing = this.onWing,
+        offWing = this.offWing,
+        startDate = this.startDate,
+        startTime = this.startTime,
+        endTime = this.endTime,
+        unlockNotes = this.unlockNotes,
+        extraInformation = this.extraInformation,
+        createdTime = this.createdTime,
+        createdBy = this.createdBy,
+        updatedTime = this.updatedTime,
+        updatedBy = this.updatedBy,
+      ).also {
+        it.appointmentOrganiser = this.appointmentOrganiser
+      },
+    )
+  }
 }

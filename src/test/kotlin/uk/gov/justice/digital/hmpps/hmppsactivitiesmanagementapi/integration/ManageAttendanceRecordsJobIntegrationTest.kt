@@ -81,12 +81,14 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     assertThat(activitySchedules).hasSize(2)
 
+    var allAttendances = attendanceRepository.findAll()
+    assertThat(allAttendances).hasSize(0)
+
     with(activitySchedules.findByDescription("Maths AM")) {
       assertThat(allocations()).hasSize(2)
       assertThat(instances()).hasSize(1)
       val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
-      assertThat(scheduledInstance.attendances).isEmpty()
     }
 
     with(activitySchedules.findByDescription("Maths PM")) {
@@ -94,7 +96,6 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(instances()).hasSize(1)
       val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
-      assertThat(scheduledInstance.attendances).isEmpty()
     }
 
     webTestClient.manageAttendanceRecords()
@@ -103,18 +104,18 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
     log.info("ActivitySchedulesAfter count = ${activitySchedulesAfter.size}")
 
+    allAttendances = attendanceRepository.findAll()
+
     with(activitySchedulesAfter.findByDescription("Maths AM")) {
       val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${instances().first().scheduledInstanceId} not found") }
-      log.info("ScheduledInstanceId (Maths AM) = ${scheduledInstance.scheduledInstanceId} attendances ${scheduledInstance.attendances.size}")
-      assertThat(scheduledInstance.attendances).hasSize(2)
+      assertThat(allAttendances.filter { it.scheduledInstance.scheduledInstanceId == scheduledInstance.scheduledInstanceId }).hasSize(2)
     }
 
     with(activitySchedulesAfter.findByDescription("Maths PM")) {
       val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${instances().first().scheduledInstanceId} not found") }
-      log.info("ScheduledInstanceId (Maths PM) = ${scheduledInstance.scheduledInstanceId} attendances ${scheduledInstance.attendances.size}")
-      assertThat(scheduledInstance.attendances).hasSize(2)
+      assertThat(allAttendances.filter { it.scheduledInstance.scheduledInstanceId == scheduledInstance.scheduledInstanceId }).hasSize(2)
     }
 
     assertThat(attendanceRepository.count()).isEqualTo(4)
@@ -153,7 +154,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       instances() hasSize 2
       val scheduledInstances = scheduledInstanceRepository.findAll()
       assertThat(scheduledInstances).isNotEmpty
-      scheduledInstances.forEach { assertThat(it.attendances).isEmpty() }
+      assertThat(attendanceRepository.findAll()).hasSize(0)
     }
 
     webTestClient.manageAttendanceRecords()
@@ -162,15 +163,11 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
     log.info("ActivitySchedulesAfter count = ${activitySchedulesAfter.size}")
 
-    val morningSession = scheduledInstanceRepository.getReferenceById(1)
-    log.info("ScheduledInstanceId (AM) = ${morningSession.scheduledInstanceId} attendances ${morningSession.attendances.size}")
-    assertThat(morningSession.attendances).hasSize(2)
+    val allAttendances = attendanceRepository.findAll()
+    assertThat(allAttendances).hasSize(6)
+    assertThat(attendanceRepository.findAll().filter { it -> it.scheduledInstance.scheduledInstanceId == 1L }).hasSize(2)
 
-    val afternoonSession = scheduledInstanceRepository.getReferenceById(2)
-    log.info("ScheduledInstanceId (PM) = ${afternoonSession.scheduledInstanceId} attendances ${afternoonSession.attendances.size}")
-    assertThat(afternoonSession.attendances).hasSize(4)
-
-    assertThat(attendanceRepository.count()).isEqualTo(6)
+    assertThat(attendanceRepository.findAll().filter { it -> it.scheduledInstance.scheduledInstanceId == 2L }).hasSize(4)
 
     verify(eventsPublisher, times(6)).send(eventCaptor.capture())
 
@@ -214,11 +211,11 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
 
     assertThat(activitySchedules).hasSize(1)
+    assertThat(attendanceRepository.findAll()).hasSize(0)
 
     with(activitySchedules.findByDescription("Gym induction AM")) {
       assertThat(allocations()).hasSize(2)
       assertThat(instances()).hasSize(1)
-      assertThat(instances().first().attendances).isEmpty()
     }
 
     webTestClient.manageAttendanceRecords()
@@ -226,9 +223,8 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     val activityAfter = activityRepository.findById(5).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
 
-    with(activitySchedulesAfter.findByDescription("Gym induction AM")) {
-      assertThat(instances().first().attendances).isNotEmpty()
-    }
+    val scheduledInstanceId = activitySchedulesAfter.findByDescription("Gym induction AM").instances().first().scheduledInstanceId
+    assertThat(attendanceRepository.findAll().filter { it.scheduledInstance.scheduledInstanceId == scheduledInstanceId }).isNotEmpty
 
     assertThat(attendanceRepository.count()).isEqualTo(2)
   }
@@ -337,13 +333,13 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
 
     assertThat(activitySchedules).hasSize(1)
+    assertThat(attendanceRepository.findAll()).hasSize(0)
 
     with(activitySchedules.first()) {
       assertThat(allocations()).hasSize(3)
       assertThat(instances()).hasSize(1)
       val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
-      assertThat(scheduledInstance.attendances).isEmpty()
     }
 
     webTestClient.manageAttendanceRecords()
@@ -365,8 +361,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun List<ActivitySchedule>.findByDescription(description: String) =
-    first { it.description.uppercase() == description.uppercase() }
+  private fun List<ActivitySchedule>.findByDescription(description: String) = first { it.description.uppercase() == description.uppercase() }
 
   private fun WebTestClient.manageAttendanceRecords() {
     post()

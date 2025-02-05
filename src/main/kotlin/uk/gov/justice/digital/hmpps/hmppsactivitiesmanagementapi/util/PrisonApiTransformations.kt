@@ -323,26 +323,22 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
   )
 }
 
-fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) =
-  if (this == null) {
-    ModelAppointmentCategorySummary(code, code)
-  } else {
-    ModelAppointmentCategorySummary(this.code, this.description)
-  }
+fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) = if (this == null) {
+  ModelAppointmentCategorySummary(code, code)
+} else {
+  ModelAppointmentCategorySummary(this.code, this.description)
+}
 
-fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?) =
-  this.toAppointmentCategorySummary(code).description.let { category ->
-    if (!description.isNullOrEmpty()) "$description ($category)" else category
-  }
+fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?) = this.toAppointmentCategorySummary(code).description.let { category ->
+  if (!description.isNullOrEmpty()) "$description ($category)" else category
+}
 
 fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
 
-fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) =
-  if (this == null) {
-    ModelAppointmentLocationSummary(locationId, prisonCode, "No information available")
-  } else {
-    ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
-  }
+fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) = if (this == null) {
+  ModelAppointmentLocationSummary(locationId, prisonCode, "No information available")
+} else {
+  ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+}
 
-fun List<PrisonApiLocation>.toAppointmentLocation() =
-  map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
+fun List<PrisonApiLocation>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }

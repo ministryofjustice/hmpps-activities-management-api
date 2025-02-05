@@ -9,6 +9,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 class AppointmentSearchIntegrationTest : IntegrationTestBase() {
@@ -336,6 +338,13 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isEdited }).isNotEmpty
+    results.forEach { result ->
+      result.createdTime isCloseTo LocalDateTime.now()
+
+      if (result.isEdited) {
+        result.updatedTime isCloseTo LocalDateTime.now()
+      }
+    }
   }
 
   @Sql(
@@ -359,20 +368,27 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.filter { it.isCancelled }).isNotEmpty
+    results.forEach { result ->
+      result.createdTime isCloseTo LocalDateTime.now()
+
+      if (result.isCancelled) {
+        result.cancelledTime isCloseTo LocalDateTime.now()
+        result.cancelledBy isEqualTo "DIFFERENT.USER"
+      }
+    }
   }
 
   private fun WebTestClient.searchAppointments(
     prisonCode: String,
     request: AppointmentSearchRequest,
-  ) =
-    post()
-      .uri("/appointments/$prisonCode/search")
-      .bodyValue(request)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, prisonCode)
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(AppointmentSearchResult::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/appointments/$prisonCode/search")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(AppointmentSearchResult::class.java)
+    .returnResult().responseBody
 }

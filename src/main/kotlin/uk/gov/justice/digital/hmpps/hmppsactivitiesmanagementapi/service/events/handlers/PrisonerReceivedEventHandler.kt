@@ -70,19 +70,17 @@ class PrisonerReceivedEventHandler(
     return Outcome.success()
   }
 
-  private fun List<Allocation>.resetAutoSuspendedAllocations(event: PrisonerReceivedEvent) =
-    this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
-      .onEach {
-        if (it.isCurrentlySuspended()) {
-          it.activatePlannedSuspension()
-        } else {
-          it.reactivateSuspension()
-        }
+  private fun List<Allocation>.resetAutoSuspendedAllocations(event: PrisonerReceivedEvent) = this.filter { it.status(PrisonerStatus.AUTO_SUSPENDED) }
+    .onEach {
+      if (it.isCurrentlySuspended()) {
+        it.activatePlannedSuspension()
+      } else {
+        it.reactivateSuspension()
       }
-      .also {
-        log.info("PRISONER RECEIVED: reset ${it.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
-      }
+    }
+    .also {
+      log.info("PRISONER RECEIVED: reset ${it.size} suspended allocations for prisoner ${event.prisonerNumber()} at prison ${event.prisonCode()}.")
+    }
 
-  private fun List<Allocation>.resetFutureAutoSuspendedAttendances() =
-    map { it to attendanceSuspensionDomainService.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), it) }
+  private fun List<Allocation>.resetFutureAutoSuspendedAttendances() = map { it to attendanceSuspensionDomainService.resetAutoSuspendedFutureAttendancesForAllocation(LocalDateTime.now(), it) }
 }

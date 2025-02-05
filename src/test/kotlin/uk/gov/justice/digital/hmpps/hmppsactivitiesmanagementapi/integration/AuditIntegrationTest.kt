@@ -158,27 +158,26 @@ class AuditIntegrationTest : IntegrationTestBase() {
     scheduleId: Long? = null,
     page: Long? = 0,
     size: Long? = 10,
-  ) =
-    post()
-      .uri("/audit/search?page=$page&size=$size")
-      .bodyValue(
-        AuditRecordSearchFilters(
-          prisonCode = prisonCode,
-          prisonerNumber = prisonerNumber,
-          username = username,
-          auditType = auditType,
-          auditEventType = auditEventType,
-          startTime = startTime,
-          endTime = endTime,
-          activityId = activityId,
-          scheduleId = scheduleId,
-        ),
-      )
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(LocalAuditSearchResults::class.java)
-      .returnResult().responseBody
+  ) = post()
+    .uri("/audit/search?page=$page&size=$size")
+    .bodyValue(
+      AuditRecordSearchFilters(
+        prisonCode = prisonCode,
+        prisonerNumber = prisonerNumber,
+        username = username,
+        auditType = auditType,
+        auditEventType = auditEventType,
+        startTime = startTime,
+        endTime = endTime,
+        activityId = activityId,
+        scheduleId = scheduleId,
+      ),
+    )
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_ACTIVITY_ADMIN)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(LocalAuditSearchResults::class.java)
+    .returnResult().responseBody
 }

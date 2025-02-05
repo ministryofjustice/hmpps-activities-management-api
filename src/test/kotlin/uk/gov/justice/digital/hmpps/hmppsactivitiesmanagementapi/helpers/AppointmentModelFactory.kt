@@ -30,67 +30,62 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
-fun appointmentCategorySummary() =
-  AppointmentCategorySummary("TEST", "Test Category")
+fun appointmentCategorySummary() = AppointmentCategorySummary("TEST", "Test Category")
 
 fun appointmentSeriesModel(
   createdTime: LocalDateTime = LocalDateTime.now(),
   updatedTime: LocalDateTime? = null,
   appointmentUpdatedTime: LocalDateTime? = null,
-) =
-  AppointmentSeries(
-    1,
-    AppointmentType.INDIVIDUAL,
-    "TPR",
-    "TEST",
-    eventTier().toModelEventTier(),
-    eventOrganiser().toModelEventOrganiser(),
-    "Appointment description",
-    123,
-    false,
-    LocalDate.now().plusDays(1),
-    LocalTime.of(9, 0),
-    LocalTime.of(10, 30),
-    null,
-    "Appointment series level comment",
-    createdTime,
-    "CREATE.USER",
-    updatedTime,
-    "UPDATE.USER",
-    appointments = listOf(appointmentModel(createdTime, appointmentUpdatedTime)),
-  )
+) = AppointmentSeries(
+  1,
+  AppointmentType.INDIVIDUAL,
+  "TPR",
+  "TEST",
+  eventTier().toModelEventTier(),
+  eventOrganiser().toModelEventOrganiser(),
+  "Appointment description",
+  123,
+  false,
+  LocalDate.now().plusDays(1),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  null,
+  "Appointment series level comment",
+  createdTime,
+  "CREATE.USER",
+  updatedTime,
+  "UPDATE.USER",
+  appointments = listOf(appointmentModel(createdTime, appointmentUpdatedTime)),
+)
 
-fun appointmentAttendeeModel() =
-  AppointmentAttendee(1, "A1234BC", 456, null, null, null, null, null, null, null, null)
+fun appointmentAttendeeModel() = AppointmentAttendee(1, "A1234BC", 456, null, null, null, null, null, null, null, null)
 
-fun appointmentAttendeeSearchResultModel() =
-  AppointmentAttendeeSearchResult(1, "A1234BC", 456)
+fun appointmentAttendeeSearchResultModel() = AppointmentAttendeeSearchResult(1, "A1234BC", 456)
 
-fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTime: LocalDateTime? = null) =
-  Appointment(
-    1,
-    1,
-    "TPR",
-    "TEST",
-    eventTier().toModelEventTier(),
-    eventOrganiser().toModelEventOrganiser(),
-    "Appointment description",
-    123,
-    false,
-    LocalDate.now().plusDays(1),
-    LocalTime.of(9, 0),
-    LocalTime.of(10, 30),
-    "Appointment level comment",
-    createdTime,
-    "CREATE.USER",
-    updatedTime,
-    "UPDATE.USER",
-    null,
-    null,
-    null,
-    false,
-    attendees = listOf(appointmentAttendeeModel()),
-  )
+fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTime: LocalDateTime? = null) = Appointment(
+  1,
+  1,
+  "TPR",
+  "TEST",
+  eventTier().toModelEventTier(),
+  eventOrganiser().toModelEventOrganiser(),
+  "Appointment description",
+  123,
+  false,
+  LocalDate.now().plusDays(1),
+  LocalTime.of(9, 0),
+  LocalTime.of(10, 30),
+  "Appointment level comment",
+  createdTime,
+  "CREATE.USER",
+  updatedTime,
+  "UPDATE.USER",
+  null,
+  null,
+  null,
+  false,
+  attendees = listOf(appointmentAttendeeModel()),
+)
 
 fun appointmentInstanceModel(
   createdTime: LocalDateTime = LocalDateTime.now().minusDays(1),
@@ -134,24 +129,23 @@ fun appointmentSeriesCreateRequest(
   extraInformation: String? = "Appointment level comment",
   schedule: AppointmentSeriesSchedule? = null,
   originalAppointmentId: Long? = 0L,
-) =
-  AppointmentSeriesCreateRequest(
-    appointmentType,
-    prisonCode,
-    prisonerNumbers,
-    categoryCode,
-    tierCode,
-    organiserCode,
-    customName,
-    internalLocationId,
-    inCell,
-    startDate,
-    startTime,
-    endTime,
-    schedule,
-    extraInformation,
-    originalAppointmentId,
-  )
+) = AppointmentSeriesCreateRequest(
+  appointmentType,
+  prisonCode,
+  prisonerNumbers,
+  categoryCode,
+  tierCode,
+  organiserCode,
+  customName,
+  internalLocationId,
+  inCell,
+  startDate,
+  startTime,
+  endTime,
+  schedule,
+  extraInformation,
+  originalAppointmentId,
+)
 
 fun appointmentSetCreateRequest(
   prisonCode: String? = "TPR",
@@ -166,25 +160,24 @@ fun appointmentSetCreateRequest(
   endTime: LocalTime? = LocalTime.of(14, 30),
   extraInformation: String? = "Test comment",
   prisonerNumbers: List<String?> = listOf("A1234BC", "A1234BD"),
-) =
-  AppointmentSetCreateRequest(
-    categoryCode = categoryCode,
-    tierCode = tierCode,
-    organiserCode = organiserCode,
-    prisonCode = prisonCode,
-    internalLocationId = internalLocationId,
-    inCell = inCell,
-    startDate = startDate,
-    customName = customName,
-    appointments = prisonerNumbers.map {
-      AppointmentSetAppointment(
-        prisonerNumber = it,
-        startTime = startTime,
-        endTime = endTime,
-        extraInformation = extraInformation,
-      )
-    }.toList(),
-  )
+) = AppointmentSetCreateRequest(
+  categoryCode = categoryCode,
+  tierCode = tierCode,
+  organiserCode = organiserCode,
+  prisonCode = prisonCode,
+  internalLocationId = internalLocationId,
+  inCell = inCell,
+  startDate = startDate,
+  customName = customName,
+  appointments = prisonerNumbers.map {
+    AppointmentSetAppointment(
+      prisonerNumber = it,
+      startTime = startTime,
+      endTime = endTime,
+      extraInformation = extraInformation,
+    )
+  }.toList(),
+)
 
 fun appointmentMigrateRequest(
   prisonCode: String? = "TPR",
@@ -201,23 +194,22 @@ fun appointmentMigrateRequest(
   updatedTime: LocalDateTime? = null,
   updatedBy: String? = null,
   isCancelled: Boolean? = false,
-) =
-  AppointmentMigrateRequest(
-    prisonCode,
-    prisonerNumber,
-    bookingId,
-    categoryCode,
-    internalLocationId,
-    startDate,
-    startTime,
-    endTime,
-    comment,
-    isCancelled,
-    createdTime,
-    createdBy,
-    updatedTime,
-    updatedBy,
-  )
+) = AppointmentMigrateRequest(
+  prisonCode,
+  prisonerNumber,
+  bookingId,
+  categoryCode,
+  internalLocationId,
+  startDate,
+  startTime,
+  endTime,
+  comment,
+  isCancelled,
+  createdTime,
+  createdBy,
+  updatedTime,
+  updatedBy,
+)
 
 fun appointmentSeriesDetails(
   customName: String? = null,
@@ -329,6 +321,10 @@ fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = Appointment
   false,
   false,
   false,
+  LocalDate.now().atStartOfDay(),
+  null,
+  null,
+  null,
 )
 
 fun appointmentSetDetails(

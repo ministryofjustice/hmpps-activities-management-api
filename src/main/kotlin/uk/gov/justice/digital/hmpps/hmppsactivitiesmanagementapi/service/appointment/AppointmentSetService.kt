@@ -89,23 +89,19 @@ class AppointmentSetService(
     }
   }
 
-  private fun AppointmentSetCreateRequest.categoryDescription() =
-    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
-      ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
+  private fun AppointmentSetCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+    ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
-  private fun AppointmentSetCreateRequest.locationDescription(): String {
-    return if (inCell) {
-      "In cell"
-    } else {
-      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
-        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
-    }
+  private fun AppointmentSetCreateRequest.locationDescription(): String = if (inCell) {
+    "In cell"
+  } else {
+    locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
+      ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
   }
 
-  private fun AppointmentSetCreateRequest.createNumberBookingIdMap() =
-    prisonerSearchApiClient.findByPrisonerNumbers(appointments.map { it.prisonerNumber!! })
-      .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associate { it.prisonerNumber to it.bookingId!!.toLong() }
+  private fun AppointmentSetCreateRequest.createNumberBookingIdMap() = prisonerSearchApiClient.findByPrisonerNumbers(appointments.map { it.prisonerNumber!! })
+    .filter { prisoner -> prisoner.prisonId == prisonCode }
+    .associate { it.prisonerNumber to it.bookingId!!.toLong() }
 
   private fun AppointmentSetCreateRequest.failIfMissingPrisoners(prisonNumberBookingIdMap: Map<String, Long>) {
     appointments.map { it.prisonerNumber }.filterNot(prisonNumberBookingIdMap::containsKey).let {
@@ -141,39 +137,38 @@ class AppointmentSetService(
     }
   }
 
-  private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) =
-    addAppointmentSeries(
-      AppointmentSeries(
-        appointmentType = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType.INDIVIDUAL,
-        prisonCode = prisonCode,
-        categoryCode = categoryCode,
-        customName = customName,
-        appointmentTier = appointmentTier,
-        internalLocationId = internalLocationId,
-        inCell = inCell,
-        startDate = startDate,
-        startTime = appointment.startTime!!,
-        endTime = appointment.endTime,
-        extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
-        createdTime = createdTime,
-        createdBy = createdBy,
-      ).also {
-        it.appointmentOrganiser = this.appointmentOrganiser
+  private fun AppointmentSet.addAppointment(appointment: AppointmentSetAppointment, prisonNumberBookingIdMap: Map<String, Long>) = addAppointmentSeries(
+    AppointmentSeries(
+      appointmentType = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType.INDIVIDUAL,
+      prisonCode = prisonCode,
+      categoryCode = categoryCode,
+      customName = customName,
+      appointmentTier = appointmentTier,
+      internalLocationId = internalLocationId,
+      inCell = inCell,
+      startDate = startDate,
+      startTime = appointment.startTime!!,
+      endTime = appointment.endTime,
+      extraInformation = appointment.extraInformation?.trim()?.takeUnless(String::isBlank),
+      createdTime = createdTime,
+      createdBy = createdBy,
+    ).also {
+      it.appointmentOrganiser = this.appointmentOrganiser
 
-        it.createAndAddAppointment(
-          1,
-          startDate,
-        ).apply {
-          addAttendee(
-            AppointmentAttendee(
-              appointment = this,
-              prisonerNumber = appointment.prisonerNumber!!,
-              bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
-            ),
-          )
-        }
-      },
-    )
+      it.createAndAddAppointment(
+        1,
+        startDate,
+      ).apply {
+        addAttendee(
+          AppointmentAttendee(
+            appointment = this,
+            prisonerNumber = appointment.prisonerNumber!!,
+            bookingId = prisonNumberBookingIdMap[appointment.prisonerNumber]!!,
+          ),
+        )
+      }
+    },
+  )
 
   private fun AppointmentSetModel.trackCreatedEvent(
     startTimeInMs: Long,

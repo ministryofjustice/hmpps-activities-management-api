@@ -587,6 +587,84 @@ class MigrateActivityServiceTest {
     }
 
     @Test
+    fun `An activity with a start date in the future`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now().plusDays(2),
+      )
+
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        with(schedules().first()) {
+          assertThat(slots()).hasSize(1)
+          assertThat(startDate).isEqualTo(LocalDate.now().plusDays(2))
+        }
+      }
+    }
+
+    @Test
+    fun `Fails when provided start date is in the past`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now().minusDays(2),
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Activity start date must be in the future for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
+    fun `Fails when provided start date is today`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        startDate = LocalDate.now(),
+      )
+
+      val exception = assertThrows<ValidationException> {
+        service.migrateActivity(request)
+      }
+
+      assertThat(exception.message).contains("Activity start date must be in the future for the requested prison ${request.prisonCode}")
+      verify(activityRepository, times(0)).saveAllAndFlush(anyList())
+    }
+
+    @Test
     fun `An activity with the outside work flag set will be flagged as such`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
@@ -847,23 +925,22 @@ class MigrateActivityServiceTest {
     private fun buildActivityMigrateRequest(
       payRates: List<NomisPayRate> = emptyList(),
       scheduleRules: List<NomisScheduleRule> = emptyList(),
-    ) =
-      ActivityMigrateRequest(
-        programServiceCode = "CLNR",
-        prisonCode = "MDI",
-        startDate = LocalDate.now().minusDays(1),
-        endDate = null,
-        internalLocationId = 1,
-        internalLocationCode = "011",
-        internalLocationDescription = "MDI-1-1-011",
-        capacity = 10,
-        description = "An activity",
-        payPerSession = "H",
-        runsOnBankHoliday = false,
-        outsideWork = false,
-        scheduleRules,
-        payRates,
-      )
+    ) = ActivityMigrateRequest(
+      programServiceCode = "CLNR",
+      prisonCode = "MDI",
+      startDate = LocalDate.now().plusDays(1),
+      endDate = null,
+      internalLocationId = 1,
+      internalLocationCode = "011",
+      internalLocationDescription = "MDI-1-1-011",
+      capacity = 10,
+      description = "An activity",
+      payPerSession = "H",
+      runsOnBankHoliday = false,
+      outsideWork = false,
+      scheduleRules,
+      payRates,
+    )
   }
 
   @Nested
@@ -1411,20 +1488,19 @@ class MigrateActivityServiceTest {
       verify(activityScheduleRepository, times(0)).saveAndFlush(any())
     }
 
-    private fun buildAllocationMigrateRequest() =
-      AllocationMigrateRequest(
-        prisonCode = "MDI",
-        activityId = 1,
-        splitRegimeActivityId = null,
-        prisonerNumber = "A1234BB",
-        bookingId = 1,
-        cellLocation = "MDI-1-1-001",
-        nomisPayBand = "1",
-        startDate = LocalDate.now().minusDays(1),
-        endDate = null,
-        endComment = null,
-        suspendedFlag = false,
-      )
+    private fun buildAllocationMigrateRequest() = AllocationMigrateRequest(
+      prisonCode = "MDI",
+      activityId = 1,
+      splitRegimeActivityId = null,
+      prisonerNumber = "A1234BB",
+      bookingId = 1,
+      cellLocation = "MDI-1-1-001",
+      nomisPayBand = "1",
+      startDate = LocalDate.now().minusDays(1),
+      endDate = null,
+      endComment = null,
+      suspendedFlag = false,
+    )
   }
 
   @Nested
@@ -1444,6 +1520,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("IND_ASA")).isEqualTo(getCategory("SAA_INDUSTRIES"))
       assertThat(service.mapProgramToCategory("IND_CRTY")).isEqualTo(getCategory("SAA_INDUSTRIES"))
       assertThat(service.mapProgramToCategory("IND_LAU")).isEqualTo(getCategory("SAA_INDUSTRIES"))
+      assertThat(service.mapProgramToCategory("SAA_INDUSTRIES")).isEqualTo(getCategory("SAA_INDUSTRIES"))
     }
 
     @Test
@@ -1456,6 +1533,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("LIBRARY")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("FG")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
       assertThat(service.mapProgramToCategory("SAFE")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
+      assertThat(service.mapProgramToCategory("SAA_PRISON_JOBS")).isEqualTo(getCategory("SAA_PRISON_JOBS"))
     }
 
     @Test
@@ -1465,12 +1543,14 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("KEY_SKILLS")).isEqualTo(getCategory("SAA_EDUCATION"))
       assertThat(service.mapProgramToCategory("PE_TYPE1")).isEqualTo(getCategory("SAA_EDUCATION"))
+      assertThat(service.mapProgramToCategory("SAA_EDUCATION")).isEqualTo(getCategory("SAA_EDUCATION"))
     }
 
     @Test
     fun `Not in work`() {
       assertThat(service.mapProgramToCategory("UNEMP")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
       assertThat(service.mapProgramToCategory("OTH_UNE")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
+      assertThat(service.mapProgramToCategory("SAA_NOT_IN_WORK")).isEqualTo(getCategory("SAA_NOT_IN_WORK"))
     }
 
     @Test
@@ -1478,6 +1558,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("INT_")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
       assertThat(service.mapProgramToCategory("GROUP")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
       assertThat(service.mapProgramToCategory("ABUSE")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
+      assertThat(service.mapProgramToCategory("SAA_INTERVENTIONS")).isEqualTo(getCategory("SAA_INTERVENTIONS"))
     }
 
     @Test
@@ -1486,12 +1567,14 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("SPORT")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("HEALTH")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
       assertThat(service.mapProgramToCategory("OTH_PER")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
+      assertThat(service.mapProgramToCategory("SAA_GYM_SPORTS_FITNESS")).isEqualTo(getCategory("SAA_GYM_SPORTS_FITNESS"))
     }
 
     @Test
     fun `Induction activities`() {
       assertThat(service.mapProgramToCategory("INDUCTION")).isEqualTo(getCategory("SAA_INDUCTION"))
       assertThat(service.mapProgramToCategory("IAG")).isEqualTo(getCategory("SAA_INDUCTION"))
+      assertThat(service.mapProgramToCategory("SAA_INDUCTION")).isEqualTo(getCategory("SAA_INDUCTION"))
     }
 
     @Test
@@ -1499,6 +1582,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("CHAP")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
       assertThat(service.mapProgramToCategory("T2CFA")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
       assertThat(service.mapProgramToCategory("OTH_CFR")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
+      assertThat(service.mapProgramToCategory("SAA_FAITH_SPIRITUALITY")).isEqualTo(getCategory("SAA_FAITH_SPIRITUALITY"))
     }
 
     @Test
@@ -1506,6 +1590,7 @@ class MigrateActivityServiceTest {
       assertThat(service.mapProgramToCategory("RANDOM TYPE")).isEqualTo(getCategory("SAA_OTHER"))
       assertThat(service.mapProgramToCategory("T2ICA")).isEqualTo(getCategory("SAA_OTHER"))
       assertThat(service.mapProgramToCategory("OTRESS")).isEqualTo(getCategory("SAA_OTHER"))
+      assertThat(service.mapProgramToCategory("SAA_OTHER")).isEqualTo(getCategory("SAA_OTHER"))
     }
   }
 
@@ -1615,6 +1700,27 @@ class MigrateActivityServiceTest {
     @Test
     fun `Unrecognised program services default to tier 2`() {
       assertThat(service.mapProgramToTier("ANY")).isEqualTo(getTier("TIER_2"))
+    }
+
+    @Test
+    fun `SAA_ coded program services map to tier 1`() {
+      assertThat(service.mapProgramToTier("SAA_INDUSTRIES")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_PRISON_JOBS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_EDUCATION")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_INTERVENTIONS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_GYM_SPORTS_FITNESS")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_FAITH_SPIRITUALITY")).isEqualTo(getTier("TIER_1"))
+      assertThat(service.mapProgramToTier("SAA_INDUCTION")).isEqualTo(getTier("TIER_1"))
+    }
+
+    @Test
+    fun `SAA_NOT_IN_WORK program services map to foundation`() {
+      assertThat(service.mapProgramToTier("SAA_NOT_IN_WORK")).isEqualTo(getTier("FOUNDATION"))
+    }
+
+    @Test
+    fun `SAA_OTHER program services default to tier 2`() {
+      assertThat(service.mapProgramToTier("SAA_OTHER")).isEqualTo(getTier("TIER_2"))
     }
   }
 

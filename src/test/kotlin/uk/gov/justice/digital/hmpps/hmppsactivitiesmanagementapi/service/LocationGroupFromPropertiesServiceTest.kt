@@ -422,39 +422,29 @@ class LocationGroupFromPropertiesServiceTest {
   }
 
   companion object {
-    private fun group(name: String): LocationGroup {
-      return LocationGroup(name, name, emptyList())
-    }
+    private fun group(name: String): LocationGroup = LocationGroup(name, name, emptyList())
 
-    private fun group(name: String, vararg subGroupNames: String): LocationGroup {
-      return LocationGroup(name, name, subGroupNames.map(::group).toList())
-    }
+    private fun group(name: String, vararg subGroupNames: String): LocationGroup = LocationGroup(name, name, subGroupNames.map(::group).toList())
 
-    private fun location(locationPrefix: String): Location {
-      return aLocation(locationPrefix)
-    }
+    private fun location(locationPrefix: String): Location = aLocation(locationPrefix)
 
     private fun applyPredicatesToLocations(
       predicate: Predicate<Location>,
       vararg locationPrefixes: String,
-    ): List<String?> {
-      return locationPrefixes.map(::location).filter(predicate::test).map { it.locationPrefix }.toList()
-    }
+    ): List<String?> = locationPrefixes.map(::location).filter(predicate::test).map { it.locationPrefix }.toList()
 
-    private fun aLocation(locationPrefix: String): Location {
-      return Location(
-        locationId = 0,
-        locationType = "",
-        description = "",
-        locationUsage = "",
-        agencyId = "",
-        parentLocationId = 0,
-        currentOccupancy = 0,
-        locationPrefix = locationPrefix,
-        operationalCapacity = 0,
-        userDescription = "",
-        internalLocationCode = "",
-      )
-    }
+    private fun aLocation(locationPrefix: String): Location = Location(
+      locationId = 0,
+      locationType = "",
+      description = "",
+      locationUsage = "",
+      agencyId = "",
+      parentLocationId = 0,
+      currentOccupancy = 0,
+      locationPrefix = locationPrefix,
+      operationalCapacity = 0,
+      userDescription = "",
+      internalLocationCode = "",
+    )
   }
 }

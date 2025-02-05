@@ -235,8 +235,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
-        invocation ->
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -351,8 +350,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
-        invocation ->
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -542,8 +540,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
-        invocation ->
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
@@ -587,8 +584,7 @@ class ActivityServiceTest {
     whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
     whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-    whenever(activityRepository.saveAndFlush(any())).thenAnswer {
-        invocation ->
+    whenever(activityRepository.saveAndFlush(any())).thenAnswer { invocation ->
       invocation.getArgument(0, ActivityEntity::class.java)
     }
 
