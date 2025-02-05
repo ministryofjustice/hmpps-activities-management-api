@@ -64,3 +64,5 @@ values (3, 1, 'A33333A', 1, 'test comment', now(), 'Old Recorder', 'COMPLETED', 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
 values (4, 2, 'A33333A', 1, null, now(), 'Old Recorder', 'WAITING', null, null, null, null);
 
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, incentive_level_warning_issued, case_note_id)
+values (5, 2, 'A22222A', 2, 'Refused Comment', now(), 'Old Recorder', 'COMPLETED', 150, 50, null, false, true, 1);

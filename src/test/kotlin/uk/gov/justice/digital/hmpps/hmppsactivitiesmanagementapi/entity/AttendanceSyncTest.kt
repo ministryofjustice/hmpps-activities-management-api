@@ -19,7 +19,7 @@ class AttendanceSyncTest {
     reasonDesc: String,
     aComment: String?,
     warning: Boolean?,
-    expectedComment: String,
+    expectedComment: String?,
   ) {
     val attendanceSessionDate = LocalDate.now()
     val startTime = LocalTime.now()
@@ -79,6 +79,7 @@ class AttendanceSyncTest {
       arguments(false, "SUSPENDED", "Suspended", "a comment", null, "Suspended - Unpaid"),
       arguments(null, "AUTO_SUSPENDED", "Temporarily absent", "a comment", null, "Temporarily absent from prison - Unpaid"),
       arguments(true, "CANCELLED", "Not attended - Session cancelled", "a comment", null, "Activity cancelled - Paid - Not attended - Session cancelled - a comment"),
+      arguments(true, "ATTENDED", "Attended", null, null, null),
     )
   }
 }

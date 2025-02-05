@@ -80,6 +80,42 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-activity-id-17.sql",
   )
   @Test
+  fun `should return attendance sync for a refused attendance`() {
+    caseNotesApiMockServer.stubGetCaseNote("A22222A", 1)
+
+    val attendanceSync =
+      webTestClient.get()
+        .uri("/synchronisation/attendance/5")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_ACTIVITIES")))
+        .exchange()
+        .expectStatus().isOk
+        .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        .expectBody(AttendanceSync::class.java)
+        .returnResult().responseBody!!
+
+    with(attendanceSync) {
+      assertThat(attendanceId).isEqualTo(5)
+      assertThat(scheduledInstanceId).isEqualTo(2)
+      assertThat(activityScheduleId).isEqualTo(2)
+      assertThat(sessionDate).isEqualTo(LocalDate.now())
+      assertThat(sessionStartTime).isEqualTo("10:00")
+      assertThat(sessionEndTime).isEqualTo("11:00")
+      assertThat(prisonerNumber).isEqualTo("A22222A")
+      assertThat(bookingId).isEqualTo(10002)
+      assertThat(attendanceReasonCode).isEqualTo("REFUSED")
+      assertThat(comment).isEqualTo("Incentive level warning issued - Case Note Text")
+      assertThat(status).isEqualTo("COMPLETED")
+      assertThat(payAmount).isEqualTo(150)
+      assertThat(bonusAmount).isEqualTo(50)
+      assertThat(issuePayment).isFalse()
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-17.sql",
+  )
+  @Test
   fun `should return attendance sync where prisoner has been deallocated and reallocated`() {
     val attendanceSync =
       webTestClient.get()

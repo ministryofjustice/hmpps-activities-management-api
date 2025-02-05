@@ -32,7 +32,7 @@ data class AttendanceSync(
 
   val attendanceReasonCode: String?,
 
-  val comment: String?,
+  var comment: String?,
 
   val status: String,
 
@@ -45,6 +45,8 @@ data class AttendanceSync(
   val attendanceReasonDescription: String?,
 
   val incentiveLevelWarningIssued: Boolean?,
+
+  val caseNoteId: Long? = null,
 ) {
   fun toModel() = AttendanceSyncModel(
     attendanceId = attendanceId,
