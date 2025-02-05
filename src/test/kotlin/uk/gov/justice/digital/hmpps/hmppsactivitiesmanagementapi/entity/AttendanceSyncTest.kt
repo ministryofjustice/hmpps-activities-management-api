@@ -68,8 +68,12 @@ class AttendanceSyncTest {
       arguments(null, "CLASH", "Person’s schedule shows another appointment", null, null, "Person’s schedule shows another appointment"),
       arguments(true, "SICK", "Sick", "a comment", null, "Sick - Paid - a comment"),
       arguments(false, "SICK", "Sick", "a comment", null, "Sick - Unpaid - a comment"),
+      arguments(true, "SICK", "Sick", null, null, "Sick - Paid"),
+      arguments(false, "SICK", "Sick", "", null, "Sick - Unpaid"),
       arguments(true, "OTHER", "Other: absence reason not listed", "a comment", null, "Other - Paid - a comment"),
       arguments(false, "OTHER", "Other: absence reason not listed", "a comment", null, "Other - Unpaid - a comment"),
+      arguments(true, "OTHER", "Other: absence reason not listed", null, null, "Other - Paid"),
+      arguments(false, "OTHER", "Other: absence reason not listed", null, null, "Other - Unpaid"),
       arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", true, "Incentive level warning issued - "),
       arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", false, ""),
       arguments(null, "NOT_REQUIRED", "Not required or excused", "a comment", null, "Not required or excused"),
@@ -79,6 +83,7 @@ class AttendanceSyncTest {
       arguments(false, "SUSPENDED", "Suspended", "a comment", null, "Suspended - Unpaid"),
       arguments(null, "AUTO_SUSPENDED", "Temporarily absent", "a comment", null, "Temporarily absent from prison - Unpaid"),
       arguments(true, "CANCELLED", "Not attended - Session cancelled", "a comment", null, "Activity cancelled - Paid - Not attended - Session cancelled - a comment"),
+      arguments(true, "CANCELLED", "Not attended - Session cancelled", null, null, "Activity cancelled - Paid - Not attended - Session cancelled"),
       arguments(true, "ATTENDED", "Attended", null, null, null),
     )
   }
