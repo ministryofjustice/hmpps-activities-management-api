@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 
 @Repository
-interface WaitingListRepository : JpaRepository<WaitingList, Long>, JpaSpecificationExecutor<WaitingList> {
+interface WaitingListRepository :
+  JpaRepository<WaitingList, Long>,
+  JpaSpecificationExecutor<WaitingList> {
   fun findByPrisonCodeAndPrisonerNumberAndActivitySchedule(
     prisonCode: String,
     prisonerNumber: String,

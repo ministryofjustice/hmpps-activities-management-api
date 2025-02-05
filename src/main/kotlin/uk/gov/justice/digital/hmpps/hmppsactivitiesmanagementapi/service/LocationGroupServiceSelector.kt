@@ -21,11 +21,9 @@ class LocationGroupServiceSelector(
     }
   }
 
-  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> {
-    return if (!overrideService.getLocationGroups(agencyId).isNullOrEmpty()) {
-      overrideService.locationGroupFilter(agencyId, groupName)
-    } else {
-      defaultService.locationGroupFilter(agencyId, groupName)
-    }
+  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> = if (!overrideService.getLocationGroups(agencyId).isNullOrEmpty()) {
+    overrideService.locationGroupFilter(agencyId, groupName)
+  } else {
+    defaultService.locationGroupFilter(agencyId, groupName)
   }
 }

@@ -167,190 +167,178 @@ data class Allocation(
    */
   fun endsOn(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
-  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) =
-    this.apply {
-      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
-      if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
-      if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) = this.apply {
+    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+    if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
+    if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
 
-      if (plannedDeallocation == null) {
-        plannedDeallocation = PlannedDeallocation(
-          allocation = this,
-          plannedReason = reason,
-          plannedDate = date,
-          plannedBy = deallocatedBy,
-          caseNoteId = caseNoteId,
-        )
-      } else {
-        plannedDeallocation?.apply {
-          plannedReason = reason
-          plannedDate = date
-          plannedBy = deallocatedBy
-          plannedAt = LocalDateTime.now()
-          this.caseNoteId = caseNoteId
-        }
+    if (plannedDeallocation == null) {
+      plannedDeallocation = PlannedDeallocation(
+        allocation = this,
+        plannedReason = reason,
+        plannedDate = date,
+        plannedBy = deallocatedBy,
+        caseNoteId = caseNoteId,
+      )
+    } else {
+      plannedDeallocation?.apply {
+        plannedReason = reason
+        plannedDate = date
+        plannedBy = deallocatedBy
+        plannedAt = LocalDateTime.now()
+        this.caseNoteId = caseNoteId
       }
     }
+  }
 
   fun plannedEndDate() = plannedDeallocation?.plannedDate ?: endDate
 
-  private fun maybeEndDate() =
-    when {
-      endDate != null -> endDate
-      plannedDeallocation?.plannedDate != null -> plannedDeallocation?.plannedDate
-      activitySchedule.endDate != null -> activitySchedule.endDate
-      activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
-      else -> null
-    }
+  private fun maybeEndDate() = when {
+    endDate != null -> endDate
+    plannedDeallocation?.plannedDate != null -> plannedDeallocation?.plannedDate
+    activitySchedule.endDate != null -> activitySchedule.endDate
+    activitySchedule.activity.endDate != null -> activitySchedule.activity.endDate
+    else -> null
+  }
 
-  fun deallocateNowWithReason(reason: DeallocationReason) =
-    this.apply {
-      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+  fun deallocateNowWithReason(reason: DeallocationReason) = this.apply {
+    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-      prisonerStatus = PrisonerStatus.ENDED
-      deallocatedReason = reason
-      deallocatedBy = ServiceName.SERVICE_NAME.value
-      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
-      endDate = LocalDate.now()
+    prisonerStatus = PrisonerStatus.ENDED
+    deallocatedReason = reason
+    deallocatedBy = ServiceName.SERVICE_NAME.value
+    deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+    endDate = LocalDate.now()
 
-      endExclusions(exclusions(ExclusionsFilter.PRESENT))
-      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
-    }
+    endExclusions(exclusions(ExclusionsFilter.PRESENT))
+    removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+  }
 
-  fun deallocateBeforeStart(reason: DeallocationReason, by: String) =
-    this.apply {
-      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+  fun deallocateBeforeStart(reason: DeallocationReason, by: String) = this.apply {
+    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-      prisonerStatus = PrisonerStatus.ENDED
-      deallocatedReason = reason
-      deallocatedBy = by
-      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
-      endDate = startDate
+    prisonerStatus = PrisonerStatus.ENDED
+    deallocatedReason = reason
+    deallocatedBy = by
+    deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+    endDate = startDate
 
-      endExclusions(exclusions(ExclusionsFilter.PRESENT))
-      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
-    }
+    endExclusions(exclusions(ExclusionsFilter.PRESENT))
+    removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+  }
 
   /**
    * This will default to ENDED for the reason unless there is planned deallocation that matches now which overrides it.
    *
    * Deallocation date cannot be in the future, this is deallocating/ending the allocation.
    */
-  fun deallocateNowOn(date: LocalDate) =
-    this.apply {
-      if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
+  fun deallocateNowOn(date: LocalDate) = this.apply {
+    if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
 
-      require(date <= LocalDate.now()) {
-        "Allocation '$allocationId' cannot be deallocated with the future date '$date'"
-      }
-
-      if (plannedDeallocation != null && plannedDeallocation?.plannedDate == date) {
-        prisonerStatus = PrisonerStatus.ENDED
-        deallocatedReason = plannedDeallocation?.plannedReason
-        deallocatedBy = plannedDeallocation?.plannedBy
-        deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
-        deallocationCaseNoteId = plannedDeallocation?.caseNoteId
-        endDate = date
-      } else {
-        prisonerStatus = PrisonerStatus.ENDED
-        deallocatedReason = DeallocationReason.ENDED
-        deallocatedBy = ServiceName.SERVICE_NAME.value
-        deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
-        endDate = date
-      }
-
-      endExclusions(exclusions(ExclusionsFilter.PRESENT))
-      removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    require(date <= LocalDate.now()) {
+      "Allocation '$allocationId' cannot be deallocated with the future date '$date'"
     }
+
+    if (plannedDeallocation != null && plannedDeallocation?.plannedDate == date) {
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = plannedDeallocation?.plannedReason
+      deallocatedBy = plannedDeallocation?.plannedBy
+      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+      deallocationCaseNoteId = plannedDeallocation?.caseNoteId
+      endDate = date
+    } else {
+      prisonerStatus = PrisonerStatus.ENDED
+      deallocatedReason = DeallocationReason.ENDED
+      deallocatedBy = ServiceName.SERVICE_NAME.value
+      deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
+      endDate = date
+    }
+
+    endExclusions(exclusions(ExclusionsFilter.PRESENT))
+    removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+  }
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }
 
-  fun allocationPay(incentiveLevelCode: String) =
-    payBand?.let { activitySchedule.activity.activityPayFor(it, incentiveLevelCode) }
+  fun allocationPay(incentiveLevelCode: String) = payBand?.let { activitySchedule.activity.activityPayFor(it, incentiveLevelCode) }
 
-  fun toModel() =
-    ModelAllocation(
-      id = allocationId,
-      prisonerNumber = prisonerNumber,
-      bookingId = bookingId,
-      prisonPayBand = payBand?.toModel(),
-      startDate = startDate,
-      endDate = plannedEndDate(),
-      allocatedTime = allocatedTime,
-      allocatedBy = allocatedBy,
-      activitySummary = activitySummary(),
-      activityId = activitySchedule.activity.activityId,
-      scheduleId = activitySchedule.activityScheduleId,
-      scheduleDescription = activitySchedule.description,
-      isUnemployment = activitySchedule.activity.isUnemployment(),
-      deallocatedBy = deallocatedBy,
-      deallocatedReason = deallocatedReason?.toModel(),
-      deallocatedTime = deallocatedTime,
-      suspendedBy = suspendedBy,
-      suspendedReason = suspendedReason,
-      suspendedTime = suspendedTime,
-      status = prisonerStatus,
-      plannedDeallocation = plannedDeallocation?.toModel(),
-      plannedSuspension = plannedSuspension()?.toModel(),
-      exclusions = exclusions(ExclusionsFilter.ACTIVE).toSlotModel(),
-    )
+  fun toModel() = ModelAllocation(
+    id = allocationId,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
+    prisonPayBand = payBand?.toModel(),
+    startDate = startDate,
+    endDate = plannedEndDate(),
+    allocatedTime = allocatedTime,
+    allocatedBy = allocatedBy,
+    activitySummary = activitySummary(),
+    activityId = activitySchedule.activity.activityId,
+    scheduleId = activitySchedule.activityScheduleId,
+    scheduleDescription = activitySchedule.description,
+    isUnemployment = activitySchedule.activity.isUnemployment(),
+    deallocatedBy = deallocatedBy,
+    deallocatedReason = deallocatedReason?.toModel(),
+    deallocatedTime = deallocatedTime,
+    suspendedBy = suspendedBy,
+    suspendedReason = suspendedReason,
+    suspendedTime = suspendedTime,
+    status = prisonerStatus,
+    plannedDeallocation = plannedDeallocation?.toModel(),
+    plannedSuspension = plannedSuspension()?.toModel(),
+    exclusions = exclusions(ExclusionsFilter.ACTIVE).toSlotModel(),
+  )
 
-  private fun isExcluded(date: LocalDate, timeSlot: TimeSlot) =
-    exclusionsOnDate(date).any {
-      date.dayOfWeek in it.getDaysOfWeek() &&
-        timeSlot == it.timeSlot &&
-        activitySchedule.getWeekNumber(date) == it.weekNumber
-    }
+  private fun isExcluded(date: LocalDate, timeSlot: TimeSlot) = exclusionsOnDate(date).any {
+    date.dayOfWeek in it.getDaysOfWeek() &&
+      timeSlot == it.timeSlot &&
+      activitySchedule.getWeekNumber(date) == it.weekNumber
+  }
 
-  fun activate() =
-    this.apply {
-      failWithMessageIfAllocationIsNotStatus("You can only activate pending allocations", PrisonerStatus.PENDING)
+  fun activate() = this.apply {
+    failWithMessageIfAllocationIsNotStatus("You can only activate pending allocations", PrisonerStatus.PENDING)
 
-      prisonerStatus = PrisonerStatus.ACTIVE
-    }
+    prisonerStatus = PrisonerStatus.ACTIVE
+  }
 
   /**
    * Only active and pending allocations can be auto-suspended.
    */
-  fun autoSuspend(dateTime: LocalDateTime, reason: String) =
-    this.apply {
-      failWithMessageIfAllocationIsNotStatus("You can only auto-suspend active, pending or suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING, PrisonerStatus.SUSPENDED)
+  fun autoSuspend(dateTime: LocalDateTime, reason: String) = this.apply {
+    failWithMessageIfAllocationIsNotStatus("You can only auto-suspend active, pending or suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.PENDING, PrisonerStatus.SUSPENDED)
 
-      prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
-      suspendedTime = dateTime
-      suspendedReason = reason
-      suspendedBy = ServiceName.SERVICE_NAME.value
+    prisonerStatus = PrisonerStatus.AUTO_SUSPENDED
+    suspendedTime = dateTime
+    suspendedReason = reason
+    suspendedBy = ServiceName.SERVICE_NAME.value
+  }
+
+  fun activatePlannedSuspension(prisonStatus: PrisonerStatus = PrisonerStatus.SUSPENDED) = this.apply {
+    val plannedSuspension = plannedSuspension()
+    require(plannedSuspension != null && plannedSuspension.hasStarted()) { "Failed to activate planned suspension for allocation with id $allocationId - no suspensions planned at this time" }
+    failWithMessageIfAllocationIsNotStatus("You can only suspend active or auto-suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.AUTO_SUSPENDED)
+
+    if (plannedSuspension.paid() == true) {
+      prisonerStatus = PrisonerStatus.SUSPENDED_WITH_PAY
+    } else {
+      prisonerStatus = prisonStatus
     }
+    suspendedTime = LocalDateTime.now()
+    suspendedReason = "Planned suspension"
+    suspendedBy = plannedSuspension.plannedBy()
+  }
 
-  fun activatePlannedSuspension(prisonStatus: PrisonerStatus = PrisonerStatus.SUSPENDED) =
-    this.apply {
-      val plannedSuspension = plannedSuspension()
-      require(plannedSuspension != null && plannedSuspension.hasStarted()) { "Failed to activate planned suspension for allocation with id $allocationId - no suspensions planned at this time" }
-      failWithMessageIfAllocationIsNotStatus("You can only suspend active or auto-suspended allocations", PrisonerStatus.ACTIVE, PrisonerStatus.AUTO_SUSPENDED)
-
-      if (plannedSuspension.paid() == true) {
-        prisonerStatus = PrisonerStatus.SUSPENDED_WITH_PAY
-      } else {
-        prisonerStatus = prisonStatus
-      }
-      suspendedTime = LocalDateTime.now()
-      suspendedReason = "Planned suspension"
-      suspendedBy = plannedSuspension.plannedBy()
-    }
-
-  fun reactivateSuspension() =
-    this.apply {
-      failWithMessageIfAllocationIsNotStatus(
-        "You can only reactivate suspended, suspended with pay or auto-suspended allocations",
-        PrisonerStatus.SUSPENDED,
-        PrisonerStatus.AUTO_SUSPENDED,
-        PrisonerStatus.SUSPENDED_WITH_PAY,
-      )
-      prisonerStatus = PrisonerStatus.ACTIVE
-      suspendedTime = null
-      suspendedReason = null
-      suspendedBy = null
-    }
+  fun reactivateSuspension() = this.apply {
+    failWithMessageIfAllocationIsNotStatus(
+      "You can only reactivate suspended, suspended with pay or auto-suspended allocations",
+      PrisonerStatus.SUSPENDED,
+      PrisonerStatus.AUTO_SUSPENDED,
+      PrisonerStatus.SUSPENDED_WITH_PAY,
+    )
+    prisonerStatus = PrisonerStatus.ACTIVE
+    suspendedTime = null
+    suspendedReason = null
+    suspendedBy = null
+  }
 
   private fun failWithMessageIfAllocationIsNotStatus(failureMessage: String, vararg statuses: PrisonerStatus) {
     if (status(*statuses).not()) {
@@ -384,9 +372,12 @@ data class Allocation(
   /**
    * Returns true if the date is between the start and end date, no clashing exclusions and not ended, otherwise false.
    */
-  fun canAttendOn(date: LocalDate, timeSlot: TimeSlot) = date.between(startDate, maybeEndDate()) && isExcluded(
-    date = date, timeSlot = timeSlot,
-  ).not() && prisonerStatus != PrisonerStatus.ENDED
+  fun canAttendOn(date: LocalDate, timeSlot: TimeSlot) = date.between(startDate, maybeEndDate()) &&
+    isExcluded(
+      date = date,
+      timeSlot = timeSlot,
+    ).not() &&
+    prisonerStatus != PrisonerStatus.ENDED
 
   fun syncExclusionsWithScheduleSlots(scheduleSlots: List<ActivityScheduleSlot>): Long? {
     var editedSome: Boolean
@@ -466,9 +457,7 @@ data class Allocation(
   }
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(allocationId = $allocationId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(allocationId = $allocationId )"
 }
 
 enum class PrisonerStatus {

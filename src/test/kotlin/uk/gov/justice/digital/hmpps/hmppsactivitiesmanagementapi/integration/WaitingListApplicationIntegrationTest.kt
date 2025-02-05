@@ -55,17 +55,16 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     assertThat(webTestClient.getById(1)).isNotNull()
   }
 
-  private fun WebTestClient.getById(id: Long) =
-    get()
-      .uri("/waiting-list-applications/$id")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(WaitingListApplication::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getById(id: Long) = get()
+    .uri("/waiting-list-applications/$id")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(WaitingListApplication::class.java)
+    .returnResult().responseBody
 
   @Sql("classpath:test_data/seed-activity-id-22.sql")
   @Test
@@ -104,18 +103,17 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun update(id: Long, request: WaitingListApplicationUpdateRequest) =
-    webTestClient.patch()
-      .uri("/waiting-list-applications/$id")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
-      .bodyValue(request)
-      .exchange()
-      .expectStatus().isAccepted
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(WaitingListApplication::class.java)
-      .returnResult().responseBody
+  private fun update(id: Long, request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
+    .uri("/waiting-list-applications/$id")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
+    .bodyValue(request)
+    .exchange()
+    .expectStatus().isAccepted
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(WaitingListApplication::class.java)
+    .returnResult().responseBody
 
   @Sql("classpath:test_data/seed-activity-id-26.sql")
   @Test
@@ -263,27 +261,25 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     prisonCode: String,
     application: WaitingListApplicationRequest,
     caseloadId: String? = CASELOAD_ID,
-  ) =
-    post()
-      .uri("/allocations/$prisonCode/waiting-list-application")
-      .bodyValue(application)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
-      .header(CASELOAD_ID, caseloadId)
-      .exchange()
+  ) = post()
+    .uri("/allocations/$prisonCode/waiting-list-application")
+    .bodyValue(application)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
+    .header(CASELOAD_ID, caseloadId)
+    .exchange()
 
   private fun WebTestClient.searchWaitingLists(
     prisonCode: String,
     request: WaitingListSearchRequest,
-  ): LinkedHashMap<String, Any> =
-    post().uri("/waiting-list-applications/$prisonCode/search")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-      .header(CASELOAD_ID, prisonCode)
-      .bodyValue(request)
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(typeReference<LinkedHashMap<String, Any>>())
-      .returnResult().responseBody!!
+  ): LinkedHashMap<String, Any> = post().uri("/waiting-list-applications/$prisonCode/search")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
+    .header(CASELOAD_ID, prisonCode)
+    .bodyValue(request)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(typeReference<LinkedHashMap<String, Any>>())
+    .returnResult().responseBody!!
 }

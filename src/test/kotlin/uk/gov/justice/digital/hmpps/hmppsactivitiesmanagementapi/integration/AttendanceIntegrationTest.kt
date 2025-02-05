@@ -274,22 +274,19 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       .jsonPath("$.[0].attendance[0].activitySummary").isEqualTo("Maths")
   }
 
-  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) =
-    get()
-      .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ModelAllAttendance::class.java)
-      .returnResult().responseBody
+  private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
+    .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ModelAllAttendance::class.java)
+    .returnResult().responseBody
 
-  private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) =
-    firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
-      ?: throw AssertionError("Prison attendance $prisonNumber not found.")
+  private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
+    ?: throw AssertionError("Prison attendance $prisonNumber not found.")
 
-  private fun List<ModelAttendance>.prisonerAttendanceReason(prisonNumber: String) =
-    firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
-      ?: throw AssertionError("Prison attendance $prisonNumber not found.")
+  private fun List<ModelAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }
+    ?: throw AssertionError("Prison attendance $prisonNumber not found.")
 }

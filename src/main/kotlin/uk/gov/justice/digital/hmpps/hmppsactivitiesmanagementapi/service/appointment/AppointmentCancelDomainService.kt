@@ -214,8 +214,7 @@ class AppointmentCancelDomainService(
       OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED
     }
     appointmentsToCancel.forEach {
-      it.attendees().forEach {
-          attendee ->
+      it.attendees().forEach { attendee ->
         outboundEventsService.send(syncEvent, attendee.appointmentAttendeeId)
       }
     }
@@ -225,8 +224,7 @@ class AppointmentCancelDomainService(
     appointmentsToUncancel: Set<Appointment>,
   ) {
     appointmentsToUncancel.forEach {
-      it.attendees().forEach {
-          attendee ->
+      it.attendees().forEach { attendee ->
         outboundEventsService.send(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED, attendee.appointmentAttendeeId)
       }
     }

@@ -39,14 +39,13 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
     identifierCaptor.secondValue isEqualTo 2
   }
 
-  private fun MockMvc.publishEvents(event: OutboundEvent, identifiers: List<Long>) =
-    post("/utility/publish-events") {
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(
-        PublishEventUtilityModel(
-          outboundEvent = event,
-          identifiers = identifiers,
-        ),
-      )
-    }
+  private fun MockMvc.publishEvents(event: OutboundEvent, identifiers: List<Long>) = post("/utility/publish-events") {
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      PublishEventUtilityModel(
+        outboundEvent = event,
+        identifiers = identifiers,
+      ),
+    )
+  }
 }

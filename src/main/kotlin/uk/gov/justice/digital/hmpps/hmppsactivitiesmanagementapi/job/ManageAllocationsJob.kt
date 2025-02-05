@@ -66,6 +66,5 @@ class ManageAllocationsJob(
     }
   }
 
-  private fun getRolledOutPrisonCodes(): List<String> =
-    rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
+  private fun getRolledOutPrisonCodes(): List<String> = rolloutPrisonService.getRolloutPrisons().map { it.prisonCode }
 }

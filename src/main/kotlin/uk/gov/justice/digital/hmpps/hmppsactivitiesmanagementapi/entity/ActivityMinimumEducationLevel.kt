@@ -40,9 +40,7 @@ data class ActivityMinimumEducationLevel(
   override fun hashCode(): Int = activityMinimumEducationLevelId.hashCode()
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(activityMinimumEducatinLevelId = $activityMinimumEducationLevelId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(activityMinimumEducatinLevelId = $activityMinimumEducationLevelId )"
 
   fun toModel() = ModelActivityMinimumEducationLevel(
     id = activityMinimumEducationLevelId,

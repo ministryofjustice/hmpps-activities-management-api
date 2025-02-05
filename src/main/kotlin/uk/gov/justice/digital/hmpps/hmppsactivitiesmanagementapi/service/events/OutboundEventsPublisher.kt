@@ -48,6 +48,5 @@ class OutboundEventsPublisher(
     log.info("Ignoring publishing event $event")
   }
 
-  private fun metaData(payload: OutboundHMPPSDomainEvent) =
-    mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(payload.eventType).build())
+  private fun metaData(payload: OutboundHMPPSDomainEvent) = mapOf("eventType" to MessageAttributeValue.builder().dataType("String").stringValue(payload.eventType).build())
 }

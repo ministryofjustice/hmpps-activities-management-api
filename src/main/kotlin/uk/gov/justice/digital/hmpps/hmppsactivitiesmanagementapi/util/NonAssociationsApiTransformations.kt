@@ -6,5 +6,4 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassoc
  * Transform functions providing a thin layer to transform non-associations api types into their API model equivalents and vice-versa.
  */
 
-fun List<NonAssociation>.hasNonAssociations(prisonerNumber: String) =
-  this.any { nonAssociation -> nonAssociation.firstPrisonerNumber == prisonerNumber || nonAssociation.secondPrisonerNumber == prisonerNumber }
+fun List<NonAssociation>.hasNonAssociations(prisonerNumber: String) = this.any { nonAssociation -> nonAssociation.firstPrisonerNumber == prisonerNumber || nonAssociation.secondPrisonerNumber == prisonerNumber }

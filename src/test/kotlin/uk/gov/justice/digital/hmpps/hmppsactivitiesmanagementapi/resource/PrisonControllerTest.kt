@@ -77,8 +77,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     verify(activityService, times(1)).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
   }
 
-  private fun MockMvc.getActivities(prisonCode: String) =
-    get("/prison/{prisonCode}/activities", prisonCode)
+  private fun MockMvc.getActivities(prisonCode: String) = get("/prison/{prisonCode}/activities", prisonCode)
 
   @Test
   fun `200 response when get pay bands by Moorland prison code`() {
@@ -189,26 +188,22 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     }.andExpect { status { isForbidden() } }
   }
 
-  private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) =
-    get("/prison/$prisonCode/prison-pay-bands")
+  private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) = get("/prison/$prisonCode/prison-pay-bands")
 
-  private fun MockMvc.createPayBand(prisonCode: String, request: PrisonPayBandCreateRequest) =
-    post("/prison/$prisonCode/prison-pay-band") {
-      principal = user
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(request)
-    }
+  private fun MockMvc.createPayBand(prisonCode: String, request: PrisonPayBandCreateRequest) = post("/prison/$prisonCode/prison-pay-band") {
+    principal = user
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(request)
+  }
 
-  private fun MockMvc.updatePayBand(prisonCode: String, prisonPayBandId: Int, request: PrisonPayBandUpdateRequest) =
-    patch("/prison/$prisonCode/prison-pay-band/$prisonPayBandId") {
-      this.principal = user
-      contentType = MediaType.APPLICATION_JSON
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-      content = mapper.writeValueAsBytes(request)
-    }
+  private fun MockMvc.updatePayBand(prisonCode: String, prisonPayBandId: Int, request: PrisonPayBandUpdateRequest) = patch("/prison/$prisonCode/prison-pay-band/$prisonPayBandId") {
+    this.principal = user
+    contentType = MediaType.APPLICATION_JSON
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(request)
+  }
 
-  private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) =
-    get("/prison/prison-regime/$prisonCode")
+  private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) = get("/prison/prison-regime/$prisonCode")
 }

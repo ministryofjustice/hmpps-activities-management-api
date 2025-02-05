@@ -114,23 +114,19 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun AppointmentSeriesCreateRequest.categoryDescription() =
-    referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
-      ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
+  private fun AppointmentSeriesCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+    ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
-  private fun AppointmentSeriesCreateRequest.locationDescription(): String {
-    return if (inCell) {
-      "In cell"
-    } else {
-      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
-        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
-    }
+  private fun AppointmentSeriesCreateRequest.locationDescription(): String = if (inCell) {
+    "In cell"
+  } else {
+    locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
+      ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
   }
 
-  private fun AppointmentSeriesCreateRequest.createNumberBookingIdMap() =
-    prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
-      .filter { prisoner -> prisoner.prisonId == prisonCode }
-      .associate { it.prisonerNumber to it.bookingId!!.toLong() }
+  private fun AppointmentSeriesCreateRequest.createNumberBookingIdMap() = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
+    .filter { prisoner -> prisoner.prisonId == prisonCode }
+    .associate { it.prisonerNumber to it.bookingId!!.toLong() }
 
   private fun AppointmentSeriesCreateRequest.failIfMissingPrisoners(prisonNumberBookingIdMap: Map<String, Long>) {
     prisonerNumbers.filterNot(prisonNumberBookingIdMap::containsKey).let {

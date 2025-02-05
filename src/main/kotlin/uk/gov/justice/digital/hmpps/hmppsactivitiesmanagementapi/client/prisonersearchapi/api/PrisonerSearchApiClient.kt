@@ -33,8 +33,7 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
     }
   }
 
-  fun findByPrisonerNumbersMap(prisonerNumbers: List<String>): Map<String, Prisoner> =
-    findByPrisonerNumbers(prisonerNumbers).associateBy { it.prisonerNumber }
+  fun findByPrisonerNumbersMap(prisonerNumbers: List<String>): Map<String, Prisoner> = findByPrisonerNumbers(prisonerNumbers).associateBy { it.prisonerNumber }
 
   suspend fun findByPrisonerNumbersAsync(prisonerNumbers: List<String>): List<Prisoner> {
     if (prisonerNumbers.isEmpty()) return emptyList()
@@ -45,14 +44,13 @@ class PrisonerSearchApiClient(private val prisonerSearchApiWebClient: WebClient)
       .awaitBody()
   }
 
-  fun findByPrisonerNumber(prisonerNumber: String): Prisoner? =
-    prisonerSearchApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/prisoner/{prisonerNumber}")
-          .build(prisonerNumber)
-      }
-      .retrieve()
-      .bodyToMono(typeReference<Prisoner>())
-      .block()
+  fun findByPrisonerNumber(prisonerNumber: String): Prisoner? = prisonerSearchApiWebClient.get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/prisoner/{prisonerNumber}")
+        .build(prisonerNumber)
+    }
+    .retrieve()
+    .bodyToMono(typeReference<Prisoner>())
+    .block()
 }

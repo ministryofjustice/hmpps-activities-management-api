@@ -125,24 +125,22 @@ class InterestingEventHandler(
     return Outcome.success()
   }
 
-  private fun InboundEvent.getEventDesc(): EventReviewDescription? {
-    return when (this) {
-      is ActivitiesChangedEvent ->
-        when (action()) {
-          Action.END -> EventReviewDescription.ACTIVITY_ENDED
-          Action.SUSPEND -> EventReviewDescription.ACTIVITY_SUSPENDED
-          else -> null
-        }
-      is PrisonerReleasedEvent ->
-        if (isPermanent()) {
-          EventReviewDescription.PERMANENT_RELEASE
-        } else if (isTemporary()) {
-          EventReviewDescription.TEMPORARY_RELEASE
-        } else {
-          EventReviewDescription.RELEASED
-        }
-      else -> null
-    }
+  private fun InboundEvent.getEventDesc(): EventReviewDescription? = when (this) {
+    is ActivitiesChangedEvent ->
+      when (action()) {
+        Action.END -> EventReviewDescription.ACTIVITY_ENDED
+        Action.SUSPEND -> EventReviewDescription.ACTIVITY_SUSPENDED
+        else -> null
+      }
+    is PrisonerReleasedEvent ->
+      if (isPermanent()) {
+        EventReviewDescription.PERMANENT_RELEASE
+      } else if (isTemporary()) {
+        EventReviewDescription.TEMPORARY_RELEASE
+      } else {
+        EventReviewDescription.RELEASED
+      }
+    else -> null
   }
 
   private fun getPrisonerDetailsFor(prisonerNumber: String) = prisonerSearchApiAppWebClient.findByPrisonerNumber(prisonerNumber)

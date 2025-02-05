@@ -90,23 +90,22 @@ data class WaitingList(
 
   fun isApproved() = isStatus(WaitingListStatus.APPROVED)
 
-  fun allocated(allocation: Allocation) =
-    apply {
-      require(allocation.prisonCode() == prisonCode) {
-        "Allocation ${allocation.allocationId} prison does not match with waiting list $waitingListId"
-      }
-
-      require(allocation.prisonerNumber == prisonerNumber) {
-        "Allocation ${allocation.allocationId} prisoner number does not match with waiting list $waitingListId"
-      }
-
-      require(status != WaitingListStatus.ALLOCATED) {
-        "Waiting list $waitingListId is already allocated"
-      }
-
-      this.status = WaitingListStatus.ALLOCATED
-      this.allocation = allocation
+  fun allocated(allocation: Allocation) = apply {
+    require(allocation.prisonCode() == prisonCode) {
+      "Allocation ${allocation.allocationId} prison does not match with waiting list $waitingListId"
     }
+
+    require(allocation.prisonerNumber == prisonerNumber) {
+      "Allocation ${allocation.allocationId} prisoner number does not match with waiting list $waitingListId"
+    }
+
+    require(status != WaitingListStatus.ALLOCATED) {
+      "Waiting list $waitingListId is already allocated"
+    }
+
+    this.status = WaitingListStatus.ALLOCATED
+    this.allocation = allocation
+  }
 }
 
 enum class WaitingListStatus {

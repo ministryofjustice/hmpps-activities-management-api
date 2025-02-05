@@ -17,7 +17,6 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-
 @Service
 class S3Service(
   private val s3ClientAnalyticalPlatform: S3Client,

@@ -62,8 +62,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
   }
 
-  override fun controller() =
-    JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock, purposefulActivityReportsJob)
+  override fun controller() = JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock, purposefulActivityReportsJob)
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
@@ -159,8 +158,7 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     verify(appointmentsMetricsJob).execute()
   }
 
-  private fun MockMvc.triggerJob(jobName: String) =
-    post("/job/$jobName") {
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.triggerJob(jobName: String) = post("/job/$jobName") {
+    contentType = MediaType.APPLICATION_JSON
+  }
 }

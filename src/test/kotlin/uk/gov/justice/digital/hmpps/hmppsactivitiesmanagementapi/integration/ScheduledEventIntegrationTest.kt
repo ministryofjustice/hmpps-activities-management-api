@@ -44,16 +44,15 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
   @Nested
   inner class GetScheduledEventsForSinglePrisoner {
-    private fun WebTestClient.getScheduledEventsForSinglePrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate) =
-      get()
-        .uri("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
-        .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-        .exchange()
-        .expectStatus().isOk
-        .expectHeader().contentType(MediaType.APPLICATION_JSON)
-        .expectBody(PrisonerScheduledEvents::class.java)
-        .returnResult().responseBody
+    private fun WebTestClient.getScheduledEventsForSinglePrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate) = get()
+      .uri("/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-3.sql")
@@ -266,17 +265,16 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       prisonCode: String,
       prisonerNumbers: Set<String>,
       date: LocalDate,
-    ) =
-      post()
-        .uri("/scheduled-events/prison/$prisonCode?date=$date")
-        .bodyValue(prisonerNumbers)
-        .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-        .exchange()
-        .expectStatus().isOk
-        .expectHeader().contentType(MediaType.APPLICATION_JSON)
-        .expectBody(PrisonerScheduledEvents::class.java)
-        .returnResult().responseBody
+    ) = post()
+      .uri("/scheduled-events/prison/$prisonCode?date=$date")
+      .bodyValue(prisonerNumbers)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
 
     @BeforeEach
     fun setUp() {
@@ -709,17 +707,16 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       internalLocationIds: Set<Long>,
       date: LocalDate,
       timeSlot: TimeSlot? = null,
-    ) =
-      post()
-        .uri("/scheduled-events/prison/$prisonCode/locations?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
-        .bodyValue(internalLocationIds)
-        .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-        .exchange()
-        .expectStatus().isOk
-        .expectHeader().contentType(MediaType.APPLICATION_JSON)
-        .expectBodyList(InternalLocationEvents::class.java)
-        .returnResult().responseBody
+    ) = post()
+      .uri("/scheduled-events/prison/$prisonCode/locations?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: ""))
+      .bodyValue(internalLocationIds)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(InternalLocationEvents::class.java)
+      .returnResult().responseBody
   }
 
   private fun adjudicationsMock(

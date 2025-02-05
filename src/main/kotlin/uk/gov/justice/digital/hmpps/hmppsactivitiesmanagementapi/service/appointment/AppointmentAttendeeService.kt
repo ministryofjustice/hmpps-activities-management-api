@@ -105,19 +105,16 @@ class AppointmentAttendeeService(
     }
   }
 
-  private fun getPrisonNumbersForFutureAppointments(prisonCode: String, daysAfterNow: Long) =
-    LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(daysAfterNow)).flatMap { date ->
-      appointmentRepository.findAllByPrisonCodeAndStartDate(prisonCode, date).flatMap { it.prisonerNumbers() }
-    }.distinct()
+  private fun getPrisonNumbersForFutureAppointments(prisonCode: String, daysAfterNow: Long) = LocalDateRange(LocalDate.now(), LocalDate.now().plusDays(daysAfterNow)).flatMap { date ->
+    appointmentRepository.findAllByPrisonCodeAndStartDate(prisonCode, date).flatMap { it.prisonerNumbers() }
+  }.distinct()
 
   private fun List<Prisoner>.permanentlyReleased() = filter { it.isPermanentlyReleased() }
 
-  private fun List<Prisoner>.notInExpectedPrison(prisonCode: String) =
-    filterNot { it.isPermanentlyReleased() }
-      .filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonCode) }
+  private fun List<Prisoner>.notInExpectedPrison(prisonCode: String) = filterNot { it.isPermanentlyReleased() }
+    .filter { prisoner -> prisoner.isOutOfPrison() || prisoner.isAtDifferentLocationTo(prisonCode) }
 
-  private fun List<Prisoner>.getExpiredMoves(prisonPlan: RolloutPrisonPlan) =
-    prisonApiClient.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, this.map { it.prisonerNumber }.toSet())
-      .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
-      .filter { prisonPlan.hasExpired { it.value.movementDate } }
+  private fun List<Prisoner>.getExpiredMoves(prisonPlan: RolloutPrisonPlan) = prisonApiClient.getMovementsForPrisonersFromPrison(prisonPlan.prisonCode, this.map { it.prisonerNumber }.toSet())
+    .groupBy { it.offenderNo }.mapValues { it -> it.value.maxBy { it.movementDateTime() } }
+    .filter { prisonPlan.hasExpired { it.value.movementDate } }
 }

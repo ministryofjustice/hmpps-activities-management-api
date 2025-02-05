@@ -56,28 +56,27 @@ data class AppointmentAttendanceSummary(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
     locationMap: Map<Long, Location>,
-  ) =
-    AppointmentAttendanceSummaryModel(
-      id = appointmentId,
-      prisonCode = prisonCode,
-      appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-      internalLocation = if (inCell) {
-        null
-      } else {
-        locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
-      },
-      startDate = startDate,
-      startTime = startTime,
-      endTime = endTime,
-      isCancelled = isCancelled,
-      attendeeCount = attendeeCount,
-      attendedCount = attendedCount,
-      nonAttendedCount = nonAttendedCount,
-      notRecordedCount = notRecordedCount,
-      attendees = attendees.toResult(),
-      eventTierType = if (eventTier != null) EventTierType.valueOf(eventTier) else null,
-      inCell = inCell,
-    )
+  ) = AppointmentAttendanceSummaryModel(
+    id = appointmentId,
+    prisonCode = prisonCode,
+    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    internalLocation = if (inCell) {
+      null
+    } else {
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+    },
+    startDate = startDate,
+    startTime = startTime,
+    endTime = endTime,
+    isCancelled = isCancelled,
+    attendeeCount = attendeeCount,
+    attendedCount = attendedCount,
+    nonAttendedCount = nonAttendedCount,
+    notRecordedCount = notRecordedCount,
+    attendees = attendees.toResult(),
+    eventTierType = if (eventTier != null) EventTierType.valueOf(eventTier) else null,
+    inCell = inCell,
+  )
 }
 
 fun List<AppointmentAttendanceSummary>.toModel(

@@ -25,69 +25,63 @@ fun prisonerReceivedFromTemporaryAbsence(
   ),
 )
 
-fun prisonerUpdatedEvent(prisonerNumber: String = "XXXXXX", categoriesChanged: List<String> = listOf<String>("LOCATION")) =
-  PrisonerUpdatedEvent(
-    PrisonerUpdatedInformation(
-      nomsNumber = prisonerNumber,
-      categoriesChanged = categoriesChanged,
-    ),
-  )
+fun prisonerUpdatedEvent(prisonerNumber: String = "XXXXXX", categoriesChanged: List<String> = listOf<String>("LOCATION")) = PrisonerUpdatedEvent(
+  PrisonerUpdatedInformation(
+    nomsNumber = prisonerNumber,
+    categoriesChanged = categoriesChanged,
+  ),
+)
 
-fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String = "MDI", action: String = "YES") =
-  AppointmentsChangedEvent(
-    personReference = PersonReference(
-      identifiers = listOf(Identifier("NOMS", prisonerNumber)),
-    ),
-    AppointmentsChangedInformation(
-      action,
-      prisonId = prisonId,
-      user = "SOME_USER",
+fun appointmentsChangedEvent(prisonerNumber: String = "XXXXXX", prisonId: String = "MDI", action: String = "YES") = AppointmentsChangedEvent(
+  personReference = PersonReference(
+    identifiers = listOf(Identifier("NOMS", prisonerNumber)),
+  ),
+  AppointmentsChangedInformation(
+    action,
+    prisonId = prisonId,
+    user = "SOME_USER",
 
-    ),
-  )
+  ),
+)
 
-fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
-  IncentivesInsertedEvent(
-    IncentivesInformation(
-      nomsNumber = prisonerNumber,
-      prisonId = prisonId,
-      reason = reason,
-    ),
-  )
+fun iepReviewInsertedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) = IncentivesInsertedEvent(
+  IncentivesInformation(
+    nomsNumber = prisonerNumber,
+    prisonId = prisonId,
+    reason = reason,
+  ),
+)
 
-fun iepReviewUpdatedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
-  IncentivesUpdatedEvent(
-    IncentivesInformation(
-      nomsNumber = prisonerNumber,
-      prisonId = prisonId,
-      reason = reason,
-    ),
-  )
+fun iepReviewUpdatedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) = IncentivesUpdatedEvent(
+  IncentivesInformation(
+    nomsNumber = prisonerNumber,
+    prisonId = prisonId,
+    reason = reason,
+  ),
+)
 
-fun iepReviewDeletedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) =
-  IncentivesDeletedEvent(
-    IncentivesInformation(
-      nomsNumber = prisonerNumber,
-      prisonId = prisonId,
-      reason = reason,
-    ),
-  )
+fun iepReviewDeletedEvent(prisonerNumber: String = "XXXXXX", prisonId: String? = null, reason: String? = null) = IncentivesDeletedEvent(
+  IncentivesInformation(
+    nomsNumber = prisonerNumber,
+    prisonId = prisonId,
+    reason = reason,
+  ),
+)
 
 fun activitiesChangedEvent(
   prisonerNumber: String,
   action: Action,
   prisonId: String,
-) =
-  ActivitiesChangedEvent(
-    personReference = PersonReference(
-      identifiers = listOf(Identifier("NOMS", prisonerNumber)),
-    ),
-    additionalInformation = ActivitiesChangedInformation(
-      action = action.name,
-      prisonId = prisonId,
-      user = "SOME_USER",
-    ),
-  )
+) = ActivitiesChangedEvent(
+  personReference = PersonReference(
+    identifiers = listOf(Identifier("NOMS", prisonerNumber)),
+  ),
+  additionalInformation = ActivitiesChangedInformation(
+    action = action.name,
+    prisonId = prisonId,
+    user = "SOME_USER",
+  ),
+)
 
 fun alertsUpdatedEvent(
   prisonerNumber: String = "123456",

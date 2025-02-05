@@ -157,7 +157,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Nested
   @DisplayName("Attendance Summary")
-  inner class AttendanceSummaryTests() {
+  inner class AttendanceSummaryTests {
     @Test
     fun `200 response when request succeeds`() {
       val now = LocalDate.now()
@@ -221,10 +221,10 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Get Schedule instance by id")
-    inner class GetScheduleInstanceById() {
+    inner class GetScheduleInstanceById {
       @Test
       @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
       fun `Get schedule instance by id (ROLE_NOMIS_ACTIVITIES) - 200`() {
@@ -236,12 +236,9 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     }
   }
 
-  private fun MockMvc.getScheduledInstanceById(instanceId: String) =
-    get("/scheduled-instances/$instanceId")
+  private fun MockMvc.getScheduledInstanceById(instanceId: String) = get("/scheduled-instances/$instanceId")
 
-  private fun MockMvc.getScheduledAttendeesByScheduledInstance(instanceId: String) =
-    get("/scheduled-instances/$instanceId/scheduled-attendees")
+  private fun MockMvc.getScheduledAttendeesByScheduledInstance(instanceId: String) = get("/scheduled-instances/$instanceId/scheduled-attendees")
 
-  private fun MockMvc.getAttendancesSummary(prisonCode: String, date: LocalDate) =
-    get("/scheduled-instances/attendance-summary?prisonCode=$prisonCode&date=$date")
+  private fun MockMvc.getAttendancesSummary(prisonCode: String, date: LocalDate) = get("/scheduled-instances/attendance-summary?prisonCode=$prisonCode&date=$date")
 }

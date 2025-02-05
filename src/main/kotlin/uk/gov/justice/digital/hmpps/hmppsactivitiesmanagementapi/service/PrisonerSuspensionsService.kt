@@ -78,7 +78,9 @@ class PrisonerSuspensionsService(
         allocation.takeIf { it.status(PrisonerStatus.ACTIVE) && it.isCurrentlySuspended() }?.let { alloc ->
           alloc.activatePlannedSuspension(request.status)
           attendanceSuspensionDomainService.suspendFutureAttendancesForAllocation(
-            dateTime = LocalDateTime.now(), allocation = alloc, issuePayment = issuePayment,
+            dateTime = LocalDateTime.now(),
+            allocation = alloc,
+            issuePayment = issuePayment,
           ).map(Attendance::attendanceId)
         } ?: emptyList()
       }

@@ -38,10 +38,8 @@ class AttendanceSuspensionDomainService(
   fun resetSuspendedFutureAttendancesForAllocation(
     dateTime: LocalDateTime,
     allocation: Allocation,
-  ): List<Attendance> {
-    return resetFutureAttendances(AttendanceReasonEnum.SUSPENDED, dateTime, allocation).also {
-      log.info("Reset ${it.size} suspended attendances for allocation with ID ${allocation.allocationId}.")
-    }
+  ): List<Attendance> = resetFutureAttendances(AttendanceReasonEnum.SUSPENDED, dateTime, allocation).also {
+    log.info("Reset ${it.size} suspended attendances for allocation with ID ${allocation.allocationId}.")
   }
 
   fun resetAutoSuspendedFutureAttendancesForAllocation(
@@ -64,16 +62,14 @@ class AttendanceSuspensionDomainService(
       }
   }
 
-  private fun completeFutureAttendances(reason: AttendanceReason, dateTime: LocalDateTime, allocation: Allocation, issuePayment: Boolean = false): List<Attendance> {
-    return attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
-      dateTime.toLocalDate(),
-      allocation.activitySchedule.activityScheduleId,
-      AttendanceStatus.WAITING,
-      allocation.prisonerNumber,
-    )
-      .filter { attendance -> attendance.editable() && attendance.scheduledInstance.isFuture(dateTime) }
-      .onEach { attendance -> attendance.complete(reason = reason, issuePayment = issuePayment) }
-  }
+  private fun completeFutureAttendances(reason: AttendanceReason, dateTime: LocalDateTime, allocation: Allocation, issuePayment: Boolean = false): List<Attendance> = attendanceRepository.findAttendancesOnOrAfterDateForAllocation(
+    dateTime.toLocalDate(),
+    allocation.activitySchedule.activityScheduleId,
+    AttendanceStatus.WAITING,
+    allocation.prisonerNumber,
+  )
+    .filter { attendance -> attendance.editable() && attendance.scheduledInstance.isFuture(dateTime) }
+    .onEach { attendance -> attendance.complete(reason = reason, issuePayment = issuePayment) }
 
   private fun resetFutureAttendances(reasonToReset: AttendanceReasonEnum, dateTime: LocalDateTime, allocation: Allocation): List<Attendance> {
     val now = LocalDateTime.now()

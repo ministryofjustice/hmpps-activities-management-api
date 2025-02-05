@@ -104,14 +104,13 @@ class WebClientConfiguration(
     clientRegistrationRepository: ClientRegistrationRepository,
     authorizedClientRepository: OAuth2AuthorizedClientRepository,
     builder: WebClient.Builder,
-  ): WebClient =
-    getOAuthWebClient(
-      authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
-      builder,
-      prisonerSearchApiUrl,
-      "prisoner-search-api",
-      shorterTimeout,
-    ).also { log.info("WEB CLIENT CONFIG: creating prisoner search api request scope web client") }
+  ): WebClient = getOAuthWebClient(
+    authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
+    builder,
+    prisonerSearchApiUrl,
+    "prisoner-search-api",
+    shorterTimeout,
+  ).also { log.info("WEB CLIENT CONFIG: creating prisoner search api request scope web client") }
 
   @Bean
   fun prisonerSearchApiAppWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
@@ -123,11 +122,10 @@ class WebClientConfiguration(
     .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
   @Bean
-  fun caseNotesApiWebClient(): WebClient =
-    webClientBuilder.baseUrl(caseNotesApiUrl)
-      .timeout(apiTimeout)
-      .filter(addAuthHeaderFilterFunction())
-      .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
+  fun caseNotesApiWebClient(): WebClient = webClientBuilder.baseUrl(caseNotesApiUrl)
+    .timeout(apiTimeout)
+    .filter(addAuthHeaderFilterFunction())
+    .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
 
   @Bean
   fun nonAssociationsApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
@@ -176,20 +174,18 @@ class WebClientConfiguration(
     return authorizedClientManager
   }
 
-  private fun addAuthHeaderFilterFunction() =
-    ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
-      val token = when (val authentication = SecurityContextHolder.getContext().authentication) {
-        is AuthAwareAuthenticationToken -> authentication.token.tokenValue
-        else -> throw IllegalStateException("Auth token not present")
-      }
-
-      next.exchange(
-        ClientRequest.from(request)
-          .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-          .build(),
-      )
+  private fun addAuthHeaderFilterFunction() = ExchangeFilterFunction { request: ClientRequest, next: ExchangeFunction ->
+    val token = when (val authentication = SecurityContextHolder.getContext().authentication) {
+      is AuthAwareAuthenticationToken -> authentication.token.tokenValue
+      else -> throw IllegalStateException("Auth token not present")
     }
 
-  private fun WebClient.Builder.timeout(duration: Duration) =
-    this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
+    next.exchange(
+      ClientRequest.from(request)
+        .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+        .build(),
+    )
+  }
+
+  private fun WebClient.Builder.timeout(duration: Duration) = this.clientConnector(ReactorClientHttpConnector(HttpClient.create().responseTimeout(duration)))
 }

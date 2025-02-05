@@ -8,17 +8,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 class ReferenceCodeService(
   private val prisonApiClient: PrisonApiClient,
 ) {
-  fun getReferenceCodes(domain: ReferenceCodeDomain): List<ReferenceCode> =
-    prisonApiClient.getReferenceCodes(domain.value)
+  fun getReferenceCodes(domain: ReferenceCodeDomain): List<ReferenceCode> = prisonApiClient.getReferenceCodes(domain.value)
 
-  fun getReferenceCodesMap(domain: ReferenceCodeDomain): Map<String, ReferenceCode> =
-    getReferenceCodes(domain).associateBy { it.code }
+  fun getReferenceCodesMap(domain: ReferenceCodeDomain): Map<String, ReferenceCode> = getReferenceCodes(domain).associateBy { it.code }
 
-  fun getScheduleReasons(eventType: ScheduleReasonEventType): List<ReferenceCode> =
-    prisonApiClient.getScheduleReasons(eventType.value)
+  fun getScheduleReasons(eventType: ScheduleReasonEventType): List<ReferenceCode> = prisonApiClient.getScheduleReasons(eventType.value)
 
-  fun getScheduleReasonsMap(eventType: ScheduleReasonEventType): Map<String, ReferenceCode> =
-    getScheduleReasons(eventType).associateBy { it.code }
+  fun getScheduleReasonsMap(eventType: ScheduleReasonEventType): Map<String, ReferenceCode> = getScheduleReasons(eventType).associateBy { it.code }
 }
 
 enum class ReferenceCodeDomain(val value: String) {
