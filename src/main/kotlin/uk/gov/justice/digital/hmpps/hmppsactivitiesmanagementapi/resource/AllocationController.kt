@@ -94,8 +94,7 @@ class AllocationController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
-  fun getAllocationById(@PathVariable("allocationId") allocationId: Long) =
-    allocationsService.getAllocationById(allocationId)
+  fun getAllocationById(@PathVariable("allocationId") allocationId: Long) = allocationsService.getAllocationById(allocationId)
 
   @Operation(
     summary = "Get the list of deallocation reasons",
@@ -253,8 +252,7 @@ class AllocationController(
       required = true,
     )
     request: WaitingListApplicationRequest,
-  ): ResponseEntity<Any> =
-    waitingListService.addPrisoner(prisonCode, request, principal.name).let { ResponseEntity.noContent().build() }
+  ): ResponseEntity<Any> = waitingListService.addPrisoner(prisonCode, request, principal.name).let { ResponseEntity.noContent().build() }
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PostMapping(value = ["/{prisonCode}/suspend"])

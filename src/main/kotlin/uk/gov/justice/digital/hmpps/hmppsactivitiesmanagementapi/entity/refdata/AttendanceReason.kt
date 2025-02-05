@@ -41,9 +41,7 @@ data class AttendanceReason(
 ) {
 
   @Override
-  override fun toString(): String {
-    return this::class.simpleName + "(attendanceReasonId = $attendanceReasonId )"
-  }
+  override fun toString(): String = this::class.simpleName + "(attendanceReasonId = $attendanceReasonId )"
 
   fun toModel() = modelAttendanceReason(
     id = attendanceReasonId,

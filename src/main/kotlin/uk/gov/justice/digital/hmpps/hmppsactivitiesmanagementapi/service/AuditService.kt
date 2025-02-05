@@ -95,12 +95,10 @@ class AuditService(
     }
   }
 
-  private fun createSort(sortDirection: String, sortField: String): Sort? {
-    return when (sortDirection) {
-      "ascending" -> Sort.by(sortField).ascending()
-      "descending" -> Sort.by(sortField).descending()
-      else -> null
-    }
+  private fun createSort(sortDirection: String, sortField: String): Sort? = when (sortDirection) {
+    "ascending" -> Sort.by(sortField).ascending()
+    "descending" -> Sort.by(sortField).descending()
+    else -> null
   }
 }
 

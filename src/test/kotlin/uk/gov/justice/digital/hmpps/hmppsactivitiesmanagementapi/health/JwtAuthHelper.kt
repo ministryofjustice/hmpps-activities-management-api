@@ -24,19 +24,18 @@ class JwtAuthHelper(private val keyPair: KeyPair) {
     isClientToken: Boolean,
     expiryTime: Duration = Duration.ofHours(1),
     jwtId: String = UUID.randomUUID().toString(),
-  ): String =
-    mutableMapOf<String, Any>()
-      .also { if (!isClientToken) subject?.let { subject -> it["user_name"] = subject } }
-      .also { it["client_id"] = "activities-management-admin-1" }
-      .also { roles?.let { roles -> it["authorities"] = roles } }
-      .also { scope?.let { scope -> it["scope"] = scope } }
-      .let {
-        Jwts.builder()
-          .setId(jwtId)
-          .setSubject(subject)
-          .addClaims(it.toMap())
-          .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
-          .signWith(keyPair.private, SignatureAlgorithm.RS256)
-          .compact()
-      }
+  ): String = mutableMapOf<String, Any>()
+    .also { if (!isClientToken) subject?.let { subject -> it["user_name"] = subject } }
+    .also { it["client_id"] = "activities-management-admin-1" }
+    .also { roles?.let { roles -> it["authorities"] = roles } }
+    .also { scope?.let { scope -> it["scope"] = scope } }
+    .let {
+      Jwts.builder()
+        .setId(jwtId)
+        .setSubject(subject)
+        .addClaims(it.toMap())
+        .setExpiration(Date(System.currentTimeMillis() + expiryTime.toMillis()))
+        .signWith(keyPair.private, SignatureAlgorithm.RS256)
+        .compact()
+    }
 }

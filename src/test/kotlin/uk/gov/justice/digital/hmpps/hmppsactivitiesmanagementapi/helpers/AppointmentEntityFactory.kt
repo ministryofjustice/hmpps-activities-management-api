@@ -132,13 +132,12 @@ fun appointmentEntity(
   }
 }
 
-private fun appointmentAttendeeEntity(appointment: Appointment, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
-  AppointmentAttendee(
-    appointmentAttendeeId = appointmentAttendeeId,
-    appointment = appointment,
-    prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-  )
+private fun appointmentAttendeeEntity(appointment: Appointment, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) = AppointmentAttendee(
+  appointmentAttendeeId = appointmentAttendeeId,
+  appointment = appointment,
+  prisonerNumber = prisonerNumber,
+  bookingId = bookingId,
+)
 
 internal fun appointmentInstanceEntity(
   appointmentInstanceId: Long = 3,
@@ -152,37 +151,36 @@ internal fun appointmentInstanceEntity(
   customName: String? = null,
   categoryCode: String = "TEST",
   isCancelled: Boolean = false,
-) =
-  AppointmentInstance(
-    appointmentInstanceId = appointmentInstanceId,
-    appointmentSeriesId = 1,
-    appointmentId = 2,
-    appointmentAttendeeId = appointmentInstanceId,
-    appointmentType = AppointmentType.INDIVIDUAL,
-    prisonCode = "TPR",
-    prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-    categoryCode = categoryCode,
-    customName = customName,
-    internalLocationId = if (inCell) null else internalLocationId,
-    customLocation = null,
-    inCell = inCell,
-    onWing = false,
-    offWing = true,
-    appointmentDate = appointmentDate,
-    startTime = LocalTime.of(9, 0),
-    endTime = LocalTime.of(10, 30),
-    unlockNotes = null,
-    extraInformation = "Appointment level comment",
-    createdTime = LocalDateTime.now().minusDays(1),
-    createdBy = createdBy,
-    isCancelled = isCancelled,
-    updatedTime = LocalDateTime.now(),
-    updatedBy = updatedBy,
-    seriesCancellationStartDate = null,
-    seriesCancellationStartTime = null,
-    seriesFrequency = null,
-  )
+) = AppointmentInstance(
+  appointmentInstanceId = appointmentInstanceId,
+  appointmentSeriesId = 1,
+  appointmentId = 2,
+  appointmentAttendeeId = appointmentInstanceId,
+  appointmentType = AppointmentType.INDIVIDUAL,
+  prisonCode = "TPR",
+  prisonerNumber = prisonerNumber,
+  bookingId = bookingId,
+  categoryCode = categoryCode,
+  customName = customName,
+  internalLocationId = if (inCell) null else internalLocationId,
+  customLocation = null,
+  inCell = inCell,
+  onWing = false,
+  offWing = true,
+  appointmentDate = appointmentDate,
+  startTime = LocalTime.of(9, 0),
+  endTime = LocalTime.of(10, 30),
+  unlockNotes = null,
+  extraInformation = "Appointment level comment",
+  createdTime = LocalDateTime.now().minusDays(1),
+  createdBy = createdBy,
+  isCancelled = isCancelled,
+  updatedTime = LocalDateTime.now(),
+  updatedBy = updatedBy,
+  seriesCancellationStartDate = null,
+  seriesCancellationStartTime = null,
+  seriesFrequency = null,
+)
 
 internal fun appointmentSearchEntity(
   appointmentSeriesId: Long = 1,
@@ -198,44 +196,43 @@ internal fun appointmentSearchEntity(
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   createdBy: String = "CREATE.USER",
-) =
-  AppointmentSearch(
-    appointmentSeriesId = appointmentSeriesId,
-    appointmentId = appointmentId,
-    appointmentType = appointmentType,
-    prisonCode = prisonCode,
-    categoryCode = "TEST",
-    customName = null,
-    internalLocationId = if (inCell) null else internalLocationId,
-    customLocation = null,
-    inCell = inCell,
-    onWing = false,
-    offWing = true,
-    startDate = startDate.plusDays(1),
-    startTime = startTime,
-    endTime = endTime,
-    isRepeat = false,
-    sequenceNumber = 1,
-    maxSequenceNumber = 1,
-    unlockNotes = null,
-    extraInformation = "Appointment level comment",
-    createdBy = createdBy,
-    isEdited = false,
-    isCancelled = false,
-    createdTime = LocalDate.now().atStartOfDay(),
-    updatedTime = null,
-    cancelledTime = null,
-    cancelledBy = null,
-  ).apply {
-    attendees = listOf(
-      appointmentAttendeeSearchEntity(
-        appointmentSearch = this,
-        appointmentAttendeeId = appointmentAttendeeId,
-        prisonerNumber = prisonerNumber,
-        bookingId = bookingId,
-      ),
-    )
-  }
+) = AppointmentSearch(
+  appointmentSeriesId = appointmentSeriesId,
+  appointmentId = appointmentId,
+  appointmentType = appointmentType,
+  prisonCode = prisonCode,
+  categoryCode = "TEST",
+  customName = null,
+  internalLocationId = if (inCell) null else internalLocationId,
+  customLocation = null,
+  inCell = inCell,
+  onWing = false,
+  offWing = true,
+  startDate = startDate.plusDays(1),
+  startTime = startTime,
+  endTime = endTime,
+  isRepeat = false,
+  sequenceNumber = 1,
+  maxSequenceNumber = 1,
+  unlockNotes = null,
+  extraInformation = "Appointment level comment",
+  createdBy = createdBy,
+  isEdited = false,
+  isCancelled = false,
+  createdTime = LocalDate.now().atStartOfDay(),
+  updatedTime = null,
+  cancelledTime = null,
+  cancelledBy = null,
+).apply {
+  attendees = listOf(
+    appointmentAttendeeSearchEntity(
+      appointmentSearch = this,
+      appointmentAttendeeId = appointmentAttendeeId,
+      prisonerNumber = prisonerNumber,
+      bookingId = bookingId,
+    ),
+  )
+}
 
 internal fun appointmentSetEntity(
   appointmentSetId: Long = 1,
@@ -248,118 +245,107 @@ internal fun appointmentSetEntity(
   startTime: LocalTime = LocalTime.of(9, 0),
   endTime: LocalTime = LocalTime.of(10, 30),
   prisonerNumberToBookingIdMap: Map<String, Long> = mapOf("A1234BC" to 456, "B2345CD" to 457, "C3456DE" to 458),
-) =
-  AppointmentSet(
-    appointmentSetId = appointmentSetId,
-    prisonCode = "TPR",
-    categoryCode = categoryCode,
-    customName = customName,
-    appointmentTier = appointmentTier,
-    internalLocationId = if (inCell) null else 123,
-    inCell = inCell,
-    startDate = startDate,
-    createdTime = LocalDateTime.now().minusDays(1),
-    createdBy = "CREATE.USER",
-  ).apply {
-    this.appointmentOrganiser = appointmentOrganiser
+) = AppointmentSet(
+  appointmentSetId = appointmentSetId,
+  prisonCode = "TPR",
+  categoryCode = categoryCode,
+  customName = customName,
+  appointmentTier = appointmentTier,
+  internalLocationId = if (inCell) null else 123,
+  inCell = inCell,
+  startDate = startDate,
+  createdTime = LocalDateTime.now().minusDays(1),
+  createdBy = "CREATE.USER",
+).apply {
+  this.appointmentOrganiser = appointmentOrganiser
 
-    var count = 0L
-    prisonerNumberToBookingIdMap.forEach {
-      appointmentSeriesEntity(
-        count + 1,
-        this,
-        customName = customName,
-        startTime = startTime.plusMinutes(30 * count),
-        endTime = endTime.plusMinutes(30 * count),
-        prisonerNumberToBookingIdMap = mapOf(it.toPair()),
-        updatedBy = null,
-        createdTime = createdTime,
-      )
-      count++
-    }
+  var count = 0L
+  prisonerNumberToBookingIdMap.forEach {
+    appointmentSeriesEntity(
+      count + 1,
+      this,
+      customName = customName,
+      startTime = startTime.plusMinutes(30 * count),
+      endTime = endTime.plusMinutes(30 * count),
+      prisonerNumberToBookingIdMap = mapOf(it.toPair()),
+      updatedBy = null,
+      createdTime = createdTime,
+    )
+    count++
   }
+}
 
-internal fun appointmentCreatedInErrorReason() =
-  AppointmentCancellationReason(
-    1,
-    "Created in error",
-    true,
-  )
+internal fun appointmentCreatedInErrorReason() = AppointmentCancellationReason(
+  1,
+  "Created in error",
+  true,
+)
 
-internal fun appointmentCancelledReason() =
-  AppointmentCancellationReason(
-    2,
-    "Cancelled",
-    false,
-  )
+internal fun appointmentCancelledReason() = AppointmentCancellationReason(
+  2,
+  "Cancelled",
+  false,
+)
 
-internal fun deleteMigratedAppointmentReason() =
-  AppointmentCancellationReason(
-    3,
-    "Delete migrated appointment",
-    true,
-  )
+internal fun deleteMigratedAppointmentReason() = AppointmentCancellationReason(
+  3,
+  "Delete migrated appointment",
+  true,
+)
 
-internal fun permanentRemovalByUserAppointmentAttendeeRemovalReason() =
-  AppointmentAttendeeRemovalReason(
-    PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-    "Permanent removal by user",
-    true,
-  )
+internal fun permanentRemovalByUserAppointmentAttendeeRemovalReason() = AppointmentAttendeeRemovalReason(
+  PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+  "Permanent removal by user",
+  true,
+)
 
-internal fun tempRemovalByUserAppointmentAttendeeRemovalReason() =
-  AppointmentAttendeeRemovalReason(
-    TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-    "Temporary removal by user",
-    false,
-  )
+internal fun tempRemovalByUserAppointmentAttendeeRemovalReason() = AppointmentAttendeeRemovalReason(
+  TEMPORARY_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+  "Temporary removal by user",
+  false,
+)
 
-internal fun cancelOnTransferAppointmentAttendeeRemovalReason() =
-  AppointmentAttendeeRemovalReason(
-    CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-    "Cancel on transfer - NOMIS OCUCANTR form",
-    true,
-  )
+internal fun cancelOnTransferAppointmentAttendeeRemovalReason() = AppointmentAttendeeRemovalReason(
+  CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+  "Cancel on transfer - NOMIS OCUCANTR form",
+  true,
+)
 
-internal fun prisonerReleasedAppointmentAttendeeRemovalReason() =
-  AppointmentAttendeeRemovalReason(
-    PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-    "Prisoner status: Released",
-    true,
-  )
+internal fun prisonerReleasedAppointmentAttendeeRemovalReason() = AppointmentAttendeeRemovalReason(
+  PRISONER_STATUS_RELEASED_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+  "Prisoner status: Released",
+  true,
+)
 
-internal fun prisonerPermanentTransferAppointmentAttendeeRemovalReason() =
-  AppointmentAttendeeRemovalReason(
-    PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-    "Prisoner status: Permanent transfer",
-    true,
-  )
+internal fun prisonerPermanentTransferAppointmentAttendeeRemovalReason() = AppointmentAttendeeRemovalReason(
+  PRISONER_STATUS_PERMANENT_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+  "Prisoner status: Permanent transfer",
+  true,
+)
 
-internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false, customName: String = "Friday Prayers", categoryCode: String = "CHAP") =
-  AppointmentAttendanceSummary(
-    1,
-    RISLEY_PRISON_CODE,
-    categoryCode,
-    customName,
-    123,
-    inCell,
-    false,
-    true,
-    LocalDate.now().plusDays(1),
-    LocalTime.of(12, 0),
-    LocalTime.of(13, 0),
-    false,
-    6,
-    3,
-    2,
-    1,
-    null,
-  )
+internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false, customName: String = "Friday Prayers", categoryCode: String = "CHAP") = AppointmentAttendanceSummary(
+  1,
+  RISLEY_PRISON_CODE,
+  categoryCode,
+  customName,
+  123,
+  inCell,
+  false,
+  true,
+  LocalDate.now().plusDays(1),
+  LocalTime.of(12, 0),
+  LocalTime.of(13, 0),
+  false,
+  6,
+  3,
+  2,
+  1,
+  null,
+)
 
-private fun appointmentAttendeeSearchEntity(appointmentSearch: AppointmentSearch, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) =
-  AppointmentAttendeeSearch(
-    appointmentAttendeeId = appointmentAttendeeId,
-    appointmentSearch = appointmentSearch,
-    prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-  )
+private fun appointmentAttendeeSearchEntity(appointmentSearch: AppointmentSearch, appointmentAttendeeId: Long = 1, prisonerNumber: String = "A1234BC", bookingId: Long = 456) = AppointmentAttendeeSearch(
+  appointmentAttendeeId = appointmentAttendeeId,
+  appointmentSearch = appointmentSearch,
+  prisonerNumber = prisonerNumber,
+  bookingId = bookingId,
+)

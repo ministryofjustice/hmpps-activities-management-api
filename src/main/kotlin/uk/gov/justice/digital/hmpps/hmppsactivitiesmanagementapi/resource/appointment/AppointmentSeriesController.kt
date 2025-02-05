@@ -73,8 +73,7 @@ class AppointmentSeriesController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentSeriesById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeries =
-    appointmentSeriesService.getAppointmentSeriesById(appointmentSeriesId)
+  fun getAppointmentSeriesById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeries = appointmentSeriesService.getAppointmentSeriesById(appointmentSeriesId)
 
   @GetMapping(value = ["/{appointmentSeriesId}/details"])
   @ResponseBody
@@ -118,8 +117,7 @@ class AppointmentSeriesController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getAppointmentDetailsById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeriesDetails =
-    appointmentSeriesService.getAppointmentSeriesDetailsById(appointmentSeriesId)
+  fun getAppointmentDetailsById(@PathVariable("appointmentSeriesId") appointmentSeriesId: Long): AppointmentSeriesDetails = appointmentSeriesService.getAppointmentSeriesDetailsById(appointmentSeriesId)
 
   @ResponseStatus(HttpStatus.CREATED)
   @PostMapping

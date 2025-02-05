@@ -27,19 +27,17 @@ class LocationGroupFromPrisonApiServiceTest {
       .containsExactlyInAnyOrder(cellA1, cellA3)
   }
 
-  private fun aLocation(locationId: Long, locationType: String, description: String, parentLocationId: Long): Location {
-    return Location(
-      locationId = locationId,
-      locationType = locationType,
-      description = description,
-      locationUsage = "",
-      agencyId = "",
-      parentLocationId = parentLocationId,
-      currentOccupancy = 0,
-      locationPrefix = description,
-      operationalCapacity = 0,
-      userDescription = "",
-      internalLocationCode = "",
-    )
-  }
+  private fun aLocation(locationId: Long, locationType: String, description: String, parentLocationId: Long): Location = Location(
+    locationId = locationId,
+    locationType = locationType,
+    description = description,
+    locationUsage = "",
+    agencyId = "",
+    parentLocationId = parentLocationId,
+    currentOccupancy = 0,
+    locationPrefix = description,
+    operationalCapacity = 0,
+    userDescription = "",
+    internalLocationCode = "",
+  )
 }

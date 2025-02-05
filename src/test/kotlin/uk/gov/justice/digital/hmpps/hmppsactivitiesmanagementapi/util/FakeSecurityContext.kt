@@ -11,7 +11,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.AuthAwar
 
 const val DEFAULT_USERNAME = "Bob"
 
-class FakeSecurityContext(val username: String = DEFAULT_USERNAME) : BeforeEachCallback, AfterEachCallback {
+class FakeSecurityContext(val username: String = DEFAULT_USERNAME) :
+  BeforeEachCallback,
+  AfterEachCallback {
 
   private val authentication: AuthAwareAuthenticationToken = mock {
     on { principal } doReturn username

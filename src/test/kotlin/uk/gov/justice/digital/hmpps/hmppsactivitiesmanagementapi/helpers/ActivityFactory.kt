@@ -81,52 +81,51 @@ internal fun activityEntity(
   riskLevel: String = "high",
   paid: Boolean = true,
   attendanceRequired: Boolean = true,
-) =
-  Activity(
-    activityId = activityId,
-    prisonCode = prisonCode,
-    activityCategory = category,
-    activityTier = tier,
-    summary = summary,
-    description = description,
-    riskLevel = riskLevel,
-    startDate = startDate,
-    createdTime = timestamp,
-    createdBy = "test",
-    inCell = inCell,
-    onWing = onWing,
-    offWing = offWing,
-    isPaid = paid,
-    attendanceRequired = attendanceRequired,
-  ).apply {
-    this.organiser = organiser
-    this.endDate = endDate
-    if (!noEligibilityRules) {
-      this.addEligibilityRule(eligibilityRuleOver21)
-    }
-    if (!noSchedules) {
-      this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp = timestamp, paid = paid, timeSlot = timeSlot))
-    }
-    if (!noPayBands) {
-      this.addPay(
-        incentiveNomisCode = "BAS",
-        incentiveLevel = "Basic",
-        payBand = lowPayBand,
-        rate = 30,
-        pieceRate = 40,
-        pieceRateItems = 50,
-        startDate = null,
-      )
-    }
-    if (!noMinimumEducationLevels) {
-      this.addMinimumEducationLevel(
-        educationLevelCode = "1",
-        educationLevelDescription = "Reading Measure 1.0",
-        studyAreaCode = "ENGLA",
-        studyAreaDescription = "English Language",
-      )
-    }
+) = Activity(
+  activityId = activityId,
+  prisonCode = prisonCode,
+  activityCategory = category,
+  activityTier = tier,
+  summary = summary,
+  description = description,
+  riskLevel = riskLevel,
+  startDate = startDate,
+  createdTime = timestamp,
+  createdBy = "test",
+  inCell = inCell,
+  onWing = onWing,
+  offWing = offWing,
+  isPaid = paid,
+  attendanceRequired = attendanceRequired,
+).apply {
+  this.organiser = organiser
+  this.endDate = endDate
+  if (!noEligibilityRules) {
+    this.addEligibilityRule(eligibilityRuleOver21)
   }
+  if (!noSchedules) {
+    this.addSchedule(activitySchedule(this, activityScheduleId = activityId, timestamp = timestamp, paid = paid, timeSlot = timeSlot))
+  }
+  if (!noPayBands) {
+    this.addPay(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = lowPayBand,
+      rate = 30,
+      pieceRate = 40,
+      pieceRateItems = 50,
+      startDate = null,
+    )
+  }
+  if (!noMinimumEducationLevels) {
+    this.addMinimumEducationLevel(
+      educationLevelCode = "1",
+      educationLevelDescription = "Reading Measure 1.0",
+      studyAreaCode = "ENGLA",
+      studyAreaDescription = "English Language",
+    )
+  }
+}
 
 internal fun activitySummary(
   category: ActivityCategory = activityCategory(),
@@ -138,34 +137,31 @@ internal fun activitySummary(
   allocated: Int = 10,
   waitlisted: Int = 2,
   activityState: ActivityState = ActivityState.LIVE,
-) =
-  ActivitySummary(
-    id = activityId,
-    prisonCode = prisonCode,
-    activityName = activityName,
-    capacity = capacity,
-    allocated = allocated,
-    waitlisted = waitlisted,
-    createdTime = timestamp,
-    activityState = activityState,
-    activityCategory = category,
-  )
+) = ActivitySummary(
+  id = activityId,
+  prisonCode = prisonCode,
+  activityName = activityName,
+  capacity = capacity,
+  allocated = allocated,
+  waitlisted = waitlisted,
+  createdTime = timestamp,
+  activityState = activityState,
+  activityCategory = category,
+)
 
-internal fun activityCategory(code: String = "category code") =
-  ActivityCategory(
-    activityCategoryId = 1,
-    code = code,
-    name = "category name",
-    description = "category description",
-  )
+internal fun activityCategory(code: String = "category code") = ActivityCategory(
+  activityCategoryId = 1,
+  code = code,
+  name = "category name",
+  description = "category description",
+)
 
-internal fun activityCategory2(code: String = "category code 2") =
-  ActivityCategory(
-    activityCategoryId = 2,
-    code = code,
-    name = "category name 2",
-    description = "category description 2",
-  )
+internal fun activityCategory2(code: String = "category code 2") = ActivityCategory(
+  activityCategoryId = 2,
+  code = code,
+  name = "category name 2",
+  description = "category description 2",
+)
 
 internal val notInWorkCategory = activityCategory("SAA_NOT_IN_WORK")
 
@@ -221,100 +217,99 @@ internal fun activitySchedule(
   noExclusions: Boolean = false,
   paid: Boolean = true,
   noInternalLocation: Boolean = false,
-) =
-  ActivitySchedule(
-    activityScheduleId = activityScheduleId,
-    activity = activity,
-    description = description,
-    capacity = 1,
-    startDate = startDate ?: activity.startDate,
-    runsOnBankHoliday = runsOnBankHolidays,
-    scheduleWeeks = scheduleWeeks,
-  ).apply {
-    this.endDate = endDate ?: activity.endDate
-    if (!noAllocations) {
+) = ActivitySchedule(
+  activityScheduleId = activityScheduleId,
+  activity = activity,
+  description = description,
+  capacity = 1,
+  startDate = startDate ?: activity.startDate,
+  runsOnBankHoliday = runsOnBankHolidays,
+  scheduleWeeks = scheduleWeeks,
+).apply {
+  this.endDate = endDate ?: activity.endDate
+  if (!noAllocations) {
+    this.allocatePrisoner(
+      prisonerNumber = "A1234AA".toPrisonerNumber(),
+      bookingId = 10001,
+      payBand = if (paid) lowPayBand else null,
+      allocatedBy = "Mr Blogs",
+      startDate = startDate ?: activity.startDate,
+    )
+  }
+  if (!noSlots) {
+    val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, timeSlot)
+    if (!noAllocations && !noExclusions) {
       this.allocatePrisoner(
-        prisonerNumber = "A1234AA".toPrisonerNumber(),
-        bookingId = 10001,
+        prisonerNumber = "A1111BB".toPrisonerNumber(),
+        bookingId = 20002,
         payBand = if (paid) lowPayBand else null,
         allocatedBy = "Mr Blogs",
         startDate = startDate ?: activity.startDate,
-      )
-    }
-    if (!noSlots) {
-      val slot = this.addSlot(1, timestamp.toLocalTime() to timestamp.toLocalTime().plusHours(1), daysOfWeek, timeSlot)
-      if (!noAllocations && !noExclusions) {
-        this.allocatePrisoner(
-          prisonerNumber = "A1111BB".toPrisonerNumber(),
-          bookingId = 20002,
-          payBand = if (paid) lowPayBand else null,
-          allocatedBy = "Mr Blogs",
-          startDate = startDate ?: activity.startDate,
-        ).apply {
-          this.updateExclusion(
-            exclusionSlot =
-            Slot(
-              weekNumber = slot.weekNumber,
-              timeSlot = slot.timeSlot,
-              monday = daysOfWeek.contains(DayOfWeek.MONDAY),
-              tuesday = daysOfWeek.contains(DayOfWeek.TUESDAY),
-              wednesday = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
-              thursday = daysOfWeek.contains(DayOfWeek.THURSDAY),
-              friday = daysOfWeek.contains(DayOfWeek.FRIDAY),
-              saturday = daysOfWeek.contains(DayOfWeek.SATURDAY),
-              sunday = daysOfWeek.contains(DayOfWeek.SUNDAY),
-            ),
-            startDate = LocalDate.now().plusDays(1),
-          )
-        }
-      }
-    }
-    if (!noInstances && !noSlots) {
-      this.addInstance(
-        sessionDate = this.startDate,
-        slot = this.slots().first(),
       ).apply {
-        this.attendances.add(
-          Attendance(
-            attendanceId = 1,
-            scheduledInstance = this,
-            prisonerNumber = "A1234AA",
-            recordedBy = "Joe Bloggs",
-            recordedTime = LocalDate.now().atStartOfDay(),
-          ).apply {
-            this.addHistory(
-              AttendanceHistory(
-                attendance = this,
-                attendanceHistoryId = 1,
-                attendanceReason = AttendanceReason(
-                  9,
-                  AttendanceReasonEnum.ATTENDED,
-                  "Previous Desc",
-                  false,
-                  true,
-                  true,
-                  false,
-                  false,
-                  false,
-                  true,
-                  1,
-                  "some note",
-                ),
-                comment = "previous comment",
-                recordedBy = "Joe Bloggs",
-                recordedTime = LocalDate.now().atStartOfDay(),
-              ),
-            )
-          },
+        this.updateExclusion(
+          exclusionSlot =
+          Slot(
+            weekNumber = slot.weekNumber,
+            timeSlot = slot.timeSlot,
+            monday = daysOfWeek.contains(DayOfWeek.MONDAY),
+            tuesday = daysOfWeek.contains(DayOfWeek.TUESDAY),
+            wednesday = daysOfWeek.contains(DayOfWeek.WEDNESDAY),
+            thursday = daysOfWeek.contains(DayOfWeek.THURSDAY),
+            friday = daysOfWeek.contains(DayOfWeek.FRIDAY),
+            saturday = daysOfWeek.contains(DayOfWeek.SATURDAY),
+            sunday = daysOfWeek.contains(DayOfWeek.SUNDAY),
+          ),
+          startDate = LocalDate.now().plusDays(1),
         )
       }
     }
-    if (!noInternalLocation) {
-      this.internalLocationId = 1
-      this.internalLocationCode = "EDU-ROOM-1"
-      this.internalLocationDescription = "Education - R1"
+  }
+  if (!noInstances && !noSlots) {
+    this.addInstance(
+      sessionDate = this.startDate,
+      slot = this.slots().first(),
+    ).apply {
+      this.attendances.add(
+        Attendance(
+          attendanceId = 1,
+          scheduledInstance = this,
+          prisonerNumber = "A1234AA",
+          recordedBy = "Joe Bloggs",
+          recordedTime = LocalDate.now().atStartOfDay(),
+        ).apply {
+          this.addHistory(
+            AttendanceHistory(
+              attendance = this,
+              attendanceHistoryId = 1,
+              attendanceReason = AttendanceReason(
+                9,
+                AttendanceReasonEnum.ATTENDED,
+                "Previous Desc",
+                false,
+                true,
+                true,
+                false,
+                false,
+                false,
+                true,
+                1,
+                "some note",
+              ),
+              comment = "previous comment",
+              recordedBy = "Joe Bloggs",
+              recordedTime = LocalDate.now().atStartOfDay(),
+            ),
+          )
+        },
+      )
     }
   }
+  if (!noInternalLocation) {
+    this.internalLocationId = 1
+    this.internalLocationCode = "EDU-ROOM-1"
+    this.internalLocationDescription = "Education - R1"
+  }
+}
 
 internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = false, withPlannedSuspensions: Boolean = false, withPaidSuspension: Boolean? = false): Allocation {
   val allocation = startDate
@@ -364,10 +359,9 @@ internal fun allocation(startDate: LocalDate? = null, withExclusions: Boolean = 
   return allocation
 }
 
-internal fun deallocation(endDate: LocalDate? = null) =
-  endDate
-    ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
-    ?: activitySchedule(activityEntity()).allocations().first()
+internal fun deallocation(endDate: LocalDate? = null) = endDate
+  ?.let { activitySchedule(activityEntity(endDate = it)).allocations().first() }
+  ?: activitySchedule(activityEntity()).allocations().first()
 
 internal fun rolloutPrison(prisonCode: String = PENTONVILLE_PRISON_CODE) = RolloutPrisonPlan(
   prisonCode = prisonCode,
@@ -470,40 +464,39 @@ internal fun activityCreateRequest(
   studyArea: ReferenceCode? = null,
   eligibilityRules: Set<EligibilityRule> = setOf(eligibilityRuleOver21),
   paid: Boolean = true,
-) =
-  ActivityCreateRequest(
-    prisonCode = prisonCode,
-    attendanceRequired = true,
-    inCell = false,
-    pieceWork = false,
-    outsideWork = false,
-    payPerSession = null,
-    summary = "Test activity",
-    description = "Test activity",
-    categoryId = activityCategory().activityCategoryId,
-    tierCode = eventTier().code,
-    organiserCode = eventOrganiser().code,
-    eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
-    pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 12)) else emptyList(),
-    riskLevel = "high",
-    startDate = TimeSource.tomorrow(),
-    endDate = null,
-    minimumEducationLevel = listOf(
-      ActivityMinimumEducationLevelCreateRequest(
-        educationLevelCode = educationLevel?.code ?: "LEVEL_CODE",
-        educationLevelDescription = educationLevel?.description ?: "LEVEL DESCRIPTION",
-        studyAreaCode = studyArea?.code ?: "STUDY_CODE",
-        studyAreaDescription = studyArea?.description ?: "STUDY DESCRIPTION",
-      ),
+) = ActivityCreateRequest(
+  prisonCode = prisonCode,
+  attendanceRequired = true,
+  inCell = false,
+  pieceWork = false,
+  outsideWork = false,
+  payPerSession = null,
+  summary = "Test activity",
+  description = "Test activity",
+  categoryId = activityCategory().activityCategoryId,
+  tierCode = eventTier().code,
+  organiserCode = eventOrganiser().code,
+  eligibilityRuleIds = eligibilityRules.map { it.eligibilityRuleId },
+  pay = if (paid) listOf(ActivityPayCreateRequest(incentiveNomisCode = "123", incentiveLevel = "level", payBandId = 12)) else emptyList(),
+  riskLevel = "high",
+  startDate = TimeSource.tomorrow(),
+  endDate = null,
+  minimumEducationLevel = listOf(
+    ActivityMinimumEducationLevelCreateRequest(
+      educationLevelCode = educationLevel?.code ?: "LEVEL_CODE",
+      educationLevelDescription = educationLevel?.description ?: "LEVEL DESCRIPTION",
+      studyAreaCode = studyArea?.code ?: "STUDY_CODE",
+      studyAreaDescription = studyArea?.description ?: "STUDY DESCRIPTION",
     ),
-    locationId = 1,
-    capacity = 1,
-    scheduleWeeks = 1,
-    slots = listOf(Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true)),
-    onWing = false,
-    offWing = false,
-    paid = paid,
-  )
+  ),
+  locationId = 1,
+  capacity = 1,
+  scheduleWeeks = 1,
+  slots = listOf(Slot(weekNumber = 1, timeSlot = TimeSlot.AM, monday = true)),
+  onWing = false,
+  offWing = false,
+  paid = paid,
+)
 
 internal fun ActivityScheduleSlot.runEveryDayOfWeek() {
   mondayFlag = true

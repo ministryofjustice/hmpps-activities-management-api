@@ -607,24 +607,23 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     endDate: LocalDate,
     timeSlot: TimeSlot? = null,
     cancelled: Boolean? = null,
-  ) =
-    get()
-      .uri { builder ->
-        builder
-          .path("/prisons/$prisonCode/scheduled-instances")
-          .queryParam("startDate", startDate)
-          .queryParam("endDate", endDate)
-          .maybeQueryParam("slot", timeSlot)
-          .maybeQueryParam("cancelled", cancelled)
-          .build()
-      }
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(ActivityScheduleInstance::class.java)
-      .returnResult().responseBody
+  ) = get()
+    .uri { builder ->
+      builder
+        .path("/prisons/$prisonCode/scheduled-instances")
+        .queryParam("startDate", startDate)
+        .queryParam("endDate", endDate)
+        .maybeQueryParam("slot", timeSlot)
+        .maybeQueryParam("cancelled", cancelled)
+        .build()
+    }
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ActivityScheduleInstance::class.java)
+    .returnResult().responseBody
 
   private fun WebTestClient.getAttendanceSummary(prisonCode: String, date: LocalDate) = get()
     .uri { builder ->

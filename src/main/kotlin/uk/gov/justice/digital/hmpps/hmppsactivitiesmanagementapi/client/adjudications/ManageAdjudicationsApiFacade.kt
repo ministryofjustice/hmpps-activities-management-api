@@ -46,27 +46,25 @@ class ManageAdjudicationsApiFacade(
     startDate: LocalDate,
     endDate: LocalDate,
     prisoners: Set<String>,
-  ): List<HearingsResponse> =
-    manageAdjudicationsApiWebClient.post()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/reported-adjudications/hearings/$agencyId")
-          .queryParam("startDate", startDate)
-          .queryParam("endDate", endDate)
-          .build()
-      }
-      .bodyValue(prisoners.toList())
-      .retrieve()
-      .awaitBody()
+  ): List<HearingsResponse> = manageAdjudicationsApiWebClient.post()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/reported-adjudications/hearings/$agencyId")
+        .queryParam("startDate", startDate)
+        .queryParam("endDate", endDate)
+        .build()
+    }
+    .bodyValue(prisoners.toList())
+    .retrieve()
+    .awaitBody()
 
-  suspend fun getAdjudicationHearingsForDate(agencyId: String, date: LocalDate): HearingSummaryResponse =
-    manageAdjudicationsApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/reported-adjudications/hearings")
-          .queryParam("hearingDate", date)
-          .build()
-      }
-      .header("Active-Caseload", agencyId)
-      .retrieve().awaitBody()
+  suspend fun getAdjudicationHearingsForDate(agencyId: String, date: LocalDate): HearingSummaryResponse = manageAdjudicationsApiWebClient.get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/reported-adjudications/hearings")
+        .queryParam("hearingDate", date)
+        .build()
+    }
+    .header("Active-Caseload", agencyId)
+    .retrieve().awaitBody()
 }

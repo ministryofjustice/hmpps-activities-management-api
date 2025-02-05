@@ -84,8 +84,7 @@ class RolloutController(
       ),
     ],
   )
-  fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrisonPlan =
-    rolloutService.getByPrisonCode(prisonCode)
+  fun getPrisonByCode(@PathVariable("prisonCode") prisonCode: String): RolloutPrisonPlan = rolloutService.getByPrisonCode(prisonCode)
 
   @Operation(
     summary = "Get all rollout prisons",
@@ -128,8 +127,7 @@ class RolloutController(
       ),
     ],
   )
-  fun getRolledOutPrisons(): List<RolloutPrisonPlan> =
-    rolloutService.getRolloutPrisons(prisonsLive = true)
+  fun getRolledOutPrisons(): List<RolloutPrisonPlan> = rolloutService.getRolloutPrisons(prisonsLive = true)
 
   @Operation(
     summary = "Creates a prison regime for a given prison",

@@ -12,18 +12,16 @@ val activeInMoorlandInmate = InmateDetailFixture.instance(agencyId = MOORLAND_PR
 val activeInPentonvilleInmate = InmateDetailFixture.instance(agencyId = PENTONVILLE_PRISON_CODE)
 val activeInLiverpoolInmate = InmateDetailFixture.instance(agencyId = LIVERPOOL_PRISON_CODE)
 
-fun InmateDetail.convert(): Prisoner {
-  return Prisoner(
-    prisonerNumber = this.offenderNo!!,
-    dateOfBirth = this.dateOfBirth!!,
-    firstName = this.firstName!!,
-    lastName = this.lastName!!,
-    gender = PrisonerDetailSearchCriteria.Gender.M.name,
-    status = "",
-    bookingId = this.bookingId?.toString(),
-    prisonId = this.agencyId,
-  )
-}
+fun InmateDetail.convert(): Prisoner = Prisoner(
+  prisonerNumber = this.offenderNo!!,
+  dateOfBirth = this.dateOfBirth!!,
+  firstName = this.firstName!!,
+  lastName = this.lastName!!,
+  gender = PrisonerDetailSearchCriteria.Gender.M.name,
+  status = "",
+  bookingId = this.bookingId?.toString(),
+  prisonId = this.agencyId,
+)
 
 object InmateDetailFixture {
   fun instance(
@@ -41,21 +39,20 @@ object InmateDetailFixture {
     middleName: String = "James",
     agencyId: String = "MDI",
     age: Int = 23,
-  ) =
-    InmateDetail(
-      offenderNo = offenderNo,
-      offenderId = offenderId,
-      rootOffenderId = rootOffenderId,
-      firstName = firstName,
-      lastName = lastName,
-      dateOfBirth = dateOfBirth,
-      activeFlag = activeFlag,
-      inOutStatus = inOutStatus,
-      status = status,
-      bookingId = bookingId,
-      bookingNo = bookingNo,
-      middleName = middleName,
-      agencyId = agencyId,
-      age = age,
-    )
+  ) = InmateDetail(
+    offenderNo = offenderNo,
+    offenderId = offenderId,
+    rootOffenderId = rootOffenderId,
+    firstName = firstName,
+    lastName = lastName,
+    dateOfBirth = dateOfBirth,
+    activeFlag = activeFlag,
+    inOutStatus = inOutStatus,
+    status = status,
+    bookingId = bookingId,
+    bookingNo = bookingNo,
+    middleName = middleName,
+    agencyId = agencyId,
+    age = age,
+  )
 }

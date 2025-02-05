@@ -9,5 +9,4 @@ interface EventTierRepository : JpaRepository<EventTier, Long> {
   fun findByCode(code: String): EventTier?
 }
 
-fun EventTierRepository.findByCodeOrThrowIllegalArgument(code: String) =
-  this.findByCode(code) ?: throw IllegalArgumentException("Event tier \"$code\" not found")
+fun EventTierRepository.findByCodeOrThrowIllegalArgument(code: String) = this.findByCode(code) ?: throw IllegalArgumentException("Event tier \"$code\" not found")

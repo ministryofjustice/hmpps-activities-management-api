@@ -150,7 +150,10 @@ class ScheduledEventService(
                 referenceCodesForAppointmentsMap,
                 locationsForAppointmentsMap,
                 getSinglePrisonerAppointments(
-                  bookingId = bookingId, dateRange = dateRange, slot = slot, prisonRegime = prisonRegime,
+                  bookingId = bookingId,
+                  dateRange = dateRange,
+                  slot = slot,
+                  prisonRegime = prisonRegime,
                 ),
               )
             }
@@ -457,13 +460,12 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     slot: TimeSlot?,
-  ): List<PrisonerScheduledActivity> =
-    prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
-      prisonCode = prisonCode,
-      prisonerNumbers = prisonerNumbers,
-      date = date,
-      timeSlot = slot,
-    )
+  ): List<PrisonerScheduledActivity> = prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
+    prisonCode = prisonCode,
+    prisonerNumbers = prisonerNumbers,
+    date = date,
+    timeSlot = slot,
+  )
 
   private fun getMultiplePrisonersAppointments(
     prisonCode: String,

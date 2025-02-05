@@ -41,9 +41,8 @@ class PrisonerAllocationControllerTest : ControllerTestBase<PrisonerAllocationCo
     verify(service).findByPrisonCodeAndPrisonerNumbers("MDI", prisonNumbers)
   }
 
-  private fun MockMvc.postPrisonerNumbers(prisonCode: String, prisonerNumbers: Collection<String>) =
-    post("/prisons/$prisonCode/prisoner-allocations") {
-      content = mapper.writeValueAsString(prisonerNumbers)
-      contentType = MediaType.APPLICATION_JSON
-    }
+  private fun MockMvc.postPrisonerNumbers(prisonCode: String, prisonerNumbers: Collection<String>) = post("/prisons/$prisonCode/prisoner-allocations") {
+    content = mapper.writeValueAsString(prisonerNumbers)
+    contentType = MediaType.APPLICATION_JSON
+  }
 }

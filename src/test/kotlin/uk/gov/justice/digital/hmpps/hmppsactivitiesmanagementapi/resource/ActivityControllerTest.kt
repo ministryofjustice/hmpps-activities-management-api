@@ -397,10 +397,10 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
   @Nested
   @DisplayName("Authorization tests")
-  inner class AuthorizationTests() {
+  inner class AuthorizationTests {
     @Nested
     @DisplayName("Create activity")
-    inner class CreateAuthTests() {
+    inner class CreateAuthTests {
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `createActivity (ROLE_ACTIVITY_HUB) - 201`() {
@@ -431,7 +431,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
 
     @Nested
     @DisplayName("Update activity")
-    inner class UpdateAuthTests() {
+    inner class UpdateAuthTests {
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `updateActivity (ROLE_ACTIVITY_HUB) - 202`() {
@@ -480,6 +480,5 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     }
   }
 
-  private fun MockMvc.getActivitySchedules(id: Long) =
-    get("/activities/{activityId}/schedules", id)
+  private fun MockMvc.getActivitySchedules(id: Long) = get("/activities/{activityId}/schedules", id)
 }

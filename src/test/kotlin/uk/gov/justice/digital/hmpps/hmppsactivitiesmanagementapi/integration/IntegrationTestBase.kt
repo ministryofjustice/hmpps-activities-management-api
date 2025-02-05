@@ -137,8 +137,7 @@ abstract class IntegrationTestBase {
     isClientToken: Boolean = true,
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisation(user, roles, isClientToken)
 
-  internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) =
-    this.queryParamIfPresent(name, Optional.ofNullable(type))
+  internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) = this.queryParamIfPresent(name, Optional.ofNullable(type))
 
   internal fun stubPrisonerForInterestingEvent(prisoner: InmateDetail) {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner.offenderNo!!)

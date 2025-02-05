@@ -250,8 +250,7 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun List<PrisonerAllocations>.prisoner(prisonerNumber: String) =
-    first { it.prisonerNumber == prisonerNumber }
+  private fun List<PrisonerAllocations>.prisoner(prisonerNumber: String) = first { it.prisonerNumber == prisonerNumber }
 
   @Sql(
     "classpath:test_data/seed-activity-id-6.sql",
@@ -265,15 +264,14 @@ class PrisonerAllocationIntegrationTest : IntegrationTestBase() {
     prisonCode: String,
     prisonerNumbers: List<String>,
     activeOnly: Boolean,
-  ) =
-    post()
-      .uri("/prisons/$prisonCode/prisoner-allocations?activeOnly=$activeOnly")
-      .bodyValue(prisonerNumbers)
-      .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBodyList(PrisonerAllocations::class.java)
-      .returnResult().responseBody!!
+  ) = post()
+    .uri("/prisons/$prisonCode/prisoner-allocations?activeOnly=$activeOnly")
+    .bodyValue(prisonerNumbers)
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(PrisonerAllocations::class.java)
+    .returnResult().responseBody!!
 }

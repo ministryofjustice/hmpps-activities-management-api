@@ -245,8 +245,7 @@ class ManageScheduledInstancesServiceTest {
     verify(monitoringService).capture("Failed to schedule instances for MDI C", exception)
   }
 
-  private fun ArgumentCaptor<ActivitySchedule>.savedSchedules(expectedNumberOfSavedSchedules: Int) =
-    this.allValues.toList().also { assertThat(it).hasSize(expectedNumberOfSavedSchedules) }
+  private fun ArgumentCaptor<ActivitySchedule>.savedSchedules(expectedNumberOfSavedSchedules: Int) = this.allValues.toList().also { assertThat(it).hasSize(expectedNumberOfSavedSchedules) }
 
   companion object {
 

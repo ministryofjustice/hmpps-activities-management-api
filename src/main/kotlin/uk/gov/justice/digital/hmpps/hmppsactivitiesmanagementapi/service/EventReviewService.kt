@@ -88,11 +88,9 @@ class EventReviewService(
     telemetryClient.trackEvent(TelemetryEvent.COC.value, propertiesMap, metricsMap)
   }
 
-  private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? {
-    return when (sortDirection) {
-      "ascending" -> Sort.by(sortField).ascending()
-      "descending" -> Sort.by(sortField).descending()
-      else -> null
-    }
+  private fun createSort(sortDirection: String, sortField: String = "eventTime"): Sort? = when (sortDirection) {
+    "ascending" -> Sort.by(sortField).ascending()
+    "descending" -> Sort.by(sortField).descending()
+    else -> null
   }
 }

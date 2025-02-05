@@ -38,56 +38,52 @@ fun EntityAllocation.toPrisonerAllocatedEvent(waitingListId: Long? = null) = Pri
   createdAt = allocatedTime,
 )
 
-fun EntityAllocation.toPrisonerDeallocatedEvent() =
-  let {
-    if (isEnded().not() || deallocatedTime == null || deallocatedReason == null || deallocatedBy == null) {
-      throw IllegalStateException("Prisoner $prisonerNumber is missing expected deallocation details for allocation id 123456")
-    }
-
-    PrisonerDeallocatedEvent(
-      activityId = activitySchedule.activity.activityId,
-      activityName = activitySchedule.activity.summary,
-      prisonCode = activitySchedule.activity.prisonCode,
-      prisonerNumber = prisonerNumber,
-      scheduleId = activitySchedule.activityScheduleId,
-      deallocationTime = deallocatedTime!!,
-      reason = deallocatedReason!!.description,
-      deallocatedBy = deallocatedBy!!,
-    )
+fun EntityAllocation.toPrisonerDeallocatedEvent() = let {
+  if (isEnded().not() || deallocatedTime == null || deallocatedReason == null || deallocatedBy == null) {
+    throw IllegalStateException("Prisoner $prisonerNumber is missing expected deallocation details for allocation id 123456")
   }
 
-fun EntityWaitingList.toPrisonerAddedToWaitingListEvent() =
-  PrisonerAddedToWaitingListEvent(
-    activityId = activity.activityId,
-    scheduleId = activitySchedule.activityScheduleId,
-    activityName = activity.summary,
-    prisonCode = activity.prisonCode,
+  PrisonerDeallocatedEvent(
+    activityId = activitySchedule.activity.activityId,
+    activityName = activitySchedule.activity.summary,
+    prisonCode = activitySchedule.activity.prisonCode,
     prisonerNumber = prisonerNumber,
-    status = status,
-    createdBy = createdBy,
-    createdAt = creationTime,
+    scheduleId = activitySchedule.activityScheduleId,
+    deallocationTime = deallocatedTime!!,
+    reason = deallocatedReason!!.description,
+    deallocatedBy = deallocatedBy!!,
   )
+}
 
-fun EntityWaitingList.toPrisonerDeclinedFromWaitingListEvent() =
-  PrisonerDeclinedFromWaitingListEvent(
-    waitingListId = waitingListId,
-    activityId = activity.activityId,
-    scheduleId = activitySchedule.activityScheduleId,
-    activityName = activity.summary,
-    prisonCode = activity.prisonCode,
-    prisonerNumber = prisonerNumber,
-    declinedBy = updatedBy ?: createdBy,
-    declinedAt = updatedTime ?: creationTime,
-  )
+fun EntityWaitingList.toPrisonerAddedToWaitingListEvent() = PrisonerAddedToWaitingListEvent(
+  activityId = activity.activityId,
+  scheduleId = activitySchedule.activityScheduleId,
+  activityName = activity.summary,
+  prisonCode = activity.prisonCode,
+  prisonerNumber = prisonerNumber,
+  status = status,
+  createdBy = createdBy,
+  createdAt = creationTime,
+)
 
-fun EntityWaitingList.toPrisonerRemovedFromWaitingListEvent() =
-  PrisonerRemovedFromWaitingListEvent(
-    waitingListId = waitingListId,
-    activityId = activity.activityId,
-    scheduleId = activitySchedule.activityScheduleId,
-    activityName = activity.summary,
-    prisonCode = activity.prisonCode,
-    prisonerNumber = prisonerNumber,
-    removedBy = updatedBy ?: createdBy,
-    removedAt = updatedTime ?: creationTime,
-  )
+fun EntityWaitingList.toPrisonerDeclinedFromWaitingListEvent() = PrisonerDeclinedFromWaitingListEvent(
+  waitingListId = waitingListId,
+  activityId = activity.activityId,
+  scheduleId = activitySchedule.activityScheduleId,
+  activityName = activity.summary,
+  prisonCode = activity.prisonCode,
+  prisonerNumber = prisonerNumber,
+  declinedBy = updatedBy ?: createdBy,
+  declinedAt = updatedTime ?: creationTime,
+)
+
+fun EntityWaitingList.toPrisonerRemovedFromWaitingListEvent() = PrisonerRemovedFromWaitingListEvent(
+  waitingListId = waitingListId,
+  activityId = activity.activityId,
+  scheduleId = activitySchedule.activityScheduleId,
+  activityName = activity.summary,
+  prisonCode = activity.prisonCode,
+  prisonerNumber = prisonerNumber,
+  removedBy = updatedBy ?: createdBy,
+  removedAt = updatedTime ?: creationTime,
+)
