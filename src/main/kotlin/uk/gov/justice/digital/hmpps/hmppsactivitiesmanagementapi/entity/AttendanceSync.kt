@@ -44,36 +44,35 @@ data class AttendanceSync(
 
   val attendanceReasonDescription: String?,
 
-  val incentiveLevelWarningIssued: Boolean?
+  val incentiveLevelWarningIssued: Boolean?,
 ) {
-  fun toModel() =
-    AttendanceSyncModel(
-      attendanceId = attendanceId,
-      scheduledInstanceId = scheduledInstanceId,
-      activityScheduleId = activityScheduleId,
-      sessionDate = sessionDate,
-      sessionStartTime = sessionStartTime,
-      sessionEndTime = sessionEndTime,
-      prisonerNumber = prisonerNumber,
-      bookingId = bookingId,
-      attendanceReasonCode = attendanceReasonCode,
-      comment = formatComment(),
-      status = status,
-      payAmount = payAmount,
-      bonusAmount = bonusAmount,
-      issuePayment = issuePayment,
-    )
+  fun toModel() = AttendanceSyncModel(
+    attendanceId = attendanceId,
+    scheduledInstanceId = scheduledInstanceId,
+    activityScheduleId = activityScheduleId,
+    sessionDate = sessionDate,
+    sessionStartTime = sessionStartTime,
+    sessionEndTime = sessionEndTime,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
+    attendanceReasonCode = attendanceReasonCode,
+    comment = formatComment(),
+    status = status,
+    payAmount = payAmount,
+    bonusAmount = bonusAmount,
+    issuePayment = issuePayment,
+  )
 
-  fun formatComment(): String? {
-    if(attendanceReasonCode != null) {
-      return when(AttendanceReasonEnum.valueOf(attendanceReasonCode)) {
+  private fun formatComment(): String? {
+    if (attendanceReasonCode != null) {
+      return when (AttendanceReasonEnum.valueOf(attendanceReasonCode)) {
         AttendanceReasonEnum.CLASH, AttendanceReasonEnum.NOT_REQUIRED -> attendanceReasonDescription
-        AttendanceReasonEnum.SICK -> attendanceReasonDescription + " - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
-        AttendanceReasonEnum.OTHER -> "Other - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
-        AttendanceReasonEnum.REFUSED -> (if(this.incentiveLevelWarningIssued == true) "Incentive level warning issued - " else "")
-        AttendanceReasonEnum.REST, AttendanceReasonEnum.SUSPENDED -> this.attendanceReasonDescription + (if(this.issuePayment == true) " - Paid" else " - Unpaid")
-        AttendanceReasonEnum.AUTO_SUSPENDED -> this.attendanceReasonDescription + " from prison" + (if(this.issuePayment == true) " - Paid" else " - Unpaid")
-        AttendanceReasonEnum.CANCELLED -> "Activity cancelled - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + this.attendanceReasonDescription + " - " + (this.comment ?: "")
+        AttendanceReasonEnum.SICK -> attendanceReasonDescription + " - " + (if (this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
+        AttendanceReasonEnum.OTHER -> "Other - " + (if (this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
+        AttendanceReasonEnum.REFUSED -> (if (this.incentiveLevelWarningIssued == true) "Incentive level warning issued - " else "")
+        AttendanceReasonEnum.REST, AttendanceReasonEnum.SUSPENDED -> this.attendanceReasonDescription + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
+        AttendanceReasonEnum.AUTO_SUSPENDED -> this.attendanceReasonDescription + " from prison" + (if (this.issuePayment == true) " - Paid" else " - Unpaid")
+        AttendanceReasonEnum.CANCELLED -> "Activity cancelled - " + (if (this.issuePayment == true) "Paid - " else "Unpaid - ") + this.attendanceReasonDescription + " - " + (this.comment ?: "")
         else -> null
       }
     }
