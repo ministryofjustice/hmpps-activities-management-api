@@ -4,6 +4,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import java.time.LocalDate
 import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSync as AttendanceSyncModel
@@ -40,6 +41,10 @@ data class AttendanceSync(
   val bonusAmount: Int?,
 
   val issuePayment: Boolean?,
+
+  val attendanceReasonDescription: String?,
+
+  val incentiveLevelWarningIssued: Boolean?
 ) {
   fun toModel() =
     AttendanceSyncModel(
@@ -52,10 +57,26 @@ data class AttendanceSync(
       prisonerNumber = prisonerNumber,
       bookingId = bookingId,
       attendanceReasonCode = attendanceReasonCode,
-      comment = comment,
+      comment = formatComment(),
       status = status,
       payAmount = payAmount,
       bonusAmount = bonusAmount,
       issuePayment = issuePayment,
     )
+
+  fun formatComment(): String? {
+    if(attendanceReasonCode != null) {
+      return when(AttendanceReasonEnum.valueOf(attendanceReasonCode)) {
+        AttendanceReasonEnum.CLASH, AttendanceReasonEnum.NOT_REQUIRED -> attendanceReasonDescription
+        AttendanceReasonEnum.SICK -> attendanceReasonDescription + " - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
+        AttendanceReasonEnum.OTHER -> "Other - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + (this.comment ?: "")
+        AttendanceReasonEnum.REFUSED -> (if(this.incentiveLevelWarningIssued == true) "Incentive level warning issued - " else "")
+        AttendanceReasonEnum.REST, AttendanceReasonEnum.SUSPENDED -> this.attendanceReasonDescription + (if(this.issuePayment == true) " - Paid" else " - Unpaid")
+        AttendanceReasonEnum.AUTO_SUSPENDED -> this.attendanceReasonDescription + " from prison" + (if(this.issuePayment == true) " - Paid" else " - Unpaid")
+        AttendanceReasonEnum.CANCELLED -> "Activity cancelled - " + (if(this.issuePayment == true) "Paid - " else "Unpaid - ") + this.attendanceReasonDescription + " - " + (this.comment ?: "")
+        else -> null
+      }
+    }
+    return null
+  }
 }

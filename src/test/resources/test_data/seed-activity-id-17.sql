@@ -59,7 +59,7 @@ insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, at
 values (2, 1, 'A11111A', null, null, now(), 'Old Recorder', 'WAITING', null, null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
-values (3, 1, 'A33333A', 1, null, now(), 'Old Recorder', 'COMPLETED', 200, null, null, null);
+values (3, 1, 'A33333A', 1, 'test comment', now(), 'Old Recorder', 'COMPLETED', 200, null, null, null);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
 values (4, 2, 'A33333A', 1, null, now(), 'Old Recorder', 'WAITING', null, null, null, null);
