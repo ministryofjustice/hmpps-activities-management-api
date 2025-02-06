@@ -15,7 +15,8 @@ select a.attendance_id,
        a.issue_payment,
        ar.description as attendance_reason_description,
        a.incentive_level_warning_issued,
-       a.case_note_id
+       a.case_note_id,
+       a.other_absence_reason
 from attendance a
          join scheduled_instance si on a.scheduled_instance_id = si.scheduled_instance_id
          join allocation a2 on si.activity_schedule_id = a2.activity_schedule_id and

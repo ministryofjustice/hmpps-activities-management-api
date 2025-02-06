@@ -12,13 +12,14 @@ import java.util.stream.Stream
 class AttendanceSyncTest {
 
   @ParameterizedTest
-  @MethodSource("issuePay_reasonCode_reasonDesc_aComment_warning_expectedComment_Provider")
+  @MethodSource("issuePay_reasonCode_reasonDesc_aComment_warning_otherReason_expectedComment_Provider")
   fun `entity is converted to model with different attendance reasons`(
     issuePay: Boolean?,
     reasonCode: String,
     reasonDesc: String,
     aComment: String?,
     warning: Boolean?,
+    otherReason: String?,
     expectedComment: String?,
   ) {
     val attendanceSessionDate = LocalDate.now()
@@ -42,6 +43,7 @@ class AttendanceSyncTest {
       issuePayment = issuePay,
       attendanceReasonDescription = reasonDesc,
       incentiveLevelWarningIssued = warning,
+      otherAbsenceReason = otherReason,
     )
 
     with(attendanceSyncEntity.toModel()) {
@@ -64,27 +66,27 @@ class AttendanceSyncTest {
 
   companion object {
     @JvmStatic
-    fun issuePay_reasonCode_reasonDesc_aComment_warning_expectedComment_Provider(): Stream<Arguments> = Stream.of(
-      arguments(null, "CLASH", "Person’s schedule shows another appointment", null, null, "Person’s schedule shows another appointment"),
-      arguments(true, "SICK", "Sick", "a comment", null, "Sick - Paid - a comment"),
-      arguments(false, "SICK", "Sick", "a comment", null, "Sick - Unpaid - a comment"),
-      arguments(true, "SICK", "Sick", null, null, "Sick - Paid"),
-      arguments(false, "SICK", "Sick", "", null, "Sick - Unpaid"),
-      arguments(true, "OTHER", "Other: absence reason not listed", "a comment", null, "Other - Paid - a comment"),
-      arguments(false, "OTHER", "Other: absence reason not listed", "a comment", null, "Other - Unpaid - a comment"),
-      arguments(true, "OTHER", "Other: absence reason not listed", null, null, "Other - Paid"),
-      arguments(false, "OTHER", "Other: absence reason not listed", null, null, "Other - Unpaid"),
-      arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", true, "Incentive level warning issued - "),
-      arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", false, ""),
-      arguments(null, "NOT_REQUIRED", "Not required or excused", "a comment", null, "Not required or excused"),
-      arguments(true, "REST", "Rest day", "a comment", null, "Rest day - Paid"),
-      arguments(false, "REST", "Rest day", "a comment", null, "Rest day - Unpaid"),
-      arguments(true, "SUSPENDED", "Suspended", "a comment", null, "Suspended - Paid"),
-      arguments(false, "SUSPENDED", "Suspended", "a comment", null, "Suspended - Unpaid"),
-      arguments(null, "AUTO_SUSPENDED", "Temporarily absent", "a comment", null, "Temporarily absent from prison - Unpaid"),
-      arguments(true, "CANCELLED", "Not attended - Session cancelled", "a comment", null, "Activity cancelled - Paid - Not attended - Session cancelled - a comment"),
-      arguments(true, "CANCELLED", "Not attended - Session cancelled", null, null, "Activity cancelled - Paid - Not attended - Session cancelled"),
-      arguments(true, "ATTENDED", "Attended", null, null, null),
+    fun issuePay_reasonCode_reasonDesc_aComment_warning_otherReason_expectedComment_Provider(): Stream<Arguments> = Stream.of(
+      arguments(null, "CLASH", "Person’s schedule shows another appointment", null, null, null, "Person’s schedule shows another appointment"),
+      arguments(true, "SICK", "Sick", "a comment", null, null, "Sick - Paid - a comment"),
+      arguments(false, "SICK", "Sick", "a comment", null, null, "Sick - Unpaid - a comment"),
+      arguments(true, "SICK", "Sick", null, null, null, "Sick - Paid"),
+      arguments(false, "SICK", "Sick", "", null, null, "Sick - Unpaid"),
+      arguments(true, "OTHER", "Other: absence reason not listed", "a comment", null, "other absence comment", "Other - Paid - other absence comment"),
+      arguments(false, "OTHER", "Other: absence reason not listed", "a comment", null, "other absence comment", "Other - Unpaid - other absence comment"),
+      arguments(true, "OTHER", "Other: absence reason not listed", null, null, null, "Other - Paid"),
+      arguments(false, "OTHER", "Other: absence reason not listed", null, null, null, "Other - Unpaid"),
+      arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", true, null, "Incentive level warning issued - "),
+      arguments(null, "REFUSED", "Other: absence reason not listed", "a comment", false, null, ""),
+      arguments(null, "NOT_REQUIRED", "Not required or excused", "a comment", null, null, "Not required or excused"),
+      arguments(true, "REST", "Rest day", "a comment", null, null, "Rest day - Paid"),
+      arguments(false, "REST", "Rest day", "a comment", null, null, "Rest day - Unpaid"),
+      arguments(true, "SUSPENDED", "Suspended", "a comment", null, null, "Suspended - Paid"),
+      arguments(false, "SUSPENDED", "Suspended", "a comment", null, null, "Suspended - Unpaid"),
+      arguments(null, "AUTO_SUSPENDED", "Temporarily absent", "a comment", null, null, "Temporarily absent from prison - Unpaid"),
+      arguments(true, "CANCELLED", "Not attended - Session cancelled", "a comment", null, null, "Activity cancelled - Paid - Not attended - Session cancelled - a comment"),
+      arguments(true, "CANCELLED", "Not attended - Session cancelled", null, null, null, "Activity cancelled - Paid - Not attended - Session cancelled"),
+      arguments(true, "ATTENDED", "Attended", null, null, null, null),
     )
   }
 }
