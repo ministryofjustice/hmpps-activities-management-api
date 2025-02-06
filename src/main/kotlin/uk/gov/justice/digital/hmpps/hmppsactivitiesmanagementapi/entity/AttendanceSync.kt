@@ -48,7 +48,7 @@ data class AttendanceSync(
 
   val caseNoteId: Long? = null,
 
-  val otherAbsenceReason: String?
+  val otherAbsenceReason: String?,
 ) {
   fun toModel() = AttendanceSyncModel(
     attendanceId = attendanceId,
