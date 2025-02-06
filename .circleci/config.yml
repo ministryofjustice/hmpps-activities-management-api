@@ -7,10 +7,10 @@ orbs:
 parameters:
   alerts-slack-channel:
     type: string
-    default: activities-and-appointments-alerts
+    default: activities-and-appointments-alerts-security
   releases-slack-channel:
     type: string
-    default: activities-and-appointments-alerts
+    default: activities-and-appointments-dev
   java-version:
     type: string
     default: "21.0"
