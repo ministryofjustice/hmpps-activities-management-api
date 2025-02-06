@@ -124,9 +124,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @Test
@@ -147,9 +145,69 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
+  @Test
+  fun `migrate appointment with null end time`() {
+    val request = appointmentMigrateRequest(endTime = null)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+
+    verifyAppointmentInstance(response = response, endTime = response.startTime.plusHours(1))
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
+  @Test
+  fun `rejected if start date is too far into the future`() {
+    val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(371))
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    assertThat(webTestClient.migrateRejectedAppointment(request)).isNull()
+  }
+
+  @Test
+  fun `not rejected if start date is the maximum allowed`() {
+    val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(370))
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+
+    verifyAppointmentInstance(response = response, appointmentDate = request.startDate)
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @ParameterizedTest
@@ -171,9 +229,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response, setCustomName = false)
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @Test
@@ -200,12 +256,17 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(extraInformation).isEqualTo(request.comment)
     }
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
-  private fun verifyAppointmentInstance(response: AppointmentInstance, setCustomName: Boolean = true, comment: String? = null, categoryCode: String? = null) {
+  private fun verifyAppointmentInstance(
+    response: AppointmentInstance,
+    setCustomName: Boolean = true,
+    comment: String? = null,
+    categoryCode: String? = null,
+    endTime: LocalTime? = LocalTime.of(14, 30),
+    appointmentDate: LocalDate? = LocalDate.now().plusDays(1),
+  ) {
     with(response) {
       assertThat(id).isNotNull
       assertThat(appointmentSeriesId).isNotNull
@@ -225,9 +286,9 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(customName).isEqualTo(name)
       assertThat(internalLocationId).isEqualTo(123)
       assertThat(inCell).isFalse
-      assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(appointmentDate).isEqualTo(appointmentDate)
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
+      assertThat(endTime).isEqualTo(endTime)
       assertThat(extraInformation).isEqualTo(comment ?: "Appointment level comment")
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("CREATE.USER")
@@ -430,6 +491,15 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     .exchange()
     .expectStatus().isCreated
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(AppointmentInstance::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.migrateRejectedAppointment(request: AppointmentMigrateRequest) = post()
+    .uri("/migrate-appointment")
+    .bodyValue(request)
+    .headers(setAuthorisation(roles = listOf("ROLE_NOMIS_APPOINTMENTS")))
+    .exchange()
+    .expectStatus().isCreated
     .expectBody(AppointmentInstance::class.java)
     .returnResult().responseBody
 
