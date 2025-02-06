@@ -44,6 +44,7 @@ class MigrateAppointmentController(
     description =
     """
     Migrate an appointment creating an appointment series with one appointment that has the supplied prisoner allocated.
+    Will return null if appointment was dropped.
     """,
   )
   @ApiResponses(
@@ -89,7 +90,7 @@ class MigrateAppointmentController(
       required = true,
     )
     request: AppointmentMigrateRequest,
-  ): AppointmentInstance = migrateAppointmentService.migrateAppointment(request)
+  ) = migrateAppointmentService.migrateAppointment(request)
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @DeleteMapping(value = ["/{prisonCode}"])

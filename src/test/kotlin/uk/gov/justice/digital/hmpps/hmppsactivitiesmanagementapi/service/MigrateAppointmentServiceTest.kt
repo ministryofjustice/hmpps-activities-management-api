@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -12,7 +13,6 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundationTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -36,7 +35,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AppointmentCancellationReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.MigrateAppointmentService
@@ -44,7 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendee as AppointmentAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
@@ -54,7 +52,6 @@ class MigrateAppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
   private val appointmentSeriesSpecification: AppointmentSeriesSpecification = spy()
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
-  private val eventTierRepository: EventTierRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, appointmentCancellationReasonRepository, TransactionHandler(), outboundEventsService, mock(), mock()))
@@ -72,6 +69,7 @@ class MigrateAppointmentServiceTest {
     appointmentRepository,
     referenceCodeService,
     TransactionHandler(),
+    2,
   )
 
   @Nested
@@ -84,7 +82,6 @@ class MigrateAppointmentServiceTest {
     fun setUp() {
       whenever(appointmentRepository.saveAndFlush(appointmentCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<Appointment>())
       whenever(appointmentSeriesRepository.saveAndFlush(appointmentSeriesCaptor.capture())).thenAnswer(AdditionalAnswers.returnsFirstArg<AppointmentSeries>())
-      whenever(eventTierRepository.findById(foundationTier().eventTierId)).thenReturn(Optional.of(foundationTier()))
       whenever(appointmentInstanceRepository.findById(any())).thenReturn(Optional.of(appointmentInstanceEntity()))
       whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(appointmentCancelledReason),
@@ -197,6 +194,26 @@ class MigrateAppointmentServiceTest {
 
       with(appointmentSeriesCaptor.firstValue) {
         endTime isEqualTo startTime.plusHours(1)
+      }
+    }
+
+    @Test
+    fun `rejected if start date is too far into the future`() {
+      val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(3))
+
+      assertThat(service.migrateAppointment(request)).isNull()
+
+      verifyNoInteractions(appointmentSeriesRepository, appointmentInstanceRepository, appointmentCreateDomainService)
+    }
+
+    @Test
+    fun `not rejected if start date is the maximum allowed`() {
+      val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(2))
+
+      assertThat(service.migrateAppointment(request)).isNotNull()
+
+      with(appointmentSeriesCaptor.firstValue) {
+        startDate isEqualTo request.startDate
       }
     }
 
