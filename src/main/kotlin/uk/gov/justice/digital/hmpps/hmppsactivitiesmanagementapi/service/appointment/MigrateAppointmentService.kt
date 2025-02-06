@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
@@ -36,6 +37,7 @@ class MigrateAppointmentService(
   private val appointmentRepository: AppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
   private val transactionHandler: TransactionHandler,
+  @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -45,7 +47,16 @@ class MigrateAppointmentService(
 
   private fun ignoreCustomName(categoryCode: String) = categoryCodeIgnoreList.contains(categoryCode)
 
-  fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance {
+  fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance? {
+    val appointmentDescription = with(request) {
+      "$prisonCode $categoryCode $startDate $startTime-$endTime"
+    }
+
+    if (LocalDate.now().plusDays(maxStartDateOffsetDays.toLong()) < request.startDate) {
+      log.warn("Appointment dropped as start date is more than $maxStartDateOffsetDays days in the future: $appointmentDescription")
+      return null
+    }
+
     val appointmentSeries =
       transactionHandler.newSpringTransaction {
         appointmentSeriesRepository.saveAndFlush(
@@ -61,7 +72,7 @@ class MigrateAppointmentService(
             endTime = request.endTime ?: run {
               with(request) {
                 val newEndTime = startTime!!.plusHours(1)
-                log.warn("Null end time set to start time plus one hour: $prisonCode $categoryCode $startDate $startTime-$newEndTime")
+                log.warn("Null end time set to start time plus one hour: $appointmentDescription")
                 newEndTime
               }
             },
