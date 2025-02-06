@@ -73,7 +73,6 @@ data class AppointmentMigrateRequest(
   @JsonFormat(pattern = "HH:mm")
   val startTime: LocalTime?,
 
-  @field:NotNull(message = "End time must be supplied")
   @Schema(
     description = "The end time of the appointment",
     example = "10:30",
