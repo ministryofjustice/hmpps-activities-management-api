@@ -58,7 +58,13 @@ class MigrateAppointmentService(
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,
             startTime = request.startTime!!,
-            endTime = request.endTime,
+            endTime = request.endTime ?: run {
+              with(request) {
+                val newEndTime = startTime!!.plusHours(1)
+                log.warn("Null end time set to start time plus one hour: $prisonCode $categoryCode $startDate $startTime-$newEndTime")
+                newEndTime
+              }
+            },
             extraInformation = request.comment?.trim()?.takeIf { it.isNotEmpty() },
             createdTime = request.created!!,
             createdBy = request.createdBy!!,

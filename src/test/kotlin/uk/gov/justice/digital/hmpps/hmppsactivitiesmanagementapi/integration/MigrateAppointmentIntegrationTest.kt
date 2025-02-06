@@ -124,9 +124,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @Test
@@ -147,9 +145,28 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
+  @Test
+  fun `migrate appointment with null end time`() {
+    val request = appointmentMigrateRequest(endTime = null)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+    verifyAppointmentInstance(response = response, endTime = response.startTime.plusHours(1))
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @ParameterizedTest
@@ -171,9 +188,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response, setCustomName = false)
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
   @Test
@@ -200,12 +215,10 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(extraInformation).isEqualTo(request.comment)
     }
 
-    verifyNoInteractions(eventsPublisher)
-    verifyNoInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
-  private fun verifyAppointmentInstance(response: AppointmentInstance, setCustomName: Boolean = true, comment: String? = null, categoryCode: String? = null) {
+  private fun verifyAppointmentInstance(response: AppointmentInstance, setCustomName: Boolean = true, comment: String? = null, categoryCode: String? = null, endTime: LocalTime? = LocalTime.of(14, 30)) {
     with(response) {
       assertThat(id).isNotNull
       assertThat(appointmentSeriesId).isNotNull
@@ -227,7 +240,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(inCell).isFalse
       assertThat(appointmentDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))
-      assertThat(endTime).isEqualTo(LocalTime.of(14, 30))
+      assertThat(endTime).isEqualTo(endTime)
       assertThat(extraInformation).isEqualTo(comment ?: "Appointment level comment")
       assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(createdBy).isEqualTo("CREATE.USER")

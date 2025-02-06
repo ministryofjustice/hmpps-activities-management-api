@@ -145,7 +145,7 @@ class MigrateAppointmentServiceTest {
 
       service.migrateAppointment(request)
 
-      verify(outboundEventsService, times(0)).send(any(), any(), any())
+      verifyNoInteractions(outboundEventsService)
     }
 
     @Test
@@ -186,6 +186,17 @@ class MigrateAppointmentServiceTest {
       with(appointmentSeriesCaptor.firstValue) {
         customName isEqualTo null
         extraInformation isEqualTo null
+      }
+    }
+
+    @Test
+    fun `null end time is replaced by start time plus one hour`() {
+      val request = appointmentMigrateRequest(endTime = null)
+
+      service.migrateAppointment(request)
+
+      with(appointmentSeriesCaptor.firstValue) {
+        endTime isEqualTo startTime.plusHours(1)
       }
     }
 
