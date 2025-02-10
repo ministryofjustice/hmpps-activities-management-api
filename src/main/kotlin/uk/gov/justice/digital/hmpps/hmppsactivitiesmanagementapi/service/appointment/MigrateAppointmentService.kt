@@ -43,9 +43,9 @@ class MigrateAppointmentService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  val categoryCodeIgnoreList = listOf("VLLA", "VLB", "VLOO", "VLPA", "VLPM")
+  val videoBookingCategories = listOf("VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP")
 
-  private fun ignoreCustomName(categoryCode: String) = categoryCodeIgnoreList.contains(categoryCode)
+  private fun ignoreCategoryCode(categoryCode: String) = videoBookingCategories.contains(categoryCode)
 
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance? {
     val appointmentDescription = with(request) {
@@ -64,7 +64,7 @@ class MigrateAppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
             categoryCode = request.categoryCode!!,
-            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCustomName(request.categoryCode).not() }?.take(40),
+            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCategoryCode(request.categoryCode).not() }?.take(40),
             appointmentTier = null,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,
@@ -75,7 +75,7 @@ class MigrateAppointmentService(
                 log.warn("Null end time set to start time plus one hour: $appointmentDescription")
                 newEndTime
               }
-            },
+            }.takeIf { ignoreCategoryCode(request.categoryCode).not() },
             extraInformation = request.comment?.trim()?.takeIf { it.isNotEmpty() },
             createdTime = request.created!!,
             createdBy = request.createdBy!!,
