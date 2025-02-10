@@ -57,7 +57,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
@@ -81,6 +81,7 @@ class AppointmentSetServiceTest {
     outboundEventsService,
     telemetryClient,
     auditService,
+    2L,
   )
 
   @BeforeEach
@@ -387,6 +388,39 @@ class AppointmentSetServiceTest {
       exception.message isEqualTo "Prisoner(s) with prisoner number(s) 'D4567EF' not found, were inactive or are residents of a different prison."
 
       verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `fails if start date is too far into the future`() {
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(
+            prisonCode = prisonCode,
+            categoryCode = categoryCode,
+            internalLocationId = internalLocationId,
+            startDate = LocalDate.now().plusDays(3),
+          ),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Start date cannot be more than 2 days into the future."
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `succeeds if start date is the maximum allowed`() {
+      val result = service.createAppointmentSet(
+        appointmentSetCreateRequest(
+          prisonCode = prisonCode,
+          categoryCode = categoryCode,
+          internalLocationId = internalLocationId,
+          startDate = LocalDate.now().plusDays(2),
+        ),
+        principal,
+      )
+
+      assertThat(result.startDate).isEqualTo(LocalDate.now().plusDays(2))
     }
 
     @Test

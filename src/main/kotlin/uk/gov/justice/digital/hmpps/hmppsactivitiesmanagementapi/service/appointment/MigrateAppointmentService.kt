@@ -52,7 +52,7 @@ class MigrateAppointmentService(
       "$prisonCode $categoryCode $startDate $startTime-$endTime"
     }
 
-    if (LocalDate.now().plusDays(maxStartDateOffsetDays.toLong()) < request.startDate) {
+    if (ignoreCategoryCode(request.categoryCode!!).not() && LocalDate.now().plusDays(maxStartDateOffsetDays.toLong()) < request.startDate) {
       log.warn("Appointment dropped as start date is more than $maxStartDateOffsetDays days in the future: $appointmentDescription")
       return null
     }
@@ -75,7 +75,7 @@ class MigrateAppointmentService(
                 log.warn("Null end time set to start time plus one hour: $appointmentDescription")
                 newEndTime
               }
-            }.takeIf { ignoreCategoryCode(request.categoryCode).not() },
+            },
             extraInformation = request.comment?.trim()?.takeIf { it.isNotEmpty() },
             createdTime = request.created!!,
             createdBy = request.createdBy!!,

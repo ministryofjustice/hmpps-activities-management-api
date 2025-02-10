@@ -148,31 +148,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
-  @ParameterizedTest(name = "null end time is left as null when category code is {0}")
-  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
-  fun `appointment with null end time is left as null when category code is excluded`(categoryCode: String) {
-    val request = appointmentMigrateRequest(endTime = null, categoryCode = categoryCode)
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
-
-    val response = webTestClient.migrateAppointment(request)!!
-
-    verifyAppointmentInstance(response = response, setCustomName = false)
-
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
-  }
-
   @Test
-  fun `appointment with null end time set to start time plus one hour when category code is not excluded`() {
+  fun `migrate appointment with null end time`() {
     val request = appointmentMigrateRequest(endTime = null)
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -194,8 +171,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @Test
-  fun `rejected if start date is too far into the future`() {
-    val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(371))
+  fun `migrate appointment rejected if start date is too far into the future and is not a BVLS code`() {
+    val request = appointmentMigrateRequest(categoryCode = "TEST2343", startDate = LocalDate.now().plusDays(371))
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf(request.prisonerNumber!!),
@@ -211,8 +188,31 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     assertThat(webTestClient.migrateRejectedAppointment(request)).isNull()
   }
 
+  @ParameterizedTest(name = "migrate appointment is not rejected if start date is too far into the future but is BVLS code {0}")
+  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+  fun `migrate appointment success if start date is too far into the future but is a BVLS code`(categoryCode: String) {
+    val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(371))
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+
+    verifyAppointmentInstance(response = response, appointmentDate = request.startDate, setCustomName = false)
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
   @Test
-  fun `not rejected if start date is the maximum allowed`() {
+  fun `migrate appointment success if start date is the maximum allowed`() {
     val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(370))
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
