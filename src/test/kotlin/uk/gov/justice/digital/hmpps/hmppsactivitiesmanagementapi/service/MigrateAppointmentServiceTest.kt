@@ -186,9 +186,21 @@ class MigrateAppointmentServiceTest {
       }
     }
 
+    @ParameterizedTest(name = "null end time is left as null when category code is {0}")
+    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+    fun `null end time is left as null category code is excluded`(categoryCode: String) {
+      val request = appointmentMigrateRequest(endTime = null, categoryCode = categoryCode)
+
+      service.migrateAppointment(request)
+
+      with(appointmentSeriesCaptor.firstValue) {
+        endTime isEqualTo null
+      }
+    }
+
     @Test
-    fun `null end time is replaced by start time plus one hour`() {
-      val request = appointmentMigrateRequest(endTime = null)
+    fun `null end time is replaced by start time plus one hour when category code is not excluded`() {
+      val request = appointmentMigrateRequest(endTime = null, categoryCode = "CANT")
 
       service.migrateAppointment(request)
 
@@ -254,7 +266,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["Appointments comment", "Appointments comment which is 41 characts"])
+    @ValueSource(strings = ["Appointments comment", "Appointments comment which is 41 characters"])
     fun `characters comment is copied to customName with first 40 chars and extra information the whole comment`(requestComment: String) {
       val request = appointmentMigrateRequest(comment = requestComment)
 
@@ -267,7 +279,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM"])
+    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
     fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
       val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 

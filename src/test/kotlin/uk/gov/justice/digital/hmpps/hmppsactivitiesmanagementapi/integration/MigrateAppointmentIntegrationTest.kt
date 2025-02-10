@@ -148,8 +148,31 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
 
+  @ParameterizedTest(name = "null end time is left as null when category code is {0}")
+  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+  fun `appointment with null end time is left as null when category code is excluded`(categoryCode: String) {
+    val request = appointmentMigrateRequest(endTime = null, categoryCode = categoryCode)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf(request.prisonerNumber!!),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumber!!,
+          bookingId = 1,
+          prisonId = request.prisonCode!!,
+        ),
+      ),
+    )
+
+    val response = webTestClient.migrateAppointment(request)!!
+
+    verifyAppointmentInstance(response = response, setCustomName = false)
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
   @Test
-  fun `migrate appointment with null end time`() {
+  fun `appointment with null end time set to start time plus one hour when category code is not excluded`() {
     val request = appointmentMigrateRequest(endTime = null)
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -211,7 +234,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM"])
+  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
   fun `migrate appointment success with BVLS category custom name is blank`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode)
 
