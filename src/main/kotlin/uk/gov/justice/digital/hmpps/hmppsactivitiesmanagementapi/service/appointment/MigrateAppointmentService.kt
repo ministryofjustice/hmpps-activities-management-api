@@ -43,9 +43,9 @@ class MigrateAppointmentService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  val categoryCodeIgnoreList = listOf("VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP")
+  val videoBookingCategories = listOf("VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP")
 
-  private fun ignoreCategoryCode(categoryCode: String) = categoryCodeIgnoreList.contains(categoryCode)
+  private fun ignoreCategoryCode(categoryCode: String) = videoBookingCategories.contains(categoryCode)
 
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance? {
     val appointmentDescription = with(request) {
