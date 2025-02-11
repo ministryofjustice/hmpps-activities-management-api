@@ -5,7 +5,15 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyMap
+import org.mockito.ArgumentMatchers.anySet
+import org.mockito.ArgumentMatchers.anyString
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
@@ -52,6 +60,7 @@ class AppointmentServiceUpdateTest {
     cancelAppointmentsJob,
     uncancelAppointmentsJob,
     maxSyncAppointmentInstanceActions = 14,
+    maxStartDateOffsetDays = 2L,
   )
 
   private val principal: Principal = mock()
@@ -135,6 +144,25 @@ class AppointmentServiceUpdateTest {
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Cannot add prisoners to an individual appointment")
+  }
+
+  @Test
+  fun `fails if start date is too far into the future`() {
+    val appointment = expectIndividualAppointment()
+    val request = AppointmentUpdateRequest(startDate = LocalDate.now().plusDays(3))
+
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Start date cannot be more than 2 days into the future")
+  }
+
+  @Test
+  fun `succeeds if start date is the maximum allowed`() {
+    val appointment = expectIndividualAppointment()
+    val request = AppointmentUpdateRequest(startDate = LocalDate.now().plusDays(2))
+
+    service.updateAppointment(appointment.appointmentId, request, principal)
+
+    verify(appointmentUpdateDomainService).updateAppointments(anyLong(), anyLong(), anySet(), any(), anyMap(), any(), anyString(), any(), anyInt(), anyLong(), eq(true), eq(true))
   }
 
   @Test

@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment
 
 import com.microsoft.applicationinsights.TelemetryClient
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
@@ -30,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
+import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Service
@@ -45,6 +47,7 @@ class AppointmentSetService(
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentSetDetailsById(appointmentSetId: Long): AppointmentSetDetails {
@@ -69,6 +72,7 @@ class AppointmentSetService(
     val locationDescription = request.locationDescription()
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
     request.failIfMissingPrisoners(prisonNumberBookingIdMap)
+    request.failIfStartDateIsTooFarInTheFuture()
 
     transactionHandler.newSpringTransaction {
       appointmentSetRepository.saveAndFlush(
@@ -108,6 +112,12 @@ class AppointmentSetService(
       require(it.isEmpty()) {
         "Prisoner(s) with prisoner number(s) '${it.joinToString("', '")}' not found, were inactive or are residents of a different prison."
       }
+    }
+  }
+
+  private fun AppointmentSetCreateRequest.failIfStartDateIsTooFarInTheFuture() {
+    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+      "Start date cannot be more than $maxStartDateOffsetDays days into the future."
     }
   }
 
