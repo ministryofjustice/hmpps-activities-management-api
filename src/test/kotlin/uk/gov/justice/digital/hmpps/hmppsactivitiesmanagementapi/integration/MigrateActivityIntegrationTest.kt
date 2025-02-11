@@ -233,6 +233,63 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  @Sql("classpath:test_data/seed-activity-id-23-2.sql")
+  fun `migrate allocation - success when future allocation start date after the activity start date`() {
+    val request = buildAllocationMigrateRequest().copy(startDate = LocalDate.now().plusDays(3))
+
+    stubPrisonerSearch(request.prisonCode, request.prisonerNumber, true)
+
+    val response = webTestClient.migrateAllocation(request, listOf("ROLE_NOMIS_ACTIVITIES"))
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(AllocationMigrateResponse::class.java)
+      .returnResult().responseBody
+
+    with(response!!) {
+      assertThat(allocationId).isNotNull
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    eventCaptor.allValues.forEach { event ->
+      log.info("Event captured on successful allocation: ${event.eventType}")
+    }
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-23-2.sql")
+  fun `migrate allocation - success when future start date before the activity start date`() {
+    val allocStartDate = LocalDate.now().plusDays(1)
+    val request = buildAllocationMigrateRequest().copy(startDate = allocStartDate)
+
+    stubPrisonerSearch(request.prisonCode, request.prisonerNumber, true)
+
+    val response = webTestClient.migrateAllocation(request, listOf("ROLE_NOMIS_ACTIVITIES"))
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(AllocationMigrateResponse::class.java)
+      .returnResult().responseBody
+
+    with(response!!) {
+      assertThat(allocationId).isNotNull
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    eventCaptor.allValues.forEach { event ->
+      log.info("Event captured on successful allocation: ${event.eventType}")
+    }
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+    }
+  }
+
+  @Test
   @Sql("classpath:test_data/seed-activity-id-23.sql")
   fun `migrate allocation - already allocated error`() {
     val request = buildAllocationMigrateRequest().copy(

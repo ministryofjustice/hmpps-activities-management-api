@@ -435,20 +435,9 @@ class MigrateActivityService(
 
       log.info("Migrating allocation ${request.prisonerNumber} to activity ${request.activityId} ${activity.summary}")
 
-      val today = LocalDate.now()
-      val tomorrow = today.plusDays(1)
-
-      if (!activity.isActive(tomorrow)) {
-        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} activity is not active tomorrow")
-      }
-
       val activityScheduleId = activity.schedules().first().activityScheduleId
       val schedule = activityScheduleRepository.findBy(activityScheduleId, activity.prisonCode)
         ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber} to ${request.activityId} ${activity.summary}. Activity schedule ID $activityScheduleId not found.")
-
-      if (!schedule.isActiveOn(tomorrow)) {
-        logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. ${request.activityId} ${activity.summary} - schedule is not active tomorrow")
-      }
 
       if (schedule.allocations(excludeEnded = true).any { allocation -> allocation.prisonerNumber == request.prisonerNumber }) {
         logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Already allocated to ${request.activityId} ${activity.summary}")
@@ -488,11 +477,14 @@ class MigrateActivityService(
           ?: logAndThrowValidationException("Allocation failed ${request.prisonerNumber}. Nomis pay band ${prisonPayBand.nomisPayBand} is not on a pay rate for ${activity.activityId} ${activity.description}")
       }
 
+      val isFutureStartDate: Boolean = request.startDate.isAfter(LocalDate.now()) && request.startDate.isAfter(activity.startDate)
+      val allocationStartDate = if (isFutureStartDate) request.startDate else activity.startDate
+
       schedule.allocatePrisoner(
         prisonerNumber = request.prisonerNumber.toPrisonerNumber(),
         payBand = prisonPayBand,
         bookingId = prisoner.bookingId?.toLong() ?: 0L,
-        startDate = if (request.startDate.isAfter(tomorrow)) request.startDate else tomorrow,
+        startDate = allocationStartDate,
         endDate = request.endDate,
         exclusions = request.exclusions?.consolidateMatchingSlots(),
         allocatedBy = MIGRATION_USER,
