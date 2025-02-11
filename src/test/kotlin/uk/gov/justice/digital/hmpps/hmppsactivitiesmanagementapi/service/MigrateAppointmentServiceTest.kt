@@ -186,21 +186,9 @@ class MigrateAppointmentServiceTest {
       }
     }
 
-    @ParameterizedTest(name = "null end time is left as null when category code is {0}")
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
-    fun `null end time is left as null category code is excluded`(categoryCode: String) {
-      val request = appointmentMigrateRequest(endTime = null, categoryCode = categoryCode)
-
-      service.migrateAppointment(request)
-
-      with(appointmentSeriesCaptor.firstValue) {
-        endTime isEqualTo null
-      }
-    }
-
     @Test
-    fun `null end time is replaced by start time plus one hour when category code is not excluded`() {
-      val request = appointmentMigrateRequest(endTime = null, categoryCode = "CANT")
+    fun `null end time is replaced by start time plus one hour`() {
+      val request = appointmentMigrateRequest(endTime = null)
 
       service.migrateAppointment(request)
 
@@ -210,16 +198,29 @@ class MigrateAppointmentServiceTest {
     }
 
     @Test
-    fun `rejected if start date is too far into the future`() {
-      val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(3))
+    fun `rejected if start date is too far into the future and is not a BVLS category code`() {
+      val request = appointmentMigrateRequest(categoryCode = "ANYTHING", startDate = LocalDate.now().plusDays(3))
 
       assertThat(service.migrateAppointment(request)).isNull()
 
       verifyNoInteractions(appointmentSeriesRepository, appointmentInstanceRepository, appointmentCreateDomainService)
     }
 
+    @ParameterizedTest(name = "do not reject if start date is too far into the future and is BVLS category code {0}")
+    @ValueSource(strings = ["VLB", "VLPM"])
+    fun `do not reject if start date is too far into the future and is a BVLS category code`(categoryCode: String) {
+      val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(3))
+
+      assertThat(service.migrateAppointment(request)).isNotNull()
+
+      with(appointmentSeriesCaptor.firstValue) {
+        categoryCode isEqualTo categoryCode
+        startDate isEqualTo request.startDate
+      }
+    }
+
     @Test
-    fun `not rejected if start date is the maximum allowed`() {
+    fun `do not rejected if start date is the maximum allowed`() {
       val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(2))
 
       assertThat(service.migrateAppointment(request)).isNotNull()
@@ -279,7 +280,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+    @ValueSource(strings = ["VLB", "VLPM"])
     fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
       val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 

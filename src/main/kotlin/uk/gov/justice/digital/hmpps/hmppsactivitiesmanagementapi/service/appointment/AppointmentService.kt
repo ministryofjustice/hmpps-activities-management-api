@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
@@ -37,6 +38,7 @@ class AppointmentService(
   private val uncancelAppointmentsJob: UncancelAppointmentsJob,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
+  @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentDetailsById(appointmentId: Long): AppointmentDetails {
@@ -102,6 +104,10 @@ class AppointmentService(
 
     require(request.removePrisonerNumbers.isNullOrEmpty() || appointmentSeries.appointmentType != AppointmentType.INDIVIDUAL) {
       "Cannot remove prisoners from an individual appointment"
+    }
+
+    require(request.startDate == null || request.startDate <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+      "Start date cannot be more than $maxStartDateOffsetDays days into the future"
     }
 
     val prisonerMap = if (request.addPrisonerNumbers.isNullOrEmpty()) {
