@@ -207,7 +207,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest(name = "do not reject if start date is too far into the future and is BVLS category code {0}")
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+    @ValueSource(strings = ["VLB", "VLPM"])
     fun `do not reject if start date is too far into the future and is a BVLS category code`(categoryCode: String) {
       val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(3))
 
@@ -280,7 +280,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+    @ValueSource(strings = ["VLB", "VLPM"])
     fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
       val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 

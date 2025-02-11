@@ -189,7 +189,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @ParameterizedTest(name = "migrate appointment is not rejected if start date is too far into the future but is BVLS code {0}")
-  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+  @ValueSource(strings = ["VLB", "VLPM"])
   fun `migrate appointment success if start date is too far into the future but is a BVLS code`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(371))
 
@@ -234,7 +234,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM", "VLAP"])
+  @ValueSource(strings = ["VLB", "VLPM"])
   fun `migrate appointment success with BVLS category custom name is blank`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode)
 
