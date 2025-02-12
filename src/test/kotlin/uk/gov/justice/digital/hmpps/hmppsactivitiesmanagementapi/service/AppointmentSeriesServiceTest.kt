@@ -83,6 +83,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.security.Principal
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -123,6 +124,7 @@ class AppointmentSeriesServiceTest {
     createAppointmentsJob,
     TransactionHandler(),
     maxSyncAppointmentInstanceActions = 14,
+    maxStartDateOffsetDays = 2,
   )
 
   @BeforeEach
@@ -279,6 +281,32 @@ class AppointmentSeriesServiceTest {
       .hasMessage("You cannot schedule more than 333 appointments for this number of attendees.")
 
     verify(appointmentSeriesRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `createAppointmentSeries appointment series throws error if start date is too far into the future`() {
+    val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().plusDays(3))
+
+    assertThatThrownBy {
+      service.createAppointmentSeries(request, principal)
+    }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Start date cannot be more than 2 days into the future.")
+
+    verify(appointmentSeriesRepository, never()).saveAndFlush(any())
+  }
+
+  @Test
+  fun `createAppointmentSeries appointment series succeeds if start date is the maximum allowed`() {
+    val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().plusDays(2))
+
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+
+    val result = service.createAppointmentSeries(request, principal)
+
+    assertThat(result.startDate).isEqualTo(request.startDate)
   }
 
   @Test

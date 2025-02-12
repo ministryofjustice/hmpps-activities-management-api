@@ -172,7 +172,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `migrate appointment rejected if start date over 5 years into the future and is not a BVLS category code`() {
-    val request = appointmentMigrateRequest(categoryCode = "TEST2343", startDate = LocalDate.now().plusDays(1785))
+    val request = appointmentMigrateRequest(categoryCode = "TEST2343", startDate = LocalDate.now().plusDays(1827))
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf(request.prisonerNumber!!),
