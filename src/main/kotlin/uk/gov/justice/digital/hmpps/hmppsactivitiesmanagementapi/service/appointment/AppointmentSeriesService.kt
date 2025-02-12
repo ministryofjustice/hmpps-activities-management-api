@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
+import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries as AppointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeriesSchedule as AppointmentSeriesScheduleEntity
 
@@ -38,6 +39,7 @@ class AppointmentSeriesService(
   private val transactionHandler: TransactionHandler,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
+  @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
   @Transactional(readOnly = true)
   fun getAppointmentSeriesById(appointmentSeriesId: Long): AppointmentSeries {
@@ -65,6 +67,7 @@ class AppointmentSeriesService(
     checkCaseloadAccess(request.prisonCode!!)
 
     request.failIfMaximumAppointmentInstancesExceeded()
+    request.failIfStartDateIsTooFarInTheFuture()
     val categoryDescription = request.categoryDescription()
     val locationDescription = request.locationDescription()
     val prisonNumberBookingIdMap = request.createNumberBookingIdMap()
@@ -111,6 +114,12 @@ class AppointmentSeriesService(
     val repeatCount = schedule?.numberOfAppointments ?: 1
     require(prisonerNumbers.size * repeatCount <= maxAppointmentInstances) {
       "You cannot schedule more than ${maxAppointmentInstances / prisonerNumbers.size} appointments for this number of attendees."
+    }
+  }
+
+  private fun AppointmentSeriesCreateRequest.failIfStartDateIsTooFarInTheFuture() {
+    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+      "Start date cannot be more than $maxStartDateOffsetDays days into the future."
     }
   }
 
