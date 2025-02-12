@@ -1148,59 +1148,149 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `Activity is not active tomorrow will fail`() {
-      val request = buildAllocationMigrateRequest()
+    fun `Future allocation start date is the same as the activity start date`() {
+      val scheduleStartDate = LocalDate.now().plusDays(2)
+
+      val request = buildAllocationMigrateRequest().copy(startDate = scheduleStartDate)
+
+      val schedule = activityEntity().schedules().first().copy(startDate = scheduleStartDate)
+
+      // The expected allocation - required so final check succeeds
+      schedule.allocatePrisoner(
+        prisonerNumber = "A1234BB".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = MIGRATION_USER,
+        startDate = scheduleStartDate,
+        endDate = null,
+      )
 
       // Set the activity to start in 2 days time
       whenever(activityRepository.findByActivityIdAndPrisonCode(1L, "MDI"))
         .thenReturn(
           activityEntity().apply {
-            startDate = LocalDate.now().plusDays(2)
+            this.startDate = scheduleStartDate
           },
         )
 
-      val exception = assertThrows<ValidationException> {
-        service.migrateAllocation(request)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      val response = service.migrateAllocation(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.allocationId).isEqualTo(0L) // default
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerNumber).isEqualTo("A1234BB")
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(startDate).isEqualTo(scheduleStartDate)
+          assertThat(payBand?.nomisPayBand).isEqualTo("1".toInt())
+          assertThat(endDate).isNull()
+        }
       }
 
-      assertThat(exception.message).contains("Allocation failed A1234BB")
-      assertThat(exception.message).contains("activity is not active tomorrow")
-
-      verify(rolloutPrisonService).getByPrisonCode("MDI")
-      verify(activityRepository).findByActivityIdAndPrisonCode(1, "MDI")
-
-      verify(activityScheduleRepository, times(0)).findBy(1, "MDI")
-      verify(prisonerSearchApiClient, times(0)).findByPrisonerNumbers(listOf("A1234BB"))
-      verify(prisonPayBandRepository, times(0)).findByPrisonCode("MDI")
-      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     }
 
     @Test
-    fun `Activity schedule is not active tomorrow will fail`() {
-      val request = buildAllocationMigrateRequest()
+    fun `Future allocation start date is after the activity start date`() {
+      val scheduleStartDate = LocalDate.now().plusDays(2)
+      val allocationStartDate = scheduleStartDate.plusDays(1)
 
-      // Set the schedule to start in 2 days time
-      whenever(activityScheduleRepository.findBy(any(), any()))
+      val request = buildAllocationMigrateRequest().copy(startDate = scheduleStartDate.plusDays(1))
+
+      val schedule = activityEntity().schedules().first().copy(startDate = scheduleStartDate)
+
+      // The expected allocation - required so final check succeeds
+      schedule.allocatePrisoner(
+        prisonerNumber = "A1234BB".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = MIGRATION_USER,
+        startDate = allocationStartDate,
+        endDate = null,
+      )
+
+      // Set the activity to start in 2 days time
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1L, "MDI"))
         .thenReturn(
-          activityEntity().schedules().first().apply {
-            startDate = LocalDate.now().plusDays(2)
+          activityEntity().apply {
+            this.startDate = scheduleStartDate
           },
         )
 
-      val exception = assertThrows<ValidationException> {
-        service.migrateAllocation(request)
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      val response = service.migrateAllocation(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.allocationId).isEqualTo(0L) // default
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerNumber).isEqualTo("A1234BB")
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(startDate).isEqualTo(allocationStartDate)
+          assertThat(payBand?.nomisPayBand).isEqualTo("1".toInt())
+          assertThat(endDate).isNull()
+        }
       }
 
-      assertThat(exception.message).contains("Allocation failed A1234BB")
-      assertThat(exception.message).contains("schedule is not active tomorrow")
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
+    }
 
-      verify(rolloutPrisonService).getByPrisonCode("MDI")
-      verify(activityRepository).findByActivityIdAndPrisonCode(1, "MDI")
-      verify(activityScheduleRepository).findBy(1, "MDI")
+    @Test
+    fun `Historic allocation start date is success if the activity is active`() {
+      val activityStartDate = LocalDate.now().plusDays(1)
+      val allocationStartDate = LocalDate.now().minusDays(2)
 
-      verify(prisonerSearchApiClient, times(0)).findByPrisonerNumbers(listOf("A1234BB"))
-      verify(prisonPayBandRepository, times(0)).findByPrisonCode("MDI")
-      verify(activityScheduleRepository, times(0)).saveAndFlush(any())
+      val request = buildAllocationMigrateRequest().copy(startDate = allocationStartDate)
+
+      val schedule = activityEntity().schedules().first().copy(startDate = activityStartDate)
+
+      // The expected allocation - required so final check succeeds
+      schedule.allocatePrisoner(
+        prisonerNumber = "A1234BB".toPrisonerNumber(),
+        payBand = lowPayBand,
+        bookingId = 1,
+        allocatedBy = MIGRATION_USER,
+        startDate = activityStartDate,
+        endDate = null,
+      )
+
+      // Set the activity to start in 2 days time
+      whenever(activityRepository.findByActivityIdAndPrisonCode(1L, "MDI"))
+        .thenReturn(
+          activityEntity().apply {
+            this.startDate = activityStartDate
+          },
+        )
+
+      whenever(activityScheduleRepository.saveAndFlush(any())).thenReturn(schedule)
+
+      val response = service.migrateAllocation(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.allocationId).isEqualTo(0L) // default
+
+      verify(activityScheduleRepository).saveAndFlush(activityScheduleCaptor.capture())
+
+      with(activityScheduleCaptor.firstValue) {
+        with(allocations().last()) {
+          assertThat(prisonerNumber).isEqualTo("A1234BB")
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.PENDING)
+          assertThat(startDate).isEqualTo(activityStartDate)
+          assertThat(payBand?.nomisPayBand).isEqualTo("1".toInt())
+          assertThat(endDate).isNull()
+        }
+      }
+
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATED, 0)
     }
 
     @Test
@@ -1496,7 +1586,7 @@ class MigrateActivityServiceTest {
       bookingId = 1,
       cellLocation = "MDI-1-1-001",
       nomisPayBand = "1",
-      startDate = LocalDate.now().minusDays(1),
+      startDate = LocalDate.now().plusDays(1),
       endDate = null,
       endComment = null,
       suspendedFlag = false,
