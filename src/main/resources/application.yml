@@ -139,7 +139,7 @@ online:
 applications:
   max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES}
   max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS}
-  max-appointment-start-date-from-today: 1784
+  max-appointment-start-date-from-today: 1826
 
 hmpps:
   sqs:
