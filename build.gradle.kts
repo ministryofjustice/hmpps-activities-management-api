@@ -63,7 +63,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.11.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.12.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.20.4")
