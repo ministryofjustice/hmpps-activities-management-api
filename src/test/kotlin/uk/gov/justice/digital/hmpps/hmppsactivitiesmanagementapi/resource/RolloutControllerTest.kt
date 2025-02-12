@@ -60,6 +60,32 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
 
   @Test
   fun `get list of all rolled out prisons`() {
+    val rolloutPrisons = listOf(
+      RolloutPrisonPlan(
+        prisonCode = "LPI",
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        prisonLive = true,
+      ),
+      RolloutPrisonPlan(
+        prisonCode = "MDI",
+        activitiesRolledOut = true,
+        appointmentsRolledOut = true,
+        prisonLive = false,
+      ),
+    )
+    whenever(prisonService.getRolloutPrisons(prisonsLive = false)).thenReturn(rolloutPrisons)
+
+    val response = mockMvc.getRolledOutPrisons()
+      .andExpect { status { isOk() } }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(rolloutPrisons))
+  }
+
+  @Test
+  fun `get list of all rolled out prisons which are live`() {
     val rolloutPrison = RolloutPrisonPlan(
       prisonCode = "LPI",
       activitiesRolledOut = true,
@@ -68,13 +94,16 @@ class RolloutControllerTest : ControllerTestBase<RolloutController>() {
     )
     whenever(prisonService.getRolloutPrisons(prisonsLive = true)).thenReturn(listOf(rolloutPrison))
 
-    val response = mockMvc.getRolledOutPrisons()
+    val response = mockMvc.getLiveRolledOutPrisons()
       .andExpect { status { isOk() } }
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(rolloutPrison)))
   }
+
   private fun MockMvc.getPrisonByCode(code: String) = get("/rollout/{code}", code)
   private fun MockMvc.getRolledOutPrisons() = get("/rollout")
+
+  private fun MockMvc.getLiveRolledOutPrisons() = get("/rollout?prisonsLive=true")
 }
