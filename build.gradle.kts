@@ -3,12 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.1"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.2"
   kotlin("plugin.spring") version "2.1.10"
   kotlin("plugin.jpa") version "2.1.10"
   jacoco
   id("org.openapi.generator") version "7.11.0"
-  id("io.sentry.jvm.gradle") version "5.1.0"
+  id("io.sentry.jvm.gradle") version "5.2.0"
 }
 
 allOpen {
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.19")
+  implementation("aws.sdk.kotlin:s3:1.4.20")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
