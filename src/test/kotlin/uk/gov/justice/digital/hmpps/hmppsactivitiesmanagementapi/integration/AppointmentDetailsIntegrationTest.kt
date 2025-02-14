@@ -305,7 +305,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentLocationSummary(123, "RSI", "Education 1"),
         false,
         LocalDate.now(),
-        LocalTime.of(9, 0),
+        LocalTime.of(0, 0),
         LocalTime.of(10, 30),
         false,
         null,
