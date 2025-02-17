@@ -392,7 +392,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       .expectBody(AppointmentSeries::class.java)
       .returnResult().responseBody
 
-    val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+    appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
     assertThat(appointmentSeries.appointments).hasSize(4)
 
@@ -409,7 +409,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     with(eventCaptor.firstValue) {
       assertThat(eventType).isEqualTo("appointments.appointment-instance.uncancelled")
-      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(3))
       assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
       assertThat(description).isEqualTo("An appointment instance has been uncancelled in the activities management service")
     }
