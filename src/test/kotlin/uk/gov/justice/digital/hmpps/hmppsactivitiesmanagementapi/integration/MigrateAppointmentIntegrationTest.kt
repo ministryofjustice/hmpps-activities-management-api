@@ -234,7 +234,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = ["VLB", "VLPM"])
+  @ValueSource(strings = ["VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP"])
   fun `migrate appointment success with BVLS category custom name is blank`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode)
 
