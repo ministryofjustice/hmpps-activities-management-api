@@ -43,16 +43,12 @@ class MigrateAppointmentService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  val videoBookingCategories = listOf("VLB", "VLPM")
-
-  private fun ignoreCategoryCode(categoryCode: String) = videoBookingCategories.contains(categoryCode)
-
   fun migrateAppointment(request: AppointmentMigrateRequest): AppointmentInstance? {
     val appointmentDescription = with(request) {
       "$prisonCode $categoryCode $startDate $startTime-$endTime"
     }
 
-    if (ignoreCategoryCode(request.categoryCode!!).not() && LocalDate.now().plusDays(maxStartDateOffsetDays.toLong()) < request.startDate) {
+    if (listOf("VLB", "VLPM").contains(request.categoryCode!!).not() && LocalDate.now().plusDays(maxStartDateOffsetDays) < request.startDate) {
       log.warn("Appointment dropped as start date is more than $maxStartDateOffsetDays days in the future: $appointmentDescription")
       return null
     }
@@ -64,7 +60,7 @@ class MigrateAppointmentService(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
             categoryCode = request.categoryCode!!,
-            customName = request.comment?.trim()?.takeIf { it.isNotEmpty() && ignoreCategoryCode(request.categoryCode).not() }?.take(40),
+            customName = if (listOf("VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP").contains(request.categoryCode).not()) request.comment?.trim()?.takeUnless(String::isBlank)?.take(40) else null,
             appointmentTier = null,
             internalLocationId = request.internalLocationId,
             startDate = request.startDate!!,

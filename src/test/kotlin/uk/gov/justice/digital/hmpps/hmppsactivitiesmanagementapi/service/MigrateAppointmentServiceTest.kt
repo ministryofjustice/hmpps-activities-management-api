@@ -280,7 +280,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["VLB", "VLPM"])
+    @ValueSource(strings = ["VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP"])
     fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
       val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 
