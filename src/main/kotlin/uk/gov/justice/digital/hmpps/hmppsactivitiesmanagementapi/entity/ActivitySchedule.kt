@@ -28,6 +28,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
 const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
@@ -82,6 +83,8 @@ data class ActivitySchedule(
   var scheduleWeeks: Int,
 
   var usePrisonRegimeTime: Boolean = true,
+
+  var dpsLocationId: UUID? = null,
 ) {
 
   init {
