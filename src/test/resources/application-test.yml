@@ -84,6 +84,14 @@ manage:
    api:
      url: http://localhost:8777
 
+locations-inside-prison:
+  api:
+    url: http://localhost:8093
+
+nomis-mapping:
+  api:
+    url: http://localhost:8094
+
 migrate:
   activities-live: PVI,RSI,MDI,IWI,FMI
   appointments-live: PVI,RSI,MDI,IWI,FMI
