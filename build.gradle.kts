@@ -87,7 +87,7 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "copyPreCommitHook")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "buildLocationsInsidePrisonApiModel", "copyPreCommitHook")
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_21)
     }
@@ -130,6 +130,15 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
   globalProperties.set(mapOf("models" to ""))
 }
 
+tasks.register("buildLocationsInsidePrisonApiModel", GenerateTask::class) {
+  generatorName.set("kotlin")
+  inputSpec.set("openapi-specs/locations-inside-prison-api.json")
+  outputDir.set("$buildDirectory/generated/locationsinsideprisonapi")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model")
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
+}
+
 tasks.register("listrepos") {
   doLast {
     println("Repositories:")
@@ -147,7 +156,7 @@ tasks.register("copyPreCommitHook", Copy::class) {
   dependsOn("generateGitProperties")
 }
 
-val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi")
+val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi", "locationsinsideprisonapi")
 
 kotlin {
   generatedProjectDirs.forEach { generatedProject ->
@@ -188,6 +197,7 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
   dependsOn("buildPrisonApiModel")
   dependsOn("buildIncentivesApiModel")
   dependsOn("buildNonAssociationsApiModel")
+  dependsOn("buildLocationsInsidePrisonApiModel")
 }
 
 ktlint {

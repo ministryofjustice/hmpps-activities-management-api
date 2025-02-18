@@ -38,6 +38,8 @@ class WebClientConfiguration(
   @Value("\${non-associations.api.url}") private val nonAssociationsApiUrl: String,
   @Value("\${incentives.api.url}") private val incentivesApiUrl: String,
   @Value("\${manage.adjudications.api.url}") private val manageAdjudicationsApiUrl: String,
+  @Value("\${locations-inside-prison.api.url}") private val locationsInsidePrisonApiUrl: String,
+  @Value("\${nomis-mapping.api.url}") private val nomisMappingApiUrl: String,
   @Value("\${api.health-timeout:2s}") private val healthTimeout: Duration,
   @Value("\${api.timeout:30s}") private val apiTimeout: Duration,
   @Value("\${prison.api.timeout:10s}") private val shorterTimeout: Duration,
@@ -65,6 +67,12 @@ class WebClientConfiguration(
 
   @Bean
   fun manageAdjudicationsApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(manageAdjudicationsApiUrl, healthTimeout)
+
+  @Bean
+  fun locationsInsidePrisonApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(locationsInsidePrisonApiUrl, healthTimeout)
+
+  @Bean
+  fun nomisMappingApiHealthWebClient(builder: WebClient.Builder) = builder.healthWebClient(nomisMappingApiUrl, healthTimeout)
 
   @Bean
   fun incentivesApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
@@ -131,6 +139,16 @@ class WebClientConfiguration(
   fun nonAssociationsApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
     .authorisedWebClient(authorizedClientManager, "non-associations-api", nonAssociationsApiUrl, apiTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating non associations api web client") }
+
+  @Bean
+  fun locationsInsidePrisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
+    .authorisedWebClient(authorizedClientManager, "locations-inside-prison", locationsInsidePrisonApiUrl, apiTimeout)
+    .also { log.info("WEB CLIENT CONFIG: creating locations inside prison api web client") }
+
+  @Bean
+  fun nomisMappingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
+    .authorisedWebClient(authorizedClientManager, "nomis-mapping-api", nomisMappingApiUrl, apiTimeout)
+    .also { log.info("WEB CLIENT CONFIG: creating NOMIS mapping api web client") }
 
   private fun getOAuthWebClient(
     authorizedClientManager: OAuth2AuthorizedClientManager,
