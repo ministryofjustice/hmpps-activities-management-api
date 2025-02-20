@@ -35,7 +35,7 @@ class LocationServiceTest {
   private val cell3 = aLocation(locationPrefix = "cell3")
   private val cell4 = aLocation(locationPrefix = "cell4")
 
-  private val dplLocationUuid = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
+  private val dpsLocationUuid = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
 
   @Test
   fun `getCellLocationsForGroup - cells match predicate - returns cells`() {
@@ -112,61 +112,61 @@ class LocationServiceTest {
 
   @Test
   fun `getLocationForSchedule - returns location details when only NOMIS location id is provided`() {
-    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dplLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = location()
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(dplLocationUuid)).thenReturn(dpsLocation)
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
     val result = locationService.getLocationForSchedule(123, null)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dplLocationUuid, dpsLocation.code, dpsLocation.localName))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByDpsId(any())
   }
 
   @Test
   fun `getLocationForSchedule - returns location details when only NOMIS location id is provided and local name is null`() {
-    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dplLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = location(localName = null)
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(dplLocationUuid)).thenReturn(dpsLocation)
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
     val result = locationService.getLocationForSchedule(123, null)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dplLocationUuid, dpsLocation.code, dpsLocation.code))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.code))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByDpsId(any())
   }
 
   @Test
   fun `getLocationForSchedule - returns location details when only DPS location UUID is provided`() {
-    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dplLocationUuid)).thenReturn(NomisDpsLocationMapping(dplLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = location()
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(dplLocationUuid)).thenReturn(dpsLocation)
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
-    val result = locationService.getLocationForSchedule(null, dplLocationUuid)
+    val result = locationService.getLocationForSchedule(null, dpsLocationUuid)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dplLocationUuid, dpsLocation.code, dpsLocation.localName))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
   }
 
   @Test
   fun `getLocationForSchedule - returns location details when NOMIS location id and DPS location UUID are provided`() {
-    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dplLocationUuid, 123))
-    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dplLocationUuid)).thenReturn(NomisDpsLocationMapping(dplLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = location()
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(dplLocationUuid)).thenReturn(dpsLocation)
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
-    val result = locationService.getLocationForSchedule(123, dplLocationUuid)
+    val result = locationService.getLocationForSchedule(123, dpsLocationUuid)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dplLocationUuid, dpsLocation.code, dpsLocation.localName))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName))
   }
 
   private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> = listOf(*cells)

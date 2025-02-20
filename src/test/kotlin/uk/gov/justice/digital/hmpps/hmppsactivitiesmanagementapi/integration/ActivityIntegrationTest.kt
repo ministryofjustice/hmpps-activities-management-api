@@ -319,11 +319,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `createActivity - using DPS location UUID is successful`() {
-    prisonApiMockServer.stubGetLocation(
-      1L,
-      "prisonapi/location-id-1.json",
-    )
-
     val location = locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val newActivity = activityCreateRequest(
@@ -1206,8 +1201,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
   fun `updateActivity to on-wing and back to internal NOMIS location`() {
-    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-PVI.json")
-
     val location = location(prisonId = PENTONVILLE_PRISON_CODE)
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location)

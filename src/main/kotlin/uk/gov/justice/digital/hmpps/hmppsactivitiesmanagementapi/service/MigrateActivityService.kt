@@ -217,7 +217,7 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       isPaid = isPaid(request.payRates),
     ).apply {
-      // TODO: SAA-2303 Int he future only dpsLocationId will be provided
+      // TODO: SAA-2303 In the future only dpsLocationId will be provided
       if (request.dpsLocationId == null) {
         onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) == true
       } else {

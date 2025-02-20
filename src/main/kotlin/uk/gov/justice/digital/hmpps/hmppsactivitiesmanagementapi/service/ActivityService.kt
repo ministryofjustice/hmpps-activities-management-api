@@ -563,7 +563,6 @@ class ActivityService(
       activity.inCell = false
       activity.onWing = false
       activity.offWing = false
-      activity.offWing = false
     }
   }
 
