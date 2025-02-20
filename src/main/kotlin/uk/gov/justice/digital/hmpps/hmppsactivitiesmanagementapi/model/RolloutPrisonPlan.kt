@@ -1,9 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
-import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import io.swagger.v3.oas.annotations.media.Schema
-import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(description = "Describes the rollout plan of a prison which may or may not be rolled out")
@@ -15,18 +13,8 @@ data class RolloutPrisonPlan(
   @Schema(description = "Flag to indicate if activities are enabled", example = "true")
   var activitiesRolledOut: Boolean,
 
-  @Schema(description = "The date activities rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
-  @JsonFormat(pattern = "yyyy-MM-dd")
-  @Deprecated(message = "Not populated")
-  val activitiesRolloutDate: LocalDate? = null,
-
   @Schema(description = "Flag to indicate if appointments are enabled", example = "true")
   var appointmentsRolledOut: Boolean,
-
-  @Schema(description = "The date appointments rolled out. Can be null if the prison is not yet scheduled for rollout.", example = "2022-09-30")
-  @JsonFormat(pattern = "yyyy-MM-dd")
-  @Deprecated(message = "Not populated")
-  val appointmentsRolloutDate: LocalDate? = null,
 
   @Schema(description = "max days to expire events based on prisoner movement, default is 21")
   val maxDaysToExpiry: Int = 21,
