@@ -40,10 +40,10 @@ class LocationsInsidePrisonAPIClientTest {
 
   @Test
   fun `should return location given a DPS location Uuid`() {
-    mockServer.stubLocationFromDpsUuid(location = location())
+    val mockLocation = mockServer.stubLocationFromDpsUuid()
 
     val location = apiClient.getLocationById(location().id)
 
-    assertThat(location).isEqualTo(location())
+    assertThat(location).isEqualTo(mockLocation)
   }
 }

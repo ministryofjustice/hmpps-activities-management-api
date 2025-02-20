@@ -26,6 +26,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot as EntityActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
@@ -42,7 +43,7 @@ class ActivityScheduleTest {
     val expectedModel = ActivityScheduleLite(
       id = 1,
       description = "schedule description",
-      internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
+      internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1", UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
       capacity = 1,
       activity = ActivityLite(
         id = 1L,
@@ -114,7 +115,7 @@ class ActivityScheduleTest {
       ActivityScheduleLite(
         id = 1,
         description = "schedule description",
-        internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
+        internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1", UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
         capacity = 1,
         activity = ActivityLite(
           id = 1L,

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(description = "A request to migrate an activity from NOMIS into this service.")
 data class ActivityMigrateRequest(
@@ -38,8 +39,12 @@ data class ActivityMigrateRequest(
   @Schema(description = "Optional NOMIS internal location code", example = "A011")
   val internalLocationCode: String?,
 
+  // TODO: SAA-2303 - Do we use this?
   @Schema(description = "Optional NOMIS internal location description", example = "PVI-1-2-A011")
   val internalLocationDescription: String?,
+
+  @Schema(description = "The optional DPS location UUID", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
 
   @Schema(description = "The maximum number of prisoners who can attend. Not null.", example = "10")
   @field:Positive(message = "Capacity must be a positive number.")

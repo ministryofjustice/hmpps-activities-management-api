@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
@@ -34,6 +35,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.UUID
 
 class MigrateIntegrationTest : IntegrationTestBase() {
 
@@ -252,6 +254,8 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location(localName = "House_block_7-1-002"))
   }
 
   @Sql(
@@ -275,7 +279,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
     with(activity.schedules.first().internalLocation!!) {
-      assertThat(id).isEqualTo(1)
+      assertThat(id).isEqualTo(468492L)
       assertThat(description).isEqualTo("House_block_7-1-002")
     }
   }
@@ -284,8 +288,57 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-fmi-prison-regime.sql",
   )
   @Test
-  fun `import location code containing 'WOW'`() {
-    val activityId = migrateActivity(request = felthamRegimeTimeRequest.copy(internalLocationCode = "junkWOWkal"))
+  fun `import with NOMIS location id should succeed`() {
+    val activityId = migrateActivity(request = felthamRegimeTimeRequest)
+    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+
+    assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
+    with(activity.schedules.first().internalLocation!!) {
+      assertThat(id).isEqualTo(468492L)
+      assertThat(description).isEqualTo("House_block_7-1-002")
+    }
+  }
+
+  @Sql(
+    "classpath:test_data/seed-fmi-prison-regime.sql",
+  )
+  @Test
+  fun `import location code containing 'WOW' when location code is provided`() {
+    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1L)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
+    val activityId = migrateActivity(
+      request = felthamRegimeTimeRequest.copy(
+        internalLocationCode = "junkWOWkal",
+        dpsLocationId = null,
+      ),
+    )
+
+    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+
+    assertThat(activity.onWing).isTrue()
+    assertThat(activity.schedules.first().internalLocation).isNull()
+  }
+
+  @Sql(
+    "classpath:test_data/seed-fmi-prison-regime.sql",
+  )
+  @Test
+  fun `import location code containing 'WOW' when only DPS location UUID is provided`() {
+    nomisMappingApiMockServer.stubNomisIdFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location(code = "junkWOWkal"))
+
+    val activityId = migrateActivity(
+      request = felthamRegimeTimeRequest.copy(
+        internalLocationId = null,
+        internalLocationCode = null,
+        internalLocationDescription = null,
+        dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
+      ),
+    )
+
     val activity = getActivity(activityId = activityId, agencyId = "FMI")
 
     assertThat(activity.onWing).isTrue()
@@ -522,6 +575,10 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-iwi.json",
     )
 
+    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1L)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location(prisonId = "IWI"))
+
     val response = createActivity(
       activityCreateRequest =
       ActivityCreateRequest(
@@ -623,6 +680,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
     incentivesApiMockServer.stubGetIncentiveLevels(request.prisonCode)
     prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
+    nomisMappingApiMockServer.stubDpsUuidFromNomisId(468492L)
 
     return webTestClient.post()
       .uri("/migrate/activity")

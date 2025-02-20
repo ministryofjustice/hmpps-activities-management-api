@@ -15,10 +15,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -50,6 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
@@ -58,6 +56,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 class MigrateActivityServiceTest {
   private val rolloutPrisonService: RolloutPrisonService = mock()
@@ -65,13 +64,13 @@ class MigrateActivityServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val incentivesApiClient: IncentivesApiClient = mock()
-  private val prisonApiClient: PrisonApiClient = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
+  private val locationService: LocationService = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -111,13 +110,13 @@ class MigrateActivityServiceTest {
     activityScheduleRepository,
     prisonerSearchApiClient,
     incentivesApiClient,
-    prisonApiClient,
     eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
     eventOrganiserRepository,
     TransactionHandler(),
     outboundEventsService,
+    locationService,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -174,15 +173,14 @@ class MigrateActivityServiceTest {
           prisonIncentiveLevel(levelCode = "EN2", levelName = "Enhanced 2", active = false),
         ),
       )
-      whenever(prisonApiClient.getLocation(1)).thenReturn(
-        Mono.just(
-          Location(
-            locationId = 1,
-            internalLocationCode = "011",
-            description = "MDI-1-1-011",
-            locationType = "N/A",
-            agencyId = "RSI",
-          ),
+
+      whenever(locationService.getLocationForSchedule(1, null)).thenReturn(
+        LocationDetails(
+          locationId = 1,
+          internalLocationCode = "011",
+          description = "MDI-1-1-011",
+          agencyId = "RSI",
+          dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
         ),
       )
 
@@ -438,6 +436,7 @@ class MigrateActivityServiceTest {
         internalLocationId = null,
         internalLocationCode = null,
         internalLocationDescription = null,
+        dpsLocationId = null,
       )
 
       whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
@@ -490,7 +489,7 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `An on-wing activity - has WOW location code`() {
+    fun `An on-wing activity - has WOW location code when NOMIS internal location code is provided`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
         NomisScheduleRule(
@@ -503,6 +502,50 @@ class MigrateActivityServiceTest {
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
         internalLocationCode = "WOW",
         internalLocationDescription = "MDI-1-1-WOW",
+      )
+
+      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
+
+      val response = service.migrateActivity(request)
+
+      assertThat(response.activityId).isEqualTo(1)
+      assertThat(response.splitRegimeActivityId).isNull()
+
+      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
+
+      with(activityCaptor.firstValue[0]) {
+        assertThat(inCell).isFalse
+        assertThat(onWing).isTrue
+        assertThat(schedules().first().internalLocationId).isNull()
+      }
+    }
+
+    @Test
+    fun `An on-wing activity - has WOW location code when DPS Location UUID is provided`() {
+      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
+      val nomisScheduleRules = listOf(
+        NomisScheduleRule(
+          startTime = LocalTime.of(10, 0),
+          endTime = LocalTime.of(11, 0),
+          monday = true,
+        ),
+      )
+
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
+        internalLocationId = null,
+        internalLocationCode = null,
+        internalLocationDescription = null,
+        dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
+      )
+
+      whenever(locationService.getLocationForSchedule(null, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
+        LocationDetails(
+          locationId = 1,
+          internalLocationCode = "junkWOWxdd",
+          description = "MDI-1-1-011",
+          agencyId = "RSI",
+          dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
+        ),
       )
 
       whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
@@ -931,6 +974,7 @@ class MigrateActivityServiceTest {
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
       internalLocationId = 1,
+      dpsLocationId = null,
       internalLocationCode = "011",
       internalLocationDescription = "MDI-1-1-011",
       capacity = 10,
@@ -938,8 +982,8 @@ class MigrateActivityServiceTest {
       payPerSession = "H",
       runsOnBankHoliday = false,
       outsideWork = false,
-      scheduleRules,
-      payRates,
+      scheduleRules = scheduleRules,
+      payRates = payRates,
     )
   }
 

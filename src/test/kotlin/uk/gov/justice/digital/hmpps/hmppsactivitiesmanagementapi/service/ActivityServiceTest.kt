@@ -23,7 +23,6 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -72,6 +71,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
@@ -89,7 +89,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
-import java.util.Optional
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as ActivityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule as EligibilityRuleEntity
 
@@ -113,6 +113,7 @@ class ActivityServiceTest {
   private val bankHolidayService: BankHolidayService = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val locationService: LocationService = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -165,12 +166,13 @@ class ActivityServiceTest {
     telemetryClient,
     TransactionHandler(),
     outboundEventsService,
+    locationService,
     daysInAdvance,
   )
 
-  private val location = Location(
+  private val location = LocationDetails(
     locationId = 1,
-    locationType = "type",
+    dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
     internalLocationCode = "code",
     description = "description",
     agencyId = MOORLAND_PRISON_CODE,
@@ -181,7 +183,8 @@ class ActivityServiceTest {
   @BeforeEach
   fun setUp() {
     openMocks(this)
-    whenever(prisonApiClient.getLocation(1)).thenReturn(Mono.just(location))
+    whenever(locationService.getLocationForSchedule(location.locationId, null)).thenReturn(location)
+    whenever(locationService.getLocationForSchedule(null, location.dpsLocationId)).thenReturn(location)
     whenever(prisonRegimeRepository.findByPrisonCode(any())).thenReturn(listOf(prisonRegime()))
     val regime = prisonRegime()
     val amTimes = Pair(regime.amStart, regime.amFinish)
@@ -813,26 +816,30 @@ class ActivityServiceTest {
 
   @Test
   fun `createActivity - Cannot be off-wing and in-cell`() {
-    val createdBy = "SCH_ACTIVITY"
-
     val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
       .copy(startDate = TimeSource.tomorrow(), inCell = true, offWing = true)
 
-    val activityCategory = activityCategory()
-    whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory))
-    whenever(eventTierRepository.findById(1)).thenReturn(Optional.of(eventTier()))
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(prisonPayBandsLowMediumHigh())
-    whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
-    whenever(prisonApiClient.getStudyArea("ENGLA")).thenReturn(Mono.just(studyArea))
-
-    val eligibilityRule = EligibilityRuleEntity(eligibilityRuleId = 1, code = "ER1", "Eligibility rule 1")
-    whenever(eligibilityRuleRepository.findById(1L)).thenReturn(Optional.of(eligibilityRule))
-
     assertThatThrownBy {
-      service().createActivity(createInCellActivityRequest, createdBy)
+      service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
+      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
+
+    verifyNoMoreInteractions(activityRepository)
+  }
+
+  @Test
+  fun `createActivity - Cannot be NOMIS location ID and DPS location UUID`() {
+    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
+      .copy(startDate = TimeSource.tomorrow(), locationId = 123, dpsLocationId = UUID.randomUUID(), inCell = false)
+
+    assertThatThrownBy {
+      service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
+
+    verifyNoMoreInteractions(activityRepository)
   }
 
   @Test
@@ -1041,11 +1048,11 @@ class ActivityServiceTest {
 
     beforeActivityEntity.addSchedule(
       description = "Woodwork",
-      internalLocation = Location(
+      internalLocation = LocationDetails(
         locationId = 1,
+        dpsLocationId = UUID.randomUUID(),
         internalLocationCode = "WW",
         description = "The wood work room description",
-        locationType = "APP",
         agencyId = "MDI",
       ),
       capacity = 10,
@@ -2199,12 +2206,6 @@ class ActivityServiceTest {
     fun setUp() {
       val activity = activityEntity()
 
-      with(activity.schedules().first()) {
-        internalLocationId isEqualTo activity.schedules().first().internalLocationId
-        internalLocationCode isEqualTo activity.schedules().first().internalLocationCode
-        internalLocationDescription isEqualTo activity.schedules().first().internalLocationDescription
-      }
-
       whenever(
         activityRepository.findByActivityIdAndPrisonCodeWithFilters(
           1,
@@ -2221,6 +2222,7 @@ class ActivityServiceTest {
           assertThat(internalLocationId).isNull()
           assertThat(internalLocationCode).isNull()
           assertThat(internalLocationDescription).isNull()
+          assertThat(dpsLocationId).isNull()
         }
       }
     }
@@ -2274,12 +2276,13 @@ class ActivityServiceTest {
           internalLocationId isEqualTo location.locationId.toInt()
           internalLocationCode isEqualTo location.internalLocationCode
           internalLocationDescription isEqualTo location.description
+          dpsLocationId isEqualTo location.dpsLocationId
         }
       }
     }
 
     @Test
-    fun `updateActivity - update to internal location from on-wing`() {
+    fun `updateActivity - update using internal location from on-wing`() {
       val activity = activityEntity(onWing = true)
       activity.schedules().first().removeLocationDetails()
 
@@ -2297,7 +2300,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `updateActivity - update to internal location from off-wing`() {
+    fun `updateActivity - update using internal location from off-wing`() {
       val activity = activityEntity(offWing = true)
 
       activity.offWing isBool true
@@ -2314,7 +2317,7 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `updateActivity - update to internal location from in-cell`() {
+    fun `updateActivity - update using internal location from in-cell`() {
       val activity = activityEntity(inCell = true)
 
       activity.inCell isBool true
@@ -2328,6 +2331,58 @@ class ActivityServiceTest {
       ).thenReturn(activity)
 
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
+    }
+
+    @Test
+    fun `updateActivity - update using DPS location from on-wing`() {
+      val activity = activityEntity(onWing = true)
+      activity.schedules().first().removeLocationDetails()
+
+      activity.onWing isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
+    }
+
+    @Test
+    fun `updateActivity - update using DPS location from off-wing`() {
+      val activity = activityEntity(offWing = true)
+
+      activity.offWing isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
+    }
+
+    @Test
+    fun `updateActivity - update to DPS location from in-cell`() {
+      val activity = activityEntity(inCell = true)
+
+      activity.inCell isBool true
+
+      whenever(
+        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
+          1,
+          MOORLAND_PRISON_CODE,
+          LocalDate.now(),
+        ),
+      ).thenReturn(activity)
+
+      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = location.dpsLocationId), "TEST")
     }
   }
 
@@ -2347,7 +2402,7 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, or a specified location")
+      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
   }
 
   @Test

@@ -5,7 +5,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -20,9 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 
 class ActivityTest {
@@ -33,6 +34,8 @@ class ActivityTest {
   private val activityWithNoEndDate = activityEntity(startDate = today, endDate = null)
 
   private val activityWithEndDate = activityWithNoEndDate.copy().apply { endDate = tomorrow }
+
+  private val dpsLocationId = UUID.randomUUID()
 
   @Test
   fun `check activity active status that starts today with open end date`() {
@@ -187,11 +190,11 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = Location(
+      internalLocation = LocationDetails(
         locationId = 1,
+        dpsLocationId = dpsLocationId,
         internalLocationCode = "WW",
         description = "The wood work room description",
-        locationType = "APP",
         agencyId = "MDI",
       ),
       capacity = 10,
@@ -205,6 +208,7 @@ class ActivityTest {
         activity = activity,
         description = "Woodwork",
         internalLocationId = 1,
+        dpsLocationId = dpsLocationId,
         internalLocationCode = "WW",
         internalLocationDescription = "The wood work room description",
         capacity = 10,
@@ -222,11 +226,11 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = Location(
+      internalLocation = LocationDetails(
         locationId = 1,
+        dpsLocationId = dpsLocationId,
         internalLocationCode = "WW",
         description = "The wood work room description",
-        locationType = "APP",
         agencyId = "MDI",
       ),
       capacity = 10,
@@ -240,6 +244,7 @@ class ActivityTest {
       assertThat(this.activity).isEqualTo(activity)
       assertThat(description).isEqualTo("Woodwork")
       assertThat(internalLocationId).isEqualTo(1)
+      assertThat(dpsLocationId).isEqualTo(dpsLocationId)
       assertThat(internalLocationCode).isEqualTo("WW")
       assertThat(internalLocationDescription).isEqualTo("The wood work room description")
       assertThat(capacity).isEqualTo(10)
@@ -258,11 +263,11 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = Location(
+        internalLocation = LocationDetails(
           locationId = 1,
+          dpsLocationId = UUID.randomUUID(),
           internalLocationCode = "WW",
           description = "The wood work room description",
-          locationType = "APP",
           agencyId = "MDI",
         ),
         capacity = 10,
@@ -284,11 +289,11 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = Location(
+        internalLocation = LocationDetails(
           locationId = 1,
+          dpsLocationId = UUID.randomUUID(),
           internalLocationCode = "WW",
           description = "The wood work room description",
-          locationType = "APP",
           agencyId = "MDI",
         ),
         capacity = 10,
@@ -309,11 +314,11 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = Location(
+        internalLocation = LocationDetails(
           locationId = 1,
+          dpsLocationId = UUID.randomUUID(),
           internalLocationCode = "WW",
           description = "The wood work room description",
-          locationType = "APP",
           agencyId = "MDI",
         ),
         capacity = 0,
@@ -332,11 +337,11 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = Location(
+      internalLocation = LocationDetails(
         locationId = 1,
+        dpsLocationId = UUID.randomUUID(),
         internalLocationCode = "WW",
         description = "The wood work room description",
-        locationType = "APP",
         agencyId = "MDI",
       ),
       capacity = 10,
@@ -348,11 +353,11 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = " WooDwork ",
-        internalLocation = Location(
+        internalLocation = LocationDetails(
           locationId = 1,
+          dpsLocationId = UUID.randomUUID(),
           internalLocationCode = "WW",
           description = "The wood work room description",
-          locationType = "APP",
           agencyId = "MDI",
         ),
         capacity = 10,
@@ -612,11 +617,11 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "description",
-      internalLocation = Location(
+      internalLocation = LocationDetails(
         locationId = 1,
+        dpsLocationId = UUID.randomUUID(),
         internalLocationCode = "RM1",
         description = "Room 1",
-        locationType = "APP",
         agencyId = "MDI",
       ),
       capacity = 1,

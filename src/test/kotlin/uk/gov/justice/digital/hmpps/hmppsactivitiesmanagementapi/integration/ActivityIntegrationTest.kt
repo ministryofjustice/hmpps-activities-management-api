@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
@@ -67,6 +68,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 @TestPropertySource(
   properties = [
@@ -97,6 +99,9 @@ class ActivityIntegrationTest : IntegrationTestBase() {
         PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A22222A"),
       ),
     )
+
+    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1)
+    nomisMappingApiMockServer.stubNomisIdFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
   }
 
   @Test
@@ -117,6 +122,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       1L,
       "prisonapi/location-id-1.json",
     )
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow())
 
@@ -189,6 +196,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
     val apr1 = activityPayCreateRequest(
       incentiveNomisCode = "BAS",
       incentiveLevel = "Basic",
@@ -258,6 +267,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
+    val location = locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
     val newActivity = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
       educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
@@ -276,6 +287,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       assertThat(pay).isEmpty()
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isFalse()
+      assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
@@ -306,6 +318,65 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `createActivity - using DPS location UUID is successful`() {
+    prisonApiMockServer.stubGetLocation(
+      1L,
+      "prisonapi/location-id-1.json",
+    )
+
+    val location = locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
+    val newActivity = activityCreateRequest(
+      prisonCode = MOORLAND_PRISON_CODE,
+      educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
+      studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
+      paid = false,
+    ).copy(locationId = null, dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
+
+    val activity = webTestClient.createActivity(newActivity)
+
+    with(activity!!) {
+      assertThat(id).isNotNull
+      assertThat(category.id).isEqualTo(1)
+      assertThat(tier!!.id).isEqualTo(2)
+      assertThat(organiser!!.id).isEqualTo(1)
+      assertThat(eligibilityRules.size).isEqualTo(1)
+      assertThat(pay).isEmpty()
+      assertThat(createdBy).isEqualTo("test-client")
+      assertThat(paid).isFalse()
+      assertThat(schedules[0].internalLocation).isEqualTo(InternalLocation(1, location.code, location.localName!!, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))
+    }
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("activities.activity-schedule.created")
+      assertThat(additionalInformation).isEqualTo(ScheduleCreatedInformation(1))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new activity schedule has been created in the activities management service")
+    }
+
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+
+    with(hmppsAuditEventCaptor.firstValue) {
+      assertThat(what).isEqualTo("ACTIVITY_CREATED")
+      assertThat(who).isEqualTo("test-client")
+      assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Test activity\",\"prisonCode\":\"MDI\",\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"test-client\"}")
+    }
+
+    assertThat(auditRepository.findAll().size).isEqualTo(1)
+
+    with(auditRepository.findAll().first()) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(username).isEqualTo("test-client")
+      assertThat(auditType).isEqualTo(AuditType.ACTIVITY)
+      assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(message).startsWith("An activity called 'Test activity'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+  }
+
+  @Test
   fun `createActivity - create multi-week schedule activity`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
@@ -323,6 +394,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       1L,
       "prisonapi/location-id-1.json",
     )
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-8.json").copy(startDate = TimeSource.tomorrow())
 
@@ -404,6 +477,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       1L,
       "prisonapi/location-id-1.json",
     )
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val newActivityWithDuplicateSummary = activityCreateRequest(
       prisonCode = MOORLAND_PRISON_CODE,
@@ -1130,8 +1205,12 @@ class ActivityIntegrationTest : IntegrationTestBase() {
 
   @Test
   @Sql("classpath:test_data/seed-activity-id-19.sql")
-  fun `updateActivity to on-wing and back to internal location`() {
+  fun `updateActivity to on-wing and back to internal NOMIS location`() {
     prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-PVI.json")
+
+    val location = location(prisonId = PENTONVILLE_PRISON_CODE)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location)
 
     with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true))) {
       onWing isEqualTo true
@@ -1142,8 +1221,34 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       onWing isEqualTo false
       with(schedules.first()) {
         internalLocation?.id isEqualTo 1
-        internalLocation?.code isEqualTo "internal location code"
-        internalLocation?.description isEqualTo "House_block_7-1-002"
+        internalLocation?.dpsLocationId isEqualTo UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
+        internalLocation?.code isEqualTo location.code
+        internalLocation?.description isEqualTo location.localName
+      }
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-19.sql")
+  fun `updateActivity to on-wing and back to internal DPS location`() {
+    prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-PVI.json")
+
+    val location = location(prisonId = PENTONVILLE_PRISON_CODE)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location)
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true))) {
+      onWing isEqualTo true
+      assertThat(schedules.first().internalLocation).isNull()
+    }
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")))) {
+      onWing isEqualTo false
+      with(schedules.first()) {
+        internalLocation?.id isEqualTo 1
+        internalLocation?.dpsLocationId isEqualTo UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
+        internalLocation?.code isEqualTo location.code
+        internalLocation?.description isEqualTo location.localName
       }
     }
   }
@@ -1290,6 +1395,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
     val startDate = TimeSource.tomorrow()
 
     whenever(bankHolidayService.isEnglishBankHoliday(startDate)) doReturn true
@@ -1342,6 +1449,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       "prisonapi/location-id-1.json",
     )
 
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
+
     val startDate = TimeSource.tomorrow()
 
     whenever(bankHolidayService.isEnglishBankHoliday(startDate)) doReturn true
@@ -1393,6 +1502,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       1L,
       "prisonapi/location-id-1.json",
     )
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val startDate = TimeSource.tomorrow()
 
@@ -1513,6 +1624,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       1L,
       "prisonapi/location-id-1.json",
     )
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
     val startDate = TimeSource.tomorrow()
 

@@ -8,7 +8,6 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentivesapi.api.IncentivesApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
@@ -60,13 +59,13 @@ class MigrateActivityService(
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val incentivesApiClient: IncentivesApiClient,
-  private val prisonApiClient: PrisonApiClient,
   private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
   private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val locationService: LocationService,
   private val mapper: ObjectMapper? = null,
 ) {
   companion object {
@@ -199,6 +198,8 @@ class MigrateActivityService(
     // For tier two activities we need a default value for the organiser
     val defaultOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument("OTHER")
 
+    val internalLocation = if (request.internalLocationId != null || request.dpsLocationId != null) locationService.getLocationForSchedule(request.internalLocationId, request.dpsLocationId) else null
+
     return Activity(
       prisonCode = request.prisonCode,
       activityCategory = mapProgramToCategory(request.programServiceCode),
@@ -206,10 +207,9 @@ class MigrateActivityService(
       attendanceRequired = true,
       summary = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
       description = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
-      inCell = (request.internalLocationId == null && !request.outsideWork) ||
+      inCell = (request.internalLocationId == null && request.dpsLocationId == null && !request.outsideWork) ||
         request.programServiceCode == TIER2_IN_CELL_ACTIVITY ||
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
-      onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) ?: false,
       outsideWork = request.outsideWork,
       startDate = request.startDate,
       riskLevel = DEFAULT_RISK_LEVEL,
@@ -217,13 +217,20 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       isPaid = isPaid(request.payRates),
     ).apply {
+      // TODO: SAA-2303 Int he future only dpsLocationId will be provided
+      if (request.dpsLocationId == null) {
+        onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) == true
+      } else {
+        onWing = internalLocation?.internalLocationCode?.contains(ON_WING_LOCATION) == true
+      }
+    }.apply {
       endDate = request.endDate
     }.apply {
       organiser = if (this.activityTier.isTierTwo()) defaultOrganiser else null
     }.apply {
       addSchedule(
         description = this.summary,
-        internalLocation = if (!onWing) request.internalLocationId?.let { prisonApiClient.getLocation(it).block() } else null,
+        internalLocation = if (!onWing) internalLocation else null,
         capacity = if (request.capacity == 0) 1 else request.capacity,
         startDate = this.startDate,
         endDate = this.endDate,
