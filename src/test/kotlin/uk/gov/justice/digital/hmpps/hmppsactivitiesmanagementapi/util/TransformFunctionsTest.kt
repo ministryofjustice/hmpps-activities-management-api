@@ -47,6 +47,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -128,7 +129,7 @@ class TransformFunctionsTest {
               ),
             ),
           ),
-          internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
+          internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1", UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
           allocations = listOf(
             Allocation(
               id = 0,

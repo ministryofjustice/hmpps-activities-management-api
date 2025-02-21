@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
@@ -18,8 +20,10 @@ class ReferenceCodeServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val locationGroupService: LocationGroupService = mock()
   private val groupsProperties: Properties = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
+  private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient = mock()
 
-  private val locationService = LocationService(prisonApiClient, locationGroupService, groupsProperties)
+  private val locationService = LocationService(prisonApiClient, locationGroupService, groupsProperties, nomisMappingAPIClient, locationsInsidePrisonAPIClient)
   private val referenceCodeService = ReferenceCodeService(prisonApiClient)
 
   @Test

@@ -16,7 +16,6 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -25,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession as ModelPayPerSession
@@ -238,7 +238,7 @@ data class Activity(
 
   fun addSchedule(
     description: String,
-    internalLocation: Location? = null,
+    internalLocation: LocationDetails? = null,
     capacity: Int,
     startDate: LocalDate,
     endDate: LocalDate? = null,
@@ -252,6 +252,7 @@ data class Activity(
       internalLocationId = internalLocation?.locationId?.toInt(),
       internalLocationCode = internalLocation?.internalLocationCode,
       internalLocationDescription = internalLocation?.description,
+      dpsLocationId = internalLocation?.dpsLocationId,
       capacity = capacity,
       startDate = startDate,
       endDate = endDate,

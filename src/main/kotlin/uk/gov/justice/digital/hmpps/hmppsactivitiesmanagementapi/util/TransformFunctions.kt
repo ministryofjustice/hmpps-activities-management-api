@@ -299,6 +299,7 @@ private fun EntityActivitySchedule.toInternalLocation() = internalLocationId?.le
     id = internalLocationId!!,
     code = internalLocationCode!!,
     description = internalLocationDescription!!,
+    dpsLocationId = dpsLocationId,
   )
 }
 
