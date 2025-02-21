@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.containsAny
@@ -37,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 typealias AllocationIds = Set<Long>
@@ -74,6 +75,7 @@ class ActivityService(
   private val telemetryClient: TelemetryClient,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
+  private val locationService: LocationService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -113,7 +115,7 @@ class ActivityService(
     checkCaseloadAccess(request.prisonCode!!)
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
-    require((request.locationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+    require((request.locationId != null) xor (request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID" }
     if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
     if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
@@ -173,7 +175,7 @@ class ActivityService(
       }
 
       activity.let {
-        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId!!)
+        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId, request.dpsLocationId)
         val usesPrisonRegimeTime = request.slots?.all { s -> s.customStartTime == null && s.customEndTime == null } == true
         activity.addSchedule(
           description = request.description!!,
@@ -292,9 +294,11 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, locationId: Long?) = prisonApiClient.getLocation(locationId!!).block()!!.also { failIfPrisonsDiffer(activity, it) }
+  private fun getLocationForSchedule(activity: Activity, nomisLocationId: Long?, dpsLocationId: UUID?): LocationDetails = locationService.getLocationForSchedule(nomisLocationId, dpsLocationId).apply {
+    failIfPrisonsDiffer(activity, this)
+  }
 
-  private fun failIfPrisonsDiffer(activity: Activity, location: Location) {
+  private fun failIfPrisonsDiffer(activity: Activity, location: LocationDetails) {
     if (activity.prisonCode != location.agencyId) {
       throw IllegalArgumentException("The activities prison '${activity.prisonCode}' does not match that of the locations '${location.agencyId}'")
     }
@@ -525,14 +529,14 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    if (request.locationId == null && request.onWing == null && request.offWing == null && request.inCell == null) {
+    if (request.locationId == null && request.dpsLocationId == null && request.onWing == null && request.offWing == null && request.inCell == null) {
       return
     }
 
-    require((request.locationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location can only be maximum one of offWing, onWing, inCell, or a specified location" }
+    require((request.locationId != null) xor (request.dpsLocationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID" }
 
-    when (request.locationId) {
-      null -> activity.schedules().forEach {
+    if (request.locationId == null && request.dpsLocationId == null) {
+      activity.schedules().forEach {
         it.removeLocationDetails()
 
         request.inCell?.apply {
@@ -547,17 +551,18 @@ class ActivityService(
           activity.offWing = this
         }
       }
-      else -> {
-        val scheduleLocation = getLocationForSchedule(activity, request.locationId)
-        activity.schedules().forEach {
-          it.internalLocationId = scheduleLocation.locationId.toInt()
-          it.internalLocationCode = scheduleLocation.internalLocationCode
-          it.internalLocationDescription = scheduleLocation.description
-        }
-        activity.inCell = false
-        activity.onWing = false
-        activity.offWing = false
+    } else {
+      val scheduleLocation = getLocationForSchedule(activity, request.locationId, request.dpsLocationId)
+
+      activity.schedules().forEach {
+        it.internalLocationId = scheduleLocation.locationId.toInt()
+        it.internalLocationCode = scheduleLocation.internalLocationCode
+        it.internalLocationDescription = scheduleLocation.description
+        it.dpsLocationId = scheduleLocation.dpsLocationId
       }
+      activity.inCell = false
+      activity.onWing = false
+      activity.offWing = false
     }
   }
 

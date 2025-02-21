@@ -172,12 +172,14 @@ data class ActivitySchedule(
       runsOnBankHoliday: Boolean,
       scheduleWeeks: Int,
       usesPrisonRegimeTime: Boolean = true,
+      dpsLocationId: UUID? = null,
     ) = ActivitySchedule(
       activity = activity,
       description = description,
       internalLocationId = internalLocationId,
       internalLocationCode = internalLocationCode,
       internalLocationDescription = internalLocationDescription,
+      dpsLocationId = dpsLocationId,
       capacity = capacity,
       startDate = startDate,
       runsOnBankHoliday = runsOnBankHoliday,
@@ -357,6 +359,7 @@ data class ActivitySchedule(
         id = internalLocationId!!,
         code = internalLocationCode!!,
         description = internalLocationDescription!!,
+        dpsLocationId = dpsLocationId,
       )
     }
   }
@@ -388,6 +391,7 @@ data class ActivitySchedule(
     this.internalLocationId = null
     this.internalLocationCode = null
     this.internalLocationDescription = null
+    this.dpsLocationId = null
   }
 }
 

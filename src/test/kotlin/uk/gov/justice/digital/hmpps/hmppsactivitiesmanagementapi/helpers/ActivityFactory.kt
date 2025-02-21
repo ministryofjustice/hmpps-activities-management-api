@@ -38,6 +38,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
@@ -308,6 +309,7 @@ internal fun activitySchedule(
     this.internalLocationId = 1
     this.internalLocationCode = "EDU-ROOM-1"
     this.internalLocationDescription = "Education - R1"
+    this.dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
   }
 }
 

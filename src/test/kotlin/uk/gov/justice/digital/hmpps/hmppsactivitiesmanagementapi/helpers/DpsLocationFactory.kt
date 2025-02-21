@@ -10,7 +10,7 @@ fun location(
   id: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
   prisonId: String = MOORLAND_PRISON_CODE,
   code: String = "EDUC-ED1-ED1",
-  localName: String = "User Description",
+  localName: String? = "User Description",
 ) = Location(
   id = id,
   prisonId = prisonId,

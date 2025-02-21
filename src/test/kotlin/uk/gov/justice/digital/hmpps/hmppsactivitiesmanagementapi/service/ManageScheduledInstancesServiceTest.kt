@@ -46,6 +46,7 @@ class ManageScheduledInstancesServiceTest {
   private val rolloutPrisonRepository: RolloutPrisonService = mock { on { getRolloutPrisons() } doReturn (rolledOutPrisons) }
   private val outboundEventsService: OutboundEventsService = mock()
   private val monitoringService: MonitoringService = mock()
+  private val locationService: LocationService = mock()
 
   private val activityServiceTest: ActivityService = ActivityService(
     activityRepository = activityRepository,
@@ -64,6 +65,7 @@ class ManageScheduledInstancesServiceTest {
     telemetryClient = telemetryClient,
     transactionHandler = TransactionHandler(),
     outboundEventsService = mock(),
+    locationService = locationService,
   )
 
   private val transactionHandler = CreateInstanceTransactionHandler(activityScheduleRepository, activityServiceTest, Clock.systemDefaultZone())
