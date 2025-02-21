@@ -32,11 +32,11 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `locations by group name - defined in properties - selects relevant locations only`() {
-    val prisonCode = "RNI"
-    val groupName = "House block 7"
+    val prisonCode = "IWI"
+    val groupName = "Houseblock 11"
 
-    prisonApiMockServer.stubGetLocationsForType("RNI", "CELL", "prisonapi/locations-RNI-HB7.json")
-    val result = this::class.java.getResource("/__files/prisonapi/RNI_location_groups_agency_locname.json")?.readText()
+    prisonApiMockServer.stubGetLocationsForType("IWI", "CELL", "prisonapi/locations-IWI-HB11.json")
+    val result = this::class.java.getResource("/__files/prisonapi/IWI_location_groups_agency_locname.json")?.readText()
 
     webTestClient.get()
       .uri { uriBuilder: UriBuilder ->

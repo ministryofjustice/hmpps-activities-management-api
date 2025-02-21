@@ -2,10 +2,10 @@
   {
     "locationId": 507011,
     "locationType": "CELL",
-    "description": "Hb7-1-002",
-    "agencyId": "RNI",
+    "description": "Hb11-1-002",
+    "agencyId": "IWI",
     "currentOccupancy": 0,
-    "locationPrefix": "RNI-HB7-1-002",
+    "locationPrefix": "IWI-HB11-1-002",
     "operationalCapacity": 0,
     "userDescription": "",
     "internalLocationCode": ""
@@ -13,10 +13,10 @@
   {
     "locationId": 507031,
     "locationType": "CELL",
-    "description": "Hb7-1-021",
-    "agencyId": "RNI",
+    "description": "Hb11-1-021",
+    "agencyId": "IWI",
     "currentOccupancy": 0,
-    "locationPrefix": "RNI-HB7-1-021",
+    "locationPrefix": "IWI-HB11-1-021",
     "operationalCapacity": 0,
     "userDescription": "",
     "internalLocationCode": ""
@@ -25,9 +25,9 @@
     "locationId": 108582,
     "locationType": "CELL",
     "description": "S-1-001",
-    "agencyId": "RNI",
+    "agencyId": "IWI",
     "currentOccupancy": 0,
-    "locationPrefix": "RNI-S-1-001",
+    "locationPrefix": "IWI-S-1-001",
     "operationalCapacity": 0,
     "userDescription": "",
     "internalLocationCode": ""
@@ -36,9 +36,9 @@
     "locationId": 108583,
     "locationType": "CELL",
     "description": "S-1-002",
-    "agencyId": "RNI",
+    "agencyId": "IWI",
     "currentOccupancy": 0,
-    "locationPrefix": "RNI-S-1-002",
+    "locationPrefix": "IWI-S-1-002",
     "operationalCapacity": 0,
     "userDescription": "",
     "internalLocationCode": ""
