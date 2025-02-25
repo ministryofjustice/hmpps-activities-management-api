@@ -1,0 +1,1 @@
+create index idx_waiting_list_activity_schedule_id ON waiting_list (activity_schedule_id);
