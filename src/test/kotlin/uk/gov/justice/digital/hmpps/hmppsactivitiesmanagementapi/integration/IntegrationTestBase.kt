@@ -31,7 +31,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.con
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.BankHolidayApiExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.IncentivesApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.LocationsInsidePrisonApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ManageAdjudicationsApiMockServer
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NomisMappingApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NonAssociationsApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.OAuthExtension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonApiMockServer
@@ -77,6 +79,9 @@ abstract class IntegrationTestBase {
     internal val caseNotesApiMockServer = CaseNotesApiMockServer()
     internal val incentivesApiMockServer = IncentivesApiMockServer()
     internal val manageAdjudicationsApiMockServer = ManageAdjudicationsApiMockServer()
+    internal val nomisMappingApiMockServer = NomisMappingApiMockServer()
+    internal val locationsInsidePrisonApiMockServer = LocationsInsidePrisonApiMockServer()
+
     internal val db = PostgresContainer.instance
     internal val localStackContainer = LocalStackContainer.instance
 
@@ -100,6 +105,8 @@ abstract class IntegrationTestBase {
       caseNotesApiMockServer.start()
       incentivesApiMockServer.start()
       manageAdjudicationsApiMockServer.start()
+      nomisMappingApiMockServer.start()
+      locationsInsidePrisonApiMockServer.start()
     }
 
     @AfterAll
@@ -111,6 +118,8 @@ abstract class IntegrationTestBase {
       caseNotesApiMockServer.stop()
       incentivesApiMockServer.stop()
       manageAdjudicationsApiMockServer.stop()
+      nomisMappingApiMockServer.stop()
+      locationsInsidePrisonApiMockServer.stop()
     }
 
     @BeforeEach
@@ -118,6 +127,8 @@ abstract class IntegrationTestBase {
       prisonApiMockServer.resetAll()
       prisonerSearchApiMockServer.resetAll()
       incentivesApiMockServer.resetAll()
+      nomisMappingApiMockServer.resetAll()
+      locationsInsidePrisonApiMockServer.resetAll()
     }
 
     @AfterEach
@@ -128,6 +139,8 @@ abstract class IntegrationTestBase {
       caseNotesApiMockServer.resetAll()
       incentivesApiMockServer.resetAll()
       manageAdjudicationsApiMockServer.resetAll()
+      nomisMappingApiMockServer.resetAll()
+      locationsInsidePrisonApiMockServer.resetAll()
     }
   }
 

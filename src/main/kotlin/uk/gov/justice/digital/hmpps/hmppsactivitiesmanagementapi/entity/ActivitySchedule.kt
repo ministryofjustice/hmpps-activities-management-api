@@ -28,6 +28,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 const val SESSION_DATE_FILTER = "SessionDateFilter"
 const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
@@ -82,6 +83,8 @@ data class ActivitySchedule(
   var scheduleWeeks: Int,
 
   var usePrisonRegimeTime: Boolean = true,
+
+  var dpsLocationId: UUID? = null,
 ) {
 
   init {
@@ -169,12 +172,14 @@ data class ActivitySchedule(
       runsOnBankHoliday: Boolean,
       scheduleWeeks: Int,
       usesPrisonRegimeTime: Boolean = true,
+      dpsLocationId: UUID? = null,
     ) = ActivitySchedule(
       activity = activity,
       description = description,
       internalLocationId = internalLocationId,
       internalLocationCode = internalLocationCode,
       internalLocationDescription = internalLocationDescription,
+      dpsLocationId = dpsLocationId,
       capacity = capacity,
       startDate = startDate,
       runsOnBankHoliday = runsOnBankHoliday,
@@ -354,6 +359,7 @@ data class ActivitySchedule(
         id = internalLocationId!!,
         code = internalLocationCode!!,
         description = internalLocationDescription!!,
+        dpsLocationId = dpsLocationId,
       )
     }
   }
@@ -385,6 +391,7 @@ data class ActivitySchedule(
     this.internalLocationId = null
     this.internalLocationCode = null
     this.internalLocationDescription = null
+    this.dpsLocationId = null
   }
 }
 

@@ -15,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivitiesFixLocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
@@ -54,6 +55,9 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   private lateinit var fixZeroPayJob: FixZeroPayJob
 
   @MockitoBean
+  private lateinit var activitiesFixLocationsJob: ActivitiesFixLocationsJob
+
+  @MockitoBean
   private lateinit var clock: Clock
 
   @BeforeEach
@@ -62,7 +66,17 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
   }
 
-  override fun controller() = JobTriggerController(createScheduledInstancesJob, manageAttendanceRecordsJob, manageAllocationsJob, activityMetricsJob, appointmentsMetricsJob, fixZeroPayJob, clock, purposefulActivityReportsJob)
+  override fun controller() = JobTriggerController(
+    createScheduledInstancesJob,
+    manageAttendanceRecordsJob,
+    manageAllocationsJob,
+    activityMetricsJob,
+    appointmentsMetricsJob,
+    fixZeroPayJob,
+    clock,
+    purposefulActivityReportsJob,
+    activitiesFixLocationsJob,
+  )
 
   @Test
   fun `201 response when create activity sessions job triggered`() {
@@ -87,21 +101,31 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
   @Test
   fun `201 response when attendance record creation job with date option is triggered`() {
     val response =
-      mockMvc.triggerJob("manage-attendance-records?date=2023-11-16").andExpect { status { isCreated() } }.andReturn().response
+      mockMvc.triggerJob("manage-attendance-records?date=2023-11-16").andExpect { status { isCreated() } }
+        .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(date = LocalDate.of(2023, 11, 16), mayBePrisonCode = null, withExpiry = false)
+    verify(manageAttendanceRecordsJob).execute(
+      date = LocalDate.of(2023, 11, 16),
+      mayBePrisonCode = null,
+      withExpiry = false,
+    )
   }
 
   @Test
   fun `201 response when attendance record creation job with prison code option is triggered`() {
     val response =
-      mockMvc.triggerJob("manage-attendance-records?prisonCode=$PENTONVILLE_PRISON_CODE").andExpect { status { isCreated() } }.andReturn().response
+      mockMvc.triggerJob("manage-attendance-records?prisonCode=$PENTONVILLE_PRISON_CODE")
+        .andExpect { status { isCreated() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage attendance records triggered")
 
-    verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
+    verify(manageAttendanceRecordsJob).execute(
+      date = LocalDate.now(),
+      mayBePrisonCode = PENTONVILLE_PRISON_CODE,
+      withExpiry = false,
+    )
   }
 
   @Test
@@ -116,13 +140,22 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
 
   @ParameterizedTest(name = " where withActivate = {0}, withDeallocateEnding={1}, withDeallocateExpiring={2}")
   @MethodSource("allocationArgs")
-  fun `201 response when manage allocations job triggered`(withActivate: Boolean, withDeallocateEnding: Boolean, withDeallocateExpiring: Boolean) {
-    val response = mockMvc.triggerJob(jobName = "manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
-      .andExpect { status { isCreated() } }.andReturn().response
+  fun `201 response when manage allocations job triggered`(
+    withActivate: Boolean,
+    withDeallocateEnding: Boolean,
+    withDeallocateExpiring: Boolean,
+  ) {
+    val response =
+      mockMvc.triggerJob(jobName = "manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
+        .andExpect { status { isCreated() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage allocations triggered operations")
 
-    verify(manageAllocationsJob).execute(withActivate = withActivate, withDeallocateEnding = withDeallocateEnding, withDeallocateExpiring = withDeallocateExpiring)
+    verify(manageAllocationsJob).execute(
+      withActivate = withActivate,
+      withDeallocateEnding = withDeallocateEnding,
+      withDeallocateExpiring = withDeallocateExpiring,
+    )
   }
 
   companion object {

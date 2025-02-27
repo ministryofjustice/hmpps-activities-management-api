@@ -57,6 +57,18 @@ spring:
             client-secret: ${system.client.secret}
             authorization-grant-type: client_credentials
             scope: read
+          locations-inside-prison:
+            provider: hmpps-auth
+            client-id: ${system.client.id}
+            client-secret: ${system.client.secret}
+            authorization-grant-type: client_credentials
+            scope: read
+          nomis-mapping-api:
+            provider: hmpps-auth
+            client-id: ${system.client.id}
+            client-secret: ${system.client.secret}
+            authorization-grant-type: client_credentials
+            scope: read
         provider:
           hmpps-auth:
             token-uri: ${hmpps.auth.url}/oauth/token
@@ -139,6 +151,7 @@ online:
 applications:
   max-appointment-instances: ${MAX_APPOINTMENT_INSTANCES}
   max-sync-appointment-instance-actions: ${MAX_SYNC_APPOINTMENT_INSTANCE_ACTIONS}
+  max-appointment-start-date-from-today: 1826
 
 hmpps:
   sqs:

@@ -198,16 +198,29 @@ class MigrateAppointmentServiceTest {
     }
 
     @Test
-    fun `rejected if start date is too far into the future`() {
-      val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(3))
+    fun `rejected if start date is too far into the future and is not a BVLS category code`() {
+      val request = appointmentMigrateRequest(categoryCode = "ANYTHING", startDate = LocalDate.now().plusDays(3))
 
       assertThat(service.migrateAppointment(request)).isNull()
 
       verifyNoInteractions(appointmentSeriesRepository, appointmentInstanceRepository, appointmentCreateDomainService)
     }
 
+    @ParameterizedTest(name = "do not reject if start date is too far into the future and is BVLS category code {0}")
+    @ValueSource(strings = ["VLB", "VLPM"])
+    fun `do not reject if start date is too far into the future and is a BVLS category code`(categoryCode: String) {
+      val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(3))
+
+      assertThat(service.migrateAppointment(request)).isNotNull()
+
+      with(appointmentSeriesCaptor.firstValue) {
+        categoryCode isEqualTo categoryCode
+        startDate isEqualTo request.startDate
+      }
+    }
+
     @Test
-    fun `not rejected if start date is the maximum allowed`() {
+    fun `do not rejected if start date is the maximum allowed`() {
       val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(2))
 
       assertThat(service.migrateAppointment(request)).isNotNull()
@@ -254,7 +267,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["Appointments comment", "Appointments comment which is 41 characts"])
+    @ValueSource(strings = ["Appointments comment", "Appointments comment which is 41 characters"])
     fun `characters comment is copied to customName with first 40 chars and extra information the whole comment`(requestComment: String) {
       val request = appointmentMigrateRequest(comment = requestComment)
 
@@ -267,7 +280,7 @@ class MigrateAppointmentServiceTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["VLLA", "VLB", "VLOO", "VLPA", "VLPM"])
+    @ValueSource(strings = ["VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP"])
     fun `custom name is empty for BVLS categoryCodes`(categoryCode: String) {
       val request = appointmentMigrateRequest(comment = "appointment comment", categoryCode = categoryCode)
 

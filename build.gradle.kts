@@ -3,12 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.0.0"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.2"
   kotlin("plugin.spring") version "2.1.10"
   kotlin("plugin.jpa") version "2.1.10"
   jacoco
   id("org.openapi.generator") version "7.11.0"
-  id("io.sentry.jvm.gradle") version "5.1.0"
+  id("io.sentry.jvm.gradle") version "5.2.0"
 }
 
 allOpen {
@@ -24,7 +24,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.3.0")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.2.2")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.3.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
 
@@ -40,10 +40,10 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.12.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.13.1")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.4")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.14")
+  implementation("aws.sdk.kotlin:s3:1.4.29")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -63,10 +63,10 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.11.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.12.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.20.4")
+  testImplementation("org.testcontainers:localstack:1.20.5")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
@@ -87,7 +87,7 @@ kotlin {
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "copyPreCommitHook")
+    dependsOn("buildPrisonApiModel", "buildNonAssociationsApiModel", "buildIncentivesApiModel", "buildLocationsInsidePrisonApiModel", "copyPreCommitHook")
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_21)
     }
@@ -130,6 +130,15 @@ tasks.register("buildIncentivesApiModel", GenerateTask::class) {
   globalProperties.set(mapOf("models" to ""))
 }
 
+tasks.register("buildLocationsInsidePrisonApiModel", GenerateTask::class) {
+  generatorName.set("kotlin")
+  inputSpec.set("openapi-specs/locations-inside-prison-api.json")
+  outputDir.set("$buildDirectory/generated/locationsinsideprisonapi")
+  modelPackage.set("uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model")
+  configOptions.set(configValues)
+  globalProperties.set(mapOf("models" to ""))
+}
+
 tasks.register("listrepos") {
   doLast {
     println("Repositories:")
@@ -147,7 +156,7 @@ tasks.register("copyPreCommitHook", Copy::class) {
   dependsOn("generateGitProperties")
 }
 
-val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi")
+val generatedProjectDirs = listOf("prisonapi", "nonassociations", "incentivesapi", "locationsinsideprisonapi")
 
 kotlin {
   generatedProjectDirs.forEach { generatedProject ->
@@ -188,6 +197,7 @@ tasks.named("runKtlintCheckOverMainSourceSet") {
   dependsOn("buildPrisonApiModel")
   dependsOn("buildIncentivesApiModel")
   dependsOn("buildNonAssociationsApiModel")
+  dependsOn("buildLocationsInsidePrisonApiModel")
 }
 
 ktlint {
