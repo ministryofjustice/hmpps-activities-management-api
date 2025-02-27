@@ -27,4 +27,14 @@ class NomisMappingApiMockServer : MockServer(8094) {
       ),
     )
   }
+
+  fun stubDpsUuidFromNomisIdNotFound(nomisLocationId: Long = 1234L) {
+    stubFor(
+      WireMock.get("/api/locations/nomis/$nomisLocationId").willReturn(
+        WireMock.aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withStatus(404),
+      ),
+    )
+  }
 }

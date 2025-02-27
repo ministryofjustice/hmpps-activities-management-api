@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivitiesFixLocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
@@ -36,6 +37,7 @@ class JobTriggerController(
   private val fixZeroPayJob: FixZeroPayJob,
   private val clock: Clock,
   private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
+  private val activitiesFixLocationsJob: ActivitiesFixLocationsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -152,6 +154,19 @@ class JobTriggerController(
     fixZeroPayJob.execute(deallocate = deallocate, makeUnpaid = makeUnpaid, allocate = allocate, activityScheduleId = activityScheduleId, prisonCode = prisonCode)
 
     return "Fix zero pay job triggered"
+  }
+
+  @PostMapping(value = ["/activities-fix-locations"])
+  @Operation(
+    summary = "Trigger the job fix zero pay activities",
+    description = """Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.""",
+  )
+  @ResponseBody
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  fun triggerActivitiesLocationsJob(): String {
+    activitiesFixLocationsJob.execute()
+
+    return "Activities fix locations job triggered"
   }
 
   @PostMapping(value = ["/purposeful-activity-reports"])

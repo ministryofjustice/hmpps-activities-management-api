@@ -19,4 +19,14 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     )
     return responseLocation
   }
+
+  fun stubLocationFromDpsUuidNotFound(dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")) {
+    stubFor(
+      WireMock.get("/locations/$dpsLocationId?formatLocalName=true").willReturn(
+        WireMock.aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withStatus(404),
+      ),
+    )
+  }
 }
