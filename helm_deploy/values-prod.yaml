@@ -55,9 +55,9 @@ generic-prometheus-alerts:
   alertSeverity: digital-prison-service
 
 cron:
-  fixZeroPayDeallocate: "0 22 27 02 *"
-  fixZeroPayReallocate: "0 5 28 02 *"
+  fixZeroPayDeallocate: "0 22 02 03 *"
+  fixZeroPayReallocate: "0 5 03 03 *"
 
   datafix:
-    prisonCode: "SNI"
-    activityScheduleId: "6257"
+    prisonCode: "WSI"
+    activityScheduleId: "7606"
