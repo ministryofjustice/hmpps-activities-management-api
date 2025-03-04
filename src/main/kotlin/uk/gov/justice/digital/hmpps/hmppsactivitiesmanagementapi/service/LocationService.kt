@@ -39,7 +39,7 @@ class LocationService(
     ?.map { it.copy(description = it.description.formatLocation()) }
     ?.toList()
 
-  fun getLocationForSchedule(nomisLocationId: Long?, dpsLocationId: UUID?): LocationDetails {
+  fun getLocationForSchedule(nomisLocationId: Long? = null, dpsLocationId: UUID?): LocationDetails {
     val locationUUID = dpsLocationId ?: nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId!!)!!.dpsLocationId
     // TODO: remove locationID later
     val locationID = nomisLocationId ?: nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId!!)!!.nomisLocationId
