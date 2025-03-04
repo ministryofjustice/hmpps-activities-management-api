@@ -823,21 +823,7 @@ class ActivityServiceTest {
       service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
-
-    verifyNoMoreInteractions(activityRepository)
-  }
-
-  @Test
-  fun `createActivity - Cannot be NOMIS location ID and DPS location UUID`() {
-    val createInCellActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-6.json")
-      .copy(startDate = TimeSource.tomorrow(), locationId = 123, dpsLocationId = UUID.randomUUID(), inCell = false)
-
-    assertThatThrownBy {
-      service().createActivity(createInCellActivityRequest, "SCH_ACTIVITY")
-    }
-      .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
+      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
 
     verifyNoMoreInteractions(activityRepository)
   }
@@ -2282,58 +2268,6 @@ class ActivityServiceTest {
     }
 
     @Test
-    fun `updateActivity - update using internal location from on-wing`() {
-      val activity = activityEntity(onWing = true)
-      activity.schedules().first().removeLocationDetails()
-
-      activity.onWing isBool true
-
-      whenever(
-        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
-          1,
-          MOORLAND_PRISON_CODE,
-          LocalDate.now(),
-        ),
-      ).thenReturn(activity)
-
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
-    }
-
-    @Test
-    fun `updateActivity - update using internal location from off-wing`() {
-      val activity = activityEntity(offWing = true)
-
-      activity.offWing isBool true
-
-      whenever(
-        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
-          1,
-          MOORLAND_PRISON_CODE,
-          LocalDate.now(),
-        ),
-      ).thenReturn(activity)
-
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
-    }
-
-    @Test
-    fun `updateActivity - update using internal location from in-cell`() {
-      val activity = activityEntity(inCell = true)
-
-      activity.inCell isBool true
-
-      whenever(
-        activityRepository.findByActivityIdAndPrisonCodeWithFilters(
-          1,
-          MOORLAND_PRISON_CODE,
-          LocalDate.now(),
-        ),
-      ).thenReturn(activity)
-
-      service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(locationId = location.locationId), "TEST")
-    }
-
-    @Test
     fun `updateActivity - update using DPS location from on-wing`() {
       val activity = activityEntity(onWing = true)
       activity.schedules().first().removeLocationDetails()
@@ -2402,7 +2336,7 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(offWing = true, inCell = true), "TEST")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID")
+      .hasMessage("Activity location must be one of offWing, onWing, inCell or a DPS location UUID")
   }
 
   @Test

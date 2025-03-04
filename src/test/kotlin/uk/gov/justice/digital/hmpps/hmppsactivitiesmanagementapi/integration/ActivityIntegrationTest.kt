@@ -326,7 +326,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       educationLevel = prisonApiMockServer.stubGetReferenceCode("EDU_LEVEL", "1", "prisonapi/education-level-code-1.json"),
       studyArea = prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json"),
       paid = false,
-    ).copy(locationId = null, dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
+    ).copy(dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
 
     val activity = webTestClient.createActivity(newActivity)
 
@@ -1195,29 +1195,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(inCell = true))) {
       inCell isEqualTo true
       assertThat(schedules.first().internalLocation).isNull()
-    }
-  }
-
-  @Test
-  @Sql("classpath:test_data/seed-activity-id-19.sql")
-  fun `updateActivity to on-wing and back to internal NOMIS location`() {
-    val location = location(prisonId = PENTONVILLE_PRISON_CODE)
-
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location)
-
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(onWing = true))) {
-      onWing isEqualTo true
-      assertThat(schedules.first().internalLocation).isNull()
-    }
-
-    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, ActivityUpdateRequest(locationId = 1))) {
-      onWing isEqualTo false
-      with(schedules.first()) {
-        internalLocation?.id isEqualTo 1
-        internalLocation?.dpsLocationId isEqualTo UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")
-        internalLocation?.code isEqualTo location.code
-        internalLocation?.description isEqualTo location.localName
-      }
     }
   }
 

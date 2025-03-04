@@ -115,7 +115,7 @@ class ActivityService(
     checkCaseloadAccess(request.prisonCode!!)
 
     require(request.startDate!! > LocalDate.now()) { "Activity start date must be in the future" }
-    require((request.locationId != null) xor (request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID" }
+    require((request.dpsLocationId != null) xor request.offWing xor request.onWing xor request.inCell) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
     if (request.paid.not() && request.pay.isNotEmpty()) throw IllegalArgumentException("Unpaid activity cannot have pay rates associated with it")
     if (request.paid && request.pay.isEmpty()) throw IllegalArgumentException("Paid activity must have at least one pay rate associated with it")
 
@@ -175,7 +175,7 @@ class ActivityService(
       }
 
       activity.let {
-        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.locationId, request.dpsLocationId)
+        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.dpsLocationId)
         val usesPrisonRegimeTime = request.slots?.all { s -> s.customStartTime == null && s.customEndTime == null } == true
         activity.addSchedule(
           description = request.description!!,
@@ -294,7 +294,7 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, nomisLocationId: Long?, dpsLocationId: UUID?): LocationDetails = locationService.getLocationForSchedule(nomisLocationId, dpsLocationId).apply {
+  private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID?): LocationDetails = locationService.getLocationForSchedule(dpsLocationId = dpsLocationId).apply {
     failIfPrisonsDiffer(activity, this)
   }
 
@@ -529,13 +529,13 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    if (request.locationId == null && request.dpsLocationId == null && request.onWing == null && request.offWing == null && request.inCell == null) {
+    if (request.dpsLocationId == null && request.onWing == null && request.offWing == null && request.inCell == null) {
       return
     }
 
-    require((request.locationId != null) xor (request.dpsLocationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location can only be maximum one of offWing, onWing, inCell, a NOMIS location id or a DPS location UUID" }
+    require((request.dpsLocationId != null) xor (request.onWing == true) xor (request.inCell == true) xor (request.offWing == true)) { "Activity location must be one of offWing, onWing, inCell or a DPS location UUID" }
 
-    if (request.locationId == null && request.dpsLocationId == null) {
+    if (request.dpsLocationId == null) {
       activity.schedules().forEach {
         it.removeLocationDetails()
 
@@ -552,7 +552,7 @@ class ActivityService(
         }
       }
     } else {
-      val scheduleLocation = getLocationForSchedule(activity, request.locationId, request.dpsLocationId)
+      val scheduleLocation = getLocationForSchedule(activity, request.dpsLocationId)
 
       activity.schedules().forEach {
         it.internalLocationId = scheduleLocation.locationId.toInt()

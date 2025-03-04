@@ -34,7 +34,7 @@
     }
   ],
   "startDate": "2023-03-31",
-  "locationId": 1,
+  "dpsLocationId": "99999999-0000-aaaa-bbbb-cccccccccccc",
   "capacity": 20,
   "scheduleWeeks": 1,
   "slots": [

@@ -61,9 +61,6 @@ data class ActivityUpdateRequest(
   @Schema(description = "The most recent risk assessment level for this activity", example = "high")
   val riskLevel: String? = null,
 
-  @Schema(description = "The optional NOMIS internal location id for this schedule", example = "98877667")
-  val locationId: Long? = null,
-
   @Schema(description = "The optional DPS location UUID for this schedule", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
   val dpsLocationId: UUID? = null,
 
