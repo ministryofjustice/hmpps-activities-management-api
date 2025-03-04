@@ -3,12 +3,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.2"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "7.1.3"
   kotlin("plugin.spring") version "2.1.10"
   kotlin("plugin.jpa") version "2.1.10"
   jacoco
-  id("org.openapi.generator") version "7.11.0"
-  id("io.sentry.jvm.gradle") version "5.2.0"
+  id("org.openapi.generator") version "7.12.0"
+  id("io.sentry.jvm.gradle") version "5.3.0"
 }
 
 allOpen {
@@ -24,7 +24,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.3.0")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.3.1")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.3.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.3.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.10.1")
 
@@ -40,7 +40,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.13.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.13.3")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.29")
+  implementation("aws.sdk.kotlin:s3:1.4.33")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -63,7 +63,7 @@ dependencies {
   runtimeOnly("org.postgresql:postgresql")
 
   // Test dependencies
-  testImplementation("org.wiremock:wiremock-standalone:3.12.0")
+  testImplementation("org.wiremock:wiremock-standalone:3.12.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.20.5")
@@ -77,7 +77,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
-  testImplementation("io.mockk:mockk:1.13.16")
+  testImplementation("io.mockk:mockk:1.13.17")
 }
 
 kotlin {
