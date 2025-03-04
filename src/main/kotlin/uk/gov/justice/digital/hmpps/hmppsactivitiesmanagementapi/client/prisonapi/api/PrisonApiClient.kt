@@ -300,16 +300,6 @@ class PrisonApiClient(
     .bodyToMono(typeReference<List<LocationGroup>>())
     .withRetryPolicy()
 
-  fun getLocation(locationId: Long): Mono<Location> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/locations/{locationId}")
-        .build(locationId)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<Location>())
-    .withRetryPolicy()
-
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations = getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
 
   suspend fun getLocationAsync(locationId: Long, includeInactive: Boolean = false): Location = prisonApiWebClient.get()
