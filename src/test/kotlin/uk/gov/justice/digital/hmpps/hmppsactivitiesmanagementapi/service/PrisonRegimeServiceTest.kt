@@ -413,7 +413,6 @@ class PrisonRegimeServiceTest {
   fun `update an existing prison pay band`() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
-      nomisPayBand = 2,
       alias = "alias2",
       description = "description2",
     )
@@ -431,7 +430,7 @@ class PrisonRegimeServiceTest {
     val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
       prisonPayBandId = 1,
       displaySequence = 2,
-      nomisPayBand = 2,
+      nomisPayBand = 1,
       payBandAlias = "alias2",
       payBandDescription = "description2",
       prisonCode = "MDI",
@@ -450,7 +449,7 @@ class PrisonRegimeServiceTest {
         displaySequence = 2,
         alias = "alias2",
         description = "description2",
-        nomisPayBand = 2,
+        nomisPayBand = 1,
         prisonCode = "MDI",
         updatedBy = "TEST_USER",
         updatedTime = now,
@@ -508,7 +507,6 @@ class PrisonRegimeServiceTest {
   @Test
   fun `partial update of an existing prison pay band, nomis pay band and alias`() {
     val request = PrisonPayBandUpdateRequest(
-      nomisPayBand = 2,
       alias = "alias2",
     )
 
@@ -525,7 +523,7 @@ class PrisonRegimeServiceTest {
     val updatedMoorlandPrisonPayBand = EntityPrisonPayBand(
       prisonPayBandId = 1,
       displaySequence = 1,
-      nomisPayBand = 2,
+      nomisPayBand = 1,
       payBandAlias = "alias2",
       payBandDescription = "description",
       prisonCode = "MDI",
@@ -542,7 +540,7 @@ class PrisonRegimeServiceTest {
       ModelPrisonPayBand(
         id = 1,
         displaySequence = 1,
-        nomisPayBand = 2,
+        nomisPayBand = 1,
         alias = "alias2",
         description = "description",
         prisonCode = "MDI",
@@ -553,46 +551,9 @@ class PrisonRegimeServiceTest {
   }
 
   @Test
-  fun `fails to update an existing prison pay band when the nomis pay band exists for the prison`() {
-    val request = PrisonPayBandUpdateRequest(
-      displaySequence = 2,
-      nomisPayBand = 2,
-      alias = "alias2",
-      description = "description2",
-    )
-
-    val existingPrisonPayBand = EntityPrisonPayBand(
-      prisonPayBandId = 1,
-      displaySequence = 1,
-      nomisPayBand = 1,
-      payBandAlias = "alias",
-      payBandDescription = "description",
-      prisonCode = "MDI",
-    )
-
-    val otherPrisonPayBand = EntityPrisonPayBand(
-      prisonPayBandId = 2,
-      displaySequence = 1,
-      nomisPayBand = 2,
-      payBandAlias = "alias",
-      payBandDescription = "description",
-      prisonCode = "MDI",
-    )
-
-    whenever(prisonPayBandRepository.findPrisonPayBandByPrisonPayBandIdAndPrisonCode(1, "MDI")).thenReturn(existingPrisonPayBand)
-    whenever(prisonPayBandRepository.findByPrisonCode("MDI")).thenReturn(listOf(existingPrisonPayBand, otherPrisonPayBand))
-
-    assertThatThrownBy {
-      service.updatePrisonPayBand("MDI", 1, request, principal)
-    }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Nomis pay band 2 already exists in the prison pay band list")
-  }
-
-  @Test
   fun `fails to update an existing prison pay band when the display sequence exists for the prison`() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
-      nomisPayBand = 1,
       alias = "alias2",
       description = "description2",
     )

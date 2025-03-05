@@ -62,7 +62,6 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
 
     val updateRequest = PrisonPayBandUpdateRequest(
       displaySequence = 5,
-      nomisPayBand = 5,
       alias = "testAlias2",
       description = "testDesc2",
     )
@@ -73,7 +72,6 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
     updatedPayBand.displaySequence isEqualTo 5
     updatedPayBand.alias isEqualTo "testAlias2"
     updatedPayBand.description isEqualTo "testDesc2"
-    updatedPayBand.nomisPayBand isEqualTo 5
     updatedPayBand.prisonCode isEqualTo "MDI"
   }
 
