@@ -358,6 +358,19 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledVisitsForLocationAsync- when prison api return 404 - success`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val locationId = 1L
+    val date = LocalDate.of(2022, 10, 10)
+
+    prisonApiMockServer.stubScheduledVisitsForLocationNotFound(prisonCode, locationId, date, null)
+
+    runBlocking {
+      prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, locationId, date, null) isEqualTo emptyList()
+    }
+  }
+
+  @Test
   fun `getLocationsForType - success`() {
     val agencyId = "LEI"
     val locationType = "CELL"
