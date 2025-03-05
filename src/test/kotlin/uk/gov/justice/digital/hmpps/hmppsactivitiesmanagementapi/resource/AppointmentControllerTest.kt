@@ -29,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
@@ -281,40 +280,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   }
 
   @Test
-  fun `404 not found response when marking appointment attendance using invalid id`() {
-    val request = AppointmentAttendanceRequest()
-    val mockPrincipal: Principal = mock()
-
-    whenever(appointmentAttendanceService.markAttendance(-1, request, mockPrincipal)).thenThrow(EntityNotFoundException("Appointment -1 not found"))
-
-    val response = mockMvc.markAttendance(-1, request, mockPrincipal)
-      .andDo { print() }
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isNotFound() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).contains("Appointment -1 not found")
-  }
-
-  @Test
-  fun `202 accepted response when marking appointment attendance with valid json`() {
-    val request = AppointmentAttendanceRequest()
-    val expectedResponse = appointmentSeriesEntity().appointments().first().toModel()
-
-    val mockPrincipal: Principal = mock()
-
-    whenever(appointmentAttendanceService.markAttendance(1, request, mockPrincipal)).thenReturn(expectedResponse)
-
-    val response = mockMvc.markAttendance(1, request, mockPrincipal)
-      .andDo { print() }
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isAccepted() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
-  }
-
-  @Test
   fun `400 response when empty attendance requests marking multiple appointments`() {
     val request = emptyList<MultipleAppointmentAttendanceRequest>()
 
@@ -482,14 +447,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
     accept = MediaType.APPLICATION_JSON
     contentType = MediaType.APPLICATION_JSON
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-
-  private fun MockMvc.markAttendance(id: Long, request: AppointmentAttendanceRequest, principal: Principal) = put("/appointments/{appointmentId}/attendance", id) {
-    this.principal = principal
-    contentType = MediaType.APPLICATION_JSON
-    content = mapper.writeValueAsBytes(
-      request,
-    )
-  }
 
   private fun MockMvc.updateAttendances(request: List<MultipleAppointmentAttendanceRequest>, action: AttendanceAction?, principal: Principal) = put("/appointments/updateAttendances?action=$action") {
     this.principal = principal
