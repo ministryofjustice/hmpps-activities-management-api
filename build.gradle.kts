@@ -66,7 +66,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.12.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.20.5")
+  testImplementation("org.testcontainers:localstack:1.20.6")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
