@@ -10,6 +10,7 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientRequestException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import reactor.util.retry.Retry
@@ -220,6 +221,8 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonerSchedule>>())
+    .doOnError { error -> log.info("Error looking up visits for location for $prisonCode $locationId", error) }
+    .onErrorResume(WebClientResponseException.NotFound::class.java) { Mono.just(emptyList()) }
     .withRetryPolicy()
     .awaitSingle()
 

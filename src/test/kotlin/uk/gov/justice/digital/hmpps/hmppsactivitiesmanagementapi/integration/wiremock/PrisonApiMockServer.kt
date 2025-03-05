@@ -204,6 +204,16 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
+  fun stubScheduledVisitsForLocationNotFound(prisonCode: String, locationId: Long, date: LocalDate, timeSlot: TimeSlot?) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/schedules/$prisonCode/locations/$locationId/usage/VISIT?date=$date${timeSlot?.let { "&timeSlot=$it" } ?: ""}"))
+        .willReturn(
+          WireMock.aResponse()
+            .withStatus(404),
+        ),
+    )
+  }
+
   fun stubGetPrisonerDetails(prisonerNumber: String, jsonFileSuffix: String = "") {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/bookings/offenderNo/$prisonerNumber"))
