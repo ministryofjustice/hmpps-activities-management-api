@@ -183,8 +183,7 @@ class ActivityServiceTest {
   @BeforeEach
   fun setUp() {
     openMocks(this)
-    whenever(locationService.getLocationForSchedule(location.locationId, null)).thenReturn(location)
-    whenever(locationService.getLocationForSchedule(null, location.dpsLocationId)).thenReturn(location)
+    whenever(locationService.getLocationForSchedule(location.dpsLocationId)).thenReturn(location)
     whenever(prisonRegimeRepository.findByPrisonCode(any())).thenReturn(listOf(prisonRegime()))
     val regime = prisonRegime()
     val amTimes = Pair(regime.amStart, regime.amFinish)
