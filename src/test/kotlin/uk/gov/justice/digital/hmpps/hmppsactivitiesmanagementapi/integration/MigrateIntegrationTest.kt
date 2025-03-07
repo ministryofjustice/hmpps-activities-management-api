@@ -599,7 +599,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
         startDate = TimeSource.tomorrow(),
         endDate = null,
         minimumEducationLevel = emptyList(),
-        locationId = 1,
+        dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
         capacity = 1,
         scheduleWeeks = 1,
         slots = listOf(

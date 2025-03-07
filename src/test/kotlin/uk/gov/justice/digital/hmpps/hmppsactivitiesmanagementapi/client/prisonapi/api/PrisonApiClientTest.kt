@@ -15,7 +15,6 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -359,6 +358,19 @@ class PrisonApiClientTest {
   }
 
   @Test
+  fun `getScheduledVisitsForLocationAsync- when prison api return 404 - success`(): Unit = runBlocking {
+    val prisonCode = "MDI"
+    val locationId = 1L
+    val date = LocalDate.of(2022, 10, 10)
+
+    prisonApiMockServer.stubScheduledVisitsForLocationNotFound(prisonCode, locationId, date, null)
+
+    runBlocking {
+      prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, locationId, date, null) isEqualTo emptyList()
+    }
+  }
+
+  @Test
   fun `getLocationsForType - success`() {
     val agencyId = "LEI"
     val locationType = "CELL"
@@ -415,25 +427,6 @@ class PrisonApiClientTest {
     assertThatThrownBy { prisonApiClient.getLocationGroups(agencyId).block() }
       .isInstanceOf(WebClientResponseException::class.java)
       .hasMessage("404 Not Found from GET http://localhost:8999/api/agencies/LEI/locations/groups")
-  }
-
-  @Test
-  fun `getLocation - success`() {
-    prisonApiMockServer.stubGetLocation(1, "prisonapi/location-id-1.json")
-
-    assertThat(prisonApiClient.getLocation(1L).block()!!).isEqualTo(
-      Location(
-        locationId = 1,
-        locationType = "CELL",
-        description = "House_block_7-1-002",
-        agencyId = "MDI",
-        currentOccupancy = 1,
-        locationPrefix = "LEI-House-block-7-1-002",
-        operationalCapacity = 2,
-        userDescription = "user description",
-        internalLocationCode = "internal location code",
-      ),
-    )
   }
 
   @Test

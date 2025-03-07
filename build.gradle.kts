@@ -24,7 +24,7 @@ configurations {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.3.1")
+  implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.4.0")
 
   // Spring boot dependencies
   implementation("org.springframework.boot:spring-boot-starter-security")
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.33")
+  implementation("aws.sdk.kotlin:s3:1.4.36")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -66,7 +66,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.12.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.20.5")
+  testImplementation("org.testcontainers:localstack:1.20.6")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")

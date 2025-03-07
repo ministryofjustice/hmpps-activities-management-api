@@ -140,7 +140,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     val request = PrisonPayBandUpdateRequest(
       displaySequence = prisonPayBands.first().displaySequence,
-      nomisPayBand = prisonPayBands.first().nomisPayBand,
       alias = prisonPayBands.first().alias,
       description = prisonPayBands.first().alias,
     )
@@ -178,7 +177,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
   fun `Update payband (ROLE_ACTIVITY_HUB) - 403`() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 1,
-      nomisPayBand = 1,
       alias = "test",
       description = "test",
     )

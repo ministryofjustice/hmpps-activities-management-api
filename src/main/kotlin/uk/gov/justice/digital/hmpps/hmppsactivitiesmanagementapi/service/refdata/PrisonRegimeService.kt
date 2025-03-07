@@ -86,10 +86,6 @@ class PrisonRegimeService(
 
     val otherPrisonPayBands = prisonPayBandRepository.findByPrisonCode(prisonPayBand.prisonCode).filterNot { it.prisonPayBandId == prisonPayBandId }
 
-    if (request.nomisPayBand != null) {
-      require(otherPrisonPayBands.none { it.nomisPayBand == request.nomisPayBand }) { "Nomis pay band ${request.nomisPayBand} already exists in the prison pay band list" }
-      prisonPayBand.nomisPayBand = request.nomisPayBand
-    }
     if (request.displaySequence != null) {
       require(otherPrisonPayBands.none { it.displaySequence == request.displaySequence }) { "Display sequence ${request.displaySequence} already exists in the prison pay band list" }
       prisonPayBand.displaySequence = request.displaySequence
