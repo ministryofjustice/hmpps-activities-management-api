@@ -175,7 +175,7 @@ class ActivityService(
       }
 
       activity.let {
-        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.dpsLocationId)
+        val scheduleLocation = if (request.inCell || request.onWing || request.offWing) null else getLocationForSchedule(it, request.dpsLocationId!!)
         val usesPrisonRegimeTime = request.slots?.all { s -> s.customStartTime == null && s.customEndTime == null } == true
         activity.addSchedule(
           description = request.description!!,
@@ -294,7 +294,7 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID?): LocationDetails = locationService.getLocationForSchedule(dpsLocationId = dpsLocationId).apply {
+  private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID): LocationDetails = locationService.getLocationForSchedule(dpsLocationId).apply {
     failIfPrisonsDiffer(activity, this)
   }
 
