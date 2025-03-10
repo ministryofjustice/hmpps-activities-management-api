@@ -414,7 +414,6 @@ class PrisonRegimeServiceTest {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
       alias = "alias2",
-      description = "description2",
     )
 
     val existingPrisonPayBand = EntityPrisonPayBand(
@@ -432,7 +431,7 @@ class PrisonRegimeServiceTest {
       displaySequence = 2,
       nomisPayBand = 1,
       payBandAlias = "alias2",
-      payBandDescription = "description2",
+      payBandDescription = "description",
       prisonCode = "MDI",
       updatedBy = "TEST_USER",
       updatedTime = now,
@@ -448,7 +447,7 @@ class PrisonRegimeServiceTest {
         id = 1,
         displaySequence = 2,
         alias = "alias2",
-        description = "description2",
+        description = "description",
         nomisPayBand = 1,
         prisonCode = "MDI",
         updatedBy = "TEST_USER",
@@ -461,7 +460,6 @@ class PrisonRegimeServiceTest {
   fun `partial update of an existing prison pay band, display sesquence and description`() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
-      description = "description2",
     )
 
     val existingPrisonPayBand = EntityPrisonPayBand(
@@ -479,7 +477,7 @@ class PrisonRegimeServiceTest {
       displaySequence = 2,
       nomisPayBand = 1,
       payBandAlias = "alias",
-      payBandDescription = "description2",
+      payBandDescription = "description",
       prisonCode = "MDI",
       updatedBy = "TEST_USER",
       updatedTime = now,
@@ -496,7 +494,7 @@ class PrisonRegimeServiceTest {
         displaySequence = 2,
         nomisPayBand = 1,
         alias = "alias",
-        description = "description2",
+        description = "description",
         prisonCode = "MDI",
         updatedBy = "TEST_USER",
         updatedTime = now,
@@ -555,7 +553,6 @@ class PrisonRegimeServiceTest {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 2,
       alias = "alias2",
-      description = "description2",
     )
 
     val existingPrisonPayBand = EntityPrisonPayBand(

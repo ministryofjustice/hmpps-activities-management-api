@@ -141,7 +141,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = prisonPayBands.first().displaySequence,
       alias = prisonPayBands.first().alias,
-      description = prisonPayBands.first().alias,
     )
 
     whenever(prisonRegimeService.updatePrisonPayBand(eq(MOORLAND_PRISON_CODE), eq(1), eq(request), eq(user), any())).thenReturn(prisonPayBands.first())
@@ -178,7 +177,6 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
     val request = PrisonPayBandUpdateRequest(
       displaySequence = 1,
       alias = "test",
-      description = "test",
     )
     mockMvcWithSecurity.patch("/prison/MDI/prison-pay-band/1") {
       contentType = MediaType.APPLICATION_JSON
