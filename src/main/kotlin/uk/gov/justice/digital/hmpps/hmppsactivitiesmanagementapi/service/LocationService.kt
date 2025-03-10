@@ -39,12 +39,11 @@ class LocationService(
     ?.map { it.copy(description = it.description.formatLocation()) }
     ?.toList()
 
-  fun getLocationForSchedule(nomisLocationId: Long? = null, dpsLocationId: UUID?): LocationDetails {
-    val locationUUID = dpsLocationId ?: nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId!!)!!.dpsLocationId
+  fun getLocationForSchedule(dpsLocationId: UUID): LocationDetails {
     // TODO: remove locationID later
-    val locationID = nomisLocationId ?: nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId!!)!!.nomisLocationId
+    val locationID = nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
 
-    return locationsInsidePrisonAPIClient.getLocationById(locationUUID).let {
+    return locationsInsidePrisonAPIClient.getLocationById(dpsLocationId).let {
       // TODO: localName is optional - what should we use?
       LocationDetails(it.prisonId, locationID, it.id, it.code, it.localName ?: it.code)
     }

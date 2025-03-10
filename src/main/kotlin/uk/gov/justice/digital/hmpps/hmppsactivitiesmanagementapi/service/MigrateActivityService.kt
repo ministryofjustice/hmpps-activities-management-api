@@ -198,7 +198,7 @@ class MigrateActivityService(
     // For tier two activities we need a default value for the organiser
     val defaultOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument("OTHER")
 
-    val internalLocation = if (request.internalLocationId != null || request.dpsLocationId != null) locationService.getLocationForSchedule(request.internalLocationId, request.dpsLocationId) else null
+    val internalLocation = if (request.dpsLocationId != null) locationService.getLocationForSchedule(request.dpsLocationId) else null
 
     return Activity(
       prisonCode = request.prisonCode,
@@ -207,7 +207,7 @@ class MigrateActivityService(
       attendanceRequired = true,
       summary = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
       description = makeNameWithCohortLabel(splitRegime, request.prisonCode, request.description, cohort),
-      inCell = (request.internalLocationId == null && request.dpsLocationId == null && !request.outsideWork) ||
+      inCell = (request.dpsLocationId == null && !request.outsideWork) ||
         request.programServiceCode == TIER2_IN_CELL_ACTIVITY ||
         request.programServiceCode == TIER2_STRUCTURED_IN_CELL,
       outsideWork = request.outsideWork,
@@ -217,12 +217,7 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       isPaid = isPaid(request.payRates),
     ).apply {
-      // TODO: SAA-2303 In the future only dpsLocationId will be provided
-      if (request.dpsLocationId == null) {
-        onWing = request.internalLocationCode?.contains(ON_WING_LOCATION) == true
-      } else {
-        onWing = internalLocation?.internalLocationCode?.contains(ON_WING_LOCATION) == true
-      }
+      onWing = internalLocation?.internalLocationCode?.contains(ON_WING_LOCATION) == true
     }.apply {
       endDate = request.endDate
     }.apply {

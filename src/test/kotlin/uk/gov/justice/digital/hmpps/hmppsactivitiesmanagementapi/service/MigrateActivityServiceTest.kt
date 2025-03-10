@@ -56,7 +56,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 class MigrateActivityServiceTest {
   private val rolloutPrisonService: RolloutPrisonService = mock()
@@ -174,7 +174,7 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      whenever(locationService.getLocationForSchedule(1, null)).thenReturn(
+      whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
         LocationDetails(
           locationId = 1,
           internalLocationCode = "011",
@@ -432,12 +432,7 @@ class MigrateActivityServiceTest {
       )
 
       // Remove the location values to indicate it is an in-cell or outside prison activity
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-        internalLocationId = null,
-        internalLocationCode = null,
-        internalLocationDescription = null,
-        dpsLocationId = null,
-      )
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(dpsLocationId = null)
 
       whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
 
@@ -489,38 +484,6 @@ class MigrateActivityServiceTest {
     }
 
     @Test
-    fun `An on-wing activity - has WOW location code when NOMIS internal location code is provided`() {
-      val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
-      val nomisScheduleRules = listOf(
-        NomisScheduleRule(
-          startTime = LocalTime.of(10, 0),
-          endTime = LocalTime.of(11, 0),
-          monday = true,
-        ),
-      )
-
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-        internalLocationCode = "WOW",
-        internalLocationDescription = "MDI-1-1-WOW",
-      )
-
-      whenever(activityRepository.saveAllAndFlush(anyList())).thenReturn(listOf(activityEntity()))
-
-      val response = service.migrateActivity(request)
-
-      assertThat(response.activityId).isEqualTo(1)
-      assertThat(response.splitRegimeActivityId).isNull()
-
-      verify(activityRepository).saveAllAndFlush(activityCaptor.capture())
-
-      with(activityCaptor.firstValue[0]) {
-        assertThat(inCell).isFalse
-        assertThat(onWing).isTrue
-        assertThat(schedules().first().internalLocationId).isNull()
-      }
-    }
-
-    @Test
     fun `An on-wing activity - has WOW location code when DPS Location UUID is provided`() {
       val nomisPayRates = listOf(NomisPayRate(incentiveLevel = "BAS", nomisPayBand = "1", rate = 110))
       val nomisScheduleRules = listOf(
@@ -531,14 +494,9 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules).copy(
-        internalLocationId = null,
-        internalLocationCode = null,
-        internalLocationDescription = null,
-        dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
-      )
+      val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      whenever(locationService.getLocationForSchedule(null, UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
+      whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
         LocationDetails(
           locationId = 1,
           internalLocationCode = "junkWOWxdd",
@@ -973,10 +931,7 @@ class MigrateActivityServiceTest {
       prisonCode = "MDI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 1,
-      dpsLocationId = null,
-      internalLocationCode = "011",
-      internalLocationDescription = "MDI-1-1-011",
+      dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
       capacity = 10,
       description = "An activity",
       payPerSession = "H",

@@ -33,16 +33,6 @@ data class ActivityMigrateRequest(
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   val endDate: LocalDate? = null,
 
-  @Schema(description = "Optional NOMIS internal location id", example = "98877667")
-  val internalLocationId: Long?,
-
-  @Schema(description = "Optional NOMIS internal location code", example = "A011")
-  val internalLocationCode: String?,
-
-  // TODO: SAA-2303 - Do we use this?
-  @Schema(description = "Optional NOMIS internal location description", example = "PVI-1-2-A011")
-  val internalLocationDescription: String?,
-
   @Schema(description = "The optional DPS location UUID", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
   val dpsLocationId: UUID? = null,
 
