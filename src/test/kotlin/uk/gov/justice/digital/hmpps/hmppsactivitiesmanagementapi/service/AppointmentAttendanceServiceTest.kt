@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
-import jakarta.persistence.EntityNotFoundException
 import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
@@ -40,7 +39,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAndAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendanceSummaryRepository
@@ -66,8 +64,6 @@ import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.*
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @ExtendWith(MockitoExtension::class)
 class AppointmentAttendanceServiceTest {
@@ -171,51 +167,6 @@ class AppointmentAttendanceServiceTest {
 
       val summaries = service.getAppointmentAttendanceSummaries(prisonCode = "RAN", date = LocalDate.now(), categoryCode = "TEST_CAT", customName = "custom")
       assertThat(summaries.all { it.appointmentName.contains("appointment") && it.appointmentName.contains("custom") }).isTrue()
-    }
-  }
-
-  @Nested
-  @DisplayName("mark attendance")
-  inner class GetAppointmentInstanceById {
-    @Test
-    fun `throws entity not found exception for unknown appointment id`() {
-      assertThatThrownBy { service.markAttendance(-1, AppointmentAttendanceRequest(), principal) }
-        .isInstanceOf(EntityNotFoundException::class.java)
-        .hasMessage("Appointment -1 not found")
-
-      verify(appointmentRepository, never()).saveAndFlush(any())
-    }
-
-    @Test
-    fun `throws caseload access exception if caseload id header does not match`() {
-      addCaseloadIdToRequestHeader("WRONG")
-      val entity = mock<Appointment>()
-      whenever(entity.prisonCode).thenReturn(MOORLAND_PRISON_CODE)
-      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
-
-      assertThatThrownBy { service.markAttendance(1, AppointmentAttendanceRequest(), principal) }
-        .isInstanceOf(CaseloadAccessException::class.java)
-
-      verify(appointmentRepository, never()).saveAndFlush(any())
-    }
-
-    @Test
-    fun `calls appointment mark prisoner attendance function`() {
-      val entity = mock<Appointment>()
-      whenever(entity.prisonCode).thenReturn(MOORLAND_PRISON_CODE)
-      whenever(entity.toModel()).thenReturn(mock<AppointmentModel>())
-      whenever(appointmentRepository.findById(1)).thenReturn(Optional.of(entity))
-      whenever(appointmentRepository.saveAndFlush(entity)).thenReturn(entity)
-      val request = AppointmentAttendanceRequest(
-        attendedPrisonNumbers = listOf("A1234BC", "C3456DE"),
-        nonAttendedPrisonNumbers = listOf("B2345CD"),
-      )
-
-      val appointment = service.markAttendance(1, request, principal)
-
-      verify(entity).markPrisonerAttendance(eq(request.attendedPrisonNumbers), eq(request.nonAttendedPrisonNumbers), any<LocalDateTime>(), eq(username))
-      verify(appointmentRepository).saveAndFlush(entity)
-      assertThat(appointment).isInstanceOf(AppointmentModel::class.java)
     }
   }
 
