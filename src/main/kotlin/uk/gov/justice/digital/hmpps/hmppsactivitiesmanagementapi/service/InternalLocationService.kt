@@ -10,6 +10,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
@@ -49,6 +51,8 @@ class InternalLocationService(
   private val prisonRegimeService: PrisonRegimeService,
   private val referenceCodeService: ReferenceCodeService,
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
+  private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -99,10 +103,21 @@ class InternalLocationService(
       .union(locationVisitsMap.keys)
       .union(adjudicationHearingsMap.keys)
 
-    val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
+    val dpsLocations = nomisMappingAPIClient.getLocationMappingsByNomisIds(internalLocationIds)
 
-    internalLocationsMap.map {
-      InternalLocationEventsSummary(it.key, it.value.agencyId, it.value.description, it.value.userDescription ?: it.value.description)
+    val dpsLocationsByDPSIdMap = dpsLocations.associateBy { it.dpsLocationId }
+
+    val allDpsLocations = locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)
+      .filter { dpsLocationsByDPSIdMap.contains(it.id) }
+
+    allDpsLocations.map {
+      InternalLocationEventsSummary(
+        dpsLocationsByDPSIdMap[it.id]!!.nomisLocationId,
+        it.id,
+        it.prisonId,
+        it.code,
+        it.localName ?: it.code,
+      )
     }.toSet()
   }
 

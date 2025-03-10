@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 /*
  * Read-only entity for the database view V_PRISONER_SCHEDULED_ACTIVITIES
@@ -81,6 +82,8 @@ data class PrisonerScheduledActivity(
   val offWing: Boolean,
 
   val internalLocationId: Int? = null,
+
+  val dpsLocationId: UUID? = null,
 
   val internalLocationCode: String? = null,
 

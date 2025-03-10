@@ -19,6 +19,9 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
@@ -32,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
@@ -48,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 class InternalLocationServiceTest {
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
@@ -59,6 +64,8 @@ class InternalLocationServiceTest {
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
+  private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient = mock()
 
   val service = InternalLocationService(
     appointmentAttendeeSearchRepository,
@@ -70,6 +77,8 @@ class InternalLocationServiceTest {
     prisonRegimeService,
     referenceCodeService,
     adjudicationsHearingAdapter,
+    nomisMappingAPIClient,
+    locationsInsidePrisonAPIClient,
   )
 
   private val prisonCode: String = "MDI"
@@ -368,20 +377,48 @@ class InternalLocationServiceTest {
           null,
         ),
       ).thenReturn(listOf(education2Activity))
+
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
+
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(listOf(education1LocationSummary, education2LocationSummary, education3LocationSummary, socialVisitsLocationSummary))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education1LocationSummary.locationId, date, null))
         .thenReturn(listOf(education1Visit))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education2LocationSummary.locationId, date, null))
         .thenReturn(listOf(education2Visit))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education3LocationSummary.locationId, date, null))
         .thenReturn(emptyList())
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, null))
         .thenReturn(listOf(socialVisit))
+
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
       )
+
+      val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+      val dpsLocationId3 = UUID.fromString("33333333-3333-3333-3333-333333333333")
+      val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
+      val dpsLocationId1000 = UUID.fromString("10001000-1000-1000-1000-100010001000")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(2, 3, 5, 1000))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId2, 2),
+          NomisDpsLocationMapping(dpsLocationId3, 3),
+          NomisDpsLocationMapping(dpsLocationId5, 5),
+          NomisDpsLocationMapping(dpsLocationId1000, 1000),
+        ),
+      )
+
+      val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2")
+      val dpsLocation3 = location(dpsLocationId3, "MDI", "L3", "Location MDI 3")
+      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+
+      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -390,27 +427,31 @@ class InternalLocationServiceTest {
       ) isEqualTo setOf(
         InternalLocationEventsSummary(
           education1Location.locationId,
+          dpsLocationId2,
           prisonCode,
-          education1Location.description,
-          education1Location.userDescription!!,
+          dpsLocation2.code,
+          dpsLocation2.localName!!,
         ),
         InternalLocationEventsSummary(
           education2Location.locationId,
+          dpsLocationId3,
           prisonCode,
-          education2Location.description,
-          education2Location.userDescription!!,
+          dpsLocation3.code,
+          dpsLocation3.localName!!,
         ),
         InternalLocationEventsSummary(
           socialVisitsLocation.locationId,
+          dpsLocationId5,
           prisonCode,
-          socialVisitsLocation.description,
-          socialVisitsLocation.userDescription!!,
+          dpsLocation5.code,
+          dpsLocation5.localName!!,
         ),
         InternalLocationEventsSummary(
           adjudicationLocation.locationId,
+          dpsLocationId1000,
           prisonCode,
-          adjudicationLocation.description,
-          adjudicationLocation.userDescription!!,
+          dpsLocation1000.code,
+          dpsLocation1000.localName!!,
         ),
       )
 
@@ -438,6 +479,27 @@ class InternalLocationServiceTest {
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, TimeSlot.PM))
         .thenReturn(listOf(socialVisit))
 
+      val dpsLocationId1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
+      val dpsLocationId4 = UUID.fromString("44444444-4444-4444-4444-444444444444")
+      val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
+      val dpsLocationId1000 = UUID.fromString("10001000-1000-1000-1000-100010001000")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(1, 4, 5, 1000))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+          NomisDpsLocationMapping(dpsLocationId4, 4),
+          NomisDpsLocationMapping(dpsLocationId5, 5),
+          NomisDpsLocationMapping(dpsLocationId1000, 1000),
+        ),
+      )
+
+      val dpsLocation1 = location(dpsLocationId1, "MDI", "L1", "Location MDI 1")
+      val dpsLocation4 = location(dpsLocationId4, "MDI", "L4", "Location MDI 4")
+      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+
+      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation1, dpsLocation4, dpsLocation5, dpsLocation1000))
+
       service.getInternalLocationEventsSummaries(
         prisonCode,
         date,
@@ -445,27 +507,31 @@ class InternalLocationServiceTest {
       ) isEqualTo setOf(
         InternalLocationEventsSummary(
           noUserDescriptionLocation.locationId,
+          dpsLocationId4,
           prisonCode,
-          noUserDescriptionLocation.description,
-          noUserDescriptionLocation.description,
+          dpsLocation4.code,
+          dpsLocation4.localName!!,
         ),
         InternalLocationEventsSummary(
           inactiveEducation1Location.locationId,
+          dpsLocationId1,
           prisonCode,
-          inactiveEducation1Location.description,
-          inactiveEducation1Location.userDescription!!,
+          dpsLocation1.code,
+          dpsLocation1.localName!!,
         ),
         InternalLocationEventsSummary(
           socialVisitsLocation.locationId,
+          dpsLocationId5,
           prisonCode,
-          socialVisitsLocation.description,
-          socialVisitsLocation.userDescription!!,
+          dpsLocation5.code,
+          dpsLocation5.localName!!,
         ),
         InternalLocationEventsSummary(
           adjudicationLocation.locationId,
+          dpsLocationId1000,
           prisonCode,
-          adjudicationLocation.description,
-          adjudicationLocation.userDescription!!,
+          dpsLocation1000.code,
+          dpsLocation1000.localName!!,
         ),
       )
 
@@ -488,6 +554,14 @@ class InternalLocationServiceTest {
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, TimeSlot.AM)).thenReturn(emptyList())
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(emptyMap())
 
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(emptySet())).thenReturn(emptyList<NomisDpsLocationMapping>())
+
+      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(
+        listOf(
+          location(UUID.randomUUID(), "MDI", "Other place"),
+        ),
+      )
+
       service.getInternalLocationEventsSummaries(
         prisonCode,
         date,
@@ -504,20 +578,50 @@ class InternalLocationServiceTest {
           null,
         ),
       ).thenReturn(listOf(education2Activity, onWingActivity))
+
       whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(education1Appointment))
+
       whenever(prisonApiClient.getEventLocationsBookedAsync(prisonCode, date, null))
         .thenReturn(listOf(education1LocationSummary, education2LocationSummary, education3LocationSummary, socialVisitsLocationSummary))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education1LocationSummary.locationId, date, null))
         .thenReturn(listOf(education1Visit))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education2LocationSummary.locationId, date, null))
         .thenReturn(listOf(education2Visit))
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, education3LocationSummary.locationId, date, null))
         .thenReturn(emptyList())
+
       whenever(prisonApiClient.getScheduledVisitsForLocationAsync(prisonCode, socialVisitsLocationSummary.locationId, date, null))
         .thenReturn(listOf(socialVisit))
+
       whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
         mapOf(adjudicationLocation.locationId to listOf(adjudicationHearing)),
       )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(3L))).thenReturn(emptyList())
+
+      val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+      val dpsLocationId3 = UUID.fromString("33333333-3333-3333-3333-333333333333")
+      val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
+      val dpsLocationId1000 = UUID.fromString("10001000-1000-1000-1000-100010001000")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(2, 3, 5, 1000))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId2, 2),
+          NomisDpsLocationMapping(dpsLocationId3, 3),
+          NomisDpsLocationMapping(dpsLocationId5, 5),
+          NomisDpsLocationMapping(dpsLocationId1000, 1000),
+        ),
+      )
+
+      val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2")
+      val dpsLocation3 = location(dpsLocationId3, "MDI", "L3", "Location MDI 3")
+      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+
+      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -526,27 +630,31 @@ class InternalLocationServiceTest {
       ) isEqualTo setOf(
         InternalLocationEventsSummary(
           education1Location.locationId,
+          dpsLocationId2,
           prisonCode,
-          education1Location.description,
-          education1Location.userDescription!!,
+          dpsLocation2.code,
+          dpsLocation2.localName!!,
         ),
         InternalLocationEventsSummary(
           education2Location.locationId,
+          dpsLocationId3,
           prisonCode,
-          education2Location.description,
-          education2Location.userDescription!!,
+          dpsLocation3.code,
+          dpsLocation3.localName!!,
         ),
         InternalLocationEventsSummary(
           socialVisitsLocation.locationId,
+          dpsLocationId5,
           prisonCode,
-          socialVisitsLocation.description,
-          socialVisitsLocation.userDescription!!,
+          dpsLocation5.code,
+          dpsLocation5.localName!!,
         ),
         InternalLocationEventsSummary(
           adjudicationLocation.locationId,
+          dpsLocationId1000,
           prisonCode,
-          adjudicationLocation.description,
-          adjudicationLocation.userDescription!!,
+          dpsLocation1000.code,
+          dpsLocation1000.localName!!,
         ),
       )
 

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomisma
 
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
 import java.util.*
 
 @Service
@@ -20,6 +21,15 @@ class NomisMappingAPIClient(private val nomisMappingApiWebClient: WebClient) {
     .retrieve()
     .bodyToMono(NomisDpsLocationMapping::class.java)
     .block()!!
+
+  suspend fun getLocationMappingsByNomisIds(nomisLocationIds: Set<Long>): List<NomisDpsLocationMapping> {
+    if (nomisLocationIds.isEmpty()) return emptyList()
+    return nomisMappingApiWebClient.post()
+      .uri("/api/locations/nomis")
+      .bodyValue(nomisLocationIds)
+      .retrieve()
+      .awaitBody()
+  }
 }
 
 data class NomisDpsLocationMapping(

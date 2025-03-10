@@ -7,17 +7,20 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
+import java.util.*
 
 class LocationIntegrationTest : IntegrationTestBase() {
   private val prisonCode = "MDI"
@@ -216,7 +219,6 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val date = LocalDate.of(2022, 10, 1)
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, null, listOf(socialVisitsLocationSummary))
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, activityLocation3, appointmentLocation1, socialVisitsLocation, onWingActivity))
 
     val activityLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation1.locationId, date = date)
     val activityLocation2Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = activityLocation2.locationId, date = date)
@@ -224,6 +226,32 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val onWingLocation4Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = onWingActivity.locationId, date = date)
     val appointmentLocation1Instance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = appointmentLocation1.locationId, date = date)
     val socialVisitInstance = PrisonApiPrisonerScheduleFixture.visitInstance(locationId = socialVisitsLocation.locationId, date = date)
+
+    val dpsLocationId1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
+    val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+    val dpsLocationId123 = UUID.fromString("12312312-1231-1231-1231-123123123123")
+    val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
+
+    nomisMappingApiMockServer.stubDpsUuidsFromNomisIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocationId1, 1),
+        NomisDpsLocationMapping(dpsLocationId2, 2),
+        NomisDpsLocationMapping(UUID.randomUUID(), 66876),
+        NomisDpsLocationMapping(dpsLocationId123, 123),
+        NomisDpsLocationMapping(dpsLocationId5, 5),
+      ),
+    )
+
+    val dpsLocation1 = location(dpsLocationId1, "MDI", "L1", "Location MDI 1")
+    val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
+    val dpsLocation123 = location(dpsLocationId123, "MDI", "L123", "Location MDI 123")
+    val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", null)
+
+    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+      prisonCode,
+      setOf(dpsLocationId1, dpsLocationId2, dpsLocationId123, dpsLocationId5),
+      listOf(dpsLocation1, dpsLocation2, dpsLocation123, dpsLocation5),
+    )
 
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, listOf(activityLocation1Instance))
     prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, listOf(activityLocation2Instance))
@@ -243,27 +271,31 @@ class LocationIntegrationTest : IntegrationTestBase() {
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date) isEqualTo listOf(
       InternalLocationEventsSummary(
         activityLocation1.locationId,
+        dpsLocationId1,
         prisonCode,
-        activityLocation1.description,
-        activityLocation1.userDescription!!,
+        dpsLocation1.code,
+        dpsLocation1.localName!!,
       ),
       InternalLocationEventsSummary(
         activityLocation2.locationId,
+        dpsLocationId2,
         prisonCode,
-        activityLocation2.description,
-        activityLocation2.userDescription!!,
+        dpsLocation2.code,
+        dpsLocation2.localName!!,
       ),
       InternalLocationEventsSummary(
         appointmentLocation1.locationId,
+        dpsLocationId123,
         prisonCode,
-        appointmentLocation1.description,
-        appointmentLocation1.userDescription!!,
+        dpsLocation123.code,
+        dpsLocation123.localName!!,
       ),
       InternalLocationEventsSummary(
         socialVisitsLocation.locationId,
+        dpsLocationId5,
         prisonCode,
-        socialVisitsLocation.description,
-        socialVisitsLocation.userDescription!!,
+        dpsLocation5.code,
+        dpsLocation5.code,
       ),
     )
   }
@@ -276,15 +308,32 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val timeSlot = TimeSlot.PM
 
     prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, date, timeSlot, emptyList())
-    prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, socialVisitsLocation))
+
     manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+
+    val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+    nomisMappingApiMockServer.stubDpsUuidsFromNomisIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocationId2, 2),
+      ),
+    )
+
+    val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
+
+    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+      prisonCode,
+      setOf(dpsLocationId2),
+      listOf(dpsLocation2),
+    )
 
     webTestClient.getInternalLocationEventsSummaries(prisonCode, date, timeSlot) isEqualTo listOf(
       InternalLocationEventsSummary(
         activityLocation2.locationId,
+        dpsLocationId2,
         prisonCode,
-        activityLocation2.description,
-        activityLocation2.userDescription!!,
+        dpsLocation2.code,
+        dpsLocation2.localName!!,
       ),
     )
   }

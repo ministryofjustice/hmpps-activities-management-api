@@ -30,7 +30,8 @@ SELECT si.scheduled_instance_id,
        att.issue_payment                                                                     AS issue_payment,
        att.status                                                                            AS attendance_status,
        attr.code                                                                             AS attendance_reason_code,
-       act.paid                                                                              AS paid_activity
+       act.paid                                                                              AS paid_activity,
+       schedule.dps_location_id
 FROM scheduled_instance si
          JOIN activity_schedule schedule
               ON schedule.activity_schedule_id = si.activity_schedule_id AND
