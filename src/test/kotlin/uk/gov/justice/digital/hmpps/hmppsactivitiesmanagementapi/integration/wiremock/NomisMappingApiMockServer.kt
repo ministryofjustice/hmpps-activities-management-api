@@ -37,4 +37,15 @@ class NomisMappingApiMockServer : MockServer(8094) {
       ),
     )
   }
+
+  fun stubDpsUuidsFromNomisIds(mappings: List<NomisDpsLocationMapping>) {
+    stubFor(
+      WireMock.post("/api/locations/nomis").willReturn(
+        WireMock.aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withBody(mapper.writeValueAsString(mappings))
+          .withStatus(200),
+      ),
+    )
+  }
 }

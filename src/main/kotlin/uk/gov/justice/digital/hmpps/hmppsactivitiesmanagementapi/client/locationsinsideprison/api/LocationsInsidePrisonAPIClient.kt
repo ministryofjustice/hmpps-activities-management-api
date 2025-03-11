@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locatio
 
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location
 import java.util.*
@@ -19,4 +20,14 @@ class LocationsInsidePrisonAPIClient(private val locationsInsidePrisonApiWebClie
     .retrieve()
     .bodyToMono(Location::class.java)
     .block()!!
+
+  suspend fun getLocationsWithUsageTypes(prisonCode: String): List<Location> = locationsInsidePrisonApiWebClient.get()
+    .uri { uriBuilder: UriBuilder ->
+      uriBuilder
+        .path("/locations/prison/{prisonCode}/non-residential-usage-type")
+        .queryParam("formatLocalName", true)
+        .build(prisonCode)
+    }
+    .retrieve()
+    .awaitBody()
 }
