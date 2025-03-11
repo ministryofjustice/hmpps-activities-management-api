@@ -35,7 +35,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.UUID
+import java.util.*
 
 class MigrateIntegrationTest : IntegrationTestBase() {
 
@@ -58,9 +58,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       prisonCode = "IWI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 468492,
-      internalLocationCode = "SITE 3",
-      internalLocationDescription = "IWI-ESTAB-SITE 3",
       capacity = 1,
       description = "BNM + 27 PK",
       payPerSession = "H",
@@ -109,9 +106,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       prisonCode = "IWI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 468492,
-      internalLocationCode = "SITE 3",
-      internalLocationDescription = "IWI-ESTAB-SITE 3",
       capacity = 1,
       description = "BNM + 27 PK",
       payPerSession = "H",
@@ -161,9 +155,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       prisonCode = "FMI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 468492,
-      internalLocationCode = "SITE 3",
-      internalLocationDescription = "IWI-ESTAB-SITE 3",
+      dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
       capacity = 1,
       description = "BNM + 27 PK",
       payPerSession = "H",
@@ -190,9 +182,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       prisonCode = "FMI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 468492,
-      internalLocationCode = "SITE 3",
-      internalLocationDescription = "IWI-ESTAB-SITE 3",
       capacity = 1,
       description = "BNM + 27 PK",
       payPerSession = "H",
@@ -219,9 +208,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       prisonCode = "IWI",
       startDate = LocalDate.now().plusDays(1),
       endDate = null,
-      internalLocationId = 468492,
-      internalLocationCode = "SITE 3",
-      internalLocationDescription = "IWI-ESTAB-SITE 3",
       capacity = 1,
       description = "BNM + 27 PK",
       payPerSession = "H",
@@ -254,6 +240,8 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   fun init() {
     whenever(clock.instant()).thenReturn(nextMonday.toInstant(ZoneOffset.UTC))
     whenever(clock.zone).thenReturn(ZoneId.of("UTC"))
+
+    nomisMappingApiMockServer.stubNomisIdFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"), 468492)
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location(localName = "House_block_7-1-002"))
   }
@@ -288,11 +276,13 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-fmi-prison-regime.sql",
   )
   @Test
-  fun `import with NOMIS location id should succeed`() {
+  fun `import with location id should succeed`() {
     val activityId = migrateActivity(request = felthamRegimeTimeRequest)
+
     val activity = getActivity(activityId = activityId, agencyId = "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
+
     with(activity.schedules.first().internalLocation!!) {
       assertThat(id).isEqualTo(468492L)
       assertThat(description).isEqualTo("House_block_7-1-002")
@@ -303,38 +293,13 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-fmi-prison-regime.sql",
   )
   @Test
-  fun `import location code containing 'WOW' when location code is provided`() {
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1L)
-
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
-
-    val activityId = migrateActivity(
-      request = felthamRegimeTimeRequest.copy(
-        internalLocationCode = "junkWOWkal",
-        dpsLocationId = null,
-      ),
-    )
-
-    val activity = getActivity(activityId = activityId, agencyId = "FMI")
-
-    assertThat(activity.onWing).isTrue()
-    assertThat(activity.schedules.first().internalLocation).isNull()
-  }
-
-  @Sql(
-    "classpath:test_data/seed-fmi-prison-regime.sql",
-  )
-  @Test
-  fun `import location code containing 'WOW' when only DPS location UUID is provided`() {
+  fun `import location code containing 'WOW'`() {
     nomisMappingApiMockServer.stubNomisIdFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location(code = "junkWOWkal"))
 
     val activityId = migrateActivity(
       request = felthamRegimeTimeRequest.copy(
-        internalLocationId = null,
-        internalLocationCode = null,
-        internalLocationDescription = null,
         dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
       ),
     )
@@ -679,8 +644,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
 
   private fun migrateActivity(request: ActivityMigrateRequest = exceptionRequest): Long {
     incentivesApiMockServer.stubGetIncentiveLevels(request.prisonCode)
-    prisonApiMockServer.stubGetLocation(468492L, "prisonapi/location-id-1.json")
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(468492L)
 
     return webTestClient.post()
       .uri("/migrate/activity")

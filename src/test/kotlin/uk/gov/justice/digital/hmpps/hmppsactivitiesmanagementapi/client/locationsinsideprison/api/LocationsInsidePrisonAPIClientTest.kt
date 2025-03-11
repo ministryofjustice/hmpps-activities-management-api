@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -45,5 +46,14 @@ class LocationsInsidePrisonAPIClientTest {
     val location = apiClient.getLocationById(location().id)
 
     assertThat(location).isEqualTo(mockLocation)
+  }
+
+  @Test
+  fun `should return locations with usage type`() {
+    val mockLocations = mockServer.stubLocationsWithUsageTypes(prisonCode = "RSI")
+    runBlocking {
+      val locations = apiClient.getLocationsWithUsageTypes("RSI")
+      assertThat(locations).isEqualTo(mockLocations)
+    }
   }
 }

@@ -13,8 +13,4 @@ data class PrisonPayBandUpdateRequest(
   @field:NotEmpty(message = "Alias must be supplied")
   @Schema(description = "The alternative text to use in place of the description e.g. Low, Medium, High", example = "Low")
   val alias: String? = null,
-
-  @field:NotEmpty(message = "Payband description must be supplied")
-  @Schema(description = "The description of pay band in this prison", example = "Pay band 1")
-  val description: String? = null,
 )
