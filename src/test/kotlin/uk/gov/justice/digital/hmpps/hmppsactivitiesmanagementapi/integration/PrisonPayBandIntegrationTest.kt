@@ -63,7 +63,6 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
     val updateRequest = PrisonPayBandUpdateRequest(
       displaySequence = 5,
       alias = "testAlias2",
-      description = "testDesc2",
     )
 
     val updatedPayBand = webTestClient.updatePayBand(MOORLAND_PRISON_CODE, payBand.id, updateRequest)!!
@@ -71,7 +70,6 @@ class PrisonPayBandIntegrationTest : IntegrationTestBase() {
     updatedPayBand.id isEqualTo payBand.id
     updatedPayBand.displaySequence isEqualTo 5
     updatedPayBand.alias isEqualTo "testAlias2"
-    updatedPayBand.description isEqualTo "testDesc2"
     updatedPayBand.prisonCode isEqualTo "MDI"
   }
 

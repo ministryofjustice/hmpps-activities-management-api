@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.activityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.appointmentInstance
+import java.util.UUID
 
 fun location(
   agencyId: String = MOORLAND_PRISON_CODE,
@@ -38,11 +39,13 @@ fun locations(
 
 fun internalLocationEventsSummary(
   id: Long = 1L,
+  dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
   prisonCode: String = "MDI",
   code: String = "EDUC-ED1-ED1",
   description: String = "Education 1",
 ) = InternalLocationEventsSummary(
   id,
+  dpsLocationId,
   prisonCode,
   code,
   description,

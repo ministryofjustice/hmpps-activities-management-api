@@ -91,7 +91,6 @@ class PrisonRegimeService(
       prisonPayBand.displaySequence = request.displaySequence
     }
     if (request.alias != null) prisonPayBand.payBandAlias = request.alias
-    if (request.description != null) prisonPayBand.payBandDescription = request.description
 
     prisonPayBand.updatedBy = principal.name
     prisonPayBand.updatedTime = updatedTime

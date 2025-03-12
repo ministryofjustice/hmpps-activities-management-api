@@ -29,4 +29,30 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
       ),
     )
   }
+
+  fun locationsWithUsageTypesResponse(dpsLocationIds: Set<UUID>): List<Location> {
+    var i = 1
+
+    return dpsLocationIds.map {
+      location(
+        id = it,
+        code = "CODE-$i",
+        localName = "User Description ${i++}",
+      )
+    }
+  }
+
+  fun stubLocationsWithUsageTypes(prisonCode: String? = "RSI", dpsLocationIds: Set<UUID> = setOf(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")), locations: List<Location>? = null): List<Location> {
+    val responseLocations = locations ?: locationsWithUsageTypesResponse(dpsLocationIds)
+
+    stubFor(
+      WireMock.get("/locations/prison/$prisonCode/non-residential-usage-type?formatLocalName=true").willReturn(
+        WireMock.aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withBody(mapper.writeValueAsString(responseLocations))
+          .withStatus(200),
+      ),
+    )
+    return responseLocations
+  }
 }

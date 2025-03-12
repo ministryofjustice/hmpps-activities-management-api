@@ -81,5 +81,5 @@ class PrisonerAllocationController(private val allocationsService: AllocationsSe
     )
     @Parameter(description = "If true will only return active allocations. Defaults to true.")
     activeOnly: Boolean?,
-  ) = allocationsService.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonerNumbers.toSet(), activeOnly ?: true)
+  ) = allocationsService.findByPrisonCodeAndPrisonerNumbers(prisonCode, prisonerNumbers.toSet(), activeOnly != false)
 }
