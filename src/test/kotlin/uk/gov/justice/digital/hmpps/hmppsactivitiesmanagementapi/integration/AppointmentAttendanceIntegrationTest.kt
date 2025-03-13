@@ -26,11 +26,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.MultipleAppointmentAttendanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentAttendeeSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -438,105 +436,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     verifyNoInteractions(auditService)
   }
 
-  @Test
-  fun `mark appointment attendance authorisation required`() {
-    webTestClient.patch()
-      .uri("/appointments/1")
-      .bodyValue(AppointmentAttendanceRequest())
-      .exchange()
-      .expectStatus().isUnauthorized
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-attendance.sql",
-  )
-  @Test
-  fun `mark attendance for past appointment`() {
-    val request = AppointmentAttendanceRequest(
-      attendedPrisonNumbers = listOf("B2345CD"),
-      nonAttendedPrisonNumbers = listOf("C3456DE"),
-    )
-
-    val appointment = webTestClient.markAppointmentAttendance(1, request)!!
-
-    with(appointment.attendees.single { it.prisonerNumber == "A1234BC" }) {
-      assertThat(attended).isNull()
-      assertThat(attendanceRecordedTime).isNull()
-      assertThat(attendanceRecordedBy).isNull()
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "B2345CD" }) {
-      assertThat(attended).isTrue()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "C3456DE" }) {
-      assertThat(attended).isFalse()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-
-    verifyNoInteractions(eventsPublisher)
-
-    verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
-      telemetryPropertyMap.capture(),
-      telemetryMetricsMap.capture(),
-    )
-
-    telemetryPropertyMap.allValues hasSize 1
-    telemetryMetricsMap.allValues hasSize 1
-
-    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
-    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 0)
-    verifyNoMoreInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-attendance.sql",
-  )
-  @Test
-  fun `mark attendance for future appointment`() {
-    val request = AppointmentAttendanceRequest(
-      attendedPrisonNumbers = listOf("C3456DE"),
-      nonAttendedPrisonNumbers = listOf("B2345CD"),
-    )
-
-    val appointment = webTestClient.markAppointmentAttendance(3, request)!!
-
-    with(appointment.attendees.single { it.prisonerNumber == "A1234BC" }) {
-      assertThat(attended).isNull()
-      assertThat(attendanceRecordedTime).isNull()
-      assertThat(attendanceRecordedBy).isNull()
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "B2345CD" }) {
-      assertThat(attended).isFalse()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "C3456DE" }) {
-      assertThat(attended).isTrue()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-
-    verifyNoInteractions(eventsPublisher)
-
-    verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
-      telemetryPropertyMap.capture(),
-      telemetryMetricsMap.capture(),
-    )
-
-    telemetryPropertyMap.allValues hasSize 1
-    telemetryMetricsMap.allValues hasSize 1
-
-    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
-    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 0)
-    verifyNoMoreInteractions(telemetryClient)
-    verifyNoInteractions(auditService)
-  }
-
   @Nested
   @DisplayName("Mark Multiple Attendances")
   inner class MarkMultipleAttendances {
@@ -780,80 +679,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     assertThat(map[EVENT_TIME_MS_METRIC_KEY]).isGreaterThan(0.0)
   }
 
-  @Sql(
-    "classpath:test_data/seed-appointment-attendance.sql",
-  )
-  @Test
-  fun `change attendance for appointment`() {
-    val request = AppointmentAttendanceRequest(
-      attendedPrisonNumbers = listOf("C3456DE"),
-      nonAttendedPrisonNumbers = listOf("B2345CD"),
-    )
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("A1234BC", "B2345CD", "C3456DE")
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-      ),
-    )
-
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "RSI",
-      listOf(
-        appointmentLocation(123, "RSI", userDescription = "Location 123"),
-      ),
-    )
-
-    val currentAttendance = webTestClient.getAppointmentDetailsById(2)!!.attendees
-
-    val appointment = webTestClient.markAppointmentAttendance(2, request)!!
-
-    with(appointment.attendees.single { it.prisonerNumber == "A1234BC" }) {
-      assertThat(attended).isNull()
-      assertThat(attendanceRecordedTime).isNull()
-      assertThat(attendanceRecordedBy).isNull()
-    }
-    with(currentAttendance.single { it.prisoner.prisonerNumber == "B2345CD" }) {
-      assertThat(attended).isTrue()
-      assertThat(attendanceRecordedTime).isBefore(LocalDateTime.now().minusDays(1))
-      assertThat(attendanceRecordedBy).isEqualTo("PREV.ATTENDANCE.RECORDED.BY")
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "B2345CD" }) {
-      assertThat(attended).isFalse()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-    with(currentAttendance.single { it.prisoner.prisonerNumber == "C3456DE" }) {
-      assertThat(attended).isFalse()
-      assertThat(attendanceRecordedTime).isBefore(LocalDateTime.now().minusDays(1))
-      assertThat(attendanceRecordedBy).isEqualTo("PREV.ATTENDANCE.RECORDED.BY")
-    }
-    with(appointment.attendees.single { it.prisonerNumber == "C3456DE" }) {
-      assertThat(attended).isTrue()
-      assertThat(attendanceRecordedTime).isCloseTo(LocalDateTime.now(), within(3, ChronoUnit.SECONDS))
-      assertThat(attendanceRecordedBy).isEqualTo("test-client")
-    }
-
-    verifyNoInteractions(eventsPublisher)
-
-    verify(telemetryClient).trackEvent(
-      eq(TelemetryEvent.APPOINTMENT_ATTENDANCE_MARKED_METRICS.value),
-      telemetryPropertyMap.capture(),
-      telemetryMetricsMap.capture(),
-    )
-
-    telemetryPropertyMap.allValues hasSize 1
-    telemetryMetricsMap.allValues hasSize 1
-
-    verifyTelemetryPropertyMap(telemetryPropertyMap.firstValue, appointment.id)
-    verifyTelemetryMetricsMap(telemetryMetricsMap.firstValue, 1, 1, 2)
-
-    verifyNoMoreInteractions(telemetryClient)
-
-    verifyNoInteractions(auditService)
-  }
-
   private fun WebTestClient.getAppointmentAttendanceSummaries(
     prisonCode: String,
     date: LocalDate,
@@ -865,19 +690,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBodyList(AppointmentAttendanceSummary::class.java)
-    .returnResult().responseBody
-
-  private fun WebTestClient.markAppointmentAttendance(
-    id: Long,
-    request: AppointmentAttendanceRequest,
-  ) = put()
-    .uri("/appointments/$id/attendance")
-    .bodyValue(request)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .exchange()
-    .expectStatus().isAccepted
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Appointment::class.java)
     .returnResult().responseBody
 
   private fun WebTestClient.updateAttendances(
