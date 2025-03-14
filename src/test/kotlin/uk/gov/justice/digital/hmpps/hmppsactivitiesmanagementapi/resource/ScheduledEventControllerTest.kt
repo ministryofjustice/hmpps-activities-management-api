@@ -17,15 +17,14 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
+import java.util.UUID
 
 @WebMvcTest(controllers = [ScheduledEventController::class])
 @ContextConfiguration(classes = [ScheduledEventController::class])
@@ -38,20 +37,14 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   private lateinit var referenceCodeService: ReferenceCodeService
 
   @MockitoBean
-  private lateinit var locationService: LocationService
-
-  @MockitoBean
   private lateinit var internalLocationService: InternalLocationService
 
-  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, locationService, internalLocationService)
+  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, internalLocationService)
 
   @BeforeEach
   fun setupMocks() {
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf("" to appointmentCategoryReferenceCode("")))
-
-    whenever(locationService.getLocationsForAppointmentsMap("MDI"))
-      .thenReturn(mapOf(101L to appointmentLocation(101, "MDI")))
   }
 
   @Test
@@ -66,7 +59,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
@@ -89,7 +81,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
@@ -105,7 +96,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenThrow(RuntimeException("Error"))
 
@@ -127,7 +117,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
@@ -237,7 +226,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         LocalDateRange(startDate, endDate),
         null,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
@@ -259,7 +247,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       LocalDateRange(startDate, endDate),
       null,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
@@ -276,7 +263,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         LocalDateRange(startDate, endDate),
         null,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenThrow(RuntimeException("Error"))
 
@@ -298,7 +284,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       LocalDateRange(startDate, endDate),
       null,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap("MDI"),
     )
   }
 
@@ -315,7 +300,6 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         LocalDateRange(startDate, endDate),
         null,
         referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-        locationService.getLocationsForAppointmentsMap("MDI"),
       ),
     ).thenReturn(result)
 
@@ -550,6 +534,119 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     assertThat(response.contentAsString + "\n").isEqualTo(result)
   }
 
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 200 response when internal locations with events found`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val timeSlot = TimeSlot.AM
+    val locations = setOf(internalLocationEvents())
+    val dpsLocationsIds = locations.map { it.dpsLocationId }.toSet()
+
+    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, timeSlot)).thenReturn(locations)
+
+    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, timeSlot)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 200 response when no time slot supplied`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val locations = setOf(internalLocationEvents())
+    val dpsLocationsIds = locations.map { it.dpsLocationId }.toSet()
+
+    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenReturn(locations)
+
+    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, null)
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(locations))
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when no date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/location-events") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Required request parameter 'date' for method parameter type LocalDate is not present")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when invalid date supplied`() {
+    mockMvc.post("/scheduled-events/prison/MDI/location-events?date=invalid") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'date' (invalid): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 400 response when invalid time slot supplied`() {
+    val date = LocalDate.now()
+    mockMvc.post("/scheduled-events/prison/MDI/location-events?date=$date&timeSlot=no") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        setOf(1),
+      )
+    }
+      .andExpect { status { isBadRequest() } }
+      .andExpect {
+        content {
+          jsonPath("$.userMessage") {
+            value("Error converting 'timeSlot' (no): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+          }
+        }
+      }
+
+    verifyNoInteractions(internalLocationService)
+  }
+
+  @Test
+  fun `getScheduledEventsForMultipleLocationsByDPSLocationsIds - 500 response when service throws exception`() {
+    val prisonCode = "MDI"
+    val date = LocalDate.now()
+    val dpsLocationsIds = setOf(UUID.randomUUID())
+
+    whenever(internalLocationService.getLocationEvents(prisonCode, dpsLocationsIds, date, null)).thenThrow(RuntimeException("Error"))
+
+    val response = mockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(prisonCode, dpsLocationsIds, date, null)
+      .andExpect { status { isInternalServerError() } }
+      .andReturn().response
+
+    val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+    assertThat(response.contentAsString + "\n").isEqualTo(result)
+  }
+
   private fun MockMvc.getScheduledEventsForSinglePrisoner(
     prisonCode: String,
     prisonerNumber: String,
@@ -580,6 +677,19 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(
       internalLocationIds,
+    )
+  }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+
+  private fun MockMvc.getScheduledEventsForMultipleLocationsByDPSLocationsIds(
+    prisonCode: String,
+    dpsLocationIds: Set<UUID>,
+    date: LocalDate,
+    timeSlot: TimeSlot? = null,
+  ) = post("/scheduled-events/prison/$prisonCode/location-events?date=$date" + (timeSlot?.let { "&timeSlot=$timeSlot" } ?: "")) {
+    accept = MediaType.APPLICATION_JSON
+    contentType = MediaType.APPLICATION_JSON
+    content = mapper.writeValueAsBytes(
+      dpsLocationIds,
     )
   }.andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
 }

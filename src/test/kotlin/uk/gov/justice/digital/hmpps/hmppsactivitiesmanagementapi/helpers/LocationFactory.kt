@@ -53,11 +53,13 @@ fun internalLocationEventsSummary(
 
 fun internalLocationEvents(
   id: Long = 1L,
+  dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
   prisonCode: String = "MDI",
   code: String = "EDUC-ED1-ED1",
   description: String = "Education 1",
 ) = InternalLocationEvents(
   id,
+  dpsLocationId,
   prisonCode,
   code,
   description,

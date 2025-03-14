@@ -305,18 +305,6 @@ class PrisonApiClient(
 
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations = getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
 
-  suspend fun getLocationAsync(locationId: Long, includeInactive: Boolean = false): Location = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/locations/{locationId}")
-        .queryParam("includeInactive", includeInactive)
-        .build(locationId)
-    }
-    .retrieve()
-    .bodyToMono(Location::class.java)
-    .withRetryPolicy()
-    .awaitSingle()
-
   internal fun <T> UriBuilder.maybeQueryParam(name: String, type: T?) = this.queryParamIfPresent(name, Optional.ofNullable(type))
 
   fun getReferenceCode(domain: String, code: String): Mono<ReferenceCode> = prisonApiWebClient.get()

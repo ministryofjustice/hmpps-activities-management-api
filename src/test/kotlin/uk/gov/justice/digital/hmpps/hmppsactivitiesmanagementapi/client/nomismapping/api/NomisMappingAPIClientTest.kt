@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -42,8 +43,8 @@ class NomisMappingAPIClientTest {
   }
 
   @Test
-  fun `should return a DPS location UUID given a NOMIS location ID`() {
-    mockServer.stubDpsUuidFromNomisId(nomisLocationId, dpsLocationId)
+  fun `should return a mapping given a NOMIS location ID`() {
+    mockServer.stubMappingFromNomisId(nomisLocationId, dpsLocationId)
 
     val result = apiClient.getLocationMappingByNomisId(nomisLocationId)
 
@@ -51,11 +52,24 @@ class NomisMappingAPIClientTest {
   }
 
   @Test
-  fun `should return a NOMIS location ID given a DPS location UUID`() {
-    mockServer.stubNomisIdFromDpsUuid(dpsLocationId, nomisLocationId)
+  fun `should return a mapping given a DPS location UUID`() {
+    mockServer.stubMappingFromDpsUuid(dpsLocationId, nomisLocationId)
 
     val result = apiClient.getLocationMappingByDpsId(dpsLocationId)
 
     assertThat(result).isEqualTo(NomisDpsLocationMapping(dpsLocationId, nomisLocationId))
+  }
+
+  @Test
+  fun `should return mappings given a set of NOMIS location IDs`() {
+    val mappings = listOf(NomisDpsLocationMapping(dpsLocationId, nomisLocationId))
+
+    mockServer.stubMappingsFromNomisIds(mappings)
+
+    runBlocking {
+      val result = apiClient.getLocationMappingsByNomisIds(setOf(nomisLocationId))
+
+      assertThat(result).isEqualTo(mappings)
+    }
   }
 }
