@@ -7,7 +7,8 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.web.reactive.function.client.WebClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.LocationsInsidePrisonApiMockServer
 
 class LocationsInsidePrisonAPIClientTest {
@@ -43,16 +44,26 @@ class LocationsInsidePrisonAPIClientTest {
   fun `should return location given a DPS location Uuid`() {
     val mockLocation = mockServer.stubLocationFromDpsUuid()
 
-    val location = apiClient.getLocationById(location().id)
+    val location = apiClient.getLocationById(dpsLocation().id)
 
     assertThat(location).isEqualTo(mockLocation)
   }
 
   @Test
   fun `should return locations with usage type`() {
-    val mockLocations = mockServer.stubLocationsWithUsageTypes(prisonCode = "RSI")
+    val mockLocations = mockServer.stubLocationsWithUsageTypes("RSI")
     runBlocking {
       val locations = apiClient.getLocationsWithUsageTypes("RSI")
+      assertThat(locations).isEqualTo(mockLocations)
+    }
+  }
+
+  @Test
+  fun `should return locations for a usage type`() {
+    val mockLocations = mockServer.stubLocationsForUsageType()
+
+    runBlocking {
+      val locations = apiClient.getLocationsForUsageType("RSI", NonResidentialUsageDto.UsageType.APPOINTMENT)
       assertThat(locations).isEqualTo(mockLocations)
     }
   }

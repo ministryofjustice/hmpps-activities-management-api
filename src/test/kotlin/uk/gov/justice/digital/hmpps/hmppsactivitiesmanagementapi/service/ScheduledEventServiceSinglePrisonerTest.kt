@@ -67,6 +67,7 @@ class ScheduledEventServiceSinglePrisonerTest {
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
+  private val locationService: LocationService = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -76,6 +77,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     appointmentInstanceRepository,
     prisonRegimeService,
     adjudicationsHearingAdapter,
+    locationService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -379,7 +381,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -559,7 +560,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -643,7 +643,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -712,7 +711,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -780,7 +778,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -849,7 +846,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verify(prisonerScheduledActivityRepository, never())
@@ -973,7 +969,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesAsync(any(), any()) }
@@ -1001,7 +996,7 @@ class ScheduledEventServiceSinglePrisonerTest {
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(appointmentEntity.internalLocationId)
           assertThat(it.internalLocationCode).isEqualTo("No information available")
-          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
+          assertThat(it.internalLocationDescription).isEqualTo("No information available")
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }
 
@@ -1092,7 +1087,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verify(prisonerScheduledActivityRepository, never())
@@ -1129,7 +1123,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(Exception::class.java)
@@ -1156,7 +1149,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(EntityNotFoundException::class.java)
@@ -1191,7 +1183,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(Exception::class.java)
@@ -1229,7 +1220,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(Exception::class.java)
@@ -1267,7 +1257,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(Exception::class.java)
@@ -1301,7 +1290,6 @@ class ScheduledEventServiceSinglePrisonerTest {
           dateRange,
           null,
           appointmentCategoryMap(),
-          appointmentLocationMap(),
         )
       }
         .isInstanceOf(Exception::class.java)
@@ -1350,7 +1338,6 @@ class ScheduledEventServiceSinglePrisonerTest {
         LocalDateRange(startDate, endDate),
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       // Should not retrieve sensitive events with future date ranges

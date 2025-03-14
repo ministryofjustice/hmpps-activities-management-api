@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -56,6 +55,7 @@ class ScheduledEventService(
   private val appointmentInstanceRepository: AppointmentInstanceRepository,
   private val prisonRegimeService: PrisonRegimeService,
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
+  private val locationService: LocationService,
 ) {
   /**
    *  Get scheduled events for a single prisoner, between two dates and with an optional time slot.
@@ -69,9 +69,11 @@ class ScheduledEventService(
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode> = emptyMap(),
-    locationsForAppointmentsMap: Map<Long, Location> = emptyMap(),
   ) = runBlocking {
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
+
+    val locationsForAppointmentsMap = locationService.getLocationDetailsForAppointmentsMap(prisonCode)
+
     prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf(prisonerNumber)).firstOrNull()
       .also { prisoner ->
         if (prisoner == null) {
@@ -267,10 +269,10 @@ class ScheduledEventService(
     date: LocalDate,
     timeSlot: TimeSlot? = null,
     referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
-    locationsForAppointmentsMap: Map<Long, Location>,
   ): PrisonerScheduledEvents? = runBlocking {
     val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
     val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
+    val locationsForAppointmentsMap = locationService.getLocationDetailsForAppointmentsMap(prisonCode)
 
     val prisonRolledOut = withContext(Dispatchers.IO) {
       rolloutPrisonService.getByPrisonCode(prisonCode)

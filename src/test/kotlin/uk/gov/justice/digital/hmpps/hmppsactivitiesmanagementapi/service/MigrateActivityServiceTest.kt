@@ -177,7 +177,7 @@ class MigrateActivityServiceTest {
       whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
         LocationDetails(
           locationId = 1,
-          internalLocationCode = "011",
+          code = "011",
           description = "MDI-1-1-011",
           agencyId = "RSI",
           dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
@@ -499,7 +499,7 @@ class MigrateActivityServiceTest {
       whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
         LocationDetails(
           locationId = 1,
-          internalLocationCode = "junkWOWxdd",
+          code = "junkWOWxdd",
           description = "MDI-1-1-011",
           agencyId = "RSI",
           dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),

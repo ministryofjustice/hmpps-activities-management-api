@@ -173,7 +173,7 @@ class ActivityServiceTest {
   private val location = LocationDetails(
     locationId = 1,
     dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
-    internalLocationCode = "code",
+    code = "code",
     description = "description",
     agencyId = MOORLAND_PRISON_CODE,
   )
@@ -1036,7 +1036,7 @@ class ActivityServiceTest {
       internalLocation = LocationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
-        internalLocationCode = "WW",
+        code = "WW",
         description = "The wood work room description",
         agencyId = "MDI",
       ),
@@ -2259,7 +2259,7 @@ class ActivityServiceTest {
 
         with(schedules().first()) {
           internalLocationId isEqualTo location.locationId.toInt()
-          internalLocationCode isEqualTo location.internalLocationCode
+          internalLocationCode isEqualTo location.code
           internalLocationDescription isEqualTo location.description
           dpsLocationId isEqualTo location.dpsLocationId
         }

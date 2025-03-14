@@ -556,7 +556,7 @@ class ActivityService(
 
       activity.schedules().forEach {
         it.internalLocationId = scheduleLocation.locationId.toInt()
-        it.internalLocationCode = scheduleLocation.internalLocationCode
+        it.internalLocationCode = scheduleLocation.code
         it.internalLocationDescription = scheduleLocation.description
         it.dpsLocationId = scheduleLocation.dpsLocationId
       }

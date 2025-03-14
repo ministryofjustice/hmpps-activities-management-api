@@ -250,7 +250,7 @@ data class Activity(
       activity = this,
       description = description,
       internalLocationId = internalLocation?.locationId?.toInt(),
-      internalLocationCode = internalLocation?.internalLocationCode,
+      internalLocationCode = internalLocation?.code,
       internalLocationDescription = internalLocation?.description,
       dpsLocationId = internalLocation?.dpsLocationId,
       capacity = capacity,

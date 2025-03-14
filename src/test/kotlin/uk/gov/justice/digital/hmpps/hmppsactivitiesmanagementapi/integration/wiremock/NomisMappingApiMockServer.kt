@@ -6,7 +6,7 @@ import java.util.*
 
 class NomisMappingApiMockServer : MockServer(8094) {
 
-  fun stubNomisIdFromDpsUuid(dpsLocationId: UUID, nomisLocationId: Long = 1) {
+  fun stubMappingFromDpsUuid(dpsLocationId: UUID, nomisLocationId: Long = 1) {
     stubFor(
       WireMock.get("/api/locations/dps/$dpsLocationId").willReturn(
         WireMock.aResponse()
@@ -17,7 +17,7 @@ class NomisMappingApiMockServer : MockServer(8094) {
     )
   }
 
-  fun stubDpsUuidFromNomisId(nomisLocationId: Long = 1234L, dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")) {
+  fun stubMappingFromNomisId(nomisLocationId: Long = 1234L, dpsLocationId: UUID = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")) {
     stubFor(
       WireMock.get("/api/locations/nomis/$nomisLocationId").willReturn(
         WireMock.aResponse()
@@ -28,7 +28,7 @@ class NomisMappingApiMockServer : MockServer(8094) {
     )
   }
 
-  fun stubDpsUuidFromNomisIdNotFound(nomisLocationId: Long = 1234L) {
+  fun stubMappingFromNomisIdNotFound(nomisLocationId: Long = 1234L) {
     stubFor(
       WireMock.get("/api/locations/nomis/$nomisLocationId").willReturn(
         WireMock.aResponse()
@@ -38,9 +38,20 @@ class NomisMappingApiMockServer : MockServer(8094) {
     )
   }
 
-  fun stubDpsUuidsFromNomisIds(mappings: List<NomisDpsLocationMapping>) {
+  fun stubMappingsFromNomisIds(mappings: List<NomisDpsLocationMapping>) {
     stubFor(
       WireMock.post("/api/locations/nomis").willReturn(
+        WireMock.aResponse()
+          .withHeader("Content-Type", "application/json")
+          .withBody(mapper.writeValueAsString(mappings))
+          .withStatus(200),
+      ),
+    )
+  }
+
+  fun stubMappingsFromDpsIds(mappings: List<NomisDpsLocationMapping>) {
+    stubFor(
+      WireMock.post("/api/locations/dps").willReturn(
         WireMock.aResponse()
           .withHeader("Content-Type", "application/json")
           .withBody(mapper.writeValueAsString(mappings))

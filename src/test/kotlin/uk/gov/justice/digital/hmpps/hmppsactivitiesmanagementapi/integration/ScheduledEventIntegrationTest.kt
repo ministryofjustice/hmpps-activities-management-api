@@ -12,12 +12,15 @@ import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -28,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.*
 
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
@@ -39,6 +43,24 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       "MDI",
       "APP",
       "prisonapi/locations-MDI-appointments.json",
+    )
+
+    val dpsLocation1 = dpsLocation(UUID.fromString("88888888-8888-8888-8888-888888888888"), "MDI", "ONE", "Location One")
+    val dpsLocation2 = dpsLocation(UUID.fromString("99999999-9999-9999-9999-999999999999"), "MDI", "TWO", "Location Teo")
+
+    val appointmentLocations = listOf(dpsLocation1, dpsLocation2)
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "MDI",
+      usageType = UsageType.APPOINTMENT,
+      locations = appointmentLocations,
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation1.id, 1),
+        NomisDpsLocationMapping(dpsLocation2.id, 2),
+      ),
     )
   }
 
@@ -556,11 +578,24 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
     private val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
     private val visitsLocation = internalLocation(locationId = 5L, description = "MDI-VISIT-LOC", userDescription = "Visits Location")
 
+    val dpsLocationId1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
+    val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+    val dpsLocationId123 = UUID.fromString("12312312-1231-1231-1231-123123123123")
+    val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
+
+    private val activityDpsLocation1 = dpsLocation(dpsLocationId1, prisonCode, "ACT-LOC1", "Activity Location 1")
+    private val activityDpsLocation2 = dpsLocation(dpsLocationId2, prisonCode, "ACT-LOC2")
+    private val appointmentDpsLocation1 = dpsLocation(dpsLocationId123, prisonCode, "APP-LOC1", "Appointment Location 1")
+    private val visitsDpsLocation5 = dpsLocation(dpsLocationId5, prisonCode, "VISIT-LOC", "Visits Location")
+
     private val visit = PrisonApiPrisonerScheduleFixture.visitInstance(eventId = 8, locationId = visitsLocation.locationId, date = LocalDate.of(2022, 10, 1))
 
     @BeforeEach
     fun setUp() {
-      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+      locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+        prisonCode = prisonCode,
+        locations = listOf(activityDpsLocation1, activityDpsLocation2, appointmentDpsLocation1, visitsDpsLocation5),
+      )
     }
 
     @Test
@@ -580,38 +615,55 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId, visitsLocation.locationId)
       val date = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, visitsLocation))
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, visitsLocation.locationId, date, null, listOf(visit))
       manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
       val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
 
       with(result) {
         size isEqualTo 4
         with(this.single { it.id == activityLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation1.description
-          description isEqualTo activityLocation1.userDescription
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
           events.filter { it.scheduledInstanceId == 1L && it.eventType == "ACTIVITY" } hasSize 2
         }
         with(this.single { it.id == activityLocation2.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation2.description
-          description isEqualTo activityLocation2.userDescription
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
           events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
         }
         with(this.single { it.id == appointmentLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo appointmentLocation1.description
-          description isEqualTo appointmentLocation1.userDescription
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
           events.single { it.appointmentAttendeeId == 5L }.eventType isEqualTo "APPOINTMENT"
         }
         with(this.single { it.id == visitsLocation.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo visitsLocation.description
-          description isEqualTo visitsLocation.userDescription
+          code isEqualTo visitsDpsLocation5.code
+          description isEqualTo visitsDpsLocation5.localName
           events.single { it.eventId == visit.eventId }.eventType isEqualTo "VISIT"
         }
       }
@@ -625,12 +677,28 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val internalLocationIds = setOf(activityLocation1.locationId, activityLocation2.locationId, appointmentLocation1.locationId, visitsLocation.locationId)
       val date = LocalDate.of(2022, 10, 1)
 
-      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1, visitsLocation))
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, null, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, visitsLocation.locationId, date, null, listOf(visit))
       manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId5, visitsLocation.locationId),
+        ),
+      )
 
       val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date)!!
 
@@ -638,26 +706,26 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         size isEqualTo 4
         with(this.single { it.id == activityLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation1.description
-          description isEqualTo activityLocation1.userDescription
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
           events.filter { it.eventType == "ACTIVITY" } hasSize 2
         }
         with(this.single { it.id == activityLocation2.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation2.description
-          description isEqualTo activityLocation2.userDescription
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
           events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
         }
         with(this.single { it.id == appointmentLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo appointmentLocation1.description
-          description isEqualTo appointmentLocation1.userDescription
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
           events.single { it.appointmentAttendeeId == 5L }.eventType isEqualTo "APPOINTMENT"
         }
         with(this.single { it.id == visitsLocation.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo visitsLocation.description
-          description isEqualTo visitsLocation.userDescription
+          code isEqualTo visitsDpsLocation5.code
+          description isEqualTo visitsDpsLocation5.localName
           events.single { it.eventId == visit.eventId }.eventType isEqualTo "VISIT"
         }
       }
@@ -671,11 +739,25 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       val date = LocalDate.of(2022, 10, 1)
       val timeSlot = TimeSlot.PM
 
-      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation1.locationId, date, timeSlot, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, activityLocation2.locationId, date, timeSlot, emptyList())
       prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, appointmentLocation1.locationId, date, timeSlot, emptyList())
       manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = date, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, activityLocation1.locationId),
+          NomisDpsLocationMapping(dpsLocationId2, activityLocation2.locationId),
+          NomisDpsLocationMapping(dpsLocationId123, appointmentLocation1.locationId),
+        ),
+      )
 
       val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, date, timeSlot)!!
 
@@ -683,20 +765,20 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         size isEqualTo 3
         with(this.single { it.id == activityLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation1.description
-          description isEqualTo activityLocation1.userDescription
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
           events hasSize 0
         }
         with(this.single { it.id == activityLocation2.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo activityLocation2.description
-          description isEqualTo activityLocation2.userDescription
+          code isEqualTo activityDpsLocation2.code
+          description isEqualTo activityDpsLocation2.localName
           events.single { it.scheduledInstanceId == 6L }.eventType isEqualTo "ACTIVITY"
         }
         with(this.single { it.id == appointmentLocation1.locationId }) {
           prisonCode isEqualTo prisonCode
-          code isEqualTo appointmentLocation1.description
-          description isEqualTo appointmentLocation1.userDescription
+          code isEqualTo appointmentDpsLocation1.code
+          description isEqualTo appointmentDpsLocation1.localName
           events hasSize 0
         }
       }

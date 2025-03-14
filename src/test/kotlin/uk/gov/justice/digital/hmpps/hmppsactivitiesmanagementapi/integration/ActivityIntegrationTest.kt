@@ -24,10 +24,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.testActivityPayRateBand1
@@ -100,8 +100,8 @@ class ActivityIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1)
-    nomisMappingApiMockServer.stubNomisIdFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
+    nomisMappingApiMockServer.stubMappingFromNomisId(1)
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))
   }
 
   @Test
@@ -1203,7 +1203,7 @@ class ActivityIntegrationTest : IntegrationTestBase() {
   fun `updateActivity to on-wing and back to internal DPS location`() {
     prisonApiMockServer.stubGetLocation(1L, "prisonapi/location-PVI.json")
 
-    val location = location(prisonId = PENTONVILLE_PRISON_CODE)
+    val location = dpsLocation(prisonId = PENTONVILLE_PRISON_CODE)
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(location = location)
 

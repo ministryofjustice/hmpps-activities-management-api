@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import java.util.function.Predicate
@@ -114,13 +114,13 @@ class LocationServiceTest {
   fun `getLocationForSchedule - returns location details when local name is null`() {
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
-    val dpsLocation = location(localName = null)
+    val dpsLocation = dpsLocation(localName = null)
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
     val result = locationService.getLocationForSchedule(dpsLocationUuid)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.code))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.code, dpsLocation.pathHierarchy))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
   }
@@ -129,13 +129,13 @@ class LocationServiceTest {
   fun `getLocationForSchedule - returns location details`() {
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
-    val dpsLocation = location()
+    val dpsLocation = dpsLocation()
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
     val result = locationService.getLocationForSchedule(dpsLocationUuid)
 
-    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName))
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
   }

@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -17,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PrisonerAllocations
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import java.time.DayOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity as EntityActivity
@@ -149,7 +149,7 @@ fun transformAppointmentInstanceToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
   referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
-  locationsForAppointmentsMap: Map<Long, Location>,
+  locationsForAppointmentsMap: Map<Long, LocationDetails>,
   appointments: List<AppointmentInstance>,
 ) = appointments.map {
   val locationCode: String
@@ -160,8 +160,8 @@ fun transformAppointmentInstanceToScheduledEvents(
       locationCode = "In cell"
       locationDescription = "In cell"
     } else -> {
-      locationCode = locationsForAppointmentsMap[it.internalLocationId]?.internalLocationCode ?: "No information available"
-      locationDescription = locationsForAppointmentsMap[it.internalLocationId]?.userDescription ?: "No information available"
+      locationCode = locationsForAppointmentsMap[it.internalLocationId]?.code ?: "No information available"
+      locationDescription = locationsForAppointmentsMap[it.internalLocationId]?.description ?: "No information available"
     }
   }
 

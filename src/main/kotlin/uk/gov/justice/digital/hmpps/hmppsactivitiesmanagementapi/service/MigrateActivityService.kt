@@ -217,7 +217,7 @@ class MigrateActivityService(
       createdBy = MIGRATION_USER,
       isPaid = isPaid(request.payRates),
     ).apply {
-      onWing = internalLocation?.internalLocationCode?.contains(ON_WING_LOCATION) == true
+      onWing = internalLocation?.code?.contains(ON_WING_LOCATION) == true
     }.apply {
       endDate = request.endDate
     }.apply {

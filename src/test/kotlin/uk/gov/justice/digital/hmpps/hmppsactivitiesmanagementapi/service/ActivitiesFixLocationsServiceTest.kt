@@ -9,7 +9,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import java.util.*
 
@@ -35,9 +35,9 @@ class ActivitiesFixLocationsServiceTest {
     whenever(nomisMappingAPIClient.getLocationMappingByNomisId(2)).thenReturn(NomisDpsLocationMapping(uuid2, 2))
     whenever(nomisMappingAPIClient.getLocationMappingByNomisId(3)).thenReturn(NomisDpsLocationMapping(uuid3, 3))
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid1)).thenReturn(location(uuid1, "RSI", "code1", "localName1"))
-    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid2)).thenReturn(location(uuid2, "RSI", "code2", "localName2"))
-    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid3)).thenReturn(location(uuid3, "RSI", "code3", "localName3"))
+    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid1)).thenReturn(dpsLocation(uuid1, "RSI", "code1", "localName1"))
+    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid2)).thenReturn(dpsLocation(uuid2, "RSI", "code2", "localName2"))
+    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid3)).thenReturn(dpsLocation(uuid3, "RSI", "code3", "localName3"))
   }
 
   @Test
@@ -57,7 +57,7 @@ class ActivitiesFixLocationsServiceTest {
   fun `should update location details when local name name is null`() {
     whenever(activityScheduleRepository.findNomisLocationsIds()).thenReturn(listOf(1))
 
-    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid1)).thenReturn(location(uuid1, "RSI", "code1", null))
+    whenever(locationsInsidePrisonAPIClient.getLocationById(uuid1)).thenReturn(dpsLocation(uuid1, "RSI", "code1", null))
 
     activitiesFixLocationsService.fixActivityLocations()
 
