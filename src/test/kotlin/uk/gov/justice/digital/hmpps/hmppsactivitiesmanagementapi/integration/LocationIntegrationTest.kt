@@ -25,10 +25,9 @@ import java.util.*
 
 @TestPropertySource(
   properties = [
-    "prison-locations.using-regex-config=RSI,BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI"
+    "prison-locations.using-regex-config=RSI,BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI",
   ],
 )
-
 class LocationIntegrationTest : IntegrationTestBase() {
   private val prisonCode = "MDI"
 
