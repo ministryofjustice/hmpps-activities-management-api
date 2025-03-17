@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
@@ -10,20 +11,20 @@ import java.util.function.Predicate
 class LocationGroupServiceSelector(
   @Qualifier("defaultLocationGroupService") private val defaultService: LocationGroupService,
   @Qualifier("overrideLocationGroupService") private val overrideService: LocationGroupService,
+  @Value("\${prison-locations.using-regex-config}") private val prisonsUsingRegexConfig: String,
 ) : LocationGroupService {
 
-  override fun getLocationGroups(agencyId: String): List<LocationGroup>? {
-    val groups = overrideService.getLocationGroups(agencyId)
-    return if (!groups.isNullOrEmpty()) {
-      groups
-    } else {
-      defaultService.getLocationGroups(agencyId)
-    }
+  override fun getLocationGroups(agencyId: String): List<LocationGroup>? = if (isUsingRegexConfig(agencyId)) {
+    overrideService.getLocationGroups(agencyId)
+  } else {
+    defaultService.getLocationGroups(agencyId)
   }
 
-  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> = if (!overrideService.getLocationGroups(agencyId).isNullOrEmpty()) {
+  override fun locationGroupFilter(agencyId: String, groupName: String): Predicate<Location> = if (isUsingRegexConfig(agencyId)) {
     overrideService.locationGroupFilter(agencyId, groupName)
   } else {
     defaultService.locationGroupFilter(agencyId, groupName)
   }
+
+  private fun isUsingRegexConfig(agencyId: String): Boolean = prisonsUsingRegexConfig.split(",").contains(agencyId)
 }

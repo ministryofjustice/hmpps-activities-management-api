@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.http.MediaType
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
@@ -22,6 +23,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonA
 import java.time.LocalDate
 import java.util.*
 
+@TestPropertySource(
+  properties = [
+    "prison-locations.using-regex-config=RSI,BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI",
+  ],
+)
 class LocationIntegrationTest : IntegrationTestBase() {
   private val prisonCode = "MDI"
 

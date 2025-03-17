@@ -166,6 +166,9 @@ migrate:
   appointments-live: ${APPOINTMENTS_LIVE:***}
   prisons-live: ${PRISONS_LIVE:***}
 
+prison-locations:
+  using-regex-config: ${PRISONS_WITH_REGEX_LOCATION_CONFIGS:***}
+
 aws:
   s3:
     ap:
