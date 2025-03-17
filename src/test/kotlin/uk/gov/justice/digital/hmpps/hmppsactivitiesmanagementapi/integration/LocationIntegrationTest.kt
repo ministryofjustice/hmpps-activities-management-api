@@ -12,9 +12,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabouts.LocationPrefixDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -232,7 +232,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val dpsLocationId123 = UUID.fromString("12312312-1231-1231-1231-123123123123")
     val dpsLocationId5 = UUID.fromString("55555555-5555-5555-5555-555555555555")
 
-    nomisMappingApiMockServer.stubDpsUuidsFromNomisIds(
+    nomisMappingApiMockServer.stubMappingsFromNomisIds(
       listOf(
         NomisDpsLocationMapping(dpsLocationId1, 1),
         NomisDpsLocationMapping(dpsLocationId2, 2),
@@ -242,10 +242,10 @@ class LocationIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val dpsLocation1 = location(dpsLocationId1, "MDI", "L1", "Location MDI 1")
-    val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
-    val dpsLocation123 = location(dpsLocationId123, "MDI", "L123", "Location MDI 123")
-    val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", null)
+    val dpsLocation1 = dpsLocation(dpsLocationId1, "MDI", "L1", "Location MDI 1")
+    val dpsLocation2 = dpsLocation(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
+    val dpsLocation123 = dpsLocation(dpsLocationId123, "MDI", "L123", "Location MDI 123")
+    val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", null)
 
     locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
       prisonCode,
@@ -313,13 +313,13 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
     val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
 
-    nomisMappingApiMockServer.stubDpsUuidsFromNomisIds(
+    nomisMappingApiMockServer.stubMappingsFromNomisIds(
       listOf(
         NomisDpsLocationMapping(dpsLocationId2, 2),
       ),
     )
 
-    val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
+    val dpsLocation2 = dpsLocation(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
 
     locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
       prisonCode,
