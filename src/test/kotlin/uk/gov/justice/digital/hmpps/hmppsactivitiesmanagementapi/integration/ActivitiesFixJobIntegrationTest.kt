@@ -10,7 +10,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.util.*
@@ -43,16 +43,16 @@ class ActivitiesFixJobIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activities-fix-locations-job.sql")
   @Test
   fun `should update location details`() {
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(1, uuid1)
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(2, uuid2)
-    nomisMappingApiMockServer.stubDpsUuidFromNomisIdNotFound(4)
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(5, uuid5)
-    nomisMappingApiMockServer.stubDpsUuidFromNomisId(6, uuid6)
+    nomisMappingApiMockServer.stubMappingFromNomisId(1, uuid1)
+    nomisMappingApiMockServer.stubMappingFromNomisId(2, uuid2)
+    nomisMappingApiMockServer.stubMappingFromNomisIdNotFound(4)
+    nomisMappingApiMockServer.stubMappingFromNomisId(5, uuid5)
+    nomisMappingApiMockServer.stubMappingFromNomisId(6, uuid6)
 
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid1, location(uuid1, "RSI", "L1", "Location 1"))
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid2, location(uuid2, "RSI", "L2", "Location 2"))
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid1, dpsLocation(uuid1, "RSI", "L1", "Location 1"))
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid2, dpsLocation(uuid2, "RSI", "L2", "Location 2"))
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuidNotFound(uuid5)
-    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid6, location(uuid6, "RSI", "L6", "Location 6"))
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(uuid6, dpsLocation(uuid6, "RSI", "L6", "Location 6"))
 
     webTestClient.fixLocations()
 

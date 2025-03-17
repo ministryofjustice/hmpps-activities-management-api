@@ -193,7 +193,7 @@ class ActivityTest {
       internalLocation = LocationDetails(
         locationId = 1,
         dpsLocationId = dpsLocationId,
-        internalLocationCode = "WW",
+        code = "WW",
         description = "The wood work room description",
         agencyId = "MDI",
       ),
@@ -229,7 +229,7 @@ class ActivityTest {
       internalLocation = LocationDetails(
         locationId = 1,
         dpsLocationId = dpsLocationId,
-        internalLocationCode = "WW",
+        code = "WW",
         description = "The wood work room description",
         agencyId = "MDI",
       ),
@@ -266,7 +266,7 @@ class ActivityTest {
         internalLocation = LocationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
-          internalLocationCode = "WW",
+          code = "WW",
           description = "The wood work room description",
           agencyId = "MDI",
         ),
@@ -292,7 +292,7 @@ class ActivityTest {
         internalLocation = LocationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
-          internalLocationCode = "WW",
+          code = "WW",
           description = "The wood work room description",
           agencyId = "MDI",
         ),
@@ -317,7 +317,7 @@ class ActivityTest {
         internalLocation = LocationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
-          internalLocationCode = "WW",
+          code = "WW",
           description = "The wood work room description",
           agencyId = "MDI",
         ),
@@ -340,7 +340,7 @@ class ActivityTest {
       internalLocation = LocationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
-        internalLocationCode = "WW",
+        code = "WW",
         description = "The wood work room description",
         agencyId = "MDI",
       ),
@@ -356,7 +356,7 @@ class ActivityTest {
         internalLocation = LocationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
-          internalLocationCode = "WW",
+          code = "WW",
           description = "The wood work room description",
           agencyId = "MDI",
         ),
@@ -620,7 +620,7 @@ class ActivityTest {
       internalLocation = LocationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
-        internalLocationCode = "RM1",
+        code = "RM1",
         description = "Room 1",
         agencyId = "MDI",
       ),

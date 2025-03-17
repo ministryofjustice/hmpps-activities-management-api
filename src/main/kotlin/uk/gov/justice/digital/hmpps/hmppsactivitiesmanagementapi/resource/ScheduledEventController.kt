@@ -25,18 +25,17 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
+import java.util.*
 
 @RestController
 @RequestMapping("/scheduled-events")
 class ScheduledEventController(
   private val scheduledEventService: ScheduledEventService,
   private val referenceCodeService: ReferenceCodeService,
-  private val locationService: LocationService,
   private val internalLocationService: InternalLocationService,
 ) {
 
@@ -119,7 +118,6 @@ class ScheduledEventController(
       dateRange,
       timeSlot,
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-      locationService.getLocationsForAppointmentsMap(prisonCode),
     )
   }
 
@@ -194,7 +192,6 @@ class ScheduledEventController(
     date,
     timeSlot,
     referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
-    locationService.getLocationsForAppointmentsMap(prisonCode),
   )
 
   @PostMapping(
@@ -247,6 +244,7 @@ class ScheduledEventController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @Deprecated(message = "Will be replaced by getScheduledEventsForMultipleLocationsByDPSLocationsIds")
   fun getScheduledEventsForMultipleLocations(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
@@ -264,6 +262,77 @@ class ScheduledEventController(
   ): Set<InternalLocationEvents> = internalLocationService.getInternalLocationEvents(
     prisonCode,
     internalLocationIds,
+    date,
+    timeSlot,
+  )
+
+  @PostMapping(
+    value = ["/prison/{prisonCode}/location-events"],
+    consumes = [MediaType.APPLICATION_JSON_VALUE],
+    produces = [MediaType.APPLICATION_JSON_VALUE],
+  )
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of scheduled events for a prison given list of DPS location UUIDs, a date and optional time slot",
+    description = """
+      Returns scheduled events for the prison, locations UUIDs, date and optional time slot.
+      This endpoint only returns activities and appointments and these come from the local database.
+      This endpoint supports the creation of movement lists.
+      Note that activities are only scheduled 60 days in advance. Appointments may be scheduled for any date in the future.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled events found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = InternalLocationEvents::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Requested resource not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun getScheduledEventsForMultipleLocationsByDPSLocationsIds(
+    @PathVariable("prisonCode")
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+    @RequestParam(value = "date", required = true)
+    @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    date: LocalDate,
+    @RequestParam(value = "timeSlot", required = false)
+    @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
+    timeSlot: TimeSlot?,
+    @RequestBody(required = true)
+    @Parameter(description = "Set of internal DPS Locations UUIDS (required). Example [b7602cc8-e769-4cbb-8194-62d8e655992a, e284603a-73cb-4892-a4c8-79cf9da199df].", required = true)
+    dpsLocationIds: Set<UUID>,
+  ): Set<InternalLocationEvents> = internalLocationService.getLocationEvents(
+    prisonCode,
+    dpsLocationIds,
     date,
     timeSlot,
   )
