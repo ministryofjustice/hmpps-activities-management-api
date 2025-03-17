@@ -60,6 +60,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
+  private val locationService: LocationService = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -69,6 +70,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     appointmentInstanceRepository,
     prisonRegimeService,
     adjudicationsHearingAdapter,
+    locationService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -369,7 +371,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
         today,
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
@@ -523,7 +524,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
         tomorrow,
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
@@ -642,13 +642,14 @@ class ScheduledEventServiceMultiplePrisonersTest {
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
 
+      whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode)).thenReturn(emptyMap())
+
       val scheduledEvents = service.getScheduledEventsForMultiplePrisoners(
         prisonCode,
         prisonerNumbers,
         today,
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
@@ -672,7 +673,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.categoryDescription).isEqualTo("Test Category")
           assertThat(it.internalLocationId).isEqualTo(101L)
           assertThat(it.internalLocationCode).isEqualTo("No information available")
-          assertThat(it.internalLocationDescription).isEqualTo("Test Appointment Location User Description")
+          assertThat(it.internalLocationDescription).isEqualTo("No information available")
           assertThat(it.cancelled).isFalse
           assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
         }
@@ -784,7 +785,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
         tomorrow,
         timeSlot,
         appointmentCategoryMap(),
-        appointmentLocationMap(),
       )
 
       // Should not retrieve sensitive events with future date ranges

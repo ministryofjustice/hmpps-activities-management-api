@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
@@ -331,7 +332,7 @@ class TransformFunctionsTest {
     @Test
     fun `appointment instance, with location, to scheduled event`() {
       val entity = appointmentInstanceEntity()
-      val scheduledEvents = transform(entity)
+      val scheduledEvents = transform(entity, emptyMap())
 
       assertThat(scheduledEvents.first()).isEqualTo(
         ModelScheduledEvent(
@@ -341,9 +342,9 @@ class TransformFunctionsTest {
           scheduledInstanceId = null,
           bookingId = entity.bookingId,
           internalLocationId = entity.internalLocationId,
-          internalLocationCode = "LOC123",
-          internalLocationUserDescription = "User location desc",
-          internalLocationDescription = "User location desc",
+          internalLocationCode = "No information available",
+          internalLocationUserDescription = "No information available",
+          internalLocationDescription = "No information available",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,
           appointmentId = entity.appointmentId,
@@ -436,8 +437,8 @@ class TransformFunctionsTest {
           bookingId = entity.bookingId,
           internalLocationId = entity.internalLocationId,
           internalLocationCode = "LOC123",
-          internalLocationUserDescription = "User location desc",
-          internalLocationDescription = "User location desc",
+          internalLocationUserDescription = "An appointment location",
+          internalLocationDescription = "An appointment location",
           eventId = null,
           appointmentSeriesId = entity.appointmentSeriesId,
           appointmentId = entity.appointmentId,
@@ -520,7 +521,17 @@ class TransformFunctionsTest {
       }
     }
 
-    private fun transform(appointmentInstance: AppointmentInstance): List<ScheduledEvent> {
+    private fun defaultLocationMap(locationId: Long) = mapOf(
+      locationId to LocationDetails(
+        locationId = locationId,
+        dpsLocationId = UUID.fromString("999998b5-fbe4-43ae-89c4-cadbc299dd98"),
+        code = "LOC123",
+        description = "An appointment location",
+        agencyId = "TPR",
+      ),
+    )
+
+    private fun transform(appointmentInstance: AppointmentInstance, locationMap: Map<Long, LocationDetails>? = null): List<ScheduledEvent> {
       val eventPriorities = EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) })
       val result = appointmentSearchEntity()
 
@@ -528,16 +539,7 @@ class TransformFunctionsTest {
         "TPR",
         eventPriorities,
         mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)),
-        mapOf(
-          result.internalLocationId!! to Location(
-            locationId = 1,
-            internalLocationCode = "LOC123",
-            description = "An appointment location",
-            userDescription = "User location desc",
-            locationType = "APP",
-            agencyId = "TPR",
-          ),
-        ),
+        locationMap ?: defaultLocationMap(result.internalLocationId!!),
         listOf(appointmentInstance),
       )
     }
