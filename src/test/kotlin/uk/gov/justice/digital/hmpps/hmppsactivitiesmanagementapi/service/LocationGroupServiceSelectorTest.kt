@@ -12,41 +12,37 @@ class LocationGroupServiceSelectorTest {
 
   private val defaultService: LocationGroupService = mock()
   private val overrideService: LocationGroupService = mock()
-  private var service: LocationGroupService = LocationGroupServiceSelector(defaultService, overrideService)
+  private var service: LocationGroupService = LocationGroupServiceSelector(defaultService, overrideService, "RSI")
 
   @Test
-  fun locationGroupsCallsDefaultWhenNoOverride() {
+  fun locationGroupsCallsDefaultWhenRegexNotConfigured() {
     whenever(defaultService.getLocationGroups("LEI")).thenReturn(listOf(LG1))
     assertThat(service.getLocationGroups("LEI")).contains(LG1)
-    verify(overrideService).getLocationGroups("LEI")
+    verify(defaultService).getLocationGroups("LEI")
+    verifyNoMoreInteractions(overrideService)
   }
 
   @Test
-  fun locationGroupsDoesNotCallDefaultWhenOverridden() {
-    whenever(overrideService.getLocationGroups("LEI")).thenReturn(listOf(LG1))
-    assertThat(service.getLocationGroups("LEI")).contains(LG1)
-    verify(overrideService).getLocationGroups("LEI")
+  fun locationGroupsCallOverrideWhenRegexConfigExist() {
+    whenever(overrideService.getLocationGroups("RSI")).thenReturn(listOf(LG1))
+    assertThat(service.getLocationGroups("RSI")).contains(LG1)
+    verify(overrideService).getLocationGroups("RSI")
     verifyNoMoreInteractions(defaultService)
   }
 
   @Test
-  fun locationGroupsForAgencyDelegatesToGetLocationGroups() {
+  fun locationGroupsFiltersCallsDefaultRegexNotConfigured() {
     whenever(defaultService.getLocationGroups("LEI")).thenReturn(listOf(LG1))
-    assertThat(service.getLocationGroups("LEI")).contains(LG1)
-    verify(overrideService).getLocationGroups("LEI")
-  }
-
-  @Test
-  fun locationGroupsFiltersCallsDefaultWhenNoOverride() {
     service.locationGroupFilter("LEI", "Z")
     verify(defaultService).locationGroupFilter("LEI", "Z")
+    verifyNoMoreInteractions(overrideService)
   }
 
   @Test
-  fun locationGroupsFiltersCallsOverrideOnlyIfOverridden() {
-    whenever(overrideService.getLocationGroups("LEI")).thenReturn(listOf(LG1))
-    service.locationGroupFilter("LEI", "Z")
-    verify(overrideService).locationGroupFilter("LEI", "Z")
+  fun locationGroupsFiltersCallsOverrideWhenRegexConfigExist() {
+    whenever(overrideService.getLocationGroups("RSI")).thenReturn(listOf(LG1))
+    service.locationGroupFilter("RSI", "A")
+    verify(overrideService).locationGroupFilter("RSI", "A")
     verifyNoMoreInteractions(defaultService)
   }
 

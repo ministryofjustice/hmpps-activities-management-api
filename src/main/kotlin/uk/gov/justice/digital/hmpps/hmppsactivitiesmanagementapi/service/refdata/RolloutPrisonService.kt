@@ -19,7 +19,6 @@ class RolloutPrisonService(
   @Value("\${migrate.activities-live}") private val activitiesLive: String,
   @Value("\${migrate.appointments-live}") private val appointmentsLive: String,
   @Value("\${migrate.prisons-live}") private val prisonsLive: String,
-
 ) {
 
   private fun getPrison(code: String): PrisonPlan {
