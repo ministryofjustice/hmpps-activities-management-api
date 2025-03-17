@@ -430,24 +430,6 @@ class PrisonApiClientTest {
   }
 
   @Test
-  fun `getLocationAsync do not include inactive - success`() {
-    val internalLocation = internalLocation()
-    prisonApiMockServer.stubGetLocation(internalLocation.locationId, internalLocation, false)
-    runBlocking {
-      prisonApiClient.getLocationAsync(internalLocation.locationId) isEqualTo internalLocation
-    }
-  }
-
-  @Test
-  fun `getLocationAsync include inactive - success`() {
-    val internalLocation = internalLocation()
-    prisonApiMockServer.stubGetLocation(internalLocation.locationId, internalLocation, true)
-    runBlocking {
-      prisonApiClient.getLocationAsync(internalLocation.locationId, true) isEqualTo internalLocation
-    }
-  }
-
-  @Test
   fun `getStudyArea - success`() {
     prisonApiMockServer.stubGetReferenceCode("STUDY_AREA", "ENGLA", "prisonapi/study-area-code-ENGLA.json")
 

@@ -6,14 +6,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
@@ -28,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
@@ -39,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformP
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Service
 class InternalLocationService(
@@ -54,28 +53,16 @@ class InternalLocationService(
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
 ) {
-  companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
+  suspend fun getInternalLocationsMapByIds(prisonCode: String, dpsLocationIds: Set<UUID>): Map<Long, LocationDetails> {
+    val locationsMap = locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)
+      .filter { dpsLocationIds.contains(it.id) }
+      .associateBy { it.id }
 
-  suspend fun getInternalLocationsMapByIds(prisonCode: String, internalLocationIds: Set<Long>): Map<Long, Location> {
-    val internalLocationsMap = prisonApiClient.getEventLocationsAsync(prisonCode)
-      .filter { internalLocationIds.contains(it.locationId) }
-      .associateBy { it.locationId }
-      .toMutableMap()
+    val mappings = nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
 
-    // Try to get any missing location ids via prisonApiClient. If found, they will be inactive
-    internalLocationIds.filterNot { internalLocationsMap.containsKey(it) }.forEach {
-      log.info("Retrieving inactive internal location with id $it")
-      runCatching {
-        val location = prisonApiClient.getLocationAsync(it, true)
-        internalLocationsMap[location.locationId] = location
-      }.onFailure { t ->
-        log.warn("Failed to retrieve inactive internal location with id $it", t)
-      }
-    }
-
-    return internalLocationsMap
+    return locationsMap.map {
+      it.value.toLocationDetails(mappings[it.key]!!.nomisLocationId)
+    }.toMapByNomisId()
   }
 
   fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
@@ -192,14 +179,26 @@ class InternalLocationService(
       .associateBy { it.locationId }
   }
 
-  fun getInternalLocationEvents(prisonCode: String, internalLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+  @Deprecated("Will be removed in favour of getLocationEvents")
+  fun getInternalLocationEvents(prisonCode: String, nomisLocationIds: Set<Long>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+    checkCaseloadAccess(prisonCode)
+
+    val dpsLocationIds =
+      nomisMappingAPIClient.getLocationMappingsByNomisIds(nomisLocationIds).map { it.dpsLocationId }.toSet()
+
+    getLocationEvents(prisonCode, dpsLocationIds, date, timeSlot)
+  }
+
+  fun getLocationEvents(prisonCode: String, dpsLocationIds: Set<UUID>, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
     checkCaseloadAccess(prisonCode)
 
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
     val referenceCodesForAppointmentsMap =
       referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
-    val internalLocationsMap = getInternalLocationsMapByIds(prisonCode, internalLocationIds)
+    val locationsMap = getInternalLocationsMapByIds(prisonCode, dpsLocationIds)
     val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
+
+    val internalLocationIds = locationsMap.map { it.key }.toSet()
 
     val activities = prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
       prisonCode,
@@ -247,7 +246,7 @@ class InternalLocationService(
         prisonCode,
         eventPriorities,
         referenceCodesForAppointmentsMap,
-        internalLocationsMap,
+        locationsMap,
         appointments,
       ),
     ).union(
@@ -264,12 +263,13 @@ class InternalLocationService(
     )
       .filterNot { it.internalLocationId == null }.groupBy { it.internalLocationId!! }
 
-    internalLocationsMap.map {
+    locationsMap.map {
       InternalLocationEvents(
         it.key,
+        it.value.dpsLocationId,
         it.value.agencyId,
+        it.value.code,
         it.value.description,
-        it.value.userDescription ?: it.value.description,
         scheduledEventsMap[it.key]?.toSet() ?: emptySet(),
       )
     }.toSet()

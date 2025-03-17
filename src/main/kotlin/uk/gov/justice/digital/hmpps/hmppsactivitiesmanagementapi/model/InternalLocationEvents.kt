@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.util.UUID
 
 @Schema(
   description =
@@ -19,6 +20,9 @@ data class InternalLocationEvents(
     example = "27723",
   )
   val id: Long,
+
+  @Schema(description = "The DPS location UUID for this schedule", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID,
 
   @Schema(
     description =

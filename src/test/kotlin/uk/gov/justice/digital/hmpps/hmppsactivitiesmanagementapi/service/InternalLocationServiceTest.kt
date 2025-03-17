@@ -10,14 +10,12 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
@@ -32,10 +30,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
@@ -52,7 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCasel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 class InternalLocationServiceTest {
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
@@ -93,6 +91,11 @@ class InternalLocationServiceTest {
     description = "EDUC-ED1-ED1",
     userDescription = "Education 1",
   )
+  private val education1DpsLocation = dpsLocation(
+    id = UUID.fromString("22222222-2222-2222-2222-222222222222"),
+    code = "EDUC-ED1-ED1",
+    localName = "Education 1",
+  )
   private val education1LocationSummary = LocationSummary(
     locationId = 2L,
     description = "EDUC-ED1-ED1",
@@ -102,6 +105,19 @@ class InternalLocationServiceTest {
     locationId = 3L,
     description = "EDUC-ED2-ED2",
     userDescription = "Education 2",
+  )
+  private val education2DpsLocation = dpsLocation(
+    id = UUID.fromString("33333333-3333-3333-3333-333333333333"),
+    code = "ED2",
+    localName = "Education 2",
+  )
+  private val education2LocationDetails = LocationService.LocationDetails(
+    agencyId = prisonCode,
+    locationId = education2Location.locationId,
+    dpsLocationId = education2DpsLocation.id,
+    code = education2DpsLocation.code,
+    description = education2DpsLocation.localName!!,
+    pathHierarchy = education2DpsLocation.pathHierarchy,
   )
   private val education2LocationSummary = LocationSummary(
     locationId = 3L,
@@ -118,10 +134,20 @@ class InternalLocationServiceTest {
     description = "NO-USR-DESC",
     userDescription = null,
   )
+  private val noUserDescriptionDpsLocation = dpsLocation(
+    id = UUID.fromString("44444444-4444-4444-4444-444444444444"),
+    code = "NO-USR-DESC",
+    localName = null,
+  )
   private val socialVisitsLocation = internalLocation(
     locationId = 5L,
     description = "SOCIAL VISITS",
     userDescription = "Social Visits",
+  )
+  private val socialVisitsDpsLocation = dpsLocation(
+    id = UUID.fromString("55555555-5555-5555-5555-555555555555"),
+    code = "SOCIAL VISITS",
+    localName = "Social Visits",
   )
   private val socialVisitsLocationSummary = LocationSummary(
     locationId = 5L,
@@ -138,6 +164,11 @@ class InternalLocationServiceTest {
     locationId = 1000L,
     description = "ADJU",
     userDescription = "ADJU",
+  )
+  private val adjudicationDpsLocation = dpsLocation(
+    id = UUID.fromString("10001000-1000-1000-1000-100010001000"),
+    code = "ADJU",
+    localName = "ADJU",
   )
 
   private val education1Appointment = appointmentSearchEntity(
@@ -188,6 +219,11 @@ class InternalLocationServiceTest {
     locationId = 6L,
     description = "EDUC-ED1-ED3",
     userDescription = "Education 3",
+  )
+  private val education3DpsLocation = dpsLocation(
+    id = UUID.fromString("66666666-6666-6666-6666-666666666666"),
+    code = "EDUC-ED1-ED3",
+    localName = "Education 3",
   )
 
   private val onWingActivity = activityFromDbInstance(
@@ -250,31 +286,31 @@ class InternalLocationServiceTest {
 
   @BeforeEach
   fun setUp() {
-    prisonApiClient.stub {
+    locationsInsidePrisonAPIClient.stub {
       on {
         runBlocking {
-          getEventLocationsAsync(prisonCode)
+          getLocationsWithUsageTypes(prisonCode)
         }
       } doReturn listOf(
-        education1Location,
-        education2Location,
-        noUserDescriptionLocation,
-        socialVisitsLocation,
-        adjudicationLocation,
-        education3Location,
+        education1DpsLocation,
+        education2DpsLocation,
+        noUserDescriptionDpsLocation,
+        socialVisitsDpsLocation,
+        adjudicationDpsLocation,
+        education3DpsLocation,
       )
-
-      on {
-        runBlocking {
-          getLocationAsync(inactiveEducation1Location.locationId, true)
-        }
-      } doReturn inactiveEducation1Location
-
-      on {
-        runBlocking {
-          getLocationAsync(-1, true)
-        }
-      } doThrow WebClientResponseException(404, "", null, null, null)
+//
+//      on {
+//        runBlocking {
+//          getLocationsWithUsageTypes(inactiveEducation1Location.locationId, true)
+//        }
+//      } doReturn inactiveEducation1Location
+//
+//      on {
+//        runBlocking {
+//          getLocationsWithUsageTypes(-1, true)
+//        }
+//      } doThrow WebClientResponseException(404, "", null, null, null)
     }
 
     prisonRegimeService.stub {
@@ -310,52 +346,15 @@ class InternalLocationServiceTest {
   inner class GetInternalLocationsMapByIds {
     @Test
     fun `filters locations matching supplied ids`() = runBlocking {
-      service.getInternalLocationsMapByIds(
-        prisonCode,
-        setOf(education2Location.locationId),
-      ) isEqualTo mapOf(
-        education2Location.locationId to education2Location,
-      )
-    }
+      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(education2DpsLocation))
 
-    @Test
-    fun `retrieves inactive locations matching supplied ids`() = runBlocking {
-      service.getInternalLocationsMapByIds(
-        prisonCode,
-        setOf(
-          inactiveEducation1Location.locationId,
-          adjudicationLocation.locationId,
-        ),
-      ) isEqualTo mapOf(
-        inactiveEducation1Location.locationId to inactiveEducation1Location,
-        adjudicationLocation.locationId to adjudicationLocation,
-      )
-    }
+      whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education2DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education2DpsLocation.id, 3)))
 
-    @Test
-    fun `retrieves inactive locations and combines with those matching supplied ids`() = runBlocking {
       service.getInternalLocationsMapByIds(
         prisonCode,
-        setOf(
-          inactiveEducation1Location.locationId,
-          education2Location.locationId,
-        ),
+        setOf(education2DpsLocation.id),
       ) isEqualTo mapOf(
-        inactiveEducation1Location.locationId to inactiveEducation1Location,
-        education2Location.locationId to education2Location,
-      )
-    }
-
-    @Test
-    fun `tries to retrieve inactive locations matching supplied ids and catches errors`() = runBlocking {
-      service.getInternalLocationsMapByIds(
-        prisonCode,
-        setOf(
-          -1,
-          education2Location.locationId,
-        ),
-      ) isEqualTo mapOf(
-        education2Location.locationId to education2Location,
+        education2Location.locationId to education2LocationDetails,
       )
     }
   }
@@ -413,10 +412,10 @@ class InternalLocationServiceTest {
         ),
       )
 
-      val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2")
-      val dpsLocation3 = location(dpsLocationId3, "MDI", "L3", "Location MDI 3")
-      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
-      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+      val dpsLocation2 = dpsLocation(dpsLocationId2, "MDI", "L2", "Location MDI 2")
+      val dpsLocation3 = dpsLocation(dpsLocationId3, "MDI", "L3", "Location MDI 3")
+      val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
       whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
@@ -493,10 +492,10 @@ class InternalLocationServiceTest {
         ),
       )
 
-      val dpsLocation1 = location(dpsLocationId1, "MDI", "L1", "Location MDI 1")
-      val dpsLocation4 = location(dpsLocationId4, "MDI", "L4", "Location MDI 4")
-      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
-      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+      val dpsLocation1 = dpsLocation(dpsLocationId1, "MDI", "L1", "Location MDI 1")
+      val dpsLocation4 = dpsLocation(dpsLocationId4, "MDI", "L4", "Location MDI 4")
+      val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
       whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation1, dpsLocation4, dpsLocation5, dpsLocation1000))
 
@@ -558,7 +557,7 @@ class InternalLocationServiceTest {
 
       whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(
         listOf(
-          location(UUID.randomUUID(), "MDI", "Other place"),
+          dpsLocation(UUID.randomUUID(), "MDI", "Other place"),
         ),
       )
 
@@ -616,10 +615,10 @@ class InternalLocationServiceTest {
         ),
       )
 
-      val dpsLocation2 = location(dpsLocationId2, "MDI", "L2", "Location MDI 2")
-      val dpsLocation3 = location(dpsLocationId3, "MDI", "L3", "Location MDI 3")
-      val dpsLocation5 = location(dpsLocationId5, "MDI", "L5", "Location MDI 5")
-      val dpsLocation1000 = location(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
+      val dpsLocation2 = dpsLocation(dpsLocationId2, "MDI", "L2", "Location MDI 2")
+      val dpsLocation3 = dpsLocation(dpsLocationId3, "MDI", "L3", "Location MDI 3")
+      val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
+      val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
       whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
@@ -709,6 +708,16 @@ class InternalLocationServiceTest {
         mapOf(adjudicationHearingForEvent.internalLocationId to listOf(adjudicationHearingForEvent)),
       )
 
+      val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(2))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId2, education1Location.locationId),
+        ),
+      )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education1DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education1DpsLocation.id, 2)))
+
       val result = service.getInternalLocationEvents(
         prisonCode,
         setOf(education1Location.locationId),
@@ -764,6 +773,16 @@ class InternalLocationServiceTest {
         ),
       ).thenReturn(listOf(education2Visit))
 
+      val dpsLocationId3 = UUID.fromString("33333333-3333-3333-3333-333333333333")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(3))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId3, education2Location.locationId),
+        ),
+      )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education2DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education2DpsLocation.id, 3)))
+
       val result = service.getInternalLocationEvents(
         prisonCode,
         setOf(education2Location.locationId),
@@ -776,8 +795,8 @@ class InternalLocationServiceTest {
         with(this.first()) {
           id isEqualTo education2Location.locationId
           prisonCode isEqualTo prisonCode
-          code isEqualTo education2Location.description
-          description isEqualTo education2Location.userDescription
+          code isEqualTo education2DpsLocation.code
+          description isEqualTo education2DpsLocation.localName
           with(events) {
             size isEqualTo 3
             this.single { it.scheduledInstanceId == education2Activity.scheduledInstanceId }.eventType isEqualTo "ACTIVITY"
@@ -817,6 +836,16 @@ class InternalLocationServiceTest {
           TimeSlot.ED,
         ),
       ).thenReturn(listOf(noLocationVisit))
+
+      val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(2))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId2, education1Location.locationId),
+        ),
+      )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education1DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education1DpsLocation.id, 2)))
 
       val result = service.getInternalLocationEvents(
         prisonCode,

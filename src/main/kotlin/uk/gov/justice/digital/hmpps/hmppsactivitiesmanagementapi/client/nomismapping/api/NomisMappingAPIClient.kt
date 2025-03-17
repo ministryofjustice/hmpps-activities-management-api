@@ -30,6 +30,15 @@ class NomisMappingAPIClient(private val nomisMappingApiWebClient: WebClient) {
       .retrieve()
       .awaitBody()
   }
+
+  suspend fun getLocationMappingsByDpsIds(dpsLocationIds: Set<UUID>): List<NomisDpsLocationMapping> {
+    if (dpsLocationIds.isEmpty()) return emptyList()
+    return nomisMappingApiWebClient.post()
+      .uri("/api/locations/dps")
+      .bodyValue(dpsLocationIds)
+      .retrieve()
+      .awaitBody()
+  }
 }
 
 data class NomisDpsLocationMapping(
