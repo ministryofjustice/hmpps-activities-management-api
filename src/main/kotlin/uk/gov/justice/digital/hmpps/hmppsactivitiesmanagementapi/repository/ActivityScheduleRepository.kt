@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import java.util.UUID
+import java.util.*
 
 @Repository
 interface ActivityScheduleRepository :
@@ -47,4 +47,42 @@ interface ActivityScheduleRepository :
   )
   @Modifying
   fun updateLocationDetails(internalLocationId: Int, dpsLocationId: UUID, code: String, description: String)
+
+  @Query(
+    value = """
+      select distinct a.dpsLocationId from ActivitySchedule a
+      where a.activity.prisonCode = :prisonCode
+      and (a.activity.endDate is null or a.activity.endDate >= current_date)
+      and a.dpsLocationId is not null
+    """,
+  )
+  fun findInvalidLocationUuids(prisonCode: String): List<UUID>
+
+  @Query(
+    value = """
+      select 
+        a.activity.prisonCode as prisonCode,
+        a.activity.activityId as activityId,
+        a.activity.description as activityDescription,
+        a.internalLocationId as internalLocationId,
+        a.internalLocationCode as internalLocationCode,
+        a.internalLocationDescription as internalLocationDescription,
+        a.dpsLocationId as dpsLocationId
+      from ActivitySchedule a 
+      where a.dpsLocationId in :dpsLocationId
+      and (a.activity.endDate is null or a.activity.endDate >= current_date)
+      order by a.activity.description
+    """,
+  )
+  fun findByInvalidLocationUuids(dpsLocationId: UUID): List<ActivityScheduleWithInvalidLocation>
+
+  interface ActivityScheduleWithInvalidLocation {
+    fun getPrisonCode(): String
+    fun getActivityId(): Long
+    fun getActivityDescription(): String
+    fun getInternalLocationId(): Int
+    fun getInternalLocationCode(): String
+    fun getInternalLocationDescription(): String
+    fun getDpsLocationId(): UUID
+  }
 }
