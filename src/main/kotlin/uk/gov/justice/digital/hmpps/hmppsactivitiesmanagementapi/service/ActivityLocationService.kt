@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
@@ -26,7 +27,7 @@ class ActivityLocationService(
       .flatMap {
         log.info("Checking for invalid activities for location $it")
 
-        val validUuids = locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(it).map { it.id }.toSet()
+        val validUuids = locationsInsidePrisonAPIClient.getLocationsForUsageType(it, NonResidentialUsageDto.UsageType.PROGRAMMES_ACTIVITIES).map { it.id }.toSet()
 
         activityScheduleRepository.findInvalidLocationUuids(it)
           .filter { validUuids.contains(it).not() }
