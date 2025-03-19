@@ -60,7 +60,6 @@ class UtilityIntegrationTest : IntegrationTestBase() {
       dpsLocationIds = setOf(UUID.fromString("99999999-9999-9999-9999-999999999999")),
     )
 
-
     locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
       prisonCode = "RSI",
       dpsLocationIds = setOf(UUID.fromString("11111111-1111-1111-1111-111111111111")),
