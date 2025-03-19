@@ -7,6 +7,7 @@ import org.mockito.kotlin.verify
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -55,13 +56,15 @@ class UtilityIntegrationTest : IntegrationTestBase() {
   @Sql("classpath:test_data/seed-activity-id-34.sql")
   @Test
   fun `returns a list of activities with invalid location`() {
-    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
       prisonCode = "LEI",
+      usageType = UsageType.PROGRAMMES_ACTIVITIES,
       dpsLocationIds = setOf(UUID.fromString("99999999-9999-9999-9999-999999999999")),
     )
 
-    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
       prisonCode = "RSI",
+      usageType = UsageType.PROGRAMMES_ACTIVITIES,
       dpsLocationIds = setOf(UUID.fromString("11111111-1111-1111-1111-111111111111")),
     )
 
