@@ -22,3 +22,23 @@ values (3, 'RSI', 1, 1, true, false, false, false, 'H', 'Activity 3', 'Activity 
 insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, end_date, dps_location_id)
 values (3, 3, 'Activity 3', 2, 'L2', 'Location 2', 10, current_timestamp, null, '22222222-2222-2222-2222-222222222222');
 
+-- Ignore because activity is on-wing
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid, on_wing)
+values (4, 'RSI', 1, 1, true, false, false, false, 'H', 'Activity 4', 'Activity 2', current_timestamp - interval '2 day', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true, true);
+
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, end_date, dps_location_id)
+values (4, 4, 'Activity 4', 2, 'L2', 'Location 2', 10, current_timestamp, null, '22222222-2222-2222-2222-222222222222');
+
+-- Ignore because activity is off-wing
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid, off_wing)
+values (5, 'RSI', 1, 1, true, false, false, false, 'H', 'Activity 5', 'Activity 2', current_timestamp - interval '2 day', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true, true);
+
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, end_date, dps_location_id)
+values (5, 5, 'Activity 5', 2, 'L2', 'Location 2', 10, current_timestamp, null, '22222222-2222-2222-2222-222222222222');
+
+-- Ignore because activity is in-cell
+insert into activity(activity_id, prison_code, activity_category_id, activity_tier_id, attendance_required, in_cell, piece_work, outside_work, pay_per_session, summary, description, start_date, end_date, risk_level, created_time, created_by, paid)
+values (6, 'RSI', 1, 1, true, true, false, false, 'H', 'Activity 6', 'Activity 2', current_timestamp - interval '2 day', null, 'high', '2022-9-21 00:00:00', 'SEED USER', true);
+
+insert into activity_schedule(activity_schedule_id, activity_id, description, internal_location_id, internal_location_code, internal_location_description, capacity, start_date, end_date, dps_location_id)
+values (6, 6, 'Activity 6', 2, 'L2', 'Location 2', 10, current_timestamp, null, '22222222-2222-2222-2222-222222222222');

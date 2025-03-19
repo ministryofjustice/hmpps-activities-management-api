@@ -71,6 +71,9 @@ interface ActivityScheduleRepository :
       from ActivitySchedule a 
       where a.dpsLocationId in :dpsLocationId
       and (a.activity.endDate is null or a.activity.endDate >= current_date)
+      and a.activity.onWing = false
+      and a.activity.offWing = false
+      and a.activity.inCell = false
       order by a.activity.description
     """,
   )
