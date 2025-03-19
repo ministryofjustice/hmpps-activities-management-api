@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
 // These endpoints are secured in the ingress rather than the app so that they can be called from
@@ -23,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 @RequestMapping("/utility", produces = [MediaType.TEXT_PLAIN_VALUE])
 class UtilityController(
   private val outboundEventsService: OutboundEventsService,
+  private val activityLocationService: ActivityLocationService,
 ) {
 
   @PostMapping(value = ["/publish-events"])
@@ -42,5 +45,20 @@ class UtilityController(
     }
 
     return "Domain event ${publishEventUtilityModel.outboundEvent} published"
+  }
+
+  @GetMapping(value = ["invalid-activity-locations"], produces = [MediaType.TEXT_PLAIN_VALUE])
+  @ResponseBody
+  @Operation(
+    summary = "Get any activities with invalid locations",
+    description = "Return any activities with invalid locations.",
+  )
+  fun getInvalidActivityLocations(): String {
+    val builder = StringBuilder()
+    builder.appendLine("Prison Code,Activity ID,Activity Description,Internal Location ID,Internal Location Code,Internal Location Description,DPS Location ID")
+    activityLocationService.getInvalidActivityLocations().forEach {
+      builder.appendLine("${it.getPrisonCode()},${it.getActivityId()},${it.getActivityDescription()},${it.getInternalLocationId()},${it.getInternalLocationCode()},${it.getInternalLocationDescription()},${it.getDpsLocationId()}")
+    }
+    return builder.toString()
   }
 }
