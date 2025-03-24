@@ -175,20 +175,21 @@ class ScheduledInstanceTest {
         cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The schedule instance has already been cancelled")
+      .hasMessage("The schedule instance ${instance.activitySchedule.description} ${LocalDate.now()} has already been cancelled")
   }
 
   @Test
   fun `cannot cancel a past scheduled instance`() {
+    val date = today.minusWeeks(1)
     assertThatThrownBy {
-      instance.copy(sessionDate = today.minusWeeks(1)).cancelSessionAndAttendances(
+      instance.copy(sessionDate = date).cancelSessionAndAttendances(
         reason = "Staff unavailable",
         by = "USER1",
         cancelComment = "Resume tomorrow",
         cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The schedule instance has ended")
+      .hasMessage("The schedule instance ${instance.activitySchedule.description} $date has ended")
   }
 
   @Test

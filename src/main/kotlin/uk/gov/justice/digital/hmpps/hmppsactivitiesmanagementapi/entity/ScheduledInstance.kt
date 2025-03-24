@@ -95,12 +95,13 @@ data class ScheduledInstance(
     by: String,
     cancelComment: String?,
     cancellationReason: AttendanceReason,
+    issuePayment: Boolean = true,
   ): List<Attendance> {
-    require(!cancelled) { "The schedule instance has already been cancelled" }
+    require(!cancelled) { "The schedule instance ${activitySchedule.description} $sessionDate has already been cancelled" }
 
     val today = LocalDateTime.now().withNano(0)
 
-    require(sessionDate >= today.toLocalDate()) { "The schedule instance has ended" }
+    require(sessionDate >= today.toLocalDate()) { "The schedule instance ${activitySchedule.description} $sessionDate has ended" }
 
     cancelled = true
     cancelledReason = reason
@@ -110,7 +111,7 @@ data class ScheduledInstance(
 
     return attendances
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
-      .onEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by) }
+      .onEach { it.cancel(reason = cancellationReason, cancelledReason = reason, cancelledBy = by, issuePayment = issuePayment) }
   }
 
   /**

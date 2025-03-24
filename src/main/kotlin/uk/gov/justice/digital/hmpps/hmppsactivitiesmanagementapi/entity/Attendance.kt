@@ -86,7 +86,7 @@ data class Attendance(
   @Override
   override fun toString(): String = this::class.simpleName + "(attendanceId = $attendanceId )"
 
-  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null) = apply {
+  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null, issuePayment: Boolean = true) = apply {
     require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
     require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
 
@@ -95,7 +95,7 @@ data class Attendance(
       reason = reason,
       newStatus = AttendanceStatus.COMPLETED,
       newComment = cancelledReason,
-      newIssuePayment = isPayable(),
+      newIssuePayment = if (issuePayment == true) isPayable() else false,
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
       newOtherAbsenceReason = null,
