@@ -4,13 +4,17 @@ import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -19,13 +23,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEve
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -40,7 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 class ScheduledInstanceServiceTest {
   private val repository: ScheduledInstanceRepository = mock()
@@ -380,6 +387,173 @@ class ScheduledInstanceServiceTest {
       val result = service.attendanceSummary("MDI", LocalDate.now())
 
       assertThat(result).isEqualTo(listOf(attendanceSummary.toModel()))
+    }
+  }
+
+  @Nested
+  @DisplayName("cancelScheduledInstances")
+  inner class CancelScheduledInstances {
+    val today = LocalDate.now()
+    var instance1: ScheduledInstance? = null
+    var instance2: ScheduledInstance? = null
+
+    @BeforeEach
+    fun setUp() {
+      val activity1 = activityEntity(activityId = 1L, timestamp = LocalDateTime.now(), noSchedules = true, description = "Maths Level 1")
+      val activity2 = activityEntity(activityId = 2L, timestamp = LocalDateTime.now(), noSchedules = true, description = "English Level 2", noPayBands = true, paid = false)
+
+      val schedule1 = activity1.addSchedule(activitySchedule(activityScheduleId = 1L, activity = activity1, description = activity1.description!!, paid = true, timeSlot = TimeSlot.AM, noInstances = true))
+      val schedule2 = activity2.addSchedule(activitySchedule(activityScheduleId = 2L, activity = activity2, description = activity2.description!!, paid = false, timeSlot = TimeSlot.AM, noInstances = true))
+
+      instance1 = schedule1.addInstance(sessionDate = today, slot = schedule1.slots().first())
+      instance2 = schedule2.addInstance(sessionDate = today, slot = schedule2.slots().first())
+
+      instance1!!.cancelled = false
+      instance2!!.cancelled = false
+
+      activity1.addPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = prisonPayBandsLowMediumHigh()[1],
+        rate = 50,
+        pieceRate = 60,
+        pieceRateItems = 70,
+        startDate = null,
+      )
+      schedule1.apply {
+        this.allocatePrisoner(
+          prisonerNumber = "A1234AB".toPrisonerNumber(),
+          startDate = today.plusDays(1),
+          bookingId = 10002,
+          payBand = prisonPayBandsLowMediumHigh()[1],
+          allocatedBy = "Mr Blogs",
+        )
+      }
+      instance1.apply {
+        this!!.attendances.add(
+          Attendance(
+            attendanceId = 2,
+            scheduledInstance = this,
+            prisonerNumber = "A1234AB",
+          ),
+        )
+      }
+
+      schedule2.apply {
+        this.allocatePrisoner(
+          prisonerNumber = "B1111BB".toPrisonerNumber(),
+          startDate = today.plusDays(1),
+          bookingId = 10003,
+          payBand = null,
+          allocatedBy = "John Smith",
+        )
+      }
+      instance2.apply {
+        this!!.attendances.add(
+          Attendance(
+            attendanceId = 3,
+            scheduledInstance = this,
+            prisonerNumber = "B1111BB",
+          ),
+        )
+      }
+
+      whenever(repository.findByIds(listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId))).thenReturn(listOf(instance1!!, instance2!!))
+      whenever(repository.saveAllAndFlush(listOf(instance1, instance2))).thenReturn(listOf(instance1, instance2))
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
+        attendanceReason(
+          AttendanceReasonEnum.CANCELLED,
+        ),
+      )
+    }
+
+    @Test
+    fun `cancels the scheduled instances and their attendances - success`() {
+      service.cancelScheduledInstances(
+        ScheduleInstancesCancelRequest(
+          scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
+          reason = "Staff unavailable",
+          username = "USER1",
+          comment = "Resume tomorrow",
+          issuePayment = true,
+        ),
+      )
+
+      with(instance1!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledTime).isNotNull
+        assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(comment).isEqualTo("Resume tomorrow")
+
+        attendances.forEach {
+          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+          assertThat(it.comment).isEqualTo("Staff unavailable")
+          assertThat(it.recordedBy).isEqualTo("USER1")
+          assertThat(it.recordedTime).isNotNull
+          assertThat(it.issuePayment).isTrue
+        }
+
+        verify(telemetryClient).trackEvent(
+          TelemetryEvent.RECORD_ATTENDANCE.value,
+          attendances.first().toTelemetryPropertiesMap(),
+        )
+        verify(outboundEventsService).send(
+          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
+          attendances.first().attendanceId,
+        )
+      }
+
+      with(instance2!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledTime).isNotNull
+        assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(comment).isEqualTo("Resume tomorrow")
+
+        attendances.forEach {
+          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+          assertThat(it.comment).isEqualTo("Staff unavailable")
+          assertThat(it.recordedBy).isEqualTo("USER1")
+          assertThat(it.recordedTime).isNotNull
+          assertThat(it.issuePayment).isFalse
+        }
+
+        verify(telemetryClient).trackEvent(
+          TelemetryEvent.RECORD_ATTENDANCE.value,
+          attendances.first().toTelemetryPropertiesMap(),
+        )
+        verify(outboundEventsService).send(
+          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
+          attendances.first().attendanceId,
+        )
+      }
+
+      verify(outboundEventsService, times(2))
+        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance1!!.scheduledInstanceId)
+    }
+
+    @Test
+    fun `will not cancel any instances if one instance is already cancelled - failed`() {
+      instance1!!.cancelled = true
+
+      assertThatThrownBy {
+        service.cancelScheduledInstances(
+          ScheduleInstancesCancelRequest(
+            scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
+            reason = "Staff unavailable",
+            username = "USER1",
+            comment = "Resume tomorrow",
+            issuePayment = true,
+          ),
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("The schedule instance ${instance1!!.activitySchedule.description} $today has already been cancelled")
+
+      verifyNoInteractions(telemetryClient)
+      verifyNoInteractions(outboundEventsService)
+      verify(repository, never()).saveAllAndFlush(anyList())
     }
   }
 }

@@ -8,12 +8,11 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.CurrentIncentive
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.IncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -24,12 +23,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduledInstanceInformation
@@ -398,38 +397,6 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     @Test
     @Sql("classpath:test_data/seed-activity-id-16.sql")
     fun success() {
-      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-        listOf("A11111A", "A22222A"),
-        listOf(
-          PrisonerSearchPrisonerFixture.instance(
-            prisonerNumber = "A11111A",
-            bookingId = 456,
-            prisonId = "TPR",
-            currentIncentive = CurrentIncentive(
-              level = IncentiveLevel(
-                description = "Basic",
-                code = "BAS",
-              ),
-              dateTime = LocalDate.now().toString(),
-              nextReviewDate = LocalDate.now(),
-            ),
-          ),
-          PrisonerSearchPrisonerFixture.instance(
-            prisonerNumber = "A22222A",
-            bookingId = 456,
-            prisonId = "TPR",
-            currentIncentive = CurrentIncentive(
-              level = IncentiveLevel(
-                description = "Basic",
-                code = "BAS",
-              ),
-              dateTime = LocalDate.now().toString(),
-              nextReviewDate = LocalDate.now(),
-            ),
-          ),
-        ),
-      )
-
       webTestClient.cancelScheduledInstance(1, "Location unavailable", "USER1")
 
       with(webTestClient.getScheduledInstanceById(1)!!) {
@@ -484,7 +451,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has ended")
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM 2022-10-10 has ended")
     }
 
     @Test
@@ -493,8 +460,149 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance has already been cancelled")
+        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM ${LocalDate.now()} has already been cancelled")
     }
+  }
+
+  @Nested
+  @DisplayName("cancelScheduledInstances")
+  inner class CancelScheduledInstances {
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-35.sql")
+    fun success() {
+      webTestClient.cancelScheduledInstances(listOf(1, 4), "Location unavailable", "USER1", "comment 1", true)
+        .expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("USER1")
+
+        with(attendances.first()) {
+          assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Location unavailable")
+          assertThat(recordedBy).isEqualTo("USER1")
+          assertThat(recordedTime).isNotNull
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isTrue
+        }
+      }
+
+      with(webTestClient.getScheduledInstanceById(4)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("USER1")
+
+        with(attendances.first()) {
+          assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Location unavailable")
+          assertThat(recordedBy).isEqualTo("USER1")
+          assertThat(recordedTime).isNotNull
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isFalse
+        }
+      }
+
+      verify(eventsPublisher, times(5)).send(eventCaptor.capture())
+
+      val allEvents = eventCaptor.allValues
+      assertThat(allEvents.size).isEqualTo(5)
+      val scheduledInstance1AmendedEvent =
+        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(1) }
+      val attendance1AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(1) }
+      val attendance2AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(2) }
+
+      with(scheduledInstance1AmendedEvent) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(attendance1AmendedEvent) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        occurredAt isCloseTo TimeSource.now()
+      }
+
+      with(attendance2AmendedEvent) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        occurredAt isCloseTo TimeSource.now()
+      }
+
+      val scheduledInstance2AmendedEvent =
+        allEvents.first { e -> e.additionalInformation == ScheduledInstanceInformation(4) }
+      val attendance3AmendedEvent = allEvents.first { e -> e.additionalInformation == PrisonerAttendanceInformation(3) }
+
+      with(scheduledInstance2AmendedEvent) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(occurredAt).isCloseTo(java.time.LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(attendance3AmendedEvent) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        occurredAt isCloseTo TimeSource.now()
+      }
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-35.sql")
+  fun `400 - a scheduled instance has already been cancelled`() {
+    val response = webTestClient.cancelScheduledInstances(listOf(4, 3), "Location unavailable", "USER2", "comment 1", false)
+
+    response
+      .expectStatus().isBadRequest
+      .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM ${LocalDate.now()} has already been cancelled")
+
+    with(webTestClient.getScheduledInstanceById(3)!!) {
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+    }
+
+    with(webTestClient.getScheduledInstanceById(4)!!) {
+      assertThat(cancelled).isFalse
+      assertThat(cancelledBy).isNull()
+
+      with(attendances.first()) {
+        assertThat(attendanceReason).isNull()
+        assertThat(status).isEqualTo("WAITING")
+        assertThat(comment).isNull()
+        assertThat(recordedBy).isNull()
+        assertThat(recordedTime).isNull()
+        assertThat(issuePayment).isNull()
+      }
+    }
+    verifyNoInteractions(eventsPublisher)
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-35.sql")
+  fun `400 - a scheduled instance has already ended`() {
+    val response = webTestClient.cancelScheduledInstances(listOf(4, 2), "Location unavailable", "USER2", "comment 1", true)
+
+    response
+      .expectStatus().isBadRequest
+      .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM 2022-10-10 has ended")
+
+    with(webTestClient.getScheduledInstanceById(2)!!) {
+      assertThat(cancelled).isFalse
+      assertThat(cancelledBy).isNull()
+    }
+
+    with(webTestClient.getScheduledInstanceById(4)!!) {
+      assertThat(cancelled).isFalse
+      assertThat(cancelledBy).isNull()
+
+      with(attendances.first()) {
+        assertThat(attendanceReason).isNull()
+        assertThat(status).isEqualTo("WAITING")
+        assertThat(comment).isNull()
+        assertThat(recordedBy).isNull()
+        assertThat(recordedTime).isNull()
+        assertThat(issuePayment).isNull()
+      }
+    }
+    verifyNoInteractions(eventsPublisher)
   }
 
   @Test
@@ -597,6 +705,19 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
   ) = put()
     .uri("/scheduled-instances/$id/cancel")
     .bodyValue(ScheduleInstanceCancelRequest(reason, username, comment))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+
+  private fun WebTestClient.cancelScheduledInstances(
+    ids: List<Long>,
+    reason: String,
+    username: String,
+    comment: String? = null,
+    issuePayment: Boolean? = true,
+  ) = put()
+    .uri("/scheduled-instances/cancel")
+    .bodyValue(ScheduleInstancesCancelRequest(ids, reason, username, comment, issuePayment))
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()
