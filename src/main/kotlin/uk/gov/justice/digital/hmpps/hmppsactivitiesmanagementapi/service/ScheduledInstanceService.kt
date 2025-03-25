@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toSchedu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -144,6 +145,51 @@ class ScheduledInstanceService(
     }
 
     log.info("Cancelled scheduled instance $instanceId")
+  }
+
+  fun cancelScheduledInstances(request: ScheduleInstancesCancelRequest) {
+    log.info("Cancelling ${request.scheduleInstanceIds!!.size} scheduled instances")
+
+    val attendancesPairsList = transactionHandler.newSpringTransaction {
+      val scheduledInstances = repository.findByIds(request.scheduleInstanceIds.map { it })
+
+      scheduledInstances.map { scheduledInstance ->
+        val waitingAttendances = scheduledInstance.attendances.filter { it.status() == AttendanceStatus.WAITING }
+
+        val cancelledAttendances = scheduledInstance.cancelSessionAndAttendances(
+          reason = request.reason,
+          by = request.username,
+          cancelComment = request.comment,
+          cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+          issuePayment = request.issuePayment!!,
+        )
+
+        // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event
+        waitingAttendances.forEach { attendance ->
+          if (attendance.status() == AttendanceStatus.COMPLETED) {
+            val propertiesMap = attendance.toTelemetryPropertiesMap()
+            telemetryClient.trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, propertiesMap)
+          }
+        }
+
+        scheduledInstance to cancelledAttendances
+      }
+        .also { repository.saveAllAndFlush(scheduledInstances) }
+    }
+
+    attendancesPairsList
+      .filter { it.first.cancelled }
+      .forEach { (cancelledInstance, cancelledAttendances) ->
+        // Emit sync events - manually
+        log.info("Sending instance amended and attendance amended events for cancelled instance with id ${cancelledInstance.scheduledInstanceId}.")
+
+        send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, cancelledInstance.scheduledInstanceId)
+
+        cancelledAttendances.forEach { attendance ->
+          send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+        }
+      }
+    log.info("Finished cancelling scheduled instances")
   }
 
   fun attendanceSummary(prisonCode: String, sessionDate: LocalDate): List<ScheduledInstanceAttendanceSummary> {

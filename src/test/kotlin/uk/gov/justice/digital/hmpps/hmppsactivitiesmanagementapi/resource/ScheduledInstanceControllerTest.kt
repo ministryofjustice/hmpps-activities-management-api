@@ -155,6 +155,22 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
     }.andExpect { status { isBadRequest() } }
   }
 
+  @Test
+  fun `cancelScheduledInstances - 204 response when successfully cancelling multiple scheduled instances`() {
+    mockMvc.put("/scheduled-instances/1/cancel") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
+      )
+    }.andExpect { status { isNoContent() } }
+
+    verify(scheduledInstanceService).cancelScheduledInstance(
+      1,
+      ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
+    )
+  }
+
   @Nested
   @DisplayName("Attendance Summary")
   inner class AttendanceSummaryTests {
