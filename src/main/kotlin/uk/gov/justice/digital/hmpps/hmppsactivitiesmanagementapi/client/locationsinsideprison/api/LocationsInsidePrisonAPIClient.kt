@@ -27,6 +27,7 @@ class LocationsInsidePrisonAPIClient(private val locationsInsidePrisonApiWebClie
       uriBuilder
         .path("/locations/prison/{prisonCode}/non-residential-usage-type")
         .queryParam("formatLocalName", true)
+        .queryParam("filterParents", false)
         .build(prisonCode)
     }
     .retrieve()
@@ -37,6 +38,7 @@ class LocationsInsidePrisonAPIClient(private val locationsInsidePrisonApiWebClie
       uriBuilder
         .path("/locations/prison/{prisonCode}/non-residential-usage-type/{usageType}")
         .queryParam("formatLocalName", true)
+        .queryParam("filterParents", false)
         .build(prisonCode, usageType)
     }
     .retrieve()
