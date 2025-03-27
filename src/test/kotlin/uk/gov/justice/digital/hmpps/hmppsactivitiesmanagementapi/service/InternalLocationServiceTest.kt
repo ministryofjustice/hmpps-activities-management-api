@@ -289,7 +289,7 @@ class InternalLocationServiceTest {
     locationsInsidePrisonAPIClient.stub {
       on {
         runBlocking {
-          getLocationsWithUsageTypes(prisonCode)
+          getNonResidentialLocations(prisonCode)
         }
       } doReturn listOf(
         education1DpsLocation,
@@ -299,18 +299,6 @@ class InternalLocationServiceTest {
         adjudicationDpsLocation,
         education3DpsLocation,
       )
-//
-//      on {
-//        runBlocking {
-//          getLocationsWithUsageTypes(inactiveEducation1Location.locationId, true)
-//        }
-//      } doReturn inactiveEducation1Location
-//
-//      on {
-//        runBlocking {
-//          getLocationsWithUsageTypes(-1, true)
-//        }
-//      } doThrow WebClientResponseException(404, "", null, null, null)
     }
 
     prisonRegimeService.stub {
@@ -346,7 +334,7 @@ class InternalLocationServiceTest {
   inner class GetInternalLocationsMapByIds {
     @Test
     fun `filters locations matching supplied ids`() = runBlocking {
-      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(education2DpsLocation))
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(listOf(education2DpsLocation))
 
       whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education2DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education2DpsLocation.id, 3)))
 
@@ -417,7 +405,7 @@ class InternalLocationServiceTest {
       val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
       val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
-      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -497,7 +485,7 @@ class InternalLocationServiceTest {
       val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
       val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
-      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation1, dpsLocation4, dpsLocation5, dpsLocation1000))
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(listOf(dpsLocation1, dpsLocation4, dpsLocation5, dpsLocation1000))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -555,7 +543,7 @@ class InternalLocationServiceTest {
 
       whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(emptySet())).thenReturn(emptyList<NomisDpsLocationMapping>())
 
-      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(
         listOf(
           dpsLocation(UUID.randomUUID(), "MDI", "Other place"),
         ),
@@ -620,7 +608,7 @@ class InternalLocationServiceTest {
       val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", "Location MDI 5")
       val dpsLocation1000 = dpsLocation(dpsLocationId1000, "MDI", "L1000", "Location MDI 100")
 
-      whenever(locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(listOf(dpsLocation2, dpsLocation3, dpsLocation5, dpsLocation1000))
 
       service.getInternalLocationEventsSummaries(
         prisonCode,
@@ -873,7 +861,7 @@ class InternalLocationServiceTest {
     @Test
     fun `getInternalLocationEventsSummaries throws caseload access exception if caseload id header does not match`() {
       addCaseloadIdToRequestHeader("WRONG")
-      assertThatThrownBy { service.getInternalLocationEventsSummaries(prisonCode, LocalDate.now(), null) }
+      assertThatThrownBy { runBlocking { service.getInternalLocationEventsSummaries(prisonCode, LocalDate.now(), null) } }
         .isInstanceOf(CaseloadAccessException::class.java)
     }
 

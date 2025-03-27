@@ -22,12 +22,11 @@ class LocationsInsidePrisonAPIClient(private val locationsInsidePrisonApiWebClie
     .bodyToMono(Location::class.java)
     .block()!!
 
-  suspend fun getLocationsWithUsageTypes(prisonCode: String): List<Location> = locationsInsidePrisonApiWebClient.get()
+  suspend fun getNonResidentialLocations(prisonCode: String): List<Location> = locationsInsidePrisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder
-        .path("/locations/prison/{prisonCode}/non-residential-usage-type")
+        .path("/locations/prison/{prisonCode}/non-residential")
         .queryParam("formatLocalName", true)
-        .queryParam("filterParents", false)
         .build(prisonCode)
     }
     .retrieve()

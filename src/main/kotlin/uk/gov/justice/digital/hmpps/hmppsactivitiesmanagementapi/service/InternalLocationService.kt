@@ -4,6 +4,7 @@ import jakarta.validation.ValidationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
@@ -37,7 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transformP
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 @Service
 class InternalLocationService(
@@ -53,19 +54,25 @@ class InternalLocationService(
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
 ) {
-  suspend fun getInternalLocationsMapByIds(prisonCode: String, dpsLocationIds: Set<UUID>): Map<Long, LocationDetails> {
-    val locationsMap = locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)
+  suspend fun getInternalLocationsMapByIds(prisonCode: String, dpsLocationIds: Set<UUID>): Map<Long, LocationDetails> = coroutineScope {
+    val locationsAsync = async { locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode) }
+    val mappingsAsync = async { nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds) }
+
+    val locationsMap = locationsAsync
+      .await()
       .filter { dpsLocationIds.contains(it.id) }
       .associateBy { it.id }
 
-    val mappings = nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
+    val mappings = mappingsAsync
+      .await()
+      .associateBy { it.dpsLocationId }
 
-    return locationsMap.map {
+    locationsMap.map {
       it.value.toLocationDetails(mappings[it.key]!!.nomisLocationId)
     }.toMapByNomisId()
   }
 
-  fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) = runBlocking {
+  suspend fun getInternalLocationEventsSummaries(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) = coroutineScope {
     checkCaseloadAccess(prisonCode)
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
 
@@ -90,12 +97,13 @@ class InternalLocationService(
       .union(locationVisitsMap.keys)
       .union(adjudicationHearingsMap.keys)
 
-    val dpsLocations = nomisMappingAPIClient.getLocationMappingsByNomisIds(internalLocationIds)
+    val dpsLocationsAsync = async { nomisMappingAPIClient.getLocationMappingsByNomisIds(internalLocationIds) }
 
-    val dpsLocationsByDPSIdMap = dpsLocations.associateBy { it.dpsLocationId }
+    val allDpsLocationsAsync = async { locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode) }
 
-    val allDpsLocations = locationsInsidePrisonAPIClient.getLocationsWithUsageTypes(prisonCode)
-      .filter { dpsLocationsByDPSIdMap.contains(it.id) }
+    val dpsLocationsByDPSIdMap = dpsLocationsAsync.await().associateBy { it.dpsLocationId }
+
+    val allDpsLocations = allDpsLocationsAsync.await().filter { dpsLocationsByDPSIdMap.contains(it.id) }
 
     allDpsLocations.map {
       InternalLocationEventsSummary(

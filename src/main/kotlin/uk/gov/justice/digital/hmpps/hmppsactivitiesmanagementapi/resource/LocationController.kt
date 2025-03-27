@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import kotlinx.coroutines.runBlocking
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -238,9 +239,11 @@ class LocationController(
     @RequestParam(value = "timeSlot", required = false)
     @Parameter(description = "Time slot for the scheduled events (optional). If supplied, one of AM, PM or ED.")
     timeSlot: TimeSlot?,
-  ): Set<InternalLocationEventsSummary> = internalLocationService.getInternalLocationEventsSummaries(
-    prisonCode,
-    date,
-    timeSlot,
-  )
+  ) = runBlocking {
+    internalLocationService.getInternalLocationEventsSummaries(
+      prisonCode,
+      date,
+      timeSlot,
+    )
+  }
 }

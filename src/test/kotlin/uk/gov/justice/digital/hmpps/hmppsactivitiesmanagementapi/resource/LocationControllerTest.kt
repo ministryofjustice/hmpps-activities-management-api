@@ -1,7 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -180,7 +184,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
     val timeSlot = TimeSlot.AM
     val locations = setOf(internalLocationEventsSummary())
 
-    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, timeSlot)).thenReturn(locations)
+    internalLocationService.stub {
+      on {
+        runBlocking {
+          internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, timeSlot)
+        }
+      } doReturn locations
+    }
 
     val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, timeSlot)
       .andExpect { status { isOk() } }
@@ -194,7 +204,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
     val date = LocalDate.now()
     val locations = setOf(internalLocationEventsSummary())
 
-    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)).thenReturn(locations)
+    internalLocationService.stub {
+      on {
+        runBlocking {
+          internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)
+        }
+      } doReturn locations
+    }
 
     val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
       .andExpect { status { isOk() } }
@@ -253,7 +269,13 @@ class LocationControllerTest : ControllerTestBase<LocationController>() {
   fun `Internal location events summaries - 500 response when service throws exception`() {
     val date = LocalDate.now()
 
-    whenever(internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)).thenThrow(RuntimeException("Error"))
+    internalLocationService.stub {
+      on {
+        runBlocking {
+          internalLocationService.getInternalLocationEventsSummaries(prisonCode, date, null)
+        }
+      } doThrow RuntimeException("Error")
+    }
 
     val response = mockMvc.getInternalLocationEventsSummaries(prisonCode, date, null)
       .andExpect { status { isInternalServerError() } }
