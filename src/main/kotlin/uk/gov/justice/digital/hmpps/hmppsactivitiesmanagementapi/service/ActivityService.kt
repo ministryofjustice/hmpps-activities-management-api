@@ -52,7 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 typealias AllocationIds = Set<Long>
@@ -93,8 +93,11 @@ class ActivityService(
   fun getActivitiesInPrison(
     prisonCode: String,
     excludeArchived: Boolean,
+    nameSearch: String? = null,
   ) = activitySummaryRepository.findAllByPrisonCode(prisonCode)
-    .filter { !excludeArchived || it.activityState != ActivityState.ARCHIVED }.toModel()
+    .filter { !excludeArchived || it.activityState != ActivityState.ARCHIVED }
+    .filter { nameSearch.isNullOrBlank() || it.activityName.contains(nameSearch, ignoreCase = true) }
+    .toModel()
 
   fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
     val activity = activityRepository.findById(activityId)
