@@ -35,7 +35,7 @@ class PrisonIntegrationTest : ActivitiesIntegrationTestBase() {
   )
   @Test
   fun `get activities for a prison when filtered by a search term`() {
-    val activities = webTestClient.getActivities("PVI", term = "enGliSh")!!
+    val activities = webTestClient.getActivities("PVI", nameSearch = "enGliSh")!!
 
     activities.single() isEqualTo
       ActivitySummary(

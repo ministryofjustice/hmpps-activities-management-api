@@ -82,10 +82,10 @@ class PrisonController(
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
-    @RequestParam(value = "term", required = false)
-    @Parameter(description = "The activity name contains this term")
-    term: String?,
-  ): List<ActivitySummary> = activityService.getActivitiesInPrison(prisonCode, excludeArchived, term)
+    @RequestParam(value = "nameSearch", required = false)
+    @Parameter(description = "The activity name contains this case insensitive search term")
+    nameSearch: String?,
+  ): List<ActivitySummary> = activityService.getActivitiesInPrison(prisonCode, excludeArchived, nameSearch = nameSearch)
 
   @GetMapping(value = ["/{prisonCode}/prison-pay-bands"])
   @ResponseBody

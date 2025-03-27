@@ -21,8 +21,8 @@ abstract class ActivitiesIntegrationTestBase : IntegrationTestBase() {
     .expectBodyList(ActivityScheduleInstance::class.java)
     .returnResult().responseBody
 
-  fun WebTestClient.getActivities(prisonCode: String, term: String? = null) = get()
-    .uri("/prison/$prisonCode/activities" + (term?.let { "?term=$term" } ?: ""))
+  fun WebTestClient.getActivities(prisonCode: String, nameSearch: String? = null) = get()
+    .uri("/prison/$prisonCode/activities" + (nameSearch?.let { "?nameSearch=$nameSearch" } ?: ""))
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()

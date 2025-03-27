@@ -93,10 +93,10 @@ class ActivityService(
   fun getActivitiesInPrison(
     prisonCode: String,
     excludeArchived: Boolean,
-    term: String? = null,
+    nameSearch: String? = null,
   ) = activitySummaryRepository.findAllByPrisonCode(prisonCode)
     .filter { !excludeArchived || it.activityState != ActivityState.ARCHIVED }
-    .filter { term.isNullOrBlank() || it.activityName.contains(term, ignoreCase = true) }
+    .filter { nameSearch.isNullOrBlank() || it.activityName.contains(nameSearch, ignoreCase = true) }
     .toModel()
 
   fun getSchedulesForActivity(activityId: Long): List<ActivityScheduleLite> {
