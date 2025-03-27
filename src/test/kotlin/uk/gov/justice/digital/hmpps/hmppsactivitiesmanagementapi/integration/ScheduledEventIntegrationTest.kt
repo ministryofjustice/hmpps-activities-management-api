@@ -592,7 +592,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp() {
-      locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+      locationsInsidePrisonApiMockServer.stubNonResidentialLocations(
         prisonCode = prisonCode,
         locations = listOf(activityDpsLocation1, activityDpsLocation2, appointmentDpsLocation1, visitsDpsLocation5),
       )

@@ -50,10 +50,10 @@ class LocationsInsidePrisonAPIClientTest {
   }
 
   @Test
-  fun `should return locations with usage type`() {
-    val mockLocations = mockServer.stubLocationsWithUsageTypes("RSI")
+  fun `should return non-residential locations`() {
+    val mockLocations = mockServer.stubNonResidentialLocations("RSI")
     runBlocking {
-      val locations = apiClient.getLocationsWithUsageTypes("RSI")
+      val locations = apiClient.getNonResidentialLocations("RSI")
       assertThat(locations).isEqualTo(mockLocations)
     }
   }

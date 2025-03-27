@@ -43,7 +43,7 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     }
   }
 
-  fun stubLocationsWithUsageTypes(
+  fun stubNonResidentialLocations(
     prisonCode: String = "RSI",
     dpsLocationIds: Set<UUID> = setOf(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc")),
     locations: List<Location>? = null,
@@ -51,7 +51,7 @@ class LocationsInsidePrisonApiMockServer : MockServer(8093) {
     val responseLocations = locations ?: defaultLocations(dpsLocationIds)
 
     stubFor(
-      WireMock.get("/locations/prison/$prisonCode/non-residential-usage-type?formatLocalName=true&filterParents=false").willReturn(
+      WireMock.get("/locations/prison/$prisonCode/non-residential?formatLocalName=true").willReturn(
         WireMock.aResponse()
           .withHeader("Content-Type", "application/json")
           .withBody(mapper.writeValueAsString(responseLocations))

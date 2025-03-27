@@ -253,7 +253,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
     val dpsLocation123 = dpsLocation(dpsLocationId123, "MDI", "L123", "Location MDI 123")
     val dpsLocation5 = dpsLocation(dpsLocationId5, "MDI", "L5", null)
 
-    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+    locationsInsidePrisonApiMockServer.stubNonResidentialLocations(
       prisonCode,
       setOf(dpsLocationId1, dpsLocationId2, dpsLocationId123, dpsLocationId5),
       listOf(dpsLocation1, dpsLocation2, dpsLocation123, dpsLocation5),
@@ -327,7 +327,7 @@ class LocationIntegrationTest : IntegrationTestBase() {
 
     val dpsLocation2 = dpsLocation(dpsLocationId2, "MDI", "L2", "Location MDI 2 Updated").copy(active = false)
 
-    locationsInsidePrisonApiMockServer.stubLocationsWithUsageTypes(
+    locationsInsidePrisonApiMockServer.stubNonResidentialLocations(
       prisonCode,
       setOf(dpsLocationId2),
       listOf(dpsLocation2),
