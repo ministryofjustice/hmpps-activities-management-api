@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisona
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
@@ -12,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
+import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
@@ -47,7 +47,7 @@ class PrisonApiClient(
 ) {
 
   private companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val log = LoggerFactory.getLogger(this::class.java)
   }
 
   private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
@@ -70,7 +70,7 @@ class PrisonApiClient(
       }
       .retrieve()
       .bodyToMono(InmateDetail::class.java)
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/offenderNo/{prisonerNumber}")))
       .awaitSingle()
   }
 
@@ -87,7 +87,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/activities")))
     .awaitSingle()
 
   suspend fun getScheduledAppointmentsAsync(
@@ -103,7 +103,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/appointments")))
     .awaitSingle()
 
   suspend fun getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -124,7 +124,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/appointments")))
       .awaitSingle()
   }
 
@@ -143,7 +143,7 @@ class PrisonApiClient(
       }
       .retrieve()
       .bodyToMono(CourtHearings::class.java)
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/court-hearings")))
       .awaitSingleOrNull()
   }
 
@@ -165,7 +165,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/courtEvents")))
       .awaitSingle()
   }
 
@@ -182,7 +182,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/visits")))
     .awaitSingle()
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
@@ -203,7 +203,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/visits")))
       .awaitSingle()
   }
 
@@ -224,7 +224,7 @@ class PrisonApiClient(
     .bodyToMono(typeReference<List<PrisonerSchedule>>())
     .doOnError { error -> log.info("Error looking up visits for location for $prisonCode $locationId", error) }
     .onErrorResume(WebClientResponseException.NotFound::class.java) { Mono.just(emptyList()) }
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/locations/{locationId}/usage/VISIT")))
     .awaitSingle()
 
   suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
@@ -245,7 +245,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/activities")))
       .awaitSingle()
   }
 
@@ -265,7 +265,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{agencyId}/externalTransfers")))
       .awaitSingle()
   }
 
@@ -277,7 +277,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations/type/{type}")))
 
   // Does not check that the invoker has the selected agency in their caseload.
   fun getLocationsForTypeUnrestricted(
@@ -292,7 +292,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations")))
 
   fun getLocationGroups(agencyId: String): Mono<List<LocationGroup>> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
@@ -302,7 +302,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<LocationGroup>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations/groups")))
 
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations = getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
 
@@ -316,7 +316,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<ReferenceCode>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/domains/{domain}/codes/{code}")))
 
   fun getReferenceCodes(domain: String): List<ReferenceCode> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
@@ -326,7 +326,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<ReferenceCode>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/domains/{domain}/codes")))
     .block() ?: emptyList()
 
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> = getReferenceCode("EDU_LEVEL", educationLevelCode)
@@ -342,7 +342,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<ReferenceCode>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/scheduleReasons")))
     .block() ?: emptyList()
 
   fun getEducationLevels(
@@ -355,7 +355,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<Education>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/education/prisoners")))
       .block() ?: emptyList()
 
     return educations
@@ -375,7 +375,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{prisonCode}/eventLocations")))
     .awaitSingle()
 
   suspend fun getEventLocationsBookedAsync(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): List<LocationSummary> = prisonApiWebClient.get()
@@ -388,7 +388,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<LocationSummary>>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{prisonCode}/eventLocationsBooked")))
     .awaitSingle()
 
   fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) = prisonerNumbers.ifNotEmpty {
@@ -403,7 +403,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<Movement>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/movements/offenders")))
       .block()
   }?.filter { it.fromAgency == prisonCode } ?: emptyList()
 }

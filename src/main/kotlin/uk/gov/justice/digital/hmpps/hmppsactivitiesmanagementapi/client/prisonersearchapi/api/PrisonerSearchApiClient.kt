@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.UriBuilder
+import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PagedPrisoner
@@ -26,7 +27,7 @@ class PrisonerSearchApiClient(
     .header("Content-Type", "application/json")
     .retrieve()
     .bodyToMono(typeReference<PagedPrisoner>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prisoner-search-api", "path", "/prison/{prisonCode}/prisoners")))
 
   fun findByPrisonerNumbers(prisonerNumbers: List<String>, batchSize: Int = 1000): List<Prisoner> {
     require(batchSize in 1..1000) {
@@ -39,7 +40,7 @@ class PrisonerSearchApiClient(
         .bodyValue(PrisonerNumbers(it))
         .retrieve()
         .bodyToMono(typeReference<List<Prisoner>>())
-        .retryWhen(backoffSpec)
+        .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prisoner-search-api", "path", "/prisoner-search/prisoner-numbers")))
         .block() ?: emptyList()
     }
   }
@@ -53,7 +54,7 @@ class PrisonerSearchApiClient(
       .bodyValue(PrisonerNumbers(prisonerNumbers))
       .retrieve()
       .bodyToMono(typeReference<List<Prisoner>>())
-      .retryWhen(backoffSpec)
+      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prisoner-search-api", "path", "/prisoner-search/prisoner-numbers")))
       .awaitSingle()
   }
 
@@ -65,6 +66,6 @@ class PrisonerSearchApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<Prisoner>())
-    .retryWhen(backoffSpec)
+    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prisoner-search-api", "path", "/prisoner/{prisonerNumber}")))
     .block()
 }
