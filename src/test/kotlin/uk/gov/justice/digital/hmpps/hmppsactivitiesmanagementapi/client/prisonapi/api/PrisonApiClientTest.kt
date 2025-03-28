@@ -15,6 +15,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.LocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
@@ -57,7 +58,7 @@ class PrisonApiClientTest {
   fun resetStubs() {
     prisonApiMockServer.resetAll()
     val webClient = WebClient.create("http://localhost:${prisonApiMockServer.port()}")
-    prisonApiClient = PrisonApiClient(webClient)
+    prisonApiClient = PrisonApiClient(webClient, RetryApiService(3, 250))
   }
 
   @Test

@@ -6,8 +6,13 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientRequestException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.PrisonerSearchApiMockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -36,7 +41,7 @@ class PrisonerSearchApiClientTest {
   fun resetStubs() {
     prisonerSearchApiMockServer.resetAll()
     val webClient = WebClient.create("http://localhost:${prisonerSearchApiMockServer.port()}")
-    prisonerSearchApiClient = PrisonerSearchApiClient(webClient)
+    prisonerSearchApiClient = PrisonerSearchApiClient(webClient, RetryApiService(3, 250))
   }
 
   @Test
@@ -132,6 +137,39 @@ class PrisonerSearchApiClientTest {
 
     with(prisonerSearchApiClient.findByPrisonerNumber("G4793VF")!!) {
       prisonerNumber isEqualTo "G4793VF"
+    }
+  }
+
+  @Nested
+  @DisplayName("Retrying failed api calls")
+  inner class RetryFailedCalls {
+    val prisonerNumber = "G4793VF"
+
+    @Test
+    fun `will succeed if number of fails is not less than maximum allowed`(): Unit = runBlocking {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumberWithConnectionReset(prisonerNumber)
+
+      with(prisonerSearchApiClient.findByPrisonerNumber("G4793VF")!!) {
+        prisonerNumber isEqualTo "G4793VF"
+      }
+    }
+
+    @Test
+    fun `will succeed if number of fails is maximum allowed`(): Unit = runBlocking {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumberWithConnectionReset(prisonerNumber, 2)
+
+      with(prisonerSearchApiClient.findByPrisonerNumber("G4793VF")!!) {
+        prisonerNumber isEqualTo "G4793VF"
+      }
+    }
+
+    @Test
+    fun `will fail if number of fails is more than maximum allowed`(): Unit = runBlocking {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumberWithConnectionReset(prisonerNumber, 3)
+
+      assertThrows<WebClientRequestException> {
+        prisonerSearchApiClient.findByPrisonerNumber(prisonerNumber)
+      }
     }
   }
 }

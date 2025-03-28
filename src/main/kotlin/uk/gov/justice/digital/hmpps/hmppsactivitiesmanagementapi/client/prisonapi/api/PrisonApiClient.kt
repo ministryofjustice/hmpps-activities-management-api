@@ -9,11 +9,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
-import reactor.util.retry.Retry
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
@@ -26,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
-import java.time.Duration
 import java.time.LocalDate
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
@@ -43,13 +41,16 @@ inline fun <reified T> typeReference() = object : ParameterizedTypeReference<T>(
 @Service
 class PrisonApiClient(
   private val prisonApiWebClient: WebClient,
-  @Value("\${prison.api.retry.max-attempts:2}") private val retryMaxAttempts: Long = 2,
-  @Value("\${prison.api.retry.min-backoff-millis:250}") private val retryMinBackoffMillis: Long = 250,
+  retryApiService: RetryApiService,
+  @Value("\${prison.api.retry.max-retries:2}") private val maxRetryAttempts: Long = 2,
+  @Value("\${prison.api.retry.backoff-millis:250}") private val backoffMillis: Long = 250,
 ) {
 
-  companion object {
+  private companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
+  private val backoffSpec = retryApiService.getBackoffSpec(maxRetryAttempts, backoffMillis)
 
   /**
    * Returns a minimal view of the prisoner's attributes in the [InmateDetail].
@@ -69,7 +70,7 @@ class PrisonApiClient(
       }
       .retrieve()
       .bodyToMono(InmateDetail::class.java)
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -86,7 +87,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   suspend fun getScheduledAppointmentsAsync(
@@ -102,7 +103,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   suspend fun getScheduledAppointmentsForPrisonerNumbersAsync(
@@ -123,7 +124,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -142,7 +143,7 @@ class PrisonApiClient(
       }
       .retrieve()
       .bodyToMono(CourtHearings::class.java)
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingleOrNull()
   }
 
@@ -164,7 +165,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -181,7 +182,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
@@ -202,7 +203,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -223,7 +224,7 @@ class PrisonApiClient(
     .bodyToMono(typeReference<List<PrisonerSchedule>>())
     .doOnError { error -> log.info("Error looking up visits for location for $prisonCode $locationId", error) }
     .onErrorResume(WebClientResponseException.NotFound::class.java) { Mono.just(emptyList()) }
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   suspend fun getScheduledActivitiesForPrisonerNumbersAsync(
@@ -244,7 +245,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -264,7 +265,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .awaitSingle()
   }
 
@@ -276,7 +277,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
 
   // Does not check that the invoker has the selected agency in their caseload.
   fun getLocationsForTypeUnrestricted(
@@ -291,7 +292,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
 
   fun getLocationGroups(agencyId: String): Mono<List<LocationGroup>> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
@@ -301,7 +302,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<LocationGroup>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
 
   suspend fun getEventLocationsForPrison(prisonCode: String): PrisonLocations = getEventLocationsAsync(prisonCode).associateBy(Location::locationId)
 
@@ -315,7 +316,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<ReferenceCode>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
 
   fun getReferenceCodes(domain: String): List<ReferenceCode> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
@@ -325,7 +326,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<ReferenceCode>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .block() ?: emptyList()
 
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> = getReferenceCode("EDU_LEVEL", educationLevelCode)
@@ -341,7 +342,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<ReferenceCode>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .block() ?: emptyList()
 
   fun getEducationLevels(
@@ -354,7 +355,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<Education>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .block() ?: emptyList()
 
     return educations
@@ -374,7 +375,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<Location>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   suspend fun getEventLocationsBookedAsync(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): List<LocationSummary> = prisonApiWebClient.get()
@@ -387,7 +388,7 @@ class PrisonApiClient(
     }
     .retrieve()
     .bodyToMono(typeReference<List<LocationSummary>>())
-    .withRetryPolicy()
+    .retryWhen(backoffSpec)
     .awaitSingle()
 
   fun getMovementsForPrisonersFromPrison(prisonCode: String, prisonerNumbers: Set<String>) = prisonerNumbers.ifNotEmpty {
@@ -402,25 +403,7 @@ class PrisonApiClient(
       .bodyValue(prisonerNumbers)
       .retrieve()
       .bodyToMono(typeReference<List<Movement>>())
-      .withRetryPolicy()
+      .retryWhen(backoffSpec)
       .block()
   }?.filter { it.fromAgency == prisonCode } ?: emptyList()
-
-  private fun <T> Mono<T>.withRetryPolicy(): Mono<T> = this
-    .retryWhen(
-      Retry.backoff(retryMaxAttempts, Duration.ofMillis(retryMinBackoffMillis))
-        .filter { isRetryable(it) }
-        .doBeforeRetry { logRetrySignal(it) }
-        .onRetryExhaustedThrow { _, signal ->
-          signal.failure()
-        },
-    )
-
-  private fun isRetryable(it: Throwable): Boolean = it is WebClientRequestException || it.cause is WebClientRequestException
-
-  private fun logRetrySignal(retrySignal: Retry.RetrySignal) {
-    val exception = retrySignal.failure()?.cause ?: retrySignal.failure()
-    val message = exception.message ?: exception.javaClass.canonicalName
-    log.debug("Retrying due to {}, totalRetries: {}", message, retrySignal.totalRetries())
-  }
 }

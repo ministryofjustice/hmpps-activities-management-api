@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.http.Fault
+import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.PrisonerNumbers
 
@@ -77,6 +79,33 @@ class PrisonerSearchApiMockServer : MockServer(8111) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(prisoner))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubSearchByPrisonerNumberWithConnectionReset(prisonerNumber: String, numFails: Int = 1) {
+    for (i in 1..numFails) {
+      stubFor(
+        WireMock.get(WireMock.urlEqualTo("/prisoner/$prisonerNumber"))
+          .inScenario("Network fail")
+          .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
+          .willReturn(
+            WireMock.aResponse()
+              .withFault(Fault.CONNECTION_RESET_BY_PEER),
+          )
+          .willSetStateTo("Fail $i"),
+      )
+    }
+
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/prisoner/$prisonerNumber"))
+        .inScenario("Network fail")
+        .whenScenarioStateIs("Fail $numFails")
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBodyFile("prisonersearchapi/prisoner-$prisonerNumber.json")
             .withStatus(200),
         ),
     )
