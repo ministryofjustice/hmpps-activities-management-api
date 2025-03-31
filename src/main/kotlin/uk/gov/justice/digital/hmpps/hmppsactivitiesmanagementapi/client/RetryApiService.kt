@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientRequestException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.util.retry.Retry
 import reactor.util.retry.RetryBackoffSpec
 import java.time.Duration
@@ -29,7 +30,9 @@ class RetryApiService(
       signal.failure()
     }
 
-  private fun isRetryable(it: Throwable): Boolean = it is WebClientRequestException || it.cause is WebClientRequestException
+  private fun isRetryable(t: Throwable): Boolean = t is WebClientRequestException ||
+    t.cause is WebClientRequestException ||
+    t is WebClientResponseException.BadGateway
 
   private fun logRetrySignal(retrySignal: Retry.RetrySignal) {
     val exception = retrySignal.failure()?.cause ?: retrySignal.failure()

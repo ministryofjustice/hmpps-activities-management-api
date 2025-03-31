@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.http.Fault
+import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import java.util.*
 
@@ -57,6 +59,62 @@ class NomisMappingApiMockServer : MockServer(8094) {
           .withBody(mapper.writeValueAsString(mappings))
           .withStatus(200),
       ),
+    )
+  }
+
+  fun stubMappingFromDpsUuidWithConnectionReset(dpsLocationId: UUID, nomisLocationId: Long = 1, numFails: Int = 1) {
+    for (i in 1..numFails) {
+      stubFor(
+        WireMock.get(WireMock.urlEqualTo("/api/locations/dps/$dpsLocationId"))
+          .inScenario("Network fail")
+          .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
+          .willReturn(
+            WireMock.aResponse()
+              .withFault(Fault.CONNECTION_RESET_BY_PEER),
+          )
+          .willSetStateTo("Fail $i"),
+      )
+    }
+
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/locations/dps/$dpsLocationId"))
+        .inScenario("Network fail")
+        .whenScenarioStateIs("Fail $numFails")
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(NomisDpsLocationMapping(dpsLocationId, nomisLocationId)))
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubMappingFromDpsUuidWithBadGateway(dpsLocationId: UUID, nomisLocationId: Long = 1, numFails: Int = 1) {
+    for (i in 1..numFails) {
+      stubFor(
+        WireMock.get(WireMock.urlEqualTo("/api/locations/dps/$dpsLocationId"))
+          .inScenario("Network fail")
+          .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
+          .willReturn(
+            WireMock.aResponse()
+              .withStatus(502)
+              .withHeader("Content-Type", "text/plain")
+              .withBody("Bad Gateway"),
+          )
+          .willSetStateTo("Fail $i"),
+      )
+    }
+
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/api/locations/dps/$dpsLocationId"))
+        .inScenario("Network fail")
+        .whenScenarioStateIs("Fail $numFails")
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(NomisDpsLocationMapping(dpsLocationId, nomisLocationId)))
+            .withStatus(200),
+        ),
     )
   }
 }
