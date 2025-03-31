@@ -2,6 +2,9 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wi
 
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
+import com.github.tomakehurst.wiremock.http.Fault
+import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingSummaryResponse
 import java.time.LocalDate
 
 class ManageAdjudicationsApiMockServer : MockServer(8777) {
@@ -45,6 +48,39 @@ class ManageAdjudicationsApiMockServer : MockServer(8777) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(body)
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubHearingsForDateWithConnectionReset(
+    agencyId: String,
+    date: LocalDate,
+    hearingSummary: HearingSummaryResponse,
+    numFails: Int = 1,
+  ) {
+    for (i in 1..numFails) {
+      stubFor(
+        WireMock.get(WireMock.urlEqualTo("/reported-adjudications/hearings?hearingDate=$date"))
+          .inScenario("Network fail")
+          .whenScenarioStateIs(if (i == 1) STARTED else "Fail ${i - 1}")
+          .willReturn(
+            WireMock.aResponse()
+              .withFault(Fault.CONNECTION_RESET_BY_PEER),
+          )
+          .willSetStateTo("Fail $i"),
+      )
+    }
+
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/reported-adjudications/hearings?hearingDate=$date"))
+        .inScenario("Network fail")
+        .whenScenarioStateIs("Fail $numFails")
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withHeader("Active-Caseload", agencyId)
+            .withBody(mapper.writeValueAsString(hearingSummary))
             .withStatus(200),
         ),
     )
