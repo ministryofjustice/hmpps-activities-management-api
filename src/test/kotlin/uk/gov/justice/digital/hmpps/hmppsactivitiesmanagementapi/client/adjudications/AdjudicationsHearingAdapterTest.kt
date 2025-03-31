@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -24,7 +23,6 @@ import java.time.LocalDateTime
 class AdjudicationsHearingAdapterTest {
 
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
-  private val prisonRegimeService: PrisonRegimeService = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
   )
