@@ -549,7 +549,7 @@ class ScheduledInstanceServiceTest {
         )
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("The schedule instance ${instance1!!.activitySchedule.description} $today has already been cancelled")
+        .hasMessage("${instance1!!.activitySchedule.description} (${instance1!!.timeSlot}) has already been cancelled")
 
       verifyNoInteractions(telemetryClient)
       verifyNoInteractions(outboundEventsService)

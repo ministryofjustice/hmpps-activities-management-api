@@ -175,7 +175,7 @@ class ScheduledInstanceTest {
         cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The schedule instance ${instance.activitySchedule.description} ${LocalDate.now()} has already been cancelled")
+      .hasMessage("${instance.activitySchedule.description} (${instance.timeSlot}) has already been cancelled")
   }
 
   @Test
@@ -189,7 +189,7 @@ class ScheduledInstanceTest {
         cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
       )
     }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("The schedule instance ${instance.activitySchedule.description} $date has ended")
+      .hasMessage("${instance.activitySchedule.description} (${instance.timeSlot}) has ended")
   }
 
   @Test
