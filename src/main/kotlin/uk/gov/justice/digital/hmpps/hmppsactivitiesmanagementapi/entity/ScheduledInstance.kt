@@ -97,11 +97,11 @@ data class ScheduledInstance(
     cancellationReason: AttendanceReason,
     issuePayment: Boolean = true,
   ): List<Attendance> {
-    require(!cancelled) { "The schedule instance ${activitySchedule.description} $sessionDate has already been cancelled" }
+    require(!cancelled) { "${activitySchedule.description} ($timeSlot) has already been cancelled" }
 
     val today = LocalDateTime.now().withNano(0)
 
-    require(sessionDate >= today.toLocalDate()) { "The schedule instance ${activitySchedule.description} $sessionDate has ended" }
+    require(sessionDate >= today.toLocalDate()) { "${activitySchedule.description} ($timeSlot) has ended" }
 
     cancelled = true
     cancelledReason = reason

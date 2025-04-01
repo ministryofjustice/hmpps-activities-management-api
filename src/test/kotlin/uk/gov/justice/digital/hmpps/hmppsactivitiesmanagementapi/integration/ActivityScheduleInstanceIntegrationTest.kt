@@ -451,7 +451,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       val response = webTestClient.cancelScheduledInstance(2, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM 2022-10-10 has ended")
+        .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has ended")
     }
 
     @Test
@@ -460,7 +460,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       val response = webTestClient.cancelScheduledInstance(3, "Location unavailable", "USER1")
       response
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM ${LocalDate.now()} has already been cancelled")
+        .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has already been cancelled")
     }
   }
 
@@ -552,7 +552,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
 
     response
       .expectStatus().isBadRequest
-      .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM ${LocalDate.now()} has already been cancelled")
+      .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has already been cancelled")
 
     with(webTestClient.getScheduledInstanceById(3)!!) {
       assertThat(cancelled).isTrue
@@ -582,7 +582,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
 
     response
       .expectStatus().isBadRequest
-      .expectBody().jsonPath("developerMessage").isEqualTo("The schedule instance Maths PM 2022-10-10 has ended")
+      .expectBody().jsonPath("developerMessage").isEqualTo("Maths PM (PM) has ended")
 
     with(webTestClient.getScheduledInstanceById(2)!!) {
       assertThat(cancelled).isFalse
