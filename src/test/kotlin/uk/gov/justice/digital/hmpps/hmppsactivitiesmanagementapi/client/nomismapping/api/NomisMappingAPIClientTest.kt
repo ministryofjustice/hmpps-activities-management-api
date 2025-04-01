@@ -5,8 +5,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientRequestException
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.NomisMappingApiMockServer
 import java.util.*
 
@@ -39,7 +44,7 @@ class NomisMappingAPIClientTest {
 
     val webClient = WebClient.create("http://localhost:${mockServer.port()}")
 
-    apiClient = NomisMappingAPIClient(webClient)
+    apiClient = NomisMappingAPIClient(webClient, RetryApiService(3, 250))
   }
 
   @Test
@@ -70,6 +75,38 @@ class NomisMappingAPIClientTest {
       val result = apiClient.getLocationMappingsByNomisIds(setOf(nomisLocationId))
 
       assertThat(result).isEqualTo(mappings)
+    }
+  }
+
+  @Nested
+  @DisplayName("Retrying failed api calls - connection reset")
+  inner class RetryFailedCallsConnectionReset {
+
+    @Test
+    fun `will succeed if number of fails is not less than maximum allowed`(): Unit = runBlocking {
+      mockServer.stubMappingFromDpsUuidWithConnectionReset(dpsLocationId, nomisLocationId)
+
+      val result = apiClient.getLocationMappingByDpsId(dpsLocationId)
+
+      assertThat(result).isEqualTo(NomisDpsLocationMapping(dpsLocationId, nomisLocationId))
+    }
+
+    @Test
+    fun `will succeed if number of fails is maximum allowed`(): Unit = runBlocking {
+      mockServer.stubMappingFromDpsUuidWithConnectionReset(dpsLocationId, nomisLocationId, 2)
+
+      val result = apiClient.getLocationMappingByDpsId(dpsLocationId)
+
+      assertThat(result).isEqualTo(NomisDpsLocationMapping(dpsLocationId, nomisLocationId))
+    }
+
+    @Test
+    fun `will fail if number of fails is more than maximum allowed`(): Unit = runBlocking {
+      mockServer.stubMappingFromDpsUuidWithConnectionReset(dpsLocationId, nomisLocationId, 3)
+
+      assertThrows<WebClientRequestException> {
+        apiClient.getLocationMappingByDpsId(dpsLocationId)
+      }
     }
   }
 }
