@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.53")
+  implementation("aws.sdk.kotlin:s3:1.4.54")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.0")
@@ -166,7 +166,7 @@ kotlin {
   }
 }
 jacoco {
-  toolVersion = "0.8.12"
+  toolVersion = "0.8.13"
 }
 
 tasks.register("integrationTest", Test::class) {
