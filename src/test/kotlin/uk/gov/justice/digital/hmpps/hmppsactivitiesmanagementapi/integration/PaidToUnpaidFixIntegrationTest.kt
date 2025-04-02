@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -8,6 +10,7 @@ import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.DataFixRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -17,7 +20,10 @@ import java.time.LocalDate
 class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
 
   @Autowired
-  private lateinit var repository: ActivityScheduleRepository
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
+
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
 
   @Autowired
   private lateinit var dataFixRepository: DataFixRepository
@@ -39,36 +45,39 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isAccepted
 
-    Thread.sleep(3000)
-
-    val allocations = repository.findById(129).orElseThrow().allocations()
-
-    assertThat(allocations).hasSize(23)
-
-    with(allocations) {
-      this.single {
-        it.prisonerNumber == "A8862DW" &&
-          it.prisonerStatus == PrisonerStatus.ACTIVE &&
-          it.plannedDeallocation?.plannedReason == DeallocationReason.OTHER &&
-          it.plannedDeallocation?.plannedDate == LocalDate.now()
+    await untilAsserted {
+      val allocations = with(activityScheduleRepository.findById(129).orElseThrow()) {
+        allocationRepository.findByActivitySchedule(this)
       }
-    }
 
-    val dataFixList = dataFixRepository.findAll()
-    assertThat(dataFixList).hasSize(22)
-    with(dataFixList) {
-      this.none {
-        it.prisonerNumber == "A3322FA"
+      assertThat(allocations).hasSize(23)
+
+      with(allocations) {
+        val allocation = this.singleOrNull {
+          it.prisonerNumber == "A8862DW" &&
+            it.prisonerStatus == PrisonerStatus.ACTIVE &&
+            it.plannedDeallocation?.plannedReason == DeallocationReason.OTHER &&
+            it.plannedDeallocation?.plannedDate == LocalDate.now()
+        }
+        assertThat(allocation).isNotNull()
       }
-      this.single {
-        it.prisonerNumber == "A8862DW" &&
-          it.startDate == LocalDate.of(2023, 9, 30) &&
-          it.activityScheduleId == 129L
-      }
-      this.single {
-        it.prisonerNumber == "A4774FD" &&
-          it.startDate == LocalDate.now().plusDays(3) &&
-          it.activityScheduleId == 129L
+
+      val dataFixList = dataFixRepository.findAll()
+      assertThat(dataFixList).hasSize(22)
+      with(dataFixList) {
+        this.none {
+          it.prisonerNumber == "A3322FA"
+        }
+        this.single {
+          it.prisonerNumber == "A8862DW" &&
+            it.startDate == LocalDate.of(2023, 9, 30) &&
+            it.activityScheduleId == 129L
+        }
+        this.single {
+          it.prisonerNumber == "A4774FD" &&
+            it.startDate == LocalDate.now().plusDays(3) &&
+            it.activityScheduleId == 129L
+        }
       }
     }
   }
@@ -83,7 +92,7 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A1611AF"))
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber(activeInRisleyPrisoner.copy(prisonerNumber = "A6015FC"))
 
-    val activitySchedule = repository.findById(129).orElseThrow()
+    val activitySchedule = activityScheduleRepository.findById(129).orElseThrow()
 
     assertThat(activitySchedule.activity.paid).isTrue()
     assertThat(activitySchedule.activity.activityPay()).hasSize(30)
@@ -94,25 +103,34 @@ class PaidToUnpaidFixIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isAccepted
 
-    Thread.sleep(3000)
+    await untilAsserted {
+      val activityScheduleUpdated = activityScheduleRepository.findById(129).orElseThrow()
 
-    val activityScheduleUpdated = repository.findById(129).orElseThrow()
+      assertThat(activityScheduleUpdated.activity.paid).isFalse()
+      assertThat(activityScheduleUpdated.activity.activityPay()).hasSize(0)
 
-    assertThat(activityScheduleUpdated.activity.paid).isFalse()
-    assertThat(activityScheduleUpdated.activity.activityPay()).hasSize(0)
+      with(activityScheduleRepository.findById(129).orElseThrow()) {
+        assertThat(allocationRepository.findByActivitySchedule(this)).hasSize(6)
+      }
 
-    assertThat(activityScheduleUpdated.allocations()).hasSize(6)
+      val allocations = allocationRepository.findByActivitySchedule(activityScheduleUpdated)
 
-    with(activityScheduleUpdated.allocations()) {
-      this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.ENDED }
-      this.single { it.prisonerNumber == "A0334EZ" && it.prisonerStatus == PrisonerStatus.ENDED }
-      this.single { it.prisonerNumber == "A1611AF" && it.prisonerStatus == PrisonerStatus.ENDED }
-      this.single { it.prisonerNumber == "A6015FC" && it.prisonerStatus == PrisonerStatus.ENDED }
-      this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.ACTIVE && it.startDate == LocalDate.now() }
-      this.single { it.prisonerNumber == "A0334EZ" && it.prisonerStatus == PrisonerStatus.PENDING && it.startDate == LocalDate.now().plusDays(3) }
+      with(allocations) {
+        this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.ENDED }
+        this.single { it.prisonerNumber == "A0334EZ" && it.prisonerStatus == PrisonerStatus.ENDED }
+        this.single { it.prisonerNumber == "A1611AF" && it.prisonerStatus == PrisonerStatus.ENDED }
+        this.single { it.prisonerNumber == "A6015FC" && it.prisonerStatus == PrisonerStatus.ENDED }
+        this.single { it.prisonerNumber == "A8862DW" && it.prisonerStatus == PrisonerStatus.ACTIVE && it.startDate == LocalDate.now() }
+        this.single {
+          it.prisonerNumber == "A0334EZ" &&
+            it.prisonerStatus == PrisonerStatus.PENDING &&
+            it.startDate == LocalDate.now()
+              .plusDays(3)
+        }
+      }
+
+      assertThat(dataFixRepository.findAll()).isEmpty()
     }
-
-    assertThat(dataFixRepository.findAll()).hasSize(0)
   }
 
   @Test

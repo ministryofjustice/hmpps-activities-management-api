@@ -97,7 +97,7 @@ data class Allocation(
   var plannedDeallocation: PlannedDeallocation? = null
     private set
 
-  @OneToMany(mappedBy = "allocation", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "allocation", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val exclusions: MutableSet<Exclusion> = mutableSetOf()
 

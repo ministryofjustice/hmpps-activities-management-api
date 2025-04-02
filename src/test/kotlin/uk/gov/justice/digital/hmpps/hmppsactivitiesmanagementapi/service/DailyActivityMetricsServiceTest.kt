@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.waitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
@@ -67,8 +68,9 @@ class DailyActivityMetricsServiceTest {
   private val scheduledInstance: ScheduledInstance = mock()
   private val waitingListRepository: WaitingListRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
+  private val allocationRepository: AllocationRepository = mock()
 
-  private val dailyActivityMetricsService = DailyActivityMetricsService(waitingListRepository, attendanceRepository)
+  private val dailyActivityMetricsService = DailyActivityMetricsService(waitingListRepository, attendanceRepository, allocationRepository)
 
   @Test
   fun `should generate activity metrics`() {

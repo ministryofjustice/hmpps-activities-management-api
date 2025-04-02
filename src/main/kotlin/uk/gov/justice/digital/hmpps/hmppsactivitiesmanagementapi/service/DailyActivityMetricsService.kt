@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITIES_ACTIVE_COUNT_METRIC_KEY
@@ -37,6 +38,7 @@ import java.time.LocalDate
 class DailyActivityMetricsService(
   private val waitingListRepository: WaitingListRepository,
   private val attendanceRepository: AttendanceRepository,
+  private val allocationRepository: AllocationRepository,
 ) {
 
   fun generateActivityMetrics(dateToGenerateFor: LocalDate, metricsMap: MutableMap<String, Double>, activities: List<Activity>) {
@@ -62,7 +64,7 @@ class DailyActivityMetricsService(
       val attendances = attendanceRepository.findAttendancesForActivityOnDate(it.activityId, dateToGenerateFor)
       generateAttendanceMetrics(metricsMap, attendances)
 
-      val allocations = it.schedules().flatMap { schedule -> schedule.allocations() }
+      val allocations = it.schedules().flatMap { schedule -> allocationRepository.findByActivitySchedule(schedule) }
       generateAllocationMetrics(dateToGenerateFor, metricsMap, allocations)
 
       val waitingLists = it.schedules().flatMap { schedule -> waitingListRepository.findByActivitySchedule(schedule) }

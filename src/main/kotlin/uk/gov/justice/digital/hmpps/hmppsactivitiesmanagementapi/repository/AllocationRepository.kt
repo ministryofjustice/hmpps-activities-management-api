@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
@@ -22,6 +23,8 @@ interface CandidateAllocation {
 interface AllocationRepository : JpaRepository<Allocation, Long> {
 
   fun findByAllocationIdIn(ids: List<Long>): List<Allocation>
+
+  fun findByActivitySchedule(activitySchedule: ActivitySchedule): List<Allocation>
 
   @Query(
     value =

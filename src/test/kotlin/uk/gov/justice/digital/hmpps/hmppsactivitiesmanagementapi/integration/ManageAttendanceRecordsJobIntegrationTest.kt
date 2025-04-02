@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -54,6 +55,9 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
   @Autowired
   private lateinit var scheduledInstanceRepository: ScheduledInstanceRepository
 
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
+
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -85,16 +89,16 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(allAttendances).hasSize(0)
 
     with(activitySchedules.findByDescription("Maths AM")) {
-      assertThat(allocations()).hasSize(2)
+      allocationRepository.findByActivitySchedule(this) hasSize 2
       assertThat(instances()).hasSize(1)
-      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
+      scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
     }
 
     with(activitySchedules.findByDescription("Maths PM")) {
-      assertThat(allocations()).hasSize(2)
+      allocationRepository.findByActivitySchedule(this) hasSize 2
       assertThat(instances()).hasSize(1)
-      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
+      scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
     }
 
@@ -150,7 +154,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(activitySchedules).hasSize(1)
 
     with(activitySchedules.first()) {
-      allocations() hasSize 4
+      allocationRepository.findByActivitySchedule(this) hasSize 4
       instances() hasSize 2
       val scheduledInstances = scheduledInstanceRepository.findAll()
       assertThat(scheduledInstances).isNotEmpty
@@ -214,7 +218,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(attendanceRepository.findAll()).hasSize(0)
 
     with(activitySchedules.findByDescription("Gym induction AM")) {
-      assertThat(allocations()).hasSize(2)
+      allocationRepository.findByActivitySchedule(this) hasSize 2
       assertThat(instances()).hasSize(1)
     }
 
@@ -336,9 +340,9 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(attendanceRepository.findAll()).hasSize(0)
 
     with(activitySchedules.first()) {
-      assertThat(allocations()).hasSize(3)
+      allocationRepository.findByActivitySchedule(this) hasSize 3
       assertThat(instances()).hasSize(1)
-      val scheduledInstance = scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
+      scheduledInstanceRepository.findById(instances().first().scheduledInstanceId)
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
     }
 
