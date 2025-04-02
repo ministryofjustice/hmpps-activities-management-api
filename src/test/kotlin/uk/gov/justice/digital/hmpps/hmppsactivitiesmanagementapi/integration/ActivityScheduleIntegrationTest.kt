@@ -38,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.NonAssociationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -77,6 +78,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var activityScheduleRepository: ActivityScheduleRepository
+
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
 
   @Autowired
   private lateinit var waitlistRepository: WaitingListRepository
@@ -298,7 +302,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     webTestClient.allocatePrisoner(
       1,
@@ -309,10 +315,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    val allocation = with(activityScheduleRepository.findById(1).orElseThrow().allocations().first()) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocatedBy).isEqualTo("test-client")
-      this
+    val allocation = with(activityScheduleRepository.findById(1).orElseThrow()) {
+      with(allocationRepository.findByActivitySchedule(this).first()) {
+        assertThat(this.prisonerNumber).isEqualTo("G4793VF")
+        assertThat(this.allocatedBy).isEqualTo("test-client")
+        this
+      }
     }
 
     verify(eventsPublisher).send(eventCaptor.capture())
@@ -355,7 +363,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     webTestClient.allocatePrisoner(
       1,
@@ -367,11 +377,12 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     ).expectStatus().isNoContent
 
-    val allocation = with(activityScheduleRepository.findById(1).orElseThrow().allocations().first()) {
-      assertThat(prisonerNumber).isEqualTo("G4793VF")
-      assertThat(allocatedBy).isEqualTo("test-client")
-      assertThat(startDate).isEqualTo(TimeSource.today())
-      this
+    val allocation = with(activityScheduleRepository.findById(1).orElseThrow()) {
+      with(allocationRepository.findByActivitySchedule(this).first()) {
+        assertThat(this.prisonerNumber).isEqualTo("G4793VF")
+        assertThat(this.allocatedBy).isEqualTo("test-client")
+        this
+      }
     }
 
     val newAttendance = attendanceRepository.findAll().filter { it.scheduledInstance.sessionDate == TimeSource.today() }
@@ -427,7 +438,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     webTestClient.allocatePrisoner(
       1,
@@ -454,7 +467,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
   fun `403 (forbidden) response when user doesnt have correct role to allocate prisoner`() {
     prisonApiMockServer.stubGetPrisonerDetails("G4793VF")
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     val error = webTestClient.post()
       .uri("/schedules/1/allocations")
@@ -506,7 +521,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isNoContent
 
     with(activityScheduleRepository.findById(1).orElseThrow()) {
-      val allocation = allocations().first()
+      val allocation = allocationRepository.findByActivitySchedule(this)
 
       with(waitlistRepository.findByActivitySchedule(this).first()) {
         assertThat(status).isEqualTo(WaitingListStatus.ALLOCATED)
@@ -736,7 +751,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     webTestClient.allocatePrisoner(
       1,
@@ -758,7 +775,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isNoContent
 
     activityScheduleRepository.findById(1).orElseThrow().also {
-      with(it.allocations().first().plannedDeallocation!!) {
+      with(allocationRepository.findByActivitySchedule(it).first().plannedDeallocation!!) {
         assertThat(plannedBy).isEqualTo("test-client")
         assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
@@ -785,7 +802,9 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    activityScheduleRepository.findById(1).orElseThrow().also { assertThat(it.allocations()).isEmpty() }
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
 
     webTestClient.allocatePrisoner(
       1,
@@ -807,7 +826,7 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     ).expectStatus().isNoContent
 
     activityScheduleRepository.findById(1).orElseThrow().also {
-      with(it.allocations().first()) {
+      with(allocationRepository.findByActivitySchedule(it).first()) {
         assertThat(deallocatedBy).isEqualTo("test-client")
         assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(startDate).isEqualTo(TimeSource.tomorrow())
@@ -855,13 +874,15 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
     }
 
     activityScheduleRepository.findById(1).orElseThrow().also {
-      with(it.allocations().first { a -> a.prisonerNumber == "A11111A" }.plannedDeallocation!!) {
+      val allocations = allocationRepository.findByActivitySchedule(it)
+
+      with(allocations.first { a -> a.prisonerNumber == "A11111A" }.plannedDeallocation!!) {
         assertThat(plannedBy).isEqualTo("test-client")
         assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
       }
 
-      assertThat(it.allocations().first { a -> a.prisonerNumber != "A11111A" }.plannedDeallocation).isNull()
+      assertThat(allocations.first { a -> a.prisonerNumber != "A11111A" }.plannedDeallocation).isNull()
     }
 
     verify(eventsPublisher, times(3)).send(eventCaptor.capture())
