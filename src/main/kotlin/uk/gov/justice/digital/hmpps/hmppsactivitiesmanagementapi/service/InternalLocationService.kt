@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSearch
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
@@ -116,9 +115,7 @@ class InternalLocationService(
     }.toSet()
   }
 
-  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?): Map<Long, PrisonerScheduledActivity> = prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
-    .filterNot { it.onWing }
-    .filterNot { it.internalLocationId == null }
+  private fun getLocationActivitiesMap(prisonCode: String, date: LocalDate, timeSlot: TimeSlot?) = prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(prisonCode, date, timeSlot)
     .associateBy { it.internalLocationId!!.toLong() }
 
   private fun getLocationAppointmentsMap(prisonCode: String, date: LocalDate, timeRange: LocalTimeRange): Map<Long, AppointmentSearch> {
