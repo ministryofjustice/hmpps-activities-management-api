@@ -56,6 +56,8 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     WHERE (sa.prisonCode = :prisonCode
     AND sa.sessionDate = :date)
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
+    AND sa.onWing = false
+    AND sa.internalLocationId IS NOT NULL
     """,
   )
   fun findByPrisonCodeAndDateAndTimeSlot(
