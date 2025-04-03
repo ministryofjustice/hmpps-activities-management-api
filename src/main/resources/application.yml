@@ -89,10 +89,10 @@ spring:
     password: ${DB_PASS}
     hikari:
       pool-name: Activities-DB-CP
-      connectionTimeout: 5000
+      connectionTimeout: 15000
       validationTimeout: 2000
       minimumIdle: 10
-      maximumPoolSize: 50
+      maximumPoolSize: 30
       idleTimeout: 300000
       maxLifetime: 1200000
 
