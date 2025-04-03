@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.awspring.cloud.sqs.annotation.SqsListener
-import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.instrumentation.annotations.WithSpan
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
@@ -29,7 +27,6 @@ class InboundEventsListener(
   }
 
   @SqsListener("activities", factory = "hmppsQueueContainerFactoryProxy")
-  @WithSpan(value = "Digital-Prison-Services-hmpps_activities_management_queue", kind = SpanKind.SERVER)
   internal fun onMessage(rawMessage: String) {
     log.debug("Inbound event raw message $rawMessage")
 
