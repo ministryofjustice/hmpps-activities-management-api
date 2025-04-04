@@ -142,12 +142,12 @@ class WebClientConfiguration(
 
   @Bean
   fun locationsInsidePrisonApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
-    .authorisedWebClient(authorizedClientManager, "locations-inside-prison", locationsInsidePrisonApiUrl, apiTimeout)
+    .authorisedWebClient(authorizedClientManager, "locations-inside-prison", locationsInsidePrisonApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating locations inside prison api web client") }
 
   @Bean
   fun nomisMappingApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
-    .authorisedWebClient(authorizedClientManager, "nomis-mapping-api", nomisMappingApiUrl, apiTimeout)
+    .authorisedWebClient(authorizedClientManager, "nomis-mapping-api", nomisMappingApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating NOMIS mapping api web client") }
 
   private fun getOAuthWebClient(
