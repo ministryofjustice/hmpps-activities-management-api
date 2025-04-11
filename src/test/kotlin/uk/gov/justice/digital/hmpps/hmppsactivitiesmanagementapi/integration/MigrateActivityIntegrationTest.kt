@@ -1,9 +1,11 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.junit.Assert.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.slf4j.Logger
@@ -15,7 +17,11 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isWithinAMinuteOf
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -25,22 +31,27 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_NOMIS_ACTIVITIES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.ScheduleCreatedInformation
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 @TestPropertySource(
   properties = [
     "feature.events.sns.enabled=true",
     "feature.event.activities.activity-schedule.created=true",
     "feature.event.activities.activity-schedule.amended=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.allocated=true",
     "feature.migrate.split.regime.enabled=true",
   ],
 )
-class MigrateActivityIntegrationTest : IntegrationTestBase() {
+class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @Autowired
   private lateinit var activityRepository: ActivityRepository
@@ -150,15 +161,6 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
-  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity = webTestClient.get()
-    .uri("/activities/$activityId/filtered")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, agencyId)
-    .exchange()
-    .expectBody(Activity::class.java)
-    .returnResult().responseBody!!
-
   @Test
   @Sql("classpath:test_data/seed-activity-id-23-1.sql")
   fun `migrate allocation with multiple exclusions - success`() {
@@ -175,7 +177,7 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     with(response!!) {
       assertThat(allocationId).isNotNull
 
-      val activity = getActivity(activityId, "MDI")
+      val activity = webTestClient.getActivityById(activityId, "MDI")
       val slots = activity.schedules.first().slots
 
       assertThat(slots).hasSize(3)
@@ -396,6 +398,109 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
     verifyNoInteractions(eventsPublisher)
   }
 
+  @Test
+  fun `moveActivitiesStartDate - failed authorisation`() {
+    val error = webTestClient.post()
+      .uri("/migrate/${PENTONVILLE_PRISON_CODE}/move-activity-start-dates?activityStartDate=${LocalDate.now()}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf("ROLE_NOT_ALLOWED")))
+      .exchange()
+      .expectStatus().isForbidden
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(403)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Access denied: Access Denied")
+      assertThat(developerMessage).isEqualTo("Access Denied")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  fun `moveActivitiesStartDate - failed as start date is not in the future`() {
+    val error = webTestClient.post()
+      .uri("/migrate/${PENTONVILLE_PRISON_CODE}/move-activity-start-dates?activityStartDate=${LocalDate.now()}")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_NOMIS_ACTIVITIES)))
+      .exchange()
+      .expectStatus().isBadRequest
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ErrorResponse::class.java)
+      .returnResult().responseBody
+
+    with(error!!) {
+      assertThat(status).isEqualTo(400)
+      assertThat(errorCode).isNull()
+      assertThat(userMessage).isEqualTo("Validation failure: moveActivityStartDates.newActivityStartDate: must be a future date")
+      assertThat(moreInfo).isNull()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-36.sql")
+  fun `moveActivitiesStartDate - is successful`() {
+    val now = LocalDateTime.now()
+    val tomorrow = LocalDate.now().plusDays(1)
+    val dayAfterTomorrow = tomorrow.plusDays(1)
+    val threeDaysTime = dayAfterTomorrow.plusDays(1)
+
+    webTestClient.moveActivitiesStartDates(PENTONVILLE_PRISON_CODE, dayAfterTomorrow)
+      .jsonPath("$.size()").isEqualTo(2)
+      .jsonPath("$.[0]").isEqualTo("'Kitchen' - C33333C - Allocation start date cannot be after allocation end date")
+      .jsonPath("$.[1]").isEqualTo("'Kitchen' - Activity start date cannot be changed. One or more allocations start before the new start date.")
+
+    // PVI maths activity is updated...
+    val pviMathsActivity = webTestClient.getActivityById(1, PENTONVILLE_PRISON_CODE)
+    pviMathsActivity.startDate isEqualTo dayAfterTomorrow
+    with(pviMathsActivity.schedules.first()) {
+      startDate isEqualTo dayAfterTomorrow
+      assertThat(updatedTime).isCloseTo(now, within(5, ChronoUnit.SECONDS))
+      allocations hasSize 2
+      with(allocations.first { it.prisonerNumber == "A11111A" }) {
+        startDate isEqualTo dayAfterTomorrow
+        assertThat(updatedTime).isCloseTo(now, within(5, ChronoUnit.SECONDS))
+      }
+      allocations.first { it.prisonerNumber == "B22222B" }.startDate isEqualTo threeDaysTime
+    }
+
+    // No change to PVI kitchen activity
+    val pviKitchenActivity = webTestClient.getActivityById(2, PENTONVILLE_PRISON_CODE)
+    pviKitchenActivity.startDate isEqualTo tomorrow
+    with(pviKitchenActivity.schedules.first()) {
+      startDate isEqualTo tomorrow
+      with(allocations.first { it.prisonerNumber == "C33333C" }) {
+        startDate isEqualTo tomorrow
+      }
+    }
+
+    // No changes to RSI activities...
+    val rsiEnglishActivity = webTestClient.getActivityById(100, RISLEY_PRISON_CODE)
+    rsiEnglishActivity.startDate isEqualTo tomorrow
+    with(rsiEnglishActivity.schedules.first()) {
+      startDate isEqualTo tomorrow
+      with(allocations.first { it.prisonerNumber == "Z99999Z" }) {
+        startDate isEqualTo tomorrow
+      }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    val messages = eventCaptor.allValues
+
+    with(messages.first { it.eventType == "activities.activity-schedule.amended" && it.additionalInformation == ScheduleCreatedInformation(1) }) {
+      occurredAt isWithinAMinuteOf now
+      description isEqualTo "An activity schedule has been updated in the activities management service"
+    }
+
+    with(messages.first { it.eventType == "activities.prisoner.allocation-amended" && it.additionalInformation == PrisonerAllocatedInformation(1) }) {
+      occurredAt isWithinAMinuteOf now
+      description isEqualTo "A prisoner allocation has been amended in the activities management service"
+    }
+  }
+
   private fun buildActivityMigrateRequest(
     payRates: List<NomisPayRate> = emptyList(),
     scheduleRules: List<NomisScheduleRule> = emptyList(),
@@ -476,4 +581,17 @@ class MigrateActivityIntegrationTest : IntegrationTestBase() {
       ),
     ),
   )
+
+  private fun WebTestClient.moveActivitiesStartDates(
+    prisonCode: String,
+    activityStartDate: LocalDate,
+  ) = post()
+    .uri("/migrate/$prisonCode/move-activity-start-dates?activityStartDate=$activityStartDate")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_NOMIS_ACTIVITIES)))
+    .header(CASELOAD_ID, prisonCode)
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody()
 }

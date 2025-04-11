@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.contains
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
@@ -52,7 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
 
 typealias AllocationIds = Set<Long>
@@ -76,6 +77,7 @@ class ActivityService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val locationService: LocationService,
+  private val allocationsService: AllocationsService,
   @Value("\${online.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long = 14L,
 ) {
   companion object {
@@ -346,15 +348,7 @@ class ActivityService(
         throw IllegalArgumentException("Activity '$activityId' cannot be paid as attendance is not required.")
       }
 
-      val now = LocalDateTime.now()
-
-      activity.updatedTime = now
-      activity.updatedBy = updatedBy
-
-      activity.schedules().forEach {
-        it.updateInstances()
-        it.markAsUpdated(now, updatedBy)
-      }
+      recordChanges(activity, updatedBy, LocalDateTime.now())
 
       activityRepository.saveAndFlush(activity)
 
@@ -372,6 +366,69 @@ class ActivityService(
 
       return activity
     }
+  }
+
+  private fun recordChanges(activity: Activity, updatedBy: String, updatedTime: LocalDateTime) {
+    activity.updatedTime = updatedTime
+    activity.updatedBy = updatedBy
+
+    activity.schedules().forEach {
+      it.updateInstances()
+      it.markAsUpdated(updatedTime, updatedBy)
+    }
+  }
+
+  @Transactional
+  fun moveStartDates(prisonCode: String, newStartDate: LocalDate, updatedBy: String): List<String> {
+    val warnings = mutableListOf<String>()
+    val activitiesUpdated = mutableListOf<Activity>()
+    val allocationsUpdated = mutableListOf<Allocation>()
+
+    transactionHandler.newSpringTransaction {
+      val activities = activityRepository.findByPrisonCodeAndStartDateLessThan(prisonCode, newStartDate)
+
+      activities.forEach { activity ->
+        runCatching {
+          activity.schedules().forEach { schedule ->
+            schedule.allocations()
+              .filter { allocation -> allocation.startDate < newStartDate }
+              .forEach { allocation ->
+                try {
+                  allocationsService.updateStartDateIgnoringValidationErrors(allocation, newStartDate)
+                } catch (e: IllegalArgumentException) {
+                  warnings.add("'${activity.description}' - ${allocation.prisonerNumber} - ${e.message!!}")
+                }
+                allocationsUpdated.add(allocation)
+              }
+          }
+
+          applyStartDateUpdate(activity, newStartDate)
+
+          recordChanges(activity, updatedBy, LocalDateTime.now())
+        }.onFailure { e ->
+          when (e) {
+            is IllegalArgumentException -> warnings.add("'${activity.description}' - ${e.message!!}")
+            else -> throw e
+          }
+        }.onSuccess {
+          activitiesUpdated.add(activity)
+        }
+      }
+      activityRepository.saveAll(activitiesUpdated)
+    }
+
+    activitiesUpdated.forEach { activity ->
+      activity.schedules().forEach { schedule ->
+
+        allocationsUpdated
+          .filter { allocation -> allocation.activitySchedule == schedule }
+          .forEach { allocation -> outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.allocationId) }
+
+        outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, schedule.activityScheduleId)
+      }
+    }
+
+    return warnings
   }
 
   private fun ActivitySchedule.markAsUpdated(
@@ -434,25 +491,30 @@ class ActivityService(
     request: ActivityUpdateRequest,
     activity: Activity,
   ) {
-    request.startDate?.let { newStartDate ->
-      val now = LocalDate.now()
+    request.startDate?.let { newStartDate -> applyStartDateUpdate(activity, newStartDate) }
+  }
 
-      require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
-      require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
-      require(activity.endDate == null || newStartDate <= activity.endDate) {
-        "Activity start date cannot be changed. Start date cannot be after the end date."
-      }
-      require(
-        activity.schedules()
-          .flatMap { it.allocations(excludeEnded = true) }
-          .none { allocation -> newStartDate.isAfter(allocation.startDate) },
-      ) {
-        "Activity start date cannot be changed. One or more allocations start before the new start date."
-      }
+  private fun applyStartDateUpdate(
+    activity: Activity,
+    newStartDate: LocalDate,
+  ) {
+    val now = LocalDate.now()
 
-      activity.startDate = newStartDate
-      activity.schedules().forEach { it.startDate = newStartDate }
+    require(activity.startDate.isAfter(now)) { "Activity start date cannot be changed. Activity already started." }
+    require(newStartDate.isAfter(now)) { "Activity start date cannot be changed. Start date must be in the future." }
+    require(activity.endDate == null || newStartDate <= activity.endDate) {
+      "Activity start date cannot be changed. Start date cannot be after the end date."
     }
+    require(
+      activity.schedules()
+        .flatMap { it.allocations(excludeEnded = true) }
+        .none { allocation -> newStartDate.isAfter(allocation.startDate) },
+    ) {
+      "Activity start date cannot be changed. One or more allocations start before the new start date."
+    }
+
+    activity.startDate = newStartDate
+    activity.schedules().forEach { it.startDate = newStartDate }
   }
 
   private fun applyEndDateUpdate(

@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
@@ -127,18 +128,20 @@ class AllocationsService(
     }
   }
 
-  private fun applyStartDateUpdate(
-    request: AllocationUpdateRequest,
-    allocation: Allocation,
-  ) {
-    request.startDate?.let { newStartDate ->
+  private fun applyStartDateUpdate(request: AllocationUpdateRequest, allocation: Allocation) = request.startDate?.let { newStartDate -> updateStartDate(allocation, newStartDate, request.scheduleInstanceId) }
+
+  @Transactional(propagation = Propagation.REQUIRED, noRollbackFor = [IllegalArgumentException::class])
+  fun updateStartDateIgnoringValidationErrors(allocation: Allocation, startDate: LocalDate) = updateStartDate(allocation, startDate)
+
+  private fun updateStartDate(allocation: Allocation, startDate: LocalDate, scheduleInstanceId: Long? = null) {
+    startDate.let { newStartDate ->
       val (start, end) = allocation.activitySchedule.activity.startDate to allocation.activitySchedule.activity.endDate
 
       val today = LocalDate.now()
 
-      require(request.startDate >= today) { "Allocation start date must not be in the past" }
+      require(startDate >= today) { "Allocation start date must not be in the past" }
 
-      if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
+      if (startDate == today && scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
 
       require(allocation.startDate > today) {
         "Start date cannot be updated once allocation has started"
@@ -159,11 +162,7 @@ class AllocationsService(
     }
   }
 
-  private fun applyEndDateUpdate(
-    request: AllocationUpdateRequest,
-    allocation: Allocation,
-    updatedBy: String,
-  ) {
+  fun applyEndDateUpdate(request: AllocationUpdateRequest, allocation: Allocation, updatedBy: String) {
     request.endDate?.apply {
       require(allocation.endDate != null || request.reasonCode != null) {
         "Reason code must be supplied when setting the allocation end date"

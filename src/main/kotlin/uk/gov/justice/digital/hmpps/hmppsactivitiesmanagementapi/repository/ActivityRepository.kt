@@ -14,19 +14,10 @@ import java.time.LocalDate
 interface ActivityRepository :
   JpaRepository<Activity, Long>,
   ActivityRepositoryCustom {
-  @Query(
-    value =
-    """
-    from Activity a
-    where a.prisonCode = :prisonCode
-    and a.startDate <= :toDate
-    and (a.endDate is null or a.endDate >= :fromDate)
-    """,
-  )
-  fun getAllForPrisonBetweenDates(
+
+  fun findByPrisonCodeAndStartDateLessThan(
     @Param("prisonCode") prisonCode: String,
-    @Param("fromDate") fromDate: LocalDate,
-    @Param("toDate") toDate: LocalDate,
+    @Param("startDate") startDate: LocalDate,
   ): List<Activity>
 
   fun findByActivityIdAndPrisonCode(activityId: Long, prisonCode: String): Activity?

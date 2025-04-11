@@ -17,6 +17,10 @@ internal infix fun LocalDateTime?.isCloseTo(dateTime: LocalDateTime) {
   assertThat(this).isCloseTo(dateTime, within(2, ChronoUnit.SECONDS))
 }
 
+internal infix fun LocalDateTime?.isWithinAMinuteOf(dateTime: LocalDateTime) {
+  assertThat(this).isCloseTo(dateTime, within(1, ChronoUnit.MINUTES))
+}
+
 internal infix fun <T> T.isEqualTo(value: T) {
   assertThat(this).isEqualTo(value)
 }

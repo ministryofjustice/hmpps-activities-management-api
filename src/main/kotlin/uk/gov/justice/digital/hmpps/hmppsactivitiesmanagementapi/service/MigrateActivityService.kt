@@ -66,6 +66,7 @@ class MigrateActivityService(
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val locationService: LocationService,
+  private val activityService: ActivityService,
   private val mapper: ObjectMapper? = null,
 ) {
   companion object {
@@ -542,6 +543,13 @@ class MigrateActivityService(
     val activity = activityRepository.findByActivityIdAndPrisonCode(activityId, prisonCode)
       ?: logAndThrowValidationException("Failed to delete. Activity $activityId was not found at prison $prisonCode")
     activityRepository.delete(activity)
+  }
+
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES','ACTIVITY_ADMIN')")
+  @Transactional
+  fun moveActivityStartDates(prisonCode: String, newActivityStartDate: LocalDate): List<String> {
+    log.info("Moving start dates for activities in prison $prisonCode")
+    return activityService.moveStartDates(prisonCode, newActivityStartDate, MIGRATION_USER)
   }
 
   private fun List<NomisScheduleRule>.consolidateMatchingScheduleSlots() = groupBy { Triple(it.startTime, it.endTime, it.timeSlot) }

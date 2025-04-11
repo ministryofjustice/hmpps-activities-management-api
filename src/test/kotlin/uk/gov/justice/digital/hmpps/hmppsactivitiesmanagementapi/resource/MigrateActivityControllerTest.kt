@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
@@ -108,6 +109,52 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
 
     verify(migrateActivityService).migrateAllocation(allocationRequest)
+  }
+
+  @Test
+  fun `Move activity start dates - 400 - Missing start date`() {
+    mockMvc.post("/migrate/PVI/move-activity-start-dates") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(allocationRequest)
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isBadRequest() }
+        content {
+          contentType(MediaType.APPLICATION_JSON)
+          jsonPath("$.developerMessage") {
+            value(Matchers.containsString("Required request parameter 'activityStartDate' for method parameter type LocalDate is not present"))
+          }
+        }
+      }
+
+    verifyNoInteractions(migrateActivityService)
+  }
+
+  @Test
+  fun `Move activity start dates - 200`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    val expectedResponse = emptyList<String>()
+    whenever(migrateActivityService.moveActivityStartDates("PVI", tomorrow)).thenReturn(expectedResponse)
+
+    val response = mockMvc.post("/migrate/PVI/move-activity-start-dates?activityStartDate=$tomorrow") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(allocationRequest)
+    }
+      .andDo { print() }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+
+    verify(migrateActivityService).moveActivityStartDates("PVI", tomorrow)
   }
 
   @Test
@@ -253,6 +300,57 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Delete activity (ROLE_UNKNOWN) - 403`() {
         mockMvcWithSecurity.delete("/migrate/delete-activity/prison/MDI/id/1") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Move Activity Start Dates")
+    inner class MoveActivityStartDateTests {
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Move activity start dates (ROLE_NOMIS_ACTIVITIES) - 200`() {
+        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
+      fun `Move activity start dates (ROLE_ACTIVITY_ADMIN) - 200`() {
+        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
+      fun `Move activity start dates (ROLE_NOMIS_APPOINTMENTS) - 403`() {
+        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(allocationRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Move activity start dates (ROLE_ACTIVITY_HUB) - 403`() {
+        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
+          contentType = MediaType.APPLICATION_JSON
+          content = mapper.writeValueAsBytes(activityRequest)
+        }.andExpect { status { isForbidden() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["UNKNOWN"])
+      fun `Move activity start dates (ROLE_UNKNOWN) - 403`() {
+        mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
         }.andExpect { status { isForbidden() } }

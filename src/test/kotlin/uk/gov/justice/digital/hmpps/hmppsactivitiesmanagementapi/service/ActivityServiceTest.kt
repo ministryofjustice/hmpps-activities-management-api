@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.anyList
 import org.mockito.MockitoAnnotations.openMocks
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -19,6 +20,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
@@ -114,6 +116,7 @@ class ActivityServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val locationService: LocationService = mock()
+  private val allocationsService: AllocationsService = mock()
 
   private val educationLevel = ReferenceCode(
     domain = "EDU_LEVEL",
@@ -167,6 +170,7 @@ class ActivityServiceTest {
     TransactionHandler(),
     outboundEventsService,
     locationService,
+    allocationsService,
     daysInAdvance,
   )
 
@@ -2878,5 +2882,127 @@ class ActivityServiceTest {
       service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(tierCode = "TIER_2"), "TEST")
     }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK for activity '1' must be a Foundation Tier.")
+  }
+
+  @Test
+  fun `moveStartDates - will move start date for activity and allocations`() {
+    val mathsActivity = activityEntity(startDate = LocalDate.now().plusDays(1), noSchedules = true, paid = false, noPayBands = true)
+      .apply {
+        addSchedule(activitySchedule(this, activityScheduleId = activityId, paid = false, noAllocations = true)).apply {
+          allocatePrisoner(
+            prisonerNumber = "A1111BB".toPrisonerNumber(),
+            bookingId = 20002,
+            payBand = null,
+            allocatedBy = "Mr Blogs",
+            startDate = activity.startDate.plusDays(1),
+          )
+        }
+      }
+
+    val matchedActivities = listOf(mathsActivity)
+
+    val newStartDate = LocalDate.now().plusDays(3)
+
+    whenever(allocationsService.updateStartDateIgnoringValidationErrors(any(), any())).thenCallRealMethod()
+
+    whenever(activityRepository.findByPrisonCodeAndStartDateLessThan(MOORLAND_PRISON_CODE, newStartDate)).thenReturn(matchedActivities)
+
+    val warnings = service().moveStartDates(MOORLAND_PRISON_CODE, newStartDate, "SCH_ACTIVITY")
+
+    assertThat(warnings).isEmpty()
+
+    verify(allocationsService).updateStartDateIgnoringValidationErrors(mathsActivity.schedules().first().allocations().first(), newStartDate)
+    verify(activityRepository).saveAll(matchedActivities)
+    verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0)
+  }
+
+  @Test
+  fun `moveStartDates - will move start date for activity but not allocation`() {
+    val mathsActivity = activityEntity(startDate = LocalDate.now().plusDays(1), noSchedules = true, paid = false, noPayBands = true)
+      .apply {
+        addSchedule(activitySchedule(this, activityScheduleId = activityId, paid = false, noAllocations = true)).apply {
+          allocatePrisoner(
+            prisonerNumber = "A1111BB".toPrisonerNumber(),
+            bookingId = 20002,
+            payBand = null,
+            allocatedBy = "Mr Blogs",
+            startDate = activity.startDate,
+          )
+        }
+      }
+
+    val firstMathsAllocation = mathsActivity.schedules().first().allocations().first()
+
+    val matchedActivities = listOf(mathsActivity)
+
+    val newStartDate = LocalDate.now().plusDays(2)
+
+    whenever(activityRepository.findByPrisonCodeAndStartDateLessThan(MOORLAND_PRISON_CODE, newStartDate)).thenReturn(matchedActivities)
+
+    whenever(allocationsService.updateStartDateIgnoringValidationErrors(firstMathsAllocation, newStartDate)).thenThrow(
+      IllegalArgumentException("Cannot update allocation"),
+    )
+
+    val warnings = service().moveStartDates(MOORLAND_PRISON_CODE, newStartDate, "SCH_ACTIVITY")
+
+    assertThat(warnings).containsOnly(
+      "'Maths basic' - A1111BB - Cannot update allocation",
+      "'Maths basic' - Activity start date cannot be changed. One or more allocations start before the new start date.",
+    )
+
+    verify(allocationsService).updateStartDateIgnoringValidationErrors(firstMathsAllocation, newStartDate)
+    verify(activityRepository).saveAll(emptyList())
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `moveStartDates - will not move start date for activity or allocation`() {
+    val mathsActivity = activityEntity(startDate = LocalDate.now().minusDays(1), noSchedules = true, paid = false, noPayBands = true)
+      .apply {
+        addSchedule(activitySchedule(this, activityScheduleId = activityId, paid = false, noAllocations = true)).apply {
+          allocatePrisoner(
+            prisonerNumber = "A1111BB".toPrisonerNumber(),
+            bookingId = 20002,
+            payBand = null,
+            allocatedBy = "Mr Blogs",
+            startDate = activity.startDate,
+          )
+        }
+      }
+
+    val firstMathsAllocation = mathsActivity.schedules().first().allocations().first()
+
+    val matchedActivities = listOf(mathsActivity)
+
+    val newStartDate = LocalDate.now().plusDays(2)
+
+    whenever(activityRepository.findByPrisonCodeAndStartDateLessThan(MOORLAND_PRISON_CODE, newStartDate)).thenReturn(matchedActivities)
+
+    val warnings = service().moveStartDates(MOORLAND_PRISON_CODE, newStartDate, "SCH_ACTIVITY")
+
+    assertThat(warnings).containsOnly(
+      "'Maths basic' - Activity start date cannot be changed. Activity already started.",
+    )
+
+    verify(allocationsService).updateStartDateIgnoringValidationErrors(firstMathsAllocation, newStartDate)
+    verify(activityRepository).saveAll(emptyList())
+    verifyNoInteractions(outboundEventsService)
+  }
+
+  @Test
+  fun `moveStartDates - will not move any start dates because an unexpected exception occurred`() {
+    val newStartDate = LocalDate.now().plusDays(2)
+
+    whenever(activityRepository.findByPrisonCodeAndStartDateLessThan(MOORLAND_PRISON_CODE, newStartDate)).thenThrow(RuntimeException("Unexpect exception"))
+
+    assertThatThrownBy {
+      service().moveStartDates(MOORLAND_PRISON_CODE, newStartDate, "SCH_ACTIVITY")
+    }.isInstanceOf(RuntimeException::class.java)
+      .hasMessage("Unexpect exception")
+
+    verifyNoInteractions(allocationsService)
+    verify(activityRepository, never()).saveAll(anyList())
+    verifyNoInteractions(outboundEventsService)
   }
 }
