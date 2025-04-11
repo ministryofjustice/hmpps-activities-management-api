@@ -71,6 +71,7 @@ class MigrateActivityServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val locationService: LocationService = mock()
+  private val activityService: ActivityService = mock()
 
   private val listOfCategories = listOf(
     ActivityCategory(1, "SAA_EDUCATION", "Education", "desc"),
@@ -117,6 +118,7 @@ class MigrateActivityServiceTest {
     TransactionHandler(),
     outboundEventsService,
     locationService,
+    activityService,
   )
 
   private fun getCategory(code: String): ActivityCategory? = listOfCategories.find { it.code == code }
@@ -1940,5 +1942,19 @@ class MigrateActivityServiceTest {
       assertThat(service.makeNameWithCohortLabel(true, "RSI", description, 1))
         .isEqualTo("0123456789 0123456789 0123456789 0123456789 group 1")
     }
+  }
+
+  @Test
+  fun `moveStartDates should call activity service`() {
+    val startDate = LocalDate.now().plusDays(1)
+    val expectedResult = listOf("Warning 1")
+
+    whenever(activityService.moveStartDates("PVI", startDate, "MIGRATION")).thenReturn(expectedResult)
+
+    val result = service.moveActivityStartDates("PVI", startDate)
+
+    assertThat(result).isEqualTo(expectedResult)
+
+    verify(activityService).moveStartDates("PVI", startDate, "MIGRATION")
   }
 }

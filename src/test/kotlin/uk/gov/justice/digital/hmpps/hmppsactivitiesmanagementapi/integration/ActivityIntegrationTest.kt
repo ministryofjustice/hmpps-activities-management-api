@@ -68,7 +68,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -79,7 +79,7 @@ import java.util.UUID
     "feature.audit.service.local.enabled=true",
   ],
 )
-class ActivityIntegrationTest : IntegrationTestBase() {
+class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
   @MockitoBean
   private lateinit var bankHolidayService: BankHolidayService
 
@@ -994,17 +994,6 @@ class ActivityIntegrationTest : IntegrationTestBase() {
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBodyList(ActivityScheduleLite::class.java)
     .returnResult().responseBody
-
-  private fun WebTestClient.getActivityById(id: Long, caseLoadId: String = "PVI") = get()
-    .uri("/activities/$id/filtered")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, caseLoadId)
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Activity::class.java)
-    .returnResult().responseBody!!
 
   private fun WebTestClient.createActivity(
     activityCreateRequest: ActivityCreateRequest,

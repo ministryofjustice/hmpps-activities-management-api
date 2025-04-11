@@ -65,6 +65,7 @@ class ManageScheduledInstancesServiceTest {
     telemetryClient = telemetryClient,
     transactionHandler = TransactionHandler(),
     outboundEventsService = mock(),
+    allocationsService = mock(),
     locationService = locationService,
   )
 
@@ -122,9 +123,6 @@ class ManageScheduledInstancesServiceTest {
   fun `can schedule multiple slots for the same day`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicWithMultipleSlots)
-
-    whenever(activityRepository.getAllForPrisonBetweenDates("LEI", today, weekFromToday))
-      .thenReturn(emptyList())
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithMultipleSlots.first().schedules().first())

@@ -37,7 +37,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.*
 
-class MigrateIntegrationTest : IntegrationTestBase() {
+class MigrateIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @MockitoBean
   lateinit var clock: Clock
@@ -252,7 +252,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   @Test
   fun `regime not found issue`() {
     val activityId = migrateActivity(request = regimeNotFoundRequest)
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
@@ -263,7 +263,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   @Test
   fun `import with regime time should set flag to true`() {
     val activityId = migrateActivity(request = felthamRegimeTimeRequest)
-    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+    val activity = webTestClient.getActivityById(activityId, "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
     with(activity.schedules.first().internalLocation!!) {
@@ -279,7 +279,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   fun `import with location id should succeed`() {
     val activityId = migrateActivity(request = felthamRegimeTimeRequest)
 
-    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+    val activity = webTestClient.getActivityById(activityId, "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isTrue()
 
@@ -304,7 +304,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+    val activity = webTestClient.getActivityById(activityId, "FMI")
 
     assertThat(activity.onWing).isTrue()
     assertThat(activity.schedules.first().internalLocation).isNull()
@@ -316,7 +316,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   @Test
   fun `import with custom time should not set flag to true`() {
     val activityId = migrateActivity(request = felthamCustomTimeRequest)
-    val activity = getActivity(activityId = activityId, agencyId = "FMI")
+    val activity = webTestClient.getActivityById(activityId, "FMI")
 
     assertThat(activity.schedules.first().usePrisonRegimeTime).isFalse()
   }
@@ -327,7 +327,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   @Test
   fun `import activity should set custom times in slot`() {
     val activityId = migrateActivity()
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     val mondayAm = activity.schedules.first().slots.first {
       it.mondayFlag && it.endTime == regimeEndTimeAM
@@ -356,7 +356,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   @Test
   fun `import activity with timeslot should set custom times and preserve the supplied slot`() {
     val activityId = migrateActivity(request = customSlotRequest)
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     val mondayAm = activity.schedules.first().slots.first {
       it.mondayFlag && it.endTime == regimeEndTimeAM
@@ -447,7 +447,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     val activityId = migrateActivity()
     migrateAllocation(activityId = activityId)
 
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     assertThat(
       activity.schedules.first().allocations.any {
@@ -481,7 +481,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     val activityId = migrateActivity()
     migrateAllocation(activityId = activityId, incExclusion = true)
 
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     assertThat(
       activity.schedules.first().allocations.first {
@@ -519,7 +519,7 @@ class MigrateIntegrationTest : IntegrationTestBase() {
   fun `exclude prisoner on migrate, then remove custom exclusion, and confirm prisoner has attendance`() {
     val activityId = migrateActivity()
     migrateAllocation(activityId = activityId, incExclusion = true)
-    val activity = getActivity(activityId = activityId)
+    val activity = webTestClient.getActivityById(activityId, "IWI")
 
     updateAllocation(allocationId = activity.schedules.first().allocations.first().id)
 
@@ -745,15 +745,6 @@ class MigrateIntegrationTest : IntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(ActivitySchedule::class.java)
-    .returnResult().responseBody!!
-
-  private fun getActivity(activityId: Long, agencyId: String = "IWI"): Activity = webTestClient.get()
-    .uri("/activities/$activityId/filtered")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
-    .header(CASELOAD_ID, agencyId)
-    .exchange()
-    .expectBody(Activity::class.java)
     .returnResult().responseBody!!
 
   private fun updateActivity(activityId: Long, slots: ActivityUpdateRequest): Activity = webTestClient.patch()
