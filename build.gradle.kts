@@ -52,10 +52,10 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.61")
+  implementation("aws.sdk.kotlin:s3:1.4.62")
 
   // Other dependencies
-  implementation("org.apache.commons:commons-text:1.13.0")
+  implementation("org.apache.commons:commons-text:1.13.1")
 
   // Database dependencies
   runtimeOnly("org.flywaydb:flyway-core")
