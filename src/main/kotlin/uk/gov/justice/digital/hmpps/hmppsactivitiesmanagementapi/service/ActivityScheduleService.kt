@@ -109,7 +109,6 @@ class ActivityScheduleService(
     earliestSessionDate = earliestSessionDate,
   )?.checkCaseloadAccess(adminMode)?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
-  @Transactional
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String, adminMode: Boolean? = false) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
