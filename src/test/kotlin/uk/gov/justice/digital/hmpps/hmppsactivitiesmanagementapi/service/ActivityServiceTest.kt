@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -346,7 +347,7 @@ class ActivityServiceTest {
       startDate = LocalDate.now().plusDays(5),
     )
 
-        val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
       .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
@@ -1011,7 +1012,14 @@ class ActivityServiceTest {
     whenever(eventTierRepository.findById(1)).thenReturn(Optional.of(eventTier()))
     whenever(eventOrganiserRepository.findById(1)).thenReturn(Optional.of(eventOrganiser()))
 
-    val beforeActivityEntity: ActivityEntity = mapper.read("activity/activity-entity-1.json")
+    val category1 = ActivityCategory(
+      activityCategoryId = 1,
+      code = "EDUCATION",
+      name = "Education",
+      description = "Description",
+    )
+    val beforeActivityEntity = activityEntity(noPayBands = true, category = category1, noSchedules = true)
+    beforeActivityEntity.addSchedule(activitySchedule(beforeActivityEntity, activityScheduleId = beforeActivityEntity.activityId, noAllocations = true))
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -1021,7 +1029,14 @@ class ActivityServiceTest {
       ),
     ).thenReturn(beforeActivityEntity)
 
-    val afterActivityEntity: ActivityEntity = mapper.read("activity/updated-activity-entity-1.json")
+    val category2 = ActivityCategory(
+      activityCategoryId = 2,
+      code = "EDUCATION",
+      name = "Education",
+      description = "Description",
+    )
+    val afterActivityEntity = activityEntity(noPayBands = true, category = category2, noSchedules = true)
+    afterActivityEntity.addSchedule(activitySchedule(afterActivityEntity, activityScheduleId = afterActivityEntity.activityId, noAllocations = true))
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
@@ -1107,7 +1122,8 @@ class ActivityServiceTest {
   @Test
   fun `updateActivity - update pay`() {
     val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-3.json")
-    val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+    val activityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+    activityEntity.addSchedule(activitySchedule(activityEntity, activityScheduleId = activityEntity.activityId, noAllocations = true))
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -1153,6 +1169,7 @@ class ActivityServiceTest {
       mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
 
     val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
+    activityEntity.addSchedule(activitySchedule(activityEntity, activityScheduleId = activityEntity.activityId, noAllocations = true))
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
@@ -2517,7 +2534,6 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - paid to unpaid when no allocations`() {
-
     val activity = activityEntity(paid = true, noSchedules = true)
     activity.addSchedule(activitySchedule(activity, activityScheduleId = activity.activityId, paid = false, noAllocations = true))
 
@@ -2711,6 +2727,8 @@ class ActivityServiceTest {
   fun `updateActivity - attendance required from YES to NO for unpaid foundation tier is successful`() {
     val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
     val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.addSchedule(activitySchedule(savedActivityEntity, activityScheduleId = savedActivityEntity.activityId, noAllocations = true, paid = false))
+
     savedActivityEntity.attendanceRequired = true
     savedActivityEntity.activityTier = eventTier
 
@@ -2741,13 +2759,10 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - unpaid to paid where existing entity set to attendance required is successful`() {
-
-//    val activity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
-//    activity.addSchedule(activitySchedule(activity, activityScheduleId = activity.activityId, paid = false, noAllocations = true))
-
-
     val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
-    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+
+    val savedActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    savedActivityEntity.addSchedule(activitySchedule(savedActivityEntity, activityScheduleId = savedActivityEntity.activityId, paid = false, noAllocations = true))
     savedActivityEntity.attendanceRequired = true
     savedActivityEntity.activityTier = eventTier
 
@@ -2759,14 +2774,14 @@ class ActivityServiceTest {
       ),
     ).thenReturn(savedActivityEntity)
 
-    val afterActivityEntity: ActivityEntity = activityEntity(noSchedules = true)
+    val afterActivityEntity = activityEntity(noSchedules = true)
+    afterActivityEntity.addSchedule(activitySchedule(afterActivityEntity, activityScheduleId = afterActivityEntity.activityId, noAllocations = true))
     afterActivityEntity.attendanceRequired = false
     afterActivityEntity.activityTier = eventTier
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
-
 
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
 
@@ -2803,8 +2818,9 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - unpaid to paid and attendance required where existing entity not set to attendance required is successful`() {
-    val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    val savedActivityEntity = activityEntity(noPayBands = true, noSchedules = true)
     savedActivityEntity.attendanceRequired = false
+    savedActivityEntity.addSchedule(activitySchedule(savedActivityEntity, activityScheduleId = savedActivityEntity.activityId, noAllocations = true))
 
     whenever(
       activityRepository.findByActivityIdAndPrisonCodeWithFilters(
