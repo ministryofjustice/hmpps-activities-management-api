@@ -78,9 +78,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -267,6 +269,8 @@ class ActivityServiceTest {
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
       EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+      ACTIVITY_ID_PROPERTY_KEY to "0",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "description",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
@@ -339,10 +343,10 @@ class ActivityServiceTest {
       incentiveLevel = "Basic",
       payBandId = 1,
       rate = 150,
-      startDate = LocalDate.now().plusDays(25),
+      startDate = LocalDate.now().plusDays(5),
     )
 
-    val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
+        val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
       .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
@@ -382,6 +386,8 @@ class ActivityServiceTest {
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
       EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
       EVENT_ORGANISER_PROPERTY_KEY to activityCaptor.firstValue.organiser!!.description,
+      ACTIVITY_ID_PROPERTY_KEY to "0",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "description",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
@@ -569,6 +575,8 @@ class ActivityServiceTest {
       PRISON_CODE_PROPERTY_KEY to createActivityRequest.prisonCode,
       ACTIVITY_NAME_PROPERTY_KEY to createActivityRequest.summary,
       EVENT_TIER_PROPERTY_KEY to activityCaptor.firstValue.activityTier.description,
+      ACTIVITY_ID_PROPERTY_KEY to "0",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "description",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_CREATED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, 0)
@@ -883,6 +891,8 @@ class ActivityServiceTest {
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
       EVENT_TIER_PROPERTY_KEY to "Tier 2",
       EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
+      ACTIVITY_ID_PROPERTY_KEY to "1",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Education - R1",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, savedActivityEntity.schedules().first().activityScheduleId)
@@ -2397,6 +2407,8 @@ class ActivityServiceTest {
       ACTIVITY_NAME_PROPERTY_KEY to activityCaptor.firstValue.summary,
       EVENT_TIER_PROPERTY_KEY to "Tier 2",
       EVENT_ORGANISER_PROPERTY_KEY to "A prisoner or group of prisoners",
+      ACTIVITY_ID_PROPERTY_KEY to "1",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Education - R1",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
   }
@@ -2505,7 +2517,9 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - paid to unpaid when no allocations`() {
-    val activity = activitySchedule(activityEntity(paid = true, noSchedules = true), noAllocations = true).activity
+
+    val activity = activityEntity(paid = true, noSchedules = true)
+    activity.addSchedule(activitySchedule(activity, activityScheduleId = activity.activityId, paid = false, noAllocations = true))
 
     activity.paid isBool true
 
@@ -2525,7 +2539,8 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - unpaid to paid when no allocations`() {
-    val activity = activitySchedule(activityEntity(paid = false, noSchedules = true, noPayBands = true), noAllocations = true).activity
+    val activity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+    activity.addSchedule(activitySchedule(activity, activityScheduleId = activity.activityId, paid = false, noAllocations = true))
 
     activity.paid isBool false
 
@@ -2726,6 +2741,11 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - unpaid to paid where existing entity set to attendance required is successful`() {
+
+//    val activity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
+//    activity.addSchedule(activitySchedule(activity, activityScheduleId = activity.activityId, paid = false, noAllocations = true))
+
+
     val eventTier = eventTier(eventTierId = 3, code = "FOUNDATION", description = "Foundation")
     val savedActivityEntity: ActivityEntity = activityEntity(paid = false, noSchedules = true, noPayBands = true)
     savedActivityEntity.attendanceRequired = true
@@ -2739,13 +2759,14 @@ class ActivityServiceTest {
       ),
     ).thenReturn(savedActivityEntity)
 
-    val afterActivityEntity: ActivityEntity = activityEntity()
+    val afterActivityEntity: ActivityEntity = activityEntity(noSchedules = true)
     afterActivityEntity.attendanceRequired = false
     afterActivityEntity.activityTier = eventTier
 
     whenever(activityRepository.saveAndFlush(any())).thenReturn(afterActivityEntity)
     whenever(prisonPayBandRepository.findByPrisonCode(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBandsLowMediumHigh())
     whenever(prisonApiClient.getEducationLevel("1")).thenReturn(Mono.just(educationLevel))
+
 
     service().updateActivity(MOORLAND_PRISON_CODE, 1, ActivityUpdateRequest(attendanceRequired = false), "SCH_ACTIVITY")
 
