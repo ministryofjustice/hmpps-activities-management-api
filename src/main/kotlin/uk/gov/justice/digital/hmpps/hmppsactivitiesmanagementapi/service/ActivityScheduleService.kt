@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import toPrisonerAllocatedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -109,6 +110,7 @@ class ActivityScheduleService(
     earliestSessionDate = earliestSessionDate,
   )?.checkCaseloadAccess(adminMode)?.toModelSchedule() ?: throw EntityNotFoundException("Activity schedule ID $scheduleId not found")
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
   fun allocatePrisoner(scheduleId: Long, request: PrisonerAllocationRequest, allocatedBy: String, adminMode: Boolean? = false) {
     log.info("Allocating prisoner ${request.prisonerNumber}.")
 
@@ -117,6 +119,8 @@ class ActivityScheduleService(
     require(request.startDate!! >= today) { "Allocation start date must not be in the past" }
 
     if (request.startDate == today && request.scheduleInstanceId == null) throw IllegalArgumentException("The next session must be provided when allocation start date is today")
+
+    val activePrisoner = getActivePrisoner(request.prisonerNumber!!, adminMode)
 
     transactionHandler.newSpringTransaction {
       val schedule = repository.findOrThrowNotFound(scheduleId).also {
@@ -133,9 +137,9 @@ class ActivityScheduleService(
           ?: throw IllegalArgumentException("Pay band not found for prison '${schedule.activity.prisonCode}'")
       }
 
-      val prisonerNumber = request.prisonerNumber!!.toPrisonerNumber()
+      val prisonerNumber = request.prisonerNumber.toPrisonerNumber()
 
-      val activePrisoner = getActivePrisoner(request.prisonerNumber, adminMode)
+      activePrisoner
         ?.also { prisoner ->
           require(prisoner.isActiveAtPrison(schedule.activity.prisonCode)) {
             "Unable to allocate prisoner with prisoner number $prisonerNumber, prisoner is not active at prison ${schedule.activity.prisonCode}."
