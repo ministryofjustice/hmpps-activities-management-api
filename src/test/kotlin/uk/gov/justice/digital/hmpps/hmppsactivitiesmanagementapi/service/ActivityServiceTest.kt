@@ -344,7 +344,7 @@ class ActivityServiceTest {
       incentiveLevel = "Basic",
       payBandId = 1,
       rate = 150,
-      startDate = LocalDate.now().plusDays(5),
+      startDate = LocalDate.now().plusDays(25),
     )
 
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")

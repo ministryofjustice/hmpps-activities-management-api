@@ -212,7 +212,17 @@ class ActivityService(
     ACTIVITY_NAME_PROPERTY_KEY to this.summary,
     ACTIVITY_ID_PROPERTY_KEY to this.id.toString(),
   ).also { propsMap ->
-    this.schedules[0].internalLocation?.let { propsMap[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] = it.description }
+    INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to (
+      if (this.inCell) {
+        "In Cell"
+      } else if (this.offWing) {
+        "Off Wing"
+      } else if (this.onWing) {
+        "On Wing"
+      } else {
+        schedules[0].internalLocation?.let { propsMap[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] = it.description }
+      }
+      )
     this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
     this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
   }
