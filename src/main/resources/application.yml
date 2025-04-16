@@ -95,6 +95,7 @@ spring:
       maximumPoolSize: 30
       idleTimeout: 300000
       maxLifetime: 1200000
+      leakDetectionThreshold: 14000
 
   flyway:
     locations: classpath:/migrations/common,classpath:/migrations/prod

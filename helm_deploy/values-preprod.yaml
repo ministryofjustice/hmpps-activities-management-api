@@ -30,6 +30,7 @@ generic-service:
     AWS_S3_AP_BUCKET: moj-reg-preprod
     AWS_S3_AP_PROJECT: hmpps-activities-management-preprod
     PRISONS_WITH_REGEX_LOCATION_CONFIGS: BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI
+    LOGGING_LEVEL_COM_ZAXXER_HIKARI: TRACE
 
   resources:
     requests:
