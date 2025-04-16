@@ -51,7 +51,6 @@ const val MAX_ACTIVITY_SUMMARY_SIZE = 50
 const val RISLEY_PRISON_CODE = "RSI"
 
 @Service
-@Transactional(readOnly = true)
 class MigrateActivityService(
   private val rolloutPrisonService: RolloutPrisonService,
   private val activityRepository: ActivityRepository,
@@ -87,7 +86,6 @@ class MigrateActivityService(
 
   val cohortNames = mapOf(RISLEY_PRISON_CODE to "group").withDefault { "group" }
 
-  @Transactional
   fun migrateActivity(request: ActivityMigrateRequest): ActivityMigrateResponse {
     // Check the prison is rolled out for activities
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
@@ -151,7 +149,7 @@ class MigrateActivityService(
       .let { (single, split) -> ActivityMigrateResponse(request.prisonCode, single.activityId, split?.activityId) }
   }
 
-  fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
+  private fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {
     val prisonRegimes = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = request.prisonCode)
     log.info("Migrating activity ${request.description} on a 1-2-1 basis")
     var usePrisonRegimeTimeForActivity = true
@@ -236,7 +234,7 @@ class MigrateActivityService(
     }
   }
 
-  fun isPaid(payRates: List<NomisPayRate>?) = !payRates.isNullOrEmpty()
+  private fun isPaid(payRates: List<NomisPayRate>?) = !payRates.isNullOrEmpty()
 
   fun makeNameWithCohortLabel(splitRegime: Boolean, prisonCode: String, description: String, cohort: Int? = null): String {
     if (!splitRegime) {
@@ -426,7 +424,6 @@ class MigrateActivityService(
     return tier ?: throw ValidationException("Could not map $programServiceCode to a tier")
   }
 
-  @Transactional
   fun migrateAllocation(request: AllocationMigrateRequest): AllocationMigrateResponse {
     if (!rolloutPrisonService.getByPrisonCode(request.prisonCode).activitiesRolledOut) {
       logAndThrowValidationException("Prison ${request.prisonCode} is not rolled out for activities")
