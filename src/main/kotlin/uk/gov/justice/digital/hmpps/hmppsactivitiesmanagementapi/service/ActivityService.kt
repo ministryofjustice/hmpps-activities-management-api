@@ -42,9 +42,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.ACTIVITY_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISON_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.activityMetricsMap
@@ -208,7 +210,19 @@ class ActivityService(
   private fun ModelActivity.toTelemetryPropertiesMap() = mutableMapOf(
     PRISON_CODE_PROPERTY_KEY to this.prisonCode,
     ACTIVITY_NAME_PROPERTY_KEY to this.summary,
+    ACTIVITY_ID_PROPERTY_KEY to this.id.toString(),
   ).also { propsMap ->
+    INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to (
+      if (this.inCell) {
+        "In Cell"
+      } else if (this.offWing) {
+        "Off Wing"
+      } else if (this.onWing) {
+        "On Wing"
+      } else {
+        schedules[0].internalLocation?.let { propsMap[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] = it.description }
+      }
+      )
     this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
     this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
   }
