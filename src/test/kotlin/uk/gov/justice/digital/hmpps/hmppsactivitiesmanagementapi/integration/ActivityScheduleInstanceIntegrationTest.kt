@@ -692,7 +692,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     fun `400 - fails - an attendance is not completed`() {
       webTestClient.uncancelScheduledInstances(listOf(1, 6))
         .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("Cannot reset an attendance that is already WAITING")
+        .expectBody().jsonPath("developerMessage").isEqualTo("Cannot reset an attendance for prisoner 'Z44444Z' that is already WAITING")
 
       with(webTestClient.getScheduledInstanceById(1)!!) {
         assertThat(cancelled).isTrue

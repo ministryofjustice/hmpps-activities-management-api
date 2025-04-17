@@ -188,7 +188,7 @@ data class Attendance(
 
   fun resetAttendance(resetBy: String? = null) {
     require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
-    require(status != AttendanceStatus.WAITING) { "Cannot reset an attendance that is already WAITING" }
+    require(status != AttendanceStatus.WAITING) { "Cannot reset an attendance for prisoner '$prisonerNumber' that is already WAITING" }
 
     attendanceReason = null
     comment = null
