@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
@@ -260,6 +261,7 @@ class ScheduledInstanceController(
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @Deprecated(message = "Will be replaced by uncancelScheduledInstances")
   fun uncancelScheduledInstance(
     @PathVariable("instanceId") instanceId: Long,
     @Valid
@@ -272,6 +274,46 @@ class ScheduledInstanceController(
   ) {
     scheduledInstanceService.uncancelScheduledInstance(instanceId)
   }
+
+  @PutMapping(value = ["/uncancel"])
+  @ResponseBody
+  @Operation(
+    summary = "Uncancel multiple schedule instances",
+    description = "Uncancel multiple schedule instances and reset associated un-suspended attendances",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Scheduled instances successfully uncancelled",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun uncancelScheduledInstances(
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The uncancel scheduled instances request",
+      required = true,
+    )
+    request: ScheduleInstancesUncancelRequest,
+  ): ResponseEntity<Any> = scheduledInstanceService.uncancelScheduledInstances(request).let { ResponseEntity.noContent().build() }
 
   @PutMapping(value = ["/{instanceId}/cancel"])
   @ResponseBody
@@ -355,7 +397,7 @@ class ScheduledInstanceController(
     @Valid
     @RequestBody
     @Parameter(
-      description = "The scheduled instances cancellation request",
+      description = "The cancel scheduled instances request",
       required = true,
     )
     request: ScheduleInstancesCancelRequest,
