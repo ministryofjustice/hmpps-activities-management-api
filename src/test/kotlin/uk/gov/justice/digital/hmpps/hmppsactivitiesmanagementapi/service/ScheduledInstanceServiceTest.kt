@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -554,6 +555,42 @@ class ScheduledInstanceServiceTest {
       verifyNoInteractions(telemetryClient)
       verifyNoInteractions(outboundEventsService)
       verify(repository, never()).saveAllAndFlush(anyList())
+    }
+  }
+
+  @Nested
+  @DisplayName("uncancelScheduledInstances")
+  inner class UncancelScheduledInstances {
+    @Test
+    fun `uncancels the scheduled instances and their attendances - success`() {
+      val activity1 = activityEntity(activityId = 1L, noSchedules = true)
+      val activity2 = activityEntity(activityId = 2L, noSchedules = true)
+
+      val schedule1 = activity1.addSchedule(activitySchedule(activityScheduleId = 1L, activity = activity1, noInstances = true))
+      val schedule2 = activity2.addSchedule(activitySchedule(activityScheduleId = 2L, activity = activity2, noInstances = true))
+
+      val today = LocalDate.now()
+      val instance1 = schedule1.addInstance(sessionDate = today, slot = schedule1.slots().first()).copy(scheduledInstanceId = 1, cancelled = true)
+      val instance2 = schedule2.addInstance(sessionDate = today, slot = schedule2.slots().first()).copy(scheduledInstanceId = 2, cancelled = true)
+
+      instance1.attendances.add(Attendance(attendanceId = 111, scheduledInstance = instance1, prisonerNumber = "A1111AA", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
+      instance2.attendances.add(Attendance(attendanceId = 222, scheduledInstance = instance1, prisonerNumber = "B1111BB", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
+      instance2.attendances.add(Attendance(attendanceId = 333, scheduledInstance = instance1, prisonerNumber = "C1111CC", status = AttendanceStatus.COMPLETED, recordedTime = LocalDateTime.now()))
+
+      whenever(repository.findByIds(listOf(instance1.scheduledInstanceId, instance2.scheduledInstanceId))).thenReturn(listOf(instance1, instance2))
+
+      service.uncancelScheduledInstances(ScheduleInstancesUncancelRequest(scheduleInstanceIds = listOf(instance1.scheduledInstanceId, instance2.scheduledInstanceId)))
+
+      assertThat(instance1.cancelled).isFalse
+
+      verify(repository).saveAllAndFlush(listOf(instance1, instance2))
+
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance1.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance2.scheduledInstanceId)
+
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 111)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 222)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 333)
     }
   }
 }

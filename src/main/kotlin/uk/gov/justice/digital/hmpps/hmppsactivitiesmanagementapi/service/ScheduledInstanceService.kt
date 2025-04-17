@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -104,6 +105,31 @@ class ScheduledInstanceService(
     }
 
     log.info("Uncancelled scheduled instance $id")
+  }
+
+  fun uncancelScheduledInstances(request: ScheduleInstancesUncancelRequest) {
+    log.info("Uncancelling ${request.scheduleInstanceIds!!.size} scheduled instances")
+
+    transactionHandler.newSpringTransaction {
+      repository.findByIds(request.scheduleInstanceIds.map { it })
+        .map { scheduledInstance ->
+          scheduledInstance to scheduledInstance.uncancelSessionAndAttendances()
+        }
+        .also {
+          repository.saveAllAndFlush(it.map { it.first })
+        }
+    }
+      .forEach { (uncancelledInstance, uncancelledAttendances) ->
+        log.info("Sending instance amended and attendance amended events for ucancelled instance with id ${uncancelledInstance.scheduledInstanceId}")
+
+        send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, uncancelledInstance.scheduledInstanceId)
+
+        uncancelledAttendances.forEach { uncancelledAttendance ->
+          send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, uncancelledAttendance.attendanceId)
+        }
+      }
+
+    log.info("Finished uncancelling scheduled instances")
   }
 
   fun cancelScheduledInstance(instanceId: Long, scheduleInstanceCancelRequest: ScheduleInstanceCancelRequest) {
