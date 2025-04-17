@@ -406,7 +406,7 @@ class AttendanceTest {
       attendance.resetAttendance("reset by test")
     }
       .isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Cannot reset an attendance that is already WAITING")
+      .hasMessage("Cannot reset an attendance for prisoner 'P000111' that is already WAITING")
   }
 
   @Test
