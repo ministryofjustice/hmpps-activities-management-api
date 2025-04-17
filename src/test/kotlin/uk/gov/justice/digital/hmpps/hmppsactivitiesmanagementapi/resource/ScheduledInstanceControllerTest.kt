@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
@@ -169,6 +170,31 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
       1,
       ScheduleInstanceCancelRequest("Staff unavailable", "USER1", null),
     )
+  }
+
+  @Test
+  fun `uncancelScheduledInstances - 204 response when successfully uncancelling multiple scheduled instances`() {
+    val request = ScheduleInstancesUncancelRequest(listOf(1))
+    mockMvc.put("/scheduled-instances/uncancel") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }.andExpect { status { isNoContent() } }
+
+    verify(scheduledInstanceService).uncancelScheduledInstances(request)
+  }
+
+  @Test
+  fun `uncancelScheduledInstances - 400 response when bad request exception is thrown`() {
+    whenever(
+      scheduledInstanceService.uncancelScheduledInstances(any()),
+    ).thenThrow(IllegalArgumentException("Bad request"))
+
+    mockMvc.put("/scheduled-instances/uncancel") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(ScheduleInstancesUncancelRequest(listOf(1)))
+    }.andExpect { status { isBadRequest() } }
   }
 
   @Nested
