@@ -212,7 +212,6 @@ class ActivityService(
     PRISON_CODE_PROPERTY_KEY to this.prisonCode,
     ACTIVITY_NAME_PROPERTY_KEY to this.summary,
     ACTIVITY_ID_PROPERTY_KEY to this.id.toString(),
-  ).also { propsMap ->
     INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to (
       if (this.inCell) {
         "In Cell"
@@ -221,9 +220,10 @@ class ActivityService(
       } else if (this.onWing) {
         "On Wing"
       } else {
-        schedules[0].internalLocation?.let { propsMap[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] = it.description }
+        this.schedules[0].internalLocation!!.description
       }
-      )
+      ),
+  ).also { propsMap ->
     this.tier?.let { propsMap[EVENT_TIER_PROPERTY_KEY] = it.description }
     this.organiser?.let { propsMap[EVENT_ORGANISER_PROPERTY_KEY] = it.description }
   }

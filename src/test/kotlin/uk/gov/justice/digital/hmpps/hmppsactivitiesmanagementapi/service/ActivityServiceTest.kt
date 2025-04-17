@@ -842,7 +842,7 @@ class ActivityServiceTest {
 
   @Test
   fun `updateActivity - success`() {
-    val updateActivityRequest: ActivityUpdateRequest = mapper.read("activity/activity-update-request-1.json")
+    val updateActivityRequest: ActivityUpdateRequest = mapper.read<ActivityUpdateRequest>("activity/activity-update-request-1.json").copy(offWing = true)
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
@@ -893,7 +893,7 @@ class ActivityServiceTest {
       EVENT_TIER_PROPERTY_KEY to "Tier 2",
       EVENT_ORGANISER_PROPERTY_KEY to "Prison staff",
       ACTIVITY_ID_PROPERTY_KEY to "1",
-      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Education - R1",
+      INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "Off Wing",
     )
     verify(telemetryClient).trackEvent(TelemetryEvent.ACTIVITY_EDITED.value, metricsPropertiesMap, activityMetricsMap())
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, savedActivityEntity.schedules().first().activityScheduleId)
