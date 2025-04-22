@@ -131,13 +131,13 @@ class WebClientConfiguration(
 
   @Bean
   fun caseNotesApiWebClient(): WebClient = webClientBuilder.baseUrl(caseNotesApiUrl)
-    .timeout(apiTimeout)
+    .timeout(shorterTimeout)
     .filter(addAuthHeaderFilterFunction())
     .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
 
   @Bean
   fun nonAssociationsApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
-    .authorisedWebClient(authorizedClientManager, "non-associations-api", nonAssociationsApiUrl, apiTimeout)
+    .authorisedWebClient(authorizedClientManager, "non-associations-api", nonAssociationsApiUrl, shorterTimeout)
     .also { log.info("WEB CLIENT CONFIG: creating non associations api web client") }
 
   @Bean
