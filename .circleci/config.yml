@@ -16,7 +16,7 @@ parameters:
     default: "21.0"
   postgres-version:
     type: string
-    default: "14"
+    default: "17"
   localstack-version:
     type: string
     default: "3"

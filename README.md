@@ -14,6 +14,7 @@ Tools required:
 
 * JDK v21+
 * Kotlin (Intellij)
+* postgresql v17+
 * docker
 * docker-compose
 
