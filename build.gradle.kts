@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.1.20"
   jacoco
   id("org.openapi.generator") version "7.12.0"
-  id("io.sentry.jvm.gradle") version "5.3.0"
+  id("io.sentry.jvm.gradle") version "5.4.0"
 }
 
 allOpen {
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.68")
+  implementation("aws.sdk.kotlin:s3:1.4.69")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
@@ -66,7 +66,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.12.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.20.6")
+  testImplementation("org.testcontainers:localstack:1.21.0")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
