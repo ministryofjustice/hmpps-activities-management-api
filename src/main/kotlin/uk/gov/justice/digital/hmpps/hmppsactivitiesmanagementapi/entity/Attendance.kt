@@ -88,10 +88,15 @@ data class Attendance(
 
   fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null, issuePayment: Boolean = true) = apply {
     require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
+
+    markCancelled(reason, cancelledReason, cancelledBy, issuePayment)
+  }
+
+  private fun markCancelled(reason: AttendanceReason, cancelledReason: String? = null, updatedBy: String? = null, issuePayment: Boolean = true) = apply {
     require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
 
     mark(
-      principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
+      principalName = updatedBy ?: ServiceName.SERVICE_NAME.value,
       reason = reason,
       newStatus = AttendanceStatus.COMPLETED,
       newComment = cancelledReason,
@@ -99,6 +104,23 @@ data class Attendance(
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
       newOtherAbsenceReason = null,
+    )
+  }
+
+  fun updateCancelledAttendance(cancelledReason: String? = null, updatedBy: String? = null, issuePayment: Boolean? = true) = apply {
+    require(hasReason(AttendanceReasonEnum.CANCELLED)) { "Attendance must be cancelled" }
+
+    val newIssuePayment = when (issuePayment) {
+      true -> isPayable()
+      false -> false
+      else -> this.issuePayment
+    }
+
+    markCancelled(
+      this.attendanceReason!!,
+      cancelledReason ?: this.comment,
+      updatedBy,
+      newIssuePayment!!,
     )
   }
 

@@ -34,6 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -591,6 +592,52 @@ class ScheduledInstanceServiceTest {
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 111)
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 222)
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 333)
+    }
+  }
+
+  @Nested
+  @DisplayName("updateScheduledInstance")
+  inner class UpdateScheduledInstance {
+    @BeforeEach
+    fun setUp() {
+      addCaseloadIdToRequestHeader("MDI")
+    }
+
+    @Test
+    fun `updates the scheduled instance`() {
+      val instance: ScheduledInstance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
+
+      instance.apply {
+        cancelled = true
+        attendances.first().cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      }
+
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.saveAndFlush(instance)).thenReturn(instance)
+
+      val request = ScheduledInstancedUpdateRequest("Cancelled reason", "Comment", true)
+      service.updateScheduledInstance(instance.scheduledInstanceId, request, "USER1")
+
+      with(instance) {
+        assertThat(cancelled).isTrue()
+        assertThat(cancelledReason).isEqualTo("Cancelled reason")
+      }
+
+      verify(repository).saveAndFlush(instance)
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
+    }
+
+    @Test
+    fun `throws exception when scheduled instance ID is not found`() {
+      whenever(repository.findById(1)).thenReturn(Optional.empty())
+
+      val exception = assertThrows<EntityNotFoundException> {
+        val request = ScheduledInstancedUpdateRequest("Cancelled reason", "Comment", true)
+        service.updateScheduledInstance(1, request, "USER1")
+      }
+
+      assertThat(exception.message).isEqualTo("Scheduled Instance 1 not found")
     }
   }
 }

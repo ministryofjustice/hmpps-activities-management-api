@@ -2,10 +2,18 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentMatchers.anyBoolean
+import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -15,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.temporal.ChronoUnit
 
 class ScheduledInstanceTest {
 
@@ -282,5 +291,159 @@ class ScheduledInstanceTest {
 
     val scheduledInstance2 = instance.copy(sessionDate = today, startTime = now.minusMinutes(30), endTime = now.minusMinutes(1))
     assertThat(scheduledInstance2.isFuture(LocalDateTime.now())).isFalse()
+  }
+
+  @Nested
+  inner class UpdateCancelledSessionAndAttendances {
+    lateinit var cancelledInstance: ScheduledInstance
+
+    @BeforeEach
+    fun setUp() {
+      cancelledInstance = instance.copy(
+        scheduledInstanceId = 1,
+        cancelled = true,
+        cancelledBy = "Old user",
+        cancelledReason = "Old reason",
+        comment = "Old comment",
+        cancelledTime = LocalDateTime.now().minusDays(1),
+        attendances = mutableListOf(mock()),
+      )
+    }
+
+    @Test
+    fun `instance is updated when updating the reason without a comment`() {
+      cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", null)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("New user")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isNull()
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+
+        verify(attendances.first(), never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
+      }
+    }
+
+    @Test
+    fun `instance is updated when updating the reason with with a comment`() {
+      cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment")
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("New user")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+
+        verify(attendances.first(), never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
+      }
+    }
+
+    @Test
+    fun `instance is not updated when only updating issue payment to true`() {
+      cancelledInstance.updateCancelledSessionAndAttendances(null, "New user", null, true)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
+
+        verify(attendances.first()).updateCancelledAttendance(null, "New user", true)
+      }
+    }
+
+    @Test
+    fun `instance is not updated when only updating issue payment to false`() {
+      cancelledInstance.updateCancelledSessionAndAttendances(null, "New user", null, false)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
+
+        verify(attendances.first()).updateCancelledAttendance(null, "New user", false)
+      }
+    }
+
+    @Test
+    fun `instance is updated when updating reason, comment and issue payment`() {
+      cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("New user")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+
+        verify(attendances.first()).updateCancelledAttendance("New reason", "New user", false)
+      }
+    }
+
+    @Test
+    fun `instance is updated suspended attendances are not`() {
+      val suspendedAttendance = mock<Attendance>()
+      val unSuspendedAttendance = mock<Attendance>()
+
+      whenever(suspendedAttendance.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)).thenReturn(true)
+
+      cancelledInstance = cancelledInstance.copy(attendances = mutableListOf(suspendedAttendance, unSuspendedAttendance))
+
+      cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("New user")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+
+        verify(suspendedAttendance, never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
+        verify(unSuspendedAttendance).updateCancelledAttendance("New reason", "New user", false)
+      }
+    }
+
+    @Test
+    fun `throws an exception when instance is not cancelled`() {
+      assertThatThrownBy {
+        instance.copy(cancelled = false).updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot update ${instance.activitySchedule.description} (${instance.timeSlot}) because it is not cancelled")
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
+
+        verifyNoInteractions(attendances.first())
+      }
+    }
+
+    @Test
+    fun `throws an exception when instance has ended`() {
+      val date = today.minusDays(1)
+
+      assertThatThrownBy {
+        instance.copy(cancelled = true, sessionDate = date).updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot update ${instance.activitySchedule.description} (${instance.timeSlot}) has ended")
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
+
+        verifyNoInteractions(attendances.first())
+      }
+    }
   }
 }
