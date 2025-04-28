@@ -115,6 +115,34 @@ data class ScheduledInstance(
   }
 
   /**
+   * Update a cancelled session and attendances and return the updated attendances
+   */
+  fun updateCancelledSessionAndAttendances(
+    reason: String?,
+    updatedBy: String,
+    cancelComment: String?,
+    issuePayment: Boolean? = null,
+  ): List<Attendance> {
+    require(cancelled) { "Cannot update ${activitySchedule.description} ($timeSlot) because it is not cancelled" }
+
+    val now = LocalDateTime.now().withNano(0)
+
+    require(sessionDate >= now.toLocalDate()) { "Cannot update ${activitySchedule.description} ($timeSlot) has ended" }
+
+    if (reason != null) {
+      cancelledReason = reason
+      comment = cancelComment
+      cancelledBy = updatedBy
+      cancelledTime = now
+    }
+
+    return attendances
+      .filterNot { issuePayment == null }
+      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
+      .onEach { it.updateCancelledAttendance(reason, updatedBy, issuePayment) }
+  }
+
+  /**
    * This will not uncancel suspended attendances. If you wish to uncancel a suspended attendance then you must uncancel the
    * attendance directly. Returns the attendances that have been uncancelled.
    */

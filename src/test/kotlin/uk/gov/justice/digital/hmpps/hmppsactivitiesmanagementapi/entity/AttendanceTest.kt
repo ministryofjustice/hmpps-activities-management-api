@@ -487,4 +487,112 @@ class AttendanceTest {
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Attendance must be suspended to unsuspend it")
   }
+
+  @Test
+  fun `updateCancelledAttendance - Updates comment`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      status = AttendanceStatus.COMPLETED,
+      comment = "Old Comment",
+      recordedBy = "Old User",
+      recordedTime = LocalDateTime.now().minusDays(1),
+      initialIssuePayment = true,
+    )
+
+    attendance.updateCancelledAttendance("New Comment", "New User", null)
+
+    with(attendance) {
+      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(comment).isEqualTo("New Comment")
+      assertThat(recordedBy).isEqualTo("New User")
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(issuePayment).isTrue
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+    }
+  }
+
+  @Test
+  fun `updateCancelledAttendance - Updates issuePayment to true`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      status = AttendanceStatus.COMPLETED,
+      comment = "Old Comment",
+      recordedBy = "Old User",
+      recordedTime = LocalDateTime.now().minusDays(1),
+      initialIssuePayment = false,
+    )
+
+    attendance.updateCancelledAttendance(null, "New User", true)
+
+    with(attendance) {
+      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(comment).isEqualTo("Old Comment")
+      assertThat(recordedBy).isEqualTo("New User")
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(issuePayment).isTrue
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+    }
+  }
+
+  @Test
+  fun `updateCancelledAttendance - Updates issuePayment to false`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      status = AttendanceStatus.COMPLETED,
+      comment = "Old Comment",
+      recordedBy = "Old User",
+      recordedTime = LocalDateTime.now().minusDays(1),
+      initialIssuePayment = true,
+    )
+
+    attendance.updateCancelledAttendance(null, "New User", false)
+
+    with(attendance) {
+      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(comment).isEqualTo("Old Comment")
+      assertThat(recordedBy).isEqualTo("New User")
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(issuePayment).isFalse
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+    }
+  }
+
+  @Test
+  fun `updateCancelledAttendance - throws an exception if not cancelled`() {
+    val attendance = Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = "P000111",
+      attendanceReason = attendanceReason(AttendanceReasonEnum.ATTENDED),
+      status = AttendanceStatus.COMPLETED,
+      comment = "Old Comment",
+      recordedBy = "Old User",
+      recordedTime = LocalDateTime.now().minusDays(1),
+      initialIssuePayment = true,
+    )
+
+    assertThatThrownBy {
+      attendance.updateCancelledAttendance(null, "New User", false)
+    }
+      .isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Attendance must be cancelled")
+
+    with(attendance) {
+      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.ATTENDED))
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(comment).isEqualTo("Old Comment")
+      assertThat(recordedBy).isEqualTo("Old User")
+      assertThat(otherAbsenceReason).isNull()
+      assertThat(issuePayment).isTrue
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
+    }
+  }
 }

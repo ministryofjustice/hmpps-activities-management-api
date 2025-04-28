@@ -29,9 +29,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
+import java.security.Principal
 import java.time.LocalDate
 
 // TODO - Combine this with ActivityScheduleInstanceController - all /scheduled-instances endpoints.
@@ -449,4 +451,59 @@ class ScheduledInstanceController(
     @Parameter(description = "The date of the attendance summary. Format, YYYY-MM-DD.", example = "2023-09-20")
     date: LocalDate,
   ): List<ScheduledInstanceAttendanceSummary> = scheduledInstanceService.attendanceSummary(prisonCode, date)
+
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @PutMapping(value = ["/{instanceId}"])
+  @Operation(
+    summary = "Update a scheduled instance.",
+    description = """
+      Currently only cancelled sessions reasons, comments and attendances where payments should be issued can be updated
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "204",
+        description = "Scheduled instance successfully updated",
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Scheduled instance not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  fun updateScheduledInstance(
+    @PathVariable("instanceId") instanceId: Long,
+    principal: Principal,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The update request with the scheduled instance changes",
+      required = true,
+    )
+    request: ScheduledInstancedUpdateRequest,
+  ) = scheduledInstanceService.updateScheduledInstance(instanceId, request, principal.name)
 }
