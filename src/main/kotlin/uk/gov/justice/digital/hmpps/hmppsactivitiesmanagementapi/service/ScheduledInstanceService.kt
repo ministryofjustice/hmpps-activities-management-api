@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -47,12 +49,13 @@ class ScheduledInstanceService(
   }
 
   @Transactional(readOnly = true)
-  fun getActivityScheduleInstanceById(id: Long): ActivityScheduleInstance {
-    val activityScheduleInstance = repository.findById(id)
-      .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
-    checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
-    return activityScheduleInstance.toModel()
-  }
+  fun getActivityScheduleInstanceById(id: Long) = getScheduleInstanceById(id).toModel()
+
+  private fun getScheduleInstanceById(id: Long): ScheduledInstance = repository.findById(id)
+    .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
+    .also {
+      checkCaseloadAccess(it.activitySchedule.activity.prisonCode)
+    }
 
   @Transactional(readOnly = true)
   fun getActivityScheduleInstancesByIds(ids: List<Long>) = repository.findByIds(ids)
@@ -176,6 +179,8 @@ class ScheduledInstanceService(
   fun cancelScheduledInstances(request: ScheduleInstancesCancelRequest) {
     log.info("Cancelling ${request.scheduleInstanceIds!!.size} scheduled instances")
 
+    val cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)
+
     val attendancesPairsList = transactionHandler.newSpringTransaction {
       val scheduledInstances = repository.findByIds(request.scheduleInstanceIds.map { it })
 
@@ -186,7 +191,7 @@ class ScheduledInstanceService(
           reason = request.reason,
           by = request.username,
           cancelComment = request.comment,
-          cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+          cancellationReason = cancellationReason,
           issuePayment = request.issuePayment!!,
         )
 
@@ -221,6 +226,36 @@ class ScheduledInstanceService(
   fun attendanceSummary(prisonCode: String, sessionDate: LocalDate): List<ScheduledInstanceAttendanceSummary> {
     checkCaseloadAccess(prisonCode)
     return attendanceSummaryRepository.findByPrisonAndDate(prisonCode, sessionDate).map { it.toModel() }
+  }
+
+  fun updateScheduledInstance(instanceId: Long, request: ScheduledInstancedUpdateRequest, updatedBy: String) {
+    log.info("Updating scheduled instance $instanceId")
+
+    val (instance, attendances) = transactionHandler.newSpringTransaction {
+      var scheduledInstance = getScheduleInstanceById(instanceId)
+
+      val attendances = scheduledInstance.updateCancelledSessionAndAttendances(
+        reason = request.cancelledReason,
+        updatedBy = updatedBy,
+        cancelComment = request.comment,
+        issuePayment = request.issuePayment,
+      )
+
+      repository.saveAndFlush(scheduledInstance) to attendances
+    }
+
+    // Emit sync events - manually
+    if (instance.cancelled) {
+      log.info("Sending instance amended and attendance amended events.")
+
+      send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+
+      attendances.forEach { attendance ->
+        send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+      }
+    }
+
+    log.info("Updated scheduled instance $instanceId")
   }
 
   private fun send(event: OutboundEvent, instanceId: Long) {
