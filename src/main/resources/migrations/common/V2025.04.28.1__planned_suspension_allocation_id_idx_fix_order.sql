@@ -1,0 +1,1 @@
+create index if not exists idx_planned_suspension_allocation_id ON planned_suspension (allocation_id);

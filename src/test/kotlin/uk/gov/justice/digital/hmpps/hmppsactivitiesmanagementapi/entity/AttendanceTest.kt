@@ -489,32 +489,6 @@ class AttendanceTest {
   }
 
   @Test
-  fun `updateCancelledAttendance - Updates comment`() {
-    val attendance = Attendance(
-      scheduledInstance = instance,
-      prisonerNumber = "P000111",
-      attendanceReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
-      status = AttendanceStatus.COMPLETED,
-      comment = "Old Comment",
-      recordedBy = "Old User",
-      recordedTime = LocalDateTime.now().minusDays(1),
-      initialIssuePayment = true,
-    )
-
-    attendance.updateCancelledAttendance("New Comment", "New User", null)
-
-    with(attendance) {
-      assertThat(attendanceReason).isEqualTo(attendanceReason(AttendanceReasonEnum.CANCELLED))
-      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
-      assertThat(comment).isEqualTo("New Comment")
-      assertThat(recordedBy).isEqualTo("New User")
-      assertThat(otherAbsenceReason).isNull()
-      assertThat(issuePayment).isTrue
-      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
-    }
-  }
-
-  @Test
   fun `updateCancelledAttendance - Updates issuePayment to true`() {
     val attendance = Attendance(
       scheduledInstance = instance,

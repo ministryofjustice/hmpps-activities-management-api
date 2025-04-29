@@ -53,6 +53,8 @@ data class ScheduledInstance(
 
   @Enumerated(EnumType.STRING)
   var timeSlot: TimeSlot,
+
+  var cancelledIssuePayment: Boolean? = null,
 ) {
 
   fun dayOfWeek() = sessionDate.dayOfWeek
@@ -67,6 +69,7 @@ data class ScheduledInstance(
     cancelledTime = this.cancelledTime,
     cancelledBy = this.cancelledBy,
     cancelledReason = this.cancelledReason,
+    cancelledIssuePayment = this.cancelledIssuePayment,
     comment = this.comment,
     previousScheduledInstanceId = if (includeAllocations) this.previous()?.scheduledInstanceId else null,
     previousScheduledInstanceDate = if (includeAllocations) this.previous()?.sessionDate else null,
@@ -95,7 +98,7 @@ data class ScheduledInstance(
     by: String,
     cancelComment: String?,
     cancellationReason: AttendanceReason,
-    issuePayment: Boolean = true,
+    issuePayment: Boolean? = null,
   ): List<Attendance> {
     require(!cancelled) { "${activitySchedule.description} ($timeSlot) has already been cancelled" }
 
@@ -108,6 +111,7 @@ data class ScheduledInstance(
     cancelledTime = today
     cancelledBy = by
     comment = cancelComment
+    cancelledIssuePayment = issuePayment
 
     return attendances
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
@@ -125,6 +129,8 @@ data class ScheduledInstance(
   ): List<Attendance> {
     require(cancelled) { "Cannot update ${activitySchedule.description} ($timeSlot) because it is not cancelled" }
 
+    require(issuePayment != true || activitySchedule.activity.isPaid()) { "Cannot issue payment for ${activitySchedule.description} ($timeSlot) because it is not payable" }
+
     val now = LocalDateTime.now().withNano(0)
 
     require(sessionDate >= now.toLocalDate()) { "Cannot update ${activitySchedule.description} ($timeSlot) has ended" }
@@ -136,10 +142,12 @@ data class ScheduledInstance(
       cancelledTime = now
     }
 
+    cancelledIssuePayment = issuePayment ?: cancelledIssuePayment
+
     return attendances
       .filterNot { issuePayment == null }
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
-      .onEach { it.updateCancelledAttendance(reason, updatedBy, issuePayment) }
+      .onEach { it.updateCancelledAttendance(reason, updatedBy, issuePayment!!) }
   }
 
   /**
@@ -157,6 +165,7 @@ data class ScheduledInstance(
     cancelledBy = null
     cancelledReason = null
     cancelledTime = null
+    cancelledIssuePayment = null
 
     return attendances
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }

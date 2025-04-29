@@ -63,17 +63,17 @@ values ( 1, 'A44444A', 1004, 2, '2022-10-10', null, '2022-10-10 09:00:00', 'MISS
 insert into allocation(activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 'Z33333Z', 1005, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (1, 1, now()::date, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
+values (1, 1, now()::date, '10:00:00', '11:00:00', false, null, null, null, null, null, 'AM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (2, 2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null, 'PM');
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
+values (2, 2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null, null, 'PM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (3, 2, now()::date, '14:00:00', '15:00:00', true, now(), 'USER1', 'Location unavailable', null, 'PM');
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
+values (3, 2, now()::date, '14:00:00', '15:00:00', true, now(), 'USER1', 'Location unavailable', true, null, 'PM');
 
-insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (4, 3, now()::date, '14:00:00', '15:00:00', false, now(), null, null, null, 'AM');
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
+values (4, 3, now()::date, '14:00:00', '15:00:00', false, now(), null, null, null, null, 'AM');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (1, 1, 'A11111A', null, null, null, null, 'WAITING', null, null, null);
