@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.1.20"
   jacoco
   id("org.openapi.generator") version "7.13.0"
-  id("io.sentry.jvm.gradle") version "5.4.0"
+  id("io.sentry.jvm.gradle") version "5.5.0"
 }
 
 allOpen {
@@ -43,7 +43,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.15.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.74")
+  implementation("aws.sdk.kotlin:s3:1.4.77")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
