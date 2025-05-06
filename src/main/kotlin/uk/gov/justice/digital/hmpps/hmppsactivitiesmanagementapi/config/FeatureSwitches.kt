@@ -39,4 +39,5 @@ enum class Feature(val label: String) {
   OUTBOUND_EVENTS_ENABLED("feature.events.sns.enabled"),
   MIGRATE_SPLIT_REGIME_ENABLED("feature.migrate.split.regime.enabled"),
   OFFENDER_MERGED_ENABLED("feature.offender.merge.enabled"),
+  CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED("feature.cancel.instance.priority.change.enabled"),
 }

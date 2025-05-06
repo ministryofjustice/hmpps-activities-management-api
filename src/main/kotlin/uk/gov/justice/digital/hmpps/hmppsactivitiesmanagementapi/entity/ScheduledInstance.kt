@@ -87,11 +87,10 @@ data class ScheduledInstance(
 
   fun slotTimes() = startTime to endTime
 
-  fun attendanceRequired() = activitySchedule.activity.attendanceRequired
-
   /**
-   * This will not cancel suspended attendances. If you wish to cancel a suspended attendance then you must cancel the
-   * attendance directly. Returns the attendances that have been cancelled.
+   * This will only cancel Not recorded or attendances marked as attended.
+   * To cancel a suspended attendance, then the attendance must be cancelled directly.
+   * Returns the attendances that have been cancelled.
    */
   fun cancelSessionAndAttendances(
     reason: String,
@@ -99,6 +98,7 @@ data class ScheduledInstance(
     cancelComment: String?,
     cancellationReason: AttendanceReason,
     issuePayment: Boolean? = null,
+    useNewPriorityRules: Boolean = false,
   ): List<Attendance> {
     require(!cancelled) { "${activitySchedule.description} ($timeSlot) has already been cancelled" }
 
@@ -112,6 +112,19 @@ data class ScheduledInstance(
     cancelledBy = by
     comment = cancelComment
     cancelledIssuePayment = issuePayment
+
+    if (useNewPriorityRules) {
+      return attendances
+        .filter { it.hasReason(AttendanceReasonEnum.ATTENDED) || it.attendanceReason == null }
+        .onEach {
+          it.cancel(
+            reason = cancellationReason,
+            cancelledReason = reason,
+            cancelledBy = by,
+            issuePayment = issuePayment,
+          )
+        }
+    }
 
     return attendances
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
@@ -146,7 +159,7 @@ data class ScheduledInstance(
 
     return attendances
       .filterNot { issuePayment == null }
-      .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }
+      .filter { it.hasReason(AttendanceReasonEnum.CANCELLED) }
       .onEach { it.updateCancelledAttendance(reason, updatedBy, issuePayment!!) }
   }
 
@@ -154,7 +167,7 @@ data class ScheduledInstance(
    * This will not uncancel suspended attendances. If you wish to uncancel a suspended attendance then you must uncancel the
    * attendance directly. Returns the attendances that have been uncancelled.
    */
-  fun uncancelSessionAndAttendances(): List<Attendance> {
+  fun uncancelSessionAndAttendances(useNewPriorityRules: Boolean = false): List<Attendance> {
     require(sessionDate >= LocalDate.now()) {
       "Cannot uncancel scheduled instance [$scheduledInstanceId] because it is in the past"
     }
@@ -166,6 +179,12 @@ data class ScheduledInstance(
     cancelledReason = null
     cancelledTime = null
     cancelledIssuePayment = null
+
+    if (useNewPriorityRules) {
+      return attendances
+        .filter { it.hasReason(AttendanceReasonEnum.CANCELLED) }
+        .onEach(Attendance::uncancel)
+    }
 
     return attendances
       .filterNot { it.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED) }

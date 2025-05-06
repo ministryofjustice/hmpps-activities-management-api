@@ -2,18 +2,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import org.mockito.ArgumentMatchers.anyBoolean
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.verifyNoInteractions
-import org.mockito.kotlin.whenever
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
@@ -23,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.temporal.ChronoUnit
 
 class ScheduledInstanceTest {
 
@@ -60,67 +52,229 @@ class ScheduledInstanceTest {
     assertThat(instance.copy(cancelled = true, sessionDate = LocalDate.MIN).isRunningOn(LocalDate.MIN)).isFalse
   }
 
-  @Test
-  fun `instance state is set correctly when uncancelled`() {
-    val cancelledInstance = instance.copy(
-      scheduledInstanceId = 1,
-      cancelled = true,
-      cancelledBy = "DEF981",
-      cancelledReason = "Meeting Cancelled",
-      cancelledIssuePayment = true,
-      attendances = mutableListOf(mock()),
-    )
+  @Nested
+  inner class UncancelSessionAndAttendances {
+    lateinit var cancelledInstance: ScheduledInstance
 
-    cancelledInstance.uncancelSessionAndAttendances()
+    @BeforeEach
+    fun setUp() {
+      cancelledInstance = activityEntity().schedules().first().instances().first()
+        .also {
+          it.cancelSessionAndAttendances(
+            reason = "Old reason",
+            by = "Old user",
+            cancelComment = "Old comment",
+            cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+            false,
+            true,
+          )
+        }
+    }
 
-    with(cancelledInstance) {
-      assertThat(cancelled).isFalse
-      assertThat(cancelledBy).isNull()
-      assertThat(cancelledReason).isNull()
-      assertThat(cancelledIssuePayment).isNull()
+    @Test
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `instance state is set correctly when uncancelled - old`() {
+      cancelledInstance.uncancelSessionAndAttendances(false)
 
-      verify(attendances.first()).uncancel()
+      with(cancelledInstance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo null
+          it.comment isEqualTo null
+          it.issuePayment isEqualTo null
+        }
+      }
+    }
+
+    @Test
+    fun `instance state is set correctly when uncancelled`() {
+      cancelledInstance.uncancelSessionAndAttendances(true)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo null
+          it.comment isEqualTo null
+          it.issuePayment isEqualTo null
+        }
+      }
+    }
+
+    @Test
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `instance cannot be uncancelled if the session date is in the past - old`() {
+      assertThatThrownBy {
+        cancelledInstance.copy(sessionDate = LocalDate.now().minusDays(1)).uncancelSessionAndAttendances(false)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot uncancel scheduled instance [0] because it is in the past")
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isNotNull()
+        assertThat(cancelledIssuePayment).isFalse()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
+      }
+    }
+
+    @Test
+    fun `instance cannot be uncancelled if the session date is in the past`() {
+      assertThatThrownBy {
+        cancelledInstance.copy(sessionDate = LocalDate.now().minusDays(1)).uncancelSessionAndAttendances(true)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot uncancel scheduled instance [0] because it is in the past")
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isEqualTo("Old comment")
+        assertThat(cancelledTime).isNotNull()
+        assertThat(cancelledIssuePayment).isFalse()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
+      }
+    }
+
+    @Test
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `instance cannot be uncancelled if it is not already cancelled - old`() {
+      assertThatThrownBy {
+        instance.copy(scheduledInstanceId = 1).uncancelSessionAndAttendances(false)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot uncancel scheduled instance [1] because it is not cancelled")
+
+      with(instance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(comment).isNull()
+        assertThat(cancelledTime).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo null
+          it.comment isEqualTo null
+          it.issuePayment isEqualTo null
+        }
+      }
+    }
+
+    @Test
+    fun `instance cannot be uncancelled if it is not already cancelled`() {
+      assertThatThrownBy {
+        instance.copy(scheduledInstanceId = 1).uncancelSessionAndAttendances(true)
+      }.isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("Cannot uncancel scheduled instance [1] because it is not cancelled")
+
+      with(instance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(comment).isNull()
+        assertThat(cancelledTime).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo null
+          it.comment isEqualTo null
+          it.issuePayment isEqualTo null
+        }
+      }
+    }
+
+    @EnumSource(AttendanceReasonEnum::class, names = ["CANCELLED"], mode = EnumSource.Mode.EXCLUDE)
+    @ParameterizedTest(name = "instance will be cancelled but attendance will not change where reason is {0}")
+    fun `instance will be cancelled but attendance will not change where reason is`(reason: AttendanceReasonEnum) {
+      cancelledInstance.attendances.first().mark(
+        principalName = "Old user",
+        reason = attendanceReason(reason),
+        newStatus = AttendanceStatus.COMPLETED,
+        newComment = "Old reason",
+        newIssuePayment = true,
+        newIncentiveLevelWarningIssued = null,
+        newCaseNoteId = null,
+        newOtherAbsenceReason = null,
+      )
+
+      cancelledInstance.uncancelSessionAndAttendances(true)
+
+      with(cancelledInstance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(reason)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo true
+        }
+      }
     }
   }
 
   @Test
-  fun `instance cannot be uncancelled if the session date is in the past`() {
-    val exception = assertThrows<IllegalArgumentException> {
-      instance.copy(
-        scheduledInstanceId = 1,
-        cancelled = true,
-        cancelledBy = "DEF981",
-        cancelledReason = "Meeting Cancelled",
-        sessionDate = LocalDate.of(2022, 1, 1),
-      ).uncancelSessionAndAttendances()
-    }
+  @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+  fun `can cancel scheduled instance - old`() {
+    val cancellableInstance = instance.copy()
 
-    assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is in the past")
-  }
-
-  @Test
-  fun `instance cannot be uncancelled if it is not already cancelled`() {
-    val exception = assertThrows<IllegalArgumentException> {
-      instance.copy(
-        scheduledInstanceId = 1,
-      ).uncancelSessionAndAttendances()
-    }
-
-    assertThat(exception.message).isEqualTo("Cannot uncancel scheduled instance [1] because it is not cancelled")
-  }
-
-  @Test
-  fun `can cancel scheduled instance`() {
-    val cancelableInstance = instance.copy()
-
-    cancelableInstance.cancelSessionAndAttendances(
+    cancellableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
       by = "USER1",
       cancelComment = "Resume tomorrow",
       cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      false,
     )
 
-    with(cancelableInstance) {
+    with(cancellableInstance) {
+      assertThat(cancelledReason).isEqualTo("Staff unavailable")
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledTime).isNotNull
+      assertThat(cancelledIssuePayment).isFalse()
+      assertThat(comment).isEqualTo("Resume tomorrow")
+
+      attendances.forEach {
+        it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+        it.comment isEqualTo "Staff unavailable"
+        it.issuePayment isEqualTo false
+      }
+    }
+  }
+
+  @Test
+  fun `can cancel scheduled instance with not recorded attendance`() {
+    val cancellableInstance = instance.copy()
+
+    cancellableInstance.cancelSessionAndAttendances(
+      reason = "Staff unavailable",
+      by = "USER1",
+      cancelComment = "Resume tomorrow",
+      cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      useNewPriorityRules = true,
+    )
+
+    with(cancellableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")
       assertThat(cancelled).isTrue
       assertThat(cancelledBy).isEqualTo("USER1")
@@ -128,16 +282,21 @@ class ScheduledInstanceTest {
       assertThat(cancelledIssuePayment).isNull()
       assertThat(comment).isEqualTo("Resume tomorrow")
 
-      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED) }
+      attendances.forEach {
+        it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+        it.comment isEqualTo "Staff unavailable"
+        it.issuePayment isEqualTo true
+      }
     }
   }
 
   @Test
-  fun `cancelling scheduled instance ignores suspended attendances`() {
-    val cancelableInstance = instance.copy()
+  @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+  fun `cancelling scheduled instance ignores suspended attendances - old`() {
+    val cancellableInstance = instance.copy()
       .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.SUSPENDED)) }
 
-    cancelableInstance.cancelSessionAndAttendances(
+    cancellableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
       by = "USER1",
       cancelComment = "Resume tomorrow",
@@ -145,7 +304,7 @@ class ScheduledInstanceTest {
       issuePayment = true,
     )
 
-    with(cancelableInstance) {
+    with(cancellableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")
       assertThat(cancelled).isTrue
       assertThat(cancelledBy).isEqualTo("USER1")
@@ -153,16 +312,52 @@ class ScheduledInstanceTest {
       assertThat(cancelledIssuePayment).isTrue
       assertThat(comment).isEqualTo("Resume tomorrow")
 
-      attendances.forEach { it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED) }
+      attendances.forEach {
+        it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.SUSPENDED)
+        it.comment isEqualTo null
+        it.issuePayment isEqualTo false
+      }
+    }
+  }
+
+  @EnumSource(AttendanceReasonEnum::class, names = ["ATTENDED"], mode = EnumSource.Mode.EXCLUDE)
+  @ParameterizedTest(name = "cancelling scheduled instance ignores attendance where reason is {0}")
+  fun `cancelling scheduled instance ignores attendance where reason is`(attendanceReason: AttendanceReasonEnum) {
+    val cancellableInstance = instance.copy()
+      .also { it.attendances.first().complete(attendanceReason(attendanceReason)) }
+
+    cancellableInstance.cancelSessionAndAttendances(
+      reason = "Staff unavailable",
+      by = "USER1",
+      cancelComment = "Resume tomorrow",
+      cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+      issuePayment = true,
+      useNewPriorityRules = true,
+    )
+
+    with(cancellableInstance) {
+      assertThat(cancelledReason).isEqualTo("Staff unavailable")
+      assertThat(cancelled).isTrue
+      assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledTime).isNotNull
+      assertThat(cancelledIssuePayment).isTrue
+      assertThat(comment).isEqualTo("Resume tomorrow")
+
+      attendances.forEach {
+        it.attendanceReason isEqualTo attendanceReason(attendanceReason)
+        it.comment isEqualTo null
+        it.issuePayment isEqualTo false
+      }
     }
   }
 
   @Test
-  fun `cancelling scheduled instance ignores auto-suspended attendances`() {
-    val cancelableInstance = instance.copy()
+  @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+  fun `cancelling scheduled instance ignores auto-suspended attendances - old`() {
+    val cancellableInstance = instance.copy()
       .also { it.attendances.first().complete(attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)) }
 
-    cancelableInstance.cancelSessionAndAttendances(
+    cancellableInstance.cancelSessionAndAttendances(
       reason = "Staff unavailable",
       by = "USER1",
       cancelComment = "Resume tomorrow",
@@ -170,7 +365,7 @@ class ScheduledInstanceTest {
       issuePayment = false,
     )
 
-    with(cancelableInstance) {
+    with(cancellableInstance) {
       assertThat(cancelledReason).isEqualTo("Staff unavailable")
       assertThat(cancelled).isTrue
       assertThat(cancelledBy).isEqualTo("USER1")
@@ -178,7 +373,11 @@ class ScheduledInstanceTest {
       assertThat(cancelledIssuePayment).isFalse
       assertThat(comment).isEqualTo("Resume tomorrow")
 
-      attendances.single { it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED) }
+      attendances.forEach {
+        it.attendanceReason == attendanceReason(AttendanceReasonEnum.AUTO_SUSPENDED)
+        it.comment isEqualTo null
+        it.issuePayment isEqualTo false
+      }
     }
   }
 
@@ -321,20 +520,21 @@ class ScheduledInstanceTest {
 
     @BeforeEach
     fun setUp() {
-      cancelledInstance = instance.copy(
-        scheduledInstanceId = 1,
-        cancelled = true,
-        cancelledBy = "Old user",
-        cancelledReason = "Old reason",
-        cancelledIssuePayment = false,
-        comment = "Old comment",
-        cancelledTime = LocalDateTime.now().minusDays(1),
-        attendances = mutableListOf(mock()),
-      )
+      cancelledInstance = activityEntity().schedules().first().instances().first()
+        .also {
+          it.cancelSessionAndAttendances(
+            reason = "Old reason",
+            by = "Old user",
+            cancelComment = "Old comment",
+            cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+            false,
+            true,
+          )
+        }
     }
 
     @Test
-    fun `instance is updated when updating the reason without a comment`() {
+    fun `instance is updated but attendance is not when updating the reason without a comment and without changing issue payment`() {
       cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", null)
 
       with(cancelledInstance) {
@@ -342,15 +542,18 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("New user")
         assertThat(cancelledReason).isEqualTo("New reason")
         assertThat(comment).isNull()
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verify(attendances.first(), never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
       }
     }
 
     @Test
-    fun `instance is updated when updating the reason with with a comment`() {
+    fun `instance is updated but attendance is not when updating the reason with with a comment and without changing issue payment`() {
       cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment")
 
       with(cancelledInstance) {
@@ -358,15 +561,18 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("New user")
         assertThat(cancelledReason).isEqualTo("New reason")
         assertThat(comment).isEqualTo("New comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verify(attendances.first(), never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
       }
     }
 
     @Test
-    fun `instance is not updated when only updating issue payment to true`() {
+    fun `instance is not updated but attendance is when only updating issue payment to true`() {
       cancelledInstance.updateCancelledSessionAndAttendances(null, "New user", null, true)
 
       with(cancelledInstance) {
@@ -374,16 +580,19 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("Old user")
         assertThat(cancelledReason).isEqualTo("Old reason")
         assertThat(comment).isEqualTo("Old comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isTrue
 
-        verify(attendances.first()).updateCancelledAttendance(null, "New user", true)
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo true
+        }
       }
     }
 
     @Test
     fun `instance is not updated when only updating issue payment to false`() {
-      cancelledInstance = cancelledInstance.copy(cancelledIssuePayment = true)
+      val cancelledInstance = cancelledInstance.copy(cancelledIssuePayment = true)
 
       cancelledInstance.updateCancelledSessionAndAttendances(null, "New user", null, false)
 
@@ -392,17 +601,18 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("Old user")
         assertThat(cancelledReason).isEqualTo("Old reason")
         assertThat(comment).isEqualTo("Old comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verify(attendances.first()).updateCancelledAttendance(null, "New user", false)
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
       }
     }
 
     @Test
     fun `instance is updated when updating reason, comment and issue payment`() {
-      cancelledInstance = cancelledInstance.copy(cancelledIssuePayment = true)
-
       cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
 
       with(cancelledInstance) {
@@ -410,51 +620,77 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("New user")
         assertThat(cancelledReason).isEqualTo("New reason")
         assertThat(comment).isEqualTo("New comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verify(attendances.first()).updateCancelledAttendance("New reason", "New user", false)
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(AttendanceReasonEnum.CANCELLED)
+          it.comment isEqualTo "New reason"
+          it.issuePayment isEqualTo false
+        }
       }
     }
 
-    @Test
-    fun `instance is updated suspended attendances are not`() {
-      val suspendedAttendance = mock<Attendance>()
-      val unSuspendedAttendance = mock<Attendance>()
+    @EnumSource(AttendanceReasonEnum::class, names = ["CANCELLED", "ATTENDED"], mode = EnumSource.Mode.EXCLUDE)
+    @ParameterizedTest(name = "instance is updated but non-cancelled attendance is not where reason is {0}")
+    fun `instance is updated but non-cancelled attendance is not`(reason: AttendanceReasonEnum) {
+      instance
+        .also {
+          it.attendances.first().mark(
+            principalName = "Old user",
+            reason = attendanceReason(reason),
+            newStatus = AttendanceStatus.COMPLETED,
+            newComment = "Old reason",
+            newIssuePayment = true,
+            newIncentiveLevelWarningIssued = null,
+            newCaseNoteId = null,
+            newOtherAbsenceReason = null,
+          )
+        }.also {
+          it.cancelSessionAndAttendances(
+            reason = "Staff unavailable",
+            by = "USER1",
+            cancelComment = "Resume tomorrow",
+            cancellationReason = attendanceReason(AttendanceReasonEnum.CANCELLED),
+            false,
+            true,
+          )
+        }
 
-      whenever(suspendedAttendance.hasReason(AttendanceReasonEnum.SUSPENDED, AttendanceReasonEnum.AUTO_SUSPENDED)).thenReturn(true)
+      instance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
 
-      cancelledInstance = cancelledInstance.copy(cancelledIssuePayment = true, attendances = mutableListOf(suspendedAttendance, unSuspendedAttendance))
-
-      cancelledInstance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
-
-      with(cancelledInstance) {
+      with(instance) {
         assertThat(cancelled).isTrue
         assertThat(cancelledBy).isEqualTo("New user")
         assertThat(cancelledReason).isEqualTo("New reason")
         assertThat(comment).isEqualTo("New comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verify(suspendedAttendance, never()).updateCancelledAttendance(anyString(), anyString(), anyBoolean())
-        verify(unSuspendedAttendance).updateCancelledAttendance("New reason", "New user", false)
+        attendances.forEach {
+          it.attendanceReason isEqualTo attendanceReason(reason)
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo true
+        }
       }
     }
 
     @Test
     fun `throws an exception when instance is not cancelled`() {
       assertThatThrownBy {
-        instance
-          .copy(cancelled = false)
-          .updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+        instance.updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Cannot update ${instance.activitySchedule.description} (${instance.timeSlot}) because it is not cancelled")
 
-      with(cancelledInstance) {
-        assertThat(cancelled).isTrue
-        assertThat(comment).isEqualTo("Old comment")
+      with(instance) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(comment).isNull()
+        assertThat(cancelledIssuePayment).isNull()
 
-        verifyNoInteractions(attendances.first())
+        attendances.forEach {
+          it.comment isEqualTo null
+          it.issuePayment isEqualTo null
+        }
       }
     }
 
@@ -463,7 +699,7 @@ class ScheduledInstanceTest {
       val date = today.minusDays(1)
 
       assertThatThrownBy {
-        instance.copy(cancelled = true, sessionDate = date).updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
+        cancelledInstance.copy(sessionDate = date).updateCancelledSessionAndAttendances("New reason", "New user", "New comment", false)
       }.isInstanceOf(IllegalArgumentException::class.java)
         .hasMessage("Cannot update ${instance.activitySchedule.description} (${instance.timeSlot}) has ended")
 
@@ -472,10 +708,12 @@ class ScheduledInstanceTest {
         assertThat(cancelledBy).isEqualTo("Old user")
         assertThat(cancelledReason).isEqualTo("Old reason")
         assertThat(comment).isEqualTo("Old comment")
-        assertThat(cancelledTime).isCloseTo(LocalDateTime.now().minusDays(1), within(1, ChronoUnit.SECONDS))
         assertThat(cancelledIssuePayment).isFalse
 
-        verifyNoInteractions(attendances.first())
+        attendances.forEach {
+          it.comment isEqualTo "Old reason"
+          it.issuePayment isEqualTo false
+        }
       }
     }
   }
