@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -43,7 +45,10 @@ class ScheduledInstanceService(
   private val outboundEventsService: OutboundEventsService,
   private val transactionHandler: TransactionHandler,
   private val telemetryClient: TelemetryClient,
+  featureSwitches: FeatureSwitches,
 ) {
+  private val useNewPriorityRules = featureSwitches.isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED)
+
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -91,7 +96,7 @@ class ScheduledInstanceService(
       val scheduledInstance = repository.findById(id)
         .orElseThrow { EntityNotFoundException("Scheduled Instance $id not found") }
 
-      val uncancelledAttendances = scheduledInstance.uncancelSessionAndAttendances()
+      val uncancelledAttendances = scheduledInstance.uncancelSessionAndAttendances(useNewPriorityRules)
 
       repository.saveAndFlush(scheduledInstance) to uncancelledAttendances
     }
@@ -116,14 +121,14 @@ class ScheduledInstanceService(
     transactionHandler.newSpringTransaction {
       repository.findByIds(request.scheduleInstanceIds.map { it })
         .map { scheduledInstance ->
-          scheduledInstance to scheduledInstance.uncancelSessionAndAttendances()
+          scheduledInstance to scheduledInstance.uncancelSessionAndAttendances(useNewPriorityRules)
         }
         .also {
           repository.saveAllAndFlush(it.map { it.first })
         }
     }
       .forEach { (uncancelledInstance, uncancelledAttendances) ->
-        log.info("Sending instance amended and attendance amended events for ucancelled instance with id ${uncancelledInstance.scheduledInstanceId}")
+        log.info("Sending instance amended and attendance amended events for uncancelled instance with id ${uncancelledInstance.scheduledInstanceId}")
 
         send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, uncancelledInstance.scheduledInstanceId)
 
@@ -149,6 +154,7 @@ class ScheduledInstanceService(
         by = scheduleInstanceCancelRequest.username,
         cancelComment = scheduleInstanceCancelRequest.comment,
         cancellationReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED),
+        useNewPriorityRules = useNewPriorityRules,
       )
 
       // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event
@@ -193,6 +199,7 @@ class ScheduledInstanceService(
           cancelComment = request.comment,
           cancellationReason = cancellationReason,
           issuePayment = request.issuePayment!!,
+          useNewPriorityRules = useNewPriorityRules,
         )
 
         // If going from WAITING -> COMPLETED track as a RECORD_ATTENDANCE event

@@ -10,5 +10,40 @@ values (1, 1, '10:00:00', '11:00:00', true, 'AM');
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
 values (1, 1, now()::date, '10:00:00', '11:00:00', true, current_timestamp - interval '1 day', 'Old user', 'Old reason', false, null, 'AM');
 
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, cancelled_issue_payment, comment, time_slot)
+values (2, 1, now()::date, '13:00:00', '15:00:00', true, current_timestamp - interval '1 day', 'Old user', 'Old reason', false, null, 'PM');
+
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
 values (1, 1, 'A11111A', 8, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (2, 2, 'Z22222A', 1, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (3, 2, 'Z22222B', 2, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (4, 2, 'Z22222C', 3, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (5, 2, 'Z22222D', 4, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (6, 2, 'Z22222E', 5, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (7, 2, 'Z22222F', 6, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (8, 2, 'Z22222G', 7, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (9, 2, 'Z22222H', 8, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (10, 2, 'Z22222I', 9, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (11, 2, 'Z22222J', 10, 'Old comment', current_timestamp - interval '1 day', 'Old user', 'COMPLETED', null, 33, 1, true, 1, 'oar1', false);
+
+
