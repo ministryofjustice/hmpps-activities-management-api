@@ -44,13 +44,13 @@ insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, sess
 values (7, 1, current_timestamp + interval '1 day', '13:00:00', '14:00:00', true, now(), 'USER1', 'Location unavailable', false, null, 'PM');
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
-values (1, 1, 'A11111A', null, 'comm1', now(), 'USER1', 'COMPLETED', null, 33, 1, true, 1, 'oar1', true);
+values (1, 1, 'A11111A', 8, 'comm1', now(), 'USER1', 'COMPLETED', null, 33, 1, true, 1, 'oar1', true);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
-values (2, 1, 'A22222A', null, 'comm2', now(), 'USER1', 'COMPLETED', null, 44, 2, true, 2, 'oar2', false);
+values (2, 1, 'A22222A', 8, 'comm2', now(), 'USER1', 'COMPLETED', null, 44, 2, true, 2, 'oar2', false);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
-values (3, 4, 'Y33333Y', null, 'comm3', now(), 'USER1', 'COMPLETED', null, 55, 4, true, 3, 'oar3', true);
+values (3, 4, 'Y33333Y', 8, 'comm3', now(), 'USER1', 'COMPLETED', null, 55, 4, true, 3, 'oar3', true);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
 values (4, 5, 'Z44444Z', null, 'comm4', null, null, 'WAITING', null, 66, 5, true, 4, 'oar4', false);
@@ -59,7 +59,28 @@ insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, at
 values (5, 6, 'Z44444Z', null, 'comm4', null, null, 'WAITING', null, 66, 5, true, 4, 'oar4', false);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
-values (6, 7, 'Z5555Z', 7, 'comm4', null, null, 'WAITING', null, 66, 5, true, 4, 'oar4', false);
+values (6, 7, 'X77777A', 1, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
 
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
-values (7, 7, 'Z66666Z', 10, 'comm4', null, null, 'WAITING', null, 66, 5, true, 4, 'oar4', false);
+values (7, 7, 'X77777B', 2, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (8, 7, 'X77777C', 3, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (9, 7, 'X77777D', 4, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (10, 7, 'X77777E', 5, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (11, 7, 'X77777F', 6, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (12, 7, 'X77777G', 7, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (13, 7, 'X77777H', 9, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
+
+insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, incentive_level_warning_issued, case_note_id, other_absence_reason, issue_payment)
+values (14, 7, 'X77777I', 10, 'comm4', now(), 'USER1', 'COMPLETED', null, 66, 5, true, 4, 'oar4', false);
