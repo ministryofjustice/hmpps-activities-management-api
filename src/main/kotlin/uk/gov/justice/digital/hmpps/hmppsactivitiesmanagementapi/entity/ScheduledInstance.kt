@@ -87,8 +87,6 @@ data class ScheduledInstance(
 
   fun slotTimes() = startTime to endTime
 
-  fun attendanceRequired() = activitySchedule.activity.attendanceRequired
-
   /**
    * This will only cancel Not recorded or attendances marked as attended.
    * To cancel a suspended attendance, then the attendance must be cancelled directly.
