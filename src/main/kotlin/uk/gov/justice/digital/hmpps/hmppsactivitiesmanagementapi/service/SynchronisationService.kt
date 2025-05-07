@@ -37,17 +37,16 @@ class SynchronisationService(
       )
     }
 
-  fun findSuspendedAllocationsSummary(prisonCode: String): AllocationReconciliationResponse =
-    allocationRepository.findBookingAllocationCountsByPrisonAndPrisonerStatusIn(
-      prisonCode,
-      listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY),
-    )
-      .let {
-        AllocationReconciliationResponse(
-          prisonCode = prisonCode,
-          bookings = it,
-        )
-      }
+  fun findSuspendedAllocationsSummary(prisonCode: String): AllocationReconciliationResponse = allocationRepository.findBookingAllocationCountsByPrisonAndPrisonerStatusIn(
+    prisonCode,
+    listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.AUTO_SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY),
+  )
+    .let {
+      AllocationReconciliationResponse(
+        prisonCode = prisonCode,
+        bookings = it,
+      )
+    }
 
   fun findAttendancePaidSummary(prisonCode: String, date: LocalDate): AttendanceReconciliationResponse = attendanceRepository.findBookingPaidAttendanceCountsByPrisonAndDate(prisonCode, date)
     .let {
