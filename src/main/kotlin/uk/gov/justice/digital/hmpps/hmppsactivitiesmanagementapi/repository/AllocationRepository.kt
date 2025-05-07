@@ -106,6 +106,22 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   ): List<BookingCount>
 
   @Query(
+    value = """
+      select new uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount(a.bookingId, count(a)) from Allocation a 
+      join ActivitySchedule as2 on a.activitySchedule.activityScheduleId = as2.activityScheduleId 
+      join Activity a2 on as2.activity.activityId = a2.activityId 
+      where a2.prisonCode = :prisonCode 
+      and a.prisonerStatus in :prisonerStatus
+      group by a.bookingId
+      order by a.bookingId
+      """,
+  )
+  fun findBookingAllocationCountsByPrisonAndPrisonerStatusIn(
+    prisonCode: String,
+    prisonerStatus: List<PrisonerStatus>,
+  ): List<BookingCount>
+
+  @Query(
     "select case when count(a) > 0 then true else false end " +
       "from Allocation a " +
       "where a.activitySchedule.activity.prisonCode = :prisonCode " +
