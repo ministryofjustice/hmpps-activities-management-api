@@ -30,7 +30,6 @@ generic-service:
     AWS_S3_AP_BUCKET: moj-reg-dev
     AWS_S3_AP_PROJECT: hmpps-activities-management-dev
     PRISONS_WITH_REGEX_LOCATION_CONFIGS: BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI,RSI
-    FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED: true
 
   resources:
     requests:
