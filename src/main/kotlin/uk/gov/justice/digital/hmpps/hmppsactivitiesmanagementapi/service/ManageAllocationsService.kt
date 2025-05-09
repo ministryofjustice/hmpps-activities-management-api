@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
-import jakarta.transaction.Transactional
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -27,7 +26,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
-@Transactional
 class ManageAllocationsService(
   private val rolloutPrisonService: RolloutPrisonService,
   private val activityScheduleRepository: ActivityScheduleRepository,
@@ -59,15 +57,19 @@ class ManageAllocationsService(
   }
 
   fun suspendAllocationsDueToBeSuspended(prisonCode: String) {
-    allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.ACTIVE))
-      .filter { it.isCurrentlySuspended() }
-      .suspend()
+    transactionHandler.newSpringTransaction {
+      allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.ACTIVE))
+        .filter { it.isCurrentlySuspended() }
+        .suspend()
+    }.let(::sendAllocationsAmendedEvents)
   }
 
   fun unsuspendAllocationsDueToBeUnsuspended(prisonCode: String) {
-    val suspended = allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY))
-      .filterNot { it.isCurrentlySuspended() }
-      .unsuspend()
+    transactionHandler.newSpringTransaction {
+      allocationRepository.findByPrisonCodePrisonerStatus(prisonCode, listOf(PrisonerStatus.SUSPENDED, PrisonerStatus.SUSPENDED_WITH_PAY))
+        .filterNot { it.isCurrentlySuspended() }
+        .unsuspend()
+    }.let(::sendAllocationsAmendedEvents)
   }
 
   /**
@@ -154,14 +156,10 @@ class ManageAllocationsService(
       .forEach { prison ->
         log.info("Checking for expired allocations at ${prison.prisonCode}.")
 
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.PENDING)).ifNotEmpty {
-          log.info("Checking for expired pending allocations at ${prison.prisonCode}.")
-          deallocateIfExpired(it, prison)
-        }
-        allocationRepository.findByPrisonCodePrisonerStatus(prison.prisonCode, listOf(PrisonerStatus.AUTO_SUSPENDED)).ifNotEmpty {
-          log.info("Checking for expired auto-suspended allocations at ${prison.prisonCode}.")
-          deallocateIfExpired(it, prison)
-        }
+        deallocateIfExpired(prison, PrisonerStatus.PENDING)
+
+        deallocateIfExpired(prison, PrisonerStatus.AUTO_SUSPENDED)
+
         waitingListService.fetchOpenApplicationsForPrison(prison.prisonCode).ifNotEmpty {
           log.info("Checking for expired waiting list applications at ${prison.prisonCode}.")
           removeWaitingListApplicationIfExpired(it, prison)
@@ -174,18 +172,27 @@ class ManageAllocationsService(
    * the regime and the date of the last known movement out or prison for the prisoner any allocations should be
    * expired/deallocated.
    */
-  private fun deallocateIfExpired(allocations: Collection<Allocation>, prisonPlan: RolloutPrisonPlan) {
-    log.info("Candidate allocations for expiration for prison ${prisonPlan.prisonCode}: ${allocations.map { it.allocationId }}")
+  private fun deallocateIfExpired(prisonPlan: RolloutPrisonPlan, prisonerStatus: PrisonerStatus) {
+    log.info("Checking for expired $prisonerStatus allocations at ${prisonPlan.prisonCode}.")
 
-    val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
-    val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
+    transactionHandler.newSpringTransaction {
+      val allocations: List<Allocation> =
+        allocationRepository.findByPrisonCodePrisonerStatus(prisonPlan.prisonCode, listOf(prisonerStatus))
 
-    val expiredAllocations = allocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
-    log.info("Expired allocations for prison ${prisonPlan.prisonCode}: ${expiredAllocations.map { it.allocationId }}")
+      allocations.ifNotEmpty {
+        log.info("Candidate allocations for expiration for prison ${prisonPlan.prisonCode}: ${allocations.map { it.allocationId }}")
 
-    expiredAllocations
-      .groupBy { it.activitySchedule }
-      .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
+        val prisonerNumbers = allocations.map { it.prisonerNumber }.distinct()
+        val expiredPrisoners = getExpiredPrisoners(prisonPlan, prisonerNumbers.toSet())
+
+        val expiredAllocations = allocations.filter { expiredPrisoners.contains(it.prisonerNumber) }
+        log.info("Expired allocations for prison ${prisonPlan.prisonCode}: ${expiredAllocations.map { it.allocationId }}")
+
+        expiredAllocations
+          .groupBy { it.activitySchedule }
+          .deallocate(DeallocationReason.TEMPORARILY_RELEASED)
+      } ?: emptyList()
+    }.let(::sendAllocationsAmendedEvents)
   }
 
   private fun removeWaitingListApplicationIfExpired(applications: Collection<WaitingList>, prisonPlan: RolloutPrisonPlan) {
@@ -217,49 +224,42 @@ class ManageAllocationsService(
       .toSet()
   }
 
-  private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason? = null) {
-    this.keys.forEach { schedule ->
-      continueToRunOnFailure(
-        block = {
-          transactionHandler.newSpringTransaction {
-            getOrDefault(schedule, emptyList()).onEach { allocation ->
-              reason?.let { allocation.deallocateNowWithReason(reason) } ?: allocation.deallocateNowOn(LocalDate.now())
-            }.ifNotEmpty { deallocations ->
-              activityScheduleRepository.saveAndFlush(schedule)
-              log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
-              deallocations
-            }?.map(Allocation::allocationId) ?: emptyList()
-          }.let(::sendAllocationsAmendedEvents)
-        },
-        failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}",
-      )
-    }
+  private fun Map<ActivitySchedule, List<Allocation>>.deallocate(reason: DeallocationReason): List<Long> = this.keys.map { schedule ->
+    continueToRunOnFailure(
+      block = {
+        getOrDefault(schedule, emptyList())
+          .onEach { allocation -> allocation.deallocateNowWithReason(reason) }
+          .ifNotEmpty { deallocations ->
+            activityScheduleRepository.saveAndFlush(schedule)
+            log.info("Deallocated ${deallocations.size} allocation(s) from schedule ${schedule.activityScheduleId} with reason '$reason'.")
+            deallocations
+          }?.map(Allocation::allocationId) ?: emptyList()
+      },
+      failure = "An error occurred deallocating allocations on activity schedule ${schedule.activityScheduleId}",
+    )
   }
+    .flatMap { it }
 
   private fun List<Allocation>.suspend() = continueToRunOnFailure(
     block = {
-      transactionHandler.newSpringTransaction {
-        onEach { allocation ->
-          run {
-            allocation.activatePlannedSuspension()
-            allocationRepository.saveAndFlush(allocation)
-          }
-        }.map(Allocation::allocationId)
-      }.let(::sendAllocationsAmendedEvents)
+      onEach { allocation ->
+        run {
+          allocation.activatePlannedSuspension()
+          allocationRepository.saveAndFlush(allocation)
+        }
+      }.map(Allocation::allocationId)
     },
     failure = "An error occurred while suspending allocations due to be suspended today",
   )
 
   private fun List<Allocation>.unsuspend() = continueToRunOnFailure(
     block = {
-      transactionHandler.newSpringTransaction {
-        onEach { allocation ->
-          run {
-            allocation.reactivateSuspension()
-            allocationRepository.saveAndFlush(allocation)
-          }
-        }.map(Allocation::allocationId)
-      }.let(::sendAllocationsAmendedEvents)
+      onEach { allocation ->
+        run {
+          allocation.reactivateSuspension()
+          allocationRepository.saveAndFlush(allocation)
+        }
+      }.map(Allocation::allocationId)
     },
     failure = "An error occurred while unsuspending allocations due to be unsuspended today",
   )
@@ -270,15 +270,14 @@ class ManageAllocationsService(
     allocationIds.forEach { outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, it) }
   }
 
-  private fun continueToRunOnFailure(block: () -> Unit, failure: String = "") {
-    runCatching {
-      block()
-    }
-      .onFailure {
-        monitoringService.capture(failure, it)
-        log.error(failure, it)
-      }
+  private fun continueToRunOnFailure(block: () -> List<Long>, failure: String = ""): List<Long> = runCatching {
+    block()
   }
+    .onFailure {
+      monitoringService.capture(failure, it)
+      log.error(failure, it)
+    }
+    .getOrDefault(emptyList())
 }
 
 enum class AllocationOperation {
