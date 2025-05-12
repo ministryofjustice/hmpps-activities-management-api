@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.80")
+  implementation("aws.sdk.kotlin:s3:1.4.81")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
@@ -70,9 +70,9 @@ dependencies {
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit:4.1.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.0")
-  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:4.1.0")
+  testImplementation("net.javacrumbs.json-unit:json-unit:4.1.1")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
+  testImplementation("net.javacrumbs.json-unit:json-unit-json-path:4.1.1")
   testImplementation("org.springframework.security:spring-security-test")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
