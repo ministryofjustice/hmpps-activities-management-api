@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.UncancelScheduledInstanceRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
@@ -43,6 +44,7 @@ import java.time.temporal.ChronoUnit
   properties = [
     "feature.event.activities.scheduled-instance.amended=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.cancel.instance.priority.change.enabled=true",
   ],
 )
 class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() {
@@ -311,6 +313,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       with(webTestClient.getScheduledInstanceById(1)!!) {
         assertThat(cancelled).isFalse
         assertThat(cancelledBy).isNull()
+        assertThat(cancelledIssuePayment).isNull()
 
         with(attendances.first()) {
           assertThat(attendanceReason).isNull()
@@ -318,6 +321,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
           assertThat(editable).isTrue
+          assertThat(issuePayment).isNull()
         }
       }
 
@@ -346,6 +350,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       with(webTestClient.getScheduledInstanceById(122405)!!) {
         assertThat(cancelled).isFalse
         assertThat(cancelledBy).isNull()
+        assertThat(cancelledIssuePayment).isNull()
 
         with(attendances.first()) {
           assertThat(attendanceReason).isNull()
@@ -353,6 +358,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
           assertThat(comment).isNull()
           assertThat(recordedBy).isNull()
           assertThat(editable).isTrue
+          assertThat(issuePayment).isNull()
         }
       }
 
@@ -395,6 +401,229 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
   }
 
   @Nested
+  @DisplayName("updateScheduledInstance")
+  inner class UpdateScheduledInstance {
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-38.sql")
+    fun `scheduled instance is updated with reason and comment`() {
+      webTestClient.updateScheduledInstance(1, "New reason", "New comment", null)
+        .expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("test-client")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledIssuePayment).isFalse
+
+        with(attendances.first()) {
+          assertThat(attendanceReason?.id).isEqualTo(8)
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Old comment")
+          assertThat(recordedBy).isEqualTo("Old user")
+          assertThat(recordedTime).isCloseTo(TimeSource.now().minusDays(1), within(60, ChronoUnit.SECONDS))
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isFalse
+        }
+      }
+
+      verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
+        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-38.sql")
+    fun `scheduled instance is updated with reason and issue payment`() {
+      webTestClient.updateScheduledInstance(1, "New reason", "New comment", true)
+        .expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("test-client")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledIssuePayment).isTrue
+
+        with(attendances.first()) {
+          assertThat(attendanceReason?.id).isEqualTo(8)
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("New reason")
+          assertThat(recordedBy).isEqualTo("test-client")
+          assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isTrue
+        }
+      }
+
+      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
+        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(eventCaptor.secondValue) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
+        occurredAt isCloseTo TimeSource.now()
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-38.sql")
+    fun `only issue payment is updated`() {
+      webTestClient.updateScheduledInstance(1, null, null, true)
+        .expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("Old user")
+        assertThat(cancelledReason).isEqualTo("Old reason")
+        assertThat(comment).isNull()
+        assertThat(cancelledTime).isCloseTo(TimeSource.now().minusDays(1), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledIssuePayment).isTrue
+
+        with(attendances.first()) {
+          assertThat(attendanceReason?.id).isEqualTo(8)
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("Old comment")
+          assertThat(recordedBy).isEqualTo("test-client")
+          assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isTrue
+        }
+      }
+
+      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(1))
+        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(eventCaptor.secondValue) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        additionalInformation isEqualTo PrisonerAttendanceInformation(1)
+        occurredAt isCloseTo TimeSource.now()
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-38.sql")
+    fun `non-cancelled attendances are ignored`() {
+      webTestClient.updateScheduledInstance(2, "New reason", "New comment", true)
+        .expectStatus().isNoContent
+
+      with(webTestClient.getScheduledInstanceById(2)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("test-client")
+        assertThat(cancelledReason).isEqualTo("New reason")
+        assertThat(comment).isEqualTo("New comment")
+        assertThat(cancelledTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(cancelledIssuePayment).isTrue
+        assertThat(attendances).hasSize(10)
+
+        val cancelledAttendances = attendances.filter { it.id == 9L }
+        assertThat(cancelledAttendances).hasSize(1)
+
+        with(cancelledAttendances.first()) {
+          assertThat(attendanceReason?.id).isEqualTo(8)
+          assertThat(status).isEqualTo("COMPLETED")
+          assertThat(comment).isEqualTo("New reason")
+          assertThat(recordedBy).isEqualTo("test-client")
+          assertThat(recordedTime).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(editable).isTrue
+          assertThat(issuePayment).isTrue
+        }
+
+        val nonCancelledAttendances = attendances.filterNot { it.id == 9L }
+        assertThat(nonCancelledAttendances).hasSize(9)
+        nonCancelledAttendances.forEach {
+          assertThat(it.attendanceReason?.id).isNotEqualTo(8)
+          assertThat(it.status).isEqualTo("COMPLETED")
+          assertThat(it.comment).isEqualTo("Old comment")
+          assertThat(it.recordedBy).isEqualTo("Old user")
+          assertThat(it.recordedTime).isCloseTo(TimeSource.now().minusDays(1), within(60, ChronoUnit.SECONDS))
+          assertThat(it.issuePayment).isFalse
+        }
+      }
+
+      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
+        assertThat(additionalInformation).isEqualTo(ScheduledInstanceInformation(2))
+        assertThat(occurredAt).isCloseTo(TimeSource.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A scheduled instance has been amended in the activities management service")
+      }
+
+      with(eventCaptor.secondValue) {
+        eventType isEqualTo "activities.prisoner.attendance-amended"
+        additionalInformation isEqualTo PrisonerAttendanceInformation(9)
+        occurredAt isCloseTo TimeSource.now()
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-37.sql")
+    fun `400 - fails - as session is not cancelled`() {
+      webTestClient.updateScheduledInstance(3, null, null, true)
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("Cannot update Maths PM (PM) because it is not cancelled")
+
+      with(webTestClient.getScheduledInstanceById(3)!!) {
+        assertThat(cancelled).isFalse
+        assertThat(cancelledBy).isNull()
+        assertThat(cancelledReason).isNull()
+        assertThat(cancelledTime).isNull()
+        assertThat(cancelledIssuePayment).isNull()
+      }
+
+      verifyNoInteractions(eventsPublisher)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-37.sql")
+    fun `400 - fails - as session is not payable when trying to issue payment`() {
+      webTestClient.updateScheduledInstance(1, null, null, true)
+        .expectStatus().isBadRequest
+        .expectBody().jsonPath("developerMessage").isEqualTo("Cannot issue payment for Maths AM (AM) because it is not payable")
+
+      with(webTestClient.getScheduledInstanceById(1)!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(cancelledReason).isEqualTo("Location unavailable")
+        assertThat(cancelledTime).isNotNull()
+        assertThat(cancelledTime).isNotNull()
+        assertThat(cancelledIssuePayment).isFalse
+
+        assertThat(attendances).hasSize(2)
+        attendances.forEach { attendance ->
+          assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED.toString())
+          assertThat(attendance.recordedBy).isEqualTo("USER1")
+          assertThat(attendance.recordedTime).isNotNull
+          assertThat(attendance.editable).isTrue
+        }
+      }
+
+      verifyNoInteractions(eventsPublisher)
+    }
+  }
+
+  @Nested
   @DisplayName("cancelScheduledInstance")
   inner class CancelScheduledInstance {
     @Test
@@ -405,6 +634,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       with(webTestClient.getScheduledInstanceById(1)!!) {
         assertThat(cancelled).isTrue
         assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(cancelledIssuePayment).isNull()
 
         with(attendances.first()) {
           assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
@@ -413,6 +643,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
           assertThat(recordedBy).isEqualTo("USER1")
           assertThat(recordedTime).isNotNull
           assertThat(editable).isTrue
+          assertThat(issuePayment).isTrue
         }
       }
 
@@ -479,6 +710,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       with(webTestClient.getScheduledInstanceById(1)!!) {
         assertThat(cancelled).isTrue
         assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(cancelledIssuePayment).isTrue
 
         with(attendances.first()) {
           assertThat(attendanceReason!!.code).isEqualTo("CANCELLED")
@@ -625,15 +857,15 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
 
     @Test
     @Sql("classpath:test_data/seed-activity-id-37.sql")
-    fun `200 - success - ignores suspended attendances`() {
+    fun `200 - success - ignores attendances which are not cancelled`() {
       webTestClient.uncancelScheduledInstances(listOf(7))
         .expectStatus().isNoContent
 
       with(webTestClient.getScheduledInstanceById(7)!!) {
         assertThatInstanceIsUncancelled(this)
-        assertThat(attendances).hasSize(2)
+        assertThat(attendances).hasSize(9)
         attendances.forEach { attendance ->
-          assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING.toString())
+          assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED.toString())
         }
       }
 
@@ -687,51 +919,12 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
       verifyNoInteractions(eventsPublisher)
     }
 
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-37.sql")
-    fun `400 - fails - an attendance is not completed`() {
-      webTestClient.uncancelScheduledInstances(listOf(1, 6))
-        .expectStatus().isBadRequest
-        .expectBody().jsonPath("developerMessage").isEqualTo("Cannot reset an attendance for prisoner 'Z44444Z' that is already WAITING")
-
-      with(webTestClient.getScheduledInstanceById(1)!!) {
-        assertThat(cancelled).isTrue
-        assertThat(cancelledBy).isEqualTo("USER1")
-        assertThat(cancelledReason).isEqualTo("Location unavailable")
-        assertThat(cancelledTime).isNotNull()
-
-        assertThat(attendances).hasSize(2)
-        attendances.forEach { attendance ->
-          assertThat(attendance.status).isEqualTo(AttendanceStatus.COMPLETED.toString())
-          assertThat(attendance.recordedBy).isEqualTo("USER1")
-          assertThat(attendance.recordedTime).isNotNull
-          assertThat(attendance.editable).isTrue
-        }
-      }
-
-      with(webTestClient.getScheduledInstanceById(6)!!) {
-        assertThat(cancelled).isTrue
-        assertThat(cancelledBy).isEqualTo("USER1")
-        assertThat(cancelledReason).isEqualTo("Location unavailable")
-        assertThat(cancelledTime).isNotNull()
-
-        assertThat(attendances).hasSize(1)
-        attendances.forEach { attendance ->
-          assertThat(attendance.status).isEqualTo(AttendanceStatus.WAITING.toString())
-          assertThat(attendance.recordedBy).isNull()
-          assertThat(attendance.recordedTime).isNull()
-          assertThat(attendance.editable).isTrue
-        }
-      }
-
-      verifyNoInteractions(eventsPublisher)
-    }
-
     private fun assertThatInstanceIsUncancelled(instances: ActivityScheduleInstance) = with(instances) {
       assertThat(cancelled).isFalse
       assertThat(cancelledBy).isNull()
       assertThat(cancelledReason).isNull()
       assertThat(cancelledTime).isNull()
+      assertThat(cancelledIssuePayment).isNull()
     }
 
     private fun assertThatAttendanceIsReset(attendances: Attendance) = with(attendances) {
@@ -761,11 +954,13 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     with(webTestClient.getScheduledInstanceById(3)!!) {
       assertThat(cancelled).isTrue
       assertThat(cancelledBy).isEqualTo("USER1")
+      assertThat(cancelledIssuePayment).isTrue
     }
 
     with(webTestClient.getScheduledInstanceById(4)!!) {
       assertThat(cancelled).isFalse
       assertThat(cancelledBy).isNull()
+      assertThat(cancelledIssuePayment).isNull()
 
       with(attendances.first()) {
         assertThat(attendanceReason).isNull()
@@ -791,11 +986,13 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
     with(webTestClient.getScheduledInstanceById(2)!!) {
       assertThat(cancelled).isFalse
       assertThat(cancelledBy).isNull()
+      assertThat(cancelledIssuePayment).isNull()
     }
 
     with(webTestClient.getScheduledInstanceById(4)!!) {
       assertThat(cancelled).isFalse
       assertThat(cancelledBy).isNull()
+      assertThat(cancelledIssuePayment).isNull()
 
       with(attendances.first()) {
         assertThat(attendanceReason).isNull()
@@ -897,6 +1094,13 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
   private fun WebTestClient.uncancelScheduledInstance(id: Long, username: String, displayName: String) = put()
     .uri("/scheduled-instances/$id/uncancel")
     .bodyValue(UncancelScheduledInstanceRequest(username, displayName))
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+
+  private fun WebTestClient.updateScheduledInstance(id: Long, cancelledReason: String?, comment: String?, issuePayment: Boolean?) = put()
+    .uri("/scheduled-instances/$id")
+    .bodyValue(ScheduledInstancedUpdateRequest(cancelledReason, comment, issuePayment))
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()

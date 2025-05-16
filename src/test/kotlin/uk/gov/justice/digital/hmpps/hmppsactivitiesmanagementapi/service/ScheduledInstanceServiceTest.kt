@@ -10,8 +10,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.anyList
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -19,6 +22,8 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -34,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -57,6 +63,7 @@ class ScheduledInstanceServiceTest {
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
+  private val featureSwitches: FeatureSwitches = mock { on { isEnabled(any<Feature>(), any()) } doReturn false }
   private val service = ScheduledInstanceService(
     repository,
     attendanceReasonRepository,
@@ -65,6 +72,7 @@ class ScheduledInstanceServiceTest {
     outboundEventsService,
     TransactionHandler(),
     telemetryClient,
+    featureSwitches,
   )
 
   @Nested
@@ -263,6 +271,74 @@ class ScheduledInstanceServiceTest {
   @DisplayName("cancelScheduledInstance")
   inner class CancelScheduledInstance {
     @Test
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `cancels a scheduled instance and its attendance - success - old`() {
+      val activity = activityEntity(timestamp = LocalDateTime.now())
+      val schedule = activity.schedules().first()
+      val instance = schedule.instances().first()
+      instance.cancelled = false
+
+      activity.addPay(
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        payBand = prisonPayBandsLowMediumHigh()[1],
+        rate = 50,
+        pieceRate = 60,
+        pieceRateItems = 70,
+        startDate = null,
+      )
+      schedule.apply {
+        this.allocatePrisoner(
+          prisonerNumber = "A1234AB".toPrisonerNumber(),
+          startDate = LocalDate.now().plusDays(1),
+          bookingId = 10002,
+          payBand = prisonPayBandsLowMediumHigh()[1],
+          allocatedBy = "Mr Blogs",
+        )
+      }
+      instance.apply {
+        this.attendances.add(
+          Attendance(
+            attendanceId = 2,
+            scheduledInstance = this,
+            prisonerNumber = "A1234AB",
+          ),
+        )
+      }
+
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.saveAndFlush(instance)).thenReturn(instance)
+      whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
+        attendanceReason(
+          AttendanceReasonEnum.CANCELLED,
+        ),
+      )
+
+      service.cancelScheduledInstance(
+        instance.scheduledInstanceId,
+        ScheduleInstanceCancelRequest("Staff unavailable", "USER1", "Resume tomorrow"),
+      )
+
+      assertThat(instance.cancelled).isTrue
+      assertThat(instance.cancelledTime).isNotNull
+      assertThat(instance.cancelledBy).isEqualTo("USER1")
+      assertThat(instance.comment).isEqualTo("Resume tomorrow")
+
+      instance.attendances.forEach {
+        assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+        assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+        assertThat(it.comment).isEqualTo("Staff unavailable")
+        assertThat(it.recordedBy).isEqualTo("USER1")
+        assertThat(it.recordedTime).isNotNull
+      }
+
+      verify(telemetryClient).trackEvent(TelemetryEvent.RECORD_ATTENDANCE.value, instance.attendances.first().toTelemetryPropertiesMap())
+      verify(outboundEventsService)
+        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
+    }
+
+    @Test
     fun `cancels a scheduled instance and its attendance - success`() {
       val activity = activityEntity(timestamp = LocalDateTime.now())
       val schedule = activity.schedules().first()
@@ -304,6 +380,8 @@ class ScheduledInstanceServiceTest {
           AttendanceReasonEnum.CANCELLED,
         ),
       )
+
+      featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
 
       service.cancelScheduledInstance(
         instance.scheduledInstanceId,
@@ -400,11 +478,41 @@ class ScheduledInstanceServiceTest {
 
     @BeforeEach
     fun setUp() {
-      val activity1 = activityEntity(activityId = 1L, timestamp = LocalDateTime.now(), noSchedules = true, description = "Maths Level 1")
-      val activity2 = activityEntity(activityId = 2L, timestamp = LocalDateTime.now(), noSchedules = true, description = "English Level 2", noPayBands = true, paid = false)
+      val activity1 = activityEntity(
+        activityId = 1L,
+        timestamp = LocalDateTime.now(),
+        noSchedules = true,
+        description = "Maths Level 1",
+      )
+      val activity2 = activityEntity(
+        activityId = 2L,
+        timestamp = LocalDateTime.now(),
+        noSchedules = true,
+        description = "English Level 2",
+        noPayBands = true,
+        paid = false,
+      )
 
-      val schedule1 = activity1.addSchedule(activitySchedule(activityScheduleId = 1L, activity = activity1, description = activity1.description!!, paid = true, timeSlot = TimeSlot.AM, noInstances = true))
-      val schedule2 = activity2.addSchedule(activitySchedule(activityScheduleId = 2L, activity = activity2, description = activity2.description!!, paid = false, timeSlot = TimeSlot.AM, noInstances = true))
+      val schedule1 = activity1.addSchedule(
+        activitySchedule(
+          activityScheduleId = 1L,
+          activity = activity1,
+          description = activity1.description!!,
+          paid = true,
+          timeSlot = TimeSlot.AM,
+          noInstances = true,
+        ),
+      )
+      val schedule2 = activity2.addSchedule(
+        activitySchedule(
+          activityScheduleId = 2L,
+          activity = activity2,
+          description = activity2.description!!,
+          paid = false,
+          timeSlot = TimeSlot.AM,
+          noInstances = true,
+        ),
+      )
 
       instance1 = schedule1.addInstance(sessionDate = today, slot = schedule1.slots().first())
       instance2 = schedule2.addInstance(sessionDate = today, slot = schedule2.slots().first())
@@ -459,7 +567,14 @@ class ScheduledInstanceServiceTest {
         )
       }
 
-      whenever(repository.findByIds(listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId))).thenReturn(listOf(instance1!!, instance2!!))
+      whenever(
+        repository.findByIds(
+          listOf(
+            instance1!!.scheduledInstanceId,
+            instance2!!.scheduledInstanceId,
+          ),
+        ),
+      ).thenReturn(listOf(instance1!!, instance2!!))
       whenever(repository.saveAllAndFlush(listOf(instance1, instance2))).thenReturn(listOf(instance1, instance2))
       whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.CANCELLED)).thenReturn(
         attendanceReason(
@@ -469,7 +584,8 @@ class ScheduledInstanceServiceTest {
     }
 
     @Test
-    fun `cancels the scheduled instances and their attendances - success`() {
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `cancels the scheduled instances and their attendances - success - old`() {
       service.cancelScheduledInstances(
         ScheduleInstancesCancelRequest(
           scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
@@ -535,10 +651,104 @@ class ScheduledInstanceServiceTest {
     }
 
     @Test
+    fun `cancels the scheduled instances and their attendances - success`() {
+      featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
+
+      service.cancelScheduledInstances(
+        ScheduleInstancesCancelRequest(
+          scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
+          reason = "Staff unavailable",
+          username = "USER1",
+          comment = "Resume tomorrow",
+          issuePayment = true,
+        ),
+      )
+
+      with(instance1!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledTime).isNotNull
+        assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(comment).isEqualTo("Resume tomorrow")
+
+        attendances.forEach {
+          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+          assertThat(it.comment).isEqualTo("Staff unavailable")
+          assertThat(it.recordedBy).isEqualTo("USER1")
+          assertThat(it.recordedTime).isNotNull
+          assertThat(it.issuePayment).isTrue
+        }
+
+        verify(telemetryClient).trackEvent(
+          TelemetryEvent.RECORD_ATTENDANCE.value,
+          attendances.first().toTelemetryPropertiesMap(),
+        )
+        verify(outboundEventsService).send(
+          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
+          attendances.first().attendanceId,
+        )
+      }
+
+      with(instance2!!) {
+        assertThat(cancelled).isTrue
+        assertThat(cancelledTime).isNotNull
+        assertThat(cancelledBy).isEqualTo("USER1")
+        assertThat(comment).isEqualTo("Resume tomorrow")
+
+        attendances.forEach {
+          assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
+          assertThat(it.attendanceReason?.code).isEqualTo(AttendanceReasonEnum.CANCELLED)
+          assertThat(it.comment).isEqualTo("Staff unavailable")
+          assertThat(it.recordedBy).isEqualTo("USER1")
+          assertThat(it.recordedTime).isNotNull
+          assertThat(it.issuePayment).isFalse
+        }
+
+        verify(telemetryClient).trackEvent(
+          TelemetryEvent.RECORD_ATTENDANCE.value,
+          attendances.first().toTelemetryPropertiesMap(),
+        )
+        verify(outboundEventsService).send(
+          OutboundEvent.PRISONER_ATTENDANCE_AMENDED,
+          attendances.first().attendanceId,
+        )
+      }
+
+      verify(outboundEventsService, times(2))
+        .send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance1!!.scheduledInstanceId)
+    }
+
+    @Test
+    @Deprecated("Remove when toggle FEATURE_CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED is removed")
+    fun `will not cancel any instances if one instance is already cancelled - failed - old`() {
+      instance1!!.cancelled = true
+
+      assertThatThrownBy {
+        service.cancelScheduledInstances(
+          ScheduleInstancesCancelRequest(
+            scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
+            reason = "Staff unavailable",
+            username = "USER1",
+            comment = "Resume tomorrow",
+            issuePayment = true,
+          ),
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("${instance1!!.activitySchedule.description} (${instance1!!.timeSlot}) has already been cancelled")
+
+      verifyNoInteractions(telemetryClient)
+      verifyNoInteractions(outboundEventsService)
+      verify(repository, never()).saveAllAndFlush(anyList())
+    }
+
+    @Test
     fun `will not cancel any instances if one instance is already cancelled - failed`() {
       instance1!!.cancelled = true
 
       assertThatThrownBy {
+        featureSwitches.stub { on { isEnabled(Feature.CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED) } doReturn true }
+
         service.cancelScheduledInstances(
           ScheduleInstancesCancelRequest(
             scheduleInstanceIds = listOf(instance1!!.scheduledInstanceId, instance2!!.scheduledInstanceId),
@@ -591,6 +801,52 @@ class ScheduledInstanceServiceTest {
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 111)
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 222)
       verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 333)
+    }
+  }
+
+  @Nested
+  @DisplayName("updateScheduledInstance")
+  inner class UpdateScheduledInstance {
+    @BeforeEach
+    fun setUp() {
+      addCaseloadIdToRequestHeader("MDI")
+    }
+
+    @Test
+    fun `updates the scheduled instance`() {
+      val instance: ScheduledInstance = activityEntity(timestamp = LocalDateTime.now()).schedules().first().instances().first()
+
+      instance.apply {
+        cancelled = true
+        attendances.first().cancel(attendanceReason(AttendanceReasonEnum.CANCELLED))
+      }
+
+      whenever(repository.findById(instance.scheduledInstanceId)).thenReturn(Optional.of(instance))
+      whenever(repository.saveAndFlush(instance)).thenReturn(instance)
+
+      val request = ScheduledInstancedUpdateRequest("Cancelled reason", "Comment", true)
+      service.updateScheduledInstance(instance.scheduledInstanceId, request, "USER1")
+
+      with(instance) {
+        assertThat(cancelled).isTrue()
+        assertThat(cancelledReason).isEqualTo("Cancelled reason")
+      }
+
+      verify(repository).saveAndFlush(instance)
+      verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULED_INSTANCE_AMENDED, instance.scheduledInstanceId)
+      verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, instance.attendances.first().attendanceId)
+    }
+
+    @Test
+    fun `throws exception when scheduled instance ID is not found`() {
+      whenever(repository.findById(1)).thenReturn(Optional.empty())
+
+      val exception = assertThrows<EntityNotFoundException> {
+        val request = ScheduledInstancedUpdateRequest("Cancelled reason", "Comment", true)
+        service.updateScheduledInstance(1, request, "USER1")
+      }
+
+      assertThat(exception.message).isEqualTo("Scheduled Instance 1 not found")
     }
   }
 }

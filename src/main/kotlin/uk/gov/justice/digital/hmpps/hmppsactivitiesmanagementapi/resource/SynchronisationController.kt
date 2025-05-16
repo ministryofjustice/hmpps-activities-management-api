@@ -116,6 +116,47 @@ class SynchronisationController(private val synchronisationService: Synchronisat
   ): AllocationReconciliationResponse = synchronisationService.findActiveAllocationsSummary(prisonId)
 
   @PreAuthorize("hasRole('NOMIS_ACTIVITIES')")
+  @GetMapping("/reconciliation/suspended-allocations/{prisonId}")
+  @ResponseStatus(HttpStatus.OK)
+  @Operation(
+    summary = "Retrieves suspended allocation details for the sync reconciliation",
+    description = "Retrieves booking numbers and counts for suspended allocations currently active in each prison",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Reconciliation information retrieved",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = AllocationReconciliationResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "There was an error with the request",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden",
+        content = [
+          Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class)),
+        ],
+      ),
+    ],
+  )
+  fun getSuspendedAllocationReconciliation(
+    @Schema(description = "Prison id", required = true) @PathVariable prisonId: String,
+  ): AllocationReconciliationResponse = synchronisationService.findSuspendedAllocationsSummary(prisonId)
+
+  @PreAuthorize("hasRole('NOMIS_ACTIVITIES')")
   @GetMapping("/reconciliation/attendances/{prisonId}")
   @ResponseStatus(HttpStatus.OK)
   @Operation(

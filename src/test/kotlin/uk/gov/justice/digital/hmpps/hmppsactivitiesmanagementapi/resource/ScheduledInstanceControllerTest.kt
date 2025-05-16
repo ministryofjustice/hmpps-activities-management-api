@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary.AttendanceSummaryDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstanceCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
@@ -195,6 +196,50 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(ScheduleInstancesUncancelRequest(listOf(1)))
     }.andExpect { status { isBadRequest() } }
+  }
+
+  @Test
+  fun `updateScheduledInstance - 204 response when successfully updated`() {
+    val request = ScheduledInstancedUpdateRequest("Staff unavailable", "Comment", true)
+
+    mockMvc.put("/scheduled-instances/1") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }.andExpect { status { isNoContent() } }
+
+    verify(scheduledInstanceService).updateScheduledInstance(1, request, "USER")
+  }
+
+  @Test
+  fun `updateScheduledInstance - 400 response when bad request exception is thrown`() {
+    whenever(
+      scheduledInstanceService.updateScheduledInstance(any(), any(), any()),
+    ).thenThrow(IllegalArgumentException("Bad request"))
+
+    mockMvc.put("/scheduled-instances/1") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(ScheduleInstancesUncancelRequest(listOf(1)))
+    }.andExpect { status { isBadRequest() } }
+  }
+
+  @Test
+  fun `updateScheduledInstance - 404 response when instance is not found`() {
+    val request = ScheduledInstancedUpdateRequest("Staff unavailable", "Comment", true)
+
+    whenever(scheduledInstanceService.updateScheduledInstance(1, request, "USER")).thenThrow(EntityNotFoundException("not found"))
+
+    val response = mockMvc.put("/scheduled-instances/1") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(request)
+    }.andExpect { status { isNotFound() } }
+
+    verify(scheduledInstanceService).updateScheduledInstance(1, request, "USER")
   }
 
   @Nested

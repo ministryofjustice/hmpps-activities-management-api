@@ -86,19 +86,35 @@ data class Attendance(
   @Override
   override fun toString(): String = this::class.simpleName + "(attendanceId = $attendanceId )"
 
-  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null, issuePayment: Boolean = true) = apply {
+  fun cancel(reason: AttendanceReason, cancelledReason: String? = null, cancelledBy: String? = null, issuePayment: Boolean? = null) = apply {
     require(hasReason(AttendanceReasonEnum.CANCELLED).not()) { "Attendance already cancelled" }
+
+    markCancelled(reason, cancelledReason, cancelledBy, issuePayment)
+  }
+
+  private fun markCancelled(reason: AttendanceReason, cancelledReason: String? = null, updatedBy: String? = null, issuePayment: Boolean? = null) = apply {
     require(reason.code == AttendanceReasonEnum.CANCELLED) { "Supplied reason code is not cancelled" }
 
     mark(
-      principalName = cancelledBy ?: ServiceName.SERVICE_NAME.value,
+      principalName = updatedBy ?: ServiceName.SERVICE_NAME.value,
       reason = reason,
       newStatus = AttendanceStatus.COMPLETED,
       newComment = cancelledReason,
-      newIssuePayment = if (issuePayment == true) isPayable() else false,
+      newIssuePayment = if (issuePayment == false) false else isPayable(),
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
       newOtherAbsenceReason = null,
+    )
+  }
+
+  fun updateCancelledAttendance(cancelledReason: String? = null, updatedBy: String? = null, issuePayment: Boolean) = apply {
+    require(hasReason(AttendanceReasonEnum.CANCELLED)) { "Attendance must be cancelled" }
+
+    markCancelled(
+      this.attendanceReason!!,
+      cancelledReason ?: this.comment,
+      updatedBy,
+      issuePayment,
     )
   }
 
