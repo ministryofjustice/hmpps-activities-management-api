@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.UniquePropertyId
 import java.time.LocalDate
+import java.util.Optional
 
 /**
  * This repository is READ-ONLY and uses the view V_PRISONER_SCHEDULED_ACTIVITIES.
@@ -15,6 +16,8 @@ import java.time.LocalDate
 interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledActivity, UniquePropertyId> {
 
   fun getAllByScheduledInstanceId(id: Long): List<PrisonerScheduledActivity>
+
+  fun getByScheduledInstanceIdAndPrisonerNumber(id: Long, prisonerNUmber: String): Optional<PrisonerScheduledActivity>
 
   @Query(
     """

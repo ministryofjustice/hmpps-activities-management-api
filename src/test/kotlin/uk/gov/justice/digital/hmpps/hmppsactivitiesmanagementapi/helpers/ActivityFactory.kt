@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AdvanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -27,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegimeDaysOfWeek
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
@@ -302,6 +305,15 @@ internal fun activitySchedule(
             ),
           )
         },
+      )
+      this.advanceAttendances.add(
+        AdvanceAttendance(
+          scheduledInstance = this,
+          prisonerNumber = "A1234AA",
+          issuePayment = true,
+          recordedBy = "Joe Bloggs",
+          recordedTime = LocalDate.now().atStartOfDay(),
+        ),
       )
     }
   }
@@ -612,3 +624,26 @@ internal fun activityFromDbInstance(
   attendanceStatus = attendanceStatus,
   attendanceReasonCode = attendanceReasonCode,
 )
+
+internal fun advanceAttendance(
+  activity: Activity = activityEntity(),
+  advanceAttendanceId: Long = 1L,
+  scheduledInstance: ScheduledInstance = activity.schedule().instances().first(),
+  prisonerNumber: String = "A11111A",
+  issuePayment: Boolean = true,
+  recordedTime: LocalDateTime = LocalDateTime.now(),
+  recordedBy: String = "USER1",
+  includeHistory: Boolean = true,
+) = AdvanceAttendance(
+  advanceAttendanceId = advanceAttendanceId,
+  scheduledInstance = scheduledInstance,
+  prisonerNumber = prisonerNumber,
+  issuePayment = issuePayment,
+  recordedTime = recordedTime,
+  recordedBy = recordedBy,
+).also {
+  if (includeHistory) {
+    it.updatePayment(issuePayment, "USER2")
+    it.updatePayment(issuePayment, "USER3")
+  }
+}
