@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 enum class ActivityCategoryCode {
@@ -20,6 +21,7 @@ enum class ActivityCategoryCode {
 }
 
 @Entity
+@Audited
 @Table(name = "activity_category")
 data class ActivityCategory(
   @Id

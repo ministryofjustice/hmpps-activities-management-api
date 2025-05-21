@@ -7,10 +7,12 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import java.time.LocalDate
 
 @Entity
+@Audited
 @Table(name = "activity_schedule_suspension")
 data class ActivityScheduleSuspension(
   @Id

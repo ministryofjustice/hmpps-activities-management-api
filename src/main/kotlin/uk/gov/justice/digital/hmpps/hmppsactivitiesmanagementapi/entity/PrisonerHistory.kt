@@ -5,9 +5,11 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import java.time.LocalDateTime
 
 @Entity
+@Audited
 @Table(name = "prisoner_history")
 data class PrisonerHistory(
   @Id

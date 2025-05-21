@@ -9,6 +9,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -19,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 typealias SlotTimes = Pair<LocalTime, LocalTime>
 
 @Entity
+@Audited
 @Table(name = "activity_schedule_slot")
 data class ActivityScheduleSlot(
   @Id

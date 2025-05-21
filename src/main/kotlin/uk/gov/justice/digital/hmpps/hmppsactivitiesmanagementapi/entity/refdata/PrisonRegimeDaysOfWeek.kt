@@ -7,9 +7,11 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import java.time.DayOfWeek
 
 @Entity
+@Audited
 @Table(name = "prison_regime_days_of_week")
 data class PrisonRegimeDaysOfWeek(
   @Id

@@ -8,9 +8,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EligibilityRule
 
 @Entity
+@Audited
 @Table(name = "activity_eligibility")
 data class ActivityEligibility(
   @Id

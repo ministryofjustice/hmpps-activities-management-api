@@ -16,6 +16,7 @@ import org.hibernate.annotations.Filter
 import org.hibernate.annotations.FilterDef
 import org.hibernate.annotations.Filters
 import org.hibernate.annotations.ParamDef
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.PrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
@@ -34,6 +35,7 @@ const val SESSION_DATE_FILTER = "SessionDateFilter"
 const val ALLOCATION_DATE_FILTER = "AllocationDateFilter"
 
 @Entity
+@Audited
 @Table(name = "activity_schedule")
 @FilterDef(
   name = SESSION_DATE_FILTER,

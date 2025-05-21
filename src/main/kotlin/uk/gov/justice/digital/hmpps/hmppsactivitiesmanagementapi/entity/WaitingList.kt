@@ -11,10 +11,12 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.envers.Audited
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
+@Audited
 @Table(name = "waiting_list")
 @EntityListeners(AuditableEntityListener::class)
 data class WaitingList(
