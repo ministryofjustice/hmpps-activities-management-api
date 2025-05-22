@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
@@ -80,6 +81,22 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         assertThat(it.previousScheduledInstanceId).isEqualTo(1L)
         assertThat(it.previousScheduledInstanceDate).isEqualTo(LocalDate.of(2022, 10, 10))
         assertThat(it.activitySchedule.activity.allocated).isEqualTo(5)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-1.sql")
+    fun `advance attendances should be returned`() {
+      val instance = webTestClient.getScheduledInstanceById(1)!!
+      assertThat(instance.advanceAttendances).hasSize(1)
+
+      with(instance.advanceAttendances.first()) {
+        prisonerNumber isEqualTo "A11111A"
+        issuePayment isEqualTo true
+        payAmount isEqualTo null
+        recordedTime isNotEqualTo null
+        recordedBy isEqualTo "John Smith"
+        attendanceHistory isEqualTo null
       }
     }
 
