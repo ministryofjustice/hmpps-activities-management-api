@@ -211,6 +211,7 @@ class InternalLocationService(
       date,
       timeSlot,
     )
+      .filter { activity -> activity.sessionDate != LocalDate.now() || activity.attendanceStatus != null }
 
     val timeRange = getTimeRange(
       prisonCode = prisonCode,

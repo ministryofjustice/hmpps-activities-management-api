@@ -595,8 +595,8 @@ internal fun activityFromDbInstance(
   suspended: Boolean = false,
   paidActivity: Boolean = false,
   issuePayment: Boolean = false,
-  attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
-  attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
+  attendanceStatus: AttendanceStatus? = AttendanceStatus.COMPLETED,
+  attendanceReasonCode: AttendanceReasonEnum? = AttendanceReasonEnum.ATTENDED,
 ) = PrisonerScheduledActivity(
   scheduledInstanceId = scheduledInstanceId,
   allocationId = allocationId,
