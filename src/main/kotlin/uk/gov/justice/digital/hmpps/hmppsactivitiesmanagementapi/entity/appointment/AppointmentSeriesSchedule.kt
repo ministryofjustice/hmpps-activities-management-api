@@ -9,13 +9,11 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as AppointmentFrequencyModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule as AppointmentSeriesScheduleModel
 
 @Entity
-@Audited
 @Table(name = "appointment_series_schedule")
 data class AppointmentSeriesSchedule(
   @Id

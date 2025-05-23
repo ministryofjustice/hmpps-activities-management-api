@@ -9,13 +9,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedDeallocation as ModelPlannedDeallocation
 
 @Entity
-@Audited
 @Table(name = "planned_deallocation")
 data class PlannedDeallocation(
   @Id

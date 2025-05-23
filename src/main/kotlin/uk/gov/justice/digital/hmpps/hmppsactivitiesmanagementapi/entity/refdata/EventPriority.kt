@@ -7,10 +7,8 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 
 @Entity
-@Audited
 @Table(name = "event_priority")
 data class EventPriority(
   @Id

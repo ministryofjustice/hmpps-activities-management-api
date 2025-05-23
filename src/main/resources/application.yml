@@ -81,7 +81,7 @@ spring:
     show-sql: false
     generate-ddl: false
     hibernate:
-      ddl-auto: create-only
+      ddl-auto: none
       envers:
         autoRegisterListeners: true
         audit_table_suffix: _aud

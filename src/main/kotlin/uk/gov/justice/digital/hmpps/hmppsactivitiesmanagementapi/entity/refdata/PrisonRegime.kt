@@ -9,11 +9,9 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 import java.time.LocalTime
 
 @Entity
-@Audited
 @Table(name = "prison_regime")
 data class PrisonRegime(
   @Id

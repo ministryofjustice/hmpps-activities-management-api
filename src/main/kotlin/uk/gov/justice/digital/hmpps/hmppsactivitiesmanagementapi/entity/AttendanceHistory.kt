@@ -8,12 +8,10 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import java.time.LocalDateTime
 
 @Entity
-@Audited
 @Table(name = "attendance_history")
 data class AttendanceHistory(
   @Id

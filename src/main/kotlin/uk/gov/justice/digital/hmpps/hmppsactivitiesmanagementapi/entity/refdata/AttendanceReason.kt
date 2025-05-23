@@ -7,11 +7,9 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason as modelAttendanceReason
 
 @Entity
-@Audited
 @Table(name = "attendance_reason")
 data class AttendanceReason(
   @Id
