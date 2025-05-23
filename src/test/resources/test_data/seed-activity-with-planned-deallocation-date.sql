@@ -41,6 +41,9 @@ update allocation set planned_deallocation_id = 2 where allocation_id = 2;
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 3, 'G0459PP', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (4, 3, 'AA1111A', 10003, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
 values (1, current_date, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
 
@@ -55,3 +58,15 @@ values (2, current_date, '10:00:00', '11:00:00', false, null, null, null, null, 
 
 insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
 values (3, current_date, '10:00:00', '11:00:00', false, null, null, null, null, 'AM');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (1, 'G0459MM', 'WAITING');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (4, 'G0459NN', 'WAITING');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (5, 'G0459PP', 'WAITING');
+
+-- insert into attendance(scheduled_instance_id, prisoner_number, status)
+-- values (5, 'AA1111A', 'WAITING');

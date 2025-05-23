@@ -468,6 +468,7 @@ class ScheduledEventService(
     date = date,
     timeSlot = slot,
   )
+    .filter { activity -> activity.sessionDate != LocalDate.now() || activity.attendanceStatus != null }
 
   private fun getMultiplePrisonersAppointments(
     prisonCode: String,
