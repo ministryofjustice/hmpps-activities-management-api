@@ -31,3 +31,9 @@ values (1000, 2, 'AM', 1, current_date + interval '1' day);
 
 insert into exclusion_days_of_week(exclusion_id, day_of_week)
 values (1000, 'MONDAY'), (1000, 'TUESDAY'), (1000, 'WEDNESDAY'), (1000, 'THURSDAY'), (1000, 'FRIDAY'), (1000, 'SATURDAY'), (1000, 'SUNDAY');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (1, 'G4793VF', 'WAITING');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (1, 'A5193DY', 'WAITING');
