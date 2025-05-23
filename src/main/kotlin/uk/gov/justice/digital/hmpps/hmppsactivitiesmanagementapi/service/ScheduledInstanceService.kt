@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.excludeTodayWithoutAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -86,7 +87,9 @@ class ScheduledInstanceService(
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)
     checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
-    return prisonerScheduledActivityRepository.getAllByScheduledInstanceId(id).toScheduledAttendeeModel()
+    return prisonerScheduledActivityRepository.getAllByScheduledInstanceId(id)
+      .excludeTodayWithoutAttendance()
+      .toScheduledAttendeeModel()
   }
 
   fun uncancelScheduledInstance(id: Long) {

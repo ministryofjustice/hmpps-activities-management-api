@@ -45,3 +45,9 @@ values (1, 'A5193DY', 'WAITING');
 
 insert into attendance(scheduled_instance_id, prisoner_number, status)
 values (2, 'A5193DY', 'WAITING');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (1, 'G4793VF', 'WAITING');
+
+insert into attendance(scheduled_instance_id, prisoner_number, status)
+values (1, 'H4793VF', 'WAITING');
