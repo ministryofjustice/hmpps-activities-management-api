@@ -39,9 +39,3 @@ values (1000, 'MONDAY'), (1000, 'TUESDAY'), (1000, 'WEDNESDAY'), (1000, 'THURSDA
 
 insert into exclusion_days_of_week(exclusion_id, day_of_week)
 values (1001, 'MONDAY'), (1001, 'TUESDAY'), (1001, 'WEDNESDAY'), (1001, 'THURSDAY'), (1001, 'FRIDAY'), (1001, 'SATURDAY'), (1001, 'SUNDAY');
-
-insert into attendance(scheduled_instance_id, prisoner_number, status)
-values (1, 'A5193DY', 'WAITING');
-
-insert into attendance(scheduled_instance_id, prisoner_number, status)
-values (2, 'A5193DY', 'WAITING');

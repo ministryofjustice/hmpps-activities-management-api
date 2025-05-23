@@ -133,7 +133,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+  @Sql("classpath:test_data/seed-activity-for-attendance-job.sql")
   @Test
   fun `Attendance records are not created for where there are exclusions`() {
     val allocatedPrisoners = listOf(listOf("G4793VF", "H4793VF"), listOf("A5193DY"))
