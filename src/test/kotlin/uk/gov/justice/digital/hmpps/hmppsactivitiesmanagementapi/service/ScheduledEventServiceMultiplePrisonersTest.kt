@@ -22,13 +22,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -219,59 +217,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
     }
   }
 
-  private fun activityFromDbInstance(
-    scheduledInstanceId: Long = 1,
-    allocationId: Long = 1,
-    prisonCode: String = "MDI",
-    sessionDate: LocalDate = LocalDate.of(2022, 12, 14),
-    startTime: LocalTime? = LocalTime.of(10, 0),
-    endTime: LocalTime? = LocalTime.of(11, 30),
-    prisonerNumber: String = "G4793VF",
-    bookingId: Long = 900001,
-    inCell: Boolean = false,
-    onWing: Boolean = false,
-    offWing: Boolean = false,
-    internalLocationId: Int? = 1,
-    internalLocationCode: String? = "MDI-EDU_ROOM1",
-    internalLocationDescription: String? = "Education room 1",
-    scheduleDescription: String? = "HB1 AM",
-    activityId: Int = 1,
-    activityCategory: String = "Education",
-    activitySummary: String? = "English level 1",
-    cancelled: Boolean = false,
-    suspended: Boolean = false,
-    paidActivity: Boolean = false,
-    issuePayment: Boolean = false,
-    attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
-    attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
-  ) = PrisonerScheduledActivity(
-    scheduledInstanceId = scheduledInstanceId,
-    allocationId = allocationId,
-    prisonCode = prisonCode,
-    sessionDate = sessionDate,
-    startTime = startTime,
-    endTime = endTime,
-    prisonerNumber = prisonerNumber,
-    bookingId = bookingId,
-    inCell = inCell,
-    onWing = onWing,
-    offWing = offWing,
-    internalLocationId = internalLocationId,
-    internalLocationCode = internalLocationCode,
-    internalLocationDescription = internalLocationDescription,
-    scheduleDescription = scheduleDescription,
-    activityId = activityId,
-    activityCategory = activityCategory,
-    activitySummary = activitySummary,
-    cancelled = cancelled,
-    suspended = suspended,
-    timeSlot = TimeSlot.AM,
-    paidActivity = paidActivity,
-    issuePayment = issuePayment,
-    attendanceStatus = attendanceStatus,
-    attendanceReasonCode = attendanceReasonCode,
-  )
-
   private fun appointmentFromDbInstance(
     appointmentInstanceId: Long = 1L,
     appointmentSeriesId: Long = 1L,
@@ -351,7 +296,9 @@ class ScheduledEventServiceMultiplePrisonersTest {
       setupMultiplePrisonerApiMocks(prisonerNumbers, today, timeSlot)
       setupRolledOutPrisonMock(true, false, true)
 
-      val activityEntity = activityFromDbInstance(sessionDate = today)
+      val activityEntity1 = activityFromDbInstance(sessionDate = today)
+      val activityEntity2 = activityFromDbInstance(sessionDate = today, prisonerNumber = "B2222BB", attendanceStatus = null)
+
       whenever(
         prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerListAndDate(
           prisonCode,
@@ -360,7 +307,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           timeSlot,
         ),
       )
-        .thenReturn(listOf(activityEntity))
+        .thenReturn(listOf(activityEntity1, activityEntity2))
 
       whenever(prisonRegimeService.getEventPrioritiesForPrison(prisonCode))
         .thenReturn(EventPriorities(EventType.entries.associateWith { listOf(Priority(it.defaultPriority)) }))
@@ -446,18 +393,18 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventSource).isEqualTo("SAA")
           assertThat(it.eventType).isEqualTo(EventType.ACTIVITY.name)
           assertThat(it.eventId).isNull()
-          assertThat(it.scheduledInstanceId).isEqualTo(activityEntity.scheduledInstanceId)
+          assertThat(it.scheduledInstanceId).isEqualTo(activityEntity1.scheduledInstanceId)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-          assertThat(it.bookingId).isEqualTo(activityEntity.bookingId.toLong())
-          assertThat(it.cancelled).isEqualTo(activityEntity.cancelled)
-          assertThat(it.suspended).isEqualTo(activityEntity.suspended)
-          assertThat(it.internalLocationId).isEqualTo(activityEntity.internalLocationId?.toLong())
-          assertThat(it.internalLocationCode).isEqualTo(activityEntity.internalLocationCode)
-          assertThat(it.internalLocationDescription).isEqualTo(activityEntity.internalLocationDescription)
-          assertThat(it.summary).isEqualTo(activityEntity.scheduleDescription)
-          assertThat(it.date).isEqualTo(activityEntity.sessionDate)
-          assertThat(it.startTime).isEqualTo(activityEntity.startTime)
-          assertThat(it.endTime).isEqualTo(activityEntity.endTime)
+          assertThat(it.bookingId).isEqualTo(activityEntity1.bookingId.toLong())
+          assertThat(it.cancelled).isEqualTo(activityEntity1.cancelled)
+          assertThat(it.suspended).isEqualTo(activityEntity1.suspended)
+          assertThat(it.internalLocationId).isEqualTo(activityEntity1.internalLocationId?.toLong())
+          assertThat(it.internalLocationCode).isEqualTo(activityEntity1.internalLocationCode)
+          assertThat(it.internalLocationDescription).isEqualTo(activityEntity1.internalLocationDescription)
+          assertThat(it.summary).isEqualTo(activityEntity1.scheduleDescription)
+          assertThat(it.date).isEqualTo(activityEntity1.sessionDate)
+          assertThat(it.startTime).isEqualTo(activityEntity1.startTime)
+          assertThat(it.endTime).isEqualTo(activityEntity1.endTime)
           assertThat(it.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
         }
 
