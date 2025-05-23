@@ -566,6 +566,26 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(activities!!.first().date).isEqualTo(date)
       }
     }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events should npt return any activity events for today where attendance does not exist`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459PP", "AA1111A")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
   }
 
   @Nested

@@ -36,6 +36,7 @@ class ActivityScheduleInstanceTest : ModelTest() {
       nextScheduledInstanceId = 0,
       nextScheduledInstanceDate = originalDate,
       attendances = emptyList(),
+      advanceAttendances = emptyList(),
       timeSlot = TimeSlot.AM,
       activitySchedule = ActivityScheduleLite(
         id = 1,

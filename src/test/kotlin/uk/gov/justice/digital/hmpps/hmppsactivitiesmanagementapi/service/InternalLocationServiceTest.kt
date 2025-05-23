@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalTimeRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
@@ -214,24 +215,10 @@ class InternalLocationServiceTest {
     startTime = LocalTime.of(17, 30),
     endTime = LocalTime.of(19, 15),
   )
-
-  private val education3Location = internalLocation(
-    locationId = 6L,
-    description = "EDUC-ED1-ED3",
-    userDescription = "Education 3",
-  )
   private val education3DpsLocation = dpsLocation(
     id = UUID.fromString("66666666-6666-6666-6666-666666666666"),
     code = "EDUC-ED1-ED3",
     localName = "Education 3",
-  )
-
-  private val onWingActivity = activityFromDbInstance(
-    scheduledInstanceId = 5,
-    internalLocationId = education3Location.locationId.toInt(),
-    startTime = LocalTime.of(17, 30),
-    endTime = LocalTime.of(19, 15),
-    onWing = true,
   )
 
   private val education1AppointmentInstance = appointmentInstanceEntity(
@@ -689,6 +676,72 @@ class InternalLocationServiceTest {
             this.single { it.appointmentAttendeeId == education1AppointmentInstance.appointmentAttendeeId }.eventType isEqualTo "APPOINTMENT"
             this.single { it.eventId == education1Visit.eventId }.eventType isEqualTo "VISIT"
             this.any { it.eventType == EventType.ADJUDICATION_HEARING.name } isEqualTo true
+          }
+        }
+      }
+    }
+
+    @Test
+    fun `will ignore activities for today where prisoner has no attendance records due to deallocation`() = runBlocking {
+      val today = LocalDate.now()
+      val internalLocationIds = setOf(education1Location.locationId)
+
+      val activity1 = activityFromDbInstance(
+        scheduledInstanceId = 1,
+        internalLocationId = education1Location.locationId.toInt(),
+        prisonerNumber = "AA1111A",
+        sessionDate = today,
+        attendanceStatus = null,
+        startTime = LocalTime.of(8, 30),
+        endTime = LocalTime.of(11, 45),
+      )
+
+      val activity2 = activityFromDbInstance(
+        scheduledInstanceId = 2,
+        internalLocationId = education1Location.locationId.toInt(),
+        prisonerNumber = "BB2222B",
+        sessionDate = today,
+        attendanceStatus = AttendanceStatus.COMPLETED,
+        startTime = LocalTime.of(8, 30),
+        endTime = LocalTime.of(11, 45),
+      )
+
+      whenever(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
+          prisonCode,
+          internalLocationIds.map { it.toInt() }.toSet(),
+          date,
+          null,
+        ),
+      ).thenReturn(listOf(activity1, activity2))
+
+      whenever(appointmentInstanceRepository.findByPrisonCodeAndInternalLocationIdsAndDateAndTime(any(), any(), any(), any(), any())).thenReturn(emptyList())
+      whenever(prisonApiClient.getScheduledVisitsForLocationAsync(any(), any(), any(), anyOrNull())).thenReturn(emptyList())
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(emptyMap())
+
+      val dpsLocationId2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(setOf(2))).thenReturn(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId2, education1Location.locationId),
+        ),
+      )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(education1DpsLocation.id))).thenReturn(listOf(NomisDpsLocationMapping(education1DpsLocation.id, 2)))
+
+      val result = service.getInternalLocationEvents(prisonCode, setOf(education1Location.locationId), date, null)
+
+      with(result) {
+        size isEqualTo 1
+        with(this.first()) {
+          id isEqualTo education1Location.locationId
+          prisonCode isEqualTo prisonCode
+          code isEqualTo education1Location.description
+          description isEqualTo education1Location.userDescription
+          events.size isEqualTo 1
+
+          with(events.first()) {
+            scheduledInstanceId isEqualTo activity2.scheduledInstanceId
           }
         }
       }

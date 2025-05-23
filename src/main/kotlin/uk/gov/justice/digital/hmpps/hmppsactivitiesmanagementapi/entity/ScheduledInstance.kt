@@ -37,6 +37,9 @@ data class ScheduledInstance(
   @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   val attendances: MutableList<Attendance> = mutableListOf(),
 
+  @OneToMany(mappedBy = "scheduledInstance", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  val advanceAttendances: MutableList<AdvanceAttendance> = mutableListOf(),
+
   val sessionDate: LocalDate,
 
   val startTime: LocalTime,
@@ -78,6 +81,7 @@ data class ScheduledInstance(
     nextScheduledInstanceId = if (includeAllocations) this.next()?.scheduledInstanceId else null,
     nextScheduledInstanceDate = if (includeAllocations) this.next()?.sessionDate else null,
     attendances = this.attendances.map { attendance -> transform(attendance, null) },
+    advanceAttendances = this.advanceAttendances.map { advanceAttendance -> transform(advanceAttendance) },
     timeSlot = this.timeSlot,
   )
 

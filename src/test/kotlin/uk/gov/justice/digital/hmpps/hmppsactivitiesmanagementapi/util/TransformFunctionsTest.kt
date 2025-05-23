@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.advanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
@@ -841,6 +842,59 @@ class TransformFunctionsTest {
         absences isEqualTo 1
         paid isEqualTo 1
       }
+    }
+  }
+
+  @Test
+  fun `Advance attendance entity to model with history`() {
+    val entity = advanceAttendance()
+
+    val model = transform(entity, true, 123)
+
+    with(model) {
+      id isEqualTo entity.advanceAttendanceId
+      scheduleInstanceId isEqualTo entity.scheduledInstance.scheduledInstanceId
+      prisonerNumber isEqualTo entity.prisonerNumber
+      issuePayment isEqualTo entity.issuePayment
+      payAmount isEqualTo 123
+      recordedTime isEqualTo entity.recordedTime
+      recordedBy isEqualTo entity.recordedBy
+      attendanceHistory!!.size isEqualTo 2
+
+      val historyEntity1 = entity.history().first()
+      val historyEntity2 = entity.history().last()
+
+      with(attendanceHistory.first()) {
+        id isEqualTo historyEntity2.advanceAttendanceHistoryId
+        issuePayment isEqualTo historyEntity2.issuePayment
+        recordedBy isEqualTo historyEntity2.recordedBy
+        recordedTime isEqualTo historyEntity2.recordedTime
+      }
+
+      with(attendanceHistory.last()) {
+        id isEqualTo historyEntity1.advanceAttendanceHistoryId
+        issuePayment isEqualTo historyEntity1.issuePayment
+        recordedBy isEqualTo historyEntity1.recordedBy
+        recordedTime isEqualTo historyEntity1.recordedTime
+      }
+    }
+  }
+
+  @Test
+  fun `Advance attendance entity to model without history`() {
+    val entity = advanceAttendance()
+
+    val model = transform(entity, false, 123)
+
+    with(model) {
+      id isEqualTo entity.advanceAttendanceId
+      scheduleInstanceId isEqualTo entity.scheduledInstance.scheduledInstanceId
+      prisonerNumber isEqualTo entity.prisonerNumber
+      issuePayment isEqualTo entity.issuePayment
+      payAmount isEqualTo 123
+      recordedTime isEqualTo entity.recordedTime
+      recordedBy isEqualTo entity.recordedBy
+      attendanceHistory isEqualTo null
     }
   }
 }
