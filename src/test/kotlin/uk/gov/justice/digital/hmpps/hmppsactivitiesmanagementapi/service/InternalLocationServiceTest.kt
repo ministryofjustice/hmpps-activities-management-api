@@ -600,6 +600,42 @@ class InternalLocationServiceTest {
         TimeSlot.AM,
       ) isEqualTo emptySet()
     }
+
+    @Test
+    fun `exclude events where only allocations ended today`() = runBlocking {
+      val activityWithNoAttendance = activityFromDbInstance(
+        scheduledInstanceId = 4,
+        sessionDate = LocalDate.now(),
+        attendanceStatus = null,
+      )
+
+      whenever(
+        prisonerScheduledActivityRepository.findByPrisonCodeAndDateAndTimeSlot(
+          prisonCode,
+          date,
+          TimeSlot.AM,
+        ),
+      ).thenReturn(listOf(activityWithNoAttendance))
+      whenever(appointmentSearchRepository.findAll(any())).thenReturn(emptyList())
+      whenever(prisonApiClient.getEventLocationsBookedAsync(any(), any(), any())).thenReturn(emptyList())
+      whenever(adjudicationsHearingAdapter.getAdjudicationsByLocation(any(), any(), anyOrNull(), any())).thenReturn(
+        emptyMap(),
+      )
+
+      whenever(nomisMappingAPIClient.getLocationMappingsByNomisIds(emptySet())).thenReturn(emptyList<NomisDpsLocationMapping>())
+
+      whenever(locationsInsidePrisonAPIClient.getNonResidentialLocations(prisonCode)).thenReturn(
+        listOf(
+          dpsLocation(UUID.randomUUID(), "MDI", "Other place"),
+        ),
+      )
+
+      service.getInternalLocationEventsSummaries(
+        prisonCode,
+        date,
+        TimeSlot.AM,
+      ) isEqualTo emptySet()
+    }
   }
 
   @Nested

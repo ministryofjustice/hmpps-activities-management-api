@@ -86,3 +86,8 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 }
+
+/**
+ * Exclude any that are for today but have no attendance as these should not be on such things like unlock lists, etc.
+ */
+fun List<PrisonerScheduledActivity>.excludeTodayWithoutAttendance() = this.filter { activity -> activity.sessionDate != LocalDate.now() || activity.attendanceStatus != null }
