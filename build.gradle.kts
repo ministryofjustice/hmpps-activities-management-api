@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.1.21"
   jacoco
   id("org.openapi.generator") version "7.13.0"
-  id("io.sentry.jvm.gradle") version "5.6.0"
+  id("io.sentry.jvm.gradle") version "5.7.0"
 }
 
 allOpen {
@@ -52,7 +52,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.91")
+  implementation("aws.sdk.kotlin:s3:1.4.93")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
