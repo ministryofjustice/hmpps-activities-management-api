@@ -55,5 +55,7 @@ data class AttendanceCreationData(
 
   val possibleExclusion: Boolean,
 
+  val possibleAdvanceAttendance: Boolean,
+
   val plannedDeallocationDate: LocalDate?,
 )

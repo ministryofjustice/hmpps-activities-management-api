@@ -312,7 +312,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
 
   if (includeHistory) {
     history = attendance.history()
-      .sortedWith(compareBy { attendance.recordedTime })
+      .sortedWith(compareBy { it.recordedTime })
       .reversed()
       .map { attendanceHistory: EntityAttendanceHistory ->
         transform(
