@@ -46,13 +46,13 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.14") {
+  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.16") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.93")
+  implementation("aws.sdk.kotlin:s3:1.4.94")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
@@ -66,7 +66,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.13.0")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.21.0")
+  testImplementation("org.testcontainers:localstack:1.21.1")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
