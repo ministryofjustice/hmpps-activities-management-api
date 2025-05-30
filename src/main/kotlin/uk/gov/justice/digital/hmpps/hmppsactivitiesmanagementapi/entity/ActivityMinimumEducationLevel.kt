@@ -8,9 +8,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.envers.Audited
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 
 @Entity
+@Audited
 @Table(name = "activity_minimum_education_level")
 data class ActivityMinimumEducationLevel(
   @Id
