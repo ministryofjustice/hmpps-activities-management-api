@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceCreationData
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
@@ -100,7 +101,7 @@ class ManageAttendancesService(
       // retrieve prisoner incentive levels
       val prisonerNumbers = possibleRecords.map { it.prisonerNumber }.distinct()
       val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
-      prisonerMap.forEach { (prisonerNumber, prisoner) -> prisonerIncentiveLevelCodeMap[prisonerNumber] = prisoner?.currentIncentive?.level?.code }
+      prisonerMap.forEach { (prisonerNumber, prisoner) -> prisonerIncentiveLevelCodeMap[prisonerNumber] = prisoner.currentIncentive?.level?.code }
     }
 
     val attendancesList = mutableListOf<Attendance>()
@@ -285,6 +286,10 @@ class ManageAttendancesService(
       instance.cancelled -> {
         cancelledAttendance(instance, attendanceCreate.prisonerNumber)
       }
+      // If prisoner has advance attendances then that means they are not required to attend
+      attendanceCreate.possibleAdvanceAttendance -> {
+        notRequiredAttendance(instance, attendanceCreate.prisonerNumber)
+      }
       // By default, create an unmarked, waiting attendance
       else -> {
         waitingAttendance(instance, attendanceCreate.prisonerNumber)
@@ -342,6 +347,45 @@ class ManageAttendancesService(
     scheduledInstance = instance,
     prisonerNumber = prisonerNumber,
   )
+
+  private fun notRequiredAttendance(instance: ScheduledInstance, prisonerNumber: String): Attendance {
+    val advanceAttendance = instance.advanceAttendances.first { it.prisonerNumber == prisonerNumber }
+
+    val attendanceReason = attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)
+
+    return Attendance(
+      scheduledInstance = instance,
+      prisonerNumber = prisonerNumber,
+      initialIssuePayment = advanceAttendance.issuePayment,
+      status = AttendanceStatus.COMPLETED,
+      attendanceReason = attendanceReason,
+      recordedTime = LocalDateTime.now(),
+      recordedBy = ServiceName.SERVICE_NAME.value,
+    )
+      .also { attendance ->
+        advanceAttendance.history().forEach { history ->
+          attendance.addHistory(
+            AttendanceHistory(
+              attendance = attendance,
+              attendanceReason = attendanceReason,
+              issuePayment = history.issuePayment,
+              recordedBy = history.recordedBy,
+              recordedTime = history.recordedTime,
+            ),
+          )
+        }
+
+        attendance.addHistory(
+          AttendanceHistory(
+            attendance = attendance,
+            attendanceReason = attendanceReason,
+            issuePayment = advanceAttendance.issuePayment,
+            recordedBy = advanceAttendance.recordedBy,
+            recordedTime = advanceAttendance.recordedTime,
+          ),
+        )
+      }
+  }
 
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) = attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
 

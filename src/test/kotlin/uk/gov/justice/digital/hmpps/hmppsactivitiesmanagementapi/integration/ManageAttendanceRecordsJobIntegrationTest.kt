@@ -20,11 +20,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -102,7 +104,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
     }
 
-    webTestClient.manageAttendanceRecords()
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
 
     val activityAfter = activityRepository.findById(4).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
@@ -161,7 +163,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(attendanceRepository.findAll()).hasSize(0)
     }
 
-    webTestClient.manageAttendanceRecords()
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
 
     val activityAfter = activityRepository.findById(1).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
@@ -197,8 +199,9 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
 
     assertThat(attendanceRepository.count()).isZero
 
-    webTestClient.manageAttendanceRecords()
-    webTestClient.manageAttendanceRecords()
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
+
+    waitForJobs({ webTestClient.manageAttendanceRecords() }, 2)
 
     assertThat(attendanceRepository.count()).isEqualTo(4)
   }
@@ -222,7 +225,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(instances()).hasSize(1)
     }
 
-    webTestClient.manageAttendanceRecords()
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
 
     val activityAfter = activityRepository.findById(5).orElseThrow()
     val activitySchedulesAfter = activityScheduleRepository.getAllByActivity(activityAfter)
@@ -231,6 +234,80 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
     assertThat(attendanceRepository.findAll().filter { it.scheduledInstance.scheduledInstanceId == scheduledInstanceId }).isNotEmpty
 
     assertThat(attendanceRepository.count()).isEqualTo(2)
+  }
+
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-1.sql")
+  @Test
+  fun `Attendance records should be created for including any advance attendances for not required prisoners`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      prisonerNumbers = listOf("A11111A"),
+      prisoners = listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A11111A", prisonId = "PVI")),
+    )
+
+    assertThat(attendanceRepository.count()).isZero
+
+    val activity = activityRepository.findById(1).orElseThrow()
+    val activitySchedules = activityScheduleRepository.getAllByActivity(activity)
+
+    with(activity) {
+      assertThat(description).isEqualTo("Gym induction")
+    }
+
+    assertThat(activitySchedules).hasSize(1)
+    assertThat(attendanceRepository.findAll()).hasSize(0)
+
+    with(activitySchedules.findByDescription("Gym induction AM")) {
+      allocationRepository.findByActivitySchedule(this) hasSize 1
+      assertThat(instances()).hasSize(1)
+    }
+
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
+
+    val attendances = attendanceRepository.findAll()
+
+    assertThat(attendances).hasSize(1)
+
+    val attendance = webTestClient.getAttendanceById(attendances.first().attendanceId)!!
+
+    with(attendance) {
+      assertThat(prisonerNumber).isEqualTo("A11111A")
+      assertThat(status).isEqualTo(AttendanceStatus.COMPLETED.toString())
+      assertThat(recordedBy).isEqualTo("Activities Management Service")
+      assertThat(recordedTime).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+
+      val attendanceHistory = attendanceHistory!!
+      assertThat(attendanceHistory).hasSize(3)
+      with(attendanceHistory[0]) {
+        assertThat(attendanceReason?.id).isEqualTo(3)
+        assertThat(recordedBy).isEqualTo("FRED SMITH")
+        assertThat(recordedTime).isEqualTo(LocalDateTime.parse("2022-10-15T10:00"))
+        assertThat(issuePayment).isTrue
+        assertThat(comment).isNull()
+        assertThat(incentiveLevelWarningIssued).isNull()
+        assertThat(otherAbsenceReason).isNull()
+        assertThat(caseNoteText).isNull()
+      }
+      with(attendanceHistory[1]) {
+        assertThat(attendanceReason?.id).isEqualTo(3)
+        assertThat(recordedBy).isEqualTo("ALICE JONES")
+        assertThat(recordedTime).isEqualTo(LocalDateTime.parse("2022-10-14T11:00"))
+        assertThat(issuePayment).isFalse
+        assertThat(comment).isNull()
+        assertThat(incentiveLevelWarningIssued).isNull()
+        assertThat(otherAbsenceReason).isNull()
+        assertThat(caseNoteText).isNull()
+      }
+      with(attendanceHistory[2]) {
+        assertThat(attendanceReason?.id).isEqualTo(3)
+        assertThat(recordedBy).isEqualTo("SARAH WILLIAMS")
+        assertThat(recordedTime).isEqualTo(LocalDateTime.parse("2022-10-13T11:00"))
+        assertThat(issuePayment).isTrue
+        assertThat(comment).isNull()
+        assertThat(incentiveLevelWarningIssued).isNull()
+        assertThat(otherAbsenceReason).isNull()
+        assertThat(caseNoteText).isNull()
+      }
+    }
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-completed.sql")
@@ -243,7 +320,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(yesterday)
     }
 
-    webTestClient.manageAttendanceRecordsWithExpiry()
+    waitForJobs({ webTestClient.manageAttendanceRecordsWithExpiry() }, 2)
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.COMPLETED)
@@ -262,7 +339,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(yesterday)
     }
 
-    webTestClient.manageAttendanceRecordsWithExpiry()
+    waitForJobs({ webTestClient.manageAttendanceRecordsWithExpiry() }, 2)
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -287,7 +364,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(twoDaysAgo)
     }
 
-    webTestClient.manageAttendanceRecordsWithExpiry()
+    waitForJobs({ webTestClient.manageAttendanceRecordsWithExpiry() }, 2)
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isEqualTo(AttendanceStatus.WAITING)
@@ -306,7 +383,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       assertThat(it.scheduledInstance.sessionDate).isEqualTo(today)
     }
 
-    webTestClient.manageAttendanceRecordsWithExpiry()
+    waitForJobs({ webTestClient.manageAttendanceRecordsWithExpiry() }, 2)
 
     attendanceRepository.findAll().forEach {
       assertThat(it.status()).isIn(AttendanceStatus.WAITING, AttendanceStatus.COMPLETED)
@@ -346,7 +423,7 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
         .orElseThrow { EntityNotFoundException("ScheduledInstance id ${this.activityScheduleId} not found") }
     }
 
-    webTestClient.manageAttendanceRecords()
+    waitForJobs({ webTestClient.manageAttendanceRecords() })
 
     val attendanceRecords = attendanceRepository.findAll()
     assertThat(attendanceRecords).hasSize(2)
@@ -373,7 +450,6 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
-    Thread.sleep(1000)
   }
 
   private fun WebTestClient.manageAttendanceRecordsWithExpiry() {
@@ -382,6 +458,14 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
-    Thread.sleep(1000)
   }
+
+  private fun WebTestClient.getAttendanceById(id: Long) = get()
+    .uri("/attendances/$id")
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBody(Attendance::class.java)
+    .returnResult().responseBody
 }
