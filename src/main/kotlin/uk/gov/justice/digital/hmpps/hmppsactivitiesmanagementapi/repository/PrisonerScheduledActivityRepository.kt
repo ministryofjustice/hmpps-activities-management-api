@@ -61,6 +61,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     AND sa.onWing = false
     AND sa.internalLocationId IS NOT NULL
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun findByPrisonCodeAndDateAndTimeSlot(
@@ -77,6 +78,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.onWing = false
     AND sa.internalLocationId in :internalLocationIds)
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(

@@ -271,6 +271,7 @@ class TransformFunctionsTest {
           paidActivity = true,
           cancelled = true,
           scheduleDescription = "Test Category",
+          possibleAdvanceAttendance = true,
         ),
       )
 

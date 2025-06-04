@@ -804,6 +804,48 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       }
     }
 
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `get location events ignores activities with future scheduled instance has not required advance attendance`() {
+      val internalLocationIds = setOf(1L)
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, 1, tomorrow, null, emptyList())
+
+      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = tomorrow, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, tomorrow)!!
+
+      with(result) {
+        size isEqualTo 1
+
+        with(this.first()) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events hasSize 1
+          // Prisoner A11111A will be ignored because they are marked as not required for tomorrow's session
+          with(events.first()) {
+            eventType isEqualTo "ACTIVITY"
+            scheduledInstanceId isEqualTo 1L
+            prisonerNumber isEqualTo "B22222B"
+          }
+        }
+      }
+    }
+
     private fun WebTestClient.getInternalLocationEvents(
       prisonCode: String,
       internalLocationIds: Set<Long>,

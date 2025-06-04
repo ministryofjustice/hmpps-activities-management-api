@@ -1057,20 +1057,22 @@ class ManageAttendancesServiceTest {
       assertThat(payAmount).isEqualTo(30)
       assertThat(history()).hasSize(2)
       with(history().first()) {
-        val matchingAdvanceAttendanceHistory = instance.advanceAttendances.first().history().first()
+        val matchingAdvanceAttendanceHistory = history().first()
         assertThat(attendanceReason).isEqualTo(notRequiredReason)
         assertThat(issuePayment).isEqualTo(matchingAdvanceAttendanceHistory.issuePayment)
         assertThat(recordedTime).isEqualTo(matchingAdvanceAttendanceHistory.recordedTime)
         assertThat(recordedBy).isEqualTo(matchingAdvanceAttendanceHistory.recordedBy)
       }
       with(history().last()) {
-        val matchingAdvanceAttendance = instance.advanceAttendances.first()
+        val matchingAdvanceAttendance = history().last()
         assertThat(attendanceReason).isEqualTo(notRequiredReason)
         assertThat(issuePayment).isEqualTo(matchingAdvanceAttendance.issuePayment)
         assertThat(recordedTime).isEqualTo(matchingAdvanceAttendance.recordedTime)
         assertThat(recordedBy).isEqualTo(matchingAdvanceAttendance.recordedBy)
       }
     }
+
+    assertThat(instance.advanceAttendances).isEmpty()
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
   }
