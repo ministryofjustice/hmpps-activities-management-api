@@ -38,7 +38,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
@@ -233,7 +232,6 @@ class ScheduledEventServiceSinglePrisonerTest {
   }
 
   private fun appointmentCategoryMap() = mapOf("TEST" to appointmentCategoryReferenceCode("TEST"))
-  private fun appointmentLocationMap() = mapOf(101L to appointmentLocation(101L, "MDI"))
 
   private fun activityFromDbInstance(
     scheduledInstanceId: Long = 1,
@@ -286,6 +284,7 @@ class ScheduledEventServiceSinglePrisonerTest {
     issuePayment = issuePayment,
     attendanceStatus = attendanceStatus,
     attendanceReasonCode = attendanceReasonCode,
+    possibleAdvanceAttendance = false,
   )
 
   private fun appointmentFromDbInstance(

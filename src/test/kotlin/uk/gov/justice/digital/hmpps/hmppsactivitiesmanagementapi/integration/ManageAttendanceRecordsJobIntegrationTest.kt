@@ -308,6 +308,12 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
         assertThat(caseNoteText).isNull()
       }
     }
+
+    webTestClient.get()
+      .uri("/advance-attendances/1")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isNotFound
   }
 
   @Sql("classpath:test_data/seed-attendances-yesterdays-completed.sql")

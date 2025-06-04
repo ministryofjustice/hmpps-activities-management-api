@@ -385,6 +385,9 @@ class ManageAttendancesService(
           ),
         )
       }
+      .also { it ->
+        instance.advanceAttendances.remove(advanceAttendance)
+      }
   }
 
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) = attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)

@@ -206,6 +206,7 @@ class ScheduledInstanceServiceTest {
             issuePayment = true,
             attendanceStatus = AttendanceStatus.COMPLETED,
             attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+            possibleAdvanceAttendance = false,
           ),
         ),
       )
@@ -247,6 +248,7 @@ class ScheduledInstanceServiceTest {
         issuePayment = true,
         attendanceStatus = AttendanceStatus.COMPLETED,
         attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+        possibleAdvanceAttendance = false,
       )
 
       val activityWithoutAttendance = activityWithAttendance.copy(attendanceStatus = null)
