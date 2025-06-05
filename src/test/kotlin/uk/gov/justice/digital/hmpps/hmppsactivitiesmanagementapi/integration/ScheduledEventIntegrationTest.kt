@@ -569,7 +569,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
-    fun `POST - multiple prisoners - scheduled events should npt return any activity events for today where attendance does not exist`() {
+    fun `POST - multiple prisoners - scheduled events should not return any activity events for today where attendance does not exist`() {
       val prisonCode = "MDI"
       val prisonerNumbers = listOf("G0459PP", "AA1111A")
       val date = LocalDate.now()
@@ -584,6 +584,30 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `POST - multiple prisoners - scheduled events should not return any future activity events for prisoners with advance attendance`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A11111A", "B22222B")
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, tomorrow)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, tomorrow)
+      adjudicationsMock(prisonCode, tomorrow, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), tomorrow)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        with(activities!!.first()) {
+          assertThat(scheduledInstanceId).isEqualTo(1)
+          assertThat(summary).isEqualTo("Geography AM")
+          assertThat(date).isEqualTo(tomorrow)
+          assertThat(prisonerNumber).isEqualTo("B22222B")
+        }
       }
     }
   }

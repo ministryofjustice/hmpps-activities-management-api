@@ -44,6 +44,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate = :date
     AND sa.prisonerNumber in :prisonerNumbers
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun getScheduledActivitiesForPrisonerListAndDate(
