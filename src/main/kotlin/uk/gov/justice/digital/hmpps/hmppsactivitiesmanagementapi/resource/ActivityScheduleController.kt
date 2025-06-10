@@ -168,7 +168,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getScheduleById(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)
@@ -382,7 +382,7 @@ class ActivityScheduleController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun allocationSuitability(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "prisonerNumber", required = true)
