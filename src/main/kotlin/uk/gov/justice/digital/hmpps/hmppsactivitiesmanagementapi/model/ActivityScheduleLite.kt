@@ -22,7 +22,7 @@ data class ActivityScheduleLite(
   @Schema(description = "The description of this activity schedule", example = "Monday AM Houseblock 3")
   val description: String,
 
-  @Schema(description = "The NOMIS internal location for this schedule", example = "98877667")
+  @Schema(description = "The NOMIS internal location for this schedule")
   var internalLocation: InternalLocation? = null,
 
   @Schema(description = "The maximum number of prisoners allowed for a scheduled instance of this schedule", example = "10")
