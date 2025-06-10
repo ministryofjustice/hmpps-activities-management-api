@@ -162,7 +162,7 @@ class ActivityController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityScheduleLite::class))
+            array = ArraySchema(schema = Schema(implementation = ActivityScheduleLite::class)),
           ),
         ],
       ),
