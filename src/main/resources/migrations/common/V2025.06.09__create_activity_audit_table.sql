@@ -17,14 +17,14 @@ CREATE TABLE activity_aud
     end_date                     date,
     activity_category_id         bigint,
     activity_tier_id             bigint,
-    in_cell                      bool         NOT NULL DEFAULT false,
-    on_wing                      bool         NOT NULL DEFAULT false,
-    off_wing                     bool         NOT NULL DEFAULT false,
-    risk_level                   varchar(10)  NOT NULL,
-    paid                         bool         NOT NULL,
-    attendance_required          bool         NOT NULL DEFAULT true,
+    in_cell                      bool,
+    on_wing                      bool,
+    off_wing                     bool,
+    risk_level                   varchar(10),
+    paid                         bool,
+    attendance_required          bool,
     rev                          bigint       NOT NULL REFERENCES revision (id),
-    revtype                      smallint
+    revtype                      smallint     NOT NULL
 );
 
 CREATE INDEX idx_activity_aud_start_date ON activity_aud (start_date);
