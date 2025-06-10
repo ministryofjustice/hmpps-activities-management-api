@@ -198,7 +198,7 @@ class ActivityController(
   )
   @GetMapping(value = ["/{activityId}/schedules"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> = activityService.getSchedulesForActivity(activityId)
 
   @ResponseStatus(HttpStatus.ACCEPTED)

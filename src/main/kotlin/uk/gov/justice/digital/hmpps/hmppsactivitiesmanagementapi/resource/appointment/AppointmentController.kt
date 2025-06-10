@@ -595,7 +595,7 @@ class AppointmentController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun searchAppointments(
     @PathVariable("prisonCode") prisonCode: String,
     @Valid
