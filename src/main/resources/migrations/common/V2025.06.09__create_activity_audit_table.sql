@@ -1,6 +1,6 @@
 CREATE TABLE revision
 (
-    id                           bigserial    NOT NULL CONSTRAINT revision_pkey PRIMARY KEY,
+    id                           bigint       NOT NULL CONSTRAINT revision_pkey PRIMARY KEY,
     "timestamp"                  bigint       NOT NULL,
     username                     varchar(100) NOT NULL
 );
