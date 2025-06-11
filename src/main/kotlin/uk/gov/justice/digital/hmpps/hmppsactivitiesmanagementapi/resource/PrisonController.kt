@@ -278,6 +278,6 @@ class PrisonController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): List<PrisonRegime> = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 }

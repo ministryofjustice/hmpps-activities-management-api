@@ -171,7 +171,7 @@ class ScheduledEventController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getScheduledEventsForMultiplePrisoners(
     @PathVariable("prisonCode")
     @Parameter(description = "The 3-character prison code.")
