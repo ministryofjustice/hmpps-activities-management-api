@@ -16,6 +16,9 @@ import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Fetch
 import org.hibernate.annotations.FetchMode
+import org.hibernate.envers.Audited
+import org.hibernate.envers.NotAudited
+import org.hibernate.envers.RelationTargetAuditMode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -30,6 +33,7 @@ import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession as ModelPayPerSession
 
 @Entity
+@Audited
 @Table(name = "activity")
 @EntityListeners(AuditableEntityListener::class)
 data class Activity(
@@ -41,10 +45,12 @@ data class Activity(
 
   @OneToOne
   @JoinColumn(name = "activity_category_id", nullable = false)
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   var activityCategory: ActivityCategory,
 
   @OneToOne
   @JoinColumn(name = "activity_tier_id")
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   var activityTier: EventTier,
 
   var attendanceRequired: Boolean = true,
@@ -55,10 +61,13 @@ data class Activity(
 
   var offWing: Boolean = false,
 
+  @NotAudited
   var pieceWork: Boolean = false,
 
+  @NotAudited
   var outsideWork: Boolean = false,
 
+  @NotAudited
   @Enumerated(EnumType.STRING)
   var payPerSession: PayPerSession = PayPerSession.H,
 
@@ -70,12 +79,16 @@ data class Activity(
 
   var riskLevel: String,
 
+  @NotAudited
   val createdTime: LocalDateTime,
 
+  @NotAudited
   val createdBy: String,
 
+  @NotAudited
   var updatedTime: LocalDateTime? = null,
 
+  @NotAudited
   var updatedBy: String? = null,
 
   @Transient
@@ -99,6 +112,7 @@ data class Activity(
       field = value
     }
 
+  @NotAudited
   @OneToOne
   @JoinColumn(name = "activity_organiser_id")
   var organiser: EventOrganiser? = null
@@ -108,18 +122,22 @@ data class Activity(
       field = value
     }
 
+  @NotAudited
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val activityMinimumEducationLevel: MutableList<ActivityMinimumEducationLevel> = mutableListOf()
 
+  @NotAudited
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val activityPay: MutableList<ActivityPay> = mutableListOf()
 
+  @NotAudited
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf()
 
+  @NotAudited
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val schedules: MutableList<ActivitySchedule> = mutableListOf()
