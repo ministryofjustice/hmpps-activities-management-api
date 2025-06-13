@@ -12,7 +12,7 @@ const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemeven
 
 @Profile("!test && !local")
 @Component
-class UpdatedFromExternalSystemsEventsListener(
+class UpdateFromExternalSystemsEventsListener(
   private val mapper: ObjectMapper
 ) {
   companion object {
@@ -30,7 +30,7 @@ class UpdatedFromExternalSystemsEventsListener(
     val sqsMessage = mapper.readValue(rawMessage, UpdateFromExternalSystemEvent::class.java)
 
     when (sqsMessage.eventType) {
-      "TestMessage" -> {}
+      "TestEvent" -> {}
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
         throw Exception("Unrecognised message type on external system event: ${sqsMessage.eventType}")
