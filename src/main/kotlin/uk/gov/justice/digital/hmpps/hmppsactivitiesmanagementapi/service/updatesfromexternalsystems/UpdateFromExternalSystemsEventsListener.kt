@@ -13,7 +13,7 @@ const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemeven
 @Profile("!test && !local")
 @Component
 class UpdateFromExternalSystemsEventsListener(
-  private val mapper: ObjectMapper
+  private val mapper: ObjectMapper,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
