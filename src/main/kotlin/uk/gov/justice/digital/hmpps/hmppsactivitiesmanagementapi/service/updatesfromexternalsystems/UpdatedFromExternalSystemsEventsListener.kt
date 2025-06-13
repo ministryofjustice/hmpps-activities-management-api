@@ -1,14 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.updatesfromexternalsystems
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.updatesfromexternalsystems.UpdateFromExternalSystemEvent
 
 const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemevents"
 
@@ -22,24 +20,21 @@ class UpdatedFromExternalSystemsEventsListener(
   }
 
   init {
-    log.info("Event listener started.")
+    log.info("Updates from external systems event listener started.")
   }
 
   @SqsListener(UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME, factory = "hmppsQueueContainerFactoryProxy")
   internal fun onMessage(rawMessage: String) {
     log.debug("Update from external system event raw message $rawMessage")
 
-    val sqsMessage: SQSMessage = mapper.readValue(rawMessage)
+    val sqsMessage = mapper.readValue(rawMessage, UpdateFromExternalSystemEvent::class.java)
 
-    when (sqsMessage.Type) {
+    when (sqsMessage.eventType) {
       "TestMessage" -> {}
       else -> {
-        log.warn("Unrecognised message type on external system event: ${sqsMessage.Type}")
-        throw Exception("Unrecognised message type on external system event: ${sqsMessage.Type}")
+        log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
+        throw Exception("Unrecognised message type on external system event: ${sqsMessage.eventType}")
       }
     }
   }
 }
-
-@JsonNaming(value = PropertyNamingStrategies.UpperCamelCaseStrategy::class)
-data class SQSMessage(val Type: String, val Message: String, val MessageId: String? = null)
