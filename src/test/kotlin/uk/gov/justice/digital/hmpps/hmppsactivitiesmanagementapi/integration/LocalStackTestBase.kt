@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 abstract class LocalStackTestBase : IntegrationTestBase() {
 
   @Autowired
-  private lateinit var hmppsQueueService: HmppsQueueService
+  lateinit var hmppsQueueService: HmppsQueueService
 
   protected val activitiesQueue by lazy { hmppsQueueService.findByQueueId("activities") as HmppsQueue }
 
