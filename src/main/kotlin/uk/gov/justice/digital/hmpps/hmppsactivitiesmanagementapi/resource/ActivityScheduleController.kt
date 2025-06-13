@@ -382,7 +382,7 @@ class ActivityScheduleController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('ACTIVITY_HUB', 'ACTIVITY_ADMIN')")
   fun allocationSuitability(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "prisonerNumber", required = true)
