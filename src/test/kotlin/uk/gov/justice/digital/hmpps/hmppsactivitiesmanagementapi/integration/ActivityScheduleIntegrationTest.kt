@@ -30,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AdvanceAttendanceCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCandidate
@@ -68,7 +69,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttend
     "feature.event.activities.prisoner.attendance-deleted=true",
   ],
 )
-class ActivityScheduleIntegrationTest : IntegrationTestBase() {
+class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
@@ -824,6 +825,72 @@ class ActivityScheduleIntegrationTest : IntegrationTestBase() {
         caseNote = null,
       ),
     ).expectStatus().isNoContent
+
+    activityScheduleRepository.findById(1).orElseThrow().also {
+      with(allocationRepository.findByActivitySchedule(it).first()) {
+        assertThat(deallocatedBy).isEqualTo("test-client")
+        assertThat(deallocatedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+        assertThat(startDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(endDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+        assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
+      }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
+    assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-30.sql",
+  )
+  fun `deallocation before the activity schedule has started will remove advance attendances`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
+
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.tomorrow(),
+      ),
+    ).expectStatus().isNoContent
+
+    val request = AdvanceAttendanceCreateRequest(
+      scheduleInstanceId = 1,
+      prisonerNumber = "G4793VF",
+      issuePayment = true,
+    )
+
+    val attendance = webTestClient.createAdvanceAttendance(request, "MDI")
+
+    webTestClient.retrieveAdvanceAttendance(attendance.id)
+
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("G4793VF"),
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
+        endDate = TimeSource.today(),
+        caseNote = null,
+      ),
+    ).expectStatus().isNoContent
+
+    webTestClient.checkAdvanceAttendanceDoesNotExist(attendance.id)
 
     activityScheduleRepository.findById(1).orElseThrow().also {
       with(allocationRepository.findByActivitySchedule(it).first()) {

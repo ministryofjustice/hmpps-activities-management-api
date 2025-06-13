@@ -61,3 +61,8 @@ values (5, 2, current_date + 1, '23:58:00', '23:59:00', false, null, null, null,
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (5, 5, 'A11111A', 2, null, current_timestamp - interval '1 hour', 'TEST_USER', 'COMPLETED', 75, null, null);
 
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'A11111A', true,'2024-01-23 12:00:00.000000', 'John Smith');
+
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'B11111B', true,'2024-01-23 12:00:00.000000', 'John Smith');

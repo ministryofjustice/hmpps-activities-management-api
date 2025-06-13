@@ -75,6 +75,23 @@ class AllocationTest {
   }
 
   @Test
+  fun `check can that deallocate active allocation removes any advance attendances`() {
+    val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
+
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      this.add(this.first().copy(prisonerNumber = "B2222BB"))
+      assertThat(this).hasSize(2)
+    }
+
+    allocation.deallocateNowWithReason(DeallocationReason.ENDED)
+
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      assertThat(this).hasSize(1)
+      assertThat(this.first().prisonerNumber).isEqualTo("B2222BB")
+    }
+  }
+
+  @Test
   fun `check cannot deallocate if allocation already ended`() {
     val allocation = allocation().apply { deallocateNowWithReason(DeallocationReason.ENDED) }
 
@@ -96,6 +113,46 @@ class AllocationTest {
     assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
     assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).hasSize(1)
     assertThat(allocation.endDate).isEqualTo(TimeSource.today())
+  }
+
+  @Test
+  fun `check that deallocate future allocation removes any advance attendances`() {
+    val allocation = allocation(startDate = LocalDate.now().plusDays(1), withExclusions = true)
+
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      this.add(this.first().copy(prisonerNumber = "B2222BB"))
+      assertThat(this).hasSize(2)
+    }
+
+    allocation.deallocateBeforeStart(DeallocationReason.ENDED, "USER1")
+
+    assertThat(allocation.deallocatedReason).isEqualTo(DeallocationReason.ENDED)
+    assertThat(allocation.deallocatedBy).isEqualTo("USER1")
+    assertThat(allocation.deallocatedTime).isCloseTo(LocalDateTime.now(), within(2, ChronoUnit.SECONDS))
+    assertThat(allocation.exclusions(ExclusionsFilter.ACTIVE)).isEmpty()
+    assertThat(allocation.exclusions(ExclusionsFilter.PRESENT)).isEmpty()
+    assertThat(allocation.endDate).isEqualTo(allocation.startDate)
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      assertThat(this).hasSize(1)
+      assertThat(this.first().prisonerNumber).isEqualTo("B2222BB")
+    }
+  }
+
+  @Test
+  fun `check that deallocate today removes any advance attendances`() {
+    val allocation = allocation(startDate = LocalDate.now().minusDays(1), withExclusions = true)
+
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      this.add(this.first().copy(prisonerNumber = "B2222BB"))
+      assertThat(this).hasSize(2)
+    }
+
+    allocation.deallocateNowOn(TimeSource.today())
+
+    with(allocation.activitySchedule.instances().first().advanceAttendances) {
+      assertThat(this).hasSize(1)
+      assertThat(this.first().prisonerNumber).isEqualTo("B2222BB")
+    }
   }
 
   @Test

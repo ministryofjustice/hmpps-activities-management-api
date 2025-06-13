@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELO
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
 import java.time.temporal.ChronoUnit
 
-class AdvanceAttendanceIntegrationTest : IntegrationTestBase() {
+class AdvanceAttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
@@ -154,18 +154,6 @@ class AdvanceAttendanceIntegrationTest : IntegrationTestBase() {
       .expectStatus().isNotFound
   }
 
-  private fun WebTestClient.createAdvanceAttendance(request: AdvanceAttendanceCreateRequest) = post()
-    .uri("/advance-attendances")
-    .bodyValue(request)
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
-    .header(CASELOAD_ID, "PVI")
-    .exchange()
-    .expectStatus().isCreated
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(AdvanceAttendance::class.java)
-    .returnResult().responseBody
-
   private fun WebTestClient.updateAdvanceAttendance(id: Long, request: AdvanceAttendanceUpdateRequest) = put()
     .uri("/advance-attendances/$id")
     .bodyValue(request)
@@ -174,17 +162,6 @@ class AdvanceAttendanceIntegrationTest : IntegrationTestBase() {
     .header(CASELOAD_ID, "PVI")
     .exchange()
     .expectStatus().isAccepted
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(AdvanceAttendance::class.java)
-    .returnResult().responseBody
-
-  private fun WebTestClient.retrieveAdvanceAttendance(id: Long) = get()
-    .uri("/advance-attendances/$id")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_ADMIN)))
-    .header(CASELOAD_ID, "PVI")
-    .exchange()
-    .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBody(AdvanceAttendance::class.java)
     .returnResult().responseBody
