@@ -32,7 +32,7 @@ data class ActivityScheduleSlot(
   @JsonFormat(pattern = "HH:mm")
   val endTime: LocalTime,
 
-  @Schema(description = "The days of the week on which the schedule slot takes place", example = "[Mon,Tue,Wed]")
+  @Schema(description = "The days of the week on which the schedule slot takes place", example = "['Mon','Tue','Wed']")
   val daysOfWeek: List<String>,
 
   @Schema(description = "Indicates whether the schedule slot takes place on a Monday", example = "true")
