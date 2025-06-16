@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.updatesfromexternalsystems.UpdateFromExternalSystemEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 
 const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemevents"
 
@@ -14,6 +15,7 @@ const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemeven
 @Component
 class UpdateFromExternalSystemsEventsListener(
   private val mapper: ObjectMapper,
+  private val attendancesService: AttendancesService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -31,6 +33,10 @@ class UpdateFromExternalSystemsEventsListener(
 
     when (sqsMessage.eventType) {
       "TestEvent" -> {}
+      "MarkPrisonerAttendance" -> {
+        val event = sqsMessage.toMarkPrisonerAttendanceEvent()
+        attendancesService.mark(principalName = sqsMessage.who, attendances = event.attendanceUpdateRequests)
+      }
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
         throw Exception("Unrecognised message type on external system event: ${sqsMessage.eventType}")

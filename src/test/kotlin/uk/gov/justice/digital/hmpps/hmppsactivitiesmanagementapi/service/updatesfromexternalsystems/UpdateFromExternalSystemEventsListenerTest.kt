@@ -9,7 +9,10 @@ import java.util.UUID
 
 class UpdateFromExternalSystemEventsListenerTest {
   private val objectMapper = jacksonObjectMapper()
-  private val updateFromExternalSystemListener = UpdateFromExternalSystemsEventsListener(objectMapper)
+  private val updateFromExternalSystemListener = UpdateFromExternalSystemsEventsListener(
+    objectMapper,
+    attendancesService
+  )
 
   @Test
   fun `will handle a test event passed in`() {
