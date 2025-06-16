@@ -129,6 +129,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
     assertThatAllocationsAreActiveFor("A11111A")
 
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A")
+
     // This event falls back to being processed as an interesting event due to the unknown reason for release
     val event =
       PrisonerReleasedEvent(
@@ -145,6 +147,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThatAllocationsAreActiveFor("A11111A")
       assertThat(eventReviewRepository.count()).isEqualTo(1L)
     }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A")
 
     verifyNoInteractions(outboundEventsService)
   }
@@ -189,6 +193,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       single { it.allocationId == 6L }.prisonerStatus isEqualTo PrisonerStatus.PENDING
     }
 
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
+
     val event = prisonerReleasedEvent(prisonerNumber = "A11111A")
 
     this.sendInboundEvent(event)
@@ -218,6 +224,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       hmppsAuditEventCaptor.secondValue.what isEqualTo "PRISONER_DEALLOCATED"
       hmppsAuditEventCaptor.thirdValue.what isEqualTo "PRISONER_DEALLOCATED"
       hmppsAuditEventCaptor.lastValue.what isEqualTo "PRISONER_DEALLOCATED"
+
+      assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
     }
   }
 
@@ -291,6 +299,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       5L,
     )
 
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
+
     val event = prisonerReleasedEvent(prisonerNumber = "A11111A")
 
     this.sendInboundEvent(event)
@@ -309,6 +319,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
         4L,
         5L,
       )
+
+      assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
     }
   }
 
@@ -805,6 +817,9 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     )
     assertThatWaitingListStatusIs(WaitingListStatus.PENDING, PENTONVILLE_PRISON_CODE, "A22222A")
 
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A22222A")
+    assertThat(webTestClient.getScheduledInstancesByIds(2).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A22222A", "B22222B")
+
     val event =
       activitiesChangedEvent(
         prisonId = PENTONVILLE_PRISON_CODE,
@@ -825,6 +840,9 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       verifyNoMoreInteractions(outboundEventsService)
 
       assertThat(attendanceRepository.findAllById(listOf(1L, 2L, 3L)).map { it.attendanceId }).containsOnly(1L)
+
+      assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).isEmpty()
+      assertThat(webTestClient.getScheduledInstancesByIds(2).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B22222B")
     }
   }
 

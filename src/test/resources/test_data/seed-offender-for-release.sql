@@ -69,3 +69,9 @@ values (2, '2022-10-10', '14:00:00', '15:00:00', false, null, null, null, null, 
 
 insert into waiting_list (waiting_list_id, prison_code, prisoner_number, booking_id, application_date, activity_id, activity_schedule_id, requested_by, status, creation_time, created_by, comments, declined_reason, updated_time, updated_by, allocation_id)
 values (1, 'PVI', 'A11111A', 1207485, '2023-06-23', 2, 3, 'Fred Bloggs', 'PENDING', '2023-08-02 13:37:47.534000', 'test user', 'The prisoner has specifically requested to attend this activity', null, null, null, null);
+
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'A11111A', true,'2024-01-23 12:00:00.000000', 'John Smith');
+
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'B11111B', true,'2024-01-23 12:00:00.000000', 'John Smith');
