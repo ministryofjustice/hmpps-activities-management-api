@@ -127,7 +127,7 @@ class PrisonController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getPrisonPayBands(
     @PathVariable("prisonCode")
     prisonCode: String,

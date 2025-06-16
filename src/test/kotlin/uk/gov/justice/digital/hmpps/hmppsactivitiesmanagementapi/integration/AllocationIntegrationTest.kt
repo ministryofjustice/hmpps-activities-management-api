@@ -54,7 +54,7 @@ import java.time.LocalDateTime
     "spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
   ],
 )
-class AllocationIntegrationTest : IntegrationTestBase() {
+class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -211,6 +211,10 @@ class AllocationIntegrationTest : IntegrationTestBase() {
   fun `update allocation end date`() {
     allocationRepository.findById(1).get().also { it.endDate isEqualTo null }
 
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A11111A")
+
+    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
+
     webTestClient.updateAllocation(
       PENTONVILLE_PRISON_CODE,
       1,
@@ -229,6 +233,8 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
+
+    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
   }
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
