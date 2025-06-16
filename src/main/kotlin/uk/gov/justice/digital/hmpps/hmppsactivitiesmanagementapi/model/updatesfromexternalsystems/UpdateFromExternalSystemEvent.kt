@@ -10,7 +10,7 @@ data class UpdateFromExternalSystemEvent(
   val description: String? = null,
   val messageAttributes: Map<String, Any?> = emptyMap(),
   val who: String,
-){
+) {
   fun toMarkPrisonerAttendanceEvent(): MarkPrisonerAttendanceEvent {
     val mapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
     return mapper.convertValue(this.messageAttributes, MarkPrisonerAttendanceEvent::class.java)

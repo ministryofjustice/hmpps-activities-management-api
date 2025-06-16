@@ -11,7 +11,7 @@ class UpdateFromExternalSystemEventsListenerTest {
   private val objectMapper = jacksonObjectMapper()
   private val updateFromExternalSystemListener = UpdateFromExternalSystemsEventsListener(
     objectMapper,
-    attendancesService
+    attendancesService,
   )
 
   @Test
