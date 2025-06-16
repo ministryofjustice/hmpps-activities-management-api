@@ -57,7 +57,7 @@ import java.time.ZoneOffset
     "jobs.deallocate-allocations-ending.days-start=22",
   ],
 )
-class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
+class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @MockitoBean
   private lateinit var clock: Clock
@@ -92,6 +92,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
     }
 
+    webTestClient.retrieveAdvanceAttendance(1)
+
     waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
@@ -108,6 +110,8 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
       onEach { it isStatus DECLINED }
       onEach { it.declinedReason isEqualTo "Activity ended" }
     }
+
+    webTestClient.checkAdvanceAttendanceDoesNotExist(1)
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
@@ -172,10 +176,13 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     )
 
     with(allocationRepository.findAll()) {
-      this hasSize 2
-      prisonerAllocation(AUTO_SUSPENDED).prisonerNumber isEqualTo "A11111A"
-      prisonerAllocation(PENDING).prisonerNumber isEqualTo "A11111A"
+      this hasSize 3
+      this.filter { it.prisonerNumber == "A11111A" && it.prisonerStatus == AUTO_SUSPENDED } hasSize 1
+      this.filter { it.prisonerNumber == "A11111A" && it.prisonerStatus == PENDING } hasSize 1
+      this.filter { it.prisonerNumber == "B11111B" && it.prisonerStatus == PENDING } hasSize 1
     }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("A11111A", "B11111B")
 
     waitForJobs({ webTestClient.manageAllocations(withDeallocateExpiring = true) })
 
@@ -183,9 +190,11 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
-    val expiredAllocations = allocationRepository.findAll().also { it hasSize 2 }
+    val expiredAllocations = allocationRepository.findAll().filter { it.prisonerNumber != "B11111B" }.also { it hasSize 2 }
 
     expiredAllocations.forEach { allocation -> allocation isDeallocatedWithReason TEMPORARILY_RELEASED }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(1).first().advanceAttendances).extracting("prisonerNumber").containsOnly("B11111B")
   }
 
   @Sql("classpath:test_data/seed-offender-with-waiting-list-application.sql")
@@ -329,8 +338,6 @@ class ManageAllocationsJobIntegrationTest : IntegrationTestBase() {
   }
 
   private fun List<Allocation>.prisoner(number: String) = single { it.prisonerNumber == number }
-
-  private fun List<Allocation>.prisonerAllocation(prisonerStatus: PrisonerStatus) = single { it.prisonerStatus == prisonerStatus }
 
   private fun List<WaitingList>.prisoner(number: String) = single { it.prisonerNumber == number }
 
