@@ -22,7 +22,9 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
@@ -150,7 +152,24 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       await untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
 
-      await untilAsserted { verify(attendancesService, times(1)).mark(eq("automated-test-client"), any<List<AttendanceUpdateRequest>>()) }
+      await untilAsserted {
+        verify(attendancesService, times(1)).mark(
+          "automated-test-client",
+          listOf(
+            AttendanceUpdateRequest(
+              1,
+              MOORLAND_PRISON_CODE,
+              AttendanceStatus.COMPLETED,
+              "SICK",
+              null,
+              true,
+              null,
+              null,
+              null
+            ),
+          )
+        )
+      }
 
       val updatedAttendances = attendanceRepository.findAll().toList().also { assertThat(it).hasSize(1) }
       assertThat(updatedAttendances.prisonerAttendanceReason("A11111A").code).isEqualTo(AttendanceReasonEnum.SICK)
