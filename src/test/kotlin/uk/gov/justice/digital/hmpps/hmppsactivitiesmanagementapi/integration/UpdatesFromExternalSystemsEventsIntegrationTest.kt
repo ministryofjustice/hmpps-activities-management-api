@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
@@ -165,9 +164,9 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
               true,
               null,
               null,
-              null
+              null,
             ),
-          )
+          ),
         )
       }
 
