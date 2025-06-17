@@ -15,6 +15,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.context.jdbc.Sql
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -37,6 +38,13 @@ import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
 
+@TestPropertySource(
+  properties = [
+    "feature.events.sns.enabled=true",
+    "feature.event.activities.prisoner.attendance-created=true",
+    "feature.event.activities.prisoner.attendance-amended=true",
+  ],
+)
 class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
