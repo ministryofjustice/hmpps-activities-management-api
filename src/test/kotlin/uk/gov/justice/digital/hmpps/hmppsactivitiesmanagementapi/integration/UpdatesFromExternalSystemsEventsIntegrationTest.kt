@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.beans.factory.annotation.Autowired
@@ -217,7 +218,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       )
 
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
-      verify(attendancesService, times(0)).mark(any(), any<List<AttendanceUpdateRequest>>())
+      verify(attendancesService, never()).mark(any(), any<List<AttendanceUpdateRequest>>())
     }
   }
 
