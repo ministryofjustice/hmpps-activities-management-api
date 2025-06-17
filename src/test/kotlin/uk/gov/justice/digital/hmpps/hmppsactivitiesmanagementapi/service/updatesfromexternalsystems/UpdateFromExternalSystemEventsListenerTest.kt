@@ -29,11 +29,11 @@ class UpdateFromExternalSystemEventsListenerTest {
     val messageId = UUID.randomUUID().toString()
     val message = """
     {
-      "messageId" : "$messageId",
-      "eventType" : "TestEvent",
-      "description" : null,
-      "messageAttributes" : {},
-      "who" : "automated-test-client"
+      "messageId": "$messageId",
+      "eventType": "TestEvent",
+      "description": null,
+      "messageAttributes": {},
+      "who": "automated-test-client"
     }
     """
 
@@ -47,11 +47,11 @@ class UpdateFromExternalSystemEventsListenerTest {
     val messageId = UUID.randomUUID().toString()
     val message = """
     {
-      "messageId" : "$messageId",
-      "eventType" : "InvalidEventType",
-      "description" : null,
-      "messageAttributes" : {},
-      "who" : "automated-test-client"
+      "messageId": "$messageId",
+      "eventType": "InvalidEventType",
+      "description": null,
+      "messageAttributes": {},
+      "who": "automated-test-client"
     }
     """
 
@@ -69,10 +69,10 @@ class UpdateFromExternalSystemEventsListenerTest {
       val messageId = UUID.randomUUID().toString()
       val message = """
       {
-        "messageId" : "$messageId",
-        "eventType" : "MarkPrisonerAttendance",
-        "description" : null,
-        "messageAttributes" : {
+        "messageId": "$messageId",
+        "eventType": "MarkPrisonerAttendance",
+        "description": null,
+        "messageAttributes": {
           "attendanceUpdateRequests": [
             {
               "id": 123456, 
@@ -87,7 +87,7 @@ class UpdateFromExternalSystemEventsListenerTest {
             }
           ]
         },
-        "who" : "automated-test-client"
+        "who": "automated-test-client"
       }
       """
 
@@ -102,13 +102,13 @@ class UpdateFromExternalSystemEventsListenerTest {
       val messageId = UUID.randomUUID().toString()
       val message = """
       {
-        "messageId" : "$messageId",
-        "eventType" : "MarkPrisonerAttendance",
-        "description" : null,
-        "messageAttributes" : {
+        "messageId": "$messageId",
+        "eventType": "MarkPrisonerAttendance",
+        "description": null,
+        "messageAttributes": {
           "invalidField": "invalid value"
         },
-        "who" : "automated-test-client"
+        "who": "automated-test-client"
       }
       """
 

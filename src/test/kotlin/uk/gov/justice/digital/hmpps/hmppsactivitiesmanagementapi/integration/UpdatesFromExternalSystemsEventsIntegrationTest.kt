@@ -76,7 +76,8 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       "messageId" : "$messageId",
       "eventType" : "TestEvent",
       "description" : null,
-      "messageAttributes" : {}
+      "messageAttributes" : {},
+      "who": "automated-test-client"
     }
     """
 
@@ -97,7 +98,8 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       "messageId" : "$messageId",
       "eventType" : "InvalidEventType",
       "description" : null,
-      "messageAttributes" : {}
+      "messageAttributes" : {},
+      "who": "automated-test-client"
     }
     """
 
@@ -139,7 +141,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
             }
           ]
         },
-        "who" : "automated-test-client"
+        "who": "automated-test-client"
       }
       """
 
