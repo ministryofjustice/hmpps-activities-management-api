@@ -214,10 +214,10 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointments("MDI", request)!!
 
-    assertThat(results.map { it.startDate }.distinct()).containsOnly(request.startDate, request.endDate)
-
     // Check for single prison code as date range filtering uses ORs which can cause data leaks
     assertThat(results.map { it.prisonCode }.distinct()).containsOnly("MDI")
+
+    assertThat(results.map { it.startDate }.distinct()).containsOnly(request.startDate, request.endDate)
   }
 
   @Sql(
@@ -241,6 +241,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     )
 
     val results = webTestClient.searchAppointments("MDI", request)!!
+
+    // Check for single prison code as date range filtering uses ORs which can cause data leaks
+    assertThat(results.map { it.prisonCode }.distinct()).containsOnly("MDI")
 
     results.map { it.startTime }.forEach {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
@@ -272,6 +275,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     )
 
     val results = webTestClient.searchAppointments("MDI", request)!!
+
+    // Check for single prison code as date range filtering uses ORs which can cause data leaks
+    assertThat(results.map { it.prisonCode }.distinct()).containsOnly("MDI")
 
     results.map { it.startTime }.forEach {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
