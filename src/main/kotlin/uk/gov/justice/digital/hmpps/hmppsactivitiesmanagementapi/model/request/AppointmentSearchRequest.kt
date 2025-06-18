@@ -38,6 +38,15 @@ data class AppointmentSearchRequest(
   val startDate: LocalDate,
 
   @Schema(
+    description = """
+    When an end date is supplied alongside the start date, the search uses a date range and will restrict the search results to
+    appointments that have a start date within the date range.
+    """,
+  )
+  @JsonFormat(pattern = "yyyy-MM-dd")
+  val endDate: LocalDate? = null,
+
+  @Schema(
     description =
     """
     The time slot to match with the appointments. Will restrict the search results to appointments that have a start
