@@ -37,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
@@ -149,6 +150,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -193,6 +195,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -240,7 +243,51 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
+      assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo("")
+      assertThat(value[CREATED_BY_PROPERTY_KEY]).isEqualTo("")
+    }
+
+    with(telemetryMetricsMap) {
+      assertThat(value[RESULTS_COUNT_METRIC_KEY]).isEqualTo(1.0)
+      assertThat(value[EVENT_TIME_MS_METRIC_KEY]).isNotNull()
+    }
+  }
+
+  @Test
+  fun `search by date range`() {
+    val request = AppointmentSearchRequest(startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
+    val result = appointmentSearchEntity()
+
+    whenever(appointmentSearchRepository.findAll(any())).thenReturn(listOf(result))
+    whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
+    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
+      .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+
+    service.searchAppointments("TPR", request, principal)
+
+    verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.endDate!!)
+    verifyNoMoreInteractions(appointmentSearchSpecification)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_SEARCH.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    with(telemetryPropertyMap) {
+      assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+      assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
+      assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo("")
@@ -282,6 +329,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo(request.categoryCode)
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -324,6 +372,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo(request.internalLocationId.toString())
@@ -386,6 +435,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -428,6 +478,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")

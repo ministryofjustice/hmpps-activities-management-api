@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONER_NUMBER_PROPERTY_KEY
@@ -149,6 +150,7 @@ class AppointmentSearchService(
       USER_PROPERTY_KEY to principal.name,
       PRISON_CODE_PROPERTY_KEY to prisonCode,
       START_DATE_PROPERTY_KEY to (request.startDate.toString() ?: ""),
+      END_DATE_PROPERTY_KEY to (request.endDate?.toString() ?: ""),
       TIME_SLOT_PROPERTY_KEY to (request.timeSlots?.toString() ?: ""),
       CATEGORY_CODE_PROPERTY_KEY to (request.categoryCode ?: ""),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to (request.internalLocationId?.toString() ?: ""),
