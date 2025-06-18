@@ -25,16 +25,28 @@ values (2, 1, 'B22222B', 10002, 1, '2022-10-01', null, '2022-10-01 10:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 2, 'B22222B', 10003, 1, '2022-10-01', null, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
 
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
+values (4, 1, 'C33333C', 10001, 1, current_date + interval '1 day', null, '2022-10-01 10:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE');
+
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, time_slot)
 values (1, 1, current_timestamp + interval '1 day', '09:00:00', '12:00:00', false, null, null, 'AM');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, time_slot)
 values (2, 2, current_timestamp + interval '1 day', '09:00:00', '12:00:00', false, null, null, 'AM');
 
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, time_slot)
+values (3, 1, current_timestamp + interval '2 day', '09:00:00', '12:00:00', false, null, null, 'AM');
+
 insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
 values (1, 'A11111A', true,'2024-01-23 12:00:00.000000', 'John Smith');
 
 insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
 values (2, 'B22222B', true,'2024-01-23 12:00:00.000000', 'John Smith');
+
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'C33333C', true,'2024-01-23 12:00:00.000000', 'John Smith');
+
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (3, 'C33333C', true,'2024-01-23 12:00:00.000000', 'John Smith');
 
 
