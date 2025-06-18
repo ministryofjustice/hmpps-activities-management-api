@@ -154,9 +154,9 @@ VALUES (342, 222, 'B2345CD', 457);
 
 --Prisoner A1234BC, Category AC1, Location 123, Today 08:30-10:00, Created by TEST.USER
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (117, 'INDIVIDUAL', 'MDI', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
+VALUES (117, 'INDIVIDUAL', 'ABC', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES (223, 117, 1, 'MDI', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
+VALUES (223, 117, 1, 'ABC', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES (343, 223, 'A1234BC', 456);
 
