@@ -52,6 +52,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.Aud
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
@@ -80,6 +81,9 @@ import java.util.*
   ],
 )
 class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
+  @Autowired
+  private lateinit var activityRepository: ActivityRepository
+
   @MockitoBean
   private lateinit var bankHolidayService: BankHolidayService
 
@@ -175,6 +179,24 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
     }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("INSERT")
+      assertThat(revisionNumber.get()).isEqualTo(4)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(summary).isEqualTo("IT level 1")
+      assertThat(description).isEqualTo("A basic IT course")
+      assertThat(riskLevel).isEqualTo("high")
+      assertThat(attendanceRequired).isTrue
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(2)
+      assertThat(paid).isTrue
+    }
   }
 
   @Test
@@ -258,6 +280,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
     }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("INSERT")
+      assertThat(revisionNumber.get()).isEqualTo(2)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(summary).isEqualTo("IT level 1")
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(2)
+      assertThat(paid).isTrue
+    }
   }
 
   @Test
@@ -315,6 +352,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'Test activity'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
     }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("INSERT")
+      assertThat(revisionNumber.get()).isEqualTo(5)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(summary).isEqualTo("Test activity")
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(2)
+      assertThat(paid).isFalse()
+    }
   }
 
   @Test
@@ -368,6 +420,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'Test activity'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("INSERT")
+      assertThat(revisionNumber.get()).isEqualTo(14)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(summary).isEqualTo("Test activity")
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(2)
+      assertThat(paid).isFalse()
     }
   }
 
@@ -436,6 +503,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_CREATED)
       assertThat(prisonCode).isEqualTo("MDI")
       assertThat(message).startsWith("An activity called 'IT level 1'(1) with category Education and starting on ${TimeSource.tomorrow()} at prison MDI was created")
+    }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("INSERT")
+      assertThat(revisionNumber.get()).isEqualTo(3)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("MDI")
+      assertThat(summary).isEqualTo("IT level 1")
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(1)
+      assertThat(paid).isTrue
     }
   }
 
@@ -1089,6 +1171,21 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(detailType).isEqualTo(AuditEventType.ACTIVITY_UPDATED)
       assertThat(prisonCode).isEqualTo(PENTONVILLE_PRISON_CODE)
       assertThat(message).startsWith("An activity called 'IT level 1 - updated'(1) with category Education and starting on 2022-10-10 at prison PVI was updated")
+    }
+
+    with(activityRepository.findLastChangeRevision(1).get().metadata) {
+      assertThat(revisionType.name).isEqualTo("UPDATE")
+      assertThat(revisionNumber.get()).isEqualTo(10)
+      assertThat(revisionInstant.toString()).isNotNull
+    }
+
+    with(activityRepository.findRevisions(1).last().entity) {
+      assertThat(activityId).isEqualTo(1)
+      assertThat(prisonCode).isEqualTo("PVI")
+      assertThat(summary).isEqualTo("IT level 1 - updated")
+      assertThat(activityCategory.activityCategoryId).isEqualTo(1)
+      assertThat(activityTier.eventTierId).isEqualTo(2)
+      assertThat(paid).isTrue
     }
   }
 
