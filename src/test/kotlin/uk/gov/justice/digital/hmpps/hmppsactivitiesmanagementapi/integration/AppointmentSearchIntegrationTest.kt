@@ -283,6 +283,30 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
+  fun `search for next weeks appointments and not find any`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now().plusWeeks(1),
+      endDate = LocalDate.now().plusDays(1).plusWeeks(1),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    results.size.isEqualTo(0)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
   fun `search for appointments that are part of an appointment with category AC1`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
