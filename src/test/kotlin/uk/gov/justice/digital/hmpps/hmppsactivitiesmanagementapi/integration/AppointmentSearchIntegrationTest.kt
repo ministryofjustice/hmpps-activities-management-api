@@ -215,6 +215,9 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     val results = webTestClient.searchAppointments("MDI", request)!!
 
     assertThat(results.map { it.startDate }.distinct()).containsOnly(request.startDate, request.endDate)
+
+    // Check for single prison code as date range filtering uses ORs which can cause data leaks
+    assertThat(results.map { it.prisonCode }.distinct()).containsOnly("MDI")
   }
 
   @Sql(
