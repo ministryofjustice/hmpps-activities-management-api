@@ -197,6 +197,92 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
+  fun `search for appointments today or tomorrow`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusDays(1),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    assertThat(results.map { it.startDate }.distinct()).containsOnly(request.startDate, request.endDate)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointments for today or tomorrow starting in AM and PM timeslots`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusDays(1),
+      timeSlots = listOf(TimeSlot.AM, TimeSlot.PM),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    results.map { it.startTime }.forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
+    }
+
+    results.count { it.startTime in amRange }.isEqualTo(8)
+    results.count { it.startTime in pmRange }.isEqualTo(4)
+    results.count { it.startTime in edRange }.isEqualTo(0)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointments today or tomorrow in AM, PM, and ED timeslots`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      endDate = LocalDate.now().plusDays(1),
+      timeSlots = listOf(TimeSlot.AM, TimeSlot.PM, TimeSlot.ED),
+    )
+
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+    prisonApiMockServer.stubGetLocationsForAppointments(
+      "MDI",
+      listOf(
+        appointmentLocation(123, "MDI", userDescription = "Location 123"),
+        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+      ),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    results.map { it.startTime }.forEach {
+      assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
+    }
+
+    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(8)
+    results.count { it.timeSlot == TimeSlot.PM }.isEqualTo(4)
+    results.count { it.timeSlot == TimeSlot.ED }.isEqualTo(2)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
   fun `search for appointments that are part of an appointment with category AC1`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
