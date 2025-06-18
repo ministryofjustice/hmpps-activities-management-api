@@ -64,36 +64,15 @@ class AppointmentSearchService(
         spec = spec.and { root, _, cb -> cb.equal(root.get<Long>("appointmentType"), appointmentType) }
       }
 
-      if (endDate != null) {
-        val days = Period.between(startDate, endDate).days
-        val datesSpec = (0..days).map {
-          val date = startDate.plusDays(it.toLong())
-          val dateSpec = appointmentSearchSpecification.startDateEquals(date)
-          val timeSlotSpecs = timeSlots?.map { slot ->
-            val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
-              prisonCode = prisonCode,
-              timeSlot = slot,
-              dayOfWeek = date.dayOfWeek,
-            )
-
-            appointmentSearchSpecification.startTimeBetween(
-              timeRange!!.start,
-              timeRange.end.minusMinutes(1),
-            )
-          } ?: listOf()
-
-          dateSpec.and(timeSlotSpecs.reduceOrNull { acc, spec -> acc.or(spec) }) ?: spec
-        }.reduceOrNull { acc, spec -> acc.or(spec) }
-
-        spec = spec.and(datesSpec) ?: spec
-      } else {
-        spec = spec.and(appointmentSearchSpecification.startDateEquals(startDate))
-
+      val days = Period.between(startDate, endDate ?: startDate).days
+      val datesSpec = (0..days).map {
+        val date = startDate.plusDays(it.toLong())
+        val dateSpec = appointmentSearchSpecification.startDateEquals(date)
         val timeSlotSpecs = timeSlots?.map { slot ->
           val timeRange = prisonRegimeService.getTimeRangeForPrisonAndTimeSlot(
             prisonCode = prisonCode,
             timeSlot = slot,
-            dayOfWeek = startDate.dayOfWeek,
+            dayOfWeek = date.dayOfWeek,
           )
 
           appointmentSearchSpecification.startTimeBetween(
@@ -102,8 +81,10 @@ class AppointmentSearchService(
           )
         } ?: listOf()
 
-        spec = spec.and(timeSlotSpecs.reduceOrNull { acc, spec -> acc.or(spec) }) ?: spec
-      }
+        dateSpec.and(timeSlotSpecs.reduceOrNull { acc, spec -> acc.or(spec) }) ?: spec
+      }.reduceOrNull { acc, spec -> acc.or(spec) }
+
+      spec = spec.and(datesSpec) ?: spec
 
       categoryCode?.apply {
         spec = spec.and(appointmentSearchSpecification.categoryCodeEquals(categoryCode))
