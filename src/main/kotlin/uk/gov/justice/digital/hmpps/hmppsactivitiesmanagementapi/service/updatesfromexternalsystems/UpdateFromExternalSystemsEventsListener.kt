@@ -45,7 +45,7 @@ class UpdateFromExternalSystemsEventsListener(
         val event = sqsMessage.toMarkPrisonerAttendanceEvent()
         attendancesService.mark(principalName = sqsMessage.who, attendances = event.attendanceUpdateRequests)
       }
-      "DeallocationPrisonerToActivitySchedule" -> {
+      "DeallocatePrisonerFromActivitySchedule" -> {
         val event = sqsMessage.toPrisonerDeallocationEvent()
         val prisonerDeallocationRequest = PrisonerDeallocationRequest(
           prisonerNumbers = event.prisonerNumbers,
