@@ -347,5 +347,36 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
       verify(activityScheduleService, never()).deallocatePrisoners(any(), any(), any())
     }
+
+    @Test
+    fun `will throw an error if message attributes fail validation`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId" : "$messageId",
+        "eventType" : "DeallocatePrisonerFromActivitySchedule",
+        "description" : null,
+        "messageAttributes" : {
+          "scheduleId": 1,
+          "prisonerNumbers": [],
+          "reasonCode": "",
+          "endDate": "2021-01-01",
+          "caseNote": {
+            "type": "GEN",
+            "text": "string"
+          },
+          "scheduleInstanceId": 0
+        },
+        "who" : "automated-test-client"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
+      verify(activityScheduleService, never()).deallocatePrisoners(any(), any(), any())
+    }
   }
 }
