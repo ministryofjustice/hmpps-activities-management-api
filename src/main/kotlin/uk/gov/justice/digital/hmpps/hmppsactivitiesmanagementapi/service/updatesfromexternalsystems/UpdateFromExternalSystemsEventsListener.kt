@@ -6,7 +6,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.updatesfromexternalsystems.UpdateFromExternalSystemEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 
 const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemevents"
@@ -16,6 +18,7 @@ const val UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME = "updatefromexternalsystemeven
 class UpdateFromExternalSystemsEventsListener(
   private val mapper: ObjectMapper,
   private val attendancesService: AttendancesService,
+  private val activityScheduleService: ActivityScheduleService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -36,6 +39,17 @@ class UpdateFromExternalSystemsEventsListener(
       "MarkPrisonerAttendance" -> {
         val event = sqsMessage.toMarkPrisonerAttendanceEvent()
         attendancesService.mark(principalName = sqsMessage.who, attendances = event.attendanceUpdateRequests)
+      }
+      "DeallocationPrisonerToActivitySchedule" -> {
+        val event = sqsMessage.toPrisonerDeallocationEvent()
+        val prisonerDeallocationRequest = PrisonerDeallocationRequest(
+          prisonerNumbers = event.prisonerNumbers,
+          reasonCode = event.reasonCode,
+          endDate = event.endDate,
+          caseNote = event.caseNote,
+          scheduleInstanceId = event.scheduleInstanceId,
+        )
+        activityScheduleService.deallocatePrisoners(event.scheduleId, request = prisonerDeallocationRequest, deallocatedBy = sqsMessage.who)
       }
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
