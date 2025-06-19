@@ -44,6 +44,6 @@ class AttendanceReasonController(private val attendanceReasonService: Attendance
   )
   @GetMapping
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getAttendanceReasons(): List<AttendanceReason> = attendanceReasonService.getAll()
 }
