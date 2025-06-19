@@ -40,4 +40,7 @@ data class ScheduledInstance(
 
   @Schema(description = "The attendance records for this scheduled instance")
   val attendances: List<Attendance> = emptyList(),
+
+  @Schema(description = "The list of advance attendances. payAmount and attendanceHistory will be null.")
+  val advanceAttendances: List<AdvanceAttendance>,
 )

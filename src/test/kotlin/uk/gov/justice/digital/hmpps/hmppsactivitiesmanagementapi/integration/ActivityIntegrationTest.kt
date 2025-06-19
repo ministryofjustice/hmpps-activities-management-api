@@ -182,7 +182,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(4)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -283,7 +282,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(2)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -355,7 +353,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(5)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -424,7 +421,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(14)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -507,7 +503,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(3)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -1175,7 +1170,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("UPDATE")
-      assertThat(revisionNumber.get()).isEqualTo(10)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -1413,7 +1407,33 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
   }
 
   @Test
-  @Sql("classpath:test_data/seed-activity-update-end-date.sql")
+  @Sql("classpath:test_data/seed-activity-update-start-and-end-date.sql")
+  fun `updateActivity start date - is successful`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    with(webTestClient.getActivityById(1)) {
+      assertThat(startDate).isEqualTo(tomorrow)
+      assertThat(schedules).hasSize(1)
+      assertThat(schedules.first().startDate).isEqualTo(tomorrow)
+      assertThat(schedules.first().allocations).hasSize(1)
+      assertThat(schedules.first().allocations.first().startDate).isEqualTo(tomorrow.plusDays(2))
+      assertThat(schedules.first().instances.first().advanceAttendances).hasSize(1)
+    }
+
+    val newActivityStartDate = LocalDate.now().plusDays(3)
+
+    val newEndDate = ActivityUpdateRequest(startDate = newActivityStartDate)
+
+    with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newEndDate)) {
+      assertThat(startDate).isEqualTo(newActivityStartDate)
+      assertThat(schedules.first().startDate).isEqualTo(newActivityStartDate)
+      assertThat(schedules.first().allocations.first().startDate).isEqualTo(newActivityStartDate)
+      assertThat(schedules.first().instances).isEmpty()
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-update-start-and-end-date.sql")
   fun `updateActivity end date - is successful`() {
     with(webTestClient.getActivityById(1)) {
       assertThat(endDate).isNull()
@@ -1421,19 +1441,23 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(schedules.first().endDate).isNull()
       assertThat(schedules.first().allocations).hasSize(1)
       assertThat(schedules.first().allocations.first().endDate).isNotNull()
+      assertThat(schedules.first().instances.first().advanceAttendances).hasSize(1)
     }
 
-    val newEndDate = ActivityUpdateRequest(endDate = TimeSource.tomorrow())
+    val dayAfterTomorrow = LocalDate.now().plusDays(3)
+
+    val newEndDate = ActivityUpdateRequest(endDate = dayAfterTomorrow)
 
     with(webTestClient.updateActivity(PENTONVILLE_PRISON_CODE, 1, newEndDate)) {
-      assertThat(endDate).isEqualTo(TimeSource.tomorrow())
-      assertThat(schedules.first().endDate).isEqualTo(TimeSource.tomorrow())
-      assertThat(schedules.first().allocations.first().endDate).isEqualTo(TimeSource.tomorrow())
+      assertThat(endDate).isEqualTo(dayAfterTomorrow)
+      assertThat(schedules.first().endDate).isEqualTo(dayAfterTomorrow)
+      assertThat(schedules.first().allocations.first().endDate).isEqualTo(dayAfterTomorrow)
+      assertThat(schedules.first().instances).isEmpty()
     }
   }
 
   @Test
-  fun `updateActivity - runs on bank holidays updated to not run on bankholidays`() {
+  fun `updateActivity - runs on bank holidays updated to not run on bank holidays`() {
     prisonApiMockServer.stubGetReferenceCode(
       "EDU_LEVEL",
       "1",

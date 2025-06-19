@@ -30,6 +30,7 @@ class ScheduledInstanceTest : ModelTest() {
       cancelled = true,
       cancelledTime = originalCancelledTime,
       attendances = emptyList(),
+      advanceAttendances = emptyList(),
     )
 
     val json = objectMapper.writeValueAsString(scheduledInstance)

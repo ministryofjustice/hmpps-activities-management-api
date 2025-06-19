@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.mockito.kotlin.doReturn
@@ -1062,5 +1064,108 @@ class AllocationTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Allocation '0' cannot be deallocated with the future date '${TimeSource.tomorrow().toIsoDate()}'")
+  }
+
+  @Nested
+  @DisplayName("removeRedundantAdvanceAttendances")
+  inner class RemoveRedundantAdvanceAttendancesTest {
+    fun setUpData(allocationPrisonerNumber: String = "A1234AA", endDate: LocalDate? = null): Triple<Allocation, ScheduledInstance, ScheduledInstance> {
+      val today = LocalDate.now()
+
+      val schedule = activitySchedule(activityEntity(startDate = today, paid = false, noPayBands = true), noExclusions = true, noAllocations = true, noInstances = true, paid = false)
+
+      val allocation = schedule.allocatePrisoner(
+        prisonerNumber = allocationPrisonerNumber.toPrisonerNumber(),
+        bookingId = 10001,
+        allocatedBy = "Mr Blogs",
+        startDate = today,
+        endDate = endDate,
+        payBand = null,
+      )
+
+      val instance1 = schedule.addInstance(today, slot = schedule.slots().first())
+        .also { instance ->
+          instance.advanceAttendances.add(
+            AdvanceAttendance(
+              scheduledInstance = instance,
+              prisonerNumber = "A1234AA",
+              issuePayment = false,
+              recordedTime = LocalDateTime.now(),
+              recordedBy = "JoeBloggs",
+            ),
+          )
+        }
+
+      val instance2 = schedule.addInstance(today.plusDays(3), slot = schedule.slots().first())
+        .also { instance ->
+          instance.advanceAttendances.add(
+            AdvanceAttendance(
+              scheduledInstance = instance,
+              prisonerNumber = "A1234AA",
+              issuePayment = false,
+              recordedTime = LocalDateTime.now(),
+              recordedBy = "Joe Bloggs",
+            ),
+          )
+        }
+
+      return Triple(allocation, instance1, instance2)
+    }
+
+    @Test
+    fun `will remove advance attendances when end date is moved to before advance attendance`() {
+      val (allocation, instance1, instance2) = setUpData(endDate = today.plusDays(7))
+
+      assertThat(allocation.endDate).isEqualTo(today.plusDays(7))
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).hasSize(1)
+
+      allocation.removeRedundantAdvanceAttendances(allocation.startDate, today.plusDays(2))
+
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).isEmpty()
+    }
+
+    @Test
+    fun `will remove advance attendances when end date is added before advance attendance`() {
+      val (allocation, instance1, instance2) = setUpData()
+
+      assertThat(allocation.endDate).isNull()
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).hasSize(1)
+
+      allocation.removeRedundantAdvanceAttendances(allocation.startDate, today.plusDays(2))
+
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).isEmpty()
+    }
+
+    @Test
+    fun `will remove advance attendances when start date is moved to after advance attendance`() {
+      val (allocation, instance1, instance2) = setUpData()
+
+      assertThat(allocation.startDate).isEqualTo(today)
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).hasSize(1)
+
+      allocation.removeRedundantAdvanceAttendances(today.plusDays(1), allocation.endDate)
+
+      assertThat(instance1.advanceAttendances).isEmpty()
+      assertThat(instance2.advanceAttendances).hasSize(1)
+    }
+
+    @Test
+    fun `will not remove advance attendances when prisoner number is not the same as the allocated prisoner`() {
+      val (allocation, instance1, instance2) = setUpData(allocationPrisonerNumber = "XX9999X")
+
+      assertThat(allocation.startDate).isEqualTo(today)
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).hasSize(1)
+
+      allocation.removeRedundantAdvanceAttendances(today.plusDays(1), allocation.endDate)
+
+      assertThat(instance1.advanceAttendances).hasSize(1)
+      assertThat(instance2.advanceAttendances).hasSize(1)
+    }
   }
 }
