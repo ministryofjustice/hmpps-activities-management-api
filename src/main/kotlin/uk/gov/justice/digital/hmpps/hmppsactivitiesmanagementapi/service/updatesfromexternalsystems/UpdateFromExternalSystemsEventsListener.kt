@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.updatesfromexternalsystems
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.awspring.cloud.sqs.annotation.SqsListener
 import jakarta.validation.Validation
 import jakarta.validation.ValidationException
