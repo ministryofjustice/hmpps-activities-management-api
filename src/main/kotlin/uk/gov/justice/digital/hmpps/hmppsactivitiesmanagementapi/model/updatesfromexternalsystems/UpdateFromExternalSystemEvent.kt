@@ -1,10 +1,20 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.updatesfromexternalsystems
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.annotation.Nullable
+import jakarta.validation.Valid
+import jakarta.validation.constraints.FutureOrPresent
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AddCaseNoteRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
+import java.time.LocalDate
 
 data class UpdateFromExternalSystemEvent(
   val messageId: String,
@@ -18,12 +28,21 @@ data class UpdateFromExternalSystemEvent(
     return mapper.convertValue(this.messageAttributes, MarkPrisonerAttendanceEvent::class.java)
   }
 
-  fun toPrisonerDeallocationRequest(): PrisonerDeallocationRequest {
+  fun toPrisonerDeallocationEvent(): PrisonerDeallocationEvent {
     val mapper = ObjectMapper().registerModule(KotlinModule.Builder().build()).registerModule(JavaTimeModule())
-    return mapper.convertValue(this.messageAttributes, PrisonerDeallocationRequest::class.java)
+    return mapper.convertValue(this.messageAttributes, PrisonerDeallocationEvent::class.java)
   }
 }
 
 data class MarkPrisonerAttendanceEvent(
   val attendanceUpdateRequests: List<AttendanceUpdateRequest>,
+)
+
+data class PrisonerDeallocationEvent(
+  val scheduleId: Long,
+  val prisonerNumbers: List<String>?,
+  val reasonCode: String?,
+  val endDate: LocalDate?,
+  val caseNote: AddCaseNoteRequest? = null,
+  val scheduleInstanceId: Long? = null,
 )
