@@ -271,6 +271,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
     attendances = it.attendances.map { attendance -> transform(attendance, null) },
+    advanceAttendances = it.advanceAttendances.map { advanceAttendance -> transform(advanceAttendance) },
   )
 }
 

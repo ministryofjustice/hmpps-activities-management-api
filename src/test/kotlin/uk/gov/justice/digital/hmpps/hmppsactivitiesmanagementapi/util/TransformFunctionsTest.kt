@@ -54,6 +54,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendance as ModelAdvanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EligibilityRule as ModelEligibilityRule
@@ -126,6 +127,18 @@ class TransformFunctionsTest {
                   recordedBy = "Joe Bloggs",
                   editable = true,
                   payable = true,
+                  attendanceHistory = null,
+                ),
+              ),
+              advanceAttendances = listOf(
+                ModelAdvanceAttendance(
+                  id = 1,
+                  scheduleInstanceId = 0,
+                  prisonerNumber = "A1234AA",
+                  issuePayment = true,
+                  payAmount = null,
+                  recordedTime = LocalDate.now().atStartOfDay(),
+                  recordedBy = "Joe Bloggs",
                   attendanceHistory = null,
                 ),
               ),

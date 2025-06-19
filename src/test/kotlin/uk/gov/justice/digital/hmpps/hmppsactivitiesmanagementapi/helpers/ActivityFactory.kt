@@ -307,6 +307,7 @@ internal fun activitySchedule(
       )
       this.advanceAttendances.add(
         AdvanceAttendance(
+          advanceAttendanceId = 1,
           scheduledInstance = this,
           prisonerNumber = "A1234AA",
           issuePayment = true,

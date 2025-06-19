@@ -157,7 +157,7 @@ class AllocationsService(
 
       allocation.prisonerStatus = if (newStartDate.isAfter(LocalDate.now())) PrisonerStatus.PENDING else PrisonerStatus.ACTIVE
       allocation.startDate = newStartDate
-
+      allocation.removeRedundantAdvanceAttendances(allocation.startDate, allocation.endDate)
       allocation.exclusions(ExclusionsFilter.FUTURE).forEach { it.startDate = newStartDate }
     }
   }
@@ -176,6 +176,7 @@ class AllocationsService(
         allocation.activitySchedule.deallocatePrisonerOn(allocation.prisonerNumber, this, allocation.plannedDeallocation!!.plannedReason, updatedBy)
       }
       allocation.endDate = this
+      allocation.removeRedundantAdvanceAttendances(allocation.startDate, allocation.endDate)
     }
   }
 
