@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.within
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -26,10 +25,10 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactlyInAnyOrder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -54,6 +53,8 @@ import java.util.UUID
     "feature.events.sns.enabled=true",
     "feature.event.activities.prisoner.attendance-created=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.event.activities.prisoner.allocation-amended=true",
+    "feature.event.activities.prisoner.attendance-deleted=true",
   ],
 )
 class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
@@ -306,21 +307,22 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         )
       }
 
-      activityScheduleRepository.findById(1).orElseThrow().also {
-        with(allocationRepository.findByActivitySchedule(it).first()) {
-          assertThat(deallocatedBy).isEqualTo(who)
-          assertThat(deallocatedReason).isEqualTo(DeallocationReason.COMPLETED)
-          assertThat(startDate).isEqualTo(TimeSource.tomorrow())
-          assertThat(endDate).isEqualTo(TimeSource.tomorrow())
-          assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
-          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
+      activityScheduleRepository.findById(scheduleId).orElseThrow().also {
+        with(allocationRepository.findByActivitySchedule(it).first().plannedDeallocation) {
+          assertThat(this!!)
+          assertThat(plannedBy).isEqualTo(who)
+          assertThat(plannedReason).isEqualTo(DeallocationReason.COMPLETED)
+          assertThat(plannedDate).isEqualTo(TimeSource.today())
         }
       }
 
-      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
-
-      assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
-      assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+      assertThat(eventCaptor.allValues.map { it.eventType }).containsExactlyInAnyOrder(
+        "activities.prisoner.allocation-amended",
+        "activities.prisoner.attendance-deleted",
+        "activities.prisoner.attendance-deleted",
+        "activities.prisoner.attendance-deleted",
+      )
     }
 
     @Test
