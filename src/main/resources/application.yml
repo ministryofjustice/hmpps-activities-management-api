@@ -106,6 +106,7 @@ spring:
     placeholders:
       dpr_user: ${DPR_USER}
       dpr_password: ${DPR_PASSWORD}
+    out-of-order: true
 
 server:
   port: 8080
