@@ -206,6 +206,27 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+  @Test
+  fun `update allocation start date to after instance with advance attendance`() {
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").contains("A11111A", "C33333C")
+
+    webTestClient.updateAllocation(
+      MOORLAND_PRISON_CODE,
+      4,
+      AllocationUpdateRequest(
+        startDate = LocalDate.now().plusDays(2),
+      ),
+    )
+
+    allocationRepository.findById(4).get().also {
+      it.startDate isEqualTo LocalDate.now().plusDays(2)
+      it.prisonerStatus isEqualTo PrisonerStatus.PENDING
+    }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").contains("A11111A")
+  }
+
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
   fun `update allocation end date`() {
@@ -235,6 +256,28 @@ class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
+  }
+
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+  @Test
+  fun `update allocation end date to before instance with advance attendance`() {
+    assertThat(webTestClient.getScheduledInstancesByIds(3)!!.first().advanceAttendances).extracting("prisonerNumber").contains("C33333C")
+
+    webTestClient.updateAllocation(
+      MOORLAND_PRISON_CODE,
+      4,
+      AllocationUpdateRequest(
+        endDate = LocalDate.now().plusDays(1),
+        reasonCode = "OTHER",
+      ),
+    )
+
+    allocationRepository.findById(4).get().also {
+      it.endDate isEqualTo LocalDate.now().plusDays(1)
+      it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+    }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(3)!!.first().advanceAttendances).isEmpty()
   }
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")
