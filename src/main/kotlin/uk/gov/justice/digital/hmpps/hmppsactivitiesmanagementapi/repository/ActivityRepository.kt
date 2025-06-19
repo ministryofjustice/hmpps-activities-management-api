@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.history.RevisionRepository
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -13,6 +14,7 @@ import java.time.LocalDate
 @Repository
 interface ActivityRepository :
   JpaRepository<Activity, Long>,
+  RevisionRepository<Activity, Long, Long>,
   ActivityRepositoryCustom {
 
   fun findByPrisonCodeAndStartDateLessThan(

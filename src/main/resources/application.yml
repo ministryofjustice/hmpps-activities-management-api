@@ -82,6 +82,10 @@ spring:
     generate-ddl: false
     hibernate:
       ddl-auto: none
+      envers:
+        autoRegisterListeners: true
+        audit_table_suffix: _aud
+        store_data_at_delete: true
 
   datasource:
     url: 'jdbc:postgresql://${DB_SERVER}/${DB_NAME}?sslmode=${DB_SSL_MODE}'
@@ -102,6 +106,7 @@ spring:
     placeholders:
       dpr_user: ${DPR_USER}
       dpr_password: ${DPR_PASSWORD}
+    out-of-order: true
 
 server:
   port: 8080
