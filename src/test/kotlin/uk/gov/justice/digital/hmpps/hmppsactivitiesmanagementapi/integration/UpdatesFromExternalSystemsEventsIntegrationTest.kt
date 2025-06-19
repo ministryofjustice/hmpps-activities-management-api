@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -24,17 +25,26 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.updatesfromexternalsystems.UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME
 import uk.gov.justice.hmpps.sqs.MissingQueueException
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -50,11 +60,20 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
 
+  @Autowired
+  private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
+
+  @Autowired
+  private lateinit var activityScheduleRepository: ActivityScheduleRepository
+
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
+
   @MockitoSpyBean
   lateinit var attendancesService: AttendancesService
 
-  @Autowired
-  private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
+  @MockitoSpyBean
+  lateinit var activityScheduleService: ActivityScheduleService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -122,6 +141,9 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Nested
   @DisplayName("MarkPrisonerAttendance")
   inner class MarkPrisonerAttendance {
+    private fun List<Attendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
+      ?: throw AssertionError("Prison attendance $prisonNumber not found.")
+
     @Sql(
       "classpath:test_data/seed-activity-id-18.sql",
     )
@@ -222,6 +244,106 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
     }
   }
 
-  private fun List<Attendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
-    ?: throw AssertionError("Prison attendance $prisonNumber not found.")
+  @Nested
+  @DisplayName("DeallocatePrisonerFromActivitySchedule")
+  inner class DeallocatePrisonerFromActivitySchedule {
+    @Sql("classpath:test_data/seed-activity-id-33.sql")
+    @Test
+    fun `will handle a valid event passed in`() {
+      val prisonerNumber = "A11111A"
+      val scheduleId = 1L
+      val scheduledInstanceId = 1L
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = MOORLAND_PRISON_CODE,
+          prisonerNumber = prisonerNumber,
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+      )
+
+      val messageId = UUID.randomUUID().toString()
+      val who = "automated-test-client"
+      val message = """
+      {
+        "messageId" : "$messageId",
+        "eventType" : "DeallocatePrisonerFromActivitySchedule",
+        "description" : null,
+        "messageAttributes" : {
+          "scheduleId": $scheduleId,
+          "prisonerNumbers": [
+            "$prisonerNumber"
+          ],
+          "reasonCode": "COMPLETED",
+          "endDate": "${LocalDate.now()}",
+          "caseNote": null,
+          "scheduleInstanceId": $scheduledInstanceId
+        },
+        "who": "$who"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      await untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
+
+      await untilAsserted {
+        verify(activityScheduleService, times(1)).deallocatePrisoners(
+          scheduleId,
+          request = PrisonerDeallocationRequest(
+            prisonerNumbers = listOf(prisonerNumber),
+            reasonCode = "COMPLETED",
+            endDate = LocalDate.now(),
+            caseNote = null,
+            scheduleInstanceId = scheduledInstanceId,
+          ),
+          deallocatedBy = who,
+        )
+      }
+
+      activityScheduleRepository.findById(1).orElseThrow().also {
+        with(allocationRepository.findByActivitySchedule(it).first()) {
+          assertThat(deallocatedBy).isEqualTo(who)
+          assertThat(deallocatedReason).isEqualTo(DeallocationReason.COMPLETED)
+          assertThat(startDate).isEqualTo(TimeSource.tomorrow())
+          assertThat(endDate).isEqualTo(TimeSource.tomorrow())
+          assertThat(deallocatedTime).isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS))
+          assertThat(prisonerStatus).isEqualTo(PrisonerStatus.ENDED)
+        }
+      }
+
+      verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+      assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
+      assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+    }
+
+    @Test
+    fun `will throw an error if message attributes are invalid`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId" : "$messageId",
+        "eventType" : "DeallocatePrisonerFromActivitySchedule",
+        "description" : null,
+        "messageAttributes" : {
+          "invalidField": "invalid value"
+        },
+        "who" : "automated-test-client"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
+      verify(activityScheduleService, never()).deallocatePrisoners(any(), any(), any())
+    }
+  }
 }
