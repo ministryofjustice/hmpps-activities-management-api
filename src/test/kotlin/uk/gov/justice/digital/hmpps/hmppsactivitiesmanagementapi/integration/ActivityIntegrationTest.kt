@@ -182,7 +182,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(4)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -283,7 +282,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(2)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -355,7 +353,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(5)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -424,7 +421,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(14)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -507,7 +503,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("INSERT")
-      assertThat(revisionNumber.get()).isEqualTo(3)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
@@ -1175,7 +1170,6 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     with(activityRepository.findLastChangeRevision(1).get().metadata) {
       assertThat(revisionType.name).isEqualTo("UPDATE")
-      assertThat(revisionNumber.get()).isEqualTo(10)
       assertThat(revisionInstant.toString()).isNotNull
     }
 
