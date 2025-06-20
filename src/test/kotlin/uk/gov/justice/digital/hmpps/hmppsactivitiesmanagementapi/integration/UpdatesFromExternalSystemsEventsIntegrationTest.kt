@@ -307,7 +307,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       }
 
       activityScheduleRepository.findById(scheduleId).orElseThrow().also {
-        with(allocationRepository.findByActivitySchedule(it).first().plannedDeallocation) {
+        with(allocationRepository.findByActivitySchedule(it).first { it.prisonerNumber == prisonerNumber }.plannedDeallocation) {
           assertThat(this!!)
           assertThat(plannedBy).isEqualTo(who)
           assertThat(plannedReason).isEqualTo(DeallocationReason.COMPLETED)
