@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 fun appointmentCategorySummary() = AppointmentCategorySummary("TEST", "Test Category")
 
@@ -37,24 +38,25 @@ fun appointmentSeriesModel(
   updatedTime: LocalDateTime? = null,
   appointmentUpdatedTime: LocalDateTime? = null,
 ) = AppointmentSeries(
-  1,
-  AppointmentType.INDIVIDUAL,
-  "TPR",
-  "TEST",
-  eventTier().toModelEventTier(),
-  eventOrganiser().toModelEventOrganiser(),
-  "Appointment description",
-  123,
-  false,
-  LocalDate.now().plusDays(1),
-  LocalTime.of(9, 0),
-  LocalTime.of(10, 30),
-  null,
-  "Appointment series level comment",
-  createdTime,
-  "CREATE.USER",
-  updatedTime,
-  "UPDATE.USER",
+  id = 1,
+  appointmentType = AppointmentType.INDIVIDUAL,
+  prisonCode = "TPR",
+  categoryCode = "TEST",
+  tier = eventTier().toModelEventTier(),
+  organiser = eventOrganiser().toModelEventOrganiser(),
+  customName = "Appointment description",
+  internalLocationId = 123,
+  dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"),
+  inCell = false,
+  startDate = LocalDate.now().plusDays(1),
+  startTime = LocalTime.of(9, 0),
+  endTime = LocalTime.of(10, 30),
+  schedule = null,
+  extraInformation = "Appointment series level comment",
+  createdTime = createdTime,
+  createdBy = "CREATE.USER",
+  updatedTime = updatedTime,
+  updatedBy = "UPDATE.USER",
   appointments = listOf(appointmentModel(createdTime, appointmentUpdatedTime)),
 )
 

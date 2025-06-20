@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivitiesFixLocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ActivityMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.AppointmentMetricsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateScheduledInstancesJob
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixLocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.FixZeroPayJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAllocationsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.ManageAttendanceRecordsJob
@@ -37,7 +37,7 @@ class JobTriggerController(
   private val fixZeroPayJob: FixZeroPayJob,
   private val clock: Clock,
   private val purposefulActivityReportsJob: PurposefulActivityReportsJob,
-  private val activitiesFixLocationsJob: ActivitiesFixLocationsJob,
+  private val fixLocationsJob: FixLocationsJob,
 ) {
 
   @PostMapping(value = ["/create-scheduled-instances"])
@@ -156,17 +156,17 @@ class JobTriggerController(
     return "Fix zero pay job triggered"
   }
 
-  @PostMapping(value = ["/activities-fix-locations"])
+  @PostMapping(value = ["/fix-locations"])
   @Operation(
-    summary = "Trigger the job fix zero pay activities",
+    summary = "Trigger the job fix activity and appointment locations",
     description = """Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.""",
   )
   @ResponseBody
   @ResponseStatus(HttpStatus.ACCEPTED)
   fun triggerActivitiesLocationsJob(): String {
-    activitiesFixLocationsJob.execute()
+    fixLocationsJob.execute()
 
-    return "Activities fix locations job triggered"
+    return "Fix locations job triggered"
   }
 
   @PostMapping(value = ["/purposeful-activity-reports"])

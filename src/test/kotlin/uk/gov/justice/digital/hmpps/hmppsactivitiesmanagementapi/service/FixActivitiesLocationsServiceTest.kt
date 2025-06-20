@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLoca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import java.util.*
 
-class ActivitiesFixLocationsServiceTest {
+class FixActivitiesLocationsServiceTest {
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient = mock()
@@ -22,7 +22,7 @@ class ActivitiesFixLocationsServiceTest {
   private val uuid2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
   private val uuid3 = UUID.fromString("33333333-3333-3333-3333-333333333333")
 
-  private val activitiesFixLocationsService = ActivitiesFixLocationsService(
+  private val fixActivitiesLocationsService = FixActivitiesLocationsService(
     activityScheduleRepository,
     nomisMappingAPIClient,
     locationsInsidePrisonAPIClient,
@@ -44,7 +44,7 @@ class ActivitiesFixLocationsServiceTest {
   fun `should update location details`() {
     whenever(activityScheduleRepository.findNomisLocationsIds()).thenReturn(listOf(1, 2, 3))
 
-    activitiesFixLocationsService.fixActivityLocations()
+    fixActivitiesLocationsService.fixActivityLocations()
 
     verify(activityScheduleRepository).findNomisLocationsIds()
     verify(activityScheduleRepository).updateLocationDetails(1, uuid1, "code1", "localName1")
@@ -54,12 +54,12 @@ class ActivitiesFixLocationsServiceTest {
   }
 
   @Test
-  fun `should update location details when local name name is null`() {
+  fun `should update location details when local name is null`() {
     whenever(activityScheduleRepository.findNomisLocationsIds()).thenReturn(listOf(1))
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(uuid1)).thenReturn(dpsLocation(uuid1, "RSI", "code1", null))
 
-    activitiesFixLocationsService.fixActivityLocations()
+    fixActivitiesLocationsService.fixActivityLocations()
 
     verify(activityScheduleRepository).findNomisLocationsIds()
     verify(activityScheduleRepository).updateLocationDetails(1, uuid1, "code1", "code1")
@@ -72,7 +72,7 @@ class ActivitiesFixLocationsServiceTest {
 
     whenever(nomisMappingAPIClient.getLocationMappingByNomisId(2)).thenThrow(RuntimeException())
 
-    activitiesFixLocationsService.fixActivityLocations()
+    fixActivitiesLocationsService.fixActivityLocations()
 
     verify(activityScheduleRepository).findNomisLocationsIds()
     verify(activityScheduleRepository).updateLocationDetails(1, uuid1, "code1", "localName1")
@@ -86,7 +86,7 @@ class ActivitiesFixLocationsServiceTest {
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(uuid2)).thenThrow(RuntimeException())
 
-    activitiesFixLocationsService.fixActivityLocations()
+    fixActivitiesLocationsService.fixActivityLocations()
 
     verify(activityScheduleRepository).findNomisLocationsIds()
     verify(activityScheduleRepository).updateLocationDetails(1, uuid1, "code1", "localName1")
