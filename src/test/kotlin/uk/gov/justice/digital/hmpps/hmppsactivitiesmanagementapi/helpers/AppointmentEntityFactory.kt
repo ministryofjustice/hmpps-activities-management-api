@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 internal fun appointmentSeriesEntity(
   appointmentSeriesId: Long = 1,
@@ -51,6 +52,7 @@ internal fun appointmentSeriesEntity(
   cancellationReason: AppointmentCancellationReason? = null,
   cancellationStartDate: LocalDate? = null,
   cancellationStartTime: LocalTime? = null,
+  dpsLocationId: UUID? = UUID.fromString("44444444-1111-2222-3333-444444444444"),
 ) = AppointmentSeries(
   appointmentSeriesId = appointmentSeriesId,
   appointmentSet = appointmentSet,
@@ -60,6 +62,7 @@ internal fun appointmentSeriesEntity(
   appointmentTier = appointmentTier,
   customName = customName,
   internalLocationId = internalLocationId,
+  dpsLocationId = dpsLocationId,
   inCell = inCell,
   startDate = startDate,
   startTime = startTime,

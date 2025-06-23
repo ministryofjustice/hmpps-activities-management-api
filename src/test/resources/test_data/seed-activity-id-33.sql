@@ -12,11 +12,11 @@ values (1, 1, '09:00:00', '10:00:00', true, 'AM'),
        (2, 1, '12:00:00', '13:00:00', true, 'PM'),
        (3, 1, '17:00:00', '18:00:00', true, 'ED');
 
-insert into scheduled_instance(activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
-values (1, current_timestamp, '09:00:00', '10:00:00', false, null, null, null, null, 'AM'),
-       (1, current_timestamp, '12:00:00', '13:00:00', false, null, null, null, null, 'PM'),
-       (1, current_timestamp, '17:00:00', '18:00:00', false, null, null, null, null, 'ED'),
-       (1, current_timestamp + interval '1 day', '12:00:00', '13:00:00', false, null, null, null, null, 'PM');
+insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, cancelled_reason, comment, time_slot)
+values (1, 1, current_timestamp, '09:00:00', '10:00:00', false, null, null, null, null, 'AM'),
+       (2, 1, current_timestamp, '12:00:00', '13:00:00', false, null, null, null, null, 'PM'),
+       (3, 1, current_timestamp, '17:00:00', '18:00:00', false, null, null, null, null, 'ED'),
+       (4, 1, current_timestamp + interval '1 day', '12:00:00', '13:00:00', false, null, null, null, null, 'PM');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (1, 1, 'A11111A', 10001, 1, '2022-10-10', null, '2022-10-10 09:00:00', 'MR BLOGS', null, null, null, null, null, null, 'ACTIVE'),

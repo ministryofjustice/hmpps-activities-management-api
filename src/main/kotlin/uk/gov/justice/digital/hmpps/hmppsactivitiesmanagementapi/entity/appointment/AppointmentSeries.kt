@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeries as AppointmentSeriesModel
 
 @Entity
@@ -102,6 +103,8 @@ data class AppointmentSeries(
   var cancellationStartDate: LocalDate? = null,
 
   var cancellationStartTime: LocalTime? = null,
+
+  var dpsLocationId: UUID? = null,
 ) {
   @OneToOne
   @JoinColumn(name = "appointment_organiser_id")
@@ -194,8 +197,6 @@ data class AppointmentSeries(
 
   fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
-  fun removeAppointment(appointment: Appointment) = appointments.remove(appointment)
-
   fun usernames() = listOfNotNull(createdBy, updatedBy).distinct()
 
   fun toModel() = AppointmentSeriesModel(
@@ -207,6 +208,7 @@ data class AppointmentSeries(
     organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,

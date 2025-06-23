@@ -195,6 +195,7 @@ class AppointmentCreateDomainService(
     telemetryClient.trackEvent(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value, propertiesMap, metricsMap)
   }
 
+  // TODO: SAA-2421 Add DPS Location ID
   private fun AppointmentSeriesModel.writeAppointmentCreatedAuditRecord(prisonNumberBookingIdMap: Map<String, Long>) {
     auditService.logEvent(
       AppointmentSeriesCreatedEvent(
