@@ -22,4 +22,4 @@ spec:
               args:
                 - /bin/sh
                 - -c
-                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/activities-fix-locations
+                - curl --fail --retry 2 -XPOST http://hmpps-activities-management-api/job/fix-locations
