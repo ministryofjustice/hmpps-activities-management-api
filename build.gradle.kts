@@ -8,7 +8,7 @@ plugins {
   kotlin("plugin.jpa") version "2.1.21"
   jacoco
   id("org.openapi.generator") version "7.13.0"
-  id("io.sentry.jvm.gradle") version "5.7.0"
+  id("io.sentry.jvm.gradle") version "5.8.0"
 }
 
 allOpen {
