@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Entity
@@ -63,6 +64,8 @@ data class AppointmentSet(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  var dpsLocationId: UUID? = null,
 ) {
   @OneToMany(fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
   @JoinTable(

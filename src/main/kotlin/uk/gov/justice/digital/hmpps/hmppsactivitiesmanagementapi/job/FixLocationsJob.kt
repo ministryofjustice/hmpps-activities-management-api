@@ -7,11 +7,13 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixActivitiesLocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixAppointmentSeriesLocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixAppointmentSetLocationsService
 
 @Component
 class FixLocationsJob(
   private val fixActivitiesLocationsService: FixActivitiesLocationsService,
   private val fixAppointmentSeriesLocationsService: FixAppointmentSeriesLocationsService,
+  private val fixAppointmentSetLocationsService: FixAppointmentSetLocationsService,
   private val jobRunner: SafeJobRunner,
 ) {
   companion object {
@@ -31,6 +33,12 @@ class FixLocationsJob(
     jobRunner.runJob(
       JobDefinition(JobType.FIX_APPOINTMENT_SERIES_LOCATIONS) {
         fixAppointmentSeriesLocationsService.fixLocations()
+      },
+    )
+
+    jobRunner.runJob(
+      JobDefinition(JobType.FIX_APPOINTMENT_SET_LOCATIONS) {
+        fixAppointmentSetLocationsService.fixLocations()
       },
     )
 
