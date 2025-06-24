@@ -36,20 +36,23 @@ class FixAppointmentSeriesJobIntegrationTest : IntegrationTestBase() {
     webTestClient.fixLocations()
 
     await untilAsserted {
-      webTestClient.getAppointmentSeriesById(1)!!.assertLocationDetails(1, uuid1) // Updated
-      webTestClient.getAppointmentSeriesById(2)!!.assertLocationDetails(null, null) // Unchanged as internal_location_id is null
-      webTestClient.getAppointmentSeriesById(3)!!.assertLocationDetails(2, uuid2) // Update because other locations with id 2 were updated
-      webTestClient.getAppointmentSeriesById(4)!!.assertLocationDetails(2, uuid2) // Updated
-      webTestClient.getAppointmentSeriesById(5)!!.assertLocationDetails(3, UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")) // Unchanged as dps_location_id already set
-      webTestClient.getAppointmentSeriesById(6)!!.assertLocationDetails(4, null) // Unchanged as mapping service returned 404
-      webTestClient.getAppointmentSeriesById(7)!!.assertLocationDetails(5, null) // Unchanged as locations inside prison service returned 404
-      webTestClient.getAppointmentSeriesById(8)!!.assertLocationDetails(6, uuid6) // Updated despite earlier exceptions
+      assertAppointmentSeries(1, 1, uuid1) // Updated
+      assertAppointmentSeries(2, null, null) // Unchanged as internal_location_id is null
+      assertAppointmentSeries(3, 2, uuid2) // Update because other locations with id 2 were updated
+      assertAppointmentSeries(4, 2, uuid2) // Updated
+      assertAppointmentSeries(5, 3, UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")) // Unchanged as dps_location_id already set
+      assertAppointmentSeries(6, 4, null) // Unchanged as mapping service returned 404
+      assertAppointmentSeries(7, 5, null) // Unchanged as locations inside prison service returned 404
+      assertAppointmentSeries(8, 6, uuid6) // Updated despite earlier exceptions
     }
   }
 
-  fun AppointmentSeries.assertLocationDetails(locationId: Int?, dpaLocationId: UUID?) = {
-    assertThat(this.internalLocationId).isEqualTo(locationId)
-    assertThat(this.dpsLocationId).isEqualTo(dpaLocationId)
+  fun assertAppointmentSeries(id: Long, locationId: Long?, dpsLocationId: UUID?) {
+    val appointmentSeries = webTestClient.getAppointmentSeriesById(id)!!
+    with(appointmentSeries) {
+      assertThat(this.internalLocationId).isEqualTo(locationId)
+      assertThat(this.dpsLocationId).isEqualTo(dpsLocationId)
+    }
   }
 
   fun WebTestClient.fixLocations() {
