@@ -1,12 +1,14 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Repository
 interface AppointmentRepository : JpaRepository<Appointment, Long> {
@@ -67,6 +69,26 @@ interface AppointmentRepository : JpaRepository<Appointment, Long> {
   ): List<AppointmentAndAttendee>
 
   fun countAppointmentByPrisonCodeAndCategoryCodeAndStartDateGreaterThanEqualAndIsDeleted(prisonCode: String, categoryCode: String, startDate: LocalDate, isDeleted: Boolean = false): Long
+
+  @Query(
+    """
+    select distinct a.internalLocationId 
+    from Appointment a 
+    where a.internalLocationId is not null
+    and a.dpsLocationId is null
+  """,
+  )
+  fun findNomisLocationsIds(): List<Int>
+
+  @Query(
+    value = """
+    update Appointment a 
+    set a.dpsLocationId = :dpsLocationId
+    where a.internalLocationId = :internalLocationId
+  """,
+  )
+  @Modifying
+  fun updateLocationDetails(internalLocationId: Int, dpsLocationId: UUID)
 }
 
 interface AppointmentAndAttendee {

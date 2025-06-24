@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment as AppointmentModel
 
 @Entity
@@ -81,6 +82,8 @@ data class Appointment(
   var updatedTime: LocalDateTime? = null,
 
   var updatedBy: String? = null,
+
+  var dpsLocationId: UUID? = null,
 ) : AbstractAggregateRoot<Appointment>() {
   @OneToOne
   @JoinColumn(name = "appointment_organiser_id")
