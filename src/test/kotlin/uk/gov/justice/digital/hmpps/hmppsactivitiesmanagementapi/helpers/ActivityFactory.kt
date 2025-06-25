@@ -524,12 +524,12 @@ internal fun prisonPayBand(
   payBandDescription: String = "Pay band 1 RSI description (lowest)",
   nomisPayBand: Int = 1,
 ) = PrisonPayBand(
-    prisonPayBandId = prisonPayBandId,
-    prisonCode = prisonCode,
-    displaySequence = displaySequence,
-    payBandAlias = payBandAlias,
-    payBandDescription = payBandDescription,
-    nomisPayBand = nomisPayBand,
+  prisonPayBandId = prisonPayBandId,
+  prisonCode = prisonCode,
+  displaySequence = displaySequence,
+  payBandAlias = payBandAlias,
+  payBandDescription = payBandDescription,
+  nomisPayBand = nomisPayBand,
 )
 
 internal fun activityCreateRequest(

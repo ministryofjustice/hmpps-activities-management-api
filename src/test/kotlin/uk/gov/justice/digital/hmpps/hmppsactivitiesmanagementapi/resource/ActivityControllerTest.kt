@@ -433,13 +433,13 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           createdTime = null,
           createdBy = null,
           updatedTime = null,
-          updatedBy = null
+          updatedBy = null,
         ),
         rate = 100,
         startDate = null,
         changedDetails = "New pay rate added: £1.00",
         changedTime = LocalDateTime.now(),
-        changedBy = "ABC123 - A. Smith"
+        changedBy = "ABC123 - A. Smith",
       ),
       ActivityPayHistory(
         id = 37,
@@ -455,13 +455,13 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           createdTime = null,
           createdBy = null,
           updatedTime = null,
-          updatedBy = null
+          updatedBy = null,
         ),
         rate = 150,
         startDate = null,
         changedDetails = "New pay rate added: £1.50",
         changedTime = LocalDateTime.now(),
-        changedBy = "ABC456 - N. John"
+        changedBy = "ABC456 - N. John",
       ),
     )
     whenever(activityService.getActivityPayHistory(1)).thenReturn(expectedModel)
