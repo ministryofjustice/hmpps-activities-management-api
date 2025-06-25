@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixActivitiesLocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixAppointmentLocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixAppointmentSeriesLocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.FixAppointmentSetLocationsService
 
@@ -14,6 +15,7 @@ class FixLocationsJob(
   private val fixActivitiesLocationsService: FixActivitiesLocationsService,
   private val fixAppointmentSeriesLocationsService: FixAppointmentSeriesLocationsService,
   private val fixAppointmentSetLocationsService: FixAppointmentSetLocationsService,
+  private val fixAppointmentLocationsService: FixAppointmentLocationsService,
   private val jobRunner: SafeJobRunner,
 ) {
   companion object {
@@ -39,6 +41,12 @@ class FixLocationsJob(
     jobRunner.runJob(
       JobDefinition(JobType.FIX_APPOINTMENT_SET_LOCATIONS) {
         fixAppointmentSetLocationsService.fixLocations()
+      },
+    )
+
+    jobRunner.runJob(
+      JobDefinition(JobType.FIX_APPOINTMENT_LOCATIONS) {
+        fixAppointmentLocationsService.fixLocations()
       },
     )
 
