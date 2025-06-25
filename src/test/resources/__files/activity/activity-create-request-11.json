@@ -25,6 +25,24 @@
       "pieceRateItems": 15
     }
   ],
+  "payChange": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 1,
+      "rate": 125,
+      "changedDetails": "New pay rate added: £1.25",
+      "changedBy": "ABC123 - A. Smith"
+    },
+    {
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
+      "payBandId": 2,
+      "rate": 160,
+      "changedDetails": "New pay rate added: £1.60",
+      "changedBy": "ABC123 - A. Smith"
+    }
+  ],
   "minimumEducationLevel": [
     {
       "educationLevelCode": "1",

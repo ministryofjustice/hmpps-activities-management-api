@@ -9,13 +9,31 @@
       "pieceRateItems": 10
     },
     {
-      "incentiveNomisCode": "BAS",
-      "incentiveLevel": "Basic",
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
       "payBandId": 2,
       "rate": 150,
       "pieceRate": 150,
       "pieceRateItems": 10,
       "startDate": "2024-06-25"
+    }
+  ],
+  "payChange": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 2,
+      "rate": 150,
+      "changedDetails": "New pay rate added: £1.50",
+      "changedBy": "ABC123 - A. Smith"
+    },
+    {
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
+      "payBandId": 2,
+      "rate": 150,
+      "changedDetails": "New pay rate added: £1.50",
+      "changedBy": "ABC123 - A. Smith"
     }
   ]
 }

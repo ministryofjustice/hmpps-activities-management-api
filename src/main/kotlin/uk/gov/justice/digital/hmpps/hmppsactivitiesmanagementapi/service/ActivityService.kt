@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
@@ -57,7 +58,9 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.collections.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity as ModelActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory as ModelActivityPayHistory
 
 typealias AllocationIds = Set<Long>
 
@@ -72,6 +75,7 @@ class ActivityService(
   private val eligibilityRuleRepository: EligibilityRuleRepository,
   private val activityScheduleRepository: ActivityScheduleRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
+  private val activityPayHistoryRepository: ActivityPayHistoryRepository,
   private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val prisonRegimeService: PrisonRegimeService,
@@ -93,6 +97,14 @@ class ActivityService(
     val activity = activityRepository.getActivityByIdWithFilters(activityId, earliestSession)
       ?: throw (EntityNotFoundException("Activity $activityId not found"))
     return transform(activity)
+  }
+
+  fun getActivityPayHistory(activityId: Long): List<ModelActivityPayHistory> {
+    val activity = activityRepository.findById(activityId)
+      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    return activityPayHistoryRepository
+      .findByActivityOrderByChangedTimeDesc(activity)
+      .map { it.toModel() }
   }
 
   fun getActivitiesInPrison(
@@ -160,6 +172,7 @@ class ActivityService(
         this.organiser = organiser
         endDate = request.endDate
         eligibilityRules.forEach { this.addEligibilityRule(it) }
+
         request.pay.forEach {
           this.addPay(
             incentiveNomisCode = it.incentiveNomisCode!!,
@@ -172,6 +185,20 @@ class ActivityService(
             startDate = it.startDate,
           )
         }
+
+        request.payChange?.forEach {
+          this.addPayHistory(
+            incentiveNomisCode = it.incentiveNomisCode,
+            incentiveLevel = it.incentiveLevel,
+            payBand = prisonPayBands[it.payBandId]
+              ?: throw IllegalArgumentException("Pay band not found for prison '${request.prisonCode}'"),
+            rate = it.rate,
+            startDate = it.startDate,
+            changedDetails = it.changedDetails,
+            changedBy = it.changedBy,
+          )
+        }
+
         request.minimumEducationLevel.forEach {
           this.addMinimumEducationLevel(
             educationLevelCode = it.educationLevelCode!!,
@@ -356,6 +383,7 @@ class ActivityService(
       applyAttendanceRequiredUpdate(request, activity)
       applyMinimumEducationLevelUpdate(request, activity)
       applyPayUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
+      applyPayHistoryUpdate(request, activity)
       applyScheduleWeeksUpdate(request, activity)
       applySlotsUpdate(request, activity).let { updatedAllocationIds.addAll(it) }
 
@@ -723,6 +751,30 @@ class ActivityService(
     if (request.paid != null && activity.paid && activity.activityPay().isEmpty()) throw IllegalStateException("Activity '${activity.activityId}' must have at least one pay rate.")
 
     return emptySet()
+  }
+
+  private fun applyPayHistoryUpdate(
+    request: ActivityUpdateRequest,
+    activity: Activity,
+  ) {
+    request.payChange?.let { pay ->
+      val prisonPayBands = prisonPayBandRepository.findByPrisonCode(activity.prisonCode)
+        .associateBy { it.prisonPayBandId }
+        .ifEmpty { throw IllegalArgumentException("No pay bands found for prison '${activity.prisonCode}") }
+
+      pay.forEach {
+        activity.addPayHistory(
+          incentiveNomisCode = it.incentiveNomisCode,
+          incentiveLevel = it.incentiveLevel,
+          payBand = prisonPayBands[it.payBandId]
+            ?: throw IllegalArgumentException("Pay band not found for prison '${activity.prisonCode}'"),
+          rate = it.rate,
+          startDate = it.startDate,
+          changedDetails = it.changedDetails,
+          changedBy = it.changedBy,
+        )
+      }
+    }
   }
 
   private fun replacePayBandAllocationBeforePayRemoval(

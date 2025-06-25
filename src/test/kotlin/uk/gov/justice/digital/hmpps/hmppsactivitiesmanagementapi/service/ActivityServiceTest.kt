@@ -44,6 +44,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityPayHistoryCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
@@ -57,6 +59,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
@@ -65,6 +68,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
@@ -107,6 +111,7 @@ class ActivityServiceTest {
   private val eligibilityRuleRepository: EligibilityRuleRepository = mock()
   private val activityScheduleRepository: ActivityScheduleRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val activityPayHistoryRepository: ActivityPayHistoryRepository = mock()
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val prisonRegimeRepository: PrisonRegimeRepository = mock()
@@ -165,6 +170,7 @@ class ActivityServiceTest {
     eligibilityRuleRepository,
     activityScheduleRepository,
     prisonPayBandRepository,
+    activityPayHistoryRepository,
     prisonApiClient,
     prisonerSearchApiClient,
     prisonRegimeService,
@@ -259,6 +265,7 @@ class ActivityServiceTest {
     with(activityCaptor.firstValue) {
       assertThat(eligibilityRules()).hasSize(1)
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
       assertThat(activityMinimumEducationLevel()).hasSize(1)
       assertThat(activityCategory).isEqualTo(activityCategory())
       assertThat(activityTier).isEqualTo(eventTier())
@@ -297,6 +304,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
       assertThat(activityMinimumEducationLevel()).hasSize(1)
       assertThat(activityCategory).isEqualTo(activityCategory())
       assertThat(activityTier).isEqualTo(eventTier())
@@ -347,8 +355,27 @@ class ActivityServiceTest {
       startDate = LocalDate.now().plusDays(25),
     )
 
+    val aprh1 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      changedDetails = "New pay rate added: £1.25",
+      changedBy = "ABC123 - A. Smith",
+    )
+
+    val aprh2 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+      changedDetails = "New pay rate added: £1.50",
+      changedBy = "ABC123 - A. Smith",
+    )
+
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
-      .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
+      .copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2), payChange = listOf(aprh1, aprh2))
 
     whenever(activityCategoryRepository.findById(1)).thenReturn(Optional.of(activityCategory()))
     whenever(eventTierRepository.findByCode("TIER_2")).thenReturn(eventTier())
@@ -376,6 +403,7 @@ class ActivityServiceTest {
     with(activityCaptor.firstValue) {
       assertThat(eligibilityRules()).hasSize(1)
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
       assertThat(activityMinimumEducationLevel()).hasSize(1)
       assertThat(activityCategory).isEqualTo(activityCategory())
       assertThat(activityTier).isEqualTo(eventTier())
@@ -567,6 +595,7 @@ class ActivityServiceTest {
     with(activityCaptor.firstValue) {
       assertThat(eligibilityRules()).hasSize(1)
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
       assertThat(activityMinimumEducationLevel()).hasSize(1)
       assertThat(activityCategory).isEqualTo(notInWorkCategory)
       assertThat(activityTier).isEqualTo(foundationTier())
@@ -608,6 +637,75 @@ class ActivityServiceTest {
     }
       .isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Activity category NOT IN WORK must be a Foundation Tier")
+  }
+
+  @Test
+  fun `getActivityPayHistory throws entity not found exception for unknown activity ID`() {
+    whenever(activityRepository.findById(1)).thenReturn(Optional.empty())
+
+    assertThatThrownBy { service().getActivityPayHistory(1) }
+      .isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity 1 not found")
+
+    verify(activityRepository, times(1)).findById(1)
+    verify(activityPayHistoryRepository, times(0)).findByActivityOrderByChangedTimeDesc(any())
+  }
+
+  @Test
+  fun `getActivityPayHistory returns the pay rate history for the given activity ID`() {
+    val activity = activityEntity()
+
+    val aprh1 = activityPayHistory(
+      activityPayHistoryId = 1,
+      activity = activity,
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBand = prisonPayBand(),
+      rate = 125,
+      changedDetails = "New pay rate added: £1.25",
+      changedBy = "ABC123 - A. Smith",
+    )
+
+    val aprh2 = activityPayHistory(
+      activityPayHistoryId = 2,
+      activity = activity,
+      incentiveNomisCode = "STD",
+      incentiveLevel = "Standard",
+      payBand = prisonPayBand(
+        prisonPayBandId = 2,
+        nomisPayBand = 2,
+      ),
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+      changedDetails = "New pay rate added: £1.50",
+      changedBy = "ABC123 - A. Smith",
+    )
+
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityPayHistoryRepository.findByActivityOrderByChangedTimeDesc(activity))
+      .thenReturn(listOf(aprh1, aprh2))
+
+    assertThat(
+      service().getActivityPayHistory(1),
+    ).isEqualTo(listOf(aprh1.toModel(), aprh2.toModel()))
+
+    verify(activityRepository, times(1)).findById(1)
+    verify(activityPayHistoryRepository, times(1)).findByActivityOrderByChangedTimeDesc(activity)
+  }
+
+  @Test
+  fun `getActivityPayHistory returns empty as there are no pay rate history found for the given activity id`() {
+    val activity = activityEntity()
+    whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
+    whenever(activityPayHistoryRepository.findByActivityOrderByChangedTimeDesc(activity))
+      .thenReturn(listOf())
+
+    assertThat(
+      service().getActivityPayHistory(1),
+    ).isEmpty()
+
+    verify(activityRepository, times(1)).findById(1)
+    verify(activityPayHistoryRepository, times(1)).findByActivityOrderByChangedTimeDesc(activity)
   }
 
   @Test
@@ -1141,6 +1239,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
+      assertThat(activityPayHistory()).hasSize(1)
     }
   }
 
@@ -1165,8 +1264,27 @@ class ActivityServiceTest {
       startDate = LocalDate.now().plusDays(25),
     )
 
+    val aprh1 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      changedDetails = "New pay rate added: £1.25",
+      changedBy = "ABC123 - A. Smith",
+    )
+
+    val aprh2 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+      changedDetails = "New pay rate added: £1.50",
+      changedBy = "ABC123 - A. Smith",
+    )
+
     val updateActivityRequest: ActivityUpdateRequest =
-      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2), payChange = listOf(aprh1, aprh2))
 
     val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
     activityEntity.addSchedule(activitySchedule(activityEntity, activityScheduleId = activityEntity.activityId, noAllocations = true))
@@ -1187,11 +1305,17 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
     }
 
     with(activityCaptor.firstValue.activityPay()) {
       single { it.startDate == null }
       single { it.startDate == LocalDate.now().plusDays(25) }
+    }
+
+    with(activityCaptor.firstValue.activityPayHistory()) {
+      single { it.startDate == null && it.changedDetails == "New pay rate added: £1.25" }
+      single { it.startDate == LocalDate.now().plusDays(25) && it.changedDetails == "New pay rate added: £1.50" }
     }
   }
 
@@ -1217,8 +1341,28 @@ class ActivityServiceTest {
       startDate = LocalDate.now().plusDays(25),
     )
 
+    val aprh1 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 125,
+      startDate = LocalDate.now().plusDays(25),
+      changedDetails = "New pay rate added: £1.25",
+      changedBy = "ABC123 - A. Smith",
+    )
+
+    val aprh2 = activityPayHistoryCreateRequest(
+      incentiveNomisCode = "BAS",
+      incentiveLevel = "Basic",
+      payBandId = 1,
+      rate = 150,
+      startDate = LocalDate.now().plusDays(25),
+      changedDetails = "New pay rate added: £1.50",
+      changedBy = "ABC123 - A. Smith",
+    )
+
     val updateActivityRequest: ActivityUpdateRequest =
-      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2))
+      mapper.read<ActivityUpdateRequest>("activity/activity-update-request-3.json").copy(pay = listOf(apr1, apr2), payChange = listOf(aprh1, aprh2))
 
     val activityEntity: ActivityEntity = activityEntity(noPayBands = true).copy(activityId = 17)
 
@@ -1263,6 +1407,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(1)
+      assertThat(activityPayHistory()).hasSize(1)
       assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.first().payBandId)
     }
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
@@ -1294,6 +1439,7 @@ class ActivityServiceTest {
 
     with(activityCaptor.firstValue) {
       assertThat(activityPay()).hasSize(2)
+      assertThat(activityPayHistory()).hasSize(2)
       assertThat(schedules().first().allocations().first().payBand?.prisonPayBandId).isEqualTo(updateActivityRequest.pay!!.last().payBandId)
     }
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 1L)
@@ -2551,6 +2697,7 @@ class ActivityServiceTest {
 
     activity.paid isBool false
     activity.activityPay() hasSize 0
+    activity.activityPayHistory() hasSize 0
   }
 
   @Test

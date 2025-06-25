@@ -8,5 +8,15 @@
       "pieceRate": 150,
       "pieceRateItems": 10
     }
+  ],
+  "payChange": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 1,
+      "rate": 150,
+      "changedDetails": "New pay rate added: £1.50",
+      "changedBy": "ABC123 - A. Smith"
+    }
   ]
 }
