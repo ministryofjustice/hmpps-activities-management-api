@@ -253,7 +253,7 @@ class UpdateFromExternalSystemEventsListenerTest {
         eq(scheduleId),
         any<PrisonerAllocationRequest>(),
         eq(who),
-        any()
+        any(),
       )
     }
 
