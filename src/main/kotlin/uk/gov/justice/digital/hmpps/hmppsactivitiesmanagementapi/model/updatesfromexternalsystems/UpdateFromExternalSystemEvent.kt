@@ -23,6 +23,11 @@ data class UpdateFromExternalSystemEvent(
     val mapper = ObjectMapper().registerModule(KotlinModule.Builder().build()).registerModule(JavaTimeModule())
     return mapper.convertValue(this.messageAttributes, PrisonerDeallocationEvent::class.java)
   }
+
+  fun toPrisonerAllocationEvent(): PrisonerAllocationEvent {
+    val mapper = ObjectMapper().registerModule(KotlinModule.Builder().build()).registerModule(JavaTimeModule())
+    return mapper.convertValue(this.messageAttributes, PrisonerAllocationEvent::class.java)
+  }
 }
 
 data class MarkPrisonerAttendanceEvent(
@@ -35,5 +40,15 @@ data class PrisonerDeallocationEvent(
   val reasonCode: String?,
   val endDate: LocalDate?,
   val caseNote: AddCaseNoteRequest? = null,
+  val scheduleInstanceId: Long? = null,
+)
+
+data class PrisonerAllocationEvent(
+  val scheduleId: Long,
+  val prisonerNumber: String?,
+  val payBandId: Long?,
+  val startDate: LocalDate,
+  val endDate: LocalDate?,
+  val exclusions: List<Slot>?,
   val scheduleInstanceId: Long? = null,
 )

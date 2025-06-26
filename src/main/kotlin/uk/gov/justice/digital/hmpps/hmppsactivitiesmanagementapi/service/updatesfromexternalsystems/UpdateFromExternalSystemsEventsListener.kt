@@ -60,6 +60,21 @@ class UpdateFromExternalSystemsEventsListener(
         }
         activityScheduleService.deallocatePrisoners(event.scheduleId, request = prisonerDeallocationRequest, deallocatedBy = sqsMessage.who)
       }
+      "AllocatePrisonerToActivitySchedule" -> {
+        val event = sqsMessage.toPrisonerAllocationEvent()
+        val prisonerAllocationRequest = PrisonerAllocationRequest(
+          prisonerNumbers = event.prisonerNumbers,
+          reasonCode = event.reasonCode,
+          endDate = event.endDate,
+          caseNote = event.caseNote,
+          scheduleInstanceId = event.scheduleInstanceId,
+        )
+        val validationIssues = validator.validate(prisonerAllocationRequest)
+        if (validationIssues.isNotEmpty()) {
+          throw ValidationException("Validation error on ${sqsMessage.eventType}: ${validationIssues.joinToString { it.message }}")
+        }
+        activityScheduleService.allocatePrisoners(event.scheduleId, request = prisonerAllocationRequest, allocatedBy = sqsMessage.who)
+      }
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
         throw Exception("Unrecognised message type on external system event: ${sqsMessage.eventType}")
