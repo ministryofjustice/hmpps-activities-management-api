@@ -9,6 +9,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.updatesfromexternalsystems.UpdateFromExternalSystemEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -59,6 +60,22 @@ class UpdateFromExternalSystemsEventsListener(
           throw ValidationException("Validation error on ${sqsMessage.eventType}: ${validationIssues.joinToString { it.message }}")
         }
         activityScheduleService.deallocatePrisoners(event.scheduleId, request = prisonerDeallocationRequest, deallocatedBy = sqsMessage.who)
+      }
+      "AllocatePrisonerToActivitySchedule" -> {
+        val event = sqsMessage.toPrisonerAllocationEvent()
+        val prisonerAllocationRequest = PrisonerAllocationRequest(
+          prisonerNumber = event.prisonerNumber,
+          payBandId = event.payBandId,
+          startDate = event.startDate,
+          endDate = event.endDate,
+          exclusions = event.exclusions,
+          scheduleInstanceId = event.scheduleInstanceId,
+        )
+        val validationIssues = validator.validate(prisonerAllocationRequest)
+        if (validationIssues.isNotEmpty()) {
+          throw ValidationException("Validation error on ${sqsMessage.eventType}: ${validationIssues.joinToString { it.message }}")
+        }
+        activityScheduleService.allocatePrisoner(event.scheduleId, request = prisonerAllocationRequest, allocatedBy = sqsMessage.who, adminMode = true)
       }
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
