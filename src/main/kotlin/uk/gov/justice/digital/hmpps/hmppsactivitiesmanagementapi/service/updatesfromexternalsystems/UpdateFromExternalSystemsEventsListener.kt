@@ -75,7 +75,7 @@ class UpdateFromExternalSystemsEventsListener(
         if (validationIssues.isNotEmpty()) {
           throw ValidationException("Validation error on ${sqsMessage.eventType}: ${validationIssues.joinToString { it.message }}")
         }
-        activityScheduleService.allocatePrisoner(event.scheduleId, request = prisonerAllocationRequest, allocatedBy = sqsMessage.who)
+        activityScheduleService.allocatePrisoner(event.scheduleId, request = prisonerAllocationRequest, allocatedBy = sqsMessage.who, adminMode = true)
       }
       else -> {
         log.warn("Unrecognised message type on external system event: ${sqsMessage.eventType}")
