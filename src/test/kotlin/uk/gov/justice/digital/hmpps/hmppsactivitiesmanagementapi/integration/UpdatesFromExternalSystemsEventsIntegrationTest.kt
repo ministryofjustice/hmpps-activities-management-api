@@ -445,7 +445,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
             scheduleInstanceId = null,
           ),
           allocatedBy = who,
-          adminMode = true
+          adminMode = true,
         )
       }
 
