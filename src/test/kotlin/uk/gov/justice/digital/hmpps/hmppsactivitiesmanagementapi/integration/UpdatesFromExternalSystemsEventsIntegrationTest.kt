@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
+import net.javacrumbs.jsonunit.assertj.assertThatJson
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.within
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -28,6 +30,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Dealloca
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditEventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AuditType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
@@ -35,10 +39,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AuditRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.updatesfromexternalsystems.UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME
 import uk.gov.justice.hmpps.sqs.MissingQueueException
@@ -55,6 +62,9 @@ import java.util.UUID
     "feature.event.activities.prisoner.attendance-amended=true",
     "feature.event.activities.prisoner.allocation-amended=true",
     "feature.event.activities.prisoner.attendance-deleted=true",
+    "feature.event.activities.prisoner.allocated=true",
+    "feature.audit.service.hmpps.enabled=true",
+    "feature.audit.service.local.enabled=true",
   ],
 )
 class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
@@ -70,6 +80,9 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
 
+  @Autowired
+  private lateinit var auditRepository: AuditRepository
+
   @MockitoSpyBean
   lateinit var attendancesService: AttendancesService
 
@@ -77,6 +90,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   lateinit var activityScheduleService: ActivityScheduleService
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
+  private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
   private val updateFromExternalSystemEventsQueue by lazy {
     hmppsQueueService.findByQueueId(UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME) ?: throw MissingQueueException("HmppsQueue $UPDATE_FROM_EXTERNAL_SYSTEM_QUEUE_NAME not found")
@@ -421,7 +435,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
           "exclusions": [],
           "scheduleInstanceId": null
         },
-        "who": "automated-test-client"
+        "who": "$who"
       }
       """
 
@@ -449,22 +463,39 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         )
       }
 
-//      activityScheduleRepository.findById(scheduleId).orElseThrow().also {
-//        with(allocationRepository.findByActivitySchedule(it).first { it.prisonerNumber == prisonerNumber }.plannedAllocation) {
-//          assertThat(this!!)
-//          assertThat(plannedBy).isEqualTo(who)
-//          assertThat(plannedReason).isEqualTo(DeallocationReason.COMPLETED)
-//          assertThat(plannedDate).isEqualTo(TimeSource.today())
-//        }
-//      }
+      val allocation = with(activityScheduleRepository.findById(1).orElseThrow()) {
+        with(allocationRepository.findByActivitySchedule(this).first()) {
+          assertThat(this.prisonerNumber).isEqualTo(prisonerNumber)
+          assertThat(this.allocatedBy).isEqualTo(who)
+          this
+        }
+      }
 
-//      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
-//      assertThat(eventCaptor.allValues.map { it.eventType }).containsExactlyInAnyOrder(
-//        "activities.prisoner.allocation-amended",
-//        "activities.prisoner.attendance-deleted",
-//        "activities.prisoner.attendance-deleted",
-//        "activities.prisoner.attendance-deleted",
-//      )
+      verify(eventsPublisher).send(eventCaptor.capture())
+
+      with(eventCaptor.firstValue) {
+        assertThat(eventType).isEqualTo("activities.prisoner.allocated")
+        assertThat(additionalInformation).isEqualTo(PrisonerAllocatedInformation(allocation.allocationId))
+        assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(description).isEqualTo("A prisoner has been allocated to an activity in the activities management service")
+      }
+
+      verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
+      with(hmppsAuditEventCaptor.firstValue) {
+        assertThat(what).isEqualTo("PRISONER_ALLOCATED")
+        assertThat(this.who).isEqualTo("activities-management-admin-1")
+        assertThatJson(details).isEqualTo("{\"activityId\":1,\"activityName\":\"Maths\",\"prisonCode\":\"MDI\",\"prisonerNumber\":\"$prisonerNumber\",\"scheduleId\":$scheduleId,\"createdAt\":\"\${json-unit.ignore}\",\"createdBy\":\"activities-management-admin-1\"}")
+      }
+
+      assertThat(auditRepository.findAll().size).isEqualTo(1)
+      with(auditRepository.findAll().first()) {
+        assertThat(activityId).isEqualTo(1)
+        assertThat(username).isEqualTo("activities-management-admin-1")
+        assertThat(auditType).isEqualTo(AuditType.PRISONER)
+        assertThat(detailType).isEqualTo(AuditEventType.PRISONER_ALLOCATED)
+        assertThat(prisonCode).isEqualTo("MDI")
+        assertThat(this.message).startsWith("Prisoner $prisonerNumber was allocated to activity 'Maths'(1) and schedule Maths AM(1)")
+      }
     }
 
     @Test
