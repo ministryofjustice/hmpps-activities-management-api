@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -376,6 +377,141 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
 
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
       verify(activityScheduleService, never()).deallocatePrisoners(any(), any(), any())
+    }
+  }
+
+  @Nested
+  @DisplayName("AllocatePrisonerToActivitySchedule")
+  inner class AllocatePrisonerToActivitySchedule {
+    @Sql("classpath:test_data/seed-activity-id-33.sql")
+    @Test
+    fun `will handle a valid event passed in`() {
+      val prisonerNumber = "A11111A"
+      val scheduleId = 1L
+      val scheduledInstanceId = 1L
+      val startDate = LocalDate.now()
+      val endDate = LocalDate.now().plusMonths(1)
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonId = MOORLAND_PRISON_CODE,
+          prisonerNumber = prisonerNumber,
+          bookingId = 1,
+          status = "ACTIVE IN",
+        ),
+      )
+
+      val messageId = UUID.randomUUID().toString()
+      val who = "automated-test-client"
+      val message = """
+      {
+        "messageId": "$messageId",
+        "eventType": "AllocatePrisonerToActivitySchedule",
+        "description": null,
+        "messageAttributes": {
+          "scheduleId": $scheduleId,
+          "prisonerNumber": "$prisonerNumber",
+          "payBandId": 123,
+          "startDate": "$startDate",
+          "endDate": "$endDate",
+          "exclusions": [],
+          "scheduleInstanceId": 0
+        },
+        "who": "automated-test-client"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 1 }
+      await untilCallTo { getNumberOfMessagesCurrentlyOnQueue() } matches { it == 0 }
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
+
+      await untilAsserted {
+        verify(activityScheduleService, times(1)).allocatePrisoner(
+          scheduleId,
+          request = PrisonerAllocationRequest(
+            prisonerNumber = prisonerNumber,
+            payBandId = 123,
+            startDate = startDate,
+            endDate = endDate,
+            exclusions = emptyList(),
+            scheduleInstanceId = scheduledInstanceId,
+          ),
+          allocatedBy = who
+        )
+      }
+
+//      activityScheduleRepository.findById(scheduleId).orElseThrow().also {
+//        with(allocationRepository.findByActivitySchedule(it).first { it.prisonerNumber == prisonerNumber }.plannedAllocation) {
+//          assertThat(this!!)
+//          assertThat(plannedBy).isEqualTo(who)
+//          assertThat(plannedReason).isEqualTo(DeallocationReason.COMPLETED)
+//          assertThat(plannedDate).isEqualTo(TimeSource.today())
+//        }
+//      }
+
+//      verify(eventsPublisher, times(4)).send(eventCaptor.capture())
+//      assertThat(eventCaptor.allValues.map { it.eventType }).containsExactlyInAnyOrder(
+//        "activities.prisoner.allocation-amended",
+//        "activities.prisoner.attendance-deleted",
+//        "activities.prisoner.attendance-deleted",
+//        "activities.prisoner.attendance-deleted",
+//      )
+    }
+
+    @Test
+    fun `will throw an error if message attributes are invalid`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId" : "$messageId",
+        "eventType" : "AllocatePrisonerToActivitySchedule",
+        "description" : null,
+        "messageAttributes" : {
+          "invalidField": "invalid value"
+        },
+        "who" : "automated-test-client"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
+      verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `will throw an error if message attributes fail validation`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId": "$messageId",
+        "eventType": "AllocatePrisonerToActivitySchedule",
+        "description": null,
+        "messageAttributes": {
+          "scheduleId": 123,
+          "prisonerNumber": "",
+          "payBandId": 123,
+          "startDate": "${LocalDate.now()}",
+          "endDate": "${LocalDate.now().plusMonths(1)}",
+          "exclusions": [],
+          "scheduleInstanceId": 0
+        },
+        "who": "automated-test-client"
+      }
+      """
+
+      queueSqsClient.sendMessage(
+        SendMessageRequest.builder().queueUrl(queueUrl).messageBody(message).build(),
+      )
+
+      await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 1 }
+      verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any(), any())
     }
   }
 }
