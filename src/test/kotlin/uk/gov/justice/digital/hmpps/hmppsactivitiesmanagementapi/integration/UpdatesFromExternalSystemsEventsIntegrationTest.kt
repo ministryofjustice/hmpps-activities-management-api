@@ -383,13 +383,13 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
   @Nested
   @DisplayName("AllocatePrisonerToActivitySchedule")
   inner class AllocatePrisonerToActivitySchedule {
-    @Sql("classpath:test_data/seed-activity-id-33.sql")
+    @Sql("classpath:test_data/seed-activity-id-7.sql")
     @Test
     fun `will handle a valid event passed in`() {
-      val prisonerNumber = "A11111A"
+      val prisonerNumber = "G4793VF"
+      val payBandId = 11L
       val scheduleId = 1L
-      val scheduledInstanceId = 1L
-      val startDate = LocalDate.now()
+      val startDate = LocalDate.now().plusDays(1)
       val endDate = LocalDate.now().plusMonths(1)
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
@@ -401,6 +401,10 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         ),
       )
 
+      with(activityScheduleRepository.findById(1).orElseThrow()) {
+        assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+      }
+
       val messageId = UUID.randomUUID().toString()
       val who = "automated-test-client"
       val message = """
@@ -411,11 +415,11 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
         "messageAttributes": {
           "scheduleId": $scheduleId,
           "prisonerNumber": "$prisonerNumber",
-          "payBandId": 123,
+          "payBandId": $payBandId,
           "startDate": "$startDate",
           "endDate": "$endDate",
           "exclusions": [],
-          "scheduleInstanceId": 0
+          "scheduleInstanceId": null
         },
         "who": "automated-test-client"
       }
@@ -434,13 +438,14 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
           scheduleId,
           request = PrisonerAllocationRequest(
             prisonerNumber = prisonerNumber,
-            payBandId = 123,
+            payBandId = payBandId,
             startDate = startDate,
             endDate = endDate,
             exclusions = emptyList(),
-            scheduleInstanceId = scheduledInstanceId,
+            scheduleInstanceId = null,
           ),
-          allocatedBy = who
+          allocatedBy = who,
+          adminMode = true
         )
       }
 
