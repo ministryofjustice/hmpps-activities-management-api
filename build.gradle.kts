@@ -41,19 +41,19 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.16.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.17.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.16") {
+  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.17") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.114")
+  implementation("aws.sdk.kotlin:s3:1.4.115")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")
@@ -67,7 +67,7 @@ dependencies {
   testImplementation("org.wiremock:wiremock-standalone:3.13.1")
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
-  testImplementation("org.testcontainers:localstack:1.21.2")
+  testImplementation("org.testcontainers:localstack:1.21.3")
   testImplementation("io.jsonwebtoken:jjwt-impl:0.12.6")
   testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.6")
   testImplementation("org.mockito:mockito-inline:5.2.0")
