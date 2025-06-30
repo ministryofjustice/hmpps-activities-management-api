@@ -346,18 +346,6 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
-  fun stubGetLocation(locationId: Long, location: Location, includeInactive: Boolean? = null) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/locations/$locationId" + (includeInactive?.let { "?includeInactive=$includeInactive" } ?: "")))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(location))
-            .withStatus(200),
-        ),
-    )
-  }
-
   fun stubGetReferenceCode(domain: String, referenceCode: String, jsonResponseFile: String): ReferenceCode {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/$domain/codes/$referenceCode"))
@@ -396,14 +384,14 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
-  fun stubGetExternalTransfersOnDate(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate) {
+  fun stubGetExternalTransfersOnDate(prisonCode: String, prisonerNumbers: Set<String>, date: LocalDate, includeTimes: Boolean = true) {
     stubFor(
       WireMock.post(WireMock.urlEqualTo("/api/schedules/$prisonCode/externalTransfers?date=$date"))
         .withRequestBody(equalToJson(mapper.writeValueAsString(prisonerNumbers)))
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(prisonerNumbers.map { prisonerTransfer(offenderNo = it, date = date) }))
+            .withBody(mapper.writeValueAsString(prisonerNumbers.map { prisonerTransfer(offenderNo = it, date = (if (includeTimes) date else null)) }))
             .withStatus(200),
         ),
     )

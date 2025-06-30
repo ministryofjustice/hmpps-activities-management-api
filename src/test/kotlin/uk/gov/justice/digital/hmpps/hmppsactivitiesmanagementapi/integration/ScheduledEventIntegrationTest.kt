@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -424,6 +425,27 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
         assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
+
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, LocalTime.of(0, 0), LocalTime.of(12, 0)))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `POST - scheduled events with transfers without times are handled`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date, includeTimes = false)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, null, null))
       }
     }
 
