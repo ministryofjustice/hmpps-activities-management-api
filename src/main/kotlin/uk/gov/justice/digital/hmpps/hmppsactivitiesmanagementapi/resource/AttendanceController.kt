@@ -173,7 +173,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @GetMapping(value = ["/{prisonCode}/suspended"])
   @ResponseBody
   @Operation(
-    summary = "gets a list of suspended prisoner attendance activities for a given date",
+    summary = "Gets a list of suspended prisoner attendance activities for a given date",
   )
   @ApiResponses(
     value = [
@@ -215,5 +215,57 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     date = date,
     reason = reason,
     categories = categories?.map { it.name },
+  )
+
+  @GetMapping(value = ["/{prisonerNumber}"])
+  @ResponseBody
+  @Operation(
+    summary = "Gets a list of prisoner attendance activities for a given date range",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = Attendance::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getAttendanceForPrisoners(
+    @PathVariable("prisonerNumber")
+    @Parameter(description = "Prisoner Number")
+    prisonerNumber: String,
+    @RequestParam("startDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
+    startDate: LocalDate,
+    @RequestParam("endDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "End date of query (required). Format YYYY-MM-DD.")
+    endDate: LocalDate,
+    @RequestParam("prisonCode", required = false)
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String? = null,
+  ): List<Attendance> = attendancesService.getPrisonerAttendance(
+    prisonerNumber = prisonerNumber,
+    startDate = startDate,
+    endDate = endDate,
+    prisonCode = prisonCode
   )
 }
