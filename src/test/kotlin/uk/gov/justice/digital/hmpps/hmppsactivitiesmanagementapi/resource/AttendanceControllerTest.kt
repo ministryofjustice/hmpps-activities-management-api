@@ -150,7 +150,7 @@ class AttendanceControllerTest : ControllerTestBase<AttendanceController>() {
       val attendance = transform(attendanceEntity, caseNotesApiClient, true)
       whenever(attendancesService.getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1), prisonCode = prisonCode)).thenReturn(listOf(attendance))
 
-      val response = mockMvc.get("/attendances/prisoner/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}&prisonCode=${prisonCode}")
+      val response = mockMvc.get("/attendances/prisoner/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}&prisonCode=$prisonCode")
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
         .andReturn().response
