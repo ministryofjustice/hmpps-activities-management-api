@@ -66,6 +66,16 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
   fun findByPrisonerNumber(prisonerNumber: String): List<Attendance>
 
+  @Query(
+    """
+      SELECT a from Attendance a
+      WHERE a.prisonerNumber = :prisonerNumber 
+      AND a.scheduledInstance.sessionDate >= :startDate
+      AND a.scheduledInstance.sessionDate <= :endDate
+    """,
+  )
+  fun getPrisonerAttendanceForActivityBetweenDates(prisonerNumber: String, startDate: LocalDate, endDate: LocalDate): List<Attendance>
+
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
   @Modifying
   fun mergeOldPrisonerNumberToNew(oldNumber: String, newNumber: String)
