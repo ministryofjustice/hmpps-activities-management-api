@@ -266,6 +266,6 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     prisonerNumber = prisonerNumber,
     startDate = startDate,
     endDate = endDate,
-    prisonCode = prisonCode
+    prisonCode = prisonCode,
   )
 }
