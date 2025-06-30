@@ -278,7 +278,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     "classpath:test_data/seed-attendances.sql",
   )
   @Test
-  fun `get prisoner attendance`(){
+  fun `get prisoner attendance`() {
     val prisonerNumber = "A11111A"
 
     webTestClient.get()
@@ -295,7 +295,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     "classpath:test_data/seed-attendances.sql",
   )
   @Test
-  fun `get prisoner attendance with prison code`(){
+  fun `get prisoner attendance with prison code`() {
     val prisonerNumber = "A11111A"
 
     webTestClient.get()
@@ -312,7 +312,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     "classpath:test_data/seed-attendances.sql",
   )
   @Test
-  fun `get prisoner attendance with invalid prison code`(){
+  fun `get prisoner attendance with invalid prison code`() {
     val prisonerNumber = "A11111A"
 
     webTestClient.get()
