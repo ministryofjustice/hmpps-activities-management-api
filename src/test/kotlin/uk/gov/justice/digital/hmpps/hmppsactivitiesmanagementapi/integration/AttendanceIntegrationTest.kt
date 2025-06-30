@@ -324,6 +324,18 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       .jsonPath("$.size()").isEqualTo(0)
   }
 
+  @Test
+  fun `get prisoner attendance returns bad request when no dates supplied`() {
+    val prisonerNumber = "A11111A"
+
+    webTestClient.get()
+      .uri("/attendances/prisoner/$prisonerNumber")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isBadRequest
+      .expectBody()
+  }
+
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
