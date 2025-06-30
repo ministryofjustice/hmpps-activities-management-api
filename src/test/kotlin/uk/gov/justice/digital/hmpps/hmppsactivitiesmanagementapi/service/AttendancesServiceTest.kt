@@ -155,7 +155,7 @@ class AttendancesServiceTest {
             ),
             activityTier = EventTier(
               code = "ABCD",
-              description = "Description"
+              description = "Description",
             ),
             attendanceRequired = true,
             inCell = false,
@@ -172,19 +172,19 @@ class AttendancesServiceTest {
             createdBy = "Joe Bloggs",
             updatedTime = LocalDateTime.now(),
             updatedBy = "Joe Bloggs",
-            isPaid = true
+            isPaid = true,
           ),
           description = "description",
           capacity = 10,
           startDate = LocalDate.now(),
-          scheduleWeeks = 1
+          scheduleWeeks = 1,
         ),
         sessionDate = LocalDate.now(),
         startTime = LocalTime.now(),
         endTime = LocalTime.now().plusHours(1),
-        timeSlot = TimeSlot.AM
+        timeSlot = TimeSlot.AM,
       ),
-      prisonerNumber = prisonerNumber
+      prisonerNumber = prisonerNumber,
     )
 
     @Test
@@ -202,13 +202,13 @@ class AttendancesServiceTest {
       val response = service.getPrisonerAttendance(
         prisonerNumber = prisonerNumber,
         startDate = LocalDate.now(),
-        endDate = LocalDate.now().plusDays(1)
+        endDate = LocalDate.now().plusDays(1),
       ).first()
 
       verify(attendanceRepository).getPrisonerAttendanceBetweenDates(
         prisonerNumber = prisonerNumber,
         startDate = LocalDate.now(),
-        endDate = LocalDate.now().plusDays(1)
+        endDate = LocalDate.now().plusDays(1),
       )
       assertThat(response.prisonerNumber).isEqualTo(prisonerNumber)
       assertThat(response.scheduleInstanceId).isEqualTo(attendance.scheduledInstance.scheduledInstanceId)
@@ -231,7 +231,7 @@ class AttendancesServiceTest {
         prisonerNumber = prisonerNumber,
         startDate = LocalDate.now(),
         endDate = LocalDate.now().plusDays(1),
-        prisonCode = prisonCode
+        prisonCode = prisonCode,
       ).first()
 
       verify(attendanceRepository).getPrisonerAttendanceBetweenDatesForPrison(
