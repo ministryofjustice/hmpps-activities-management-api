@@ -17,7 +17,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerActivityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
@@ -31,6 +30,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
 class AttendancesService(
@@ -130,7 +130,7 @@ class AttendancesService(
     endDate: LocalDate,
     prisonCode: String? = null,
   ): List<ModelAttendance> {
-    val attendances = if (prisonCode != null) {
+    val attendance = if (prisonCode != null) {
       attendanceRepository.getPrisonerAttendanceBetweenDatesForPrison(
         prisonerNumber = prisonerNumber,
         startDate = startDate,
@@ -145,7 +145,7 @@ class AttendancesService(
       )
     }
 
-    return attendances.map { transform(it, caseNotesApiClient = caseNotesApiClient, includeHistory = true) }
+    return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient, includeHistory = true) }
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {
