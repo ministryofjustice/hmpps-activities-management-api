@@ -92,7 +92,7 @@ data class ScheduledEvent(
 
   @Schema(description = "The start time for this scheduled instance", example = "09:00")
   @JsonFormat(pattern = "HH:mm")
-  val startTime: LocalTime,
+  val startTime: LocalTime?,
 
   @Schema(description = "The end time for this scheduled instance", example = "10:00")
   @JsonFormat(pattern = "HH:mm")

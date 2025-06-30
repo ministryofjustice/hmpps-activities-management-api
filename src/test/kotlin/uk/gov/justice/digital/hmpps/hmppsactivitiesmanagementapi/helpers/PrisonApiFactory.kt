@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CaseLoad
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
@@ -11,15 +10,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoTim
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-
-fun userCaseLoads(prisonCode: String) = listOf(
-  CaseLoad(
-    caseLoadId = prisonCode,
-    description = "Prison Description",
-    type = CaseLoad.Type.INST,
-    currentlyActive = true,
-  ),
-)
 
 fun internalLocation(
   locationId: Long = 1L,
@@ -71,9 +61,9 @@ fun prisonerTransfer(
   eventType: String = "TRANSFER",
   eventDescription: String = "Governor",
   eventStatus: String = "SCH",
-  date: LocalDate,
-  startTime: String = date.atStartOfDay().toIsoDateTime(),
-  endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
+  date: LocalDate?,
+  startTime: String? = date?.atStartOfDay()?.toIsoDateTime(),
+  endTime: String? = date?.atStartOfDay()?.plusHours(12)?.toIsoDateTime(),
 ) = PrisonerSchedule(
   offenderNo = offenderNo,
   bookingId = bookingId,

@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -29,10 +30,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture.activityInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture.appointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture.courtInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture.transferInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonApiPrisonerScheduleFixture.visitInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
@@ -125,11 +130,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
     timeSlot: TimeSlot?,
   ) {
     val prisonCode = "MDI"
-    val activities = listOf(PrisonApiPrisonerScheduleFixture.activityInstance(date = date))
-    val appointments = listOf(PrisonApiPrisonerScheduleFixture.appointmentInstance(date = date))
-    val visits = listOf(PrisonApiPrisonerScheduleFixture.visitInstance(date = date))
-    val courtEvents = listOf(PrisonApiPrisonerScheduleFixture.courtInstance(date = date))
-    val transferEvents = listOf(PrisonApiPrisonerScheduleFixture.transferInstance(date = date))
+    val activities = listOf(activityInstance(date = date))
+    val appointments = listOf(appointmentInstance(date = date))
+    val visits = listOf(visitInstance(date = date))
+    val courtEvents = listOf(courtInstance(date = date))
+    val transferEvents = listOf(transferInstance(date = date), transferInstance(date = date, startTime = null, endTime = null))
     val adjudications = prisonerNumbers.map { adjudicationHearing(prisonCode, it) }
 
     prisonApiClient.stub {
@@ -270,7 +275,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
   )
 
   private fun appointmentCategoryMap() = mapOf("TEST" to appointmentCategoryReferenceCode("TEST"))
-  private fun appointmentLocationMap() = mapOf(101L to appointmentLocation(101L, "MDI"))
 
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - activities rolled out, appointments are not")
@@ -395,7 +399,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventId).isNull()
           assertThat(it.scheduledInstanceId).isEqualTo(activityEntity1.scheduledInstanceId)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-          assertThat(it.bookingId).isEqualTo(activityEntity1.bookingId.toLong())
+          assertThat(it.bookingId).isEqualTo(activityEntity1.bookingId)
           assertThat(it.cancelled).isEqualTo(activityEntity1.cancelled)
           assertThat(it.suspended).isEqualTo(activityEntity1.suspended)
           assertThat(it.internalLocationId).isEqualTo(activityEntity1.internalLocationId?.toLong())
@@ -408,8 +412,10 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
         }
 
-        assertThat(externalTransfers).isNotNull
-        assertThat(externalTransfers).hasSize(1)
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(
+          Tuple(today, LocalTime.of(0, 0), LocalTime.of(12, 0)),
+          Tuple(today, null, null),
+        )
 
         externalTransfers!!.map {
           assertThat(it.eventSource).isEqualTo("NOMIS")
@@ -652,7 +658,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventId).isNull()
           assertThat(it.scheduledInstanceId).isEqualTo(activityEntity.scheduledInstanceId)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-          assertThat(it.bookingId).isEqualTo(activityEntity.bookingId.toLong())
+          assertThat(it.bookingId).isEqualTo(activityEntity.bookingId)
           assertThat(it.cancelled).isFalse
           assertThat(it.internalLocationId).isEqualTo(activityEntity.internalLocationId?.toLong())
           assertThat(it.internalLocationCode).isEqualTo(activityEntity.internalLocationCode)
@@ -664,8 +670,10 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
         }
 
-        assertThat(externalTransfers).isNotNull
-        assertThat(externalTransfers).hasSize(1)
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(
+          Tuple(today, LocalTime.of(0, 0), LocalTime.of(12, 0)),
+          Tuple(today, null, null),
+        )
 
         externalTransfers!!.map {
           assertThat(it.eventSource).isEqualTo("NOMIS")
