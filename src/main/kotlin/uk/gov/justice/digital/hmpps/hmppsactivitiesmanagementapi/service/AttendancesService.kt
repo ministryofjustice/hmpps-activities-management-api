@@ -124,6 +124,7 @@ class AttendancesService(
     }
   }
 
+  @Transactional(readOnly = true)
   fun getPrisonerAttendance(
     prisonerNumber: String,
     startDate: LocalDate,

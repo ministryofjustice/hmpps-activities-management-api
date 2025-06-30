@@ -274,6 +274,56 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       .jsonPath("$.[0].attendance[0].activitySummary").isEqualTo("Maths")
   }
 
+  @Sql(
+    "classpath:test_data/seed-attendances.sql",
+  )
+  @Test
+  fun `get prisoner attendance`(){
+    val prisonerNumber = "A11111A"
+
+    webTestClient.get()
+      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(5)
+      .jsonPath("$.[0].prisonerNumber").isEqualTo(prisonerNumber)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-attendances.sql",
+  )
+  @Test
+  fun `get prisoner attendance with prison code`(){
+    val prisonerNumber = "A11111A"
+
+    webTestClient.get()
+      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=MDI")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(5)
+      .jsonPath("$.[0].prisonerNumber").isEqualTo(prisonerNumber)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-attendances.sql",
+  )
+  @Test
+  fun `get prisoner attendance with invalid prison code`(){
+    val prisonerNumber = "A11111A"
+
+    webTestClient.get()
+      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectBody()
+      .jsonPath("$.size()").isEqualTo(0)
+  }
+
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
