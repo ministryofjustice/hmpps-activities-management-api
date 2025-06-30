@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerActivityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
@@ -127,11 +128,25 @@ class AttendancesService(
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
-  ): List<Attendance> = attendanceRepository.getPrisonerAttendanceForActivityBetweenDates(
-    prisonerNumber = prisonerNumber,
-    startDate = startDate,
-    endDate = endDate,
-  )
+    prisonCode: String? = null,
+  ): List<ModelAttendance> {
+    val attendances = if (prisonCode != null) {
+      attendanceRepository.getPrisonerAttendanceBetweenDatesForPrison(
+        prisonerNumber = prisonerNumber,
+        startDate = startDate,
+        endDate = endDate,
+        prisonCode = prisonCode,
+      )
+    } else {
+      attendanceRepository.getPrisonerAttendanceBetweenDates(
+        prisonerNumber = prisonerNumber,
+        startDate = startDate,
+        endDate = endDate,
+      )
+    }
+
+    return attendances.map { transform(it, caseNotesApiClient = caseNotesApiClient, includeHistory = true) }
+  }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {
     val caseNoteReason = if (attendance.issuePayment == true && issuePayment == false) {
