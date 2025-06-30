@@ -128,6 +128,48 @@ class AttendancesServiceTest {
     }
   }
 
+//  @Nested
+//  inner class GetPrisonerAttendanceTest {
+//    val localTime = LocalTime.now()
+//
+//    @Test
+//    fun `maps fields for UI correctly`() {
+//      whenever(
+//        attendanceRepository.getPrisonerAttendanceForActivityBetweenDates(
+//          prisonerNumber = "A1234AA",
+//          startDate = LocalDate.now(),
+//          endDate = LocalDate.now().plusDays(1),
+//        ),
+//      ).thenReturn(
+//        listOf(
+//          Attendance(
+//            scheduledInstance = ,
+//            prisonerNumber = "A1234AA"
+//          ),
+//        ),
+//      )
+//
+//      val response = service.getPrisonerAttendance(
+//        prisonerNumber = "A1234AA",
+//        startDate = LocalDate.now(),
+//        endDate = LocalDate.now().plusDays(1)
+//      ).first()
+//
+//      assertThat(response.prisonerNumber).isEqualTo("prisoner")
+//      assertThat(response.attendance.first().startTime).isEqualTo(localTime)
+//      assertThat(response.attendance.first().endTime).isEqualTo(localTime.plusHours(1))
+//      assertThat(response.attendance.first().categoryName).isEqualTo("CAT")
+//      assertThat(response.attendance.first().attendanceReasonCode).isEqualTo("REASON")
+//      assertThat(response.attendance.first().timeSlot).isEqualTo("TIME")
+//      assertThat(response.attendance.first().inCell).isFalse()
+//      assertThat(response.attendance.first().onWing).isFalse()
+//      assertThat(response.attendance.first().offWing).isFalse()
+//      assertThat(response.attendance.first().internalLocation).isEqualTo("desc")
+//      assertThat(response.attendance.first().scheduledInstanceId).isEqualTo(1)
+//      assertThat(response.attendance.first().activitySummary).isEqualTo("summary")
+//    }
+//  }
+
   @Test
   fun `mark attendance record`() {
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)

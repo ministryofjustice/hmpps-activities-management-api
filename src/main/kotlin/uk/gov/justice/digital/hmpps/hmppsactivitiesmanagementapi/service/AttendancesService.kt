@@ -123,6 +123,16 @@ class AttendancesService(
     }
   }
 
+  fun getPrisonerAttendance(
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+  ): List<Attendance> = attendanceRepository.getPrisonerAttendanceForActivityBetweenDates(
+    prisonerNumber = prisonerNumber,
+    startDate = startDate,
+    endDate = endDate,
+  )
+
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {
     val caseNoteReason = if (attendance.issuePayment == true && issuePayment == false) {
       "Pay removed"
