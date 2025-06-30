@@ -154,8 +154,8 @@ object PrisonApiPrisonerScheduleFixture {
     eventDescription: String = "Transfer",
     eventStatus: String? = "SCH",
     date: LocalDate,
-    startTime: String = date.atStartOfDay().toIsoDateTime(),
-    endTime: String = date.atStartOfDay().plusHours(12).toIsoDateTime(),
+    startTime: String? = date.atStartOfDay().toIsoDateTime(),
+    endTime: String? = date.atStartOfDay().plusHours(12).toIsoDateTime(),
   ) = PrisonerSchedule(
     offenderNo = offenderNo,
     bookingId = bookingId,

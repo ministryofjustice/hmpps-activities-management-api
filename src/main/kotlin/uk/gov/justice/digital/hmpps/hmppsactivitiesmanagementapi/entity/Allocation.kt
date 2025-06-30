@@ -153,6 +153,20 @@ data class Allocation(
     exclusions.remove(exclusion)
   }
 
+  private fun removeAllAdvanceAttendances() = this.activitySchedule.instances().forEach { scheduledInstance ->
+    scheduledInstance.advanceAttendances
+      .filter { it.prisonerNumber == this.prisonerNumber }
+      .forEach { advanceAttendance -> scheduledInstance.advanceAttendances.remove(advanceAttendance) }
+  }
+
+  fun removeRedundantAdvanceAttendances(startDate: LocalDate, endDate: LocalDate? = null) = this.activitySchedule.instances()
+    .filter { scheduledInstance -> scheduledInstance.sessionDate < startDate || (endDate != null && scheduledInstance.sessionDate > endDate) }
+    .forEach { scheduledInstance ->
+      scheduledInstance.advanceAttendances
+        .filter { advanceAttendance -> advanceAttendance.prisonerNumber == this.prisonerNumber }
+        .forEach { advanceAttendance -> scheduledInstance.advanceAttendances.remove(advanceAttendance) }
+    }
+
   fun endExclusions(exclusionsToEnd: Set<Exclusion>) = run {
     require(exclusionsToEnd.all { it.allocation == this }) { "Cannot end the given exclusions because some of them do not belong to the allocation with id $allocationId" }
     exclusionsToEnd.forEach { it.endNow() }
@@ -212,6 +226,7 @@ data class Allocation(
 
     endExclusions(exclusions(ExclusionsFilter.PRESENT))
     removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    removeAllAdvanceAttendances()
   }
 
   fun deallocateBeforeStart(reason: DeallocationReason, by: String) = this.apply {
@@ -225,6 +240,7 @@ data class Allocation(
 
     endExclusions(exclusions(ExclusionsFilter.PRESENT))
     removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    removeAllAdvanceAttendances()
   }
 
   /**
@@ -256,6 +272,7 @@ data class Allocation(
 
     endExclusions(exclusions(ExclusionsFilter.PRESENT))
     removeExclusions(exclusions(ExclusionsFilter.FUTURE))
+    removeAllAdvanceAttendances()
   }
 
   fun status(vararg status: PrisonerStatus) = status.any { it == prisonerStatus }

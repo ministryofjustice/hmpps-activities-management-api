@@ -146,6 +146,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -208,6 +209,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -280,6 +282,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -325,6 +328,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -387,6 +391,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = true,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -446,6 +451,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -521,6 +527,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -604,6 +611,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -687,6 +695,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -760,6 +769,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -843,6 +853,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -932,6 +943,7 @@ class ManageAttendancesServiceTest {
           scheduleWeeks = 1,
           possibleExclusion = false,
           plannedDeallocationDate = null,
+          possibleAdvanceAttendance = false,
         ),
       ),
     )
@@ -971,6 +983,96 @@ class ManageAttendancesServiceTest {
       assertThat(prisonerNumber).isEqualTo(instance.activitySchedule.allocations().first().prisonerNumber)
       assertThat(payAmount).isEqualTo(30)
     }
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
+  }
+
+  @Test
+  fun `attendance is created when advance attendance for not required exists`() {
+    whenever(attendanceCreationDataRepository.findBy(MOORLAND_PRISON_CODE, LocalDate.now())).thenReturn(
+      listOf(
+        AttendanceCreationData(
+          id = UUID.randomUUID(),
+          scheduledInstanceId = 0L,
+          sessionDate = LocalDate.now(),
+          timeSlot = TimeSlot.AM,
+          prisonerNumber = "A1234AA",
+          paid = true,
+          prisonPayBandId = 1L,
+          prisonCode = MOORLAND_PRISON_CODE,
+          activityId = 1L,
+          prisonerStatus = PrisonerStatus.ACTIVE,
+          allocationId = 1L,
+          allocStart = LocalDate.now(),
+          allocEnd = null,
+          scheduleStart = LocalDate.now(),
+          scheduleEnd = null,
+          scheduleWeeks = 1,
+          possibleExclusion = false,
+          plannedDeallocationDate = null,
+          possibleAdvanceAttendance = true,
+        ),
+      ),
+    )
+
+    val notRequiredReason = attendanceReasons()["NOT_REQUIRED"]
+
+    whenever(attendanceReasonRepository.findByCode(AttendanceReasonEnum.NOT_REQUIRED)).thenReturn(notRequiredReason)
+
+    whenever(scheduledInstanceRepository.findAllById(listOf(0L))).thenReturn(listOf(instance))
+
+    whenever(activityRepository.findAllById(listOf(1L))).thenReturn(listOf(activity))
+
+    whenever(prisonPayBandRepository.findAllById(listOf(1L))).thenReturn(listOf(lowPayBand))
+    whenever(allocationRepository.findById(1L)).thenReturn(Optional.of(allocation))
+
+    whenever(attendanceRepository.saveAllAndFlush(anyList()))
+      .thenReturn(
+        listOf(
+          Attendance(
+            attendanceId = 1L,
+            scheduledInstance = instance,
+            prisonerNumber = instance.activitySchedule.allocations().first().prisonerNumber,
+            status = AttendanceStatus.WAITING,
+            initialIssuePayment = true,
+            payAmount = 30,
+          ),
+        ),
+      )
+
+    whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(listOf("A1234AA")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234AA")).associateBy { it.prisonerNumber })
+
+    instance.advanceAttendances.first().updatePayment(false, "Sally Baker")
+
+    service.createAttendances(today, MOORLAND_PRISON_CODE)
+
+    verify(attendanceRepository).saveAllAndFlush(attendanceListCaptor.capture())
+
+    with(attendanceListCaptor.firstValue.first()) {
+      assertThat(attendanceId).isEqualTo(0L) // Not set when called
+      assertThat(status()).isEqualTo(AttendanceStatus.COMPLETED)
+      assertThat(attendanceReason).isEqualTo(notRequiredReason)
+      assertThat(prisonerNumber).isEqualTo(instance.activitySchedule.allocations().first().prisonerNumber)
+      assertThat(payAmount).isEqualTo(30)
+      assertThat(history()).hasSize(2)
+      with(history().first()) {
+        val matchingAdvanceAttendanceHistory = history().first()
+        assertThat(attendanceReason).isEqualTo(notRequiredReason)
+        assertThat(issuePayment).isEqualTo(matchingAdvanceAttendanceHistory.issuePayment)
+        assertThat(recordedTime).isEqualTo(matchingAdvanceAttendanceHistory.recordedTime)
+        assertThat(recordedBy).isEqualTo(matchingAdvanceAttendanceHistory.recordedBy)
+      }
+      with(history().last()) {
+        val matchingAdvanceAttendance = history().last()
+        assertThat(attendanceReason).isEqualTo(notRequiredReason)
+        assertThat(issuePayment).isEqualTo(matchingAdvanceAttendance.issuePayment)
+        assertThat(recordedTime).isEqualTo(matchingAdvanceAttendance.recordedTime)
+        assertThat(recordedBy).isEqualTo(matchingAdvanceAttendance.recordedBy)
+      }
+    }
+
+    assertThat(instance.advanceAttendances).isEmpty()
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_CREATED, 1L)
   }

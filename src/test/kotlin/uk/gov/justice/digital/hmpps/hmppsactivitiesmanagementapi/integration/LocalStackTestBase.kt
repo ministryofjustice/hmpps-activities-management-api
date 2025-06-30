@@ -21,10 +21,10 @@ import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import java.util.concurrent.TimeUnit
 
 @ActiveProfiles("test-local-stack", inheritProfiles = false)
-abstract class LocalStackTestBase : IntegrationTestBase() {
+abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
 
   @Autowired
-  private lateinit var hmppsQueueService: HmppsQueueService
+  lateinit var hmppsQueueService: HmppsQueueService
 
   protected val activitiesQueue by lazy { hmppsQueueService.findByQueueId("activities") as HmppsQueue }
 

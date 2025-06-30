@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.groups.Tuple
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -424,6 +425,27 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
         assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
+
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, LocalTime.of(0, 0), LocalTime.of(12, 0)))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `POST - scheduled events with transfers without times are handled`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date, includeTimes = false)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, null, null))
       }
     }
 
@@ -564,6 +586,50 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
       with(scheduledEvents!!) {
         assertThat(activities).hasSize(1)
         assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events should not return any activity events for today where attendance does not exist`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459PP", "AA1111A")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `POST - multiple prisoners - scheduled events should not return any future activity events for prisoners with advance attendance`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A11111A", "B22222B")
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, tomorrow)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, tomorrow)
+      adjudicationsMock(prisonCode, tomorrow, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), tomorrow)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        with(activities!!.first()) {
+          assertThat(scheduledInstanceId).isEqualTo(1)
+          assertThat(summary).isEqualTo("Geography AM")
+          assertThat(date).isEqualTo(tomorrow)
+          assertThat(prisonerNumber).isEqualTo("B22222B")
+        }
       }
     }
   }
@@ -780,6 +846,48 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
           code isEqualTo appointmentDpsLocation1.code
           description isEqualTo appointmentDpsLocation1.localName
           events hasSize 0
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `get location events ignores activities with future scheduled instance has not required advance attendance`() {
+      val internalLocationIds = setOf(1L)
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, 1, tomorrow, null, emptyList())
+
+      manageAdjudicationsApiMockServer.stubHearingsForDate(agencyId = prisonCode, date = tomorrow, body = mapper.writeValueAsString(HearingSummaryResponse(hearings = emptyList())))
+
+      nomisMappingApiMockServer.stubMappingsFromNomisIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocationId1, 1),
+        ),
+      )
+
+      val result = webTestClient.getInternalLocationEvents(prisonCode, internalLocationIds, tomorrow)!!
+
+      with(result) {
+        size isEqualTo 1
+
+        with(this.first()) {
+          prisonCode isEqualTo prisonCode
+          code isEqualTo activityDpsLocation1.code
+          description isEqualTo activityDpsLocation1.localName
+          events hasSize 1
+          // Prisoner A11111A will be ignored because they are marked as not required for tomorrow's session
+          with(events.first()) {
+            eventType isEqualTo "ACTIVITY"
+            scheduledInstanceId isEqualTo 1L
+            prisonerNumber isEqualTo "B22222B"
+          }
         }
       }
     }

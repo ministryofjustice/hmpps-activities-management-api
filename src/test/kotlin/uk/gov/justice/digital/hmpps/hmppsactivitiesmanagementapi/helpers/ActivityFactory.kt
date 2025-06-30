@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AdvanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
@@ -16,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Exclusion
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -38,7 +40,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.UUID
+import java.util.*
 
 internal fun activityModel(activity: Activity) = transform(activity)
 
@@ -302,6 +304,16 @@ internal fun activitySchedule(
             ),
           )
         },
+      )
+      this.advanceAttendances.add(
+        AdvanceAttendance(
+          advanceAttendanceId = 1,
+          scheduledInstance = this,
+          prisonerNumber = "A1234AA",
+          issuePayment = true,
+          recordedBy = "Joe Bloggs",
+          recordedTime = LocalDate.now().atStartOfDay(),
+        ),
       )
     }
   }
@@ -583,8 +595,8 @@ internal fun activityFromDbInstance(
   suspended: Boolean = false,
   paidActivity: Boolean = false,
   issuePayment: Boolean = false,
-  attendanceStatus: AttendanceStatus = AttendanceStatus.COMPLETED,
-  attendanceReasonCode: AttendanceReasonEnum = AttendanceReasonEnum.ATTENDED,
+  attendanceStatus: AttendanceStatus? = AttendanceStatus.COMPLETED,
+  attendanceReasonCode: AttendanceReasonEnum? = AttendanceReasonEnum.ATTENDED,
 ) = PrisonerScheduledActivity(
   scheduledInstanceId = scheduledInstanceId,
   allocationId = allocationId,
@@ -611,4 +623,28 @@ internal fun activityFromDbInstance(
   issuePayment = issuePayment,
   attendanceStatus = attendanceStatus,
   attendanceReasonCode = attendanceReasonCode,
+  possibleAdvanceAttendance = false,
 )
+
+internal fun advanceAttendance(
+  activity: Activity = activityEntity(),
+  advanceAttendanceId: Long = 1L,
+  scheduledInstance: ScheduledInstance = activity.schedule().instances().first(),
+  prisonerNumber: String = "A11111A",
+  issuePayment: Boolean = true,
+  recordedTime: LocalDateTime = LocalDateTime.now(),
+  recordedBy: String = "USER1",
+  includeHistory: Boolean = true,
+) = AdvanceAttendance(
+  advanceAttendanceId = advanceAttendanceId,
+  scheduledInstance = scheduledInstance,
+  prisonerNumber = prisonerNumber,
+  issuePayment = issuePayment,
+  recordedTime = recordedTime,
+  recordedBy = recordedBy,
+).also {
+  if (includeHistory) {
+    it.updatePayment(issuePayment, "USER2")
+    it.updatePayment(issuePayment, "USER3")
+  }
+}

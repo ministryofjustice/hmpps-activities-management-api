@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import java.util.*
 
-class ActivitiesFixJobIntegrationTest : IntegrationTestBase() {
+class FixActivitiesJobIntegrationTest : IntegrationTestBase() {
 
   val uuid1 = UUID.fromString("11111111-1111-1111-1111-111111111111")
   val uuid2 = UUID.fromString("22222222-2222-2222-2222-222222222222")
@@ -40,9 +40,9 @@ class ActivitiesFixJobIntegrationTest : IntegrationTestBase() {
     )
   }
 
-  @Sql("classpath:test_data/seed-activities-fix-locations-job.sql")
+  @Sql("classpath:test_data/seed-fix-activities-locations-job.sql")
   @Test
-  fun `should update location details`() {
+  fun `should update activity location details`() {
     nomisMappingApiMockServer.stubMappingFromNomisId(1, uuid1)
     nomisMappingApiMockServer.stubMappingFromNomisId(2, uuid2)
     nomisMappingApiMockServer.stubMappingFromNomisIdNotFound(4)
@@ -85,7 +85,7 @@ class ActivitiesFixJobIntegrationTest : IntegrationTestBase() {
 
   fun WebTestClient.fixLocations() {
     post()
-      .uri("/job/activities-fix-locations")
+      .uri("/job/fix-locations")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isAccepted

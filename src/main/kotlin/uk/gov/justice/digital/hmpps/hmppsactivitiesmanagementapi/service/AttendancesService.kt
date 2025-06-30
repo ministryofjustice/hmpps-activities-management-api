@@ -49,9 +49,10 @@ class AttendancesService(
   fun mark(principalName: String, attendances: List<AttendanceUpdateRequest>) {
     log.info("Attendance marking in progress")
 
+    val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
+
     val markedAttendanceIds = transactionHandler.newSpringTransaction {
       val attendanceUpdatesById = attendances.associateBy { it.id }
-      val attendanceReasonsByCode = attendanceReasonRepository.findAll().associateBy { it.code }
 
       attendanceRepository.findAllById(attendanceUpdatesById.keys).onEach { attendance ->
         val updateRequest = attendanceUpdatesById[attendance.attendanceId]!!

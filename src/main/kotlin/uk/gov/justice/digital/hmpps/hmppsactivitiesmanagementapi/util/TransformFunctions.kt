@@ -25,6 +25,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPay as EntityActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule as EntityActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension as EntitySuspension
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AdvanceAttendance as EntityAdvanceAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AdvanceAttendanceHistory as EntityAdvanceAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation as EntityAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance as EntityAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory as EntityAttendanceHistory
@@ -40,6 +42,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule as ModelActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendance as ModelAdvanceAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AdvanceAttendanceHistory as ModelAdvanceAttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency as ModelAppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory as ModelAttendanceHistory
@@ -267,6 +271,7 @@ private fun List<EntityScheduledInstance>.toModelScheduledInstances() = map {
     cancelledTime = it.cancelledTime,
     cancelledBy = it.cancelledBy,
     attendances = it.attendances.map { attendance -> transform(attendance, null) },
+    advanceAttendances = it.advanceAttendances.map { advanceAttendance -> transform(advanceAttendance) },
   )
 }
 
@@ -308,7 +313,7 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
 
   if (includeHistory) {
     history = attendance.history()
-      .sortedWith(compareBy { attendance.recordedTime })
+      .sortedWith(compareBy { it.recordedTime })
       .reversed()
       .map { attendanceHistory: EntityAttendanceHistory ->
         transform(
@@ -361,6 +366,30 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
   )
 }
 
+fun transform(attendance: EntityAdvanceAttendance, includeHistory: Boolean = false, payAmount: Int? = null): ModelAdvanceAttendance {
+  var history: List<ModelAdvanceAttendanceHistory>? = null
+
+  if (includeHistory) {
+    history = attendance.history()
+      .sortedWith(compareBy { attendance.recordedTime })
+      .reversed()
+      .map { attendanceHistory: EntityAdvanceAttendanceHistory ->
+        transform(attendanceHistory)
+      }
+  }
+
+  return ModelAdvanceAttendance(
+    id = attendance.advanceAttendanceId,
+    scheduleInstanceId = attendance.scheduledInstance.scheduledInstanceId,
+    prisonerNumber = attendance.prisonerNumber,
+    issuePayment = attendance.issuePayment,
+    payAmount = payAmount,
+    recordedTime = attendance.recordedTime,
+    recordedBy = attendance.recordedBy,
+    attendanceHistory = history,
+  )
+}
+
 fun transform(
   attendanceHistory: EntityAttendanceHistory,
   prisonerNumber: String,
@@ -395,6 +424,15 @@ fun transform(
       attendanceHistory.caseNoteId!!,
     )?.text
   },
+)
+
+fun transform(
+  attendanceHistory: EntityAdvanceAttendanceHistory,
+): ModelAdvanceAttendanceHistory = ModelAdvanceAttendanceHistory(
+  id = attendanceHistory.advanceAttendanceHistoryId,
+  issuePayment = attendanceHistory.issuePayment,
+  recordedTime = attendanceHistory.recordedTime,
+  recordedBy = attendanceHistory.recordedBy,
 )
 
 fun EntityPrisonPayBand.toModelPrisonPayBand() = ModelPrisonPayBand(

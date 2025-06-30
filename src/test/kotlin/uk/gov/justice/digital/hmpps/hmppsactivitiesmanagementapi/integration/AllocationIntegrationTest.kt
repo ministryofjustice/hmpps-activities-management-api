@@ -54,7 +54,7 @@ import java.time.LocalDateTime
     "spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
   ],
 )
-class AllocationIntegrationTest : IntegrationTestBase() {
+class AllocationIntegrationTest : ActivitiesIntegrationTestBase() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -206,10 +206,35 @@ class AllocationIntegrationTest : IntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+  @Test
+  fun `update allocation start date to after instance with advance attendance`() {
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").contains("A11111A", "C33333C")
+
+    webTestClient.updateAllocation(
+      MOORLAND_PRISON_CODE,
+      4,
+      AllocationUpdateRequest(
+        startDate = LocalDate.now().plusDays(2),
+      ),
+    )
+
+    allocationRepository.findById(4).get().also {
+      it.startDate isEqualTo LocalDate.now().plusDays(2)
+      it.prisonerStatus isEqualTo PrisonerStatus.PENDING
+    }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(1)!!.first().advanceAttendances).extracting("prisonerNumber").contains("A11111A")
+  }
+
   @Sql("classpath:test_data/seed-activity-id-1.sql")
   @Test
   fun `update allocation end date`() {
     allocationRepository.findById(1).get().also { it.endDate isEqualTo null }
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A11111A")
+
+    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
 
     webTestClient.updateAllocation(
       PENTONVILLE_PRISON_CODE,
@@ -229,6 +254,30 @@ class AllocationIntegrationTest : IntegrationTestBase() {
       additionalInformation isEqualTo PrisonerAllocatedInformation(1)
       occurredAt isCloseTo TimeSource.now()
     }
+
+    assertThat(webTestClient.retrieveAdvanceAttendance(1).prisonerNumber).isEqualTo("A11111A")
+  }
+
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+  @Test
+  fun `update allocation end date to before instance with advance attendance`() {
+    assertThat(webTestClient.getScheduledInstancesByIds(3)!!.first().advanceAttendances).extracting("prisonerNumber").contains("C33333C")
+
+    webTestClient.updateAllocation(
+      MOORLAND_PRISON_CODE,
+      4,
+      AllocationUpdateRequest(
+        endDate = LocalDate.now().plusDays(1),
+        reasonCode = "OTHER",
+      ),
+    )
+
+    allocationRepository.findById(4).get().also {
+      it.endDate isEqualTo LocalDate.now().plusDays(1)
+      it.prisonerStatus isEqualTo PrisonerStatus.ACTIVE
+    }
+
+    assertThat(webTestClient.getScheduledInstancesByIds(3)!!.first().advanceAttendances).isEmpty()
   }
 
   @Sql("classpath:test_data/seed-activity-id-1.sql")

@@ -50,7 +50,7 @@ class LocationService(
     nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
   }
 
-  @Deprecated("NOMIS Locations will be removed in tthe future")
+  @Deprecated("NOMIS Locations will be removed in the future")
   fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> = getLocationsForAppointments(agencyId)
     .associateBy { it.locationId }
 

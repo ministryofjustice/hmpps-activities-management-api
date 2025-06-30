@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.ArraySchema
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -157,10 +158,11 @@ class ActivityController(
       ApiResponse(
         responseCode = "200",
         description = "Activity schedules",
+        useReturnTypeSchema = true,
         content = [
           Content(
             mediaType = "application/json",
-            schema = Schema(implementation = ActivityScheduleLite::class),
+            array = ArraySchema(schema = Schema(implementation = ActivityScheduleLite::class)),
           ),
         ],
       ),
@@ -198,7 +200,7 @@ class ActivityController(
   )
   @GetMapping(value = ["/{activityId}/schedules"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getActivitySchedules(@PathVariable("activityId") activityId: Long): List<ActivityScheduleLite> = activityService.getSchedulesForActivity(activityId)
 
   @ResponseStatus(HttpStatus.ACCEPTED)

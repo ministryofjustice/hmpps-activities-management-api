@@ -17,8 +17,3 @@ values (1, 1, 'Maths Level 1', 1, null,'L1', 'Location 1', 10, '2022-10-10'),
        (6, 6, 'Pottery', 4, null, 'Old Location Code 4', 'Old Location 4', 10, '2022-10-10'),
        (7, 7, 'Origami', 5, null, 'Old Location Code 5', 'Old Location 5', 10, '2022-10-10'),
        (8, 8, 'History', 6, null, 'Old Location Code 6', 'Old Location 6', 10, '2022-10-10');
-
-
-
-
-

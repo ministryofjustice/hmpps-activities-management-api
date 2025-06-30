@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 
 @Service
-class ActivitiesFixLocationsService(
-  private val activityScheduleRepository: ActivityScheduleRepository,
+class FixAppointmentLocationsService(
+  private val appointmentRepository: AppointmentRepository,
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
   private val transactionHandler: TransactionHandler,
@@ -18,10 +18,10 @@ class ActivitiesFixLocationsService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun fixActivityLocations() {
-    val ids = activityScheduleRepository.findNomisLocationsIds()
+  fun fixLocations() {
+    val ids = appointmentRepository.findNomisLocationsIds()
 
-    log.info("Found ${ids.size} locations ids with null DPS Location UUIDS")
+    log.info("Found ${ids.size} appointment locations ids with null DPS Location UUIDS")
 
     ids.mapNotNull { internalLocationId ->
       log.debug("Internal location id is: $internalLocationId")
@@ -47,15 +47,13 @@ class ActivitiesFixLocationsService(
       }
 
       transactionHandler.newSpringTransaction {
-        activityScheduleRepository.updateLocationDetails(
+        appointmentRepository.updateLocationDetails(
           internalLocationId,
           dpsLocation.id,
-          dpsLocation.code,
-          dpsLocation.localName ?: dpsLocation.code,
         )
       }
     }
 
-    log.info("Finished running activities fix locations job")
+    log.info("Finished running appointment fix locations job")
   }
 }

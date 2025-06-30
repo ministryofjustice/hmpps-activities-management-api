@@ -116,6 +116,7 @@ data class PrisonerScheduledActivity(
 
   val paidActivity: Boolean,
 
+  val possibleAdvanceAttendance: Boolean,
 ) {
   fun toScheduledAttendeeModel() = ScheduledAttendee(
     scheduledInstanceId = scheduledInstanceId,

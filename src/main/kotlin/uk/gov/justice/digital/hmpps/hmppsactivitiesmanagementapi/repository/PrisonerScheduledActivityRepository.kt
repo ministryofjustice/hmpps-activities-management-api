@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.UniquePropertyId
 import java.time.LocalDate
+import java.util.Optional
 
 /**
  * This repository is READ-ONLY and uses the view V_PRISONER_SCHEDULED_ACTIVITIES.
@@ -15,6 +16,8 @@ import java.time.LocalDate
 interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledActivity, UniquePropertyId> {
 
   fun getAllByScheduledInstanceId(id: Long): List<PrisonerScheduledActivity>
+
+  fun getByScheduledInstanceIdAndPrisonerNumber(id: Long, prisonerNUmber: String): Optional<PrisonerScheduledActivity>
 
   @Query(
     """
@@ -41,6 +44,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.sessionDate = :date
     AND sa.prisonerNumber in :prisonerNumbers
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun getScheduledActivitiesForPrisonerListAndDate(
@@ -58,6 +62,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
     AND sa.onWing = false
     AND sa.internalLocationId IS NOT NULL
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun findByPrisonCodeAndDateAndTimeSlot(
@@ -74,6 +79,7 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     AND sa.onWing = false
     AND sa.internalLocationId in :internalLocationIds)
     AND (:timeSlot IS NULL OR sa.timeSlot = :timeSlot)
+    AND sa.possibleAdvanceAttendance = false
     """,
   )
   fun findByPrisonCodeAndInternalLocationIdsAndDateAndTimeSlot(
@@ -83,3 +89,8 @@ interface PrisonerScheduledActivityRepository : JpaRepository<PrisonerScheduledA
     timeSlot: TimeSlot?,
   ): List<PrisonerScheduledActivity>
 }
+
+/**
+ * Exclude any that are for today but have no attendance as these should not be on such things like unlock lists, etc.
+ */
+fun List<PrisonerScheduledActivity>.excludeTodayWithoutAttendance() = this.filter { activity -> activity.sessionDate != LocalDate.now() || activity.attendanceStatus != null }

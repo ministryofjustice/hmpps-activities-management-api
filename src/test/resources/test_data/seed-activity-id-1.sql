@@ -73,6 +73,12 @@ values (1, '2022-10-11', '13:00:00', '14:00:00', false, null, null, null, null, 
 insert into attendance(scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces)
 values (4, 'A22222A', 1, null, null, null, 'COMPLETED', null, null, null);
 
+insert into advance_attendance(scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 'A11111A', true,'2024-01-23 12:00:00.000000', 'John Smith');
+
+insert into advance_attendance_history(advance_attendance_id, recorded_time, recorded_by, issue_payment)
+values (1, '2024-01-23 12:00:00.000000', 'John Smith', false)
+
 
 
 

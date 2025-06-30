@@ -64,6 +64,9 @@ data class ActivityScheduleInstance(
   @Schema(description = "The list of attendees")
   val attendances: List<Attendance>,
 
+  @Schema(description = "The list of advance attendances. payAmount and attendanceHistory will be null.")
+  val advanceAttendances: List<AdvanceAttendance>,
+
   @Schema(description = "The activity schedule")
   val activitySchedule: ActivityScheduleLite,
 )

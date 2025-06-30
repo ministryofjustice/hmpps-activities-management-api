@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.excludeTodayWithoutAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
@@ -125,6 +126,7 @@ class ScheduledEventService(
               schedules.transfers.multiplePrisonerTransfersToScheduledEvents(
                 prisonCode,
                 eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
+                null,
               ),
               schedules.adjudications.nomisAdjudicationsToScheduledEvents(
                 prisonCode,
@@ -305,6 +307,7 @@ class ScheduledEventService(
           schedules.transfers.multiplePrisonerTransfersToScheduledEvents(
             prisonCode,
             eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
+            date,
           ),
           schedules.adjudications.nomisAdjudicationsToScheduledEvents(
             prisonCode,
@@ -468,6 +471,7 @@ class ScheduledEventService(
     date = date,
     timeSlot = slot,
   )
+    .excludeTodayWithoutAttendance()
 
   private fun getMultiplePrisonersAppointments(
     prisonCode: String,

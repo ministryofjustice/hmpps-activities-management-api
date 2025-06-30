@@ -344,6 +344,51 @@ class LocationIntegrationTest : IntegrationTestBase() {
     )
   }
 
+  @Test
+  @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+  fun `get location future events summaries excluding any sessions where prisoner has advance attendance`() {
+    val tomorrow = LocalDate.now().plusDays(1)
+
+    prisonApiMockServer.stubGetEventLocationsBooked(prisonCode, tomorrow, null, emptyList())
+
+    val dpsLocationId = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+    nomisMappingApiMockServer.stubMappingsFromNomisIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocationId, 2),
+      ),
+    )
+
+    val dpsLocation = dpsLocation(dpsLocationId, "MDI", "L2", "Location MDI 2")
+
+    locationsInsidePrisonApiMockServer.stubNonResidentialLocations(
+      prisonCode,
+      setOf(dpsLocationId),
+      listOf(dpsLocation),
+    )
+
+    prisonApiMockServer.stubScheduledVisitsForLocation(prisonCode, 1L, tomorrow, null, emptyList())
+
+    manageAdjudicationsApiMockServer.stubHearingsForDate(
+      agencyId = prisonCode,
+      date = tomorrow,
+      body = mapper.writeValueAsString(
+        HearingSummaryResponse(hearings = emptyList()),
+      ),
+    )
+
+    // Location 2 will not be returned as only activity has one prisoner with advance attendance
+    webTestClient.getInternalLocationEventsSummaries(prisonCode, tomorrow) isEqualTo listOf(
+      InternalLocationEventsSummary(
+        2L,
+        dpsLocationId,
+        prisonCode,
+        dpsLocation.code,
+        dpsLocation.localName!!,
+      ),
+    )
+  }
+
   private fun WebTestClient.getLocationPrefix(prisonCode: String, groupName: String) = get()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder

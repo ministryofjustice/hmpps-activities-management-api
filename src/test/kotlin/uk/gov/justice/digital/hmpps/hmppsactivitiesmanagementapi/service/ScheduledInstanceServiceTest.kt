@@ -206,8 +206,57 @@ class ScheduledInstanceServiceTest {
             issuePayment = true,
             attendanceStatus = AttendanceStatus.COMPLETED,
             attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+            possibleAdvanceAttendance = false,
           ),
         ),
+      )
+
+      val result = service.getAttendeesForScheduledInstance(1)
+
+      assertThat(result).hasSize(1)
+      assertThat(result).isEqualTo(
+        listOf(
+          ScheduledAttendee(
+            scheduledInstanceId = 1,
+            allocationId = 2,
+            prisonerNumber = "ABC123",
+            bookingId = 100001,
+            suspended = false,
+          ),
+        ),
+      )
+    }
+
+    @Test
+    fun `get attendees by instance including without attendance - success`() {
+      val activityWithAttendance = PrisonerScheduledActivity(
+        scheduledInstanceId = 1,
+        allocationId = 2,
+        prisonCode = "MDI",
+        sessionDate = LocalDate.now(),
+        startTime = LocalTime.of(10, 0),
+        endTime = LocalTime.of(11, 0),
+        prisonerNumber = "ABC123",
+        bookingId = 100001,
+        inCell = false,
+        onWing = false,
+        offWing = true,
+        activityCategory = "SAA_OUT_OF_WORK",
+        activityId = 1,
+        timeSlot = TimeSlot.AM,
+        paidActivity = true,
+        issuePayment = true,
+        attendanceStatus = AttendanceStatus.COMPLETED,
+        attendanceReasonCode = AttendanceReasonEnum.ATTENDED,
+        possibleAdvanceAttendance = false,
+      )
+
+      val activityWithoutAttendance = activityWithAttendance.copy(attendanceStatus = null)
+
+      addCaseloadIdToRequestHeader("MDI")
+      whenever(repository.findById(1)).thenReturn(Optional.of(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+      whenever(prisonerScheduledActivityRepository.getAllByScheduledInstanceId(1)).thenReturn(
+        listOf(activityWithAttendance, activityWithoutAttendance),
       )
 
       val result = service.getAttendeesForScheduledInstance(1)
