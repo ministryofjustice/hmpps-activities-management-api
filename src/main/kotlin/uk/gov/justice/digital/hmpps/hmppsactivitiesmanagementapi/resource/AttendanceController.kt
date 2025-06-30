@@ -217,7 +217,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     categories = categories?.map { it.name },
   )
 
-  @GetMapping(value = ["/{prisonerNumber}"])
+  @GetMapping(value = ["/prisoner/{prisonerNumber}"])
   @ResponseBody
   @Operation(
     summary = "Gets a list of prisoner attendance activities for a given date range",
@@ -244,10 +244,20 @@ class AttendanceController(private val attendancesService: AttendancesService) {
         description = "Forbidden, requires an appropriate role",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The attendance was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
     ],
   )
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
-  fun getAttendanceForPrisoners(
+  fun getAttendanceForPrisoner(
     @PathVariable("prisonerNumber")
     @Parameter(description = "Prisoner Number")
     prisonerNumber: String,
