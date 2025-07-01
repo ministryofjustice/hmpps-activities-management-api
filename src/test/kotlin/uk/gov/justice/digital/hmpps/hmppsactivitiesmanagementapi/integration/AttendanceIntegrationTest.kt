@@ -281,14 +281,18 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
   fun `get prisoner attendance without prison code`() {
     val prisonerNumber = "A11111A"
 
-    webTestClient.get()
-      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody()
-      .jsonPath("$.size()").isEqualTo(5)
-      .jsonPath("$.[0].prisonerNumber").isEqualTo(prisonerNumber)
+    val attendanceList = webTestClient.getAttendanceForPrisoner(
+      prisonerNumber = prisonerNumber,
+      startDate = LocalDate.of(2022, 10, 10),
+      endDate = LocalDate.of(2022, 10, 11)
+    )
+
+    assertThat(attendanceList.size).isEqualTo(5)
+    assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
+    assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
+    assertThat(attendanceList.first().attendanceReason).isNull()
+    assertThat(attendanceList.first().comment).isNull()
+
   }
 
   @Sql(
@@ -298,14 +302,18 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
   fun `get prisoner attendance with prison code`() {
     val prisonerNumber = "A11111A"
 
-    webTestClient.get()
-      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=MDI")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody()
-      .jsonPath("$.size()").isEqualTo(5)
-      .jsonPath("$.[0].prisonerNumber").isEqualTo(prisonerNumber)
+    val attendanceList = webTestClient.getAttendanceForPrisoner(
+      prisonCode = MOORLAND_PRISON_CODE,
+      prisonerNumber = prisonerNumber,
+      startDate = LocalDate.of(2022, 10, 10),
+      endDate = LocalDate.of(2022, 10, 11)
+    )
+
+    assertThat(attendanceList.size).isEqualTo(5)
+    assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
+    assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
+    assertThat(attendanceList.first().attendanceReason).isNull()
+    assertThat(attendanceList.first().comment).isNull()
   }
 
   @Sql(
@@ -356,6 +364,16 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBodyList(ModelAllAttendance::class.java)
+    .returnResult().responseBody
+
+  private fun WebTestClient.getAttendanceForPrisoner(prisonCode: String? = null, startDate: LocalDate, endDate: LocalDate, prisonerNumber: String) = get()
+    .uri("/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=${it}" } ?: ""}")
+    .accept(MediaType.APPLICATION_JSON)
+    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .exchange()
+    .expectStatus().isOk
+    .expectHeader().contentType(MediaType.APPLICATION_JSON)
+    .expectBodyList(ModelAttendance::class.java)
     .returnResult().responseBody
 
   private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
