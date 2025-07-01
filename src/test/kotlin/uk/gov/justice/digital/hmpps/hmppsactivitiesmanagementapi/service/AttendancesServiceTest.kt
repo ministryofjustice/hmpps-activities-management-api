@@ -6,12 +6,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.testcontainers.shaded.org.bouncycastle.util.Exceptions.illegalStateException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
@@ -242,6 +245,29 @@ class AttendancesServiceTest {
       )
       assertThat(response.prisonerNumber).isEqualTo(prisonerNumber)
       assertThat(response.scheduleInstanceId).isEqualTo(attendance.scheduledInstance.scheduledInstanceId)
+    }
+
+    @Test
+    fun `returns exception when there is more than 4 weeks between start and end date`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusWeeks(5),
+          prisonCode = prisonCode,
+        ),
+      ).thenThrow(IllegalArgumentException("End date cannot be more than 4 weeks after the start date."))
+
+      assertThatThrownBy {
+        service.getPrisonerAttendance(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusWeeks(5),
+          prisonCode = prisonCode,
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("End date cannot be more than 4 weeks after the start date.")
     }
   }
 
