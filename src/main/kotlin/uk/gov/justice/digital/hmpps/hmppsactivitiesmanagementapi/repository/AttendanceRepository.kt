@@ -79,7 +79,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     prisonerNumber: String,
     startDate: LocalDate,
     endDate: LocalDate,
-    prisonCode: String? = null, // Make prisonCode nullable with a default null value
+    prisonCode: String? = null,
   ): List<Attendance>
 
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
