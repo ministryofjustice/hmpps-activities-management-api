@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
@@ -324,7 +325,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     webTestClient.get()
       .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectBody()
@@ -337,7 +338,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     webTestClient.get()
       .uri("/attendances/prisoner/$prisonerNumber")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isBadRequest
       .expectBody()
@@ -349,7 +350,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
 
     webTestClient.get()
       .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isBadRequest
       .expectBody()
@@ -368,7 +369,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
   private fun WebTestClient.getAttendanceForPrisoner(prisonCode: String? = null, startDate: LocalDate, endDate: LocalDate, prisonerNumber: String) = get()
     .uri("/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+    .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
     .exchange()
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)

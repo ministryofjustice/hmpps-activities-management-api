@@ -261,7 +261,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getAttendanceForPrisoner(
     @PathVariable("prisonerNumber")
     @Parameter(description = "Prisoner Number")
