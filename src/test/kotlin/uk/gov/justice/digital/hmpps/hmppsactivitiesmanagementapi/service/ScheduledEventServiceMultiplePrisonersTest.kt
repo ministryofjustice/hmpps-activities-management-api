@@ -47,6 +47,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 /*
  Tests for the ScheduledEventService focussing on the multiple prisoner methods and responses.
@@ -234,6 +235,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     categoryCode: String = "TEST",
     customName: String? = null,
     internalLocationId: Long? = 101,
+    dpsLocationId: UUID? = UUID.fromString("44444444-1111-2222-3333-444444444444"),
     inCell: Boolean = false,
     appointmentDate: LocalDate = LocalDate.now(),
     startTime: LocalTime = LocalTime.now(),
@@ -255,6 +257,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     categoryCode = categoryCode,
     customName = customName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     customLocation = null,
     inCell = inCell,
     onWing = false,

@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -102,6 +103,9 @@ data class AppointmentInstance(
     example = "123",
   )
   val internalLocationId: Long?,
+
+  @Schema(description = "The optional DPS location UUID for this appointment", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
 
   @Schema(
     description =

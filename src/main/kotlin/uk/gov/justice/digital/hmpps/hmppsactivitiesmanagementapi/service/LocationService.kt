@@ -57,6 +57,9 @@ class LocationService(
   fun getLocationDetailsForAppointmentsMap(agencyId: String): Map<Long, LocationDetails> = getDpsLocationsForAppointments(agencyId)
     .associateBy { it.locationId }
 
+  fun getLocationDetailsForAppointmentsMapByDpsLocationId(agencyId: String): Map<UUID, LocationDetails> = getDpsLocationsForAppointments(agencyId)
+    .associateBy { it.dpsLocationId }
+
   fun getCellLocationsForGroup(agencyId: String, groupName: String): List<Location>? = prisonApiClient.getLocationsForType(agencyId, "CELL").block()
     ?.filter(locationGroupService.locationGroupFilter(agencyId, groupName)::test)?.toMutableList()
     ?.map { it.copy(description = it.description.formatLocation()) }
