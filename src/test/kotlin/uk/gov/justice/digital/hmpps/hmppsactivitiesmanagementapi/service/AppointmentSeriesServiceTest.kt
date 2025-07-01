@@ -22,6 +22,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
@@ -47,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSeriesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
@@ -102,6 +105,7 @@ class AppointmentSeriesServiceTest {
   private val auditService: AuditService = mock()
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, mock(), TransactionHandler(), mock(), telemetryClient, auditService))
   private val createAppointmentsJob: CreateAppointmentsJob = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
   private lateinit var principal: Principal
 
   private val appointmentCaptor = argumentCaptor<Appointment>()
@@ -123,8 +127,17 @@ class AppointmentSeriesServiceTest {
     appointmentCreateDomainService,
     createAppointmentsJob,
     TransactionHandler(),
+    nomisMappingAPIClient,
     maxSyncAppointmentInstanceActions = 14,
     maxStartDateOffsetDays = 2,
+  )
+
+  private val appointmentLocationDetails = LocationDetails(
+    agencyId = prisonCode,
+    locationId = 1,
+    dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"),
+    code = "CHAPEL",
+    description = "Chapel",
   )
 
   @BeforeEach
@@ -138,6 +151,15 @@ class AppointmentSeriesServiceTest {
 
     whenever(locationService.getLocationsForAppointmentsMap(prisonCode))
       .thenReturn(mapOf(internalLocationId to appointmentLocation(internalLocationId, prisonCode, "Chapel")))
+
+    whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
+      .thenReturn(mapOf(appointmentLocationDetails.dpsLocationId to appointmentLocationDetails))
+
+    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(UUID.fromString("44444444-1111-2222-3333-444444444444")))
+      .thenReturn(NomisDpsLocationMapping(UUID.fromString("44444444-1111-2222-3333-444444444444"), 123))
+
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123))
+      .thenReturn(NomisDpsLocationMapping(UUID.fromString("44444444-1111-2222-3333-444444444444"), 123))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC")))
       .thenReturn(
@@ -191,7 +213,7 @@ class AppointmentSeriesServiceTest {
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
-      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
+      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId, "TPR")))
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
       AppointmentSeriesDetails(
         entity.appointmentSeriesId,
@@ -202,7 +224,7 @@ class AppointmentSeriesServiceTest {
         entity.appointmentTier!!.toModelEventTier(),
         entity.appointmentOrganiser!!.toModelEventOrganiser(),
         "Appointment description",
-        AppointmentLocationSummary(entity.internalLocationId!!, "TPR", "Test Appointment Location User Description"),
+        AppointmentLocationSummary(entity.internalLocationId, "TPR", "Test Appointment Location User Description"),
         entity.inCell,
         entity.startDate,
         entity.startTime,
@@ -261,16 +283,16 @@ class AppointmentSeriesServiceTest {
     )
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         request.prisonerNumbers.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it,
             bookingId = 1,
-            prisonId = request.prisonCode!!,
+            prisonId = request.prisonCode,
           )
         },
       )
@@ -300,9 +322,9 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().plusDays(2))
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
 
     val result = service.createAppointmentSeries(request, principal)
 
@@ -323,10 +345,25 @@ class AppointmentSeriesServiceTest {
   }
 
   @Test
+  fun `createAppointmentSeries DPS location id not found`() {
+    val dpsLocationId = UUID.randomUUID()
+
+    val exception = assertThrows<IllegalArgumentException> {
+      service.createAppointmentSeries(
+        appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, dpsLocationId = dpsLocationId),
+        principal,
+      )
+    }
+    exception.message isEqualTo "Appointment location with DPS Location id '$dpsLocationId' not found in prison 'TPR'"
+
+    verifyNoInteractions(appointmentSeriesRepository)
+  }
+
+  @Test
   fun `createAppointmentSeries internal location id not found`() {
     val exception = assertThrows<IllegalArgumentException> {
       service.createAppointmentSeries(
-        appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999),
+        appointmentSeriesCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999, dpsLocationId = null),
         principal,
       )
     }
@@ -420,13 +457,122 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest()
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
-    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+
+    val appointmentLocationDetails = LocationDetails(
+      agencyId = request.prisonCode!!,
+      locationId = request.internalLocationId!!,
+      dpsLocationId = UUID.fromString("11111111-1111-1111-1111-111111111111"),
+      code = "CHAPEL",
+      description = "Chapel",
+    )
+
+    whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(request.prisonCode))
+      .thenReturn(mapOf(request.dpsLocationId!! to appointmentLocationDetails))
+
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         listOf(
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode),
+        ),
+      )
+
+    service.createAppointmentSeries(request, principal)
+
+    with(appointmentSeriesEntityCaptor.firstValue) {
+      assertThat(categoryCode).isEqualTo(request.categoryCode)
+      assertThat(appointmentTier).isEqualTo(eventTier())
+      assertThat(appointmentOrganiser).isEqualTo(eventOrganiser())
+      assertThat(prisonCode).isEqualTo(request.prisonCode)
+      assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(inCell).isEqualTo(request.inCell)
+      assertThat(startDate).isEqualTo(request.startDate)
+      assertThat(startTime).isEqualTo(request.startTime)
+      assertThat(endTime).isEqualTo(request.endTime)
+      assertThat(extraInformation).isEqualTo(request.extraInformation)
+      assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
+      assertThat(updatedTime).isNull()
+      assertThat(updatedBy).isNull()
+      with(appointments()) {
+        assertThat(size).isEqualTo(1)
+        with(appointments().first()) {
+          assertThat(categoryCode).isEqualTo(request.categoryCode)
+          assertThat(appointmentTier).isEqualTo(eventTier())
+          assertThat(appointmentOrganiser).isEqualTo(eventOrganiser())
+          assertThat(prisonCode).isEqualTo(request.prisonCode)
+          assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+          assertThat(inCell).isEqualTo(request.inCell)
+          assertThat(startDate).isEqualTo(request.startDate)
+          assertThat(startTime).isEqualTo(request.startTime)
+          assertThat(endTime).isEqualTo(request.endTime)
+          assertThat(extraInformation).isEqualTo(request.extraInformation)
+          assertThat(createdTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+          assertThat(createdBy).isEqualTo(DEFAULT_USERNAME)
+          assertThat(updatedTime).isNull()
+          assertThat(updatedBy).isNull()
+          assertThat(isDeleted).isFalse
+          with(attendees()) {
+            assertThat(size).isEqualTo(1)
+            with(first()) {
+              assertThat(prisonerNumber).isEqualTo(request.prisonerNumbers.first())
+              assertThat(bookingId).isEqualTo(1)
+            }
+          }
+        }
+      }
+
+      verify(telemetryClient).trackEvent(
+        eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
+
+      with(telemetryPropertyMap.firstValue) {
+        assertThat(this[USER_PROPERTY_KEY]).isEqualTo(principal.name)
+        assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+        assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("0")
+        assertThat(this[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("TEST")
+        assertThat(this[CATEGORY_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Category")
+        assertThat(this[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(this[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Chapel")
+        assertThat(this[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
+        assertThat(this[START_TIME_PROPERTY_KEY]).isEqualTo("13:00")
+        assertThat(this[END_TIME_PROPERTY_KEY]).isEqualTo("14:30")
+        assertThat(this[IS_REPEAT_PROPERTY_KEY]).isEqualTo("false")
+        assertThat(this[FREQUENCY_PROPERTY_KEY]).isEqualTo("")
+        assertThat(this[NUMBER_OF_APPOINTMENTS_PROPERTY_KEY]).isEqualTo("")
+        assertThat(this[HAS_EXTRA_INFORMATION_PROPERTY_KEY]).isEqualTo("true")
+        assertThat(this[ORIGINAL_ID_PROPERTY_KEY]).isEqualTo("")
+      }
+
+      with(telemetryMetricsMap.firstValue) {
+        assertThat(this[PRISONER_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(1.0)
+        assertThat(this[CUSTOM_NAME_LENGTH_METRIC_KEY]).isEqualTo(23.0)
+        assertThat(this[EXTRA_INFORMATION_LENGTH_METRIC_KEY]).isEqualTo(25.0)
+        assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+      }
+
+      verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+    }
+  }
+
+  @Test
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
+  fun `createAppointmentSeries single appointment single prisoner success - deprecated`() {
+    val request = appointmentSeriesCreateRequest(dpsLocationId = null)
+
+    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
+    whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
+      .thenReturn(
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode),
         ),
       )
 
@@ -521,14 +667,14 @@ class AppointmentSeriesServiceTest {
     )
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         listOf(
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode!!),
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode!!),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A12345BC", bookingId = 1, prisonId = request.prisonCode),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B23456CE", bookingId = 2, prisonId = request.prisonCode),
         ),
       )
 
@@ -564,13 +710,13 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.WEEKLY, 3))
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         listOf(
-          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode!!),
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.prisonerNumbers.first(), bookingId = 1, prisonId = request.prisonCode),
         ),
       )
 
@@ -588,16 +734,16 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = null)
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         prisonerNumberToBookingIdMap.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it.key,
             bookingId = it.value,
-            prisonId = request.prisonCode!!,
+            prisonId = request.prisonCode,
           )
         },
       )
@@ -618,16 +764,16 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 1))
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         prisonerNumberToBookingIdMap.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it.key,
             bookingId = it.value,
-            prisonId = request.prisonCode!!,
+            prisonId = request.prisonCode,
           )
         },
       )
@@ -648,16 +794,16 @@ class AppointmentSeriesServiceTest {
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 2))
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         prisonerNumberToBookingIdMap.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it.key,
             bookingId = it.value,
-            prisonId = request.prisonCode!!,
+            prisonId = request.prisonCode,
           )
         },
       )
@@ -683,16 +829,16 @@ class AppointmentSeriesServiceTest {
     )
 
     whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode!!)))
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
     whenever(locationService.getLocationsForAppointmentsMap(request.prisonCode!!))
-      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId!!, request.prisonCode!!)))
+      .thenReturn(mapOf(request.internalLocationId!! to appointmentLocation(request.internalLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
       .thenReturn(
         prisonerNumberToBookingIdMap.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it.key,
             bookingId = it.value,
-            prisonId = request.prisonCode!!,
+            prisonId = request.prisonCode,
           )
         },
       )
@@ -708,15 +854,15 @@ class AppointmentSeriesServiceTest {
         eq(prisonerNumberToBookingIdMap.map { it.key to it.value }.toMap()),
         any(),
         eq("Test Category"),
-        eq("Test Appointment Location User Description"),
+        eq("Chapel"),
         eq(789L),
       )
     }
   }
 
   @Test
-  fun `internal location id = null, in cell = true`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = null, inCell = true)
+  fun `internal location id = null, dps location id is null, in cell = true`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = null, dpsLocationId = null, inCell = true)
 
     service.createAppointmentSeries(request, principal)
 
@@ -731,8 +877,40 @@ class AppointmentSeriesServiceTest {
   }
 
   @Test
-  fun `internal location id = 1, in cell = true`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = internalLocationId, inCell = true)
+  fun `internal location id = 1, dps location id is null, in cell = true`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = internalLocationId, dpsLocationId = null, inCell = true)
+
+    service.createAppointmentSeries(request, principal)
+
+    appointmentSeriesEntityCaptor.firstValue.internalLocationId isEqualTo null
+    appointmentSeriesEntityCaptor.firstValue.inCell isBool true
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+    with(telemetryPropertyMap.firstValue) {
+      this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
+    }
+  }
+
+  @Test
+  fun `internal location id = 1, dps location id is not null, in cell = true`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = internalLocationId, dpsLocationId = UUID.randomUUID(), inCell = true)
+
+    service.createAppointmentSeries(request, principal)
+
+    appointmentSeriesEntityCaptor.firstValue.internalLocationId isEqualTo null
+    appointmentSeriesEntityCaptor.firstValue.inCell isBool true
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+    with(telemetryPropertyMap.firstValue) {
+      this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
+    }
+  }
+
+  @Test
+  fun `internal location id = null, dps location id is not null, in cell = true`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = categoryCode, internalLocationId = null, dpsLocationId = UUID.randomUUID(), inCell = true)
 
     service.createAppointmentSeries(request, principal)
 
