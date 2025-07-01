@@ -336,6 +336,18 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectBody()
   }
 
+  @Test
+  fun `get prisoner attendance returns bad request when dates greater than 4 weeks apart supplied`() {
+    val prisonerNumber = "A11111A"
+
+    webTestClient.get()
+      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isBadRequest
+      .expectBody()
+  }
+
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
