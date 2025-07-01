@@ -132,7 +132,7 @@ class AttendancesService(
     endDate: LocalDate,
     prisonCode: String? = null,
   ): List<ModelAttendance> {
-    if ( endDate.isBefore(startDate) || ChronoUnit.WEEKS.between(startDate, endDate) > 4) {
+    if (endDate.isBefore(startDate) || ChronoUnit.WEEKS.between(startDate, endDate) > 4) {
       throw IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date.")
     }
 
