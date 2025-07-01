@@ -253,7 +253,7 @@ class AttendancesServiceTest {
           endDate = LocalDate.now().plusWeeks(5),
           prisonCode = prisonCode,
         ),
-      ).thenThrow(IllegalArgumentException("End date cannot be more than 4 weeks after the start date."))
+      ).thenThrow(IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date."))
 
       assertThatThrownBy {
         service.getPrisonerAttendance(
@@ -264,7 +264,30 @@ class AttendancesServiceTest {
         )
       }
         .isInstanceOf(IllegalArgumentException::class.java)
-        .hasMessage("End date cannot be more than 4 weeks after the start date.")
+        .hasMessage("End date cannot be before, or more than 4 weeks after the start date.")
+    }
+
+    @Test
+    fun `returns exception when end date is before the start date`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().minusDays(5),
+          prisonCode = prisonCode,
+        ),
+      ).thenThrow(IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date."))
+
+      assertThatThrownBy {
+        service.getPrisonerAttendance(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().minusDays(5),
+          prisonCode = prisonCode,
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("End date cannot be before, or more than 4 weeks after the start date.")
     }
   }
 

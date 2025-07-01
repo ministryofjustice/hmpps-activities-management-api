@@ -132,8 +132,8 @@ class AttendancesService(
     endDate: LocalDate,
     prisonCode: String? = null,
   ): List<ModelAttendance> {
-    if (ChronoUnit.WEEKS.between(startDate, endDate) > 4) {
-      throw IllegalArgumentException("End date cannot be more than 4 weeks after the start date.")
+    if ( endDate.isBefore(startDate) || ChronoUnit.WEEKS.between(startDate, endDate) > 4) {
+      throw IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date.")
     }
 
     val attendance =
