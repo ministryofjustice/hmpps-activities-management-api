@@ -49,7 +49,7 @@ data class PrisonerSchedule(
 
   @get:Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$")
   @Schema(example = "2021-07-05T10:35:17", description = "Date and time at which event starts")
-  @JsonProperty("startTime") val startTime: String,
+  @JsonProperty("startTime") val startTime: String? = null,
 
   @Schema(example = "null", description = "Activity id if any. Used to attend or pay the event")
   @JsonProperty("eventId") val eventId: Long? = null,

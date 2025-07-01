@@ -126,6 +126,7 @@ class ScheduledEventService(
               schedules.transfers.multiplePrisonerTransfersToScheduledEvents(
                 prisonCode,
                 eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
+                null,
               ),
               schedules.adjudications.nomisAdjudicationsToScheduledEvents(
                 prisonCode,
@@ -306,6 +307,7 @@ class ScheduledEventService(
           schedules.transfers.multiplePrisonerTransfersToScheduledEvents(
             prisonCode,
             eventPriorities.getOrDefault(EventType.EXTERNAL_TRANSFER),
+            date,
           ),
           schedules.adjudications.nomisAdjudicationsToScheduledEvents(
             prisonCode,

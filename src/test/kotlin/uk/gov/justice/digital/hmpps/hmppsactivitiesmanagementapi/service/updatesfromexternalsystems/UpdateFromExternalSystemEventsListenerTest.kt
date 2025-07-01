@@ -15,6 +15,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -215,6 +216,93 @@ class UpdateFromExternalSystemEventsListenerTest {
         updateFromExternalSystemListener.onMessage(message)
       }
       verify(activityScheduleService, never()).deallocatePrisoners(any(), any(), any())
+    }
+  }
+
+  @Nested
+  @DisplayName("AllocatePrisonerToActivitySchedule")
+  inner class AllocatePrisonerToActivitySchedule {
+    val scheduleId = 1234L
+    val who = "automated-test-client"
+
+    @Test
+    fun `will handle a valid event passed in`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId": "$messageId",
+        "eventType": "AllocatePrisonerToActivitySchedule",
+        "description": null,
+        "messageAttributes": {
+          "scheduleId": $scheduleId,
+          "prisonerNumber": "A1234BC",
+          "payBandId": 123,
+          "startDate": "${LocalDate.now()}",
+          "endDate": "${LocalDate.now().plusMonths(1)}",
+          "exclusions": [],
+          "scheduleInstanceId": 0
+        },
+        "who": "$who"
+      }
+      """
+
+      assertDoesNotThrow {
+        updateFromExternalSystemListener.onMessage(message)
+      }
+      verify(activityScheduleService, times(1)).allocatePrisoner(
+        eq(scheduleId),
+        any<PrisonerAllocationRequest>(),
+        eq(who),
+        any(),
+      )
+    }
+
+    @Test
+    fun `will throw an error if message attributes are not supplied`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId": "$messageId",
+        "eventType": "AllocatePrisonerToActivitySchedule",
+        "description": null,
+        "messageAttributes": {
+          "invalidField": "invalid value"
+        },
+        "who": "automated-test-client"
+      }
+      """
+
+      assertThrows<Exception> {
+        updateFromExternalSystemListener.onMessage(message)
+      }
+      verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any(), any())
+    }
+
+    @Test
+    fun `will throw an error if message attributes fail validation`() {
+      val messageId = UUID.randomUUID().toString()
+      val message = """
+      {
+        "messageId": "$messageId",
+        "eventType": "AllocatePrisonerToActivitySchedule",
+        "description": null,
+        "messageAttributes": {
+          "scheduleId": $scheduleId,
+          "prisonerNumber": "",
+          "payBandId": 123,
+          "startDate": "${LocalDate.now()}",
+          "endDate": "${LocalDate.now().plusMonths(1)}",
+          "exclusions": [],
+          "scheduleInstanceId": 0
+        },
+        "who": "automated-test-client"
+      }
+      """
+
+      assertThrows<ValidationException> {
+        updateFromExternalSystemListener.onMessage(message)
+      }
+      verify(activityScheduleService, never()).allocatePrisoner(any(), any(), any(), any())
     }
   }
 }

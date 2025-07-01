@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.*
 
 class AppointmentSeriesCreateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
@@ -40,9 +41,27 @@ class AppointmentSeriesCreateRequestTest {
   }
 
   @Test
-  fun `internal location id must be supplied if in cell = false`() {
-    val request = appointmentSeriesCreateRequest(internalLocationId = null, inCell = false)
-    assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id must be supplied if in cell = false")
+  fun `internal location id or DPS Location id must be supplied if in cell = false`() {
+    val request = appointmentSeriesCreateRequest(internalLocationId = null, dpsLocationId = null, inCell = false)
+    assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id or DPS Location ID must be supplied if in cell = false")
+  }
+
+  @Test
+  fun `internal location id is not needed if DPS Location id is supplied and in cell = false`() {
+    val request = appointmentSeriesCreateRequest(internalLocationId = null, dpsLocationId = UUID.randomUUID(), inCell = false)
+    assertThat(validator.validate(request)).isEmpty()
+  }
+
+  @Test
+  fun `DPS Location id is not needed if internal location id is supplied and in cell = false`() {
+    val request = appointmentSeriesCreateRequest(internalLocationId = 1L, dpsLocationId = null, inCell = false)
+    assertThat(validator.validate(request)).isEmpty()
+  }
+
+  @Test
+  fun `DPS Location id and internal location id are not needed if cell = true`() {
+    val request = appointmentSeriesCreateRequest(internalLocationId = 1L, dpsLocationId = UUID.randomUUID(), inCell = false)
+    assertThat(validator.validate(request)).isEmpty()
   }
 
   @Test
