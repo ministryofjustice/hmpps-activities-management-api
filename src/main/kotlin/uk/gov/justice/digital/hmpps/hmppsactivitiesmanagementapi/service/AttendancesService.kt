@@ -131,20 +131,13 @@ class AttendancesService(
     endDate: LocalDate,
     prisonCode: String? = null,
   ): List<ModelAttendance> {
-    val attendance = if (prisonCode != null) {
-      attendanceRepository.getPrisonerAttendanceBetweenDatesForPrison(
+    val attendance =
+      attendanceRepository.getPrisonerAttendanceBetweenDates(
         prisonerNumber = prisonerNumber,
         startDate = startDate,
         endDate = endDate,
         prisonCode = prisonCode,
       )
-    } else {
-      attendanceRepository.getPrisonerAttendanceBetweenDates(
-        prisonerNumber = prisonerNumber,
-        startDate = startDate,
-        endDate = endDate,
-      )
-    }
 
     return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient, includeHistory = true) }
   }

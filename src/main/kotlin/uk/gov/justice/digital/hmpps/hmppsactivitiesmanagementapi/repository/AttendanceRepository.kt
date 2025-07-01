@@ -69,23 +69,18 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
   @Query(
     """
       SELECT a FROM Attendance a
-      WHERE a.prisonerNumber = :prisonerNumber 
-      AND a.scheduledInstance.sessionDate >= :startDate
-      AND a.scheduledInstance.sessionDate <= :endDate
-    """,
-  )
-  fun getPrisonerAttendanceBetweenDates(prisonerNumber: String, startDate: LocalDate, endDate: LocalDate): List<Attendance>
-
-  @Query(
-    """
-      SELECT a FROM Attendance a
       WHERE a.prisonerNumber = :prisonerNumber
-      AND a.scheduledInstance.activitySchedule.activity.prisonCode = :prisonCode
       AND a.scheduledInstance.sessionDate >= :startDate
       AND a.scheduledInstance.sessionDate <= :endDate
+      AND (:prisonCode IS NULL OR a.scheduledInstance.activitySchedule.activity.prisonCode = :prisonCode)
     """,
   )
-  fun getPrisonerAttendanceBetweenDatesForPrison(prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, prisonCode: String): List<Attendance>
+  fun getPrisonerAttendanceBetweenDates(
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    prisonCode: String? = null, // Make prisonCode nullable with a default null value
+  ): List<Attendance>
 
   @Query(value = "UPDATE Attendance a SET a.prisonerNumber = :newNumber WHERE a.prisonerNumber = :oldNumber")
   @Modifying

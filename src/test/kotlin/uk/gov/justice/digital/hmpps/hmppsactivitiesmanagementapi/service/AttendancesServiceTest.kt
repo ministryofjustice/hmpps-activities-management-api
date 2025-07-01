@@ -217,7 +217,7 @@ class AttendancesServiceTest {
     @Test
     fun `returns data correctly when prison code is provided`() {
       whenever(
-        attendanceRepository.getPrisonerAttendanceBetweenDatesForPrison(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
           prisonerNumber = prisonerNumber,
           startDate = LocalDate.now(),
           endDate = LocalDate.now().plusDays(1),
@@ -234,7 +234,7 @@ class AttendancesServiceTest {
         prisonCode = prisonCode,
       ).first()
 
-      verify(attendanceRepository).getPrisonerAttendanceBetweenDatesForPrison(
+      verify(attendanceRepository).getPrisonerAttendanceBetweenDates(
         prisonerNumber = prisonerNumber,
         startDate = LocalDate.now(),
         endDate = LocalDate.now().plusDays(1),
