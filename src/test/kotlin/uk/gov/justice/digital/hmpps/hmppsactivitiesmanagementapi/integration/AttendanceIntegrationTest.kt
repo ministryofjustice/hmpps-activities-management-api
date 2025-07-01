@@ -284,7 +284,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     val attendanceList = webTestClient.getAttendanceForPrisoner(
       prisonerNumber = prisonerNumber,
       startDate = LocalDate.of(2022, 10, 10),
-      endDate = LocalDate.of(2022, 10, 11)
+      endDate = LocalDate.of(2022, 10, 11),
     )
 
     assertThat(attendanceList.size).isEqualTo(5)
@@ -292,7 +292,6 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
     assertThat(attendanceList.first().attendanceReason).isNull()
     assertThat(attendanceList.first().comment).isNull()
-
   }
 
   @Sql(
@@ -306,7 +305,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       prisonCode = MOORLAND_PRISON_CODE,
       prisonerNumber = prisonerNumber,
       startDate = LocalDate.of(2022, 10, 10),
-      endDate = LocalDate.of(2022, 10, 11)
+      endDate = LocalDate.of(2022, 10, 11),
     )
 
     assertThat(attendanceList.size).isEqualTo(5)
@@ -367,7 +366,7 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     .returnResult().responseBody
 
   private fun WebTestClient.getAttendanceForPrisoner(prisonCode: String? = null, startDate: LocalDate, endDate: LocalDate, prisonerNumber: String) = get()
-    .uri("/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=${it}" } ?: ""}")
+    .uri("/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
     .exchange()
