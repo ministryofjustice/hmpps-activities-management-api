@@ -911,4 +911,22 @@ class TransformFunctionsTest {
       attendanceHistory isEqualTo null
     }
   }
+
+  @Test
+  fun `Convert to money format`() {
+    val amount = toMoney(100)
+    amount isEqualTo "£1.00"
+  }
+
+  @Test
+  fun `Convert to money format with zero`() {
+    val amount = toMoney(0)
+    amount isEqualTo "£0.00"
+  }
+
+  @Test
+  fun `Convert to money format with decimal`() {
+    val amount = toMoney(59)
+    amount isEqualTo "£0.59"
+  }
 }

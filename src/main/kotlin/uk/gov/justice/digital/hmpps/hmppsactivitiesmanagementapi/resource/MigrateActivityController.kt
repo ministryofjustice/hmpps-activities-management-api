@@ -266,4 +266,41 @@ class MigrateActivityController(
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     @Future newActivityStartDate: LocalDate,
   ) = migrateActivityService.moveActivityStartDates(prisonCode, newActivityStartDate)
+
+  @PostMapping(value = ["/pay-history"])
+  @Operation(
+    summary = "Create pay rate history for all the existing activities",
+    description = "Create pay rate history for all the existing activities.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The pay rate history has been successfully created.",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES','ACTIVITY_ADMIN')")
+  fun createActivityPayHistory() = migrateActivityService.createActivityPayHistory()
+
 }

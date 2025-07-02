@@ -41,6 +41,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisPayRate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
@@ -67,6 +69,8 @@ class MigrateActivityServiceTest {
   private val eventTierRepository: EventTierRepository = mock()
   private val activityCategoryRepository: ActivityCategoryRepository = mock()
   private val prisonPayBandRepository: PrisonPayBandRepository = mock()
+  private val activityPayRepository: ActivityPayRepository = mock()
+  private val activityPayHistoryRepository: ActivityPayHistoryRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
@@ -114,6 +118,8 @@ class MigrateActivityServiceTest {
     eventTierRepository,
     activityCategoryRepository,
     prisonPayBandRepository,
+    activityPayRepository,
+    activityPayHistoryRepository,
     eventOrganiserRepository,
     TransactionHandler(),
     outboundEventsService,
@@ -1956,5 +1962,28 @@ class MigrateActivityServiceTest {
     assertThat(result).isEqualTo(expectedResult)
 
     verify(activityService).moveStartDates("PVI", startDate, "MIGRATION")
+  }
+
+  @Test
+  fun `migrate activity pay history data - with existing data in activity_pay_history table`() {
+    whenever(activityPayHistoryRepository.count()).thenReturn(10)
+
+    val response = service.createActivityPayHistory()
+
+    assertThat(response.payRateDataSize).isEqualTo(0)
+    assertThat(response.payHistoryDataSize).isEqualTo(10)
+    assertThat(response.message).isEqualTo("Activities pay rate history migration can't be started as activity_pay_history table isn't empty")
+  }
+
+  @Test
+  fun `migrate activity pay history data - with no data in activity_pay and activity_pay_history tables`() {
+    whenever(activityPayHistoryRepository.count()).thenReturn(0)
+    whenever(activityPayRepository.count()).thenReturn(0)
+
+    val response = service.createActivityPayHistory()
+
+    assertThat(response.payRateDataSize).isEqualTo(0)
+    assertThat(response.payHistoryDataSize).isEqualTo(0)
+    assertThat(response.message).isEqualTo("Activities pay rate history migration can't be started as activity_pay table is empty")
   }
 }
