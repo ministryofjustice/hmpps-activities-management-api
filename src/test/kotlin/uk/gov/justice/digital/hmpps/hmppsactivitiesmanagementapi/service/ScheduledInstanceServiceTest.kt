@@ -296,24 +296,12 @@ class ScheduledInstanceServiceTest {
 
     @Test
     fun `returns exception when there is more than 3 months between start and end date`() {
-      whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
-          prisonCode = prisonCode,
-          prisonerNumber = prisonerNumber,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = null,
-          timeSlot = null,
-        ),
-      )
-        .thenThrow(ValidationException("Date range cannot exceed 3 months"))
-
       assertThatThrownBy {
         service.getActivityScheduleInstancesForPrisonerByDateRange(
           prisonCode = prisonCode,
           prisonerNumber = prisonerNumber,
           startDate = startDate,
-          endDate = endDate,
+          endDate = startDate.plusMonths(3).plusDays(1),
           cancelled = null,
           slot = null,
         )
