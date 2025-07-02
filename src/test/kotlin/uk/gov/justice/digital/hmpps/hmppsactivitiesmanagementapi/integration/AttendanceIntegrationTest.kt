@@ -23,7 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.A
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_ACTIVITY_ADMIN
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAttendanceInformation
@@ -275,87 +274,6 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
       .jsonPath("$.[0].attendance[0].activitySummary").isEqualTo("Maths")
   }
 
-  @Sql(
-    "classpath:test_data/seed-attendances.sql",
-  )
-  @Test
-  fun `get prisoner attendance without prison code`() {
-    val prisonerNumber = "A11111A"
-
-    val attendanceList = webTestClient.getAttendanceForPrisoner(
-      prisonerNumber = prisonerNumber,
-      startDate = LocalDate.of(2022, 10, 10),
-      endDate = LocalDate.of(2022, 10, 11),
-    )
-
-    assertThat(attendanceList.size).isEqualTo(5)
-    assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
-    assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
-    assertThat(attendanceList.first().attendanceReason).isNull()
-    assertThat(attendanceList.first().comment).isNull()
-  }
-
-  @Sql(
-    "classpath:test_data/seed-attendances.sql",
-  )
-  @Test
-  fun `get prisoner attendance with prison code`() {
-    val prisonerNumber = "A11111A"
-
-    val attendanceList = webTestClient.getAttendanceForPrisoner(
-      prisonCode = MOORLAND_PRISON_CODE,
-      prisonerNumber = prisonerNumber,
-      startDate = LocalDate.of(2022, 10, 10),
-      endDate = LocalDate.of(2022, 10, 11),
-    )
-
-    assertThat(attendanceList.size).isEqualTo(5)
-    assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
-    assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
-    assertThat(attendanceList.first().attendanceReason).isNull()
-    assertThat(attendanceList.first().comment).isNull()
-  }
-
-  @Sql(
-    "classpath:test_data/seed-attendances.sql",
-  )
-  @Test
-  fun `get prisoner attendance with invalid prison code`() {
-    val prisonerNumber = "A11111A"
-
-    webTestClient.get()
-      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
-      .exchange()
-      .expectStatus().isOk
-      .expectBody()
-      .jsonPath("$.size()").isEqualTo(0)
-  }
-
-  @Test
-  fun `get prisoner attendance returns bad request when no dates supplied`() {
-    val prisonerNumber = "A11111A"
-
-    webTestClient.get()
-      .uri("/attendances/prisoner/$prisonerNumber")
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
-      .exchange()
-      .expectStatus().isBadRequest
-      .expectBody()
-  }
-
-  @Test
-  fun `get prisoner attendance returns bad request when dates greater than 4 weeks apart supplied`() {
-    val prisonerNumber = "A11111A"
-
-    webTestClient.get()
-      .uri("/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
-      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
-      .exchange()
-      .expectStatus().isBadRequest
-      .expectBody()
-  }
-
   private fun WebTestClient.getAllAttendanceByDate(prisonCode: String, sessionDate: LocalDate, eventTierType: EventTierType? = null) = get()
     .uri("/attendances/$prisonCode/$sessionDate${eventTierType?.let { "?eventTier=${it.name}" } ?: ""}")
     .accept(MediaType.APPLICATION_JSON)
@@ -364,16 +282,6 @@ class AttendanceIntegrationTest : ActivitiesIntegrationTestBase() {
     .expectStatus().isOk
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
     .expectBodyList(ModelAllAttendance::class.java)
-    .returnResult().responseBody
-
-  private fun WebTestClient.getAttendanceForPrisoner(prisonCode: String? = null, startDate: LocalDate, endDate: LocalDate, prisonerNumber: String) = get()
-    .uri("/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
-    .accept(MediaType.APPLICATION_JSON)
-    .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBodyList(ModelAttendance::class.java)
     .returnResult().responseBody
 
   private fun List<EntityAttendance>.prisonerAttendanceReason(prisonNumber: String) = firstOrNull { it.prisonerNumber.uppercase() == prisonNumber.uppercase() }.let { it?.attendanceReason }
