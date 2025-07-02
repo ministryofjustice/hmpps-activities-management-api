@@ -12,7 +12,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -147,7 +146,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   }
 
   @Nested
-  inner class GetScheduledInstancesForPrisoner{
+  inner class GetScheduledInstancesForPrisoner {
     @Test
     fun `200 response with scheduled instances`() {
       val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel()
@@ -156,7 +155,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       whenever(
         scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
-          prisonCode= "MDI",
+          prisonCode = "MDI",
           prisonerNumber = "A1234AA",
           startDate = startDate,
           endDate = endDate,
@@ -171,7 +170,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         startDate = startDate,
         endDate = endDate,
         slot = TimeSlot.AM,
-        cancelled = false
+        cancelled = false,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
@@ -180,12 +179,12 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
 
       verify(scheduledInstanceService).getActivityScheduleInstancesForPrisonerByDateRange(
-        prisonCode= "MDI",
+        prisonCode = "MDI",
         prisonerNumber = "A1234AA",
         startDate = startDate,
         endDate = endDate,
         slot = TimeSlot.AM,
-        cancelled = false
+        cancelled = false,
       )
     }
 
