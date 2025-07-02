@@ -144,7 +144,7 @@ class AttendancesService(
         prisonCode = prisonCode,
       )
 
-    return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient, includeHistory = true) }
+    return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient) }
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {
