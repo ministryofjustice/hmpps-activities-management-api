@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -92,14 +93,19 @@ class ScheduledInstanceService(
     endDate: LocalDate,
     slot: TimeSlot?,
     cancelled: Boolean?,
-  ): List<ActivityScheduleInstance> = repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+  ): List<ActivityScheduleInstance> {
+    if (endDate.isAfter(startDate.plusMonths(3))) {
+      throw ValidationException("Date range cannot exceed 3 months")
+    }
+
+    return repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     startDate = startDate,
     endDate = endDate,
     cancelled = cancelled,
     timeSlot = slot,
-  ).toModel()
+  ).toModel()}
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)

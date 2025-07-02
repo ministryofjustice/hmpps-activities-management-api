@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -291,6 +292,32 @@ class ScheduledInstanceServiceTest {
       assertThat(result).hasSize(1)
       assertThat(result.first().attendances).hasSize(2)
       assertThat(result.first().advanceAttendances).hasSize(1)
+    }
+
+    @Test
+    fun `returns exception when there is more than 3 months between start and end date`() {
+      whenever(
+        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+          prisonCode = prisonCode,
+          prisonerNumber = prisonerNumber,
+          startDate = startDate,
+          endDate = endDate,
+          cancelled = null,
+          timeSlot = null,
+        ),
+      )
+        .thenThrow(ValidationException("Date range cannot exceed 3 months"))
+
+      assertThatThrownBy {
+        service.getActivityScheduleInstancesForPrisonerByDateRange(
+          prisonCode = prisonCode,
+          prisonerNumber = prisonerNumber,
+          startDate = startDate,
+          endDate = endDate,
+          cancelled = null,
+          slot = null)}
+        .isInstanceOf(ValidationException::class.java)
+        .hasMessage("Date range cannot exceed 3 months")
     }
   }
 
