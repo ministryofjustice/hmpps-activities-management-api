@@ -161,7 +161,7 @@ object AttendancesFixture {
         timeSlot = timeSlot,
       ),
       prisonerNumber = prisonerNumber,
-    )
+    ),
   ) as MutableList<Attendance>
 }
 
@@ -218,6 +218,6 @@ object AdvanceAttendancesFixture {
       issuePayment = true,
       recordedTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
       recordedBy = "Joe Bloggs",
-    )
+    ),
   ) as MutableList<AdvanceAttendance>
 }
