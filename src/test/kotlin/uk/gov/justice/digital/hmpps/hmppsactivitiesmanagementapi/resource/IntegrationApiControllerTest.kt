@@ -11,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -22,7 +24,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSe
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -35,7 +40,10 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var attendancesService: AttendancesService
 
-  override fun controller() = IntegrationApiController(attendancesService)
+  @MockitoBean
+  private lateinit var scheduledInstanceService: ScheduledInstanceService
+
+  override fun controller() = IntegrationApiController(attendancesService, scheduledInstanceService)
 
   @Nested
   inner class GetPrisonerAttendance {
@@ -136,5 +144,51 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       verify(attendancesService).getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
     }
+  }
+
+  @Nested
+  inner class GetScheduledInstancesForPrisoner{
+    @Test
+    fun `200 response with scheduled instances`() {
+      val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel()
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      whenever(
+        scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
+          prisonCode= "MDI",
+          prisonerNumber = "A1234AA",
+          startDate = startDate,
+          endDate = endDate,
+          slot = TimeSlot.AM,
+          cancelled = false,
+        ),
+      ).thenReturn(results)
+
+      val response = mockMvc.getScheduledInstancesForPrisoner(
+        prisonCode = "MDI",
+        prisonerNumber = "A1234AA",
+        startDate = startDate,
+        endDate = endDate,
+        slot = TimeSlot.AM,
+        cancelled = false
+      )
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
+
+      verify(scheduledInstanceService).getActivityScheduleInstancesForPrisonerByDateRange(
+        prisonCode= "MDI",
+        prisonerNumber = "A1234AA",
+        startDate = startDate,
+        endDate = endDate,
+        slot = TimeSlot.AM,
+        cancelled = false
+      )
+    }
+
+    private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot, cancelled: Boolean) = get("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot&cancelled=$cancelled")
   }
 }
