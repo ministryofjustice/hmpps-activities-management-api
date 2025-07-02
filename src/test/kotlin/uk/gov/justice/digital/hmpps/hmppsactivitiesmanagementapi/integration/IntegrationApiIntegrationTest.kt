@@ -19,7 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
     "feature.event.activities.prisoner.attendance-amended=true",
   ],
 )
-class IntegrationApiIntegrationTest: ActivitiesIntegrationTestBase() {
+class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @Nested
   inner class GetAttendances {
@@ -109,7 +109,7 @@ class IntegrationApiIntegrationTest: ActivitiesIntegrationTestBase() {
       prisonCode: String? = null,
       startDate: LocalDate,
       endDate: LocalDate,
-      prisonerNumber: String
+      prisonerNumber: String,
     ) = get()
       .uri("/integration-api/attendances/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)

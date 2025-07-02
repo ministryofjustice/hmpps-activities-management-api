@@ -30,7 +30,7 @@ import java.time.LocalTime
 
 @WebMvcTest(controllers = [IntegrationApiController::class])
 @ContextConfiguration(classes = [IntegrationApiController::class])
-class IntegrationApiControllerTest :  ControllerTestBase<IntegrationApiController>() {
+class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController>() {
 
   @MockitoBean
   private lateinit var attendancesService: AttendancesService

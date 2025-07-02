@@ -24,7 +24,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/integration-api", produces = [MediaType.APPLICATION_JSON_VALUE])
 class IntegrationApiController(
-  private val attendancesService: AttendancesService
+  private val attendancesService: AttendancesService,
 ) {
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
   @ResponseBody

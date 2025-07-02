@@ -217,5 +217,3 @@ class AttendanceController(private val attendancesService: AttendancesService) {
     categories = categories?.map { it.name },
   )
 }
-
-
