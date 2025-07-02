@@ -40,10 +40,11 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
       AND (:timeSlot is null or si.timeSlot = :timeSlot)
       AND EXISTS (
       SELECT 1 FROM Attendance a WHERE a MEMBER OF si.attendances AND a.prisonerNumber = :prisonerNumber
+      )
+      AND EXISTS (
+        SELECT 1 FROM AdvanceAttendance aa WHERE aa MEMBER OF si.advanceAttendances AND aa.prisonerNumber = :prisonerNumber
+      )
     )
-    AND EXISTS (
-      SELECT 1 FROM AdvanceAttendance aa WHERE aa MEMBER OF si.advanceAttendances AND aa.prisonerNumber = :prisonerNumber
-    ))
     AND (:cancelled is null or si.cancelled = :cancelled)
     """,
   )

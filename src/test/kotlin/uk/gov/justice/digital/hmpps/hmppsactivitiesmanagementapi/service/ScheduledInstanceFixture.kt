@@ -161,43 +161,7 @@ object AttendancesFixture {
         timeSlot = timeSlot,
       ),
       prisonerNumber = prisonerNumber,
-    ),
-    Attendance(
-      scheduledInstance = ScheduledInstance(
-        activitySchedule = ActivitySchedule(
-          activity = Activity(
-            prisonCode = prisonCode,
-            activityCategory = ActivityCategory(
-              activityCategoryId,
-              activityCategoryCode,
-              "ACTIVITY CATEGORY NAME  $activityCategoryId",
-              "ACTIVITY CATEGORY DESCRIPTION  $activityCategoryId",
-            ),
-            activityTier = EventTier(
-              activityTierId,
-              "ACTIVITY TIER CODE $activityTierId",
-              "ACTIVITY TIER DESCRIPTION $activityTierId",
-            ),
-            summary = "ACTIVITY SUMMARY $activityId",
-            description = "ACTIVITY DESCRIPTION $activityId",
-            startDate = date,
-            riskLevel = "high",
-            createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
-            createdBy = "CREATED BY",
-            isPaid = true,
-          ),
-          description = "DESCRIPTION $activityScheduleId",
-          capacity = 10,
-          startDate = date,
-          scheduleWeeks = 1,
-        ),
-        sessionDate = date,
-        startTime = startTime,
-        endTime = endTime,
-        timeSlot = timeSlot,
-      ),
-      prisonerNumber = "B1234BB",
-    ),
+    )
   ) as MutableList<Attendance>
 }
 
@@ -254,45 +218,6 @@ object AdvanceAttendancesFixture {
       issuePayment = true,
       recordedTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
       recordedBy = "Joe Bloggs",
-    ),
-    AdvanceAttendance(
-      scheduledInstance = ScheduledInstance(
-        activitySchedule = ActivitySchedule(
-          activity = Activity(
-            prisonCode = prisonCode,
-            activityCategory = ActivityCategory(
-              activityCategoryId,
-              activityCategoryCode,
-              "ACTIVITY CATEGORY NAME  $activityCategoryId",
-              "ACTIVITY CATEGORY DESCRIPTION  $activityCategoryId",
-            ),
-            activityTier = EventTier(
-              activityTierId,
-              "ACTIVITY TIER CODE $activityTierId",
-              "ACTIVITY TIER DESCRIPTION $activityTierId",
-            ),
-            summary = "ACTIVITY SUMMARY $activityId",
-            description = "ACTIVITY DESCRIPTION $activityId",
-            startDate = date,
-            riskLevel = "high",
-            createdTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
-            createdBy = "CREATED BY",
-            isPaid = true,
-          ),
-          description = "DESCRIPTION $activityScheduleId",
-          capacity = 10,
-          startDate = date,
-          scheduleWeeks = 1,
-        ),
-        sessionDate = date,
-        startTime = startTime,
-        endTime = endTime,
-        timeSlot = timeSlot,
-      ),
-      prisonerNumber = "B1234BB",
-      issuePayment = true,
-      recordedTime = LocalDateTime.of(2022, 10, 1, 12, 0, 0),
-      recordedBy = "Joe Bloggs",
-    ),
+    )
   ) as MutableList<AdvanceAttendance>
 }
