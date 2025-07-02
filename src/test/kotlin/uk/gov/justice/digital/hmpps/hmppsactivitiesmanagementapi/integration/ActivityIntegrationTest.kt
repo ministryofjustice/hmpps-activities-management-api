@@ -39,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
@@ -140,9 +141,13 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(organiser!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+      assertThat(payChange.size).isEqualTo(0)
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isTrue()
     }
+
+    val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
+    assertThat(activityPayHistoryList).size().isEqualTo(2)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -219,6 +224,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid()
 
+    val futureDate = LocalDate.now().plusDays(25)
     val apr1 = activityPayCreateRequest(
       incentiveNomisCode = "BAS",
       incentiveLevel = "Basic",
@@ -231,7 +237,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       incentiveLevel = "Basic",
       payBandId = 11,
       rate = 150,
-      startDate = LocalDate.now().plusDays(25),
+      startDate = futureDate,
     )
 
     val createActivityRequest: ActivityCreateRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-7.json").copy(startDate = TimeSource.tomorrow(), pay = listOf(apr1, apr2))
@@ -245,14 +251,18 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(organiser!!.id).isEqualTo(1)
       assertThat(eligibilityRules.size).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+      assertThat(payChange.size).isEqualTo(0)
       assertThat(createdBy).isEqualTo("test-client")
       assertThat(paid).isTrue()
     }
 
     with(activity.pay) {
       this.single { it.startDate == null }
-      this.single { it.startDate == LocalDate.now().plusDays(25) }
+      this.single { it.startDate == futureDate }
     }
+
+    val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
+    assertThat(activityPayHistoryList).size().isEqualTo(2)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -464,6 +474,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(category.id).isEqualTo(1)
       assertThat(tier!!.id).isEqualTo(1)
       assertThat(pay.size).isEqualTo(2)
+      assertThat(payChange.size).isEqualTo(0)
       assertThat(createdBy).isEqualTo("test-client")
       with(schedules.first()) {
         assertThat(scheduleWeeks).isEqualTo(2)
@@ -474,6 +485,9 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
         assertThat(slots.find { it.weekNumber == 2 && it.mondayFlag }).isNull()
       }
     }
+
+    val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
+    assertThat(activityPayHistoryList).size().isEqualTo(2)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -1138,9 +1152,13 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(tier!!.id).isEqualTo(2)
       assertThat(organiser!!.id).isEqualTo(1)
       assertThat(pay.size).isEqualTo(1)
+      assertThat(payChange.size).isEqualTo(0)
       assertThat(updatedBy).isEqualTo("test-client")
       assertThat(schedules.first().updatedBy).isEqualTo("test-client")
     }
+
+    val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
+    assertThat(activityPayHistoryList).size().isEqualTo(1)
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -1764,6 +1782,49 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
         assertThat(it.endTime == LocalTime.of(11, 45))
         assertThat(it.timeSlot == TimeSlot.AM)
       }
+    }
+  }
+
+  @Test
+  @Sql("classpath:test_data/seed-activity-id-40.sql")
+  fun `getActivityPayHistory - is successful`() {
+    val activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
+
+    assertThat(activityPayHistoryList).size().isEqualTo(3)
+    with(activityPayHistoryList[0]) {
+      id.isEqualTo(3)
+      incentiveNomisCode.isEqualTo("BAS")
+      incentiveLevel.isEqualTo("Basic")
+      prisonPayBand.id.isEqualTo(1)
+      rate.isEqualTo(200)
+      startDate.isEqualTo(LocalDate.parse("2025-05-07"))
+      changedDetails.isEqualTo("Amount increased to £2.00, from 7 May 2025")
+      changedTime.isEqualTo(LocalDateTime.parse("2025-04-20T09:00"))
+      changedBy.isEqualTo("A. Smith")
+    }
+
+    with(activityPayHistoryList[1]) {
+      id.isEqualTo(2)
+      incentiveNomisCode.isEqualTo("BAS")
+      incentiveLevel.isEqualTo("Basic")
+      prisonPayBand.id.isEqualTo(1)
+      rate.isEqualTo(75)
+      startDate.isEqualTo(LocalDate.parse("2025-03-09"))
+      changedDetails.isEqualTo("Amount reduced to £0.75, from 9 Mar 2025")
+      changedTime.isEqualTo(LocalDateTime.parse("2025-04-10T09:00"))
+      changedBy.isEqualTo("S. Adam")
+    }
+
+    with(activityPayHistoryList[2]) {
+      id.isEqualTo(1)
+      incentiveNomisCode.isEqualTo("BAS")
+      incentiveLevel.isEqualTo("Basic")
+      prisonPayBand.id.isEqualTo(1)
+      rate.isEqualTo(125)
+      startDate.isEqualTo(null)
+      changedDetails.isEqualTo("New pay rate added: £1.25")
+      changedTime.isEqualTo(LocalDateTime.parse("2025-03-09T09:00"))
+      changedBy.isEqualTo("A. Smith")
     }
   }
 }

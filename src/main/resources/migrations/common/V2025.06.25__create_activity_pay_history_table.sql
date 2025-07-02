@@ -9,7 +9,7 @@ CREATE TABLE activity_pay_history
     start_date                  date,
     changed_details             varchar(500)   NOT NULL,
     changed_time                timestamp      NOT NULL,
-    changed_by                  varchar(255)   NOT NULL
+    changed_by                  varchar(100)   NOT NULL
 );
 
 CREATE INDEX idx_activity_pay_history_activity_id ON activity_pay (activity_id);
