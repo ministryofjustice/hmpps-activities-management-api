@@ -15,8 +15,11 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointment
@@ -43,6 +46,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -160,6 +164,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             ),
           ),
         ),
+        UUID.fromString("44444444-1111-2222-3333-444444444444"),
       ),
     )
 
@@ -251,10 +256,54 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series single appointment single prisoner success for internal location`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", dpsLocationId = null)
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = request.prisonerNumbers.first(),
+          bookingId = 1,
+          prisonId = request.prisonCode,
+        ),
+      ),
+    )
+
+    val dpsLocationId = UUID.fromString("22222222-2222-2222-2222-222222222222")
+
+    nomisMappingApiMockServer.stubMappingFromNomisId(123, dpsLocationId)
+
+    val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+    val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+
+    assertSingleAppointmentSinglePrisoner(appointmentSeries, request.copy(dpsLocationId = dpsLocationId))
+    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(dpsLocationId = dpsLocationId))
+
+    verify(eventsPublisher).send(eventCaptor.capture())
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.created")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(attendeeIds[0]))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentSeriesCreatedEvent>())
+
+    verify(telemetryClient).trackEvent(anyString(), telemetryCaptor.capture(), anyMap())
+
+    with(telemetryCaptor.firstValue) {
+      this[ORIGINAL_ID_PROPERTY_KEY] isEqualTo ""
+    }
+  }
+
+  @Test
+  fun `create appointment series single appointment single prisoner success for DPS Location ID`() {
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
+
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -266,11 +315,27 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 1),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 4445)
+
     val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
     val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
-    assertSingleAppointmentSinglePrisoner(appointmentSeries, request)
-    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request)
+    assertSingleAppointmentSinglePrisoner(appointmentSeries, request.copy(internalLocationId = 4445))
+    assertSingleAppointmentSinglePrisoner(webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!, request.copy(internalLocationId = 4445))
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -292,7 +357,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series single appointment single prisoner success for in cell`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, dpsLocationId = null, inCell = true)
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
@@ -339,7 +404,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -351,12 +416,27 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = "B23456CE",
           bookingId = 2,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         ),
       ),
     )
 
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(request.dpsLocationId, request.internalLocationId!!),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, request.internalLocationId)
+
     val appointmentSeries = webTestClient.createAppointmentSeries(request)!!
+
     val attendeeIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
     assertSingleAppointmentTwoPrisoner(appointmentSeries, request)
@@ -383,9 +463,10 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series duplicated from an original appointment`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true, originalAppointmentId = 789L)
+    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, dpsLocationId = null, inCell = true, originalAppointmentId = 789L)
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -434,7 +515,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = request.prisonerNumbers.first(),
           bookingId = 1,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         ),
       ),
     )
@@ -484,7 +565,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = it.key,
           bookingId = it.value,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         )
       },
     )
@@ -535,7 +616,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         PrisonerSearchPrisonerFixture.instance(
           prisonerNumber = it.key,
           bookingId = it.value,
-          prisonId = request.prisonCode!!,
+          prisonId = request.prisonCode,
         )
       },
     )
@@ -581,12 +662,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         EventTier(
           id = appointmentSeries.tier!!.id,
           code = request.tierCode!!,
-          description = appointmentSeries.tier!!.description,
+          description = appointmentSeries.tier.description,
         ),
         EventOrganiser(
           id = appointmentSeries.organiser!!.id,
           code = request.organiserCode!!,
-          description = appointmentSeries.organiser!!.description,
+          description = appointmentSeries.organiser.description,
         ),
         request.customName,
         request.internalLocationId,
@@ -604,23 +685,23 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
           Appointment(
             appointmentSeries.appointments.first().id,
             1,
-            request.prisonCode!!,
-            request.categoryCode!!,
+            request.prisonCode,
+            request.categoryCode,
             EventTier(
-              id = appointmentSeries.tier!!.id,
-              code = request.tierCode!!,
-              description = appointmentSeries.tier!!.description,
+              id = appointmentSeries.tier.id,
+              code = request.tierCode,
+              description = appointmentSeries.tier.description,
             ),
             EventOrganiser(
-              id = appointmentSeries.organiser!!.id,
-              code = request.organiserCode!!,
-              description = appointmentSeries.organiser!!.description,
+              id = appointmentSeries.organiser.id,
+              code = request.organiserCode,
+              description = appointmentSeries.organiser.description,
             ),
             request.customName,
             request.internalLocationId,
             request.inCell,
-            request.startDate!!,
-            request.startTime!!,
+            request.startDate,
+            request.startTime,
             request.endTime,
             request.extraInformation,
             appointmentSeries.createdTime,
@@ -648,6 +729,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             ),
           ),
         ),
+        request.dpsLocationId,
       ),
     )
 
@@ -669,12 +751,12 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
           EventTier(
             id = appointmentSeries.tier!!.id,
             code = request.tierCode!!,
-            description = appointmentSeries.tier!!.description,
+            description = appointmentSeries.tier.description,
           ),
           EventOrganiser(
             id = appointmentSeries.organiser!!.id,
             code = request.organiserCode!!,
-            description = appointmentSeries.organiser!!.description,
+            description = appointmentSeries.organiser.description,
           ),
           request.customName,
           request.internalLocationId,
@@ -692,23 +774,23 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             Appointment(
               appointmentSeries.appointments.first().id,
               1,
-              request.prisonCode!!,
-              request.categoryCode!!,
+              request.prisonCode,
+              request.categoryCode,
               EventTier(
-                id = appointmentSeries.tier!!.id,
-                code = request.tierCode!!,
-                description = appointmentSeries.tier!!.description,
+                id = appointmentSeries.tier.id,
+                code = request.tierCode,
+                description = appointmentSeries.tier.description,
               ),
               EventOrganiser(
-                id = appointmentSeries.organiser!!.id,
-                code = request.organiserCode!!,
-                description = appointmentSeries.organiser!!.description,
+                id = appointmentSeries.organiser.id,
+                code = request.organiserCode,
+                description = appointmentSeries.organiser.description,
               ),
               request.customName,
               request.internalLocationId,
               request.inCell,
-              request.startDate!!,
-              request.startTime!!,
+              request.startDate,
+              request.startTime,
               request.endTime,
               request.extraInformation,
               appointmentSeries.createdTime,
@@ -725,6 +807,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
               ),
             ),
           ),
+          request.dpsLocationId,
         ),
       )
 

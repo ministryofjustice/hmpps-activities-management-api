@@ -16,14 +16,21 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategoryCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -125,6 +132,162 @@ class AttendancesServiceTest {
       assertThat(response.attendance.first().internalLocation).isEqualTo("desc")
       assertThat(response.attendance.first().scheduledInstanceId).isEqualTo(1)
       assertThat(response.attendance.first().activitySummary).isEqualTo("summary")
+    }
+  }
+
+  @Nested
+  inner class GetPrisonerAttendanceTest {
+
+    val prisonerNumber = "A1234AA"
+    val prisonCode = "MDI"
+    val attendance = Attendance(
+      scheduledInstance = ScheduledInstance(
+        scheduledInstanceId = 1234L,
+        activitySchedule = ActivitySchedule(
+          activity = Activity(
+            activityId = 1234,
+            prisonCode = prisonCode,
+            activityCategory = ActivityCategory(
+              activityCategoryId = 1234L,
+              code = "CHAP",
+              name = "Chaplaincy",
+              description = "Chaplaincy",
+            ),
+            activityTier = EventTier(
+              code = "ABCD",
+              description = "Description",
+            ),
+            attendanceRequired = true,
+            inCell = false,
+            onWing = true,
+            offWing = false,
+            pieceWork = false,
+            outsideWork = false,
+            payPerSession = PayPerSession.H,
+            summary = "Summary",
+            description = "Description",
+            startDate = LocalDate.now(),
+            riskLevel = "High",
+            createdTime = LocalDateTime.now(),
+            createdBy = "Joe Bloggs",
+            updatedTime = LocalDateTime.now(),
+            updatedBy = "Joe Bloggs",
+            isPaid = true,
+          ),
+          description = "description",
+          capacity = 10,
+          startDate = LocalDate.now(),
+          scheduleWeeks = 1,
+        ),
+        sessionDate = LocalDate.now(),
+        startTime = LocalTime.now(),
+        endTime = LocalTime.now().plusHours(1),
+        timeSlot = TimeSlot.AM,
+      ),
+      prisonerNumber = prisonerNumber,
+    )
+
+    @Test
+    fun `returns data correctly when prison code is not provided`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusDays(1),
+        ),
+      ).thenReturn(
+        listOf(attendance),
+      )
+
+      val response = service.getPrisonerAttendance(
+        prisonerNumber = prisonerNumber,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(1),
+      ).first()
+
+      verify(attendanceRepository).getPrisonerAttendanceBetweenDates(
+        prisonerNumber = prisonerNumber,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(1),
+      )
+      assertThat(response.prisonerNumber).isEqualTo(prisonerNumber)
+      assertThat(response.scheduleInstanceId).isEqualTo(attendance.scheduledInstance.scheduledInstanceId)
+    }
+
+    @Test
+    fun `returns data correctly when prison code is provided`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusDays(1),
+          prisonCode = prisonCode,
+        ),
+      ).thenReturn(
+        listOf(attendance),
+      )
+
+      val response = service.getPrisonerAttendance(
+        prisonerNumber = prisonerNumber,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(1),
+        prisonCode = prisonCode,
+      ).first()
+
+      verify(attendanceRepository).getPrisonerAttendanceBetweenDates(
+        prisonerNumber = prisonerNumber,
+        startDate = LocalDate.now(),
+        endDate = LocalDate.now().plusDays(1),
+        prisonCode = prisonCode,
+      )
+      assertThat(response.prisonerNumber).isEqualTo(prisonerNumber)
+      assertThat(response.scheduleInstanceId).isEqualTo(attendance.scheduledInstance.scheduledInstanceId)
+    }
+
+    @Test
+    fun `returns exception when there is more than 4 weeks between start and end date`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusWeeks(5),
+          prisonCode = prisonCode,
+        ),
+      ).thenThrow(IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date."))
+
+      assertThatThrownBy {
+        service.getPrisonerAttendance(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().plusWeeks(5),
+          prisonCode = prisonCode,
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("End date cannot be before, or more than 4 weeks after the start date.")
+    }
+
+    @Test
+    fun `returns exception when end date is before the start date`() {
+      whenever(
+        attendanceRepository.getPrisonerAttendanceBetweenDates(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().minusDays(5),
+          prisonCode = prisonCode,
+        ),
+      ).thenThrow(IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date."))
+
+      assertThatThrownBy {
+        service.getPrisonerAttendance(
+          prisonerNumber = prisonerNumber,
+          startDate = LocalDate.now(),
+          endDate = LocalDate.now().minusDays(5),
+          prisonCode = prisonCode,
+        )
+      }
+        .isInstanceOf(IllegalArgumentException::class.java)
+        .hasMessage("End date cannot be before, or more than 4 weeks after the start date.")
     }
   }
 

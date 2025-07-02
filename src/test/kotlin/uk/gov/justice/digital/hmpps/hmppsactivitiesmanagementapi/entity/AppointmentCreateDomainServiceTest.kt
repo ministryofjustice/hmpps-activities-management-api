@@ -38,6 +38,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Optional
+import java.util.UUID
 
 class AppointmentCreateDomainServiceTest {
   private val appointmentSeriesRepository = mock<AppointmentSeriesRepository>()
@@ -83,6 +84,7 @@ class AppointmentCreateDomainServiceTest {
       customName = appointmentSeries.customName,
       appointmentTier = appointmentSeries.appointmentTier,
       internalLocationId = appointmentSeries.internalLocationId,
+      dpsLocationId = appointmentSeries.dpsLocationId,
       customLocation = appointmentSeries.customLocation,
       inCell = appointmentSeries.inCell,
       onWing = appointmentSeries.onWing,
@@ -228,6 +230,7 @@ class AppointmentCreateDomainServiceTest {
       customName = "Custom name",
       appointmentTier = eventTier(),
       internalLocationId = 123,
+      dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"),
       // Not currently used by the UI. For future features
       customLocation = "Custom location",
       // Not currently used by the UI. For future features
@@ -261,6 +264,7 @@ class AppointmentCreateDomainServiceTest {
         customName = this.customName,
         appointmentTier = this.appointmentTier,
         internalLocationId = this.internalLocationId,
+        dpsLocationId = this.dpsLocationId,
         customLocation = this.customLocation,
         inCell = this.inCell,
         onWing = this.onWing,

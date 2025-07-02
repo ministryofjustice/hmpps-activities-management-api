@@ -234,6 +234,7 @@ fun AppointmentSeries.createAndAddAppointment(sequenceNumber: Int, startDate: Lo
   customName = this.customName,
   appointmentTier = this.appointmentTier,
   internalLocationId = this.internalLocationId,
+  dpsLocationId = this.dpsLocationId,
   customLocation = this.customLocation,
   inCell = this.inCell,
   onWing = this.onWing,

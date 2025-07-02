@@ -11,6 +11,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -88,6 +89,9 @@ data class AppointmentSeriesCreateRequest(
   )
   val internalLocationId: Long?,
 
+  @Schema(description = "The optional DPS location UUID for this appointment series", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
+
   @Schema(
     description =
     """
@@ -156,8 +160,8 @@ data class AppointmentSeriesCreateRequest(
   @AssertTrue(message = "Cannot allocate more than one prisoner to an individual appointment")
   private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2
 
-  @AssertTrue(message = "Internal location id must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell || internalLocationId != null
+  @AssertTrue(message = "Internal location id or DPS Location ID must be supplied if in cell = false")
+  private fun isInternalLocationId() = inCell || internalLocationId != null || dpsLocationId != null
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime

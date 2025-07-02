@@ -173,7 +173,7 @@ class AttendanceController(private val attendancesService: AttendancesService) {
   @GetMapping(value = ["/{prisonCode}/suspended"])
   @ResponseBody
   @Operation(
-    summary = "gets a list of suspended prisoner attendance activities for a given date",
+    summary = "Gets a list of suspended prisoner attendance activities for a given date",
   )
   @ApiResponses(
     value = [

@@ -43,7 +43,11 @@ SELECT aa.appointment_attendee_id AS appointment_instance_id,
        aa.removed_by,
        asrs.cancellation_start_date AS series_cancellation_start_date,
        asrs.cancellation_start_time AS series_cancellation_start_time,
-       ass.frequency AS series_frequency
+       ass.frequency AS series_frequency,
+       CASE
+           WHEN a.in_cell THEN NULL::uuid
+           ELSE a.dps_location_id
+           END AS dps_location_id
 FROM appointment_attendee aa
          JOIN appointment a ON aa.appointment_id = a.appointment_id
          JOIN appointment_series asrs ON asrs.appointment_series_id = a.appointment_series_id

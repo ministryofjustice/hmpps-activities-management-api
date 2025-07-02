@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoin
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CreateAppointmentsJob
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries as AppointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeriesSchedule as AppointmentSeriesScheduleEntity
 
@@ -37,6 +39,7 @@ class AppointmentSeriesService(
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val createAppointmentsJob: CreateAppointmentsJob,
   private val transactionHandler: TransactionHandler,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
   @Value("\${applications.max-appointment-instances}") private val maxAppointmentInstances: Int = 20000,
   @Value("\${applications.max-sync-appointment-instance-actions}") private val maxSyncAppointmentInstanceActions: Int = 500,
   @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
@@ -118,7 +121,7 @@ class AppointmentSeriesService(
   }
 
   private fun AppointmentSeriesCreateRequest.failIfStartDateIsTooFarInTheFuture() {
-    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays)) {
       "Start date cannot be more than $maxStartDateOffsetDays days into the future."
     }
   }
@@ -126,11 +129,18 @@ class AppointmentSeriesService(
   private fun AppointmentSeriesCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
     ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
-  private fun AppointmentSeriesCreateRequest.locationDescription(): String = if (inCell) {
-    "In cell"
-  } else {
-    locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
-      ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+  private fun AppointmentSeriesCreateRequest.locationDescription(): String = when {
+    inCell -> "In cell"
+    dpsLocationId != null -> {
+      locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode!!)[dpsLocationId]?.description
+        ?: throw IllegalArgumentException("Appointment location with DPS Location id '$dpsLocationId' not found in prison '$prisonCode'")
+    }
+    else -> {
+      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let {
+        it.userDescription ?: it.description
+      }
+        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+    }
   }
 
   private fun AppointmentSeriesCreateRequest.createNumberBookingIdMap() = prisonerSearchApiClient.findByPrisonerNumbers(prisonerNumbers)
@@ -145,9 +155,23 @@ class AppointmentSeriesService(
     }
   }
 
+  private fun determineLocationIds(inCell: Boolean, dpsLocationId: UUID?, nomisLocationId: Long?) = when {
+    inCell -> {
+      null to null
+    }
+    dpsLocationId != null -> {
+      dpsLocationId to nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
+    }
+    nomisLocationId != null -> {
+      nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId)!!.dpsLocationId to nomisLocationId
+    }
+    else -> throw IllegalArgumentException("If in cell is false then DPS Location ID or internal location id must not be null")
+  }
+
   private fun AppointmentSeriesCreateRequest.toAppointmentSeries(createdBy: String): AppointmentSeriesEntity {
     val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(tierCode!!)
     val organiser = organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+    val (dpsLocationId, internalLocationId) = determineLocationIds(inCell, dpsLocationId, internalLocationId)
 
     return AppointmentSeriesEntity(
       appointmentType = appointmentType!!,
@@ -155,7 +179,8 @@ class AppointmentSeriesService(
       categoryCode = categoryCode!!,
       customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = tier,
-      internalLocationId = if (inCell) null else internalLocationId,
+      internalLocationId = internalLocationId,
+      dpsLocationId = dpsLocationId,
       inCell = inCell,
       startDate = startDate!!,
       startTime = startTime!!,

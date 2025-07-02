@@ -13,6 +13,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 
 class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
   @Test
@@ -43,6 +44,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
         "AC1",
         "Appointment description",
         123,
+        UUID.fromString("44444444-1111-2222-3333-444444444444"),
         false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),

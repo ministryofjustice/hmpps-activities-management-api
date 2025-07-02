@@ -1,15 +1,19 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.api.LocationsInsidePrisonAPIClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
@@ -101,13 +105,85 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `getLocationsForAppointmentsMap returns mapped locations`() {
+  fun `getLocationsForAppointmentsMap returns NOMIS locations mapped by NOMIS locations ids`() {
     whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
       .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"), appointmentLocation(2, "TPR"))))
 
     val locations = locationService.getLocationsForAppointmentsMap("TPR")
 
     assertThat(locations).isEqualTo(mapOf(1L to appointmentLocation(1, "TPR"), 2L to appointmentLocation(2, "TPR")))
+  }
+
+  @Test
+  fun `getLocationDetailsForAppointmentsMap returns DPS locations mapped by NOMIS locations ids`() {
+    val dpsLocationId1 = UUID.randomUUID()
+    val dpsLocationId2 = UUID.randomUUID()
+    val dpsLocation1 = dpsLocation(dpsLocationId1)
+    val dpsLocation2 = dpsLocation(dpsLocationId2)
+
+    locationsInsidePrisonAPIClient.stub {
+      on {
+        runBlocking {
+          locationsInsidePrisonAPIClient.getLocationsForUsageType("TPR", UsageType.APPOINTMENT)
+        }
+      } doReturn listOf(dpsLocation1, dpsLocation2)
+    }
+
+    nomisMappingAPIClient.stub {
+      on {
+        runBlocking {
+          nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(dpsLocationId1, dpsLocationId2))
+        }
+      } doReturn listOf(
+        NomisDpsLocationMapping(dpsLocationId1, 1),
+        NomisDpsLocationMapping(dpsLocationId2, 2),
+      )
+    }
+
+    val locations = locationService.getLocationDetailsForAppointmentsMap("TPR")
+
+    val expectedLocations = mapOf<Long, LocationDetails>(
+      1L to LocationDetails(dpsLocation1.prisonId, 1, dpsLocation1.id, dpsLocation1.code, dpsLocation1.localName!!, dpsLocation1.pathHierarchy),
+      2L to LocationDetails(dpsLocation2.prisonId, 2, dpsLocation2.id, dpsLocation2.code, dpsLocation2.localName!!, dpsLocation2.pathHierarchy),
+    )
+
+    assertThat(locations).isEqualTo(expectedLocations)
+  }
+
+  @Test
+  fun `getLocationDetailsForAppointmentsMapByDpsLocationId returns DPS locations mapped by DPS Location UUID`() {
+    val dpsLocationId1 = UUID.randomUUID()
+    val dpsLocationId2 = UUID.randomUUID()
+    val dpsLocation1 = dpsLocation(dpsLocationId1)
+    val dpsLocation2 = dpsLocation(dpsLocationId2)
+
+    locationsInsidePrisonAPIClient.stub {
+      on {
+        runBlocking {
+          locationsInsidePrisonAPIClient.getLocationsForUsageType("TPR", UsageType.APPOINTMENT)
+        }
+      } doReturn listOf(dpsLocation1, dpsLocation2)
+    }
+
+    nomisMappingAPIClient.stub {
+      on {
+        runBlocking {
+          nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(dpsLocationId1, dpsLocationId2))
+        }
+      } doReturn listOf(
+        NomisDpsLocationMapping(dpsLocationId1, 1),
+        NomisDpsLocationMapping(dpsLocationId2, 2),
+      )
+    }
+
+    val locations = locationService.getLocationDetailsForAppointmentsMapByDpsLocationId("TPR")
+
+    val expectedLocations = mapOf<UUID, LocationDetails>(
+      dpsLocationId1 to LocationDetails(dpsLocation1.prisonId, 1, dpsLocation1.id, dpsLocation1.code, dpsLocation1.localName!!, dpsLocation1.pathHierarchy),
+      dpsLocationId2 to LocationDetails(dpsLocation2.prisonId, 2, dpsLocation2.id, dpsLocation2.code, dpsLocation2.localName!!, dpsLocation2.pathHierarchy),
+    )
+
+    assertThat(locations).isEqualTo(expectedLocations)
   }
 
   @Test
