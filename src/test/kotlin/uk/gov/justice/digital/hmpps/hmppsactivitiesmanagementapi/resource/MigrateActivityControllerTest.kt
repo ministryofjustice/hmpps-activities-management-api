@@ -189,7 +189,8 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
     val expectedResponse = PayHistoryMigrateResponse(
       25L,
       25L,
-      "Activities pay rate history migration has been completed successfully for all records")
+      "Activities pay rate history migration has been completed successfully for all records",
+    )
     whenever(migrateActivityService.createActivityPayHistory()).thenReturn(expectedResponse)
 
     val response = mockMvc.post("/migrate/pay-history") {

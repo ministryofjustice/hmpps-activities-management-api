@@ -214,7 +214,6 @@ class MigrateActivityService(
             log.info("Activities pay rate history migration completed for activity: $activityId")
           }
 
-
           activityPayHistoryCount = activityPayHistoryRepository.count()
 
           message = if (activityPayHistoryCount == activityPayCount) {

@@ -10,7 +10,7 @@ interface ActivityPayRepository : JpaRepository<ActivityPay, Long> {
 
   @Query(
     value =
-      """
+    """
     SELECT distinct ap.activity.activityId FROM ActivityPay ap
     ORDER BY ap.activity.activityId ASC
     """,
@@ -19,7 +19,7 @@ interface ActivityPayRepository : JpaRepository<ActivityPay, Long> {
 
   @Query(
     value =
-      """
+    """
     SELECT ap FROM ActivityPay ap
     WHERE ap.activity.activityId = :activityId
     ORDER BY ap.incentiveNomisCode, ap.payBand.prisonPayBandId, CASE WHEN ap.startDate IS NULL THEN 0 ELSE 1 END, ap.startDate ASC

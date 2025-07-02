@@ -302,5 +302,4 @@ class MigrateActivityController(
   )
   @PreAuthorize("hasAnyRole('NOMIS_ACTIVITIES','ACTIVITY_ADMIN')")
   fun createActivityPayHistory() = migrateActivityService.createActivityPayHistory()
-
 }

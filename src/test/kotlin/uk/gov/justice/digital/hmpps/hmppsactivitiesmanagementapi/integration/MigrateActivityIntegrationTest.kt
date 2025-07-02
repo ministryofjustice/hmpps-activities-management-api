@@ -167,7 +167,6 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
   @Test
   @Sql("classpath:test_data/seed-activity-pay.sql")
   fun `migrate activity pay rate history - with data in activity_pay table - success`() {
-
     val response = webTestClient.createActivityPayHistory(listOf("ROLE_NOMIS_ACTIVITIES"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
