@@ -30,6 +30,33 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   ): List<ScheduledInstance>
 
   @Query(
+    """
+    SELECT si FROM ScheduledInstance si 
+    WHERE EXISTS (
+      SELECT 1 FROM si.activitySchedule s
+      WHERE s.activity.prisonCode = :prisonCode 
+      AND si.sessionDate >= :startDate
+      AND si.sessionDate <= :endDate
+      AND (:timeSlot is null or si.timeSlot = :timeSlot)
+      AND EXISTS (
+      SELECT 1 FROM Attendance a WHERE a MEMBER OF si.attendances AND a.prisonerNumber = :prisonerNumber
+    )
+    AND EXISTS (
+      SELECT 1 FROM AdvanceAttendance aa WHERE aa MEMBER OF si.advanceAttendances AND aa.prisonerNumber = :prisonerNumber
+    ))
+    AND (:cancelled is null or si.cancelled = :cancelled)
+    """,
+  )
+  fun getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+    prisonCode: String,
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    cancelled: Boolean? = null,
+    timeSlot: TimeSlot? = null,
+  ): List<ScheduledInstance>
+
+  @Query(
     "select si " +
       "from ScheduledInstance si " +
       "join fetch si.activitySchedule asch " +

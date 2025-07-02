@@ -84,6 +84,23 @@ class ScheduledInstanceService(
     timeSlot = slot,
   ).toModel()
 
+  @Transactional(readOnly = true)
+  fun getActivityScheduleInstancesForPrisonerByDateRange(
+    prisonCode: String,
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    slot: TimeSlot?,
+    cancelled: Boolean?,
+  ): List<ActivityScheduleInstance> = repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+    prisonCode = prisonCode,
+    prisonerNumber = prisonerNumber,
+    startDate = startDate,
+    endDate = endDate,
+    cancelled = cancelled,
+    timeSlot = slot,
+  ).toModel()
+
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)
     checkCaseloadAccess(activityScheduleInstance.activitySchedule.activity.prisonCode)
