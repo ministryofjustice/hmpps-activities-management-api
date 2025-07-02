@@ -315,7 +315,9 @@ class ScheduledInstanceServiceTest {
           startDate = startDate,
           endDate = endDate,
           cancelled = null,
-          slot = null)}
+          slot = null,
+        )
+      }
         .isInstanceOf(ValidationException::class.java)
         .hasMessage("Date range cannot exceed 3 months")
     }

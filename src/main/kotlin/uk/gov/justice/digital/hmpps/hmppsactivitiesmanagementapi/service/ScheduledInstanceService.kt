@@ -99,13 +99,14 @@ class ScheduledInstanceService(
     }
 
     return repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
-    prisonCode = prisonCode,
-    prisonerNumber = prisonerNumber,
-    startDate = startDate,
-    endDate = endDate,
-    cancelled = cancelled,
-    timeSlot = slot,
-  ).toModel()}
+      prisonCode = prisonCode,
+      prisonerNumber = prisonerNumber,
+      startDate = startDate,
+      endDate = endDate,
+      cancelled = cancelled,
+      timeSlot = slot,
+    ).toModel()
+  }
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)
