@@ -69,6 +69,23 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       "classpath:test_data/seed-attendances.sql",
     )
     @Test
+    fun `does not get prisoner attendance when no data in date range`() {
+      val prisonerNumber = "A11111A"
+
+      val attendanceList = webTestClient.getAttendanceForPrisoner(
+        prisonCode = MOORLAND_PRISON_CODE,
+        prisonerNumber = prisonerNumber,
+        startDate = LocalDate.of(2022, 12, 10),
+        endDate = LocalDate.of(2022, 12, 11),
+      )
+
+      assertThat(attendanceList.size).isEqualTo(0)
+    }
+
+    @Sql(
+      "classpath:test_data/seed-attendances.sql",
+    )
+    @Test
     fun `get prisoner attendance with invalid prison code`() {
       val prisonerNumber = "A11111A"
 
