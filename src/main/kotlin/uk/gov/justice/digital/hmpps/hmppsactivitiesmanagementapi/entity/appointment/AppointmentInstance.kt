@@ -9,6 +9,7 @@ import org.hibernate.annotations.Immutable
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance as AppointmentInstanceModel
 
 @Entity
@@ -73,6 +74,8 @@ data class AppointmentInstance(
 
   @Enumerated(EnumType.STRING)
   var seriesFrequency: AppointmentFrequency?,
+
+  var dpsLocationId: UUID?,
 ) {
   fun toModel() = AppointmentInstanceModel(
     id = appointmentInstanceId,
@@ -86,6 +89,7 @@ data class AppointmentInstance(
     categoryCode = categoryCode,
     customName = customName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     inCell = inCell,
     appointmentDate = appointmentDate,
     startTime = startTime,

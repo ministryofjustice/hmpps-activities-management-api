@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location as PrisonApiLocation
@@ -40,13 +41,15 @@ fun List<PrisonApiPrisonerSchedule>.multiplePrisonerActivitiesToScheduledEvents(
 fun List<PrisonApiPrisonerSchedule>.multiplePrisonerTransfersToScheduledEvents(
   prisonCode: String,
   priority: Int,
-) = prisonerScheduleToScheduledEvents(prisonCode, EventType.EXTERNAL_TRANSFER, priority)
+  date: LocalDate? = null,
+) = prisonerScheduleToScheduledEvents(prisonCode, EventType.EXTERNAL_TRANSFER, priority, date = date)
 
 private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
   prisonCode: String,
   eventType: EventType,
   priority: Int,
   prisonLocations: PrisonLocations = emptyMap(),
+  date: LocalDate? = null,
 ) = map {
   val mayBeInternalLocation = it.locationId?.let(prisonLocations::get)
 
@@ -73,8 +76,8 @@ private fun List<PrisonApiPrisonerSchedule>.prisonerScheduleToScheduledEvents(
     categoryCode = it.event,
     categoryDescription = null,
     comments = it.comment,
-    date = LocalDateTime.parse(it.startTime).toLocalDate(),
-    startTime = LocalDateTime.parse(it.startTime).toLocalTime(),
+    date = it.startTime?.let { startTime -> LocalDateTime.parse(startTime).toLocalDate() } ?: date,
+    startTime = it.startTime?.let { startTime -> LocalDateTime.parse(startTime).toLocalTime() },
     endTime = it.endTime?.let { endTime -> LocalDateTime.parse(endTime).toLocalTime() },
     priority = priority,
     appointmentSeriesCancellationStartDate = null,
