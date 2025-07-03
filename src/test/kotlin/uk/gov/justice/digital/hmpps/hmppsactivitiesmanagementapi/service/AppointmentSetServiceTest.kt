@@ -122,10 +122,13 @@ class AppointmentSetServiceTest {
   fun `getAppointmentSetDetailsById returns mapped appointment details for known appointment set id`() {
     val entity = appointmentSetEntity()
     whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
+
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
+
     whenever(locationService.getLocationDetailsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR")))
+
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
       mapOf(
         "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -197,6 +200,7 @@ class AppointmentSetServiceTest {
       organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
+      dpsLocationId = dpsLocationId,
       inCell = false,
       startDate = LocalDate.now(),
       appointments = listOf(
@@ -216,6 +220,7 @@ class AppointmentSetServiceTest {
       organiserCode = eventOrganiser().code,
       customName = "Custom name",
       internalLocationId = internalLocationId,
+      dpsLocationId = dpsLocationId,
       inCell = false,
       startDate = LocalDate.now(),
       appointments = listOf(
@@ -252,8 +257,8 @@ class AppointmentSetServiceTest {
       whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
         .thenReturn(mapOf("MEDO" to appointmentCategoryReferenceCode(categoryCode, "Medical - Doctor")))
 
-      whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
-        .thenReturn(mapOf(internalLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))
+      whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
+        .thenReturn(mapOf(dpsLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC")))
         .thenReturn(
@@ -299,10 +304,25 @@ class AppointmentSetServiceTest {
     }
 
     @Test
+    fun `DPS location id not found`() {
+      val dpsLocationId = UUID.randomUUID()
+
+      val exception = assertThrows<IllegalArgumentException> {
+        service.createAppointmentSet(
+          appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, dpsLocationId = dpsLocationId),
+          principal,
+        )
+      }
+      exception.message isEqualTo "Appointment location with DPS Location id '$dpsLocationId' not found in prison 'MDI'"
+
+      verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
     fun `internal location id not found`() {
       val exception = assertThrows<IllegalArgumentException> {
         service.createAppointmentSet(
-          appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999),
+          appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = 999, dpsLocationId = null),
           principal,
         )
       }
