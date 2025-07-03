@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocation
 
 @RestController
 @RequestMapping("/appointment-locations", produces = [MediaType.APPLICATION_JSON_VALUE])

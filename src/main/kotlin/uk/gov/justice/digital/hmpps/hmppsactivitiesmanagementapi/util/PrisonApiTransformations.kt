@@ -3,17 +3,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode as PrisonApiReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
 
 const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
@@ -337,12 +334,6 @@ fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?
   if (!description.isNullOrEmpty()) "$description ($category)" else category
 }
 
-fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
-
-fun LocationDetails?.toAppointmentLocationSummary(locationId: Long, dpsLocationId: UUID?, prisonCode: String) = if (this == null) {
-  ModelAppointmentLocationSummary(locationId, dpsLocationId, prisonCode, "No information available")
-} else {
-  ModelAppointmentLocationSummary(this.locationId, this.dpsLocationId, this.agencyId, this.description)
+fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map {
+  it.toAppointmentCategorySummary(it.code)
 }
-
-fun List<LocationDetails>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.dpsLocationId, it.agencyId) }

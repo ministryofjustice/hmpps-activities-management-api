@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.advanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
@@ -34,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayB
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
@@ -49,7 +47,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityEligibility as ModelActivityEligibility
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel as ModelActivityMinimumEducationLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPay as ModelActivityPay
@@ -65,8 +63,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
-  val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
-
   @Test
   fun `transformation of activity entity to the activity models`() {
     val timestamp = LocalDateTime.of(LocalDate.now(), LocalTime.of(9, 0)).truncatedTo(ChronoUnit.MINUTES)
@@ -667,20 +663,6 @@ class TransformFunctionsTest {
   @Test
   fun `reference code to appointment name mapping for null reference code and no description`() {
     assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("MEDO")
-  }
-
-  @Test
-  fun `location to appointment location summary returns a default description for null locations`() {
-    assertThat((null as LocationDetails?).toAppointmentLocationSummary(1, dpsLocationId, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, dpsLocationId, "TPR", "No information available"),
-    )
-  }
-
-  @Test
-  fun `location to appointment location summary mapping`() {
-    assertThat(appointmentLocationDetails(1, dpsLocationId, "TPR").toAppointmentLocationSummary(1, dpsLocationId, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, dpsLocationId, "TPR", "Test Appointment Location"),
-    )
   }
 
   @Test

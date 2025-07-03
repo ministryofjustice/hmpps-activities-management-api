@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location as DpsLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 
 @Service
 class LocationService(
@@ -76,3 +77,11 @@ fun List<DpsLocation>.toIdSet() = this.map { it.id }.toSet()
 fun DpsLocation.toLocationDetails(locationId: Long) = LocationDetails(this.prisonId, locationId, this.id, this.code, this.localName ?: this.code, this.pathHierarchy)
 
 fun List<LocationDetails>.toMapByNomisId() = this.associateBy { it.locationId }
+
+fun LocationDetails?.toAppointmentLocationSummary(locationId: Long, dpsLocationId: UUID?, prisonCode: String) = if (this == null) {
+  ModelAppointmentLocationSummary(locationId, dpsLocationId, prisonCode, "No information available")
+} else {
+  ModelAppointmentLocationSummary(this.locationId, this.dpsLocationId, this.agencyId, this.description)
+}
+
+fun List<LocationDetails>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.dpsLocationId, it.agencyId) }

@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentLocationController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocation
 import java.util.UUID
 
 @WebMvcTest(controllers = [AppointmentLocationController::class])
