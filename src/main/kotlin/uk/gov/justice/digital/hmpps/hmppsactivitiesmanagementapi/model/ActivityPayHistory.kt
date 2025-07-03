@@ -33,6 +33,6 @@ data class ActivityPayHistory(
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
   val changedTime: LocalDateTime? = null,
 
-  @Schema(description = "The person who changed this pay rate", example = "ABC123 - A. Smith")
+  @Schema(description = "The person who changed this pay rate", example = "joebloggs")
   val changedBy: String? = null,
 )

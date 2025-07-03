@@ -361,7 +361,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 125,
       changedDetails = "New pay rate added: £1.25",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val aprh2 = activityPayHistoryCreateRequest(
@@ -371,7 +371,7 @@ class ActivityServiceTest {
       rate = 150,
       startDate = LocalDate.now().plusDays(25),
       changedDetails = "New pay rate added: £1.50",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val createActivityRequest = mapper.read<ActivityCreateRequest>("activity/activity-create-request-1.json")
@@ -663,7 +663,7 @@ class ActivityServiceTest {
       payBand = prisonPayBand(),
       rate = 125,
       changedDetails = "New pay rate added: £1.25",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val aprh2 = activityPayHistory(
@@ -678,7 +678,7 @@ class ActivityServiceTest {
       rate = 150,
       startDate = LocalDate.now().plusDays(25),
       changedDetails = "New pay rate added: £1.50",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     whenever(activityRepository.findById(1)).thenReturn(Optional.of(activity))
@@ -1270,7 +1270,7 @@ class ActivityServiceTest {
       payBandId = 1,
       rate = 125,
       changedDetails = "New pay rate added: £1.25",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val aprh2 = activityPayHistoryCreateRequest(
@@ -1280,7 +1280,7 @@ class ActivityServiceTest {
       rate = 150,
       startDate = LocalDate.now().plusDays(25),
       changedDetails = "New pay rate added: £1.50",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val updateActivityRequest: ActivityUpdateRequest =
@@ -1348,7 +1348,7 @@ class ActivityServiceTest {
       rate = 125,
       startDate = LocalDate.now().plusDays(25),
       changedDetails = "New pay rate added: £1.25",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val aprh2 = activityPayHistoryCreateRequest(
@@ -1358,7 +1358,7 @@ class ActivityServiceTest {
       rate = 150,
       startDate = LocalDate.now().plusDays(25),
       changedDetails = "New pay rate added: £1.50",
-      changedBy = "ABC123 - A. Smith",
+      changedBy = "joebloggs",
     )
 
     val updateActivityRequest: ActivityUpdateRequest =

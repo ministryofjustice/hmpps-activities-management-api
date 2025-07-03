@@ -32,7 +32,7 @@
       "payBandId": 1,
       "rate": 125,
       "changedDetails": "New pay rate added: £1.25",
-      "changedBy": "ABC123 - A. Smith"
+      "changedBy": "joebloggs"
     },
     {
       "incentiveNomisCode": "STD",
@@ -40,7 +40,7 @@
       "payBandId": 2,
       "rate": 160,
       "changedDetails": "New pay rate added: £1.60",
-      "changedBy": "ABC123 - A. Smith"
+      "changedBy": "joebloggs"
     }
   ],
   "minimumEducationLevel": [

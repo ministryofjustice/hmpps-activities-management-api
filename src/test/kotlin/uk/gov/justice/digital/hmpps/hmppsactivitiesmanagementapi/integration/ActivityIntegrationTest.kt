@@ -1799,7 +1799,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       startDate.isEqualTo(LocalDate.parse("2025-05-07"))
       changedDetails.isEqualTo("Amount increased to £2.00, from 7 May 2025")
       changedTime.isEqualTo(LocalDateTime.parse("2025-04-20T09:00"))
-      changedBy.isEqualTo("A. Smith")
+      changedBy.isEqualTo("joebloggs")
     }
 
     with(activityPayHistoryList[1]) {
@@ -1811,7 +1811,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       startDate.isEqualTo(LocalDate.parse("2025-03-09"))
       changedDetails.isEqualTo("Amount reduced to £0.75, from 9 Mar 2025")
       changedTime.isEqualTo(LocalDateTime.parse("2025-04-10T09:00"))
-      changedBy.isEqualTo("S. Adam")
+      changedBy.isEqualTo("adsmith")
     }
 
     with(activityPayHistoryList[2]) {
@@ -1823,7 +1823,7 @@ class ActivityIntegrationTest : ActivitiesIntegrationTestBase() {
       startDate.isEqualTo(null)
       changedDetails.isEqualTo("New pay rate added: £1.25")
       changedTime.isEqualTo(LocalDateTime.parse("2025-03-09T09:00"))
-      changedBy.isEqualTo("A. Smith")
+      changedBy.isEqualTo("joebloggs")
     }
   }
 }

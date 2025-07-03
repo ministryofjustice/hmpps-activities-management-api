@@ -439,7 +439,7 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
         startDate = null,
         changedDetails = "New pay rate added: £1.00",
         changedTime = LocalDateTime.now(),
-        changedBy = "ABC123 - A. Smith",
+        changedBy = "joebloggs",
       ),
       ActivityPayHistory(
         id = 37,
