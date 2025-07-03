@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -69,6 +70,9 @@ data class AppointmentSetCreateRequest(
     example = "123",
   )
   val internalLocationId: Long?,
+
+  @Schema(description = "The optional DPS location UUID for this appointment set", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
 
   @Schema(
     description =

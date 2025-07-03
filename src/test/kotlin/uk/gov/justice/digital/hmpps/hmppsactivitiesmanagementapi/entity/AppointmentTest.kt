@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
@@ -16,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
@@ -28,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -278,7 +278,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -307,7 +307,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -338,7 +338,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSetEntity().appointmentSeries().first()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -357,7 +357,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = emptyMap<String, Prisoner>()
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap).attendees) {
       assertThat(size).isEqualTo(1)
@@ -377,7 +377,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonersMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -414,7 +414,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -436,7 +436,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = emptyMap<Long, Location>()
+    val locationMap = emptyMap<Long, LocationDetails>()
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -447,11 +447,11 @@ class AppointmentTest {
         cellLocation = "1-2-3",
       ),
     )
-    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
-      assertThat(internalLocation).isNotNull
-      assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
-      assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
-      assertThat(internalLocation!!.description).isEqualTo("No information available")
+    with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap).internalLocation!!) {
+      assertThat(id).isEqualTo(entity.internalLocationId)
+      assertThat(dpsLocationId).isEqualTo(entity.dpsLocationId)
+      assertThat(prisonCode).isEqualTo("TPR")
+      assertThat(description).isEqualTo("No information available")
     }
   }
 
@@ -461,7 +461,7 @@ class AppointmentTest {
     val entity = appointmentSeries.appointments().first()
     entity.internalLocationId = 123
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -484,7 +484,7 @@ class AppointmentTest {
     val entity = appointmentSeries.appointments().first()
     entity.updatedBy = null
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -509,7 +509,7 @@ class AppointmentTest {
     entity.cancellationReason = null
     entity.cancelledBy = null
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -532,7 +532,7 @@ class AppointmentTest {
     val appointmentSeries = appointmentSeriesEntity(frequency = AppointmentRepeatPeriodEntity.WEEKLY, numberOfAppointments = 4)
     val entity = appointmentSeries.appointments().first()
     val referenceCodeMap = mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -558,7 +558,7 @@ class AppointmentTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",
@@ -584,7 +584,7 @@ class AppointmentTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = mapOf(
       "A1234BC" to PrisonerSearchPrisonerFixture.instance(
         prisonerNumber = "A1234BC",

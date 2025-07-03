@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
@@ -124,8 +124,8 @@ class AppointmentSetServiceTest {
     whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(entity.prisonCode))
-      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(entity.prisonCode))
+      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR")))
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
       mapOf(
         "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -185,6 +185,7 @@ class AppointmentSetServiceTest {
     private val categoryCode = "MEDO"
     private val appointmentTier = foundationTier()
     private val internalLocationId = 1L
+    private val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
     private val createdBy = "CREATED_BY_USER"
 
     private val appointmentSetCaptor = argumentCaptor<AppointmentSet>()
@@ -251,8 +252,8 @@ class AppointmentSetServiceTest {
       whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
         .thenReturn(mapOf("MEDO" to appointmentCategoryReferenceCode(categoryCode, "Medical - Doctor")))
 
-      whenever(locationService.getLocationsForAppointmentsMap(prisonCode))
-        .thenReturn(mapOf(internalLocationId to appointmentLocation(internalLocationId, prisonCode, "HB1 Doctors")))
+      whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
+        .thenReturn(mapOf(internalLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))
 
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC")))
         .thenReturn(
@@ -465,7 +466,7 @@ class AppointmentSetServiceTest {
             inCell = false,
             onWing = false,
             offWing = true,
-            startDate = request.startDate!!,
+            startDate = request.startDate,
             startTime = request.appointments.single().startTime!!,
             endTime = request.appointments.single().endTime!!,
             schedule = null,
@@ -494,7 +495,7 @@ class AppointmentSetServiceTest {
               inCell = false,
               onWing = false,
               offWing = true,
-              startDate = request.startDate!!,
+              startDate = request.startDate,
               startTime = request.appointments.single().startTime!!,
               endTime = request.appointments.single().endTime!!,
               unlockNotes = null,

@@ -25,7 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.advanceAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
@@ -65,6 +65,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Scheduled
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 class TransformFunctionsTest {
+  val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
 
   @Test
   fun `transformation of activity entity to the activity models`() {
@@ -670,15 +671,15 @@ class TransformFunctionsTest {
 
   @Test
   fun `location to appointment location summary returns a default description for null locations`() {
-    assertThat((null as Location?).toAppointmentLocationSummary(1, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, "TPR", "No information available"),
+    assertThat((null as LocationDetails?).toAppointmentLocationSummary(1, dpsLocationId, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, dpsLocationId, "TPR", "No information available"),
     )
   }
 
   @Test
   fun `location to appointment location summary mapping`() {
-    assertThat(appointmentLocation(1, "TPR").toAppointmentLocationSummary(1, "TPR")).isEqualTo(
-      AppointmentLocationSummary(1, "TPR", "Test Appointment Location User Description"),
+    assertThat(appointmentLocationDetails(1, dpsLocationId, "TPR").toAppointmentLocationSummary(1, dpsLocationId, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, dpsLocationId, "TPR", "Test Appointment Location"),
     )
   }
 

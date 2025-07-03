@@ -3,10 +3,11 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.extensions.internalLocationId
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location as PrisonApiLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
@@ -338,10 +339,10 @@ fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?
 
 fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
 
-fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) = if (this == null) {
-  ModelAppointmentLocationSummary(locationId, prisonCode, "No information available")
+fun LocationDetails?.toAppointmentLocationSummary(locationId: Long, dpsLocationId: UUID?, prisonCode: String) = if (this == null) {
+  ModelAppointmentLocationSummary(locationId, dpsLocationId, prisonCode, "No information available")
 } else {
-  ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+  ModelAppointmentLocationSummary(this.locationId, this.dpsLocationId, this.agencyId, this.description)
 }
 
-fun List<PrisonApiLocation>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
+fun List<LocationDetails>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.dpsLocationId, it.agencyId) }

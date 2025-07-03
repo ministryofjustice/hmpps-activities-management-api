@@ -12,7 +12,6 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.springframework.data.domain.AbstractAggregateRoot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AppointmentAttendeeRemovalReason
@@ -21,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -211,40 +211,40 @@ data class Appointment(
   fun toDetails(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
+    locationMap: Map<Long, LocationDetails>,
   ) = AppointmentDetails(
-    appointmentId,
-    if (appointmentSeries.appointmentSet == null) appointmentSeries.toSummary() else null,
-    appointmentSeries.appointmentSet?.toSummary(),
-    appointmentSeries.appointmentType,
-    sequenceNumber,
-    prisonCode,
-    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    attendees().map { it.toSummary(prisonerMap) },
-    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
-    appointmentTier?.toModelEventTier(),
-    appointmentOrganiser?.toModelEventOrganiser(),
-    customName,
+    id = appointmentId,
+    appointmentSeries = if (appointmentSeries.appointmentSet == null) appointmentSeries.toSummary() else null,
+    appointmentSet = appointmentSeries.appointmentSet?.toSummary(),
+    appointmentType = appointmentSeries.appointmentType,
+    sequenceNumber = sequenceNumber,
+    prisonCode = prisonCode,
+    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    attendees = attendees().map { it.toSummary(prisonerMap) },
+    category = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    tier = appointmentTier?.toModelEventTier(),
+    organiser = appointmentOrganiser?.toModelEventOrganiser(),
+    customName = customName,
     if (inCell) {
       null
     } else {
-      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, dpsLocationId, prisonCode)
     },
-    inCell,
-    startDate,
-    startTime,
-    endTime,
-    isExpired(),
-    extraInformation,
-    appointmentSeries.createdTime,
-    appointmentSeries.createdBy,
-    isEdited(),
-    updatedTime,
-    updatedBy,
-    isCancelled(),
-    isDeleted,
-    cancelledTime,
-    cancelledBy,
+    inCell = inCell,
+    startDate = startDate,
+    startTime = startTime,
+    endTime = endTime,
+    isExpired = isExpired(),
+    extraInformation = extraInformation,
+    createdTime = appointmentSeries.createdTime,
+    createdBy = appointmentSeries.createdBy,
+    isEdited = isEdited(),
+    updatedTime = updatedTime,
+    updatedBy = updatedBy,
+    isCancelled = isCancelled(),
+    isDeleted = isDeleted,
+    cancelledTime = cancelledTime,
+    cancelledBy = cancelledBy,
   )
 
   /**
@@ -267,7 +267,7 @@ fun List<Appointment>.toSummary() = map { it.toSummary() }
 fun List<Appointment>.toDetails(
   prisonerMap: Map<String, Prisoner>,
   referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
+  locationMap: Map<Long, LocationDetails>,
 ) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
 
 data class AppointmentAttendanceMarkedEvent(

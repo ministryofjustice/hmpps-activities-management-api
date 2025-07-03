@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
@@ -92,26 +91,6 @@ class LocationServiceTest {
     whenever(groupsProperties.getProperty(anyString())).thenReturn(null)
     val locationPrefixDto = locationService.getLocationPrefixFromGroup("LDI", "A_B")
     assertThat(locationPrefixDto.locationPrefix).isEqualTo("LDI-A-B-")
-  }
-
-  @Test
-  fun `getLocationsForAppointments returns locations`() {
-    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
-      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"))))
-
-    val locations = locationService.getLocationsForAppointments("TPR")
-
-    assertThat(locations).containsExactly(appointmentLocation(1, "TPR"))
-  }
-
-  @Test
-  fun `getLocationsForAppointmentsMap returns NOMIS locations mapped by NOMIS locations ids`() {
-    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
-      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"), appointmentLocation(2, "TPR"))))
-
-    val locations = locationService.getLocationsForAppointmentsMap("TPR")
-
-    assertThat(locations).isEqualTo(mapOf(1L to appointmentLocation(1, "TPR"), 2L to appointmentLocation(2, "TPR")))
   }
 
   @Test

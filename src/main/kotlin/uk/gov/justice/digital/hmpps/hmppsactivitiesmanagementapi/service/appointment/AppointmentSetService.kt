@@ -58,7 +58,7 @@ class AppointmentSetService(
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointmentSet.prisonCode)
+    val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointmentSet.prisonCode)
 
     return appointmentSet.toDetails(prisonerMap, referenceCodeMap, locationMap)
   }
@@ -96,11 +96,16 @@ class AppointmentSetService(
   private fun AppointmentSetCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
     ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
-  private fun AppointmentSetCreateRequest.locationDescription(): String = if (inCell) {
-    "In cell"
-  } else {
-    locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let { it.userDescription ?: it.description }
-      ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+  private fun AppointmentSetCreateRequest.locationDescription(): String = when {
+    inCell -> "In cell"
+    dpsLocationId != null -> {
+      locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode!!)[dpsLocationId]?.description
+        ?: throw IllegalArgumentException("Appointment location with DPS Location id '$dpsLocationId' not found in prison '$prisonCode'")
+    }
+    else -> {
+      locationService.getLocationDetailsForAppointmentsMap(prisonCode!!)[internalLocationId]?.description
+        ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
+    }
   }
 
   private fun AppointmentSetCreateRequest.createNumberBookingIdMap() = prisonerSearchApiClient.findByPrisonerNumbers(appointments.map { it.prisonerNumber!! })
@@ -116,7 +121,7 @@ class AppointmentSetService(
   }
 
   private fun AppointmentSetCreateRequest.failIfStartDateIsTooFarInTheFuture() {
-    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+    require(startDate!! <= LocalDate.now().plusDays(maxStartDateOffsetDays)) {
       "Start date cannot be more than $maxStartDateOffsetDays days into the future."
     }
   }

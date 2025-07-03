@@ -4,13 +4,14 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary as AppointmentAttendanceSummaryModel
 
 @Entity
@@ -51,11 +52,13 @@ data class AppointmentAttendanceSummary(
   val notRecordedCount: Long,
 
   val eventTier: String?,
+
+  var dpsLocationId: UUID? = null,
 ) {
   fun toModel(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
+    locationMap: Map<Long, LocationDetails>,
   ) = AppointmentAttendanceSummaryModel(
     id = appointmentId,
     prisonCode = prisonCode,
@@ -63,7 +66,7 @@ data class AppointmentAttendanceSummary(
     internalLocation = if (inCell) {
       null
     } else {
-      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, dpsLocationId, prisonCode)
     },
     startDate = startDate,
     startTime = startTime,
@@ -82,5 +85,5 @@ data class AppointmentAttendanceSummary(
 fun List<AppointmentAttendanceSummary>.toModel(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
+  locationMap: Map<Long, LocationDetails>,
 ) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }

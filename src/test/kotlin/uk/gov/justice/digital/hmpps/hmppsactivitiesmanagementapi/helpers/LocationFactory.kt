@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocationEventsSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.activityInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture.appointmentInstance
 import java.util.UUID
@@ -35,6 +36,19 @@ fun locations(
     locationType = locationType,
     userDescription = userDescription,
   ),
+)
+
+fun appointmentLocationDetails(
+  locationId: Long,
+  dpsLocationId: UUID,
+  agencyId: String,
+  description: String = "Test Appointment Location",
+) = LocationDetails(
+  locationId = locationId,
+  dpsLocationId = dpsLocationId,
+  code = "WW",
+  description = description,
+  agencyId = agencyId,
 )
 
 fun internalLocationEventsSummary(

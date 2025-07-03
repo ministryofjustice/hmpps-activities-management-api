@@ -32,10 +32,6 @@ class LocationService(
     return LocationPrefixDto(locationPrefix)
   }
 
-  @Deprecated("Use Locations Inside Prison API")
-  fun getLocationsForAppointments(agencyId: String): List<Location> = prisonApiClient
-    .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
-
   fun getDpsLocationsForAppointments(agencyId: String): List<LocationDetails> = runBlocking {
     val locations = locationsInsidePrisonAPIClient.getLocationsForUsageType(agencyId, NonResidentialUsageDto.UsageType.APPOINTMENT)
 
@@ -49,10 +45,6 @@ class LocationService(
   fun getLocationMappingsByDpsIds(dpsLocationIds: Set<UUID>) = runBlocking {
     nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
   }
-
-  @Deprecated("NOMIS Locations will be removed in the future")
-  fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> = getLocationsForAppointments(agencyId)
-    .associateBy { it.locationId }
 
   fun getLocationDetailsForAppointmentsMap(agencyId: String): Map<Long, LocationDetails> = getDpsLocationsForAppointments(agencyId)
     .associateBy { it.locationId }

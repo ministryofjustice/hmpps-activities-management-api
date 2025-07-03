@@ -11,13 +11,13 @@ import jakarta.persistence.JoinTable
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
@@ -102,6 +102,7 @@ data class AppointmentSet(
     organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     inCell = inCell,
     startDate = startDate,
     appointments = this.appointmentSeries().flatMap { it.appointments() }.toModel(),
@@ -118,7 +119,7 @@ data class AppointmentSet(
   fun toDetails(
     prisonerMap: Map<String, Prisoner>,
     referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
+    locationMap: Map<Long, LocationDetails>,
   ): AppointmentSetDetails = AppointmentSetDetails(
     appointmentSetId,
     prisonCode,
@@ -128,7 +129,7 @@ data class AppointmentSet(
     if (inCell) {
       null
     } else {
-      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, dpsLocationId, prisonCode)
     },
     inCell,
     startDate,

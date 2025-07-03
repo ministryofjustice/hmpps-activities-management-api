@@ -3,21 +3,22 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerReleasedAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDateTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventOrganiser as EventOrganiserModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.EventTier as EventTierModel
@@ -27,26 +28,27 @@ class AppointmentSetTest {
   fun `entity to model mapping`() {
     val entity = appointmentSetEntity()
     val expectedModel = AppointmentSetModel(
-      entity.appointmentSetId,
-      entity.prisonCode,
-      entity.categoryCode,
-      EventTierModel(
+      id = entity.appointmentSetId,
+      prisonCode = entity.prisonCode,
+      categoryCode = entity.categoryCode,
+      tier = EventTierModel(
         entity.appointmentTier!!.eventTierId,
-        entity.appointmentTier!!.code,
-        entity.appointmentTier!!.description,
+        entity.appointmentTier.code,
+        entity.appointmentTier.description,
       ),
-      EventOrganiserModel(
+      organiser = EventOrganiserModel(
         entity.appointmentOrganiser!!.eventOrganiserId,
         entity.appointmentOrganiser!!.code,
         entity.appointmentOrganiser!!.description,
       ),
-      entity.customName,
-      entity.internalLocationId,
-      entity.inCell,
-      entity.startDate,
-      entity.appointments().toModel(),
-      entity.createdTime,
-      entity.createdBy,
+      customName = entity.customName,
+      internalLocationId = entity.internalLocationId,
+      dpsLocationId = entity.dpsLocationId,
+      inCell = entity.inCell,
+      startDate = entity.startDate,
+      appointments = entity.appointments().toModel(),
+      createdTime = entity.createdTime,
+      createdBy = entity.createdBy,
     )
     assertThat(entity.toModel()).isEqualTo(expectedModel)
   }
@@ -97,7 +99,7 @@ class AppointmentSetTest {
   fun `entity to details mapping`() {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
 
     assertThat(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)).isEqualTo(
@@ -114,7 +116,7 @@ class AppointmentSetTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
 
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
@@ -131,7 +133,7 @@ class AppointmentSetTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
 
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
@@ -143,7 +145,7 @@ class AppointmentSetTest {
   fun `entity to details mapping reference code not found`() {
     val entity = appointmentSetEntity()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(category.code).isEqualTo(entity.categoryCode)
@@ -155,13 +157,13 @@ class AppointmentSetTest {
   fun `entity to details mapping location not found`() {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = emptyMap<Long, Location>()
+    val locationMap = emptyMap<Long, LocationDetails>()
     val prisonerMap = getPrisonerMap()
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
-      assertThat(internalLocation).isNotNull
       assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
-      assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
-      assertThat(internalLocation!!.description).isEqualTo("No information available")
+      assertThat(internalLocation.dpsLocationId).isEqualTo(entity.dpsLocationId)
+      assertThat(internalLocation.prisonCode).isEqualTo("TPR")
+      assertThat(internalLocation.description).isEqualTo("No information available")
     }
   }
 
@@ -169,8 +171,9 @@ class AppointmentSetTest {
   fun `entity to details mapping in cell nullifies internal location`() {
     val entity = appointmentSetEntity(inCell = true)
     entity.internalLocationId = 123
+    entity.dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
     with(entity.toDetails(prisonerMap, referenceCodeMap, locationMap)) {
       assertThat(internalLocation).isNull()
@@ -182,7 +185,7 @@ class AppointmentSetTest {
   fun `entity to details mapping removes appointments with no attendees`() {
     val entity = appointmentSetEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     val prisonerMap = getPrisonerMap()
 
     entity.appointments().first().apply { this.removeAttendee(this.attendees().first().prisonerNumber, LocalDateTime.now(), prisonerReleasedAppointmentAttendeeRemovalReason(), "OFFENDER_RELEASED_EVENT") }

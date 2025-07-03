@@ -22,7 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
@@ -56,6 +56,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentSearchServiceTest {
@@ -131,13 +132,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
     verify(telemetryClient).trackEvent(
@@ -175,13 +176,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
@@ -222,13 +223,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     verify(appointmentSearchSpecification).startTimeBetween(LocalTime.of(13, 0), LocalTime.of(17, 58))
     verifyNoMoreInteractions(appointmentSearchSpecification)
@@ -266,13 +267,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).startDateEquals(request.endDate!!)
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
@@ -286,7 +287,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
-      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate.toString())
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -313,8 +314,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
@@ -335,7 +336,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
-      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate.toString())
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -366,8 +367,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
@@ -390,7 +391,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[USER_PROPERTY_KEY]).isEqualTo(principal.name)
       assertThat(value[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
       assertThat(value[START_DATE_PROPERTY_KEY]).isEqualTo(request.startDate.toString())
-      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate?.toString() ?: "")
+      assertThat(value[END_DATE_PROPERTY_KEY]).isEqualTo(request.endDate.toString())
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo(request.timeSlots.toString())
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
@@ -413,8 +414,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
@@ -456,8 +457,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
@@ -499,13 +500,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
       .thenReturn(emptyMap())
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).inCellEquals(request.inCell!!)
     verifyNoMoreInteractions(appointmentSearchSpecification)
   }
@@ -519,13 +520,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).prisonerNumbersIn(request.prisonerNumbers!!)
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
@@ -543,7 +544,7 @@ class AppointmentSearchServiceTest {
       assertThat(value[TIME_SLOT_PROPERTY_KEY]).isEqualTo("[]")
       assertThat(value[CATEGORY_CODE_PROPERTY_KEY]).isEqualTo("")
       assertThat(value[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("")
-      assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo(request.prisonerNumbers!!.first())
+      assertThat(value[PRISONER_NUMBER_PROPERTY_KEY]).isEqualTo(request.prisonerNumbers.first())
       assertThat(value[CREATED_BY_PROPERTY_KEY]).isEqualTo("")
     }
 
@@ -562,13 +563,13 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     service.searchAppointments("TPR", request, principal)
 
     verify(appointmentSearchSpecification).prisonCodeEquals("TPR")
-    verify(appointmentSearchSpecification).startDateEquals(request.startDate!!)
+    verify(appointmentSearchSpecification).startDateEquals(request.startDate)
     verify(appointmentSearchSpecification).createdByEquals(request.createdBy!!)
     verifyNoMoreInteractions(appointmentSearchSpecification)
 
@@ -610,8 +611,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })).thenReturn(results.flatMap { it.attendees })
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf("TEST" to appointmentCategoryReferenceCode()))
-    whenever(locationService.getLocationsForAppointmentsMap(prisonCode))
-      .thenReturn(mapOf(123L to appointmentLocation(123L, prisonCode)))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
+      .thenReturn(mapOf(123L to appointmentLocationDetails(123L, UUID.fromString("44444444-1111-2222-3333-444444444444"), prisonCode)))
 
     val searchResults = service.searchAppointments(prisonCode, request, principal)
     searchResults.map { it.appointmentId }.isEqualTo(listOf(individualAppointmentOneAttendee, groupAppointmentOneAttendee, groupAppointmentNoAttendee).map { it.appointmentId })
@@ -628,8 +629,8 @@ class AppointmentSearchServiceTest {
     whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(result.appointmentId))).thenReturn(result.attendees)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(result.prisonCode))
-      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocation(result.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(result.prisonCode))
+      .thenReturn(mapOf(result.internalLocationId!! to appointmentLocationDetails(result.internalLocationId!!, result.dpsLocationId!!, "TPR")))
 
     assertThatThrownBy { service.searchAppointments("TPR", request, principal) }
       .isInstanceOf(CaseloadAccessException::class.java)

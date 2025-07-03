@@ -59,7 +59,7 @@ class AppointmentSeriesService(
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
+    val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)
 
     return appointmentSeries.toDetails(referenceCodeMap, locationMap)
   }
@@ -136,9 +136,7 @@ class AppointmentSeriesService(
         ?: throw IllegalArgumentException("Appointment location with DPS Location id '$dpsLocationId' not found in prison '$prisonCode'")
     }
     else -> {
-      locationService.getLocationsForAppointmentsMap(prisonCode!!)[internalLocationId]?.let {
-        it.userDescription ?: it.description
-      }
+      locationService.getLocationDetailsForAppointmentsMap(prisonCode!!)[internalLocationId]?.description
         ?: throw IllegalArgumentException("Appointment location with id '$internalLocationId' not found in prison '$prisonCode'")
     }
   }
