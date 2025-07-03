@@ -29,7 +29,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.Telem
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @Service
 class AttendancesService(
@@ -121,6 +123,28 @@ class AttendancesService(
         },
       )
     }
+  }
+
+  @Transactional(readOnly = true)
+  fun getPrisonerAttendance(
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    prisonCode: String? = null,
+  ): List<ModelAttendance> {
+    if (endDate.isBefore(startDate) || ChronoUnit.WEEKS.between(startDate, endDate) > 4) {
+      throw IllegalArgumentException("End date cannot be before, or more than 4 weeks after the start date.")
+    }
+
+    val attendance =
+      attendanceRepository.getPrisonerAttendanceBetweenDates(
+        prisonerNumber = prisonerNumber,
+        startDate = startDate,
+        endDate = endDate,
+        prisonCode = prisonCode,
+      )
+
+    return attendance.map { transform(it, caseNotesApiClient = caseNotesApiClient) }
   }
 
   private fun AttendanceUpdateRequest.mayBeCaseNote(attendance: Attendance): CaseNote? = caseNote?.let {
