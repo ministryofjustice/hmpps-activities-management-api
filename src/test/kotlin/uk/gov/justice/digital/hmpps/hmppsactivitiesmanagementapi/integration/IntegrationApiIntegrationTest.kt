@@ -157,7 +157,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonerNumber = prisonerNumber,
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
-          endDate = endDate)
+          endDate = endDate,
+        )
 
       assertThat(scheduledInstances).hasSize(20)
     }
@@ -174,7 +175,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
           endDate = endDate,
-          cancelled = false)
+          cancelled = false,
+        )
 
       assertThat(scheduledInstances).hasSize(18)
     }
@@ -191,7 +193,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
           endDate = endDate,
-          cancelled = true)
+          cancelled = true,
+        )
 
       assertThat(scheduledInstances).hasSize(2)
     }
@@ -208,7 +211,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
           endDate = endDate,
-          timeSlot = TimeSlot.AM)
+          timeSlot = TimeSlot.AM,
+        )
 
       assertThat(scheduledInstances).hasSize(10)
     }
@@ -224,7 +228,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonerNumber = prisonerNumber,
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
-          endDate = endDate)
+          endDate = endDate,
+        )
 
       assertThat(scheduledInstances).hasSize(16)
     }
@@ -240,7 +245,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonerNumber = prisonerNumber,
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
-          endDate = endDate)
+          endDate = endDate,
+        )
 
       assertThat(scheduledInstances).hasSize(1)
     }
@@ -257,7 +263,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           prisonCode = MOORLAND_PRISON_CODE,
           startDate = startDate,
           endDate = endDate,
-          timeSlot = TimeSlot.PM)
+          timeSlot = TimeSlot.PM,
+        )
 
       assertThat(scheduledInstances).isEmpty()
     }
