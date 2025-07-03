@@ -147,7 +147,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     val prisonerNumber = "A11111A"
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns all 20 rows within the time slot`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
@@ -164,7 +164,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns 18 rows within the time slot ignoring cancelled instances`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
@@ -182,7 +182,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns 2 rows within the time slot for only cancelled instances`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
@@ -200,7 +200,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns 10 rows with the time slot filter`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
@@ -218,7 +218,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     @Test
-    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `date range precludes 4 rows from the sample of 20`() {
       val startDate = LocalDate.of(2022, 10, 2)
       val endDate = LocalDate.of(2022, 11, 4)

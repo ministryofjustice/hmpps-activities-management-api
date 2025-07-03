@@ -31,18 +31,21 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
 
   @Query(
     """
-    SELECT si FROM ScheduledInstance si 
+    SELECT si FROM ScheduledInstance si
     WHERE EXISTS (
       SELECT 1 FROM si.activitySchedule s
-      WHERE s.activity.prisonCode = :prisonCode 
+      WHERE s.activity.prisonCode = :prisonCode
       AND si.sessionDate >= :startDate
       AND si.sessionDate <= :endDate
       AND (:timeSlot is null or si.timeSlot = :timeSlot)
-      AND EXISTS (
-      SELECT 1 FROM Attendance a WHERE a MEMBER OF si.attendances AND a.prisonerNumber = :prisonerNumber
+    )
+    AND (
+      EXISTS (
+        SELECT 1 FROM si.attendances a WHERE a.prisonerNumber = :prisonerNumber
       )
-      AND EXISTS (
-        SELECT 1 FROM AdvanceAttendance aa WHERE aa MEMBER OF si.advanceAttendances AND aa.prisonerNumber = :prisonerNumber
+      OR
+      EXISTS (
+        SELECT 1 FROM si.advanceAttendances aa WHERE aa.prisonerNumber = :prisonerNumber
       )
     )
     AND (:cancelled is null or si.cancelled = :cancelled)
