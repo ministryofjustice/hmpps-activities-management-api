@@ -112,15 +112,12 @@ class ScheduledInstanceService(
       val matchingAttendances = scheduledInstance.attendances.filter { attendance -> attendance.prisonerNumber == prisonerNumber }
       val matchingAdvancedAttendances = scheduledInstance.advanceAttendances.filter { advanceAttendance -> advanceAttendance.prisonerNumber == prisonerNumber }
 
-      if (matchingAttendances.isNotEmpty()) {
+      if (matchingAttendances.isNotEmpty() || matchingAdvancedAttendances.isNotEmpty()) {
         filteredScheduledInstances.add(
-          scheduledInstance.copy(attendances = matchingAttendances),
-        )
-      }
-
-      if (matchingAdvancedAttendances.isNotEmpty()) {
-        filteredScheduledInstances.add(
-          scheduledInstance.copy(advanceAttendances = matchingAdvancedAttendances),
+          scheduledInstance.copy(
+            attendances = matchingAttendances,
+            advanceAttendances = matchingAdvancedAttendances
+          )
         )
       }
     }
