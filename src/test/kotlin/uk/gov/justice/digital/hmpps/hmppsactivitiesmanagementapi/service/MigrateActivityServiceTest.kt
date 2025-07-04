@@ -256,6 +256,18 @@ class MigrateActivityServiceTest {
           assertThat(rate).isEqualTo(110)
         }
 
+        assertThat(activityPayHistory()).hasSize(1)
+        with(activityPayHistory().first()) {
+          assertThat(incentiveNomisCode).isEqualTo("BAS")
+          assertThat(incentiveLevel).isEqualTo("Basic")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(110)
+          assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
+          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+        }
+
         // Check the schedule attributes
         assertThat(schedules()).hasSize(1)
         with(schedules().first()) {
@@ -316,6 +328,7 @@ class MigrateActivityServiceTest {
       with(activityCaptor.firstValue[0]) {
         assertThat(isPaid()).isTrue
         assertThat(activityPay()).hasSize(3)
+        assertThat(activityPayHistory()).hasSize(3)
 
         with(activityPay()[0]) {
           assertThat(incentiveNomisCode).isEqualTo("BAS")
@@ -342,6 +355,39 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandAlias).isEqualTo("1")
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(130)
+        }
+
+        with(activityPayHistory()[0]) {
+          assertThat(incentiveNomisCode).isEqualTo("BAS")
+          assertThat(incentiveLevel).isEqualTo("Basic")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(110)
+          assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
+          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+        }
+
+        with(activityPayHistory()[1]) {
+          assertThat(incentiveNomisCode).isEqualTo("STD")
+          assertThat(incentiveLevel).isEqualTo("Standard")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(120)
+          assertThat(changedDetails).isEqualTo("New pay rate added: £1.20")
+          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+        }
+
+        with(activityPayHistory()[2]) {
+          assertThat(incentiveNomisCode).isEqualTo("ENH")
+          assertThat(incentiveLevel).isEqualTo("Enhanced")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(130)
+          assertThat(changedDetails).isEqualTo("New pay rate added: £1.30")
+          assertThat(changedBy).isEqualTo(MIGRATION_USER)
         }
 
         assertThat(schedules()).hasSize(1)
@@ -408,6 +454,7 @@ class MigrateActivityServiceTest {
         assertThat(activityCategory.code).isEqualTo("SAA_EDUCATION")
         assertThat(isPaid()).isTrue
         assertThat(activityPay()).hasSize(3)
+        assertThat(activityPayHistory()).hasSize(3)
         assertThat(schedules()).hasSize(1)
 
         with(schedules().first()) {
@@ -455,6 +502,7 @@ class MigrateActivityServiceTest {
         assertThat(inCell).isTrue
         assertThat(isPaid()).isTrue
         assertThat(activityPay()).hasSize(1)
+        assertThat(activityPayHistory()).hasSize(1)
         assertThat(schedules()).hasSize(1)
         with(schedules().first()) {
           assertThat(slots()).hasSize(1)
@@ -730,6 +778,7 @@ class MigrateActivityServiceTest {
       with(activityCaptor.firstValue[0]) {
         assertThat(isPaid()).isFalse
         assertThat(activityPay()).isNullOrEmpty()
+        assertThat(activityPayHistory()).isNullOrEmpty()
       }
     }
 
@@ -838,6 +887,18 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandAlias).isEqualTo("1")
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(110)
+        }
+
+        assertThat(activityPayHistory()).hasSize(1)
+        with(activityPayHistory().first()) {
+          assertThat(incentiveNomisCode).isEqualTo("BAS")
+          assertThat(incentiveLevel).isEqualTo("Basic")
+          assertThat(payBand.nomisPayBand).isEqualTo(1)
+          assertThat(payBand.payBandAlias).isEqualTo("1")
+          assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
+          assertThat(rate).isEqualTo(110)
+          assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
+          assertThat(changedBy).isEqualTo(MIGRATION_USER)
         }
 
         // Check the schedule attributes

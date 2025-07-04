@@ -25,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
 import java.time.LocalDate
 import java.time.LocalTime
@@ -182,30 +181,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
       }
 
     verify(migrateActivityService).migrateAllocation(allocationRequest)
-  }
-
-  @Test
-  fun `200 response while creating pay history for activities`() {
-    val expectedResponse = PayHistoryMigrateResponse(
-      25L,
-      25L,
-      "Activities pay rate history migration has been completed successfully for all records",
-    )
-    whenever(migrateActivityService.createActivityPayHistory()).thenReturn(expectedResponse)
-
-    val response = mockMvc.post("/migrate/pay-history") {
-      principal = user
-      accept = MediaType.APPLICATION_JSON
-      contentType = MediaType.APPLICATION_JSON
-    }
-      .andDo { print() }
-      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
-      .andExpect { status { isOk() } }
-      .andReturn().response
-
-    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
-
-    verify(migrateActivityService).createActivityPayHistory()
   }
 
   @Nested
@@ -378,34 +353,6 @@ class MigrateActivityControllerTest : ControllerTestBase<MigrateActivityControll
         mockMvcWithSecurity.post("/migrate/MDI/move-activity-start-dates?activityStartDate=$tomorrow") {
           contentType = MediaType.APPLICATION_JSON
           content = mapper.writeValueAsBytes(activityRequest)
-        }.andExpect { status { isForbidden() } }
-      }
-    }
-
-    @Nested
-    @DisplayName("Create activity pay history")
-    inner class CreateActivityPayHistoryTests {
-      @Test
-      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
-      fun `Create activity pay history (ROLE_NOMIS_ACTIVITIES) - 200`() {
-        mockMvcWithSecurity.post("/migrate/pay-history") {
-          contentType = MediaType.APPLICATION_JSON
-        }.andExpect { status { isOk() } }
-      }
-
-      @Test
-      @WithMockUser(roles = ["ACTIVITY_ADMIN"])
-      fun `Create activity pay history (ROLE_ACTIVITY_ADMIN) - 200`() {
-        mockMvcWithSecurity.post("/migrate/pay-history") {
-          contentType = MediaType.APPLICATION_JSON
-        }.andExpect { status { isOk() } }
-      }
-
-      @Test
-      @WithMockUser(roles = ["ACTIVITY_HUB"])
-      fun `Create activity pay history (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.post("/migrate/pay-history") {
-          contentType = MediaType.APPLICATION_JSON
         }.andExpect { status { isForbidden() } }
       }
     }

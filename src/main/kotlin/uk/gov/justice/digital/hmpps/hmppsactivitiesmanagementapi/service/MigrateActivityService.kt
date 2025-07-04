@@ -136,6 +136,7 @@ class MigrateActivityService(
 
             if (iep != null) {
               activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null, null)
+              activity.addPayHistory(it.incentiveLevel, iep.levelName, payBand, it.rate, null, "New pay rate added: ${toMoney(it.rate)}", MIGRATION_USER)
             }
           }
         }
