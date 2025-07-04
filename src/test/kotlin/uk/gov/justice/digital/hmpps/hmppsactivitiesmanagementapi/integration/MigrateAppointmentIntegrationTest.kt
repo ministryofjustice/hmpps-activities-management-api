@@ -19,11 +19,12 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentMigrateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCountSummary
@@ -38,6 +39,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -62,24 +64,33 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("B2345CD")
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("C3456DE")
 
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-      ),
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "RSI")
+    val dpsLocation2 = dpsLocation(UUID.fromString("44444444-4444-4444-4444-444444444444"), "MDI")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "RSI",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation1),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "RSI",
-      listOf(
-        appointmentLocation(123, "RSI", userDescription = "Location 123"),
-      ),
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "MDI",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation2),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "MDI",
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
-        appointmentLocation(456, "MDI", userDescription = "Location 456"),
+        NomisDpsLocationMapping(dpsLocation1.id, 123),
       ),
+      setOf(dpsLocation1.id),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation2.id, 456),
+      ),
+      setOf(dpsLocation2.id),
     )
   }
 
@@ -114,7 +125,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -135,7 +146,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -156,7 +167,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -178,7 +189,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -197,7 +208,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -219,7 +230,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -242,7 +253,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -266,7 +277,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       listOf(request.prisonerNumber!!),
       listOf(
         PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber!!,
+          prisonerNumber = request.prisonerNumber,
           bookingId = 1,
           prisonId = request.prisonCode!!,
         ),
@@ -348,18 +359,18 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     await untilAsserted {
       // Appointments starting earlier than supplied date should not have been deleted
       setOf(10L, 11L, 12L, 13L).forEach {
-        webTestClient.getAppointmentDetailsById(it).isDeleted isBool false
+        webTestClient.getAppointmentDetailsById(it)!!.isDeleted isBool false
       }
     }
 
     // Not migrated
-    webTestClient.getAppointmentDetailsById(14).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(14)!!.isDeleted isBool false
     // On start date
-    webTestClient.getAppointmentDetailsById(15).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(15)!!.isDeleted isBool true
     // Different prison
-    webTestClient.getAppointmentDetailsById(16).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(16)!!.isDeleted isBool false
     // On start date
-    webTestClient.getAppointmentDetailsById(17).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool true
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -388,18 +399,18 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     await untilAsserted {
       // Appointments starting earlier than supplied date should not have been deleted
       setOf(10L, 11L, 12L, 13L).forEach {
-        webTestClient.getAppointmentDetailsById(it).isDeleted isBool false
+        webTestClient.getAppointmentDetailsById(it)!!.isDeleted isBool false
       }
     }
 
     // Not migrated
-    webTestClient.getAppointmentDetailsById(14).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(14)!!.isDeleted isBool false
     // On start date with matching category code
-    webTestClient.getAppointmentDetailsById(15).isDeleted isBool true
+    webTestClient.getAppointmentDetailsById(15)!!.isDeleted isBool true
     // Different prison
-    webTestClient.getAppointmentDetailsById(16).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(16)!!.isDeleted isBool false
     // On start date with different category code
-    webTestClient.getAppointmentDetailsById(17).isDeleted isBool false
+    webTestClient.getAppointmentDetailsById(17)!!.isDeleted isBool false
 
     verify(eventsPublisher).send(eventCaptor.capture())
 
@@ -427,7 +438,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     await untilAsserted {
       // Appointments starting earlier than supplied date should not have been deleted
       setOf(10L, 11L, 12L, 13L).forEach {
-        webTestClient.getAppointmentDetailsById(it).isDeleted isEqualTo true
+        webTestClient.getAppointmentDetailsById(it)!!.isDeleted isEqualTo true
       }
     }
 
@@ -459,7 +470,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     assertThat(summary).hasSize(5)
 
-    with(summary) {
+    with(summary!!) {
       this.single { it.appointmentCategorySummary.code == "GOVE" && it.count == 1L }
       this.single { it.appointmentCategorySummary.code == "CHAP" && it.count == 0L }
       this.single { it.appointmentCategorySummary.code == "ACTI" && it.count == 8L }
@@ -478,7 +489,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     assertThat(summary).hasSize(1)
 
-    with(summary) {
+    with(summary!!) {
       this.single { it.appointmentCategorySummary.code == "AC3" && it.appointmentCategorySummary.description == "Appointment Category 3" && it.count == 1L }
     }
   }

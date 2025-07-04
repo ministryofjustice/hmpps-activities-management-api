@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
@@ -13,13 +12,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSeriesSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -362,7 +362,7 @@ class AppointmentSeriesTest {
   fun `entity to details mapping`() {
     val entity = appointmentSeriesEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     assertThat(entity.toDetails(referenceCodeMap, locationMap)).isEqualTo(
       appointmentSeriesDetails(
         customName = "Appointment description",
@@ -377,7 +377,7 @@ class AppointmentSeriesTest {
   fun `entity to details mapping reference code not found`() {
     val entity = appointmentSeriesEntity()
     val referenceCodeMap = emptyMap<String, ReferenceCode>()
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(category.code).isEqualTo(entity.categoryCode)
       assertThat(category.description).isEqualTo(entity.categoryCode)
@@ -388,12 +388,12 @@ class AppointmentSeriesTest {
   fun `entity to details mapping location not found`() {
     val entity = appointmentSeriesEntity()
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = emptyMap<Long, Location>()
-    with(entity.toDetails(referenceCodeMap, locationMap)) {
-      assertThat(internalLocation).isNotNull
-      assertThat(internalLocation!!.id).isEqualTo(entity.internalLocationId)
-      assertThat(internalLocation!!.prisonCode).isEqualTo("TPR")
-      assertThat(internalLocation!!.description).isEqualTo("No information available")
+    val locationMap = emptyMap<Long, LocationDetails>()
+    with(entity.toDetails(referenceCodeMap, locationMap).internalLocation!!) {
+      assertThat(id).isEqualTo(entity.internalLocationId)
+      assertThat(dpsLocationId).isEqualTo(entity.dpsLocationId)
+      assertThat(prisonCode).isEqualTo("TPR")
+      assertThat(description).isEqualTo("No information available")
     }
   }
 
@@ -401,7 +401,7 @@ class AppointmentSeriesTest {
   fun `entity to details mapping in cell nullifies internal location`() {
     val entity = appointmentSeriesEntity(internalLocationId = 123, inCell = true)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(internalLocation).isNull()
       assertThat(inCell).isTrue
@@ -412,7 +412,7 @@ class AppointmentSeriesTest {
   fun `entity to details mapping updated by null`() {
     val entity = appointmentSeriesEntity(updatedBy = null)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(updatedBy).isNull()
     }
@@ -422,7 +422,7 @@ class AppointmentSeriesTest {
   fun `entity to details mapping schedule to repeat`() {
     val entity = appointmentSeriesEntity(updatedBy = null, frequency = AppointmentFrequency.FORTNIGHTLY, numberOfAppointments = 2)
     val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(schedule).isEqualTo(AppointmentSeriesSchedule(AppointmentRepeatPeriodModel.FORTNIGHTLY, 2))
     }
@@ -437,7 +437,7 @@ class AppointmentSeriesTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(appointmentName).isEqualTo("appointment name (test category)")
     }
@@ -452,7 +452,7 @@ class AppointmentSeriesTest {
         "test category",
       ),
     )
-    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR"))
+    val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, "TPR"))
     with(entity.toDetails(referenceCodeMap, locationMap)) {
       assertThat(appointmentName).isEqualTo("test category")
     }

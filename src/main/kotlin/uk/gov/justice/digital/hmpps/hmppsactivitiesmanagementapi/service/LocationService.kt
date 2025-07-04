@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.whereabou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.Location as DpsLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 
 @Service
 class LocationService(
@@ -32,10 +33,6 @@ class LocationService(
     return LocationPrefixDto(locationPrefix)
   }
 
-  @Deprecated("Use Locations Inside Prison API")
-  fun getLocationsForAppointments(agencyId: String): List<Location> = prisonApiClient
-    .getLocationsForTypeUnrestricted(agencyId, "APP").block() ?: emptyList()
-
   fun getDpsLocationsForAppointments(agencyId: String): List<LocationDetails> = runBlocking {
     val locations = locationsInsidePrisonAPIClient.getLocationsForUsageType(agencyId, NonResidentialUsageDto.UsageType.APPOINTMENT)
 
@@ -49,10 +46,6 @@ class LocationService(
   fun getLocationMappingsByDpsIds(dpsLocationIds: Set<UUID>) = runBlocking {
     nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
   }
-
-  @Deprecated("NOMIS Locations will be removed in the future")
-  fun getLocationsForAppointmentsMap(agencyId: String): Map<Long, Location> = getLocationsForAppointments(agencyId)
-    .associateBy { it.locationId }
 
   fun getLocationDetailsForAppointmentsMap(agencyId: String): Map<Long, LocationDetails> = getDpsLocationsForAppointments(agencyId)
     .associateBy { it.locationId }
@@ -84,3 +77,11 @@ fun List<DpsLocation>.toIdSet() = this.map { it.id }.toSet()
 fun DpsLocation.toLocationDetails(locationId: Long) = LocationDetails(this.prisonId, locationId, this.id, this.code, this.localName ?: this.code, this.pathHierarchy)
 
 fun List<LocationDetails>.toMapByNomisId() = this.associateBy { it.locationId }
+
+fun LocationDetails?.toAppointmentLocationSummary(locationId: Long, dpsLocationId: UUID?, prisonCode: String) = if (this == null) {
+  ModelAppointmentLocationSummary(locationId, dpsLocationId, prisonCode, "No information available")
+} else {
+  ModelAppointmentLocationSummary(this.locationId, this.dpsLocationId, this.agencyId, this.description)
+}
+
+fun List<LocationDetails>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.dpsLocationId, it.agencyId) }

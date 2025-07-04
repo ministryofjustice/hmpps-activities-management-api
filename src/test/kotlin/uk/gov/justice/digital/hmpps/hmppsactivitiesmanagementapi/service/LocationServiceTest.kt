@@ -18,8 +18,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.util.*
 import java.util.function.Predicate
@@ -92,26 +93,6 @@ class LocationServiceTest {
     whenever(groupsProperties.getProperty(anyString())).thenReturn(null)
     val locationPrefixDto = locationService.getLocationPrefixFromGroup("LDI", "A_B")
     assertThat(locationPrefixDto.locationPrefix).isEqualTo("LDI-A-B-")
-  }
-
-  @Test
-  fun `getLocationsForAppointments returns locations`() {
-    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
-      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"))))
-
-    val locations = locationService.getLocationsForAppointments("TPR")
-
-    assertThat(locations).containsExactly(appointmentLocation(1, "TPR"))
-  }
-
-  @Test
-  fun `getLocationsForAppointmentsMap returns NOMIS locations mapped by NOMIS locations ids`() {
-    whenever(prisonApiClient.getLocationsForTypeUnrestricted("TPR", "APP"))
-      .thenReturn(Mono.just(listOf(appointmentLocation(1, "TPR"), appointmentLocation(2, "TPR"))))
-
-    val locations = locationService.getLocationsForAppointmentsMap("TPR")
-
-    assertThat(locations).isEqualTo(mapOf(1L to appointmentLocation(1, "TPR"), 2L to appointmentLocation(2, "TPR")))
   }
 
   @Test
@@ -214,6 +195,33 @@ class LocationServiceTest {
     assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
+  }
+
+  @Test
+  fun `location to appointment location summary returns a default description for null locations`() {
+    assertThat((null as LocationDetails?).toAppointmentLocationSummary(1, dpsLocationUuid, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, dpsLocationUuid, "TPR", "No information available"),
+    )
+  }
+
+  @Test
+  fun `location to appointment location summary mapping`() {
+    assertThat(appointmentLocationDetails(1, dpsLocationUuid, "TPR").toAppointmentLocationSummary(1, dpsLocationUuid, "TPR")).isEqualTo(
+      AppointmentLocationSummary(1, dpsLocationUuid, "TPR", "Test Appointment Location"),
+    )
+  }
+
+  @Test
+  fun `toAppointmentLocation returns a summary`() {
+    val location1 = appointmentLocationDetails(1, UUID.randomUUID(), "TPR", "Chapel")
+    val location2 = appointmentLocationDetails(2, UUID.randomUUID(), "MDI", "Kitchen")
+
+    assertThat(listOf(location1, location2).toAppointmentLocation()).isEqualTo(
+      listOf(
+        AppointmentLocationSummary(1, location1.dpsLocationId, "TPR", "Chapel"),
+        AppointmentLocationSummary(2, location2.dpsLocationId, "MDI", "Kitchen"),
+      ),
+    )
   }
 
   private fun locationPrefixPredicate(vararg cells: String): Predicate<Location> = listOf(*cells)

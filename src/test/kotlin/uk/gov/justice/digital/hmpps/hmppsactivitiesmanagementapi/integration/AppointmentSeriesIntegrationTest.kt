@@ -194,7 +194,20 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   @Test
   fun `get single appointment series details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+
+    val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 123),
+      ),
+    )
 
     val appointmentDetails = webTestClient.getAppointmentSeriesDetailsById(1)!!
 
@@ -216,7 +229,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
           description = "Prison staff",
         ),
         "Appointment description",
-        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        AppointmentLocationSummary(123, UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR", "User Description"),
         false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
@@ -259,7 +272,21 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     val request = appointmentSeriesCreateRequest(categoryCode = "AC1", dpsLocationId = null)
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
+    val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), request.prisonCode!!, localName = "Test Appointment Location")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = request.prisonCode,
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, request.internalLocationId!!),
+      ),
+    )
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(

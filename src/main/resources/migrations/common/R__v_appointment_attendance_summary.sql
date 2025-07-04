@@ -15,7 +15,8 @@ SELECT a.appointment_id,
        at.attended_count,
        at.non_attended_count,
        at.not_recorded_count,
-       et.code AS event_tier
+       et.code AS event_tier,
+       CASE WHEN a.in_cell THEN NULL ELSE a.dps_location_id END         AS dps_location_id
 FROM appointment a
 LEFT JOIN event_tier et on et.event_tier_id = a.appointment_tier_id
 LEFT JOIN LATERAL (
