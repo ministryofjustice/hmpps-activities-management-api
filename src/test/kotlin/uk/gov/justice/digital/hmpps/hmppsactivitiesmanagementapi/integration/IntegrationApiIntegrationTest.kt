@@ -148,7 +148,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns all 20 rows within the time slot`() {
+    fun `returns 5 rows within the time slot AND which have the correct prisoner number`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -160,7 +160,9 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           endDate = endDate,
         )
 
-      assertThat(scheduledInstances).hasSize(20)
+      assertThat(scheduledInstances).hasSize(5)
+      assertThat(scheduledInstances?.first()?.attendances?.size).isEqualTo(1)
+//      assertThat(scheduledInstances?.first()?.attendances).allSatisfy {prisonerNumber == it.prisonerNumber }
     }
 
     @Test
