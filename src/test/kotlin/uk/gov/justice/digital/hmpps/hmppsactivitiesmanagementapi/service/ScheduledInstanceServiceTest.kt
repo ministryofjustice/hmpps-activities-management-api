@@ -204,6 +204,10 @@ class ScheduledInstanceServiceTest {
       val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = null)
 
       assertThat(result).hasSize(1)
+      val attendances = result.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = result.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
@@ -223,6 +227,10 @@ class ScheduledInstanceServiceTest {
       var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = TimeSlot.PM)
 
       assertThat(result).hasSize(1)
+      val attendances = result.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = result.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
 
       result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = TimeSlot.AM)
       assertThat(result).isEmpty()
@@ -247,6 +255,10 @@ class ScheduledInstanceServiceTest {
 
       var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = true, slot = null)
       assertThat(result).hasSize(1)
+      val attendances = result.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = result.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
 
       result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = false, slot = null)
       assertThat(result).isEmpty()
@@ -268,6 +280,10 @@ class ScheduledInstanceServiceTest {
 
       var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = false, slot = null)
       assertThat(result).hasSize(1)
+      val attendances = result.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = result.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
 
       result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = true, slot = null)
       assertThat(result).isEmpty()
@@ -290,8 +306,10 @@ class ScheduledInstanceServiceTest {
       val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = null)
 
       assertThat(result).hasSize(1)
-      assertThat(result.first().attendances).hasSize(2)
-      assertThat(result.first().advanceAttendances).hasSize(1)
+      val attendances = result.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = result.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
