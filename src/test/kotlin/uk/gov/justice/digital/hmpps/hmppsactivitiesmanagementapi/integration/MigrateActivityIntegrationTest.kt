@@ -22,8 +22,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isWithinAMinuteOf
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AllocationMigrateRequest
@@ -31,7 +29,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_NOMIS_ACTIVITIES
@@ -162,40 +159,6 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     verifyNoInteractions(eventsPublisher)
-  }
-
-  @Test
-  @Sql("classpath:test_data/seed-activity-pay.sql")
-  fun `migrate activity pay rate history - with data in activity_pay table - success`() {
-    val response = webTestClient.createActivityPayHistory(listOf("ROLE_NOMIS_ACTIVITIES"))
-      .expectStatus().isOk
-      .expectHeader().contentType(MediaType.APPLICATION_JSON)
-      .expectBody(PayHistoryMigrateResponse::class.java)
-      .returnResult().responseBody
-
-    with(response!!) {
-      assertThat(payRateDataSize).isEqualTo(21)
-      assertThat(payHistoryDataSize).isEqualTo(21)
-      assertThat(message).isEqualTo("Activities pay rate history migration has been completed successfully for all records")
-    }
-
-    var activityPayHistoryList = webTestClient.getActivityPayHistory(1L)
-    activityPayHistoryList.forEach { it.changedTime = null }
-    var expectedActivityPayHistory = mapper.read<List<ActivityPayHistory>>("activity/activity-pay-history-1.json")
-    assertThat(activityPayHistoryList).size().isEqualTo(10)
-    assertThat(activityPayHistoryList).isEqualTo(expectedActivityPayHistory)
-
-    activityPayHistoryList = webTestClient.getActivityPayHistory(2L)
-    activityPayHistoryList.forEach { it.changedTime = null }
-    expectedActivityPayHistory = mapper.read<List<ActivityPayHistory>>("activity/activity-pay-history-2.json")
-    assertThat(activityPayHistoryList).size().isEqualTo(8)
-    assertThat(activityPayHistoryList).isEqualTo(expectedActivityPayHistory)
-
-    activityPayHistoryList = webTestClient.getActivityPayHistory(3L)
-    activityPayHistoryList.forEach { it.changedTime = null }
-    expectedActivityPayHistory = mapper.read<List<ActivityPayHistory>>("activity/activity-pay-history-3.json")
-    assertThat(activityPayHistoryList).size().isEqualTo(3)
-    assertThat(activityPayHistoryList).isEqualTo(expectedActivityPayHistory)
   }
 
   @Test
@@ -593,11 +556,6 @@ class MigrateActivityIntegrationTest : ActivitiesIntegrationTestBase() {
   private fun WebTestClient.migrateActivity(request: ActivityMigrateRequest, roles: List<String>) = post()
     .uri("/migrate/activity")
     .bodyValue(request)
-    .headers(setAuthorisation(roles = roles))
-    .exchange()
-
-  private fun WebTestClient.createActivityPayHistory(roles: List<String>) = post()
-    .uri("/migrate/pay-history")
     .headers(setAuthorisation(roles = roles))
     .exchange()
 
