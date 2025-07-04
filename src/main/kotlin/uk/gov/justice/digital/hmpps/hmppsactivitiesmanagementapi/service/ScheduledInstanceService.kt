@@ -116,8 +116,8 @@ class ScheduledInstanceService(
         filteredScheduledInstances.add(
           scheduledInstance.copy(
             attendances = matchingAttendances,
-            advanceAttendances = matchingAdvancedAttendances
-          )
+            advanceAttendances = matchingAdvancedAttendances,
+          ),
         )
       }
     }
