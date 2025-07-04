@@ -162,7 +162,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       assertThat(scheduledInstances).hasSize(5)
       assertThat(scheduledInstances?.first()?.attendances?.size).isEqualTo(1)
-//      assertThat(scheduledInstances?.first()?.attendances).allSatisfy {prisonerNumber == it.prisonerNumber }
+      assertThat(scheduledInstances?.first()?.attendances).allMatch { prisonerNumber == it.prisonerNumber }
     }
 
     @Test
