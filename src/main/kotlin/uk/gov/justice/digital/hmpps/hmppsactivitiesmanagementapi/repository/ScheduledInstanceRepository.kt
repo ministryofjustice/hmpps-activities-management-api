@@ -32,13 +32,11 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
   @Query(
     """
     SELECT si FROM ScheduledInstance si
-    WHERE EXISTS (
-      SELECT 1 FROM si.activitySchedule s
-      WHERE s.activity.prisonCode = :prisonCode
-      AND si.sessionDate >= :startDate
-      AND si.sessionDate <= :endDate
-      AND (:timeSlot is null or si.timeSlot = :timeSlot)
-    )
+    WHERE si.activitySchedule.activity.prisonCode = :prisonCode
+    AND si.sessionDate >= :startDate
+    AND si.sessionDate <= :endDate
+    AND (:cancelled is null or si.cancelled = :cancelled)
+    AND (:timeSlot is null or si.timeSlot = :timeSlot)
     AND (
       EXISTS (
         SELECT 1 FROM si.attendances a WHERE a.prisonerNumber = :prisonerNumber
@@ -48,7 +46,6 @@ interface ScheduledInstanceRepository : JpaRepository<ScheduledInstance, Long> {
         SELECT 1 FROM si.advanceAttendances aa WHERE aa.prisonerNumber = :prisonerNumber
       )
     )
-    AND (:cancelled is null or si.cancelled = :cancelled)
     """,
   )
   fun getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
