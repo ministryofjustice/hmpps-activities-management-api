@@ -21,10 +21,13 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentDetails
@@ -48,6 +51,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -90,6 +94,24 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         appointmentLocation(123, prisonCode, userDescription = "Education 1"),
         appointmentLocation(456, prisonCode, userDescription = "Chapel"),
         appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+      ),
+    )
+
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode)
+    val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode)
+    val dpsLocation3 = dpsLocation(UUID.fromString("33333333-3333-3333-3333-333333333333"), prisonCode)
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = prisonCode,
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation1.id, 123),
+        NomisDpsLocationMapping(dpsLocation2.id, 456),
+        NomisDpsLocationMapping(dpsLocation3.id, 789),
       ),
     )
   }
@@ -188,12 +210,21 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      prisonCode,
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode, localName = "Education 1")
+    val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode, localName = "Chapel")
+    val dpsLocation3 = dpsLocation(UUID.fromString("33333333-3333-3333-3333-333333333333"), prisonCode, localName = "Health Care Centre")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = prisonCode,
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
-        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
-        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
-        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+        NomisDpsLocationMapping(dpsLocation1.id, 123),
+        NomisDpsLocationMapping(dpsLocation2.id, 456),
+        NomisDpsLocationMapping(dpsLocation3.id, 789),
       ),
     )
 
@@ -206,7 +237,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           2,
           prisonCode,
           "custom (Education)",
-          AppointmentLocationSummary(123, prisonCode, "Education 1"),
+          AppointmentLocationSummary(123, dpsLocation1.id, prisonCode, "Education 1"),
           false,
           date,
           LocalTime.of(9, 0),
@@ -232,7 +263,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           9,
           prisonCode,
           "Jehovah's Witness One to One (Chaplaincy)",
-          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          AppointmentLocationSummary(456, dpsLocation2.id, prisonCode, "Chapel"),
           false,
           date,
           LocalTime.of(13, 45),
@@ -252,7 +283,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           10,
           prisonCode,
           "Jehovah's Witness One to One (Chaplaincy)",
-          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          AppointmentLocationSummary(456, dpsLocation2.id, prisonCode, "Chapel"),
           false,
           date,
           LocalTime.of(14, 15),
@@ -270,7 +301,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           11,
           prisonCode,
           "Jehovah's Witness One to One (Chaplaincy)",
-          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          AppointmentLocationSummary(456, dpsLocation2.id, prisonCode, "Chapel"),
           false,
           date,
           LocalTime.of(14, 45),
@@ -288,7 +319,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           12,
           prisonCode,
           "Medical - Doctor",
-          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
           LocalTime.of(9, 0),
@@ -306,7 +337,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           13,
           prisonCode,
           "Medical - Doctor",
-          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
           LocalTime.of(9, 15),
@@ -324,7 +355,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           14,
           prisonCode,
           "Medical - Doctor",
-          AppointmentLocationSummary(789, prisonCode, "Health Care Centre"),
+          AppointmentLocationSummary(789, dpsLocation3.id, prisonCode, "Health Care Centre"),
           false,
           date,
           LocalTime.of(9, 30),
@@ -361,12 +392,21 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      prisonCode,
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode, localName = "Education 1")
+    val dpsLocation2 = dpsLocation(UUID.fromString("44444444-4444-4444-4444-444444444444"), prisonCode, localName = "Chapel")
+    val dpsLocation3 = dpsLocation(UUID.fromString("77777777-7777-7777-7777-777777777777"), prisonCode, localName = "Health Care Centre")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "RSI",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation1, dpsLocation2, dpsLocation3),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
-        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
-        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
-        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
+        NomisDpsLocationMapping(dpsLocation1.id, 123),
+        NomisDpsLocationMapping(dpsLocation2.id, 456),
+        NomisDpsLocationMapping(dpsLocation3.id, 789),
       ),
     )
 
@@ -379,7 +419,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           1,
           prisonCode,
           "Education",
-          AppointmentLocationSummary(123, prisonCode, "Education 1"),
+          AppointmentLocationSummary(123, dpsLocation1.id, prisonCode, "Education 1"),
           false,
           date,
           LocalTime.of(9, 0),
@@ -401,7 +441,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
           4,
           prisonCode,
           "Jehovah's Witness One to One (Chaplaincy)",
-          AppointmentLocationSummary(456, prisonCode, "Chapel"),
+          AppointmentLocationSummary(456, dpsLocation2.id, prisonCode, "Chapel"),
           false,
           date,
           LocalTime.of(13, 45),
@@ -485,7 +525,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.updateAttendances(requests, AttendanceAction.ATTENDED)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.ATTENDED)
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),
@@ -542,7 +582,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.updateAttendances(requests, AttendanceAction.NOT_ATTENDED)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.NOT_ATTENDED)
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),
@@ -599,7 +639,7 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         MultipleAppointmentAttendanceRequest(999, listOf("XX1111X")),
       )
 
-      webTestClient.updateAttendances(requests, AttendanceAction.RESET)!!
+      webTestClient.updateAttendances(requests, AttendanceAction.RESET)
 
       prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
         listOf("A1234BC"),

@@ -4,10 +4,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.Test
 import org.springframework.test.context.jdbc.Sql
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
@@ -30,6 +32,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
@@ -60,12 +63,20 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      RISLEY_PRISON_CODE,
+    val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE)
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = RISLEY_PRISON_CODE,
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
-        appointmentLocation(123, RISLEY_PRISON_CODE, userDescription = "Education 1"),
+        NomisDpsLocationMapping(dpsLocation.id, 123),
       ),
     )
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC", "B2345CD", "C3456DE"),
       listOf(
@@ -101,7 +112,21 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `get single appointment details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+
+    val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 123),
+      ),
+    )
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC"),
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR", category = "H")),
@@ -131,7 +156,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         eventTier().toModelEventTier(),
         eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
-        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        AppointmentLocationSummary(123, dpsLocation.id, "TPR", "User Description"),
         false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
@@ -159,7 +184,21 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `get appointment details from an appointment set`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+
+    val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 123),
+      ),
+    )
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC"),
       listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A1234BC", bookingId = 456, prisonId = "TPR")),
@@ -189,7 +228,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         eventTier().toModelEventTier(),
         eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
-        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        AppointmentLocationSummary(123, dpsLocation.id, "TPR", "User Description"),
         false,
         LocalDate.now().plusDays(1),
         LocalTime.of(9, 0),
@@ -243,11 +282,19 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      RISLEY_PRISON_CODE,
+    val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE, localName = "Education 1")
+    val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), RISLEY_PRISON_CODE, localName = "Canteen A")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = RISLEY_PRISON_CODE,
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation1, dpsLocation2),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
       listOf(
-        appointmentLocation(123, RISLEY_PRISON_CODE, userDescription = "Education 1"),
-        appointmentLocation(456, RISLEY_PRISON_CODE, userDescription = "Canteen A"),
+        NomisDpsLocationMapping(dpsLocation1.id, 123),
+        NomisDpsLocationMapping(dpsLocation2.id, 456),
       ),
     )
 
@@ -261,7 +308,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
-    val appointments = webTestClient.getAppointmentDetailsByIds(listOf(2, 4))
+    val appointments = webTestClient.getAppointmentDetailsByIds(listOf(2, 4))!!
 
     val appointment2 = appointments.first { it.id == 2L }
     val appointment4 = appointments.first { it.id == 4L }
@@ -302,7 +349,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         EventTier(1, "TIER_1", "Tier 1"),
         null,
         null,
-        AppointmentLocationSummary(123, "RSI", "Education 1"),
+        AppointmentLocationSummary(123, dpsLocation1.id, "RSI", "Education 1"),
         false,
         LocalDate.now(),
         LocalTime.MIDNIGHT,
@@ -343,7 +390,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         EventTier(1, "TIER_1", "Tier 1"),
         null,
         null,
-        AppointmentLocationSummary(456, "RSI", "Canteen A"),
+        AppointmentLocationSummary(456, dpsLocation2.id, "RSI", "Canteen A"),
         false,
         LocalDate.now(),
         LocalTime.MIDNIGHT,

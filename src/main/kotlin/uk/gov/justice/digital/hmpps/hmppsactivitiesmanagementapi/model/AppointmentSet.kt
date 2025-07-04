@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -57,6 +58,9 @@ data class AppointmentSet(
     example = "123",
   )
   val internalLocationId: Long?,
+
+  @Schema(description = "The optional DPS location UUID", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
 
   @Schema(
     description =

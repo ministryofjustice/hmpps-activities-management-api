@@ -9,10 +9,11 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentLocationController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocation
+import java.util.UUID
 
 @WebMvcTest(controllers = [AppointmentLocationController::class])
 @ContextConfiguration(classes = [AppointmentLocationController::class])
@@ -25,9 +26,9 @@ class AppointmentLocationControllerTest : ControllerTestBase<AppointmentLocation
 
   @Test
   fun `200 response when get all appointment locations`() {
-    val locations = listOf(appointmentLocation(1, MOORLAND_PRISON_CODE))
+    val locations = listOf(appointmentLocationDetails(1, UUID.fromString("44444444-1111-2222-3333-444444444444"), MOORLAND_PRISON_CODE))
 
-    whenever(locationService.getLocationsForAppointments(MOORLAND_PRISON_CODE)).thenReturn(locations)
+    whenever(locationService.getDpsLocationsForAppointments(MOORLAND_PRISON_CODE)).thenReturn(locations)
 
     val response = mockMvc
       .get("/appointment-locations/{prisonCode}", MOORLAND_PRISON_CODE)

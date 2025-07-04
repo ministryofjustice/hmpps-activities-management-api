@@ -8,18 +8,19 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @Entity
 @Immutable
@@ -78,6 +79,8 @@ data class AppointmentSearch(
   val cancelledTime: LocalDateTime?,
 
   val cancelledBy: String?,
+
+  var dpsLocationId: UUID? = null,
 ) {
   @OneToMany(mappedBy = "appointmentSearch", fetch = FetchType.LAZY)
   var attendees: List<AppointmentAttendeeSearch> = listOf()
@@ -85,7 +88,7 @@ data class AppointmentSearch(
   fun toResult(
     attendees: List<AppointmentAttendeeSearch>,
     referenceCodeMap: Map<String, ReferenceCode>,
-    locationMap: Map<Long, Location>,
+    locationMap: Map<Long, LocationDetails>,
     prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ) = AppointmentSearchResult(
     appointmentSeriesId = appointmentSeriesId,
@@ -99,7 +102,7 @@ data class AppointmentSearch(
     internalLocation = if (inCell) {
       null
     } else {
-      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, prisonCode)
+      locationMap[internalLocationId].toAppointmentLocationSummary(internalLocationId!!, dpsLocationId, prisonCode)
     },
     inCell = inCell,
     startDate = startDate,
@@ -126,7 +129,7 @@ data class AppointmentSearch(
 fun List<AppointmentSearch>.toResults(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
   referenceCodeMap: Map<String, ReferenceCode>,
-  locationMap: Map<Long, Location>,
+  locationMap: Map<Long, LocationDetails>,
   prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
 ) = map {
   it.toResult(

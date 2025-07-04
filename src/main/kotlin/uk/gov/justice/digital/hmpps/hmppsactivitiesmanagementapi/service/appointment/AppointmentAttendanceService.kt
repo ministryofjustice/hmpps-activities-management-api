@@ -78,7 +78,7 @@ class AppointmentAttendanceService(
       QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomNameIgnoreCase(prisonCode, date, categoryCode!!, customName!!)
     }
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
-    val locationMap = locationService.getLocationsForAppointmentsMap(prisonCode)
+    val locationMap = locationService.getLocationDetailsForAppointmentsMap(prisonCode)
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(summaries.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 

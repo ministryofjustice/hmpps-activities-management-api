@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
@@ -77,8 +77,8 @@ class AppointmentServiceTest {
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode))
-      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocation(entity.internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode))
+      .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR")))
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
       mapOf(
         "A1234BC" to PrisonerSearchPrisonerFixture.instance(
@@ -149,8 +149,8 @@ class AppointmentServiceTest {
     whenever(appointmentRepository.findByIds(listOf(entities[0].appointmentId, entities[1].appointmentId, entities[2].appointmentId))).thenReturn(entities)
     whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
       .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
-    whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode))
-      .thenReturn(mapOf(entities[0].internalLocationId!! to appointmentLocation(entities[0].internalLocationId!!, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode))
+      .thenReturn(mapOf(entities[0].internalLocationId!! to appointmentLocationDetails(entities[0].internalLocationId!!, entities[0].dpsLocationId!!, "TPR")))
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entities[0].prisonerNumbers())).thenReturn(
       mapOf(
         "A1234BC" to PrisonerSearchPrisonerFixture.instance(

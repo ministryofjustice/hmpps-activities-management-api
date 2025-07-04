@@ -14,8 +14,11 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet
@@ -34,6 +37,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -73,7 +77,21 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `get appointment set details`() {
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", 123)
+
+    val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR", localName = "Test Appointment Location")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 123),
+      ),
+    )
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A1234BC", "B2345CD", "C3456DE"),
       listOf(
@@ -118,7 +136,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
         "$customName (${category.description})",
         category,
         customName,
-        AppointmentLocationSummary(123, "TPR", "Test Appointment Location User Description"),
+        AppointmentLocationSummary(123, dpsLocation.id, "TPR", "Test Appointment Location"),
         false,
         LocalDate.now().plusDays(1),
         appointments = listOf(

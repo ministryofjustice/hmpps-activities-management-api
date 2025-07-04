@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
@@ -51,14 +52,16 @@ class NomisMappingApiMockServer : MockServer(8094) {
     )
   }
 
-  fun stubMappingsFromDpsIds(mappings: List<NomisDpsLocationMapping>) {
+  fun stubMappingsFromDpsIds(mappings: List<NomisDpsLocationMapping>, dpsLocationIds: Set<UUID>? = null) {
     stubFor(
-      WireMock.post("/api/locations/dps").willReturn(
-        WireMock.aResponse()
-          .withHeader("Content-Type", "application/json")
-          .withBody(mapper.writeValueAsString(mappings))
-          .withStatus(200),
-      ),
+      WireMock.post("/api/locations/dps")
+        .let { if (dpsLocationIds == null) it else it.withRequestBody(equalToJson(mapper.writeValueAsString(dpsLocationIds))) }
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withBody(mapper.writeValueAsString(mappings))
+            .withStatus(200),
+        ),
     )
   }
 

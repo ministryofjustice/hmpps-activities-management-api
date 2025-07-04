@@ -21,7 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCreatedInErrorReason
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
@@ -52,6 +52,7 @@ import java.security.Principal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
+import java.util.UUID
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceAsyncTest {
@@ -120,8 +121,8 @@ class AppointmentServiceAsyncTest {
   @BeforeEach
   fun setUp() {
     addCaseloadIdToRequestHeader("TPR")
-    whenever(locationService.getLocationsForAppointmentsMap("TPR"))
-      .thenReturn(mapOf(456L to appointmentLocation(456, "TPR")))
+    whenever(locationService.getLocationDetailsForAppointmentsMap("TPR"))
+      .thenReturn(mapOf(456L to appointmentLocationDetails(456, UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR")))
     whenever(principal.name).thenReturn("TEST.USER")
     whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
       Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
