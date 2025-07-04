@@ -122,7 +122,7 @@ insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, sess
 values (2, 1, '2022-10-02', '10:01:00', '12:00:00', false, null, null, 'AM');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, time_slot)
-values (3, 1, '2022-10-03', '09:00:00', '12:00:00', false, null, null, 'AM');
+values (3, 1, '2022-10-03', '09:00:00', '12:00:00', true, current_timestamp, 'ABC123', 'PM');
 
 insert into scheduled_instance(scheduled_instance_id, activity_schedule_id, session_date, start_time, end_time, cancelled, cancelled_time, cancelled_by, time_slot)
 values (4, 1, '2022-10-04', '09:00:00', '12:00:00', false, null, null, 'AM');
@@ -268,3 +268,20 @@ values (10, 5, 'A22222A', 3, null, null, null, 'WAITING', null, null, null);
 insert into attendance(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, comment, recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment)
 values (11, 1, 'C11111A', 9, null, null, null, 'COMPLETED', null, null, null, true);
 
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (1, 1, 'A11111A', true, null, null);
+
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (2, 1, 'A22222A', true, null, null);
+
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (3, 2, 'A11111A', true, null, null);
+
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (4, 2, 'A22222A', true, null, null);
+
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (5, 6, 'A11111A', true, null, null);
+
+insert into advance_attendance(advance_attendance_id, scheduled_instance_id, prisoner_number, issue_payment, recorded_time, recorded_by)
+values (6, 6, 'A22222A', true, null, null);

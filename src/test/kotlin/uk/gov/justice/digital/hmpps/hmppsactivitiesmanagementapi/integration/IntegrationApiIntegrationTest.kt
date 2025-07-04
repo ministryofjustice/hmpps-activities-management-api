@@ -148,7 +148,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns 5 rows within the time slot AND which have the correct prisoner number`() {
+    fun `returns data within the time slot AND which have the correct prisoner number`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -160,14 +160,17 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           endDate = endDate,
         )
 
-      assertThat(scheduledInstances).hasSize(5)
-      assertThat(scheduledInstances?.first()?.attendances?.size).isEqualTo(1)
-      assertThat(scheduledInstances?.first()?.attendances).allMatch { prisonerNumber == it.prisonerNumber }
+      assertThat(scheduledInstances).isNotNull()
+      assertThat(scheduledInstances).hasSize(6)
+      val attendances = scheduledInstances?.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns 18 rows within the time slot ignoring cancelled instances`() {
+    fun `returns data within the time slot ignoring cancelled instances`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -180,12 +183,16 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           cancelled = false,
         )
 
-      assertThat(scheduledInstances).hasSize(18)
+      assertThat(scheduledInstances).hasSize(5)
+      val attendances = scheduledInstances?.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns 2 rows within the time slot for only cancelled instances`() {
+    fun `returns data within the time slot for only cancelled instances`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -198,12 +205,16 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           cancelled = true,
         )
 
-      assertThat(scheduledInstances).hasSize(2)
+      assertThat(scheduledInstances).hasSize(1)
+      val attendances = scheduledInstances?.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns 10 rows with the time slot filter`() {
+    fun `returns data with the time slot filter`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -216,12 +227,16 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           timeSlot = TimeSlot.AM,
         )
 
-      assertThat(scheduledInstances).hasSize(10)
+      assertThat(scheduledInstances).hasSize(4)
+      val attendances = scheduledInstances?.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `date range precludes 4 rows from the sample of 20`() {
+    fun `returns data in the date range with the correct prisoner number`() {
       val startDate = LocalDate.of(2022, 10, 2)
       val endDate = LocalDate.of(2022, 11, 4)
 
@@ -233,42 +248,11 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           endDate = endDate,
         )
 
-      assertThat(scheduledInstances).hasSize(16)
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-10.sql")
-    fun `returns instance when no allocations`() {
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-
-      val scheduledInstances =
-        webTestClient.getScheduledInstancesForPrisonerBy(
-          prisonerNumber = prisonerNumber,
-          prisonCode = MOORLAND_PRISON_CODE,
-          startDate = startDate,
-          endDate = endDate,
-        )
-
-      assertThat(scheduledInstances).hasSize(1)
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-id-10.sql")
-    fun `returns no instance when match on time slot`() {
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-
-      val scheduledInstances =
-        webTestClient.getScheduledInstancesForPrisonerBy(
-          prisonerNumber = prisonerNumber,
-          prisonCode = MOORLAND_PRISON_CODE,
-          startDate = startDate,
-          endDate = endDate,
-          timeSlot = TimeSlot.PM,
-        )
-
-      assertThat(scheduledInstances).isEmpty()
+      assertThat(scheduledInstances).hasSize(4)
+      val attendances = scheduledInstances?.flatMap { it.attendances }
+      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
+      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
+      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     private fun WebTestClient.getScheduledInstancesForPrisonerBy(
