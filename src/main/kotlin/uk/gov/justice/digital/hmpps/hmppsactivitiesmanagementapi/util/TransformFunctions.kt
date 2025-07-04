@@ -541,3 +541,5 @@ fun EntityWaitingList.toModel(earliestReleaseDate: EarliestReleaseDate, nonAssoc
   earliestReleaseDate = earliestReleaseDate,
   nonAssociations = nonAssociations,
 )
+
+fun toMoney(amount: Int?): String = "£%.2f".format(amount?.toFloat()?.div(100))
