@@ -43,6 +43,6 @@ data class ActivityPayHistoryCreateRequest(
 
   @field:NotEmpty(message = "Changed by must be supplied")
   @field:Size(max = 100, message = "Changed by should not exceed {max} characters")
-  @Schema(description = "The person who changed this pay rate", example = "ABC123 - A. Smith")
+  @Schema(description = "The person who changed this pay rate", example = "joebloggs")
   val changedBy: String? = null,
 )

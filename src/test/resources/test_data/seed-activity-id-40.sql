@@ -11,10 +11,10 @@ insert into activity_pay(activity_pay_id, activity_id, incentive_nomis_code, inc
 values (3, 1, 'BAS', 'Basic', 1, 200, 200, 1, '2025-05-07');
 
 insert into activity_pay_history(activity_pay_history_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, start_date, changed_details, changed_time, changed_by)
-values (1, 1, 'BAS', 'Basic', 1, 125, null, 'New pay rate added: £1.25', '2025-03-09 09:00:00', 'A. Smith');
+values (1, 1, 'BAS', 'Basic', 1, 125, null, 'New pay rate added: £1.25', '2025-03-09 09:00:00', 'joebloggs');
 
 insert into activity_pay_history(activity_pay_history_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, start_date, changed_details, changed_time, changed_by)
-values (2, 1, 'BAS', 'Basic', 1, 75, '2025-03-09', 'Amount reduced to £0.75, from 9 Mar 2025', '2025-04-10 09:00:00', 'S. Adam');
+values (2, 1, 'BAS', 'Basic', 1, 75, '2025-03-09', 'Amount reduced to £0.75, from 9 Mar 2025', '2025-04-10 09:00:00', 'adsmith');
 
 insert into activity_pay_history(activity_pay_history_id, activity_id, incentive_nomis_code, incentive_level, prison_pay_band_id, rate, start_date, changed_details, changed_time, changed_by)
-values (3, 1, 'BAS', 'Basic', 1, 200, '2025-05-07', 'Amount increased to £2.00, from 7 May 2025', '2025-04-20 09:00:00', 'A. Smith');
+values (3, 1, 'BAS', 'Basic', 1, 200, '2025-05-07', 'Amount increased to £2.00, from 7 May 2025', '2025-04-20 09:00:00', 'joebloggs');
