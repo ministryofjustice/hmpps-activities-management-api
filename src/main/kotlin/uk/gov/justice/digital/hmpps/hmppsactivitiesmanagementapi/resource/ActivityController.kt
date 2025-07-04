@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
@@ -277,4 +278,59 @@ class ActivityController(
     )
     activity: ActivityUpdateRequest,
   ): Activity = activityService.updateActivity(prisonCode, activityId, activity, principal.name)
+
+  @GetMapping(value = ["/{activityId}/pay-history"])
+  @ResponseBody
+  @Operation(
+    summary = "Get the complete pay rate history for an activity by its ID",
+    description = "Returns full list of pay rate history for a single activity by activity ID",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activity found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Activity::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The activity for this ID was not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_HUB')")
+  fun getActivityPayHistory(
+    @PathVariable("activityId") activityId: Long,
+  ): List<ActivityPayHistory> = activityService.getActivityPayHistory(activityId)
 }

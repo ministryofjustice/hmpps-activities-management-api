@@ -87,6 +87,10 @@ data class ActivityUpdateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity. Must be null or empty if the activity is unpaid")
   val pay: List<ActivityPayCreateRequest>? = null,
 
+  @field:Valid
+  @Schema(description = "The list of pay rates that can apply to this activity. Must be null or empty if the activity is unpaid")
+  val payChange: List<ActivityPayHistoryCreateRequest>? = null,
+
   @field:Min(value = 1, message = "Schedule weeks must be either 1 or 2")
   @field:Max(value = 2, message = "Schedule weeks must be either 1 or 2")
   @Schema(description = "The number of weeks in the schedule", example = "1")

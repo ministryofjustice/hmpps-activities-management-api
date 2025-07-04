@@ -26,6 +26,24 @@
       "pieceRateItems": 15
     }
   ],
+  "payChange": [
+    {
+      "incentiveNomisCode": "BAS",
+      "incentiveLevel": "Basic",
+      "payBandId": 1,
+      "rate": 125,
+      "changedDetails": "New pay rate added: £1.25",
+      "changedBy": "joebloggs"
+    },
+    {
+      "incentiveNomisCode": "STD",
+      "incentiveLevel": "Standard",
+      "payBandId": 2,
+      "rate": 160,
+      "changedDetails": "New pay rate added: £1.60",
+      "changedBy": "joebloggs"
+    }
+  ],
   "minimumEducationLevel": [
     {
       "educationLevelCode": "1",
