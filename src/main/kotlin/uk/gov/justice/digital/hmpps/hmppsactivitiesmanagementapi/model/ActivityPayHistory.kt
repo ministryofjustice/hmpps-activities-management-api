@@ -18,7 +18,7 @@ data class ActivityPayHistory(
   val incentiveLevel: String? = null,
 
   @Schema(description = "The pay band id for this activity pay history", example = "123456")
-  val prisonPayBand: uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand,
+  val prisonPayBand: PrisonPayBand,
 
   @Schema(description = "The earning rate for one half day session for someone of this incentive level and pay band (in pence)", example = "150")
   val rate: Int? = null,
