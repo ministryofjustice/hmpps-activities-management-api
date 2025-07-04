@@ -98,7 +98,7 @@ class ScheduledInstanceService(
       throw ValidationException("Date range cannot exceed 3 months")
     }
 
-    val allScheduledInstances =  repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+    val allScheduledInstances = repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
       prisonCode = prisonCode,
       prisonerNumber = prisonerNumber,
       startDate = startDate,
@@ -114,13 +114,13 @@ class ScheduledInstanceService(
 
       if (matchingAttendances.isNotEmpty()) {
         filteredScheduledInstances.add(
-          scheduledInstance.copy(attendances = matchingAttendances)
+          scheduledInstance.copy(attendances = matchingAttendances),
         )
       }
 
       if (matchingAdvancedAttendances.isNotEmpty()) {
         filteredScheduledInstances.add(
-          scheduledInstance.copy(advanceAttendances = matchingAdvancedAttendances)
+          scheduledInstance.copy(advanceAttendances = matchingAdvancedAttendances),
         )
       }
     }
