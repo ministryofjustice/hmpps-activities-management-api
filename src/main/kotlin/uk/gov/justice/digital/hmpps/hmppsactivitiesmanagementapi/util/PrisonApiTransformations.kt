@@ -6,13 +6,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import java.time.LocalDate
 import java.time.LocalDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings as PrisonApiCourtHearings
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location as PrisonApiLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode as PrisonApiReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentLocationSummary as ModelAppointmentLocationSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
 
 const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
@@ -336,12 +334,6 @@ fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?
   if (!description.isNullOrEmpty()) "$description ($category)" else category
 }
 
-fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map { it.toAppointmentCategorySummary(it.code) }
-
-fun PrisonApiLocation?.toAppointmentLocationSummary(locationId: Long, prisonCode: String) = if (this == null) {
-  ModelAppointmentLocationSummary(locationId, prisonCode, "No information available")
-} else {
-  ModelAppointmentLocationSummary(this.locationId, this.agencyId, this.userDescription ?: this.description)
+fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map {
+  it.toAppointmentCategorySummary(it.code)
 }
-
-fun List<PrisonApiLocation>.toAppointmentLocation() = map { it.toAppointmentLocationSummary(it.locationId, it.agencyId) }
