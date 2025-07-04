@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Acti
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivitySummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EligibilityRuleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
@@ -100,8 +101,7 @@ class ActivityService(
   }
 
   fun getActivityPayHistory(activityId: Long): List<ModelActivityPayHistory> {
-    val activity = activityRepository.findById(activityId)
-      .orElseThrow { EntityNotFoundException("Activity $activityId not found") }
+    val activity = activityRepository.findOrThrowNotFound(activityId)
     return activityPayHistoryRepository
       .findByActivityOrderByChangedTimeDesc(activity)
       .map { it.toModel() }
