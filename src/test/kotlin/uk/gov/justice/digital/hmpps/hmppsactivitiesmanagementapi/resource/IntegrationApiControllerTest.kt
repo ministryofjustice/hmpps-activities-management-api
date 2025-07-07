@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -23,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSe
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
@@ -148,7 +151,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   inner class GetScheduledInstancesForPrisoner {
     @Test
     fun `200 response with scheduled instances`() {
-      val results = listOf(activityFromDbInstance())
+      val results = listOf(activityFromDbInstance()).toScheduledActivityModel()
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 

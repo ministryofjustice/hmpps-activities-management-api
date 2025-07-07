@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
@@ -147,7 +147,7 @@ class IntegrationApiController(
     @RequestParam(value = "slot")
     @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
     slot: TimeSlot?,
-  ): List<PrisonerScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
+  ): List<ScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     startDate = startDate,

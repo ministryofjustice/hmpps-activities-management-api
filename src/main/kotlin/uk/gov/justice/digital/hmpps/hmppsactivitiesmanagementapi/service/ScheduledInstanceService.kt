@@ -13,10 +13,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -93,7 +94,7 @@ class ScheduledInstanceService(
     startDate: LocalDate,
     endDate: LocalDate,
     slot: TimeSlot?,
-  ): List<PrisonerScheduledActivity> {
+  ): List<ScheduledActivity> {
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
@@ -104,7 +105,7 @@ class ScheduledInstanceService(
       startDate = startDate,
       endDate = endDate,
       timeSlot = slot,
-    )
+    ).toScheduledActivityModel()
 
     return filteredScheduledInstances
   }
