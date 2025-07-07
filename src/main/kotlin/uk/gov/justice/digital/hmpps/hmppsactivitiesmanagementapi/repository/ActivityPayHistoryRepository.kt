@@ -11,7 +11,7 @@ interface ActivityPayHistoryRepository : JpaRepository<ActivityPayHistory, Long>
 
   @Query(
     value =
-      """
+    """
     SELECT aph FROM ActivityPayHistory aph
     WHERE aph.activity = :activity
     ORDER BY CASE WHEN aph.changedTime IS NULL THEN 1 ELSE 0 END, aph.changedTime DESC
