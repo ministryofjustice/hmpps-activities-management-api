@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
@@ -92,33 +93,19 @@ class ScheduledInstanceService(
     startDate: LocalDate,
     endDate: LocalDate,
     slot: TimeSlot?,
-    cancelled: Boolean?,
-  ): List<ActivityScheduleInstance> {
+  ): List<PrisonerScheduledActivity> {
     if (endDate.isAfter(startDate.plusMonths(3))) {
       throw ValidationException("Date range cannot exceed 3 months")
     }
 
-    val allScheduledInstances = repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+    val filteredScheduledInstances = prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
       prisonCode = prisonCode,
       prisonerNumber = prisonerNumber,
       startDate = startDate,
       endDate = endDate,
-      cancelled = cancelled,
       timeSlot = slot,
-    ).toModel()
+    )
 
-    val filteredScheduledInstances = mutableListOf<ActivityScheduleInstance>()
-    for (scheduledInstance in allScheduledInstances) {
-      val matchingAttendances = scheduledInstance.attendances.filter { attendance -> attendance.prisonerNumber == prisonerNumber }
-      val matchingAdvancedAttendances = scheduledInstance.advanceAttendances.filter { advanceAttendance -> advanceAttendance.prisonerNumber == prisonerNumber }
-
-      filteredScheduledInstances.add(
-        scheduledInstance.copy(
-          attendances = matchingAttendances,
-          advanceAttendances = matchingAdvancedAttendances,
-        ),
-      )
-    }
     return filteredScheduledInstances
   }
 

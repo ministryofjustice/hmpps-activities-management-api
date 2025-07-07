@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -149,12 +150,11 @@ class IntegrationApiController(
     @RequestParam(value = "cancelled")
     @Parameter(description = "Return cancelled scheduled instances?")
     cancelled: Boolean?,
-  ): List<ActivityScheduleInstance> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
+  ): List<PrisonerScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,
     startDate = startDate,
     endDate = endDate,
     slot = slot,
-    cancelled = cancelled,
   )
 }
