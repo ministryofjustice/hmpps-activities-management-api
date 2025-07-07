@@ -19,7 +19,7 @@
     "startDate": null,
     "changedDetails": "New pay rate added: £0.70",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 9,
@@ -41,7 +41,7 @@
     "startDate": "2025-06-15",
     "changedDetails": "Amount reduced to £1.50, from 15 Jun 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 8,
@@ -63,7 +63,7 @@
     "startDate": "2025-05-06",
     "changedDetails": "Amount increased to £2.00, from 6 May 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 7,
@@ -85,7 +85,7 @@
     "startDate": "2025-04-29",
     "changedDetails": "Amount increased to £0.95, from 29 Apr 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 6,
@@ -107,7 +107,7 @@
     "startDate": null,
     "changedDetails": "New pay rate added: £0.50",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 5,
@@ -129,7 +129,7 @@
     "startDate": null,
     "changedDetails": "New pay rate added: £0.55",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 4,
@@ -151,7 +151,7 @@
     "startDate": "2025-06-12",
     "changedDetails": "Amount increased to £1.00, from 12 Jun 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 3,
@@ -173,7 +173,7 @@
     "startDate": "2025-06-06",
     "changedDetails": "Amount reduced to £0.75, from 6 Jun 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 2,
@@ -195,7 +195,7 @@
     "startDate": "2025-01-10",
     "changedDetails": "Amount reduced to £1.25, from 10 Jan 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 1,
@@ -217,6 +217,6 @@
     "startDate": null,
     "changedDetails": "New pay rate added: £1.50",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   }
 ]
