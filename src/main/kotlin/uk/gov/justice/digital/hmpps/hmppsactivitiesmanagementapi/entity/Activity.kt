@@ -133,6 +133,11 @@ data class Activity(
   private val activityPay: MutableList<ActivityPay> = mutableListOf()
 
   @NotAudited
+  @OneToMany(mappedBy = "activity", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @Fetch(FetchMode.SUBSELECT)
+  private val activityPayHistory: MutableList<ActivityPayHistory> = mutableListOf()
+
+  @NotAudited
   @OneToMany(mappedBy = "activity", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   @Fetch(FetchMode.SUBSELECT)
   private val eligibilityRules: MutableList<ActivityEligibility> = mutableListOf()
@@ -147,6 +152,8 @@ data class Activity(
   fun eligibilityRules() = eligibilityRules.toList()
 
   fun activityPay() = activityPay.toList()
+
+  fun activityPayHistory() = activityPayHistory.toList()
 
   fun activityPayFor(payBand: PrisonPayBand, incentiveLevelCode: String): ActivityPay? = activityPay()
     .filter {
@@ -225,6 +232,35 @@ data class Activity(
         pieceRate = pieceRate,
         pieceRateItems = pieceRateItems,
         startDate = startDate,
+      ),
+    )
+  }
+
+  fun addPayHistory(
+    incentiveNomisCode: String?,
+    incentiveLevel: String?,
+    payBand: PrisonPayBand,
+    rate: Int?,
+    startDate: LocalDate?,
+    changedDetails: String?,
+    changedTime: LocalDateTime?,
+    changedBy: String?,
+  ) {
+    require(paid) {
+      "Unpaid activity '$summary' cannot have pay rates added to it"
+    }
+
+    activityPayHistory.add(
+      ActivityPayHistory(
+        activity = this,
+        incentiveNomisCode = incentiveNomisCode,
+        incentiveLevel = incentiveLevel,
+        payBand = payBand,
+        rate = rate,
+        startDate = startDate,
+        changedDetails = changedDetails,
+        changedTime = changedTime,
+        changedBy = changedBy,
       ),
     )
   }

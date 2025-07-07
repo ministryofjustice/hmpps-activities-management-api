@@ -60,6 +60,9 @@ data class Activity(
   @Schema(description = "The list of pay rates by incentive level and pay band that can apply to this activity")
   val pay: List<ActivityPay> = emptyList(),
 
+  @Schema(description = "The list of recent pay rate changes that can apply to this activity")
+  val payChange: List<ActivityPayHistory> = emptyList(),
+
   @Schema(description = "The date on which this activity will start. From this date, any schedules will be created as real, planned instances", example = "2022-09-21")
   @JsonFormat(pattern = "yyyy-MM-dd")
   val startDate: LocalDate,

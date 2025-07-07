@@ -49,7 +49,7 @@ class AppointmentService(
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(appointment.prisonCode)
+    val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointment.prisonCode)
 
     return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap)
   }
@@ -70,7 +70,7 @@ class AppointmentService(
 
     val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
 
-    val locationMap = locationService.getLocationsForAppointmentsMap(prisonCodes.first())
+    val locationMap = locationService.getLocationDetailsForAppointmentsMap(prisonCodes.first())
 
     return appointments.map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
   }
@@ -94,7 +94,7 @@ class AppointmentService(
     }
 
     if (request.internalLocationId != null) {
-      locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)
+      locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)
         .also {
           require(it.containsKey(request.internalLocationId)) {
             "Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'"
@@ -106,7 +106,7 @@ class AppointmentService(
       "Cannot remove prisoners from an individual appointment"
     }
 
-    require(request.startDate == null || request.startDate <= LocalDate.now().plusDays(maxStartDateOffsetDays.toLong())) {
+    require(request.startDate == null || request.startDate <= LocalDate.now().plusDays(maxStartDateOffsetDays)) {
       "Start date cannot be more than $maxStartDateOffsetDays days into the future"
     }
 

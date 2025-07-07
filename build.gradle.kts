@@ -47,13 +47,13 @@ dependencies {
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
   // AWS
-  implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.17") {
+  implementation("com.squareup.okhttp3:okhttp:5.0.0") {
     version {
       strictly("5.0.0-alpha.14")
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.4.117")
+  implementation("aws.sdk.kotlin:s3:1.4.119")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.13.1")

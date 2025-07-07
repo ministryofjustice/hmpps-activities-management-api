@@ -88,6 +88,10 @@ data class ActivityCreateRequest(
   @Schema(description = "The list of pay rates that can apply to this activity")
   val pay: List<ActivityPayCreateRequest> = emptyList(),
 
+  @field:Valid
+  @Schema(description = "The list of pay rates that can apply to this activity. Must be null or empty if the activity is unpaid")
+  val payChange: List<ActivityPayHistoryCreateRequest>? = emptyList(),
+
   @field:NotEmpty(message = "Risk level must be supplied")
   @field:Size(max = 10, message = "Risk level should not exceed {max} characters")
   @Schema(description = "The most recent risk assessment level for this activity", example = "high")

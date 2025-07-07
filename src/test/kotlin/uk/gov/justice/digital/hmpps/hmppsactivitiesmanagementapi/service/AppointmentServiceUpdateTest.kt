@@ -108,7 +108,7 @@ class AppointmentServiceUpdateTest {
     val appointmentSeries = appointment.appointmentSeries
     val request = AppointmentUpdateRequest(internalLocationId = -1)
 
-    whenever(locationService.getLocationsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
+    whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
       .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
@@ -122,7 +122,7 @@ class AppointmentServiceUpdateTest {
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!)).thenReturn(emptyList())
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
+      .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
   }
 
   @Test
@@ -131,10 +131,10 @@ class AppointmentServiceUpdateTest {
     val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("DIFFERENT_PRISON"))
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
-      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers!!.first(), prisonId = "DIFFERENT")))
+      .thenReturn(listOf(PrisonerSearchPrisonerFixture.instance(prisonerNumber = request.addPrisonerNumbers.first(), prisonId = "DIFFERENT")))
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers!!.first()}' not found, were inactive or are residents of a different prison.")
+      .hasMessage("Prisoner(s) with prisoner number(s) '${request.addPrisonerNumbers.first()}' not found, were inactive or are residents of a different prison.")
   }
 
   @Test
@@ -174,7 +174,7 @@ class AppointmentServiceUpdateTest {
 
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.addPrisonerNumbers!!))
       .thenReturn(
-        request.addPrisonerNumbers!!.map {
+        request.addPrisonerNumbers.map {
           PrisonerSearchPrisonerFixture.instance(
             prisonerNumber = it,
             bookingId = 1,

@@ -28,10 +28,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
@@ -395,6 +397,91 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
     verify(activityService).updateActivity(any(), any(), any(), any(), any())
   }
 
+  @Test
+  fun `404 not found response while getting activity pay history for an invalid activity id`() {
+    whenever(activityService.getActivityPayHistory(1)).thenThrow(
+      EntityNotFoundException("not found"),
+    )
+
+    mockMvc.get("/activities/1/pay-history") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isNotFound() }
+      }
+
+    verify(activityService).getActivityPayHistory(1)
+  }
+
+  @Test
+  fun `200 response while getting activity pay history for a valid activity id`() {
+    val expectedModel = listOf(
+      ActivityPayHistory(
+        id = 29,
+        incentiveNomisCode = "BAS",
+        incentiveLevel = "Basic",
+        PrisonPayBand(
+          id = 19,
+          displaySequence = 3,
+          alias = "Pay band 3",
+          description = "Pay band 3",
+          nomisPayBand = 3,
+          prisonCode = "RSI",
+          createdTime = null,
+          createdBy = null,
+          updatedTime = null,
+          updatedBy = null,
+        ),
+        rate = 100,
+        startDate = null,
+        changedDetails = "New pay rate added: £1.00",
+        changedTime = LocalDateTime.now(),
+        changedBy = "joebloggs",
+      ),
+      ActivityPayHistory(
+        id = 37,
+        incentiveNomisCode = "STD",
+        incentiveLevel = "Standard",
+        PrisonPayBand(
+          id = 19,
+          displaySequence = 3,
+          alias = "Pay band 4",
+          description = "Pay band 4",
+          nomisPayBand = 4,
+          prisonCode = "RSI",
+          createdTime = null,
+          createdBy = null,
+          updatedTime = null,
+          updatedBy = null,
+        ),
+        rate = 150,
+        startDate = null,
+        changedDetails = "New pay rate added: £1.50",
+        changedTime = LocalDateTime.now(),
+        changedBy = "ABC456 - N. John",
+      ),
+    )
+    whenever(activityService.getActivityPayHistory(1)).thenReturn(expectedModel)
+
+    val response = mockMvc.get("/activities/1/pay-history") {
+      principal = user
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+    }
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect {
+        status { isOk() }
+      }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+    verify(activityService).getActivityPayHistory(1)
+  }
+
   @Nested
   @DisplayName("Authorization tests")
   inner class AuthorizationTests {
@@ -476,6 +563,37 @@ class ActivityControllerTest : ControllerTestBase<ActivityController>() {
           contentType = MediaType.APPLICATION_JSON
           header(CASELOAD_ID, "MDI")
         }.andExpect { status { isOk() } }
+      }
+    }
+
+    @Nested
+    @DisplayName("Get pay rate history activity by id")
+    inner class GetActivityPayHistoryAuthTests {
+      @Test
+      @WithMockUser(roles = ["PRISON"])
+      fun `Get activity pay rate history by id (PRISON) - 200`() {
+        mockMvcWithSecurity.get("/activities/1/pay-history") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["ACTIVITY_HUB"])
+      fun `Get activity pay rate history by id (ACTIVITY_HUB) - 200`() {
+        mockMvcWithSecurity.get("/activities/1/pay-history") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isOk() } }
+      }
+
+      @Test
+      @WithMockUser(roles = ["NOMIS_ACTIVITIES"])
+      fun `Get activity pay rate history by id (NOMIS_ACTIVITIES) - 403`() {
+        mockMvcWithSecurity.get("/activities/1/pay-history") {
+          contentType = MediaType.APPLICATION_JSON
+          header(CASELOAD_ID, "MDI")
+        }.andExpect { status { isForbidden() } }
       }
     }
   }
