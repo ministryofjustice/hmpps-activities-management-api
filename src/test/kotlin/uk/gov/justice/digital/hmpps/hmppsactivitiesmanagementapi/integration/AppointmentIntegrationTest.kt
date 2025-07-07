@@ -4,6 +4,8 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -648,24 +650,25 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
+    val result = webTestClient.cancelAppointment(appointmentId, request)!!
 
     // Synchronous cancel. Cancel specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       single { it.id == appointmentId }.isCancelled() isEqualTo true
       filter { it.id != appointmentId }.map { it.isCancelled() }.distinct().single() isEqualTo false
     }
 
-    // Wait for remaining appointments to be cancelled
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
+            .map { AppointmentInstanceInformation(it.id) })
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -713,18 +716,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
+    val result = webTestClient.cancelAppointment(appointmentId, request)!!
 
     // Synchronous delete. Delete specified appointment only
-    with(appointmentSeries.appointments.filterNot { it.isDeleted }) {
+    with(result.appointments.filterNot { it.isDeleted }) {
       singleOrNull { it.id == appointmentId } isEqualTo null
       filter { it.id != appointmentId } hasSize 3
     }
 
-    // Wait for remaining appointments to be deleted
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
+  }
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -1136,27 +1139,28 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
 
-    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
 
     // Synchronous update. Update specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       single { it.id == appointmentId }.internalLocationId isEqualTo 456
       single { it.id == appointmentId }.dpsLocationId isEqualTo request.dpsLocationId
       filter { it.id != appointmentId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
       filter { it.id != appointmentId }.map { it.dpsLocationId }.distinct().single() isEqualTo UUID.fromString("44444444-1111-2222-3333-444444444444")
     }
 
-    // Wait for remaining appointments to be updated
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo 456
-    appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo request.dpsLocationId
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo 456
+      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo request.dpsLocationId
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
+            .map { AppointmentInstanceInformation(it.id) })
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -1230,27 +1234,29 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
 
-    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
 
     // Synchronous update. Update specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       single { it.id == appointmentId }.internalLocationId isEqualTo request.internalLocationId
       single { it.id == appointmentId }.dpsLocationId isEqualTo dpsLocation.id
       filter { it.id != appointmentId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
       filter { it.id != appointmentId }.map { it.dpsLocationId }.distinct().single() isEqualTo UUID.fromString("44444444-1111-2222-3333-444444444444")
     }
 
-    // Wait for remaining appointments to be updated
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
-    appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo dpsLocation.id
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.internalLocationId }.distinct()
+        .single() isEqualTo request.internalLocationId
+      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo dpsLocation.id
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
+            .map { AppointmentInstanceInformation(it.id) })
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -1314,41 +1320,44 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
 
     // Synchronous update. Update specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       assertThat(single { it.id == appointmentId }.attendees.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
       assertThat(filter { it.id != appointmentId }.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
     }
 
-    // Wait for remaining appointments to be updated
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    assertThat(appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      assertThat(
+        appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }
+          .distinct()
+      ).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(size).isEqualTo(4)
-      assertThat(map { it.additionalInformation }).containsExactly(
-        // The deleted event for the specified appointment's attendee is sent first
-        AppointmentInstanceInformation(36),
-        // Followed by the deleted events for the remaining attendees
-        AppointmentInstanceInformation(30),
-        AppointmentInstanceInformation(33),
-        AppointmentInstanceInformation(39),
-      )
-    }
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(
-          appointmentSeries.appointments
-            .flatMap { it.attendees }
-            .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
-            .map { AppointmentInstanceInformation(it.id) },
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+        assertThat(size).isEqualTo(4)
+        assertThat(map { it.additionalInformation }).containsExactly(
+          // The deleted event for the specified appointment's attendee is sent first
+          AppointmentInstanceInformation(36),
+          // Followed by the deleted events for the remaining attendees
+          AppointmentInstanceInformation(30),
+          AppointmentInstanceInformation(33),
+          AppointmentInstanceInformation(39),
         )
+      }
+
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(
+            appointmentSeries.appointments
+              .flatMap { it.attendees }
+              .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
