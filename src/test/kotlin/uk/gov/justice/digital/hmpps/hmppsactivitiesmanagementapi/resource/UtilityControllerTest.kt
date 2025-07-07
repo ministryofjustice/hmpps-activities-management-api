@@ -16,8 +16,10 @@ import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository.ActivityScheduleWithInvalidLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityLocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.util.*
@@ -32,9 +34,12 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
   @MockitoBean
   private lateinit var activityLocationService: ActivityLocationService
 
+  @MockitoBean
+  private lateinit var migrateActivityService: MigrateActivityService
+
   private val identifierCaptor = argumentCaptor<Long>()
 
-  override fun controller() = UtilityController(outboundEventsService, activityLocationService)
+  override fun controller() = UtilityController(outboundEventsService, activityLocationService, migrateActivityService)
 
   @Test
   fun `201 response when outbound event is published`() {
@@ -66,6 +71,24 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(expectedResult)
+  }
+
+  @Test
+  fun `201 response while creating pay history for activities`() {
+    val expectedResponse = PayHistoryMigrateResponse(
+      25L,
+      25L,
+      "Activities pay rate history migration has been completed successfully for all records",
+    )
+    whenever(migrateActivityService.createActivityPayHistory()).thenReturn(expectedResponse)
+
+    val response = mockMvc.post("/utility/create-pay-history")
+      .andExpect { status { isCreated() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+
+    verify(migrateActivityService).createActivityPayHistory()
   }
 
   private fun MockMvc.publishEvents(event: OutboundEvent, identifiers: List<Long>) = post("/utility/publish-events") {
