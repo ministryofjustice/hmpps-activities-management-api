@@ -109,7 +109,7 @@ fun AppointmentUpdateRequest.toTelemetryPropertiesMap(
   CATEGORY_CHANGED_PROPERTY_KEY to (this.categoryCode != null).toString(),
   EVENT_TIER_CHANGED_PROPERTY_KEY to (this.tierCode != null).toString(),
   EVENT_ORGANISER_CHANGED_PROPERTY_KEY to (this.organiserCode != null).toString(),
-  INTERNAL_LOCATION_CHANGED_PROPERTY_KEY to (this.internalLocationId != null).toString(),
+  INTERNAL_LOCATION_CHANGED_PROPERTY_KEY to (this.internalLocationId != null || this.dpsLocationId != null).toString(),
   START_DATE_CHANGED_PROPERTY_KEY to (this.startDate != null).toString(),
   START_TIME_CHANGED_PROPERTY_KEY to (this.startTime != null).toString(),
   END_TIME_CHANGED_PROPERTY_KEY to (this.endTime != null).toString(),

@@ -97,7 +97,16 @@ class AppointmentService(
       locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)
         .also {
           require(it.containsKey(request.internalLocationId)) {
-            "Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'"
+            "Appointment location with Nomis location id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'"
+          }
+        }
+    }
+
+    if (request.dpsLocationId != null) {
+      locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(appointmentSeries.prisonCode)
+        .also {
+          require(it.containsKey(request.dpsLocationId)) {
+            "Appointment location with DPS location id ${request.dpsLocationId} not found in prison '${appointmentSeries.prisonCode}'"
           }
         }
     }
@@ -128,7 +137,7 @@ class AppointmentService(
     }
 
     val updateAppointmentsCount = appointmentsToUpdate.size
-    val updateInstancesCount = appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentsToUpdate)
+    val updateInstancesCount = appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentsToUpdate)
     require(updateInstancesCount <= maxAppointmentInstances) {
       "You cannot modify more than ${maxAppointmentInstances / updateAppointmentsCount} appointment instances for this number of attendees"
     }

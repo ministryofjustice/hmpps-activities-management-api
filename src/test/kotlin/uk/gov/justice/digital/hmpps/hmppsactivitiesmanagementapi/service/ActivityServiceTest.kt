@@ -57,6 +57,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBand
@@ -78,7 +79,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonRegimeRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.BankHolidayService
@@ -183,7 +183,7 @@ class ActivityServiceTest {
     daysInAdvance,
   )
 
-  private val location = LocationDetails(
+  private val location = locationDetails(
     locationId = 1,
     dpsLocationId = UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"),
     code = "code",
@@ -196,7 +196,7 @@ class ActivityServiceTest {
   @BeforeEach
   fun setUp() {
     openMocks(this)
-    whenever(locationService.getLocationForSchedule(location.dpsLocationId)).thenReturn(location)
+    whenever(locationService.getLocationDetails(location.dpsLocationId)).thenReturn(location)
     whenever(prisonRegimeRepository.findByPrisonCode(any())).thenReturn(listOf(prisonRegime()))
     val regime = prisonRegime()
     val amTimes = Pair(regime.amStart, regime.amFinish)
@@ -1160,7 +1160,7 @@ class ActivityServiceTest {
 
     beforeActivityEntity.addSchedule(
       description = "Woodwork",
-      internalLocation = LocationDetails(
+      internalLocation = locationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
         code = "WW",

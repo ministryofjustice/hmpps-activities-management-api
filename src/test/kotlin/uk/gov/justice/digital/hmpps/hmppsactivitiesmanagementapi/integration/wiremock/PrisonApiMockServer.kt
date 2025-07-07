@@ -298,18 +298,6 @@ class PrisonApiMockServer : MockServer(8999) {
     )
   }
 
-  fun stubGetLocationsForTypeUnrestrictedNotFound(agencyId: String, locationType: String) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations?eventType=$locationType"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBodyFile("prisonapi/location-404.json")
-            .withStatus(404),
-        ),
-    )
-  }
-
   fun stubGetLocationGroups(agencyId: String, jsonResponseFile: String) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/agencies/$agencyId/locations/groups"))
@@ -360,6 +348,7 @@ class PrisonApiMockServer : MockServer(8999) {
     return mapper.read(jsonResponseFile)
   }
 
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
   fun stubGetLocationsForAppointments(prisonCode: String, locationId: Long) {
     stubFor(
       WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/locations?eventType=APP"))
@@ -367,18 +356,6 @@ class PrisonApiMockServer : MockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(listOf(appointmentLocation(locationId, prisonCode))))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetLocationsForAppointments(prisonCode: String, locations: List<Location>) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/agencies/$prisonCode/locations?eventType=APP"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(locations))
             .withStatus(200),
         ),
     )

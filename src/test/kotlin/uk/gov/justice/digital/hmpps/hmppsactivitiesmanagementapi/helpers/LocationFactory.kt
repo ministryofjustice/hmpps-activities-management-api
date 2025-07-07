@@ -38,12 +38,26 @@ fun locations(
   ),
 )
 
+fun locationDetails(
+  locationId: Long,
+  dpsLocationId: UUID,
+  agencyId: String,
+  description: String = "Test Location",
+  code: String = "WW",
+) = LocationDetails(
+  locationId = locationId,
+  dpsLocationId = dpsLocationId,
+  code = code,
+  description = description,
+  agencyId = agencyId,
+)
+
 fun appointmentLocationDetails(
   locationId: Long,
   dpsLocationId: UUID,
   agencyId: String,
   description: String = "Test Appointment Location",
-) = LocationDetails(
+) = locationDetails(
   locationId = locationId,
   dpsLocationId = dpsLocationId,
   code = "WW",

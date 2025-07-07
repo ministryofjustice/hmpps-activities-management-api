@@ -36,7 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class AppointmentServiceUpdateTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -111,7 +111,7 @@ class AppointmentServiceUpdateTest {
     whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
+      .hasMessage("Appointment location with Nomis location id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
   }
 
   @Test
@@ -183,7 +183,7 @@ class AppointmentServiceUpdateTest {
         },
       )
 
-    whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()))
+    whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries.appointments()))
       .thenReturn(prisonerList.size * appointmentSeries.schedule!!.numberOfAppointments)
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)

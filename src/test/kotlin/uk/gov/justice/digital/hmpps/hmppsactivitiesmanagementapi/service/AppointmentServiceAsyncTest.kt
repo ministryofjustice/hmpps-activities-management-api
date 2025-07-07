@@ -51,8 +51,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import java.security.Principal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceAsyncTest {
@@ -65,6 +64,8 @@ class AppointmentServiceAsyncTest {
   private val telemetryClient: TelemetryClient = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
+  private val locationService: LocationService = mock()
+
   private val appointmentUpdateDomainService = spy(
     AppointmentUpdateDomainService(
       appointmentSeriesRepository,
@@ -75,6 +76,7 @@ class AppointmentServiceAsyncTest {
       outboundEventsService,
       telemetryClient,
       auditService,
+      locationService,
     ),
   )
   private val appointmentCancelDomainService = spy(
@@ -89,7 +91,6 @@ class AppointmentServiceAsyncTest {
   )
 
   private val referenceCodeService: ReferenceCodeService = mock()
-  private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
@@ -118,11 +119,18 @@ class AppointmentServiceAsyncTest {
   private val appointmentCancelledReason = appointmentCancelledReason()
   private val appointmentDeletedReason = appointmentCreatedInErrorReason()
 
+  private val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
+
   @BeforeEach
   fun setUp() {
     addCaseloadIdToRequestHeader("TPR")
+
     whenever(locationService.getLocationDetailsForAppointmentsMap("TPR"))
-      .thenReturn(mapOf(456L to appointmentLocationDetails(456, UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR")))
+      .thenReturn(mapOf(456L to appointmentLocationDetails(456, dpsLocationId, "TPR")))
+
+    whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId("TPR"))
+      .thenReturn(mapOf(dpsLocationId to appointmentLocationDetails(456, dpsLocationId, "TPR")))
+
     whenever(principal.name).thenReturn("TEST.USER")
     whenever(appointmentAttendeeRemovalReasonRepository.findById(permanentRemovalByUserAppointmentAttendeeRemovalReason.appointmentAttendeeRemovalReasonId)).thenReturn(
       Optional.of(permanentRemovalByUserAppointmentAttendeeRemovalReason),
@@ -137,7 +145,7 @@ class AppointmentServiceAsyncTest {
   }
 
   @Test
-  fun `update internal location synchronously when update applies to one appointment with fifteen attendees`() {
+  fun `update DPS location synchronously when update applies to one appointment with fifteen attendees`() {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
@@ -151,7 +159,7 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
       .thenReturn(Optional.of(appointmentSeries))
 
-    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.THIS_APPOINTMENT)
+    val request = AppointmentUpdateRequest(dpsLocationId = dpsLocationId, applyTo = ApplyTo.THIS_APPOINTMENT)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -195,7 +203,7 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
       .thenReturn(Optional.of(appointmentSeries))
 
-    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, dpsLocationId = dpsLocationId, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 
@@ -225,7 +233,7 @@ class AppointmentServiceAsyncTest {
   }
 
   @Test
-  fun `update internal location asynchronously when update applies to five appointments with three attendees affecting fifteen in total`() {
+  fun `update internal location, using Nomis location id asynchronously when update applies to five appointments with three attendees affecting fifteen in total`() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val appointmentSeries = appointmentSeriesEntity(
       prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
@@ -239,7 +247,67 @@ class AppointmentServiceAsyncTest {
     whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
       .thenReturn(Optional.of(appointmentSeries))
 
-    val request = AppointmentUpdateRequest(internalLocationId = 456, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
+    val request = AppointmentUpdateRequest(internalLocationId = 456, dpsLocationId = dpsLocationId, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
+
+    service.updateAppointment(appointment.appointmentId, request, principal)
+
+    // Update only the first appointment synchronously and do not track custom event
+    verify(appointmentUpdateDomainService).updateAppointments(
+      eq(appointmentSeries.appointmentSeriesId),
+      eq(appointment.appointmentId),
+      eq(setOf(appointment.appointmentId)),
+      eq(request),
+      eq(emptyMap()),
+      updated.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+      eq(false),
+      eq(true),
+    )
+
+    assertThat(updated.firstValue).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+    assertThat(startTimeInMs.firstValue).isCloseTo(System.currentTimeMillis(), within(60000L))
+
+    verifyNoInteractions(telemetryClient)
+
+    // Start asynchronous job to apply update to all remaining appointments
+    verify(updateAppointmentsJob).execute(
+      eq(appointmentSeries.appointmentSeriesId),
+      eq(appointment.appointmentId),
+      eq(appointmentSeries.scheduledAppointments().filterNot { it.appointmentId == appointment.appointmentId }.map { it.appointmentId }.toSet()),
+      eq(request),
+      eq(emptyMap()),
+      updated.capture(),
+      eq("TEST.USER"),
+      eq(5),
+      eq(15),
+      startTimeInMs.capture(),
+    )
+
+    // Use the same updated value so that all appointments have the same updated date time stamp
+    updated.firstValue isEqualTo updated.secondValue
+    // Use the same start time so that elapsed time metric is calculated correctly and consistently with the synchronous path
+    startTimeInMs.firstValue isEqualTo startTimeInMs.secondValue
+  }
+
+  @Test
+  fun `update internal location, using DPS location id, asynchronously when update applies to five appointments with three attendees affecting fifteen in total`() {
+    val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
+    val appointmentSeries = appointmentSeriesEntity(
+      prisonerNumberToBookingIdMap = prisonerNumberToBookingIdMap,
+      frequency = AppointmentFrequency.DAILY,
+      numberOfAppointments = 5,
+    )
+    val appointment = appointmentSeries.appointments().first()
+    whenever(appointmentRepository.findById(appointment.appointmentId)).thenReturn(
+      Optional.of(appointment),
+    )
+    whenever(appointmentSeriesRepository.findById(appointmentSeries.appointmentSeriesId))
+      .thenReturn(Optional.of(appointmentSeries))
+
+    val request = AppointmentUpdateRequest(dpsLocationId = dpsLocationId, applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS)
 
     service.updateAppointment(appointment.appointmentId, request, principal)
 

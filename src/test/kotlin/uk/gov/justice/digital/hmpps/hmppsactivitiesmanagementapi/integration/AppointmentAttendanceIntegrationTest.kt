@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
@@ -85,15 +84,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         appointmentCategoryReferenceCode("EDUC", "Education"),
         appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
         appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
-      ),
-    )
-
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      prisonCode,
-      listOf(
-        appointmentLocation(123, prisonCode, userDescription = "Education 1"),
-        appointmentLocation(456, prisonCode, userDescription = "Chapel"),
-        appointmentLocation(789, prisonCode, userDescription = "Health Care Centre"),
       ),
     )
 
@@ -497,13 +487,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
         listOf(
           appointmentCategoryReferenceCode("EDUC", "Education"),
           appointmentCategoryReferenceCode("CANT", "Canteen"),
-        ),
-      )
-
-      prisonApiMockServer.stubGetLocationsForAppointments(
-        "RSI",
-        listOf(
-          appointmentLocation(123, "RSI", userDescription = "Location 123"),
         ),
       )
     }

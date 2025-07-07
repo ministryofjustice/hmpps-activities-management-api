@@ -58,11 +58,19 @@ class LocationService(
     ?.map { it.copy(description = it.description.formatLocation()) }
     ?.toList()
 
-  fun getLocationForSchedule(dpsLocationId: UUID): LocationDetails {
-    // TODO: remove locationID later
+  @Deprecated("At some point we will only have DPS Location UUIDs and not Nomis IDs.")
+  fun getLocationDetails(dpsLocationId: UUID): LocationDetails {
     val locationId = nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
 
     return locationsInsidePrisonAPIClient.getLocationById(dpsLocationId).toLocationDetails(locationId)
+  }
+
+  @Deprecated("At some point we will only have DPS Location UUIDs and not Nomis IDs.")
+  fun getLocationDetails(nomisLocationId: Long?, dpsLocationId: UUID?): LocationDetails {
+    val dpsLocationUuid = dpsLocationId ?: nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId!!)!!.dpsLocationId
+    val locationId = nomisLocationId ?: nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId!!)!!.nomisLocationId
+
+    return locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid).toLocationDetails(locationId)
   }
 
   private fun String.formatLocation(): String = WordUtils.capitalizeFully(this)

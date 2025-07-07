@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -42,13 +43,24 @@ data class AppointmentUpdateRequest(
   @Schema(
     description =
     """
-    The updated NOMIS internal location id within the specified prison. This must be supplied if inCell is false.
+    The updated NOMIS internal location id within the specified prison. This or DPS location id must be supplied if inCell is false.
     The internal location id must exist, must be within the prison specified by the prisonCode property on the
     appointment and be active. 
     """,
     example = "123",
   )
   val internalLocationId: Long? = null,
+
+  @Schema(
+    description =
+    """
+      The updated DPS location id within the specified prison. This or NOMIS internal location id must be supplied if inCell is false.
+      The DPS location UUID must exist, must be within the prison specified by the prisonCode property on the
+      appointment and be active. 
+    """,
+    example = "b7602cc8-e769-4cbb-8194-62d8e655992a",
+  )
+  val dpsLocationId: UUID? = null,
 
   @Schema(
     description =
@@ -121,10 +133,10 @@ data class AppointmentUpdateRequest(
   )
   val applyTo: ApplyTo = ApplyTo.THIS_APPOINTMENT,
 ) {
-  fun isPropertyUpdate() = categoryCode != null || internalLocationId != null || inCell != null || startDate != null || startTime != null || endTime != null || extraInformation != null
+  fun isPropertyUpdate() = categoryCode != null || internalLocationId != null || dpsLocationId != null || inCell != null || startDate != null || startTime != null || endTime != null || extraInformation != null
 
-  @AssertTrue(message = "Internal location id must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell != false || internalLocationId != null
+  @AssertTrue(message = "Internal location id or DPS location id must be supplied if in cell = false")
+  private fun isInternalLocationId() = inCell != false || internalLocationId != null || dpsLocationId != null
 
   @AssertTrue(message = "Start time must be in the future")
   private fun isStartTime() = startDate == null || startTime == null || startDate < LocalDate.now() || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()

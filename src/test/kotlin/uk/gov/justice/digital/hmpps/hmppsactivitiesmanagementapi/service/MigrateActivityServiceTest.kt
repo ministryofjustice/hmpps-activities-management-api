@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonIncentiveLevel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
@@ -49,7 +50,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
@@ -182,8 +182,8 @@ class MigrateActivityServiceTest {
         ),
       )
 
-      whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
-        LocationDetails(
+      whenever(locationService.getLocationDetails(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
+        locationDetails(
           locationId = 1,
           code = "011",
           description = "MDI-1-1-011",
@@ -556,8 +556,8 @@ class MigrateActivityServiceTest {
 
       val request = buildActivityMigrateRequest(nomisPayRates, nomisScheduleRules)
 
-      whenever(locationService.getLocationForSchedule(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
-        LocationDetails(
+      whenever(locationService.getLocationDetails(UUID.fromString("99999999-0000-aaaa-bbbb-cccccccccccc"))).thenReturn(
+        locationDetails(
           locationId = 1,
           code = "junkWOWxdd",
           description = "MDI-1-1-011",

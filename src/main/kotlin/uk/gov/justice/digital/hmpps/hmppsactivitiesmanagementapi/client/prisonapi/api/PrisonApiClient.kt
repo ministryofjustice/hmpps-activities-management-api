@@ -279,21 +279,6 @@ class PrisonApiClient(
     .bodyToMono(typeReference<List<Location>>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations/type/{type}")))
 
-  // Does not check that the invoker has the selected agency in their caseload.
-  fun getLocationsForTypeUnrestricted(
-    agencyId: String,
-    locationType: String,
-  ): Mono<List<Location>> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/agencies/{agencyId}/locations")
-        .queryParam("eventType", locationType)
-        .build(agencyId)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<Location>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/agencies/{agencyId}/locations")))
-
   fun getLocationGroups(agencyId: String): Mono<List<LocationGroup>> = prisonApiWebClient.get()
     .uri { uriBuilder: UriBuilder ->
       uriBuilder

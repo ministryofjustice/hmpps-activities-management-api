@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 class AppointmentTelemetryTransformFunctionsTest {
   private val appointmentSetWithThreeAppointments = appointmentSetEntity(
@@ -143,9 +144,29 @@ class AppointmentTelemetryTransformFunctionsTest {
   }
 
   @Test
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
   fun `update appointment to telemetry properties internal location changed`() {
     with(
       AppointmentUpdateRequest(internalLocationId = 123).toTelemetryPropertiesMap(
+        "TEST.USER",
+        "MDI",
+        appointmentSeriesModel(),
+        appointmentModel().copy(id = 2),
+      ),
+    ) {
+      this[CATEGORY_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
+      this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY] isEqualTo true.toString()
+      this[START_DATE_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
+      this[START_TIME_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
+      this[END_TIME_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
+      this[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY] isEqualTo false.toString()
+    }
+  }
+
+  @Test
+  fun `update appointment to telemetry properties DPS location id changed`() {
+    with(
+      AppointmentUpdateRequest(dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")).toTelemetryPropertiesMap(
         "TEST.USER",
         "MDI",
         appointmentSeriesModel(),
