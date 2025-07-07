@@ -666,8 +666,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
       with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
         assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
-            .map { AppointmentInstanceInformation(it.id) })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
       }
     }
 
@@ -727,7 +729,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     await untilAsserted {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
       appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
-  }
+    }
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -1158,8 +1160,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
       with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
         assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
-            .map { AppointmentInstanceInformation(it.id) })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
       }
     }
 
@@ -1254,8 +1258,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
       with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
         assertThat(map { it.additionalInformation })
-          .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }
-            .map { AppointmentInstanceInformation(it.id) })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
       }
     }
 
@@ -1332,7 +1338,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
       assertThat(
         appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }
-          .distinct()
+          .distinct(),
       ).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
 
       verify(eventsPublisher, times(12)).send(eventCaptor.capture())
