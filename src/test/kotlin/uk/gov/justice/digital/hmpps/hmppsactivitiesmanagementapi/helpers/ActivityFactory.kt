@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -34,6 +35,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityMinimumEducationLevelCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayCreateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ActivityPayHistoryCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.DayOfWeek
@@ -470,6 +472,64 @@ internal fun activityPayCreateRequest(
   pieceRate = pieceRate,
   pieceRateItems = pieceRateItems,
   startDate = startDate,
+)
+
+internal fun activityPayHistoryCreateRequest(
+  incentiveNomisCode: String = "123",
+  incentiveLevel: String = "level",
+  payBandId: Long = 12,
+  rate: Int? = null,
+  startDate: LocalDate? = null,
+  changedDetails: String? = null,
+  changedBy: String? = null,
+) = ActivityPayHistoryCreateRequest(
+  incentiveNomisCode = incentiveNomisCode,
+  incentiveLevel = incentiveLevel,
+  payBandId = payBandId,
+  rate = rate,
+  startDate = startDate,
+  changedDetails = changedDetails,
+  changedBy = changedBy,
+)
+
+internal fun activityPayHistory(
+  activityPayHistoryId: Long = 0,
+  activity: Activity,
+  incentiveNomisCode: String = "123",
+  incentiveLevel: String = "level",
+  payBand: PrisonPayBand,
+  rate: Int? = null,
+  startDate: LocalDate? = null,
+  changedDetails: String? = null,
+  changedBy: String? = null,
+  changedTime: LocalDateTime? = null,
+) = ActivityPayHistory(
+  activityPayHistoryId = activityPayHistoryId,
+  activity = activity,
+  incentiveNomisCode = incentiveNomisCode,
+  incentiveLevel = incentiveLevel,
+  payBand = payBand,
+  rate = rate,
+  startDate = startDate,
+  changedDetails = changedDetails,
+  changedBy = changedBy,
+  changedTime = changedTime,
+)
+
+internal fun prisonPayBand(
+  prisonPayBandId: Long = 1,
+  prisonCode: String = "MDI",
+  displaySequence: Int = 1,
+  payBandAlias: String = "Medium",
+  payBandDescription: String = "Pay band 1 RSI description (lowest)",
+  nomisPayBand: Int = 1,
+) = PrisonPayBand(
+  prisonPayBandId = prisonPayBandId,
+  prisonCode = prisonCode,
+  displaySequence = displaySequence,
+  payBandAlias = payBandAlias,
+  payBandDescription = payBandDescription,
+  nomisPayBand = nomisPayBand,
 )
 
 internal fun activityCreateRequest(

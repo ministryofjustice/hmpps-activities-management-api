@@ -1,0 +1,178 @@
+[
+  {
+    "id": "18",
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
+    "prisonPayBand": {
+      "id": "14",
+      "displaySequence": "1",
+      "alias": "Pay band 1 (lowest)",
+      "description": "Pay band 1 (lowest)",
+      "nomisPayBand": "1",
+      "prisonCode": "RSI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "125",
+    "startDate": "2025-06-11",
+    "changedDetails": "Amount reduced to £1.25, from 11 Jun 2025",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "17",
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
+    "prisonPayBand": {
+      "id": "14",
+      "displaySequence": "1",
+      "alias": "Pay band 1 (lowest)",
+      "description": "Pay band 1 (lowest)",
+      "nomisPayBand": "1",
+      "prisonCode": "RSI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "200",
+    "startDate": "2025-04-07",
+    "changedDetails": "Amount increased to £2.00, from 7 Apr 2025",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "16",
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
+    "prisonPayBand": {
+      "id": "14",
+      "displaySequence": "1",
+      "alias": "Pay band 1 (lowest)",
+      "description": "Pay band 1 (lowest)",
+      "nomisPayBand": "1",
+      "prisonCode": "RSI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "100",
+    "startDate": null,
+    "changedDetails": "New pay rate added: £1.00",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "15",
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
+    "prisonPayBand": {
+      "id": "13",
+      "displaySequence": "3",
+      "alias": "High",
+      "description": "Pay band 3 (highest)",
+      "nomisPayBand": "3",
+      "prisonCode": "MDI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "125",
+    "startDate": null,
+    "changedDetails": "New pay rate added: £1.25",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "14",
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
+    "prisonPayBand": {
+      "id": "11",
+      "displaySequence": "1",
+      "alias": "Low",
+      "description": "Pay band 1 (Lowest)",
+      "nomisPayBand": "1",
+      "prisonCode": "MDI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "150",
+    "startDate": null,
+    "changedDetails": "New pay rate added: £1.50",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "13",
+    "incentiveNomisCode": "BAS",
+    "incentiveLevel": "Basic",
+    "prisonPayBand": {
+      "id": "13",
+      "displaySequence": "3",
+      "alias": "High",
+      "description": "Pay band 3 (highest)",
+      "nomisPayBand": "3",
+      "prisonCode": "MDI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "85",
+    "startDate": "2025-05-01",
+    "changedDetails": "Amount reduced to £0.85, from 1 May 2025",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "12",
+    "incentiveNomisCode": "BAS",
+    "incentiveLevel": "Basic",
+    "prisonPayBand": {
+      "id": "13",
+      "displaySequence": "3",
+      "alias": "High",
+      "description": "Pay band 3 (highest)",
+      "nomisPayBand": "3",
+      "prisonCode": "MDI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "125",
+    "startDate": null,
+    "changedDetails": "New pay rate added: £1.25",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  },
+  {
+    "id": "11",
+    "incentiveNomisCode": "BAS",
+    "incentiveLevel": "Basic",
+    "prisonPayBand": {
+      "id": "11",
+      "displaySequence": "1",
+      "alias": "Low",
+      "description": "Pay band 1 (Lowest)",
+      "nomisPayBand": "1",
+      "prisonCode": "MDI",
+      "createdTime": null,
+      "createdBy": null,
+      "updatedTime": null,
+      "updatedBy": null
+    },
+    "rate": "125",
+    "startDate": null,
+    "changedDetails": "New pay rate added: £1.25",
+    "changedTime": null,
+    "changedBy": "MIGRATION"
+  }
+]
