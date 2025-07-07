@@ -33,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
@@ -184,132 +185,48 @@ class ScheduledInstanceServiceTest {
   inner class GetActivityScheduleInstancesForPrisonerByDateRange {
     val prisonCode = "MDI"
     val prisonerNumber = "A1234AA"
-    val startDate = LocalDate.of(2022, 10, 1)
-    val endDate = LocalDate.of(2022, 11, 5)
+    val startDate: LocalDate = LocalDate.of(2022, 10, 1)
+    val endDate: LocalDate = LocalDate.of(2022, 11, 5)
+    val results = listOf(activityFromDbInstance())
 
     @Test
-    fun `get instances by date range - success`() {
+    fun `get prisoner activities`() {
       whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
           prisonCode = prisonCode,
           prisonerNumber = prisonerNumber,
           startDate = startDate,
           endDate = endDate,
-          cancelled = null,
           timeSlot = null,
         ),
       )
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+        .thenReturn(results)
 
-      val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = null)
-
+      val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = null)
       assertThat(result).hasSize(1)
-      val attendances = result.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = result.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
     fun `filtered by time slot`() {
       whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
           prisonCode = prisonCode,
           prisonerNumber = prisonerNumber,
           startDate = startDate,
           endDate = endDate,
-          cancelled = null,
           timeSlot = TimeSlot.PM,
         ),
       )
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
+        .thenReturn(results)
 
-      var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = TimeSlot.PM)
-
+      var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.PM)
       assertThat(result).hasSize(1)
-      val attendances = result.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = result.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
 
-      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = TimeSlot.AM)
+      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.AM)
       assertThat(result).isEmpty()
 
-      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = TimeSlot.ED)
+      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.ED)
       assertThat(result).isEmpty()
-    }
-
-    @Test
-    fun `filtered for cancelled instances`() {
-      whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
-          prisonCode = prisonCode,
-          prisonerNumber = prisonerNumber,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = true,
-          timeSlot = null,
-        ),
-      )
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
-
-      var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = true, slot = null)
-      assertThat(result).hasSize(1)
-      val attendances = result.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = result.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
-
-      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = false, slot = null)
-      assertThat(result).isEmpty()
-    }
-
-    @Test
-    fun `filtered for non-cancelled instances`() {
-      whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
-          prisonCode = prisonCode,
-          prisonerNumber = prisonerNumber,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = false,
-          timeSlot = null,
-        ),
-      )
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
-
-      var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = false, slot = null)
-      assertThat(result).hasSize(1)
-      val attendances = result.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = result.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
-
-      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = true, slot = null)
-      assertThat(result).isEmpty()
-    }
-
-    @Test
-    fun `filtered for prisoner number`() {
-      whenever(
-        repository.getActivityScheduleInstancesForPrisonerByPrisonCodeAndDateRange(
-          prisonCode = prisonCode,
-          prisonerNumber = prisonerNumber,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = null,
-          timeSlot = null,
-        ),
-      )
-        .thenReturn(listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)))
-
-      val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, cancelled = null, slot = null)
-
-      assertThat(result).hasSize(1)
-      val attendances = result.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = result.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
     }
 
     @Test
@@ -320,7 +237,6 @@ class ScheduledInstanceServiceTest {
           prisonerNumber = prisonerNumber,
           startDate = startDate,
           endDate = startDate.plusMonths(3).plusDays(1),
-          cancelled = null,
           slot = null,
         )
       }

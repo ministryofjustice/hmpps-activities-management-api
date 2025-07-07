@@ -23,9 +23,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSe
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
@@ -149,7 +148,8 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   inner class GetScheduledInstancesForPrisoner {
     @Test
     fun `200 response with scheduled instances`() {
-      val results = listOf(ScheduledInstanceFixture.instance(id = 1, locationId = 22)).toModel()
+
+      val results = listOf(activityFromDbInstance())
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
 
@@ -160,7 +160,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           startDate = startDate,
           endDate = endDate,
           slot = TimeSlot.AM,
-          cancelled = false,
         ),
       ).thenReturn(results)
 
@@ -184,7 +183,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         startDate = startDate,
         endDate = endDate,
         slot = TimeSlot.AM,
-        cancelled = false,
       )
     }
 
