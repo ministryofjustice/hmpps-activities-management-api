@@ -50,6 +50,7 @@ import java.time.LocalTime
 import kotlin.let
 
 const val MIGRATION_USER = "MIGRATION"
+const val UNKNOWN_USER = "Not known"
 const val TIER2_IN_CELL_ACTIVITY = "T2ICA"
 const val TIER2_STRUCTURED_IN_CELL = "T2SOC"
 const val ON_WING_LOCATION = "WOW"
@@ -136,7 +137,7 @@ class MigrateActivityService(
 
             if (iep != null) {
               activity.addPay(it.incentiveLevel, iep.levelName, payBand, it.rate, null, null, null)
-              activity.addPayHistory(it.incentiveLevel, iep.levelName, payBand, it.rate, null, "New pay rate added: ${toMoney(it.rate)}", MIGRATION_USER)
+              activity.addPayHistory(it.incentiveLevel, iep.levelName, payBand, it.rate, null, "New pay rate added: ${toMoney(it.rate)}", null, UNKNOWN_USER)
             }
           }
         }
@@ -205,8 +206,8 @@ class MigrateActivityService(
                 rate = it.rate,
                 startDate = it.startDate,
                 changedDetails = changedDetails,
-                changedTime = LocalDateTime.now(),
-                changedBy = MIGRATION_USER,
+                changedTime = null,
+                changedBy = UNKNOWN_USER,
               )
               activityPayHistoryList.add(activityPayHistory)
             }

@@ -195,6 +195,7 @@ class ActivityService(
             rate = it.rate,
             startDate = it.startDate,
             changedDetails = it.changedDetails,
+            changedTime = LocalDateTime.now(),
             changedBy = it.changedBy,
           )
         }
@@ -771,6 +772,7 @@ class ActivityService(
           rate = it.rate,
           startDate = it.startDate,
           changedDetails = it.changedDetails,
+          changedTime = LocalDateTime.now(),
           changedBy = it.changedBy,
         )
       }

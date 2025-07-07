@@ -1,8 +1,8 @@
 [
   {
-    "id": 21,
-    "incentiveNomisCode": "STD",
-    "incentiveLevel": "Standard",
+    "id": 19,
+    "incentiveNomisCode": "BAS",
+    "incentiveLevel": "Basic",
     "prisonPayBand": {
       "id": 11,
       "displaySequence": 1,
@@ -15,11 +15,11 @@
       "updatedTime": null,
       "updatedBy": null
     },
-    "rate": 75,
+    "rate": 150,
     "startDate": null,
-    "changedDetails": "New pay rate added: £0.75",
+    "changedDetails": "New pay rate added: £1.50",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
     "id": 20,
@@ -41,12 +41,12 @@
     "startDate": "2025-04-22",
     "changedDetails": "Amount reduced to £1.25, from 22 Apr 2025",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   },
   {
-    "id": 19,
-    "incentiveNomisCode": "BAS",
-    "incentiveLevel": "Basic",
+    "id": 21,
+    "incentiveNomisCode": "STD",
+    "incentiveLevel": "Standard",
     "prisonPayBand": {
       "id": 11,
       "displaySequence": 1,
@@ -59,10 +59,10 @@
       "updatedTime": null,
       "updatedBy": null
     },
-    "rate": 150,
+    "rate": 75,
     "startDate": null,
-    "changedDetails": "New pay rate added: £1.50",
+    "changedDetails": "New pay rate added: £0.75",
     "changedTime": null,
-    "changedBy": "MIGRATION"
+    "changedBy": "Not known"
   }
 ]

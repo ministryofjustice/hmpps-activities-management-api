@@ -265,7 +265,8 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(110)
           assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
-          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+          assertThat(changedBy).isEqualTo(UNKNOWN_USER)
+          assertThat(changedTime).isNull()
         }
 
         // Check the schedule attributes
@@ -365,7 +366,8 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(110)
           assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
-          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+          assertThat(changedBy).isEqualTo(UNKNOWN_USER)
+          assertThat(changedTime).isNull()
         }
 
         with(activityPayHistory()[1]) {
@@ -376,7 +378,8 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(120)
           assertThat(changedDetails).isEqualTo("New pay rate added: £1.20")
-          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+          assertThat(changedBy).isEqualTo(UNKNOWN_USER)
+          assertThat(changedTime).isNull()
         }
 
         with(activityPayHistory()[2]) {
@@ -387,7 +390,8 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(130)
           assertThat(changedDetails).isEqualTo("New pay rate added: £1.30")
-          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+          assertThat(changedBy).isEqualTo(UNKNOWN_USER)
+          assertThat(changedTime).isNull()
         }
 
         assertThat(schedules()).hasSize(1)
@@ -898,7 +902,8 @@ class MigrateActivityServiceTest {
           assertThat(payBand.payBandDescription).isEqualTo("Pay band 1")
           assertThat(rate).isEqualTo(110)
           assertThat(changedDetails).isEqualTo("New pay rate added: £1.10")
-          assertThat(changedBy).isEqualTo(MIGRATION_USER)
+          assertThat(changedBy).isEqualTo(UNKNOWN_USER)
+          assertThat(changedTime).isNull()
         }
 
         // Check the schedule attributes
