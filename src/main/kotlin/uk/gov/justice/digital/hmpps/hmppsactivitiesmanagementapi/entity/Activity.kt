@@ -243,6 +243,7 @@ data class Activity(
     rate: Int?,
     startDate: LocalDate?,
     changedDetails: String?,
+    changedTime: LocalDateTime?,
     changedBy: String?,
   ) {
     require(paid) {
@@ -258,7 +259,7 @@ data class Activity(
         rate = rate,
         startDate = startDate,
         changedDetails = changedDetails,
-        changedTime = LocalDateTime.now(),
+        changedTime = changedTime,
         changedBy = changedBy,
       ),
     )
