@@ -148,7 +148,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   inner class GetScheduledInstancesForPrisoner {
     @Test
     fun `200 response with scheduled instances`() {
-
       val results = listOf(activityFromDbInstance())
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
