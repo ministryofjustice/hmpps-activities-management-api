@@ -154,7 +154,7 @@ data class PrisonerScheduledActivity(
     attendanceStatus = attendanceStatus,
     attendanceReasonCode = attendanceReasonCode,
     paidActivity = paidActivity,
-    possibleAdvanceAttendance = possibleAdvanceAttendance
+    possibleAdvanceAttendance = possibleAdvanceAttendance,
   )
 }
 

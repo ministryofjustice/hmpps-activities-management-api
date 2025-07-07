@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
