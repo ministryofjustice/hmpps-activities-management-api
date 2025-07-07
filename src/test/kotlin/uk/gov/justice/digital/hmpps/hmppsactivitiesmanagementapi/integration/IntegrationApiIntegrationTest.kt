@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -163,8 +162,8 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         )
 
       assertThat(scheduledInstances).hasSize(8)
-      assertThat(scheduledInstances).allMatch { it.prisonerNumber == prisonerNumber}
-      assertThat(scheduledInstances).allMatch { it.prisonCode == MOORLAND_PRISON_CODE}
+      assertThat(scheduledInstances).allMatch { it.prisonerNumber == prisonerNumber }
+      assertThat(scheduledInstances).allMatch { it.prisonCode == MOORLAND_PRISON_CODE }
       assertThat(scheduledInstances).allMatch { it.sessionDate.between(startDate, endDate) }
     }
 
@@ -184,10 +183,27 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         )
 
       assertThat(scheduledInstances).hasSize(4)
-      assertThat(scheduledInstances).allMatch { it.prisonerNumber == prisonerNumber}
-      assertThat(scheduledInstances).allMatch { it.prisonCode == MOORLAND_PRISON_CODE}
+      assertThat(scheduledInstances).allMatch { it.prisonerNumber == prisonerNumber }
+      assertThat(scheduledInstances).allMatch { it.prisonCode == MOORLAND_PRISON_CODE }
       assertThat(scheduledInstances).allMatch { it.sessionDate.between(startDate, endDate) }
       assertThat(scheduledInstances).allMatch { it.timeSlot == TimeSlot.AM }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
+    fun `returns no data for date range outside of data`() {
+      val startDate = LocalDate.now()
+      val endDate = LocalDate.now().plusMonths(1)
+
+      val scheduledInstances =
+        webTestClient.getScheduledInstancesForPrisonerBy(
+          prisonerNumber = prisonerNumber,
+          prisonCode = MOORLAND_PRISON_CODE,
+          startDate = startDate,
+          endDate = endDate,
+        )
+
+      assertThat(scheduledInstances).hasSize(0)
     }
 
     private fun WebTestClient.getScheduledInstancesForPrisonerBy(
