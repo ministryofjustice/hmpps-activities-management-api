@@ -147,9 +147,6 @@ class IntegrationApiController(
     @RequestParam(value = "slot")
     @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
     slot: TimeSlot?,
-    @RequestParam(value = "cancelled")
-    @Parameter(description = "Return cancelled scheduled instances?")
-    cancelled: Boolean?,
   ): List<PrisonerScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
     prisonCode = prisonCode,
     prisonerNumber = prisonerNumber,

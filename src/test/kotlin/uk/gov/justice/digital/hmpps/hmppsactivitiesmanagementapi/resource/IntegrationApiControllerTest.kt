@@ -168,7 +168,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         startDate = startDate,
         endDate = endDate,
         slot = TimeSlot.AM,
-        cancelled = false,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
@@ -185,6 +184,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       )
     }
 
-    private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot, cancelled: Boolean) = get("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot&cancelled=$cancelled")
+    private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot) = get("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
   }
 }

@@ -170,50 +170,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
     @Test
     @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns data within the time slot ignoring cancelled instances`() {
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-
-      val scheduledInstances =
-        webTestClient.getScheduledInstancesForPrisonerBy(
-          prisonerNumber = prisonerNumber,
-          prisonCode = MOORLAND_PRISON_CODE,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = false,
-        )
-
-      assertThat(scheduledInstances).hasSize(5)
-      val attendances = scheduledInstances?.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
-    fun `returns data within the time slot for only cancelled instances`() {
-      val startDate = LocalDate.of(2022, 10, 1)
-      val endDate = LocalDate.of(2022, 11, 5)
-
-      val scheduledInstances =
-        webTestClient.getScheduledInstancesForPrisonerBy(
-          prisonerNumber = prisonerNumber,
-          prisonCode = MOORLAND_PRISON_CODE,
-          startDate = startDate,
-          endDate = endDate,
-          cancelled = true,
-        )
-
-      assertThat(scheduledInstances).hasSize(1)
-      val attendances = scheduledInstances?.flatMap { it.attendances }
-      assertThat(attendances).allMatch { it.prisonerNumber == prisonerNumber }
-      val advanceAttendances = scheduledInstances?.flatMap { it.advanceAttendances }
-      assertThat(advanceAttendances).allMatch { it.prisonerNumber == prisonerNumber }
-    }
-
-    @Test
-    @Sql("classpath:test_data/seed-activity-integration-api-1.sql")
     fun `returns data with the time slot filter`() {
       val startDate = LocalDate.of(2022, 10, 1)
       val endDate = LocalDate.of(2022, 11, 5)
@@ -261,7 +217,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       startDate: LocalDate,
       endDate: LocalDate,
       timeSlot: TimeSlot? = null,
-      cancelled: Boolean? = null,
     ) = get()
       .uri { builder ->
         builder
@@ -269,7 +224,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           .queryParam("startDate", startDate)
           .queryParam("endDate", endDate)
           .maybeQueryParam("slot", timeSlot)
-          .maybeQueryParam("cancelled", cancelled)
           .build()
       }
       .accept(MediaType.APPLICATION_JSON)
