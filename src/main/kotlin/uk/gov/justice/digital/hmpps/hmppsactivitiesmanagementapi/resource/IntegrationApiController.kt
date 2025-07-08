@@ -112,7 +112,7 @@ class IntegrationApiController(
         content = [
           Content(
             mediaType = "application/json",
-            array = ArraySchema(schema = Schema(implementation = ActivityScheduleInstance::class)),
+            array = ArraySchema(schema = Schema(implementation = ScheduledActivity::class)),
           ),
         ],
       ),
