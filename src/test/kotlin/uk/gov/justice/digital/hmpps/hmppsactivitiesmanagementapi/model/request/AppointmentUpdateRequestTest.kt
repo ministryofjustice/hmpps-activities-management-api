@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 class AppointmentUpdateRequestTest {
   private val validator: Validator = Validation.buildDefaultValidatorFactory().validator
@@ -20,8 +21,8 @@ class AppointmentUpdateRequestTest {
 
   @Test
   fun `internal location id must be supplied if in cell = false`() {
-    val request = AppointmentUpdateRequest(internalLocationId = null, inCell = false)
-    assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id must be supplied if in cell = false")
+    val request = AppointmentUpdateRequest(internalLocationId = null, dpsLocationId = null, inCell = false)
+    assertSingleValidationError(validator.validate(request), "internalLocation", "Internal location id or DPS location id must be supplied if in cell = false")
   }
 
   @Test
@@ -63,6 +64,12 @@ class AppointmentUpdateRequestTest {
   @Test
   fun `is property update true when internal location update is supplied`() {
     val request = AppointmentUpdateRequest(internalLocationId = 123)
+    request.isPropertyUpdate() isEqualTo true
+  }
+
+  @Test
+  fun `is property update true when DPS location id update is supplied`() {
+    val request = AppointmentUpdateRequest(dpsLocationId = UUID.randomUUID())
     request.isPropertyUpdate() isEqualTo true
   }
 

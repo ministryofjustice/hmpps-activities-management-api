@@ -134,6 +134,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             ),
             "Appointment description",
             123,
+            UUID.fromString("44444444-1111-2222-3333-444444444444"),
             false,
             LocalDate.now().plusDays(1),
             LocalTime.of(9, 0),
@@ -535,7 +536,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
       appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -585,7 +586,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       prisonerNumberToBookingIdMap.map {
@@ -636,7 +637,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     )
 
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       prisonerNumberToBookingIdMap.map {
@@ -726,6 +727,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             ),
             request.customName,
             request.internalLocationId,
+            request.dpsLocationId,
             request.inCell,
             request.startDate,
             request.startTime,
@@ -815,6 +817,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
               ),
               request.customName,
               request.internalLocationId,
+              request.dpsLocationId,
               request.inCell,
               request.startDate,
               request.startTime,

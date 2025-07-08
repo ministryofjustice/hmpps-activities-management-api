@@ -73,6 +73,7 @@ fun appointmentModel(createdTime: LocalDateTime = LocalDateTime.now(), updatedTi
   eventOrganiser().toModelEventOrganiser(),
   "Appointment description",
   123,
+  dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"),
   false,
   LocalDate.now().plusDays(1),
   LocalTime.of(9, 0),

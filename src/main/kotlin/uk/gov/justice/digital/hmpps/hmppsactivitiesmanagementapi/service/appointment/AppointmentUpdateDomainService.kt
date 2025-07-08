@@ -17,6 +17,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PERMANENT_REMOVAL_BY_USER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -38,6 +40,7 @@ class AppointmentUpdateDomainService(
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  private val locationService: LocationService,
 ) {
   fun updateAppointments(
     appointmentSeriesId: Long,
@@ -119,7 +122,6 @@ class AppointmentUpdateDomainService(
 
   fun getUpdateInstancesCount(
     request: AppointmentUpdateRequest,
-    appointmentSeries: AppointmentSeries,
     appointmentsToUpdate: Collection<Appointment>,
   ): Int {
     var instanceCount = if (request.isPropertyUpdate()) appointmentsToUpdate.flatMap { it.attendees() }.size else 0
@@ -183,15 +185,19 @@ class AppointmentUpdateDomainService(
     request: AppointmentUpdateRequest,
     appointmentsToUpdate: Collection<Appointment>,
   ) {
+    val locationDetails: LocationDetails? = if (request.inCell != true && (request.internalLocationId != null || request.dpsLocationId != null)) locationService.getLocationDetails(request.internalLocationId, request.dpsLocationId) else null
+
     appointmentsToUpdate.forEach {
       if (request.inCell == true) {
         it.internalLocationId = null
+        it.dpsLocationId = null
         it.inCell = true
         it.onWing = true
         it.offWing = false
       } else {
-        request.internalLocationId?.apply {
-          it.internalLocationId = this
+        locationDetails?.apply {
+          it.internalLocationId = locationDetails.locationId
+          it.dpsLocationId = locationDetails.dpsLocationId
           it.inCell = false
           it.onWing = false
           it.offWing = true
@@ -288,6 +294,7 @@ class AppointmentUpdateDomainService(
     }
   }
 
+  // TODO: SAA-2421 Add DPS Location ID
   private fun writeAppointmentUpdatedAuditRecord(
     appointmentId: Long,
     request: AppointmentUpdateRequest,

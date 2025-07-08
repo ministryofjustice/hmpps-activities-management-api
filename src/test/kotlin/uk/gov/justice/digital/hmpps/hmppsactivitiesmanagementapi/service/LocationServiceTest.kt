@@ -168,14 +168,14 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `getLocationForSchedule - returns location details when local name is null`() {
+  fun `getLocationDetails - by DPS location id - returns location details when local name is null`() {
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = dpsLocation(localName = null)
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
-    val result = locationService.getLocationForSchedule(dpsLocationUuid)
+    val result = locationService.getLocationDetails(dpsLocationUuid)
 
     assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.code, dpsLocation.pathHierarchy))
 
@@ -183,18 +183,62 @@ class LocationServiceTest {
   }
 
   @Test
-  fun `getLocationForSchedule - returns location details`() {
+  fun `getLocationDetails - by DPS location id - returns location details`() {
     whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
 
     val dpsLocation = dpsLocation()
 
     whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
 
-    val result = locationService.getLocationForSchedule(dpsLocationUuid)
+    val result = locationService.getLocationDetails(dpsLocationUuid)
 
     assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
 
     verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
+  }
+
+  @Test
+  fun `getLocationDetails - by Nomis location id and DPS location id - returns location details when only NOMIS location id is provided`() {
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
+
+    val dpsLocation = dpsLocation()
+
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
+
+    val result = locationService.getLocationDetails(123, null)
+
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
+
+    verify(nomisMappingAPIClient, never()).getLocationMappingByDpsId(any())
+  }
+
+  @Test
+  fun `getLocationDetails - by Nomis location id and DPS location id - returns location details when only DPS location UUID is provided`() {
+    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
+
+    val dpsLocation = dpsLocation()
+
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
+
+    val result = locationService.getLocationDetails(null, dpsLocationUuid)
+
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
+
+    verify(nomisMappingAPIClient, never()).getLocationMappingByNomisId(any())
+  }
+
+  @Test
+  fun `getLocationDetails - by Nomis location id and DPS location id - returns location details when NOMIS location id and DPS location UUID are provided`() {
+    whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
+    whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationUuid)).thenReturn(NomisDpsLocationMapping(dpsLocationUuid, 123))
+
+    val dpsLocation = dpsLocation()
+
+    whenever(locationsInsidePrisonAPIClient.getLocationById(dpsLocationUuid)).thenReturn(dpsLocation)
+
+    val result = locationService.getLocationDetails(123, dpsLocationUuid)
+
+    assertThat(result).isEqualTo(LocationDetails(dpsLocation.prisonId, 123, dpsLocationUuid, dpsLocation.code, dpsLocation.localName!!, dpsLocation.pathHierarchy))
   }
 
   @Test

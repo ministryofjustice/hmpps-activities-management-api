@@ -13,13 +13,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eligibilityRuleOver21
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.mediumPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.notInWorkCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -190,7 +190,7 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = LocationDetails(
+      internalLocation = locationDetails(
         locationId = 1,
         dpsLocationId = dpsLocationId,
         code = "WW",
@@ -226,7 +226,7 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = LocationDetails(
+      internalLocation = locationDetails(
         locationId = 1,
         dpsLocationId = dpsLocationId,
         code = "WW",
@@ -263,7 +263,7 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = LocationDetails(
+        internalLocation = locationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
           code = "WW",
@@ -289,7 +289,7 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = LocationDetails(
+        internalLocation = locationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
           code = "WW",
@@ -314,7 +314,7 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = "Woodwork",
-        internalLocation = LocationDetails(
+        internalLocation = locationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
           code = "WW",
@@ -337,7 +337,7 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "Woodwork",
-      internalLocation = LocationDetails(
+      internalLocation = locationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
         code = "WW",
@@ -353,7 +353,7 @@ class ActivityTest {
     assertThatThrownBy {
       activity.addSchedule(
         description = " WooDwork ",
-        internalLocation = LocationDetails(
+        internalLocation = locationDetails(
           locationId = 1,
           dpsLocationId = UUID.randomUUID(),
           code = "WW",
@@ -617,7 +617,7 @@ class ActivityTest {
 
     activity.addSchedule(
       description = "description",
-      internalLocation = LocationDetails(
+      internalLocation = locationDetails(
         locationId = 1,
         dpsLocationId = UUID.randomUUID(),
         code = "RM1",

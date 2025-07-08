@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.foundat
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.permanentRemovalByUserAppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentEditedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
@@ -53,7 +55,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEve
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.Optional
+import java.util.*
 
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentUpdateDomainServiceTest {
@@ -64,6 +66,7 @@ class AppointmentUpdateDomainServiceTest {
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
+  private val locationService: LocationService = mock()
 
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
@@ -77,6 +80,7 @@ class AppointmentUpdateDomainServiceTest {
       outboundEventsService,
       telemetryClient,
       auditService,
+      locationService,
     ),
   )
 
@@ -266,7 +270,11 @@ class AppointmentUpdateDomainServiceTest {
     fun `updates internal location id`() {
       val appointmentsToUpdate = applyToThisAndAllFuture
       val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
       val request = AppointmentUpdateRequest(internalLocationId = 456)
+
+      whenever(locationService.getLocationDetails(456, null)).thenReturn(locationDetails(456, dpsLocationId, "TPR"))
+
       val response = service.updateAppointments(
         appointmentSeries.appointmentSeriesId,
         appointment.appointmentId,
@@ -285,7 +293,46 @@ class AppointmentUpdateDomainServiceTest {
       /* then the series will not be updated */
       appointmentSeries.internalLocationId isEqualTo 123
       /* then the selected appointments will be updated */
-      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L } isBool true
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L && it.dpsLocationId == dpsLocationId } isBool true
+      /* the remaining appointments will not be updated */
+      appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.internalLocationId == 123L } isBool true
+
+      response.internalLocationId isEqualTo 123
+      response.appointments.filter { ids.contains(it.id) }.all { it.internalLocationId == 456L } isBool true
+      response.appointments.filterNot { ids.contains(it.id) }.all { it.internalLocationId == 123L } isBool true
+
+      verify(outboundEventsService, times(9)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UPDATED), any(), eq(null))
+      verifyNoMoreInteractions(outboundEventsService)
+    }
+
+    @Test
+    fun `updates DPS location id`() {
+      val appointmentsToUpdate = applyToThisAndAllFuture
+      val ids = appointmentsToUpdate.map { it.appointmentId }.toSet()
+      val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
+      val request = AppointmentUpdateRequest(dpsLocationId = dpsLocationId)
+
+      whenever(locationService.getLocationDetails(null, dpsLocationId)).thenReturn(locationDetails(456, dpsLocationId, "TPR"))
+
+      val response = service.updateAppointments(
+        appointmentSeries.appointmentSeriesId,
+        appointment.appointmentId,
+        ids,
+        request,
+        emptyMap(),
+        LocalDateTime.now(),
+        updatedBy,
+        appointmentsToUpdate.size,
+        appointmentsToUpdate.flatMap { it.attendees() }.size,
+        System.currentTimeMillis(),
+        trackEvent = false,
+        auditEvent = false,
+      )
+
+      /* then the series will not be updated */
+      appointmentSeries.internalLocationId isEqualTo 123
+      /* then the selected appointments will be updated */
+      appointmentSeries.appointments().filter { ids.contains(it.appointmentId) }.all { it.internalLocationId == 456L && it.dpsLocationId == dpsLocationId } isBool true
       /* the remaining appointments will not be updated */
       appointmentSeries.appointments().filterNot { ids.contains(it.appointmentId) }.all { it.internalLocationId == 123L } isBool true
 
@@ -832,7 +879,7 @@ class AppointmentUpdateDomainServiceTest {
     fun `no updates`() {
       val request = AppointmentUpdateRequest()
       val appointmentSeries = appointmentSeriesEntity()
-      service.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()) isEqualTo 0
+      service.getUpdateInstancesCount(request, appointmentSeries.appointments()) isEqualTo 0
     }
 
     @Test
@@ -840,7 +887,6 @@ class AppointmentUpdateDomainServiceTest {
       val request = AppointmentUpdateRequest(categoryCode = "NEW")
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToThis,
       ) isEqualTo applyToThis.flatMap { it.attendees() }.size
     }
@@ -850,7 +896,6 @@ class AppointmentUpdateDomainServiceTest {
       val request = AppointmentUpdateRequest(internalLocationId = 456)
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToThisAndAllFuture,
       ) isEqualTo applyToThisAndAllFuture.flatMap { it.attendees() }.size
     }
@@ -859,14 +904,14 @@ class AppointmentUpdateDomainServiceTest {
     fun `remove prisoners`() {
       // Only A1234BC is currently allocated
       val request = AppointmentUpdateRequest(removePrisonerNumbers = listOf("A1234BC", "D4567EF"))
-      service.getUpdateInstancesCount(request, appointmentSeries, applyToAllFuture) isEqualTo applyToAllFuture.size
+      service.getUpdateInstancesCount(request, applyToAllFuture) isEqualTo applyToAllFuture.size
     }
 
     @Test
     fun `add prisoners`() {
       // C3456DE is already allocated
       val request = AppointmentUpdateRequest(addPrisonerNumbers = listOf("C3456DE", "D4567EF", "E5678FG"))
-      service.getUpdateInstancesCount(request, appointmentSeries, applyToThis) isEqualTo applyToThis.size * 2
+      service.getUpdateInstancesCount(request, applyToThis) isEqualTo applyToThis.size * 2
     }
 
     @Test
@@ -878,7 +923,6 @@ class AppointmentUpdateDomainServiceTest {
       )
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToThis,
       ) isEqualTo applyToThis.size + applyToThis.size * 2
     }
@@ -891,7 +935,6 @@ class AppointmentUpdateDomainServiceTest {
       )
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToThisAndAllFuture,
       ) isEqualTo applyToThisAndAllFuture.flatMap { it.attendees() }.size
     }
@@ -904,7 +947,6 @@ class AppointmentUpdateDomainServiceTest {
       )
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToAllFuture,
       ) isEqualTo applyToAllFuture.flatMap { it.attendees() }.size + (applyToAllFuture.size * 2)
     }
@@ -918,7 +960,6 @@ class AppointmentUpdateDomainServiceTest {
       )
       service.getUpdateInstancesCount(
         request,
-        appointmentSeries,
         applyToAllFuture,
       ) isEqualTo applyToAllFuture.flatMap { it.attendees() }.size + (applyToAllFuture.size * 2)
     }

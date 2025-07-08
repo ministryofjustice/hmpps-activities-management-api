@@ -129,7 +129,7 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
         content {
           contentType(MediaType.APPLICATION_JSON)
           jsonPath("$.developerMessage") {
-            value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
+            value(Matchers.containsString("Internal location id or DPS location id must be supplied if in cell = false"))
             value(Matchers.containsString("Start date must not be in the past"))
             value(Matchers.containsString("End time must be after the start time"))
           }

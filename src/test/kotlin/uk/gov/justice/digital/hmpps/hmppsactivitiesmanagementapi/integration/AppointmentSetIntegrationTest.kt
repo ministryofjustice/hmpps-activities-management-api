@@ -192,7 +192,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     val request = appointmentSetCreateRequest(categoryCode = "AC1")
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
-    prisonApiMockServer.stubGetLocationsForAppointments(request.prisonCode!!, request.internalLocationId!!)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
       listOf(

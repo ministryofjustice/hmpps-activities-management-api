@@ -4,6 +4,9 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.assertj.core.api.Assertions.within
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -16,6 +19,7 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiServiceTest.Companion.mockServer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
@@ -57,7 +61,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.UUID
+import java.util.*
 
 @TestPropertySource(
   properties = [
@@ -80,6 +84,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
+  @BeforeEach
+  fun setUp() {
+    mockServer.resetAll()
+  }
+
   @Test
   fun `update appointment by unknown id returns 404 not found`() {
     webTestClient.patch()
@@ -95,6 +104,94 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `update single appointment`() {
+    val request = AppointmentUpdateRequest(
+      categoryCode = "AC2",
+      tierCode = "TIER_2",
+      organiserCode = "PRISON_STAFF",
+      dpsLocationId = UUID.fromString("11111111-1111-1111-1111-111111111111"),
+      startDate = LocalDate.now().plusDays(3),
+      startTime = LocalTime.of(13, 30),
+      endTime = LocalTime.of(15, 0),
+      extraInformation = "Updated Appointment level comment",
+      applyTo = ApplyTo.THIS_APPOINTMENT,
+    )
+
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+
+    val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(request.dpsLocationId, 456),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 456)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
+
+    val appointmentSeries = webTestClient.updateAppointment(2, request)!!
+    val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
+
+    with(appointmentSeries) {
+      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(tier!!.code).isEqualTo("TIER_2")
+      assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
+      assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
+      assertThat(inCell).isFalse
+      assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+      assertThat(extraInformation).isEqualTo("Appointment series level comment")
+      assertThat(customName).isEqualTo("Appointment description")
+      assertThat(updatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(updatedBy).isEqualTo("test-client")
+      with(appointments.single()) {
+        assertThat(categoryCode).isEqualTo(request.categoryCode)
+        assertThat(tier!!.code).isEqualTo("TIER_2")
+        assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
+        assertThat(internalLocationId).isEqualTo(456)
+        assertThat(dpsLocationId).isEqualTo(request.dpsLocationId)
+        assertThat(inCell).isFalse
+        assertThat(startDate).isEqualTo(request.startDate)
+        assertThat(startTime).isEqualTo(request.startTime)
+        assertThat(endTime).isEqualTo(request.endTime)
+        assertThat(extraInformation).isEqualTo(request.extraInformation)
+        assertThat(updatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+        assertThat(updatedBy).isEqualTo("test-client")
+        with(attendees.single()) {
+          assertThat(prisonerNumber).isEqualTo("A1234BC")
+          assertThat(bookingId).isEqualTo(456)
+        }
+      }
+    }
+
+    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
+
+    with(eventCaptor.firstValue) {
+      assertThat(eventType).isEqualTo("appointments.appointment-instance.updated")
+      assertThat(additionalInformation).isEqualTo(AppointmentInstanceInformation(appointmentIds.first()))
+      assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(description).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-single-id-1.sql",
+  )
+  @Test
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
+  fun `update single appointment when using location id`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       tierCode = "TIER_2",
@@ -123,6 +220,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nomisMappingApiMockServer.stubMappingFromNomisId(456, dpsLocation.id)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
+
     val appointmentSeries = webTestClient.updateAppointment(2, request)!!
     val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
@@ -131,6 +232,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(tier!!.code).isEqualTo("TIER_2")
       assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
@@ -144,6 +246,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(tier!!.code).isEqualTo("TIER_2")
         assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
         assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+        assertThat(dpsLocationId).isEqualTo(dpsLocation.id)
         assertThat(inCell).isFalse
         assertThat(startDate).isEqualTo(request.startDate)
         assertThat(startTime).isEqualTo(request.startTime)
@@ -198,6 +301,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(tier!!.code).isEqualTo("TIER_2")
       assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().plusDays(1))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
@@ -211,6 +315,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(tier!!.code).isEqualTo("TIER_2")
         assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
         assertThat(internalLocationId).isNull()
+        assertThat(dpsLocationId).isNull()
         assertThat(inCell).isTrue()
         assertThat(startDate).isEqualTo(request.startDate)
         assertThat(startTime).isEqualTo(request.startTime)
@@ -545,24 +650,27 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
+    val result = webTestClient.cancelAppointment(appointmentId, request)!!
 
     // Synchronous cancel. Cancel specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       single { it.id == appointmentId }.isCancelled() isEqualTo true
       filter { it.id != appointmentId }.map { it.isCancelled() }.distinct().single() isEqualTo false
     }
 
-    // Wait for remaining appointments to be cancelled
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.cancelled" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -610,18 +718,18 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    var appointmentSeries = webTestClient.cancelAppointment(appointmentId, request)!!
+    val result = webTestClient.cancelAppointment(appointmentId, request)!!
 
     // Synchronous delete. Delete specified appointment only
-    with(appointmentSeries.appointments.filterNot { it.isDeleted }) {
+    with(result.appointments.filterNot { it.isDeleted }) {
       singleOrNull { it.id == appointmentId } isEqualTo null
       filter { it.id != appointmentId } hasSize 3
     }
 
-    // Wait for remaining appointments to be deleted
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.filterNot { it.isDeleted } hasSize 0
+    }
 
     verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -669,7 +777,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
   )
   @Test
-  fun `update group repeat appointment this and all future appointments`() {
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
+  fun `update group repeat appointment this and all future appointments when using location ids`() {
     val request = AppointmentUpdateRequest(
       categoryCode = "AC2",
       tierCode = "TIER_2",
@@ -700,6 +809,10 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
+    nomisMappingApiMockServer.stubMappingFromNomisId(456, dpsLocation.id)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.addPrisonerNumbers!!,
       listOf(
@@ -715,6 +828,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       assertThat(tier!!.code).isEqualTo("TIER_1")
       assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
       assertThat(inCell).isFalse
       assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
       assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
@@ -734,6 +848,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(it.tier!!.code).isEqualTo("TIER_1")
         assertThat(it.organiser).isNull()
         assertThat(it.internalLocationId).isEqualTo(123)
+        assertThat(it.dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
         assertThat(it.inCell).isFalse
         assertThat(it.startTime).isEqualTo(LocalTime.of(9, 0))
         assertThat(it.endTime).isEqualTo(LocalTime.of(10, 30))
@@ -756,6 +871,174 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
         assertThat(it.tier!!.code).isEqualTo("TIER_2")
         assertThat(it.organiser!!.code).isEqualTo("PRISON_STAFF")
         assertThat(it.internalLocationId).isEqualTo(request.internalLocationId)
+        assertThat(it.dpsLocationId).isEqualTo(dpsLocation.id)
+        assertThat(it.inCell).isFalse
+        assertThat(it.startTime).isEqualTo(request.startTime)
+        assertThat(it.endTime).isEqualTo(request.endTime)
+        assertThat(it.extraInformation).isEqualTo("Updated Appointment level comment")
+        assertThat(it.updatedTime).isCloseTo(
+          LocalDateTime.now(),
+          within(60, ChronoUnit.SECONDS),
+        )
+        assertThat(it.updatedBy).isEqualTo("test-client")
+
+        assertThat(it.attendees)
+          .extracting(AppointmentAttendee::prisonerNumber, AppointmentAttendee::bookingId)
+          .containsOnly(
+            tuple("C3456DE", 458L),
+            tuple("B2345CD", 457L),
+          )
+      }
+    }
+
+    verify(eventsPublisher, times(6)).send(eventCaptor.capture())
+    verifyNoMoreInteractions(eventsPublisher)
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
+      assertThat(size).isEqualTo(2)
+      assertThat(map { it.additionalInformation }).containsAll(
+        appointmentSeries.appointments.subList(2, appointmentSeries.appointments.size).flatMap {
+          it.attendees.filter { attendee -> attendee.prisonerNumber == "C3456DE" }
+            .map { attendee -> AppointmentInstanceInformation(attendee.id) }
+        },
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("A new appointment instance has been created in the activities management service")
+    }
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+      assertThat(size).isEqualTo(2)
+      assertThat(map { it.additionalInformation }).contains(
+        AppointmentInstanceInformation(25),
+        AppointmentInstanceInformation(27),
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been updated in the activities management service")
+    }
+
+    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+      assertThat(size).isEqualTo(2)
+      assertThat(map { it.additionalInformation }).contains(
+        AppointmentInstanceInformation(24),
+        AppointmentInstanceInformation(26),
+      )
+      forEach {
+        assertThat(it.occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      }
+      assertThat(
+        map { it.description }.distinct().single(),
+      ).isEqualTo("An appointment instance has been deleted in the activities management service")
+    }
+
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-id-5.sql",
+  )
+  @Test
+  fun `update group repeat appointment this and all future appointments`() {
+    val request = AppointmentUpdateRequest(
+      categoryCode = "AC2",
+      tierCode = "TIER_2",
+      organiserCode = "PRISON_STAFF",
+      dpsLocationId = UUID.fromString("11111111-1111-1111-1111-11111111111"),
+      startDate = LocalDate.now().plusDays(3),
+      startTime = LocalTime.of(13, 30),
+      endTime = LocalTime.of(15, 0),
+      extraInformation = "Updated Appointment level comment",
+      addPrisonerNumbers = listOf("B2345CD", "C3456DE"),
+      removePrisonerNumbers = listOf("A1234BC"),
+      applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
+    )
+
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+
+    val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(request.dpsLocationId, 456),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 456)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(request.dpsLocationId, dpsLocation)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      request.addPrisonerNumbers!!,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "B2345CD", bookingId = 457, prisonId = "TPR"),
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "C3456DE", bookingId = 458, prisonId = "TPR"),
+      ),
+    )
+
+    val appointmentSeries = webTestClient.updateAppointment(12, request)!!
+
+    with(appointmentSeries) {
+      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(tier!!.code).isEqualTo("TIER_1")
+      assertThat(organiser).isNull()
+      assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
+      assertThat(inCell).isFalse
+      assertThat(startDate).isEqualTo(LocalDate.now().minusDays(3))
+      assertThat(startTime).isEqualTo(LocalTime.of(9, 0))
+      assertThat(endTime).isEqualTo(LocalTime.of(10, 30))
+      assertThat(extraInformation).isEqualTo("Appointment series level comment")
+      assertThat(updatedTime).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
+      assertThat(updatedBy).isEqualTo("test-client")
+      assertThat(appointments[0].startDate).isEqualTo(LocalDate.now().minusDays(3))
+      assertThat(appointments[1].startDate).isEqualTo(LocalDate.now().minusDays(3).plusWeeks(1))
+      assertThat(appointments[2].startDate).isEqualTo(request.startDate)
+      assertThat(appointments[3].startDate).isEqualTo(request.startDate!!.plusWeeks(1))
+
+      val tier1Appointments = appointments.subList(0, 2)
+      assertThat(tier1Appointments).hasSize(2)
+      tier1Appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo("AC1")
+        assertThat(it.tier!!.code).isEqualTo("TIER_1")
+        assertThat(it.organiser).isNull()
+        assertThat(it.internalLocationId).isEqualTo(123)
+        assertThat(it.dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
+        assertThat(it.inCell).isFalse
+        assertThat(it.startTime).isEqualTo(LocalTime.of(9, 0))
+        assertThat(it.endTime).isEqualTo(LocalTime.of(10, 30))
+        assertThat(it.extraInformation).isEqualTo("Appointment level comment")
+        assertThat(it.updatedTime).isNull()
+        assertThat(it.updatedBy).isNull()
+
+        assertThat(it.attendees)
+          .extracting(AppointmentAttendee::prisonerNumber, AppointmentAttendee::bookingId)
+          .containsOnly(
+            tuple("A1234BC", 456L),
+            tuple("B2345CD", 457L),
+          )
+      }
+
+      val tier2Appointments = appointments.subList(2, appointments.size)
+      assertThat(tier2Appointments).hasSize(2)
+      tier2Appointments.forEach {
+        assertThat(it.categoryCode).isEqualTo(request.categoryCode)
+        assertThat(it.tier!!.code).isEqualTo("TIER_2")
+        assertThat(it.organiser!!.code).isEqualTo("PRISON_STAFF")
+        assertThat(it.internalLocationId).isEqualTo(456)
+        assertThat(it.dpsLocationId).isEqualTo(UUID.fromString("11111111-1111-1111-1111-11111111111"))
         assertThat(it.inCell).isFalse
         assertThat(it.startTime).isEqualTo(request.startTime)
         assertThat(it.endTime).isEqualTo(request.endTime)
@@ -836,30 +1119,150 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     // will be updated as an asynchronous job
     val appointmentId = 22L
     val request = AppointmentUpdateRequest(
+      dpsLocationId = UUID.fromString("11111111-1111-1111-1111-11111111111"),
+      applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
+    )
+
+    val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, 456),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(dpsLocation.id, 456)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
+
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
+
+    // Synchronous update. Update specified appointment only
+    with(result.appointments) {
+      single { it.id == appointmentId }.internalLocationId isEqualTo 456
+      single { it.id == appointmentId }.dpsLocationId isEqualTo request.dpsLocationId
+      filter { it.id != appointmentId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      filter { it.id != appointmentId }.map { it.dpsLocationId }.distinct().single() isEqualTo UUID.fromString("44444444-1111-2222-3333-444444444444")
+    }
+
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo 456
+      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo request.dpsLocationId
+
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
+      }
+    }
+
+    verifyNoMoreInteractions(eventsPublisher)
+
+    verify(telemetryClient).trackEvent(
+      eq(TelemetryEvent.APPOINTMENT_EDITED.value),
+      telemetryPropertyMap.capture(),
+      telemetryMetricsMap.capture(),
+    )
+
+    telemetryPropertyMap.allValues hasSize 1
+    telemetryMetricsMap.allValues hasSize 1
+
+    with(telemetryPropertyMap.firstValue) {
+      assertThat(this[USER_PROPERTY_KEY]).isEqualTo("test-client")
+      assertThat(this[PRISON_CODE_PROPERTY_KEY]).isEqualTo("TPR")
+      assertThat(this[APPOINTMENT_SERIES_ID_PROPERTY_KEY]).isEqualTo("7")
+      assertThat(this[APPOINTMENT_ID_PROPERTY_KEY]).isEqualTo(appointmentId.toString())
+      assertThat(this[CATEGORY_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[INTERNAL_LOCATION_CHANGED_PROPERTY_KEY]).isEqualTo("true")
+      assertThat(this[START_DATE_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[START_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[END_TIME_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[EXTRA_INFORMATION_CHANGED_PROPERTY_KEY]).isEqualTo("false")
+      assertThat(this[APPLY_TO_PROPERTY_KEY]).isEqualTo(request.applyTo.toString())
+    }
+
+    with(telemetryMetricsMap.firstValue) {
+      assertThat(this[PRISONERS_REMOVED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+      assertThat(this[PRISONERS_ADDED_COUNT_METRIC_KEY]).isEqualTo(0.0)
+      assertThat(this[APPOINTMENT_COUNT_METRIC_KEY]).isEqualTo(4.0)
+      assertThat(this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY]).isEqualTo(12.0)
+      assertThat(this[EVENT_TIME_MS_METRIC_KEY]).isNotNull
+    }
+
+    verifyNoMoreInteractions(telemetryClient)
+    verify(auditService).logEvent(any<AppointmentEditedEvent>())
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-group-repeat-12-instances-id-7.sql",
+  )
+  @Test
+  @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
+  fun `update large group repeat appointment location asynchronously success when using location ids`() {
+    // Seed appointment series has 4 appointments each with 3 attendees equalling 12 appointment instances. Editing all of them
+    // affects more instances than the configured max-sync-appointment-instance-actions value. The service will therefore
+    // update only the first affected appointment and its attendees synchronously. The remaining appointments and attendees
+    // will be updated as an asynchronous job
+    val appointmentId = 22L
+    val request = AppointmentUpdateRequest(
       internalLocationId = 456,
       applyTo = ApplyTo.ALL_FUTURE_APPOINTMENTS,
     )
 
-    prisonApiMockServer.stubGetLocationsForAppointments("TPR", request.internalLocationId!!)
+    val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
-    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocation.id, request.internalLocationId!!),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromNomisId(456, dpsLocation.id)
+
+    locationsInsidePrisonApiMockServer.stubLocationFromDpsUuid(dpsLocation.id, dpsLocation)
+
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
 
     // Synchronous update. Update specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       single { it.id == appointmentId }.internalLocationId isEqualTo request.internalLocationId
+      single { it.id == appointmentId }.dpsLocationId isEqualTo dpsLocation.id
       filter { it.id != appointmentId }.map { it.internalLocationId }.distinct().single() isEqualTo 123
+      filter { it.id != appointmentId }.map { it.dpsLocationId }.distinct().single() isEqualTo UUID.fromString("44444444-1111-2222-3333-444444444444")
     }
 
-    // Wait for remaining appointments to be updated
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo request.internalLocationId
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      appointmentSeries.appointments.map { it.internalLocationId }.distinct()
+        .single() isEqualTo request.internalLocationId
+      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo dpsLocation.id
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(appointmentSeries.appointments.flatMap { it.attendees }.map { AppointmentInstanceInformation(it.id) })
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.updated" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(
+            appointmentSeries.appointments.flatMap { it.attendees }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)
@@ -923,41 +1326,44 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       ),
     )
 
-    var appointmentSeries = webTestClient.updateAppointment(appointmentId, request)!!
+    val result = webTestClient.updateAppointment(appointmentId, request)!!
 
     // Synchronous update. Update specified appointment only
-    with(appointmentSeries.appointments) {
+    with(result.appointments) {
       assertThat(single { it.id == appointmentId }.attendees.map { it.prisonerNumber }).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
       assertThat(filter { it.id != appointmentId }.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("A1234BC", "B2345CD", "C3456DE")
     }
 
-    // Wait for remaining appointments to be updated
-    Thread.sleep(1000)
-    appointmentSeries = webTestClient.getAppointmentSeriesById(appointmentSeries.id)!!
-    assertThat(appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }.distinct()).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
+    await untilAsserted {
+      val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
+      assertThat(
+        appointmentSeries.appointments.flatMap { it.attendees }.map { it.prisonerNumber }
+          .distinct(),
+      ).containsOnly("B2345CD", "C3456DE", "D4567EF", "E5679FG")
 
-    verify(eventsPublisher, times(12)).send(eventCaptor.capture())
+      verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
-      assertThat(size).isEqualTo(4)
-      assertThat(map { it.additionalInformation }).containsExactly(
-        // The deleted event for the specified appointment's attendee is sent first
-        AppointmentInstanceInformation(36),
-        // Followed by the deleted events for the remaining attendees
-        AppointmentInstanceInformation(30),
-        AppointmentInstanceInformation(33),
-        AppointmentInstanceInformation(39),
-      )
-    }
-
-    with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
-      assertThat(map { it.additionalInformation })
-        .hasSameElementsAs(
-          appointmentSeries.appointments
-            .flatMap { it.attendees }
-            .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
-            .map { AppointmentInstanceInformation(it.id) },
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.deleted" }) {
+        assertThat(size).isEqualTo(4)
+        assertThat(map { it.additionalInformation }).containsExactly(
+          // The deleted event for the specified appointment's attendee is sent first
+          AppointmentInstanceInformation(36),
+          // Followed by the deleted events for the remaining attendees
+          AppointmentInstanceInformation(30),
+          AppointmentInstanceInformation(33),
+          AppointmentInstanceInformation(39),
         )
+      }
+
+      with(eventCaptor.allValues.filter { it.eventType == "appointments.appointment-instance.created" }) {
+        assertThat(map { it.additionalInformation })
+          .hasSameElementsAs(
+            appointmentSeries.appointments
+              .flatMap { it.attendees }
+              .filter { attendee -> listOf("E5679FG", "D4567EF").contains(attendee.prisonerNumber) }
+              .map { AppointmentInstanceInformation(it.id) },
+          )
+      }
     }
 
     verifyNoMoreInteractions(eventsPublisher)

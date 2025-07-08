@@ -36,7 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.security.Principal
 import java.time.LocalDate
-import java.util.Optional
+import java.util.*
 
 class AppointmentServiceUpdateTest {
   private val appointmentRepository: AppointmentRepository = mock()
@@ -103,7 +103,7 @@ class AppointmentServiceUpdateTest {
   }
 
   @Test
-  fun `update internal location throws illegal argument exception when inCell = false and requested internal location id is not found`() {
+  fun `update internal location id throws illegal argument exception when inCell = false and requested internal location id is not found`() {
     val appointment = expectGroupAppointment()
     val appointmentSeries = appointment.appointmentSeries
     val request = AppointmentUpdateRequest(internalLocationId = -1)
@@ -111,7 +111,19 @@ class AppointmentServiceUpdateTest {
     whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)).thenReturn(emptyMap())
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
-      .hasMessage("Appointment location with id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
+      .hasMessage("Appointment location with Nomis location id ${request.internalLocationId} not found in prison '${appointmentSeries.prisonCode}'")
+  }
+
+  @Test
+  fun `update DPS location id throws illegal argument exception when inCell = false and requested DPS location id is not found`() {
+    val appointment = expectGroupAppointment()
+    val appointmentSeries = appointment.appointmentSeries
+    val request = AppointmentUpdateRequest(dpsLocationId = UUID.randomUUID())
+
+    whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(appointmentSeries.prisonCode)).thenReturn(emptyMap())
+
+    assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)
+      .hasMessage("Appointment location with DPS location id ${request.dpsLocationId} not found in prison '${appointmentSeries.prisonCode}'")
   }
 
   @Test
@@ -183,7 +195,7 @@ class AppointmentServiceUpdateTest {
         },
       )
 
-    whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries, appointmentSeries.appointments()))
+    whenever(appointmentUpdateDomainService.getUpdateInstancesCount(request, appointmentSeries.appointments()))
       .thenReturn(prisonerList.size * appointmentSeries.schedule!!.numberOfAppointments)
 
     assertThatThrownBy { service.updateAppointment(appointment.appointmentId, request, principal) }.isInstanceOf(IllegalArgumentException::class.java)

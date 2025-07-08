@@ -181,6 +181,7 @@ data class Appointment(
     organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     inCell = inCell,
     startDate = startDate,
     startTime = startTime,

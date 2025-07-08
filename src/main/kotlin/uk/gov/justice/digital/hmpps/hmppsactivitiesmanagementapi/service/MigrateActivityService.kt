@@ -281,7 +281,7 @@ class MigrateActivityService(
     // For tier two activities we need a default value for the organiser
     val defaultOrganiser = eventOrganiserRepository.findByCodeOrThrowIllegalArgument("OTHER")
 
-    val internalLocation = if (request.dpsLocationId != null) locationService.getLocationForSchedule(request.dpsLocationId) else null
+    val internalLocation = if (request.dpsLocationId != null) locationService.getLocationDetails(request.dpsLocationId) else null
 
     return Activity(
       prisonCode = request.prisonCode,

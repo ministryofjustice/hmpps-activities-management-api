@@ -9,7 +9,6 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -25,13 +24,6 @@ class FixActivitiesJobIntegrationTest : IntegrationTestBase() {
   @BeforeEach
   fun setUp() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers("B2345CD", "C3456DE")
-
-    prisonApiMockServer.stubGetLocationsForAppointments(
-      "RSI",
-      listOf(
-        appointmentLocation(123, "RSI", userDescription = "Location 123"),
-      ),
-    )
 
     prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
       listOf(

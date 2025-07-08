@@ -99,6 +99,7 @@ class AppointmentServiceUncancelTest {
       outboundEventsService,
       telemetryClient,
       auditService,
+      locationService,
     ),
     AppointmentCancelDomainService(
       appointmentSeriesRepository,

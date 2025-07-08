@@ -342,7 +342,7 @@ class ActivityService(
     }
   }
 
-  private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID): LocationDetails = locationService.getLocationForSchedule(dpsLocationId).apply {
+  private fun getLocationForSchedule(activity: Activity, dpsLocationId: UUID): LocationDetails = locationService.getLocationDetails(dpsLocationId).apply {
     failIfPrisonsDiffer(activity, this)
   }
 
