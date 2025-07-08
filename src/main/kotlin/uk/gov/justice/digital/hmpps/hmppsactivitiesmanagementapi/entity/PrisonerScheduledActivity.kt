@@ -9,6 +9,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import java.io.Serializable
 import java.time.LocalDate
@@ -126,6 +127,37 @@ data class PrisonerScheduledActivity(
     suspended = suspended,
     autoSuspended = autoSuspended,
   )
+
+  fun toScheduledActivityModel() = ScheduledActivity(
+    scheduledInstanceId = scheduledInstanceId,
+    allocationId = allocationId,
+    prisonCode = prisonCode,
+    sessionDate = sessionDate,
+    startTime = startTime,
+    endTime = endTime,
+    prisonerNumber = prisonerNumber,
+    bookingId = bookingId,
+    inCell = inCell,
+    onWing = onWing,
+    offWing = offWing,
+    internalLocationId = internalLocationId,
+    internalLocationDescription = internalLocationDescription,
+    scheduleDescription = scheduleDescription,
+    activityId = activityId,
+    activityCategory = activityCategory,
+    activitySummary = activitySummary,
+    cancelled = cancelled,
+    suspended = suspended,
+    autoSuspended = autoSuspended,
+    timeSlot = timeSlot,
+    issuePayment = issuePayment,
+    attendanceStatus = attendanceStatus,
+    attendanceReasonCode = attendanceReasonCode,
+    paidActivity = paidActivity,
+    possibleAdvanceAttendance = possibleAdvanceAttendance,
+  )
 }
 
 fun List<PrisonerScheduledActivity>.toScheduledAttendeeModel() = map { it.toScheduledAttendeeModel() }
+
+fun List<PrisonerScheduledActivity>.toScheduledActivityModel() = map { it.toScheduledActivityModel() }
