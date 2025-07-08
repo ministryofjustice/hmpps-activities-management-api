@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -15,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledAttendeeModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledInstanceAttendanceSummary
@@ -22,6 +24,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.S
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduleInstancesUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ScheduledInstancedUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceAttendanceSummaryRepository
@@ -83,6 +86,29 @@ class ScheduledInstanceService(
     cancelled = cancelled,
     timeSlot = slot,
   ).toModel()
+
+  @Transactional(readOnly = true)
+  fun getActivityScheduleInstancesForPrisonerByDateRange(
+    prisonCode: String,
+    prisonerNumber: String,
+    startDate: LocalDate,
+    endDate: LocalDate,
+    slot: TimeSlot?,
+  ): List<ScheduledActivity> {
+    if (endDate.isAfter(startDate.plusMonths(3))) {
+      throw ValidationException("Date range cannot exceed 3 months")
+    }
+
+    val filteredScheduledInstances = prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
+      prisonCode = prisonCode,
+      prisonerNumber = prisonerNumber,
+      startDate = startDate,
+      endDate = endDate,
+      timeSlot = slot,
+    ).toScheduledActivityModel()
+
+    return filteredScheduledInstances
+  }
 
   fun getAttendeesForScheduledInstance(id: Long): List<ScheduledAttendee> {
     val activityScheduleInstance = repository.findOrThrowNotFound(id)

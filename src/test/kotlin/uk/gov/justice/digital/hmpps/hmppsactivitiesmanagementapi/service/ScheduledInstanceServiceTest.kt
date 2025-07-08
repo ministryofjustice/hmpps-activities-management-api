@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.ValidationException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
@@ -175,6 +177,71 @@ class ScheduledInstanceServiceTest {
 
       result = service.getActivityScheduleInstancesByDateRange(prisonCode, dateRange, null, true)
       assertThat(result).isEmpty()
+    }
+  }
+
+  @Nested
+  @DisplayName("getActivityScheduleInstancesForPrisonerByDateRange")
+  inner class GetActivityScheduleInstancesForPrisonerByDateRange {
+    val prisonCode = "MDI"
+    val prisonerNumber = "A1234AA"
+    val startDate: LocalDate = LocalDate.of(2022, 10, 1)
+    val endDate: LocalDate = LocalDate.of(2022, 11, 5)
+    val results = listOf(activityFromDbInstance())
+
+    @Test
+    fun `get prisoner activities`() {
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
+          prisonCode = prisonCode,
+          prisonerNumber = prisonerNumber,
+          startDate = startDate,
+          endDate = endDate,
+          timeSlot = null,
+        ),
+      )
+        .thenReturn(results)
+
+      val result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = null)
+      assertThat(result).hasSize(1)
+    }
+
+    @Test
+    fun `filtered by time slot`() {
+      whenever(
+        prisonerScheduledActivityRepository.getScheduledActivitiesForPrisonerAndDateRange(
+          prisonCode = prisonCode,
+          prisonerNumber = prisonerNumber,
+          startDate = startDate,
+          endDate = endDate,
+          timeSlot = TimeSlot.PM,
+        ),
+      )
+        .thenReturn(results)
+
+      var result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.PM)
+      assertThat(result).hasSize(1)
+
+      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.AM)
+      assertThat(result).isEmpty()
+
+      result = service.getActivityScheduleInstancesForPrisonerByDateRange(prisonCode = prisonCode, prisonerNumber = prisonerNumber, startDate = startDate, endDate = endDate, slot = TimeSlot.ED)
+      assertThat(result).isEmpty()
+    }
+
+    @Test
+    fun `returns exception when there is more than 3 months between start and end date`() {
+      assertThatThrownBy {
+        service.getActivityScheduleInstancesForPrisonerByDateRange(
+          prisonCode = prisonCode,
+          prisonerNumber = prisonerNumber,
+          startDate = startDate,
+          endDate = startDate.plusMonths(3).plusDays(1),
+          slot = null,
+        )
+      }
+        .isInstanceOf(ValidationException::class.java)
+        .hasMessage("Date range cannot exceed 3 months")
     }
   }
 

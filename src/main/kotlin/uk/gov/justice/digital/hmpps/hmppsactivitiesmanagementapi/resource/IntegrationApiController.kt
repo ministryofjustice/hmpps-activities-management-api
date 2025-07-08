@@ -16,15 +16,20 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import java.time.LocalDate
 
 @RestController
 @RequestMapping("/integration-api", produces = [MediaType.APPLICATION_JSON_VALUE])
 class IntegrationApiController(
   private val attendancesService: AttendancesService,
+  private val scheduledInstanceService: ScheduledInstanceService,
 ) {
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
   @ResponseBody
@@ -91,5 +96,62 @@ class IntegrationApiController(
     startDate = startDate,
     endDate = endDate,
     prisonCode = prisonCode,
+  )
+
+  @GetMapping(value = ["/prisons/{prisonCode}/{prisonerNumber}/scheduled-instances"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a list of scheduled instances for a prisoner, prison, date range (max 3 months) and time slot (AM, PM or ED - optional)",
+    description = "Returns zero or more scheduled instances for a prisoner and date range (max 3 months).",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call - zero or more scheduled instance records found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivityScheduleInstance::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getScheduledInstancesForPrisoner(
+    @PathVariable("prisonCode", required = true)
+    @Parameter(description = "The 3-character prison code.")
+    prisonCode: String,
+    @PathVariable("prisonerNumber", required = true)
+    @Parameter(description = "Prisoner Number")
+    prisonerNumber: String,
+    @RequestParam("startDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
+    startDate: LocalDate,
+    @RequestParam("endDate", required = true)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @Parameter(description = "End date of query (required). The end date must be within 3 months of the start date. Format YYYY-MM-DD.")
+    endDate: LocalDate,
+    @RequestParam(value = "slot")
+    @Parameter(description = "The time slot (optional). If supplied, one of AM, PM or ED.")
+    slot: TimeSlot?,
+  ): List<ScheduledActivity> = scheduledInstanceService.getActivityScheduleInstancesForPrisonerByDateRange(
+    prisonCode = prisonCode,
+    prisonerNumber = prisonerNumber,
+    startDate = startDate,
+    endDate = endDate,
+    slot = slot,
   )
 }
