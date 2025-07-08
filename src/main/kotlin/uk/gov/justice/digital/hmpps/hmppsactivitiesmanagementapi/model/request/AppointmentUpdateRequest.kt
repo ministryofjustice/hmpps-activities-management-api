@@ -136,7 +136,7 @@ data class AppointmentUpdateRequest(
   fun isPropertyUpdate() = categoryCode != null || internalLocationId != null || dpsLocationId != null || inCell != null || startDate != null || startTime != null || endTime != null || extraInformation != null
 
   @AssertTrue(message = "Internal location id or DPS location id must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell != false || internalLocationId != null || dpsLocationId != null
+  private fun isInternalLocation() = inCell != false || internalLocationId != null || dpsLocationId != null
 
   @AssertTrue(message = "Start time must be in the future")
   private fun isStartTime() = startDate == null || startTime == null || startDate < LocalDate.now() || LocalDateTime.of(startDate, startTime) > LocalDateTime.now()

@@ -22,7 +22,7 @@ class AppointmentUpdateRequestTest {
   @Test
   fun `internal location id must be supplied if in cell = false`() {
     val request = AppointmentUpdateRequest(internalLocationId = null, dpsLocationId = null, inCell = false)
-    assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id or DPS location id must be supplied if in cell = false")
+    assertSingleValidationError(validator.validate(request), "internalLocation", "Internal location id or DPS location id must be supplied if in cell = false")
   }
 
   @Test
