@@ -25,6 +25,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingList
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerAllocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PrisonerDeallocationRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -195,6 +196,11 @@ class ActivityScheduleService(
 
       newAttendances.forEach { manageAttendancesService.sendCreatedEvent(it) }
     }
+  }
+
+  fun getSuitabilityCriteria(scheduleId: Long): ActivitySuitabilityCriteria? {
+    val activityschedule = repository.findById(scheduleId)
+    return activityschedule.map { it.toActivitySuitabilityCriteria() } as ActivitySuitabilityCriteria?
   }
 
   private fun getActivePrisoner(prisonerNumber: String, adminMode: Boolean?): Prisoner? {
