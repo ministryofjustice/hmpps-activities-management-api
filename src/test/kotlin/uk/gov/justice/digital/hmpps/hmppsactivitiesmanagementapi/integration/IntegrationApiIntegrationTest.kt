@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
@@ -205,7 +206,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       assertThat(scheduledInstances).hasSize(0)
     }
-
     private fun WebTestClient.getScheduledInstancesForPrisonerBy(
       prisonerNumber: String,
       prisonCode: String,
@@ -227,6 +227,58 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(PrisonerScheduledActivity::class.java)
+      .returnResult().responseBody
+  }
+
+  @Nested
+  @DisplayName("getActivityScheduleSuitabilityCriteria")
+  inner class GetActivityScheduleSuitabilityCriteria {
+    val scheduleId = 1L
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-for-suitability-check.sql")
+    fun `returns suitability data for given id`() {
+      val suitabilityCriteria =
+        webTestClient.getActivityScheduleSuitabilityCriteria(scheduleId = scheduleId)
+
+      assertThat(suitabilityCriteria).isNotNull
+      assertThat(suitabilityCriteria?.riskLevel).isEqualTo("high")
+      assertThat(suitabilityCriteria?.minimumEducationLevel).hasSize(1)
+      assertThat(suitabilityCriteria?.payRate).hasSize(3)
+
+    }
+
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-for-suitability-check.sql")
+    fun `returns 404 for schedule id with no data `() {
+      val scheduleIdWithNoData = 4L
+      webTestClient.get()
+        .uri { builder ->
+          builder
+            .path("/integration-api/activities/schedule/$scheduleIdWithNoData/suitability-criteria")
+            .build()
+        }
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+        .exchange()
+        .expectStatus().isNotFound
+    }
+
+    private fun WebTestClient.getActivityScheduleSuitabilityCriteria(
+      scheduleId: Long = 1L,
+    ) = get()
+      .uri { builder ->
+        builder
+          .path("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
+          .build()
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ActivitySuitabilityCriteria::class.java)
       .returnResult().responseBody
   }
 }

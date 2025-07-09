@@ -8,7 +8,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -26,7 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -210,12 +208,12 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       whenever(
         activityScheduleService.getSuitabilityCriteria(
-          scheduleId = scheduleId
+          scheduleId = scheduleId,
         ),
       ).thenReturn(results)
 
       val response = mockMvc.getActivityScheduleSuitabilityCriteria(
-        scheduleId = scheduleId
+        scheduleId = scheduleId,
       )
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
@@ -224,7 +222,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
 
       verify(activityScheduleService).getSuitabilityCriteria(
-        scheduleId = scheduleId
+        scheduleId = scheduleId,
       )
     }
 
@@ -240,10 +238,10 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       assertThat(response.contentAsString).contains("not found")
 
       verify(activityScheduleService).getSuitabilityCriteria(
-        scheduleId = scheduleId
+        scheduleId = scheduleId,
       )
     }
 
-    private fun MockMvc.getActivityScheduleSuitabilityCriteria(scheduleId:Long = 1L) = get("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
+    private fun MockMvc.getActivityScheduleSuitabilityCriteria(scheduleId: Long = 1L) = get("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
   }
 }
