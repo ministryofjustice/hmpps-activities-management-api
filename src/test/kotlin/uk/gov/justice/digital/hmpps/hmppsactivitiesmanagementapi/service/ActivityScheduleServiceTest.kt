@@ -59,6 +59,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.P
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.EarliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.PrisonPayBandRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
@@ -324,6 +325,23 @@ class ActivityScheduleServiceTest {
   @Test
   fun `throws entity not found exception for unknown activity schedule`() {
     assertThatThrownBy { service.getAllocationsBy(-99) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity Schedule -99 not found")
+  }
+
+  @Test
+  fun `suitability criteria for a given schedule are returned`() {
+    val schedule = schedule(MOORLAND_PRISON_CODE)
+
+    whenever(repository.findOrThrowNotFound(schedule.activityScheduleId)) doReturn schedule
+
+    assertThat(service.getSuitabilityCriteria(schedule.activityScheduleId)).isEqualTo(
+      schedule.toModelActivitySuitabilityCriteria(),
+    )
+  }
+
+  @Test
+  fun `throws entity not found exception for unknown suitability criteria`() {
+    assertThatThrownBy { service.getSuitabilityCriteria(-99) }.isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity Schedule -99 not found")
   }
 

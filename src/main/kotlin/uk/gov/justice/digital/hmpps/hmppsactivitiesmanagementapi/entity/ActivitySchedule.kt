@@ -160,11 +160,11 @@ data class ActivitySchedule(
 
   fun toModelActivityScheduleSlots() = this.slots().map { it.toModel() }
 
-  fun toActivitySuitabilityCriteria() = ActivitySuitabilityCriteria(
+  fun toModelActivitySuitabilityCriteria() = ActivitySuitabilityCriteria(
     riskLevel = this.activity.riskLevel,
     isPaid = this.activity.paid,
     payRate = this.activity.activityPay().map { it.toModel() },
-    minimumEducationLevel = this.activity.activityMinimumEducationLevel().map { it.toModel() }
+    minimumEducationLevel = this.activity.activityMinimumEducationLevel().map { it.toModel() },
   )
 
   companion object {

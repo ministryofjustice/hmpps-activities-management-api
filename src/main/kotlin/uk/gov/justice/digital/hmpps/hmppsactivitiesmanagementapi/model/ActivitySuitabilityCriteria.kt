@@ -10,5 +10,5 @@ data class ActivitySuitabilityCriteria(
   @Schema(description = "Describes the pay rates and bands which apply to an activity")
   val payRate: List<ActivityPay>,
   @Schema(description = "Describes the minimum education levels which apply to an activity")
-  val minimumEducationLevel: List<ActivityMinimumEducationLevel>
+  val minimumEducationLevel: List<ActivityMinimumEducationLevel>,
 )

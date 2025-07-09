@@ -200,7 +200,7 @@ class ActivityScheduleService(
 
   fun getSuitabilityCriteria(scheduleId: Long): ActivitySuitabilityCriteria? {
     val activitySchedule = repository.findOrThrowNotFound(scheduleId)
-    return activitySchedule.toActivitySuitabilityCriteria()
+    return activitySchedule.toModelActivitySuitabilityCriteria()
   }
 
   private fun getActivePrisoner(prisonerNumber: String, adminMode: Boolean?): Prisoner? {
