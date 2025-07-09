@@ -42,7 +42,11 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
-  override fun controller() = IntegrationApiController(attendancesService, scheduledInstanceService)
+  override fun controller() = IntegrationApiController(
+      attendancesService,
+      scheduledInstanceService,
+      activityScheduleService
+  )
 
   @Nested
   inner class GetPrisonerAttendance {
