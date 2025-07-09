@@ -207,6 +207,6 @@ class IntegrationApiController(
     @Parameter(description = "Schedule ID", required = true)
     scheduleId: Long,
   ): ActivitySuitabilityCriteria? = activityScheduleService.getSuitabilityCriteria(
-    scheduleId = scheduleId
+    scheduleId = scheduleId,
   )
 }
