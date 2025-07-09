@@ -245,9 +245,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(suitabilityCriteria?.riskLevel).isEqualTo("high")
       assertThat(suitabilityCriteria?.minimumEducationLevel).hasSize(1)
       assertThat(suitabilityCriteria?.payRate).hasSize(3)
-
     }
-
 
     @Test
     @Sql("classpath:test_data/seed-activity-for-suitability-check.sql")
