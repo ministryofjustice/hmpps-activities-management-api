@@ -32,7 +32,7 @@ class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
   private val waitingListService: WaitingListService,
-  ) {
+) {
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
   @ResponseBody
   @Operation(
