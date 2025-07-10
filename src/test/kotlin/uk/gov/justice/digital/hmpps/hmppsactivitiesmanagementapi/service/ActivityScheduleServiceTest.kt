@@ -328,6 +328,23 @@ class ActivityScheduleServiceTest {
   }
 
   @Test
+  fun `suitability criteria for a given schedule are returned`() {
+    val schedule = schedule(MOORLAND_PRISON_CODE)
+
+    whenever(repository.findById(1)) doReturn Optional.of(schedule)
+
+    assertThat(service.getSuitabilityCriteria(1)).isEqualTo(
+      schedule.toModelActivitySuitabilityCriteria(),
+    )
+  }
+
+  @Test
+  fun `throws entity not found exception for unknown suitability criteria`() {
+    assertThatThrownBy { service.getSuitabilityCriteria(-99) }.isInstanceOf(EntityNotFoundException::class.java)
+      .hasMessage("Activity Schedule -99 not found")
+  }
+
+  @Test
   fun `can deallocate a prisoner from activity schedule`() {
     val allocation = allocation().copy(prisonerNumber = "1")
 

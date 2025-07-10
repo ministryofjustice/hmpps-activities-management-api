@@ -24,7 +24,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -44,9 +47,17 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
   @MockitoBean
+  private lateinit var activityScheduleService: ActivityScheduleService
+
+  @MockitoBean
   private lateinit var waitingListService: WaitingListService
 
-  override fun controller() = IntegrationApiController(attendancesService, scheduledInstanceService, waitingListService)
+  override fun controller() = IntegrationApiController(
+    attendancesService,
+    scheduledInstanceService,
+    activityScheduleService,
+    waitingListService,
+  )
 
   @Nested
   inner class GetPrisonerAttendance {
@@ -190,5 +201,52 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     }
 
     private fun MockMvc.getScheduledInstancesForPrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate, slot: TimeSlot) = get("/integration-api/prisons/$prisonCode/$prisonerNumber/scheduled-instances?startDate=$startDate&endDate=$endDate&slot=$slot")
+  }
+
+  @Nested
+  inner class GetActivityScheduleSuitabilityCriteria {
+    val scheduleId = 1L
+
+    @Test
+    fun `200 response with suitability criteria`() {
+      val results = schedule(MOORLAND_PRISON_CODE).toModelActivitySuitabilityCriteria()
+
+      whenever(
+        activityScheduleService.getSuitabilityCriteria(
+          scheduleId = scheduleId,
+        ),
+      ).thenReturn(results)
+
+      val response = mockMvc.getActivityScheduleSuitabilityCriteria(
+        scheduleId = scheduleId,
+      )
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(results))
+
+      verify(activityScheduleService).getSuitabilityCriteria(
+        scheduleId = scheduleId,
+      )
+    }
+
+    @Test
+    fun `404 response when get activity schedule suitability criteria not found`() {
+      whenever(activityScheduleService.getSuitabilityCriteria(scheduleId = scheduleId)).thenThrow(EntityNotFoundException("not found"))
+
+      val response = mockMvc.get("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isNotFound() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).contains("not found")
+
+      verify(activityScheduleService).getSuitabilityCriteria(
+        scheduleId = scheduleId,
+      )
+    }
+
+    private fun MockMvc.getActivityScheduleSuitabilityCriteria(scheduleId: Long = 1L) = get("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
   }
 }

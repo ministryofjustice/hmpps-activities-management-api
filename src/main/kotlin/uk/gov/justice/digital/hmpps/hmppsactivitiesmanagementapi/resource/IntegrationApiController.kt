@@ -18,9 +18,11 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -31,6 +33,7 @@ import java.time.LocalDate
 class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
+  private val activityScheduleService: ActivityScheduleService,
   private val waitingListService: WaitingListService,
 ) {
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
@@ -155,6 +158,64 @@ class IntegrationApiController(
     startDate = startDate,
     endDate = endDate,
     slot = slot,
+  )
+
+  @GetMapping(value = ["/activities/schedule/{scheduleId}/suitability-criteria"])
+  @ResponseBody
+  @Operation(
+    summary = "Gets the suitability criteria for allocating prisoners to a particular activity ",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Successful call",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivitySuitabilityCriteria::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Invalid request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The suitability criteria was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getActivityScheduleSuitabilityCriteria(
+    @PathVariable("scheduleId")
+    @Parameter(description = "Schedule ID", required = true)
+    scheduleId: Long,
+  ): ActivitySuitabilityCriteria? = activityScheduleService.getSuitabilityCriteria(
+    scheduleId = scheduleId,
   )
 
   @GetMapping(value = ["/schedules/{scheduleId}/waiting-list-applications"])

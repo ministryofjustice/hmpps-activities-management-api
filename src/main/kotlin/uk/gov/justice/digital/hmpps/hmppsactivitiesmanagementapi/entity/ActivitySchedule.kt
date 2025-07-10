@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.DayOfWeek
@@ -158,6 +159,13 @@ data class ActivitySchedule(
   fun allocations(excludeEnded: Boolean = false): List<Allocation> = allocations.toList().filter { !excludeEnded || !it.status(PrisonerStatus.ENDED) }
 
   fun toModelActivityScheduleSlots() = this.slots().map { it.toModel() }
+
+  fun toModelActivitySuitabilityCriteria() = ActivitySuitabilityCriteria(
+    riskLevel = this.activity.riskLevel,
+    isPaid = this.activity.paid,
+    payRates = this.activity.activityPay().map { it.toModel() },
+    minimumEducationLevel = this.activity.activityMinimumEducationLevel().map { it.toModel() },
+  )
 
   companion object {
     fun valueOf(
