@@ -66,8 +66,8 @@ class AppointmentSetCreateRequestTest {
   }
 
   @Test
-  fun `DPS Location id and internal location id are not needed if cell = true`() {
-    val request = appointmentSetCreateRequest(internalLocationId = 1L, dpsLocationId = UUID.randomUUID(), inCell = false)
+  fun `DPS Location id and internal location id are not needed if in cell = true`() {
+    val request = appointmentSetCreateRequest(internalLocationId = null, dpsLocationId = null, inCell = true)
     assertThat(validator.validate(request)).isEmpty()
   }
 
