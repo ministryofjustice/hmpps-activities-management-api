@@ -244,7 +244,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       assertThat(suitabilityCriteria).isNotNull
       assertThat(suitabilityCriteria?.riskLevel).isEqualTo("high")
       assertThat(suitabilityCriteria?.minimumEducationLevel).hasSize(1)
-      assertThat(suitabilityCriteria?.payRate).hasSize(3)
+      assertThat(suitabilityCriteria?.payRates).hasSize(3)
     }
 
     @Test

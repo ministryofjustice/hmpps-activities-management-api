@@ -163,7 +163,7 @@ data class ActivitySchedule(
   fun toModelActivitySuitabilityCriteria() = ActivitySuitabilityCriteria(
     riskLevel = this.activity.riskLevel,
     isPaid = this.activity.paid,
-    payRate = this.activity.activityPay().map { it.toModel() },
+    payRates = this.activity.activityPay().map { it.toModel() },
     minimumEducationLevel = this.activity.activityMinimumEducationLevel().map { it.toModel() },
   )
 
