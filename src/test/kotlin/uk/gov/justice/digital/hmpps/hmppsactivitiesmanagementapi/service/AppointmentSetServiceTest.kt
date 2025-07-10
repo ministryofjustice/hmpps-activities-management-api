@@ -18,6 +18,8 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
@@ -69,6 +71,7 @@ class AppointmentSetServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
 
   private val service = AppointmentSetService(
     appointmentSetRepository,
@@ -81,6 +84,7 @@ class AppointmentSetServiceTest {
     outboundEventsService,
     telemetryClient,
     auditService,
+    nomisMappingAPIClient,
     2L,
   )
 
@@ -260,6 +264,12 @@ class AppointmentSetServiceTest {
       whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
         .thenReturn(mapOf(dpsLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))
 
+      whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId))
+        .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
+
+      whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123))
+        .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
+
       whenever(prisonerSearchApiClient.findByPrisonerNumbers(listOf("A1234BC")))
         .thenReturn(
           listOf(
@@ -329,6 +339,64 @@ class AppointmentSetServiceTest {
       exception.message isEqualTo "Appointment location with id '999' not found in prison 'MDI'"
 
       verifyNoInteractions(appointmentSetRepository)
+    }
+
+    @Test
+    fun `createAppointmentSet determines DPS location id when DPS location id is null`() {
+      val request = appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, dpsLocationId = null)
+
+      whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
+        .thenReturn(mapOf(123L to appointmentLocationDetails(123L, dpsLocationId, request.prisonCode!!)))
+
+      service.createAppointmentSet(request, principal)
+
+      with(appointmentSetCaptor.firstValue) {
+        inCell isBool false
+        internalLocationId isEqualTo 123
+        dpsLocationId = dpsLocationId
+        appointmentSeries().forEach {
+          it.inCell isBool false
+          it.internalLocationId isEqualTo 123
+          it.dpsLocationId = dpsLocationId
+          with(it.appointments().single()) {
+            inCell isBool false
+            internalLocationId isEqualTo 123
+            dpsLocationId = dpsLocationId
+          }
+        }
+      }
+
+      verify(nomisMappingAPIClient).getLocationMappingByNomisId(123L)
+      verify(appointmentSetRepository).saveAndFlush(any())
+    }
+
+    @Test
+    fun `createAppointmentSet determines location id when location id is null`() {
+      val request = appointmentSetCreateRequest(prisonCode = prisonCode, categoryCode = categoryCode, internalLocationId = null)
+
+      whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
+        .thenReturn(mapOf(123L to appointmentLocationDetails(123L, dpsLocationId, request.prisonCode!!)))
+
+      service.createAppointmentSet(request, principal)
+
+      with(appointmentSetCaptor.firstValue) {
+        inCell isBool false
+        internalLocationId isEqualTo 123
+        dpsLocationId = dpsLocationId
+        appointmentSeries().forEach {
+          it.inCell isBool false
+          it.internalLocationId isEqualTo 123
+          it.dpsLocationId = dpsLocationId
+          with(it.appointments().single()) {
+            inCell isBool false
+            internalLocationId isEqualTo 123
+            dpsLocationId = dpsLocationId
+          }
+        }
+      }
+
+      verify(nomisMappingAPIClient).getLocationMappingByDpsId(dpsLocationId)
+      verify(appointmentSetRepository).saveAndFlush(any())
     }
 
     @Test
@@ -453,18 +521,19 @@ class AppointmentSetServiceTest {
       with(appointmentSetCaptor.firstValue) {
         this isEqualTo AppointmentSet(
           appointmentSetId = 0L,
-          prisonCode = prisonCode,
-          categoryCode = categoryCode,
-          appointmentTier = appointmentTier,
+          prisonCode = request.prisonCode!!,
+          categoryCode = request.categoryCode!!,
+          appointmentTier = eventTier(),
           customName = "Custom name",
-          internalLocationId = internalLocationId,
+          internalLocationId = 123,
+          dpsLocationId = request.dpsLocationId!!,
           customLocation = null,
           inCell = false,
           onWing = false,
           offWing = true,
           startDate = request.startDate!!,
           createdTime = appointmentSetCaptor.firstValue.createdTime,
-          createdBy = createdBy,
+          createdBy = principal.name,
           updatedTime = null,
           updatedBy = null,
         ).also {
@@ -477,11 +546,12 @@ class AppointmentSetServiceTest {
             appointmentSeriesId = 0L,
             appointmentSet = null,
             appointmentType = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType.INDIVIDUAL,
-            prisonCode = prisonCode,
-            categoryCode = categoryCode,
-            appointmentTier = appointmentTier,
+            prisonCode = request.prisonCode,
+            categoryCode = request.categoryCode,
+            appointmentTier = eventTier(),
             customName = "Custom name",
-            internalLocationId = internalLocationId,
+            internalLocationId = 123,
+            dpsLocationId = request.dpsLocationId,
             customLocation = null,
             inCell = false,
             onWing = false,
@@ -493,7 +563,7 @@ class AppointmentSetServiceTest {
             unlockNotes = null,
             extraInformation = request.appointments.single().extraInformation,
             createdTime = appointmentSetCaptor.firstValue.createdTime,
-            createdBy = createdBy,
+            createdBy = principal.name,
             updatedTime = null,
             updatedBy = null,
           ).also {
@@ -506,11 +576,12 @@ class AppointmentSetServiceTest {
               appointmentId = 0L,
               appointmentSeries = appointmentSeries,
               sequenceNumber = 1,
-              prisonCode = prisonCode,
-              categoryCode = categoryCode,
+              prisonCode = request.prisonCode,
+              categoryCode = request.categoryCode,
               customName = "Custom name",
-              appointmentTier = appointmentTier,
-              internalLocationId = internalLocationId,
+              appointmentTier = eventTier(),
+              internalLocationId = 123,
+              dpsLocationId = request.dpsLocationId,
               customLocation = null,
               inCell = false,
               onWing = false,
@@ -521,7 +592,7 @@ class AppointmentSetServiceTest {
               unlockNotes = null,
               extraInformation = request.appointments.single().extraInformation,
               createdTime = appointmentSetCaptor.firstValue.createdTime,
-              createdBy = createdBy,
+              createdBy = principal.name,
               updatedTime = null,
               updatedBy = null,
             ).also {
@@ -572,15 +643,29 @@ class AppointmentSetServiceTest {
     }
 
     @Test
-    fun `internal location id = null, in cell = true`() {
-      val request = createAppointmentSetWithOneAppointment.copy(internalLocationId = null, inCell = true)
+    fun `internal location id = null, DPS location id is null and in cell is true`() {
+      val request = createAppointmentSetWithOneAppointment.copy(internalLocationId = null, dpsLocationId = null, inCell = true)
 
       service.createAppointmentSet(request, principal)
 
-      appointmentSetCaptor.firstValue.internalLocationId isEqualTo null
-      appointmentSetCaptor.firstValue.inCell isBool true
+      with(appointmentSetCaptor.firstValue) {
+        inCell isBool true
+        internalLocationId isEqualTo null
+        dpsLocationId = null
+        with(appointmentSeries().single()) {
+          inCell isBool true
+          internalLocationId isEqualTo null
+          dpsLocationId = null
+          with(appointments().single()) {
+            inCell isBool true
+            internalLocationId isEqualTo null
+            dpsLocationId = null
+          }
+        }
+      }
 
       verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+
       with(propertiesMapCaptor.firstValue) {
         this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
         this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
@@ -588,15 +673,59 @@ class AppointmentSetServiceTest {
     }
 
     @Test
-    fun `internal location id = 1, in cell = true`() {
-      val request = createAppointmentSetWithOneAppointment.copy(internalLocationId = 1, inCell = true)
+    fun `internal location id is not null, DPS location id is null and in cell is true`() {
+      val request = createAppointmentSetWithOneAppointment.copy(dpsLocationId = null, inCell = true)
 
       service.createAppointmentSet(request, principal)
 
-      appointmentSetCaptor.firstValue.internalLocationId isEqualTo null
-      appointmentSetCaptor.firstValue.inCell isBool true
+      with(appointmentSetCaptor.firstValue) {
+        inCell isBool true
+        internalLocationId isEqualTo null
+        dpsLocationId = null
+        with(appointmentSeries().single()) {
+          inCell isBool true
+          internalLocationId isEqualTo null
+          dpsLocationId = null
+          with(appointments().single()) {
+            inCell isBool true
+            internalLocationId isEqualTo null
+            dpsLocationId = null
+          }
+        }
+      }
 
       verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+
+      with(propertiesMapCaptor.firstValue) {
+        this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
+      }
+    }
+
+    @Test
+    fun `internal location id is null, DPS location id is not null and in cell is true`() {
+      val request = createAppointmentSetWithOneAppointment.copy(internalLocationId = null, inCell = true)
+
+      service.createAppointmentSet(request, principal)
+
+      with(appointmentSetCaptor.firstValue) {
+        inCell isBool true
+        internalLocationId isEqualTo null
+        dpsLocationId = null
+        with(appointmentSeries().single()) {
+          inCell isBool true
+          internalLocationId isEqualTo null
+          dpsLocationId = null
+          with(appointments().single()) {
+            inCell isBool true
+            internalLocationId isEqualTo null
+            dpsLocationId = null
+          }
+        }
+      }
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+
       with(propertiesMapCaptor.firstValue) {
         this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
         this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
