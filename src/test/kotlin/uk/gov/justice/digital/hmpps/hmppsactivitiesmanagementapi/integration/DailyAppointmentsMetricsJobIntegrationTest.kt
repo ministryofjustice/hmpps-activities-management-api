@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -51,23 +53,36 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
   fun `generate appointments metrics loops through each combination of prison code and category`() {
     webTestClient.generateAppointmentsMetrics()
 
-    verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+    await untilAsserted {
+      verify(telemetryClient, times(9)).trackEvent(
+        eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value),
+        telemetryPropertyMap.capture(),
+        telemetryMetricsMap.capture(),
+      )
 
-    assertThat(telemetryPropertyMap.allValues.map { Pair(it[PRISON_CODE_PROPERTY_KEY], it[CATEGORY_CODE_PROPERTY_KEY]) }).containsAll(
-      listOf(
-        Pair("PVI", "CHAP"),
-        Pair("PVI", "EDUC"),
-        Pair("PVI", "IND"),
-        Pair("MDI", "CHAP"),
-        Pair("MDI", "EDUC"),
-        Pair("MDI", "IND"),
-        Pair("RSI", "CHAP"),
-        Pair("RSI", "EDUC"),
-        Pair("RSI", "IND"),
-      ),
-    )
+      assertThat(
+        telemetryPropertyMap.allValues.map {
+          Pair(
+            it[PRISON_CODE_PROPERTY_KEY],
+            it[CATEGORY_CODE_PROPERTY_KEY],
+          )
+        },
+      ).containsAll(
+        listOf(
+          Pair("PVI", "CHAP"),
+          Pair("PVI", "EDUC"),
+          Pair("PVI", "IND"),
+          Pair("MDI", "CHAP"),
+          Pair("MDI", "EDUC"),
+          Pair("MDI", "IND"),
+          Pair("RSI", "CHAP"),
+          Pair("RSI", "EDUC"),
+          Pair("RSI", "IND"),
+        ),
+      )
 
-    verifyNoMoreInteractions(telemetryClient)
+      verifyNoMoreInteractions(telemetryClient)
+    }
   }
 
   @Sql(
@@ -77,21 +92,22 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
   fun `generate appointments metrics and verify counts`() {
     webTestClient.generateAppointmentsMetrics()
 
-    verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
-    // this test is flakey and relies on order of prisons.  also probably pointless, given no one uses these daily metrics in app insights
-    with(telemetryMetricsMap.firstValue) {
-      this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0
-      this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 9.0
-      this[APPOINTMENT_SERIES_COUNT_METRIC_KEY] isEqualTo 1.0
-      this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1.0
-      this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
-      this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
-      this[ATTENDANCE_RECORDED_COUNT_METRIC_KEY] isEqualTo 3.0
-      this[ATTENDANCE_RECORDED_ATTENDED_COUNT_METRIC_KEY] isEqualTo 2.0
-      this[ATTENDANCE_RECORDED_NOT_ATTENDED_COUNT_METRIC_KEY] isEqualTo 1.0
+    await untilAsserted {
+      verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+      // this test is flakey and relies on order of prisons.  also probably pointless, given no one uses these daily metrics in app insights
+      with(telemetryMetricsMap.firstValue) {
+        this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0
+        this[APPOINTMENT_INSTANCE_COUNT_METRIC_KEY] isEqualTo 9.0
+        this[APPOINTMENT_SERIES_COUNT_METRIC_KEY] isEqualTo 1.0
+        this[APPOINTMENT_SET_COUNT_METRIC_KEY] isEqualTo 1.0
+        this[CANCELLED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
+        this[DELETED_APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 2.0
+        this[ATTENDANCE_RECORDED_COUNT_METRIC_KEY] isEqualTo 3.0
+        this[ATTENDANCE_RECORDED_ATTENDED_COUNT_METRIC_KEY] isEqualTo 2.0
+        this[ATTENDANCE_RECORDED_NOT_ATTENDED_COUNT_METRIC_KEY] isEqualTo 1.0
+      }
+      verifyNoMoreInteractions(telemetryClient)
     }
-
-    verifyNoMoreInteractions(telemetryClient)
   }
 
   private fun WebTestClient.generateAppointmentsMetrics() {
@@ -100,6 +116,5 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
       .headers(setAuthorisation(roles = listOf()))
       .exchange()
       .expectStatus().isAccepted
-    Thread.sleep(3000)
   }
 }

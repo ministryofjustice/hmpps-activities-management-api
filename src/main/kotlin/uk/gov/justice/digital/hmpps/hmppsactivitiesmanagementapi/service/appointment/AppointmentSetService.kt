@@ -4,6 +4,7 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
@@ -32,6 +33,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSet as AppointmentSetModel
 
 @Service
@@ -47,6 +49,7 @@ class AppointmentSetService(
   private val outboundEventsService: OutboundEventsService,
   private val telemetryClient: TelemetryClient,
   private val auditService: AuditService,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
   @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
   @Transactional(readOnly = true)
@@ -126,12 +129,27 @@ class AppointmentSetService(
     }
   }
 
+  private fun determineLocationIds(inCell: Boolean, dpsLocationId: UUID?, nomisLocationId: Long?) = when {
+    inCell -> {
+      null to null
+    }
+    dpsLocationId != null -> {
+      dpsLocationId to nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
+    }
+    nomisLocationId != null -> {
+      nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId)!!.dpsLocationId to nomisLocationId
+    }
+    // Can never get here
+    else -> throw IllegalArgumentException("If in cell is false then DPS Location ID or internal location id must not be null")
+  }
+
   private fun AppointmentSetCreateRequest.toAppointmentSet(
     prisonNumberBookingIdMap: Map<String, Long>,
     createdBy: String,
   ): AppointmentSet {
     val tier = eventTierRepository.findByCodeOrThrowIllegalArgument(this.tierCode!!)
     val organiser = this.organiserCode?.let { eventOrganiserRepository.findByCodeOrThrowIllegalArgument(it) }
+    val (dpsLocationId, internalLocationId) = determineLocationIds(inCell, dpsLocationId, internalLocationId)
 
     return AppointmentSet(
       prisonCode = prisonCode!!,
@@ -139,6 +157,7 @@ class AppointmentSetService(
       customName = customName?.trim()?.takeUnless(String::isBlank),
       appointmentTier = tier,
       internalLocationId = if (inCell) null else internalLocationId,
+      dpsLocationId = dpsLocationId,
       inCell = inCell,
       onWing = inCell,
       offWing = !inCell,
@@ -160,6 +179,7 @@ class AppointmentSetService(
       customName = customName,
       appointmentTier = appointmentTier,
       internalLocationId = internalLocationId,
+      dpsLocationId = dpsLocationId,
       inCell = inCell,
       startDate = startDate,
       startTime = appointment.startTime!!,
