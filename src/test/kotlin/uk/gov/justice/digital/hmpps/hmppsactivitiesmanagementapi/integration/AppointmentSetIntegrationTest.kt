@@ -188,8 +188,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @Test
-  fun `create appointment set success for internal location`() {
-    val request = appointmentSetCreateRequest(categoryCode = "AC1")
+  fun `create appointment set success for internal location id`() {
+    val request = appointmentSetCreateRequest(categoryCode = "AC1", dpsLocationId = null)
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
     prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
@@ -209,8 +209,96 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
     )
 
+    val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation(dpsLocationId, "TPR", "ONE", "Location One")),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(dpsLocationId, 123),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromNomisId(123, dpsLocationId)
+
     val response = webTestClient.createAppointmentSet(request)!!
     verifyAppointmentSet(request, response)
+
+    assertThat(response.inCell).isFalse()
+    assertThat(response.internalLocationId).isEqualTo(request.internalLocationId)
+    assertThat(response.dpsLocationId).isEqualTo(dpsLocationId)
+    assertThat(response.appointments).allMatch {
+      it.internalLocationId == 123L
+      it.dpsLocationId == dpsLocationId
+      it.inCell == false
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(
+      eventCaptor.allValues.map { it.eventType }.distinct().single(),
+    ).isEqualTo("appointments.appointment-instance.created")
+    assertThat(eventCaptor.allValues.map { it.additionalInformation }).contains(
+      AppointmentInstanceInformation(response.appointments[0].attendees[0].id),
+      AppointmentInstanceInformation(response.appointments[1].attendees[0].id),
+    )
+
+    verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), any(), any())
+
+    verify(auditService).logEvent(any<AppointmentSetCreatedEvent>())
+  }
+
+  @Test
+  fun `create appointment set success for DPS location id`() {
+    val request = appointmentSetCreateRequest(categoryCode = "AC1", internalLocationId = null)
+    val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
+    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      prisonerNumbers,
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = prisonerNumbers[0],
+          bookingId = 1,
+          prisonId = request.prisonCode,
+        ),
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = prisonerNumbers[1],
+          bookingId = 2,
+          prisonId = request.prisonCode,
+        ),
+      ),
+    )
+
+    locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+      prisonCode = "TPR",
+      usageType = UsageType.APPOINTMENT,
+      locations = listOf(dpsLocation(request.dpsLocationId!!, "TPR", "ONE", "Location One")),
+    )
+
+    nomisMappingApiMockServer.stubMappingsFromDpsIds(
+      listOf(
+        NomisDpsLocationMapping(request.dpsLocationId, 123),
+      ),
+    )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(request.dpsLocationId, 123)
+
+    val response = webTestClient.createAppointmentSet(request)!!
+    verifyAppointmentSet(request, response)
+
+    assertThat(response.inCell).isFalse()
+    assertThat(response.internalLocationId).isEqualTo(123)
+    assertThat(response.dpsLocationId).isEqualTo(request.dpsLocationId)
+    assertThat(response.appointments).allMatch {
+      it.internalLocationId == 123L
+      it.dpsLocationId == request.dpsLocationId
+      it.inCell == false
+    }
 
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
@@ -251,6 +339,15 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     val response = webTestClient.createAppointmentSet(request)!!
     verifyAppointmentSet(request, response)
 
+    assertThat(response.inCell).isTrue()
+    assertThat(response.internalLocationId).isNull()
+    assertThat(response.dpsLocationId).isNull()
+    assertThat(response.appointments).allMatch {
+      it.internalLocationId == null
+      it.dpsLocationId == null
+      it.inCell == true
+    }
+
     verify(eventsPublisher, times(2)).send(eventCaptor.capture())
 
     assertThat(
@@ -277,8 +374,6 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
     response.appointments.forEach {
       assertThat(it.categoryCode).isEqualTo(request.categoryCode)
       assertThat(it.prisonCode).isEqualTo(request.prisonCode)
-      assertThat(it.internalLocationId).isEqualTo(request.internalLocationId)
-      assertThat(it.inCell).isEqualTo(request.inCell)
       assertThat(it.startDate).isEqualTo(request.startDate)
       assertThat(it.startTime).isEqualTo(request.appointments.first().startTime)
       assertThat(it.endTime).isEqualTo(request.appointments.first().endTime)

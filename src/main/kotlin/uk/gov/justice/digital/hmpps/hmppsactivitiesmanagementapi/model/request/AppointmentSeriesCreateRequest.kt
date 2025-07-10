@@ -161,7 +161,7 @@ data class AppointmentSeriesCreateRequest(
   private fun isPrisonerNumbers() = appointmentType == AppointmentType.GROUP || prisonerNumbers.size < 2
 
   @AssertTrue(message = "Internal location id or DPS Location ID must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell || internalLocationId != null || dpsLocationId != null
+  private fun isInternalLocation() = inCell || internalLocationId != null || dpsLocationId != null
 
   @AssertTrue(message = "End time must be after the start time")
   private fun isEndTime() = startTime == null || endTime == null || endTime > startTime
