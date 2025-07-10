@@ -43,7 +43,7 @@ class AppointmentSeriesCreateRequestTest {
   @Test
   fun `internal location id or DPS Location id must be supplied if in cell = false`() {
     val request = appointmentSeriesCreateRequest(internalLocationId = null, dpsLocationId = null, inCell = false)
-    assertSingleValidationError(validator.validate(request), "internalLocationId", "Internal location id or DPS Location ID must be supplied if in cell = false")
+    assertSingleValidationError(validator.validate(request), "internalLocation", "Internal location id or DPS Location ID must be supplied if in cell = false")
   }
 
   @Test

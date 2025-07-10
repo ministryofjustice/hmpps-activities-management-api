@@ -74,7 +74,7 @@ class AppointmentSetControllerTest : ControllerTestBase<AppointmentSetController
           jsonPath("$.developerMessage") {
             value(Matchers.containsString("Prison code must be supplied"))
             value(Matchers.containsString("Category code must be supplied"))
-            value(Matchers.containsString("Internal location id must be supplied if in cell = false"))
+            value(Matchers.containsString("Internal location id or DPS Location ID must be supplied if in cell = false"))
             value(Matchers.containsString("Start date must be supplied"))
             value(Matchers.containsString("At least one appointment must be supplied"))
           }

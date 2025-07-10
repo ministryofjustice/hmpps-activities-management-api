@@ -102,8 +102,8 @@ data class AppointmentSetCreateRequest(
   )
   val appointments: List<AppointmentSetAppointment> = emptyList(),
 ) {
-  @AssertTrue(message = "Internal location id must be supplied if in cell = false")
-  private fun isInternalLocationId() = inCell || internalLocationId != null
+  @AssertTrue(message = "Internal location id or DPS Location ID must be supplied if in cell = false")
+  private fun isInternalLocation() = inCell || internalLocationId != null || dpsLocationId != null
 
   @AssertTrue(message = "Start times must be in the future")
   private fun isStartTime() = startDate == null || startDate < LocalDate.now() || appointments.all { it.startTime == null || LocalDateTime.of(startDate, it.startTime) > LocalDateTime.now() }

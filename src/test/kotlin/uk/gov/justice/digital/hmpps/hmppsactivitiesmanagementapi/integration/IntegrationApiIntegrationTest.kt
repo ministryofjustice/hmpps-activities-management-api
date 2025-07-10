@@ -13,7 +13,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
@@ -278,5 +281,36 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(ActivitySuitabilityCriteria::class.java)
       .returnResult().responseBody
+  }
+
+  @DisplayName("/integration-api/schedules/{scheduleId}/waiting-list-applications")
+  inner class GetWaitingListApplications {
+    private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) = get()
+      .uri("/integration-api/schedules/$scheduleId/waiting-list-applications")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(WaitingListApplication::class.java)
+      .returnResult().responseBody
+
+    @Sql(
+      "classpath:test_data/seed-activity-id-21.sql",
+    )
+    @Test
+    fun `get all waiting lists for Maths ignoring prisoners REMOVED from waitlist`() {
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+        listOf("A4065DZ"),
+        listOf(
+          PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+        ),
+      )
+
+      nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
+      webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
+    }
   }
 }

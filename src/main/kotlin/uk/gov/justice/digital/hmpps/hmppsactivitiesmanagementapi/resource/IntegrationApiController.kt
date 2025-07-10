@@ -20,10 +20,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import java.time.LocalDate
 
 @RestController
@@ -32,6 +34,7 @@ class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
   private val activityScheduleService: ActivityScheduleService,
+  private val waitingListService: WaitingListService,
 ) {
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
   @ResponseBody
@@ -182,7 +185,12 @@ class IntegrationApiController(
       ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
       ),
       ApiResponse(
         responseCode = "403",
@@ -209,4 +217,58 @@ class IntegrationApiController(
   ): ActivitySuitabilityCriteria? = activityScheduleService.getSuitabilityCriteria(
     scheduleId = scheduleId,
   )
+
+  @GetMapping(value = ["/schedules/{scheduleId}/waiting-list-applications"])
+  @ResponseBody
+  @Operation(
+    summary = "Get a schedules waiting list applications",
+    description = "Returns zero or more activity schedule waiting list applications.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "The waiting list applications for an activity schedule",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = WaitingListApplication::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Schedule ID not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) = waitingListService.getWaitingListsBySchedule(scheduleId)
 }
