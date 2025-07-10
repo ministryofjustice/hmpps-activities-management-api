@@ -48,7 +48,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
   @MockitoBean
   private lateinit var activityScheduleService: ActivityScheduleService
-  
+
   @MockitoBean
   private lateinit var waitingListService: WaitingListService
 
