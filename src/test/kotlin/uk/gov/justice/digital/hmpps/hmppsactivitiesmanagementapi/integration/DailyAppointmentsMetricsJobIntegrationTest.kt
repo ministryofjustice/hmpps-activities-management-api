@@ -57,15 +57,17 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
       verify(telemetryClient, times(9)).trackEvent(
         eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value),
         telemetryPropertyMap.capture(),
-        telemetryMetricsMap.capture()
+        telemetryMetricsMap.capture(),
       )
 
-      assertThat(telemetryPropertyMap.allValues.map {
-        Pair(
-          it[PRISON_CODE_PROPERTY_KEY],
-          it[CATEGORY_CODE_PROPERTY_KEY]
-        )
-      }).containsAll(
+      assertThat(
+        telemetryPropertyMap.allValues.map {
+          Pair(
+            it[PRISON_CODE_PROPERTY_KEY],
+            it[CATEGORY_CODE_PROPERTY_KEY],
+          )
+        },
+      ).containsAll(
         listOf(
           Pair("PVI", "CHAP"),
           Pair("PVI", "EDUC"),
