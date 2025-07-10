@@ -332,9 +332,9 @@ class ActivityScheduleServiceTest {
   fun `suitability criteria for a given schedule are returned`() {
     val schedule = schedule(MOORLAND_PRISON_CODE)
 
-    whenever(repository.findOrThrowNotFound(1L)) doReturn schedule
+    whenever(repository.findById(1)) doReturn Optional.of(schedule)
 
-    assertThat(service.getSuitabilityCriteria(1L)).isEqualTo(
+    assertThat(service.getSuitabilityCriteria(1)).isEqualTo(
       schedule.toModelActivitySuitabilityCriteria(),
     )
   }
