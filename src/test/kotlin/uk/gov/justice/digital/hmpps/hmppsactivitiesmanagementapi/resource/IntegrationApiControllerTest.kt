@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toSchedu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -42,7 +43,10 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
-  override fun controller() = IntegrationApiController(attendancesService, scheduledInstanceService)
+  @MockitoBean
+  private lateinit var waitingListService: WaitingListService
+
+  override fun controller() = IntegrationApiController(attendancesService, scheduledInstanceService, waitingListService)
 
   @Nested
   inner class GetPrisonerAttendance {
