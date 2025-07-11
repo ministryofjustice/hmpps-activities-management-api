@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -37,6 +38,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -54,6 +56,9 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
   @MockitoBean
+  private lateinit var attendanceReasonService: AttendanceReasonService
+
+  @MockitoBean
   private lateinit var activityService: ActivityService
 
   @MockitoBean
@@ -65,6 +70,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   override fun controller() = IntegrationApiController(
     attendancesService,
     scheduledInstanceService,
+    attendanceReasonService,
     activityService,
     activityScheduleService,
     waitingListService,
@@ -168,6 +174,26 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       assertThat(response.contentAsString).contains("not found")
 
       verify(attendancesService).getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
+    }
+  }
+
+  @Nested
+  inner class GetAttendanceReasons {
+    @Test
+    fun `200 response when get attendance reasons`() {
+      val expectedModel = listOf(attendanceReason().toModel())
+
+      whenever(attendanceReasonService.getAll()).thenReturn(listOf(attendanceReason().toModel()))
+
+      val response = mockMvc
+        .get("/attendance-reasons")
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+      verify(attendanceReasonService).getAll()
     }
   }
 

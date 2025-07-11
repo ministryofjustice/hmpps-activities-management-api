@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorRes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -28,6 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Activit
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import java.time.LocalDate
 
 @RestController
@@ -35,6 +37,7 @@ import java.time.LocalDate
 class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
+  private val attendanceReasonService: AttendanceReasonService,
   private val activityService: ActivityService,
   private val activityScheduleService: ActivityScheduleService,
   private val waitingListService: WaitingListService,
@@ -105,6 +108,33 @@ class IntegrationApiController(
     endDate = endDate,
     prisonCode = prisonCode,
   )
+
+  @Operation(
+    summary = "Get the list of attendance reasons",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance reasons found",
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = AttendanceReason::class)))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @GetMapping("/attendance-reasons")
+  @ResponseBody
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getAttendanceReasons(): List<AttendanceReason> = attendanceReasonService.getAll()
 
   @Operation(
     summary = "Get the capacity and number of allocated slots in an activity",
