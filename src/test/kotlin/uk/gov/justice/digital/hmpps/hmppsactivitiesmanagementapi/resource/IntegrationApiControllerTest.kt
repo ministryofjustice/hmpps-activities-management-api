@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSession
@@ -27,7 +28,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toSchedu
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
@@ -47,6 +54,9 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   private lateinit var scheduledInstanceService: ScheduledInstanceService
 
   @MockitoBean
+  private lateinit var activityService: ActivityService
+
+  @MockitoBean
   private lateinit var activityScheduleService: ActivityScheduleService
 
   @MockitoBean
@@ -55,6 +65,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   override fun controller() = IntegrationApiController(
     attendancesService,
     scheduledInstanceService,
+    activityService,
     activityScheduleService,
     waitingListService,
   )
@@ -158,6 +169,92 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       verify(attendancesService).getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
     }
+  }
+
+  @Nested
+  inner class GetActivitySchedules {
+    @Test
+    fun `200 response when get activity schedules`() {
+      val expectedModel = listOf(
+        ActivityScheduleLite(
+          id = 1,
+          description = "schedule description",
+          internalLocation = InternalLocation(1, "EDU-ROOM-1", "Education - R1"),
+          capacity = 20,
+          activity = ActivityLite(
+            id = 12L,
+            prisonCode = "MDI",
+            attendanceRequired = true,
+            inCell = false,
+            onWing = false,
+            offWing = false,
+            pieceWork = false,
+            outsideWork = false,
+            payPerSession = uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession.H,
+            summary = "Maths",
+            description = "Beginner maths",
+            riskLevel = "High",
+            category = ModelActivityCategory(
+              id = 1L,
+              code = "EDUCATION",
+              name = "Education",
+              description = "Such as classes in English, maths, construction and computer skills",
+            ),
+            capacity = 20,
+            allocated = 10,
+            createdTime = LocalDateTime.now(),
+            activityState = ActivityState.LIVE,
+            paid = true,
+          ),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 1L,
+              timeSlot = TimeSlot.AM,
+              weekNumber = 1,
+              startTime = LocalTime.of(10, 20),
+              endTime = LocalTime.of(10, 20),
+              daysOfWeek = listOf("Mon"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+          ),
+          startDate = LocalDate.now(),
+          scheduleWeeks = 1,
+          usePrisonRegimeTime = true,
+        ),
+      )
+
+      whenever(activityService.getSchedulesForActivity(1)).thenReturn(expectedModel)
+
+      val response = mockMvc.getActivitySchedules(1)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+      verify(activityService).getSchedulesForActivity(1)
+    }
+
+    @Test
+    fun `404 response when get activity schedules and activity id not found`() {
+      whenever(activityService.getSchedulesForActivity(2)).thenThrow(EntityNotFoundException("not found"))
+
+      val response = mockMvc.getActivitySchedules(2)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isNotFound() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).contains("Not found")
+
+      verify(activityService).getSchedulesForActivity(2)
+    }
+    private fun MockMvc.getActivitySchedules(id: Long) = get("/integration-api/activities/{activityId}/schedules", id)
   }
 
   @Nested

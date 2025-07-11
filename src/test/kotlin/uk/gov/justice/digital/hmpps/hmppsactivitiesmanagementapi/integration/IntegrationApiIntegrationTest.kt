@@ -10,14 +10,25 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @TestPropertySource(
@@ -25,6 +36,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
     "feature.events.sns.enabled=true",
     "feature.event.activities.prisoner.attendance-created=true",
     "feature.event.activities.prisoner.attendance-amended=true",
+    "feature.event.activities.activity-schedule.created=true",
+    "feature.event.activities.activity-schedule.amended=true",
   ],
 )
 class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
@@ -143,6 +156,315 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(ModelAttendance::class.java)
+      .returnResult().responseBody
+  }
+
+  @Nested
+  @DisplayName("getActivitySchedules")
+  inner class GetActivitySchedules {
+    @Sql(
+      "classpath:test_data/seed-activity-id-1.sql",
+    )
+    @Test
+    fun `get all schedules of an activity`() {
+      val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+      assertThat(schedules).containsExactlyInAnyOrder(
+        ActivityScheduleLite(
+          id = 1,
+          description = "Maths AM",
+          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          capacity = 10,
+          activity = ActivityLite(
+            id = 1L,
+            attendanceRequired = true,
+            inCell = false,
+            onWing = false,
+            offWing = false,
+            pieceWork = false,
+            outsideWork = false,
+            payPerSession = PayPerSession.H,
+            prisonCode = "PVI",
+            summary = "Maths",
+            description = "Maths Level 1",
+            riskLevel = "high",
+            minimumEducationLevel = listOf(
+              ActivityMinimumEducationLevel(
+                id = 1,
+                educationLevelCode = "1",
+                educationLevelDescription = "Reading Measure 1.0",
+                studyAreaCode = "ENGLA",
+                studyAreaDescription = "English Language",
+              ),
+            ),
+            category = educationCategory,
+            capacity = 20,
+            allocated = 5,
+            createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+            activityState = ActivityState.LIVE,
+            paid = true,
+          ),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 1L,
+              timeSlot = TimeSlot.AM,
+              weekNumber = 1,
+              startTime = LocalTime.of(10, 0),
+              endTime = LocalTime.of(11, 0),
+              daysOfWeek = listOf("Mon"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+          ),
+          startDate = LocalDate.of(2022, 10, 10),
+          scheduleWeeks = 1,
+          usePrisonRegimeTime = true,
+        ),
+        ActivityScheduleLite(
+          id = 2,
+          description = "Maths PM",
+          internalLocation = InternalLocation(2, "L2", "Location 2"),
+          capacity = 10,
+          activity = ActivityLite(
+            id = 1L,
+            prisonCode = "PVI",
+            attendanceRequired = true,
+            inCell = false,
+            onWing = false,
+            offWing = false,
+            pieceWork = false,
+            outsideWork = false,
+            payPerSession = PayPerSession.H,
+            summary = "Maths",
+            description = "Maths Level 1",
+            riskLevel = "high",
+            minimumEducationLevel = listOf(
+              ActivityMinimumEducationLevel(
+                id = 1,
+                educationLevelCode = "1",
+                educationLevelDescription = "Reading Measure 1.0",
+                studyAreaCode = "ENGLA",
+                studyAreaDescription = "English Language",
+              ),
+            ),
+            category = educationCategory,
+            capacity = 20,
+            allocated = 5,
+            createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+            activityState = ActivityState.LIVE,
+            paid = true,
+          ),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 2L,
+              timeSlot = TimeSlot.PM,
+              weekNumber = 1,
+              startTime = LocalTime.of(14, 0),
+              endTime = LocalTime.of(15, 0),
+              daysOfWeek = listOf("Mon"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+          ),
+          startDate = LocalDate.of(2022, 10, 10),
+          scheduleWeeks = 1,
+          usePrisonRegimeTime = true,
+        ),
+      )
+    }
+
+    @Sql(
+      "classpath:test_data/seed-activity-id-8.sql",
+    )
+    @Test
+    fun `get schedules of an activity with multiple slots`() {
+      val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+      assertThat(schedules).containsExactly(
+        ActivityScheduleLite(
+          id = 1,
+          description = "Maths AM",
+          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          capacity = 10,
+          activity = ActivityLite(
+            id = 1L,
+            attendanceRequired = true,
+            inCell = false,
+            onWing = false,
+            offWing = false,
+            pieceWork = true,
+            outsideWork = true,
+            payPerSession = PayPerSession.H,
+            prisonCode = "PVI",
+            summary = "Maths",
+            description = "Maths Level 1",
+            riskLevel = "high",
+            category = educationCategory,
+            capacity = 10,
+            allocated = 2,
+            createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+            activityState = ActivityState.LIVE,
+            paid = true,
+          ),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 1L,
+              timeSlot = TimeSlot.AM,
+              weekNumber = 1,
+              startTime = LocalTime.of(10, 0),
+              endTime = LocalTime.of(11, 0),
+              daysOfWeek = listOf("Mon", "Wed"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = true,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+            ActivityScheduleSlot(
+              id = 2L,
+              timeSlot = TimeSlot.PM,
+              weekNumber = 1,
+              startTime = LocalTime.of(13, 0),
+              endTime = LocalTime.of(14, 0),
+              daysOfWeek = listOf("Mon", "Thu"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = true,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+          ),
+          startDate = LocalDate.of(2022, 10, 10),
+          scheduleWeeks = 1,
+          usePrisonRegimeTime = true,
+        ),
+      )
+    }
+
+    @Sql(
+      "classpath:test_data/seed-activity-multi-week-schedule-1.sql",
+    )
+    @Test
+    fun `gets activity schedules for activity with multi-week schedule`() {
+      val schedules = webTestClient.getSchedulesOfAnActivity(1)
+
+      assertThat(schedules).containsExactly(
+        ActivityScheduleLite(
+          id = 1,
+          description = "Maths AM",
+          internalLocation = InternalLocation(1, "L1", "Location 1"),
+          capacity = 10,
+          activity = ActivityLite(
+            id = 1L,
+            attendanceRequired = true,
+            inCell = false,
+            onWing = false,
+            offWing = false,
+            pieceWork = true,
+            outsideWork = true,
+            payPerSession = PayPerSession.H,
+            prisonCode = "PVI",
+            summary = "Maths",
+            description = "Maths Level 1",
+            riskLevel = "high",
+            category = educationCategory,
+            capacity = 10,
+            allocated = 2,
+            createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+            activityState = ActivityState.LIVE,
+            paid = true,
+          ),
+          slots = listOf(
+            ActivityScheduleSlot(
+              id = 1L,
+              timeSlot = TimeSlot.AM,
+              weekNumber = 1,
+              startTime = LocalTime.of(10, 0),
+              endTime = LocalTime.of(11, 0),
+              daysOfWeek = listOf("Mon", "Wed"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = true,
+              thursdayFlag = false,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+            ActivityScheduleSlot(
+              id = 2L,
+              timeSlot = TimeSlot.PM,
+              weekNumber = 1,
+              startTime = LocalTime.of(13, 0),
+              endTime = LocalTime.of(14, 0),
+              daysOfWeek = listOf("Mon", "Thu"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = true,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+            ActivityScheduleSlot(
+              id = 3L,
+              timeSlot = TimeSlot.AM,
+              weekNumber = 2,
+              startTime = LocalTime.of(10, 0),
+              endTime = LocalTime.of(11, 0),
+              daysOfWeek = listOf("Tue", "Fri"),
+              mondayFlag = false,
+              tuesdayFlag = true,
+              wednesdayFlag = false,
+              thursdayFlag = false,
+              fridayFlag = true,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+            ActivityScheduleSlot(
+              id = 4L,
+              timeSlot = TimeSlot.PM,
+              weekNumber = 2,
+              startTime = LocalTime.of(13, 0),
+              endTime = LocalTime.of(14, 0),
+              daysOfWeek = listOf("Mon", "Thu"),
+              mondayFlag = true,
+              tuesdayFlag = false,
+              wednesdayFlag = false,
+              thursdayFlag = true,
+              fridayFlag = false,
+              saturdayFlag = false,
+              sundayFlag = false,
+            ),
+          ),
+          startDate = LocalDate.of(2022, 10, 10),
+          scheduleWeeks = 2,
+          usePrisonRegimeTime = true,
+        ),
+      )
+    }
+
+    private fun WebTestClient.getSchedulesOfAnActivity(id: Long) = get()
+      .uri("/activities/$id/schedules")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivityScheduleLite::class.java)
       .returnResult().responseBody
   }
 
@@ -283,6 +605,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .returnResult().responseBody
   }
 
+  @Nested
   @DisplayName("/integration-api/schedules/{scheduleId}/waiting-list-applications")
   inner class GetWaitingListApplications {
     private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) = get()
