@@ -362,7 +362,6 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     }
 
     private fun MockMvc.getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate? = null) = get("/integration-api/schedules/$scheduleId${earliestSessionDate?.let { "?earliestSessionDate=$it" } ?: ""}")
-
   }
 
   @Nested
