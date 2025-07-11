@@ -18,10 +18,12 @@ import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -42,6 +44,39 @@ class IntegrationApiController(
   private val activityScheduleService: ActivityScheduleService,
   private val waitingListService: WaitingListService,
 ) {
+  @Operation(
+    summary = "Get the list of deallocation reasons",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Deallocation reasons found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ModelDeallocationReason::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  @GetMapping(value = ["/allocations/deallocation-reasons"])
+  @ResponseBody
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
+
+
   @GetMapping(value = ["/attendances/{prisonerNumber}"])
   @ResponseBody
   @Operation(
@@ -133,7 +168,7 @@ class IntegrationApiController(
   )
   @GetMapping("/attendance-reasons")
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getAttendanceReasons(): List<AttendanceReason> = attendanceReasonService.getAll()
 
   @Operation(

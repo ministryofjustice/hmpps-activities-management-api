@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -75,6 +76,34 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     activityScheduleService,
     waitingListService,
   )
+
+  @Nested
+  inner class GetDeallocationReasons {
+    @Test
+    fun `200 response when get deallocation reasons`() {
+      val response = mockMvc.get("/integration-api/allocations/deallocation-reasons")
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).contains(
+        DeallocationReason.COMPLETED.name,
+        DeallocationReason.HEALTH.name,
+        DeallocationReason.OTHER.name,
+        DeallocationReason.SECURITY.name,
+        DeallocationReason.TRANSFERRED.name,
+        DeallocationReason.WITHDRAWN_OWN.name,
+        DeallocationReason.WITHDRAWN_STAFF.name,
+      )
+
+      assertThat(response.contentAsString).doesNotContain(
+        DeallocationReason.DIED.name,
+        DeallocationReason.ENDED.name,
+        DeallocationReason.EXPIRED.name,
+        DeallocationReason.RELEASED.name,
+        DeallocationReason.TEMPORARILY_RELEASED.name,
+      )
+    }
+  }
 
   @Nested
   inner class GetPrisonerAttendance {
@@ -186,7 +215,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       whenever(attendanceReasonService.getAll()).thenReturn(listOf(attendanceReason().toModel()))
 
       val response = mockMvc
-        .get("/attendance-reasons")
+        .get("/integration-api/attendance-reasons")
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
         .andReturn().response
