@@ -4,6 +4,9 @@ import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -15,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
@@ -27,8 +31,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -40,6 +46,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -310,6 +317,52 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       verify(activityService).getSchedulesForActivity(2)
     }
     private fun MockMvc.getActivitySchedules(id: Long) = get("/integration-api/activities/{activityId}/schedules", id)
+  }
+
+  @Nested
+  inner class GetScheduleById {
+    @Test
+    fun `200 response when get schedule by schedule identifier with earliest session date default`() {
+      val expected = activityEntity().schedules().first().copy(1).toModelSchedule()
+
+      whenever(activityScheduleService.getScheduleById(1, 4.weeksAgo())) doReturn expected
+
+      val response = mockMvc.getScheduleById(1)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      response.contentAsString isEqualTo mapper.writeValueAsString(expected)
+    }
+
+    @Test
+    fun `200 response when get schedule by schedule identifier with earliest session date specified`() {
+      val expected = activityEntity().schedules().first().copy(1).toModelSchedule()
+
+      whenever(activityScheduleService.getScheduleById(1, 4.weeksAgo())) doReturn expected
+
+      val response = mockMvc.getScheduleById(1, 4.weeksAgo())
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      response.contentAsString isEqualTo mapper.writeValueAsString(expected)
+    }
+
+    @Test
+    fun `404 response when get schedule by id not found`() {
+      whenever(activityScheduleService.getScheduleById(eq(-99), any(), eq(false))).thenThrow(EntityNotFoundException("not found"))
+
+      val response = mockMvc.getScheduleById(-99)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isNotFound() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).contains("not found")
+    }
+
+    private fun MockMvc.getScheduleById(scheduleId: Long, earliestSessionDate: LocalDate? = null) = get("/integration-api/schedules/$scheduleId${earliestSessionDate?.let { "?earliestSessionDate=$it" } ?: ""}")
+
   }
 
   @Nested

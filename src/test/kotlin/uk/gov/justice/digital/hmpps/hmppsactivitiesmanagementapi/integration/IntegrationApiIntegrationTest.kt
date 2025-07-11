@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.tes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.suspendedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityMinimumEducationLevel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
@@ -49,6 +50,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
     "feature.event.activities.prisoner.attendance-amended=true",
     "feature.event.activities.activity-schedule.created=true",
     "feature.event.activities.activity-schedule.amended=true",
+    "feature.event.activities.prisoner.allocated=true",
   ],
 )
 class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
@@ -197,6 +199,68 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBodyList(AttendanceReason::class.java)
+      .returnResult().responseBody
+  }
+
+  @Nested
+  @DisplayName("getScheduleById")
+  inner class GetScheduleById {
+    @Sql(
+      "classpath:test_data/seed-activity-id-1.sql",
+    )
+    @Test
+    fun `get schedules by their ids`() {
+      with(webTestClient.getScheduleBy(1)!!) {
+        assertThat(id).isEqualTo(1)
+      }
+
+      with(webTestClient.getScheduleBy(2)!!) {
+        assertThat(id).isEqualTo(2)
+      }
+    }
+
+    @Sql(
+      "classpath:test_data/seed-activity-id-1.sql",
+    )
+    @Test
+    fun `403 when fetching schedule for the wrong case load`() {
+      webTestClient.get()
+        .uri("/integration-api/schedules/1")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false))
+        .header(CASELOAD_ID, "MDI")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    @Sql(
+      "classpath:test_data/seed-activity-id-1.sql",
+    )
+    @Test
+    fun `attempting to get a schedule without specifying a caseload succeeds if admin role present`() {
+      webTestClient.get()
+        .uri("/integration-api/schedules/1")
+        .accept(MediaType.APPLICATION_JSON)
+        .headers(setAuthorisation(isClientToken = false))
+        .header(CASELOAD_ID, "MDI")
+        .exchange()
+        .expectStatus().isForbidden
+    }
+
+    private fun WebTestClient.getScheduleBy(scheduleId: Long, caseLoadId: String = "PVI", earliestSessionDate: LocalDate? = null) = get()
+      .uri { builder ->
+        builder
+          .path("/integration-api/schedules/$scheduleId")
+          .maybeQueryParam("earliestSessionDate", earliestSessionDate)
+          .build(scheduleId)
+      }
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .header(CASELOAD_ID, caseLoadId)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(ActivitySchedule::class.java)
       .returnResult().responseBody
   }
 
