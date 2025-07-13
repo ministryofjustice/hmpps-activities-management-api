@@ -1,10 +1,15 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
 import com.microsoft.applicationinsights.TelemetryClient
+import io.mockk.clearAllMocks
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
 import jakarta.persistence.EntityNotFoundException
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -70,7 +75,7 @@ class WaitingListServiceTest {
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
   private val auditService: AuditService = mock()
-  private val nonAssociationsApiClient: NonAssociationsApiClient = mock()
+  private val nonAssociationsApiClient: NonAssociationsApiClient = mockk()
   private val declinedEventCaptor = argumentCaptor<PrisonerDeclinedFromWaitingListEvent>()
   private val removedEventCaptor = argumentCaptor<PrisonerRemovedFromWaitingListEvent>()
   private val service = WaitingListService(
@@ -84,6 +89,11 @@ class WaitingListServiceTest {
     nonAssociationsApiClient,
   )
   private val waitingListCaptor = argumentCaptor<WaitingList>()
+
+  @BeforeEach
+  fun setUp() {
+    clearAllMocks()
+  }
 
   @Test
   fun `add prisoner fails if does not have case load access`() {
@@ -429,13 +439,7 @@ class WaitingListServiceTest {
       on { firstPrisonerNumber } doReturn "123456"
     }
 
-    nonAssociationsApiClient.stub {
-      on {
-        runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("123456"))
-        }
-      } doReturn listOf(nonAssociation)
-    }
+    coEvery { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("123456")) } returns listOf(nonAssociation)
 
     val exception = assertThrows<NullPointerException> {
       service.getWaitingListsBySchedule(1L)
@@ -472,15 +476,41 @@ class WaitingListServiceTest {
       on { firstPrisonerNumber } doReturn "CCCCCC"
     }
 
-    nonAssociationsApiClient.stub {
-      on {
-        runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC"))
-        }
-      } doReturn listOf(nonAssociation)
+    coEvery { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) } returns listOf(nonAssociation)
+
+    service.getWaitingListsBySchedule(1L, true) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), true))
+
+    coVerify { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) }
+  }
+
+  @Test
+  fun `get waiting lists by the schedule identifier with includeNonAssociationsCheck set to false does not call non-associations api`() {
+    val schedule = activityEntity(prisonCode = PENTONVILLE_PRISON_CODE).schedules().first()
+
+    val removedWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "AAAAAAA", initialStatus = WaitingListStatus.REMOVED)
+    val validWaitingList = waitingList(prisonCode = PENTONVILLE_PRISON_CODE, prisonerNumber = "CCCCCC", initialStatus = WaitingListStatus.PENDING)
+
+    val validPrisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = validWaitingList.prisonerNumber)
+
+    scheduleRepository.stub {
+      on { scheduleRepository.findById(1L) } doReturn Optional.of(schedule)
     }
 
-    service.getWaitingListsBySchedule(1L) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), true))
+    waitingListRepository.stub {
+      on { findByActivitySchedule(schedule) } doReturn listOf(removedWaitingList, validWaitingList)
+    }
+
+    prisonerSearchApiClient.stub {
+      on {
+        runBlocking {
+          prisonerSearchApiClient.findByPrisonerNumbersAsync(listOf("CCCCCC"))
+        }
+      } doReturn listOf(validPrisoner)
+    }
+
+    service.getWaitingListsBySchedule(1L, false) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), null))
+
+    coVerify(exactly = 0) { nonAssociationsApiClient.getNonAssociationsInvolving(any(), any()) }
   }
 
   @Test
@@ -496,22 +526,12 @@ class WaitingListServiceTest {
     }
 
     prisonerSearchApiClient.stub {
-      on {
-        runBlocking {
-          prisonerSearchApiClient.findByPrisonerNumbersAsync(emptyList())
-        }
-      } doReturn emptyList()
-    }
-
-    nonAssociationsApiClient.stub {
-      on {
-        runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, emptyList())
-        }
-      } doReturn emptyList()
+      on { prisonerSearchApiClient.findByPrisonerNumbers(emptyList()) } doReturn emptyList()
     }
 
     assertThat(service.getWaitingListsBySchedule(1L)).isEmpty()
+
+    coVerify(exactly = 0) { nonAssociationsApiClient.getNonAssociationsInvolving(any(), any()) }
   }
 
   @Test
@@ -538,15 +558,11 @@ class WaitingListServiceTest {
       } doReturn listOf(validPrisoner)
     }
 
-    nonAssociationsApiClient.stub {
-      on {
-        runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC"))
-        }
-      } doReturn null
-    }
+    coEvery { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) } returns null
 
-    service.getWaitingListsBySchedule(1L) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), null))
+    service.getWaitingListsBySchedule(1L, true) isEqualTo listOf(validWaitingList.toModel(determineEarliestReleaseDate(validPrisoner), null))
+
+    coVerify { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("CCCCCC")) }
   }
 
   @Test
@@ -595,13 +611,7 @@ class WaitingListServiceTest {
       on { firstPrisonerNumber } doReturn "G4793VF"
     }
 
-    nonAssociationsApiClient.stub {
-      on {
-        runBlocking {
-          nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("G4793VF"))
-        }
-      } doReturn listOf(nonAssociation)
-    }
+    coEvery { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("G4793VF")) } returns listOf(nonAssociation)
 
     val earliestReleaseDate = earliestReleaseDate().copy(releaseDate = releaseDate)
 
@@ -628,6 +638,8 @@ class WaitingListServiceTest {
         nonAssociations isEqualTo true
       }
     }
+
+    coVerify { nonAssociationsApiClient.getNonAssociationsInvolving(PENTONVILLE_PRISON_CODE, listOf("G4793VF")) }
   }
 
   @Test

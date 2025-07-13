@@ -65,25 +65,33 @@ class WaitingListService(
     return waitingList.toModel(determineEarliestReleaseDate(prisoner))
   }
 
-  fun getWaitingListsBySchedule(id: Long): List<WaitingListApplication> = runBlocking {
+  fun getWaitingListsBySchedule(id: Long, includeNonAssociationsCheck: Boolean = true): List<WaitingListApplication> = runBlocking {
     val schedule = scheduleRepository.findOrThrowNotFound(id).checkCaseloadAccess()
 
     val waitingLists = waitingListRepository.findByActivitySchedule(schedule)
       .filter { waitingList -> waitingList.status != WaitingListStatus.REMOVED }
 
+    if (waitingLists.isEmpty()) return@runBlocking emptyList()
+
     val prisonerNumbers = waitingLists.map { it.prisonerNumber }
 
-    val prisoners = async { prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers) }
+    val prisonersAsync = async { prisonerSearchApiClient.findByPrisonerNumbersAsync(prisonerNumbers) }
 
-    val nonAssociations = async { nonAssociationsApiClient.getNonAssociationsInvolving(schedule.activity.prisonCode, prisonerNumbers) }
+    val nonAssociations = if (includeNonAssociationsCheck) {
+      async { nonAssociationsApiClient.getNonAssociationsInvolving(schedule.activity.prisonCode, prisonerNumbers) }.await()
+    } else {
+      null
+    }
+
+    val prisoners = prisonersAsync.await()
 
     waitingLists.map {
-      val prisoner = prisoners.await().find { p -> it.prisonerNumber == p.prisonerNumber }
+      val prisoner = prisoners.find { p -> it.prisonerNumber == p.prisonerNumber }
         ?: throw NullPointerException("Prisoner ${it.prisonerNumber} not found for waiting list id $id")
 
-      val nonAssociations = nonAssociations.await()?.hasNonAssociations(it.prisonerNumber)
+      val hasNonAssociations = nonAssociations?.hasNonAssociations(it.prisonerNumber)
 
-      it.toModel(determineEarliestReleaseDate(prisoner), nonAssociations)
+      it.toModel(determineEarliestReleaseDate(prisoner), hasNonAssociations)
     }
   }
 
@@ -192,7 +200,7 @@ class WaitingListService(
       "Prisoner ${request.prisonerNumber} has no booking id at prison $prisonCode"
     }
 
-    return prisonerDetails.bookingId!!.toLong()
+    return prisonerDetails.bookingId.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {

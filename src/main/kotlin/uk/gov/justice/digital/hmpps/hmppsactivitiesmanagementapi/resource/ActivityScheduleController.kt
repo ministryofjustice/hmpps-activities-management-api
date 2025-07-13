@@ -512,7 +512,12 @@ class ActivityScheduleController(
   )
   @CaseloadHeader
   @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
-  fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) = waitingListService.getWaitingListsBySchedule(scheduleId)
+  fun getWaitingListApplicationsBy(
+    @PathVariable("scheduleId") scheduleId: Long,
+    @RequestParam(value = "includeNonAssociationsCheck", required = false)
+    @Parameter(description = "If true will try fetch and add non-association details. Defaults to true.")
+    includeNonAssociationsCheck: Boolean?,
+  ) = waitingListService.getWaitingListsBySchedule(scheduleId, includeNonAssociationsCheck ?: true)
 
   @GetMapping(value = ["/{scheduleId}/non-associations"])
   @ResponseBody
