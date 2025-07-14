@@ -147,7 +147,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       val prisonerNumber = "A11111A"
 
       webTestClient.get()
-        .uri("/integration-api/attendances/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
+        .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-10-11&prisonCode=ABC")
         .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isOk
@@ -160,7 +160,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       val prisonerNumber = "A11111A"
 
       webTestClient.get()
-        .uri("/integration-api/attendances/$prisonerNumber")
+        .uri("/integration-api/attendances/prisoner/$prisonerNumber")
         .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isBadRequest
@@ -172,7 +172,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       val prisonerNumber = "A11111A"
 
       webTestClient.get()
-        .uri("/integration-api/attendances/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
+        .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=2022-10-10&endDate=2022-12-11")
         .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isBadRequest
@@ -185,7 +185,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       endDate: LocalDate,
       prisonerNumber: String,
     ) = get()
-      .uri("/integration-api/attendances/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
+      .uri("/integration-api/attendances/prisoner/$prisonerNumber?startDate=$startDate&endDate=$endDate${prisonCode?.let { "&prisonCode=$it" } ?: ""}")
       .accept(MediaType.APPLICATION_JSON)
       .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()

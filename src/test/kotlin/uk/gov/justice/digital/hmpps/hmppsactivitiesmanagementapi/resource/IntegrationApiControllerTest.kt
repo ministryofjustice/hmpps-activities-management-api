@@ -42,6 +42,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -253,6 +254,45 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       verify(attendancesService).getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))
     }
+  }
+
+  @Nested
+  inner class GetAttendanceById {
+    @Test
+    fun `200 response when get attendance by ID found`() {
+      val caseNotesApiClient: CaseNotesApiClient = mock()
+      val attendanceEntity = attendance()
+      val history = AttendanceHistory(attendanceHistoryId = 1L, attendance = attendanceEntity, recordedTime = LocalDateTime.now(), recordedBy = "TEST_USER", issuePayment = true, incentiveLevelWarningIssued = false)
+      attendanceEntity.addHistory(history)
+      val attendance = transform(attendanceEntity, caseNotesApiClient, true)
+
+      whenever(attendancesService.getAttendanceById(1)).thenReturn(attendance)
+
+      val response = mockMvc.getAttendanceById("1")
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(attendance))
+
+      verify(attendancesService).getAttendanceById(1)
+    }
+
+    @Test
+    fun `404 response when get attendance by ID not found`() {
+      whenever(attendancesService.getAttendanceById(2)).thenThrow(EntityNotFoundException("not found"))
+
+      val response = mockMvc.getAttendanceById("2")
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isNotFound() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).contains("Not found")
+
+      verify(attendancesService).getAttendanceById(2)
+    }
+
+    private fun MockMvc.getAttendanceById(attendanceId: String) = get("/integration-api/attendances/$attendanceId")
   }
 
   @Nested

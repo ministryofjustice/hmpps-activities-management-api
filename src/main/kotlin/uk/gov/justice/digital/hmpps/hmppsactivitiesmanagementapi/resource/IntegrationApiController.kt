@@ -103,7 +103,7 @@ class IntegrationApiController(
   @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
 
-  @GetMapping(value = ["/attendances/{prisonerNumber}"])
+  @GetMapping(value = ["/attendances/prisoner/{prisonerNumber}"])
   @ResponseBody
   @Operation(
     summary = "Gets a list of prisoner attendance activities for a given date range",
@@ -169,6 +169,61 @@ class IntegrationApiController(
     endDate = endDate,
     prisonCode = prisonCode,
   )
+
+  @GetMapping(value = ["/attendances/{attendanceId}"])
+  @ResponseBody
+  @Operation(
+    summary = "Get an attendance by ID",
+    description = "Returns an attendance.",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Attendance found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = Attendance::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "The attendance was not found.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getAttendanceById(
+    @PathVariable("attendanceId") instanceId: Long,
+  ): Attendance = attendancesService.getAttendanceById(instanceId)
 
   @Operation(
     summary = "Get the list of attendance reasons",
