@@ -37,8 +37,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -46,10 +48,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
+import java.security.Principal
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
@@ -65,6 +69,7 @@ class IntegrationApiController(
   private val activityScheduleService: ActivityScheduleService,
   private val waitingListService: WaitingListService,
   private val prisonRegimeService: PrisonRegimeService,
+  private val appointmentSearchService: AppointmentSearchService
 ) {
   @Operation(
     summary = "Get the list of deallocation reasons",
@@ -839,4 +844,61 @@ class IntegrationApiController(
     timeSlot,
     referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
   )
+
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  @PostMapping(value = ["/appointments/{prisonCode}/search"])
+  @Operation(
+    summary = "Search for appointments within the specified prison",
+    description =
+      """
+    Uses the supplied prison code and search parameters to filter and return appointment search results.
+    """,
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "202",
+        description = "Prison code and search parameters were accepted and results returned.",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = AppointmentSearchResult::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun searchAppointments(
+    @PathVariable("prisonCode") prisonCode: String,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "The search parameters to use to filter appointments",
+      required = true,
+    )
+    request: AppointmentSearchRequest,
+    principal: Principal,
+  ): List<AppointmentSearchResult> = appointmentSearchService.searchAppointments(prisonCode, request, principal)
 }

@@ -41,6 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAN
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
@@ -52,6 +53,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -61,6 +63,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
@@ -69,6 +72,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.security.Principal
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -106,6 +110,9 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var referenceCodeService: ReferenceCodeService
 
+  @MockitoBean
+  private lateinit var appointmentSearchService: AppointmentSearchService
+
   override fun controller() = IntegrationApiController(
     attendancesService,
     scheduledInstanceService,
@@ -116,6 +123,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     activityScheduleService,
     waitingListService,
     prisonRegimeService,
+    appointmentSearchService,
   )
 
   @Nested
@@ -991,6 +999,39 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       contentType = MediaType.APPLICATION_JSON
       content = mapper.writeValueAsBytes(
         prisonerNumbers,
+      )
+    }
+  }
+
+  @Nested
+  inner class SearchAppointments {
+    @Test
+    fun `202 accepted response when search appointments with valid json`() {
+      val request = AppointmentSearchRequest(startDate = LocalDate.now())
+      val expectedResponse = listOf(appointmentSearchResultModel())
+
+      val mockPrincipal: Principal = mock()
+
+      whenever(appointmentSearchService.searchAppointments("TPR", request, mockPrincipal)).thenReturn(expectedResponse)
+
+      val response = mockMvc.searchAppointments("TPR", request, mockPrincipal)
+        .andDo { print() }
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isAccepted() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+    }
+
+    private fun MockMvc.searchAppointments(
+      prisonCode: String,
+      request: AppointmentSearchRequest,
+      principal: Principal
+    ) = post("/integration-api/appointments/{prisonCode}/search", prisonCode) {
+      this.principal = principal
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        request,
       )
     }
   }
