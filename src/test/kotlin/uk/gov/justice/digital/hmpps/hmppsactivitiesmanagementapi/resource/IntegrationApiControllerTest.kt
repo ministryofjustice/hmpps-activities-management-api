@@ -214,7 +214,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       val attendance = transform(attendanceEntity, caseNotesApiClient, true)
       whenever(attendancesService.getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))).thenReturn(listOf(attendance))
 
-      val response = mockMvc.get("/integration-api/attendances/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}")
+      val response = mockMvc.get("/integration-api/attendances/prisoner/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}")
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
         .andReturn().response
@@ -231,7 +231,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       val attendance = transform(attendanceEntity, caseNotesApiClient, true)
       whenever(attendancesService.getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1), prisonCode = prisonCode)).thenReturn(listOf(attendance))
 
-      val response = mockMvc.get("/integration-api/attendances/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}&prisonCode=$prisonCode")
+      val response = mockMvc.get("/integration-api/attendances/prisoner/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}&prisonCode=$prisonCode")
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isOk() } }
         .andReturn().response
@@ -245,7 +245,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     fun `404 response when get attendance for prisoner not found`() {
       whenever(attendancesService.getPrisonerAttendance(prisonerNumber = prisonerNumber, startDate = LocalDate.now(), endDate = LocalDate.now().plusDays(1))).thenThrow(EntityNotFoundException("not found"))
 
-      val response = mockMvc.get("/integration-api/attendances/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}")
+      val response = mockMvc.get("/integration-api/attendances/prisoner/A1234AA?startDate=${LocalDate.now()}&endDate=${LocalDate.now().plusDays(1)}")
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isNotFound() } }
         .andReturn().response
