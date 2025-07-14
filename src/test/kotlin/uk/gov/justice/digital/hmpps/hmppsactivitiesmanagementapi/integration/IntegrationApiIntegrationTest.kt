@@ -1468,5 +1468,4 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       }
     }
   }
-
 }
