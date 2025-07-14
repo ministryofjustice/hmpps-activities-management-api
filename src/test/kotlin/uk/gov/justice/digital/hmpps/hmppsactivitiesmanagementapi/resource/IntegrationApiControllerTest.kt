@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource
 
 import jakarta.persistence.EntityNotFoundException
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.core.StringStartsWith
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -17,6 +18,7 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -773,5 +775,187 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       startDate: LocalDate,
       endDate: LocalDate,
     ) = get("/integration-api/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
+  }
+
+  @Nested
+  inner class GetScheduledEventsForMultiplePrisoners {
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - 200 response with events`() {
+      val prisonerNumbers = setOf("G1234GG")
+      val result = PrisonerScheduledEventsFixture.instance()
+
+      whenever(
+        scheduledEventService.getScheduledEventsForMultiplePrisoners(
+          "MDI",
+          prisonerNumbers,
+          LocalDate.of(2022, 10, 1),
+          TimeSlot.AM,
+          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        ),
+      ).thenReturn(result)
+
+      val response =
+        mockMvc.getScheduledEventsForMultiplePrisoners(
+          "MDI",
+          prisonerNumbers,
+          LocalDate.of(2022, 10, 1),
+          TimeSlot.AM.name,
+        )
+          .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+          .andExpect { status { isOk() } }
+          .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
+
+      verify(scheduledEventService).getScheduledEventsForMultiplePrisoners(
+        "MDI",
+        prisonerNumbers,
+        LocalDate.of(2022, 10, 1),
+        TimeSlot.AM,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      )
+    }
+
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - Error response when service throws exception`() {
+      val prisonerNumbers = setOf("G1234GG")
+      val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+
+      whenever(
+        scheduledEventService.getScheduledEventsForMultiplePrisoners(
+          "MDI",
+          prisonerNumbers,
+          LocalDate.of(2022, 10, 1),
+          TimeSlot.AM,
+          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        ),
+      ).thenThrow(RuntimeException("Error"))
+
+      val response = mockMvc.getScheduledEventsForMultiplePrisoners(
+        "MDI",
+        prisonerNumbers,
+        LocalDate.of(2022, 10, 1),
+        TimeSlot.AM.name,
+      )
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
+        .andExpect { status { is5xxServerError() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString + "\n").isEqualTo(result)
+
+      verify(scheduledEventService).getScheduledEventsForMultiplePrisoners(
+        "MDI",
+        prisonerNumbers,
+        LocalDate.of(2022, 10, 1),
+        TimeSlot.AM,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      )
+    }
+
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - 400 response when no date provided`() {
+      val prisonerNumbers = setOf("G1234GG")
+
+      mockMvc.post("/integration-api/scheduled-events/prison/MDI") {
+        accept = MediaType.APPLICATION_JSON
+        contentType = MediaType.APPLICATION_JSON
+        content = mapper.writeValueAsBytes(
+          prisonerNumbers,
+        )
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            isBadRequest()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Required request parameter 'date' for method parameter type LocalDate is not present")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - 400 response when no prisoner numbers are provided`() {
+      mockMvc.post("/integration-api/scheduled-events/prison/MDI?date=2022-12-14") {
+        accept = MediaType.APPLICATION_JSON
+        contentType = MediaType.APPLICATION_JSON
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value(StringStartsWith("Required request body is missing:"))
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - 400 response when date incorrect format`() {
+      val prisonerNumbers = setOf("G1234GG")
+      mockMvc.post("/integration-api/scheduled-events/prison/MDI?date=20/12/2022") {
+        accept = MediaType.APPLICATION_JSON
+        contentType = MediaType.APPLICATION_JSON
+        content = mapper.writeValueAsBytes(
+          prisonerNumbers,
+        )
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Error converting 'date' (20/12/2022): Method parameter 'date': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForMultiplePrisoners - 400 response when time slot is an incorrect format`() {
+      val prisonerNumbers = setOf("G1234GG")
+      mockMvc.post("/integration-api/scheduled-events/prison/MDI?date=2022-12-01&timeSlot=AF") {
+        accept = MediaType.APPLICATION_JSON
+        contentType = MediaType.APPLICATION_JSON
+        content = mapper.writeValueAsBytes(
+          prisonerNumbers,
+        )
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Error converting 'timeSlot' (AF): Method parameter 'timeSlot': Failed to convert value of type 'java.lang.String' to required type 'uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot'")
+            }
+          }
+        }
+    }
+
+    private fun MockMvc.getScheduledEventsForMultiplePrisoners(
+      prisonCode: String,
+      prisonerNumbers: Set<String>,
+      date: LocalDate,
+      timeSlot: String,
+    ) = post("/integration-api/scheduled-events/prison/$prisonCode?date=$date&timeSlot=$timeSlot") {
+      accept = MediaType.APPLICATION_JSON
+      contentType = MediaType.APPLICATION_JSON
+      content = mapper.writeValueAsBytes(
+        prisonerNumbers,
+      )
+    }
   }
 }

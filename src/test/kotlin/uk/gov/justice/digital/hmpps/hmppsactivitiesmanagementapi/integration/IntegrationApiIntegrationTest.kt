@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.groups.Tuple
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -11,13 +13,20 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.util.UriBuilder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.attendedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.autoSuspendedReason
@@ -37,6 +46,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivitySuitabilityCriteria
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
@@ -50,6 +60,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Prisone
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 @TestPropertySource(
@@ -1045,4 +1056,417 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       )
     }
   }
+
+  @Nested
+  inner class GetScheduledEventsForMultiplePrisoners {
+    private val prisonCode = "MDI"
+    private val prisonerNumbers = listOf("A11111A", "A22222A", "C11111A")
+    private val date = LocalDate.of(2022, 10, 1)
+
+    @BeforeEach
+    fun setupAppointmentStubs() {
+      // Stubs used to find category and location descriptions for appointments
+      prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+      prisonApiMockServer.stubGetLocationsForTypeUnrestricted(
+        "MDI",
+        "APP",
+        "prisonapi/locations-MDI-appointments.json",
+      )
+
+      val dpsLocation1 = dpsLocation(UUID.fromString("88888888-8888-8888-8888-888888888888"), "MDI", "ONE", "Location One")
+      val dpsLocation2 = dpsLocation(UUID.fromString("99999999-9999-9999-9999-999999999999"), "MDI", "TWO", "Location Teo")
+
+      val appointmentLocations = listOf(dpsLocation1, dpsLocation2)
+
+      locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
+        prisonCode = "MDI",
+        usageType = UsageType.APPOINTMENT,
+        locations = appointmentLocations,
+      )
+
+      nomisMappingApiMockServer.stubMappingsFromDpsIds(
+        listOf(
+          NomisDpsLocationMapping(dpsLocation1.id, 1),
+          NomisDpsLocationMapping(dpsLocation2.id, 2),
+        ),
+      )
+    }
+
+    private fun WebTestClient.getScheduledEventsForMultiplePrisoners(
+      prisonCode: String,
+      prisonerNumbers: Set<String>,
+      date: LocalDate,
+    ) = post()
+      .uri("/integration-api/scheduled-events/prison/$prisonCode?date=$date")
+      .bodyValue(prisonerNumbers)
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(PrisonerScheduledEvents::class.java)
+      .returnResult().responseBody
+
+    private fun adjudicationsMock(
+      agencyId: String,
+      date: LocalDate,
+      prisonerNumbers: List<String>,
+    ) {
+      manageAdjudicationsApiMockServer.stubHearings(
+        agencyId = agencyId,
+        startDate = date,
+        endDate = date,
+        prisoners = prisonerNumbers,
+        body = mapper.writeValueAsString(
+          prisonerNumbers.mapIndexed { hearingId, offenderNo ->
+            HearingsResponse(
+              prisonerNumber = offenderNo,
+              hearing = Hearing(
+                id = hearingId.plus(1).toLong(),
+                oicHearingType = "GOV_ADULT",
+                dateTimeOfHearing = date.atTime(10, 30, 0),
+                locationId = 1L,
+                agencyId = agencyId,
+              ),
+            )
+          },
+        ),
+      )
+    }
+
+    @BeforeEach
+    fun setUp() {
+      val activityLocation1 = internalLocation(1L, prisonCode = prisonCode, description = "MDI-ACT-LOC1", userDescription = "Activity Location 1")
+      val activityLocation2 = internalLocation(2L, prisonCode = prisonCode, description = "MDI-ACT-LOC2", userDescription = "Activity Location 2")
+      val appointmentLocation1 = appointmentLocation(123, prisonCode, description = "MDI-APP-LOC1", userDescription = "Appointment Location 1")
+
+      prisonApiMockServer.stubGetScheduledAppointmentsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetEventLocations(prisonCode, listOf(activityLocation1, activityLocation2, appointmentLocation1))
+
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-id-3.sql")
+    fun `POST - multiple prisoners - activities active, appointments not active - 200 success`() {
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(prisonerNumbers).contains("A11111A")
+        assertThat(courtHearings).hasSize(2)
+        assertThat(visits).hasSize(2)
+        assertThat(activities).hasSize(2)
+
+        with(activities!!.first { a -> a.prisonerNumber == "A11111A" }) {
+          assertThat(eventType).isEqualTo(EventType.ACTIVITY.name)
+          assertThat(eventSource).isEqualTo("SAA")
+          assertThat(priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+          assertThat(paidActivity).isTrue
+          assertThat(issuePayment).isNull()
+          assertThat(attendanceStatus).isEqualTo(AttendanceStatus.WAITING.name)
+          assertThat(attendanceReasonCode).isEqualTo(AttendanceReasonEnum.NOT_REQUIRED.name)
+        }
+
+        with(activities!!.first { a -> a.prisonerNumber == "C11111A" }) {
+          assertThat(eventType).isEqualTo(EventType.ACTIVITY.name)
+          assertThat(eventSource).isEqualTo("SAA")
+          assertThat(priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+          assertThat(paidActivity).isTrue
+          assertThat(issuePayment).isTrue
+          assertThat(attendanceStatus).isEqualTo(AttendanceStatus.COMPLETED.name)
+          assertThat(attendanceReasonCode).isEqualTo(AttendanceReasonEnum.ATTENDED.name)
+        }
+
+        assertThat(adjudications).hasSize(3)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-for-events.sql")
+    @Sql("classpath:test_data/seed-appointment-group-id-4.sql")
+    fun `POST - multiple prisoners - activities and appointments active - 200 success`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G4793VF", "A5193DY")
+      val date = LocalDate.of(2022, 10, 1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(appointments).hasSize(2)
+        appointments!!.map {
+          assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
+          assertThat(it.eventSource).isEqualTo("SAA")
+          assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
+        }
+        assertThat(activities).hasSize(2)
+        activities!!.map {
+          assertThat(it.eventType).isEqualTo(EventType.ACTIVITY.name)
+          assertThat(it.eventSource).isEqualTo("SAA")
+          assertThat(it.priority).isEqualTo(EventType.ACTIVITY.defaultPriority)
+        }
+        assertThat(courtHearings).hasSize(2)
+        assertThat(visits).hasSize(2)
+        assertThat(adjudications).hasSize(2)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-appointment-group-series-cancelled.sql")
+    fun `POST - multiple prisoners - cancelled appointment series - 200 success`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G4793VF", "A5193DY")
+      val date = LocalDate.of(2022, 10, 16)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(appointments).hasSize(2)
+        appointments!!.map {
+          assertThat(it.eventType).isEqualTo(EventType.APPOINTMENT.name)
+          assertThat(it.eventSource).isEqualTo("SAA")
+          assertThat(it.priority).isEqualTo(EventType.APPOINTMENT.defaultPriority)
+          assertThat(it.appointmentSeriesCancellationStartDate).isEqualTo(LocalDate.of(2022, 10, 16))
+          assertThat(it.appointmentSeriesCancellationStartTime).isEqualTo(LocalTime.of(11, 30, 0))
+          assertThat(it.appointmentSeriesFrequency).isEqualTo(AppointmentFrequency.DAILY)
+        }
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `POST - multiple prisoners - scheduled events with exclusions are not returned`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(LocalDate.now())
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
+
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, LocalTime.of(0, 0), LocalTime.of(12, 0)))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-active-exclusions.sql")
+    fun `POST - scheduled events with transfers without times are handled`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date, includeTimes = false)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(externalTransfers).extracting("date", "startTime", "endTime").containsExactly(Tuple(date, null, null))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-historical-exclusions.sql")
+    fun `POST - multiple prisoners - scheduled events with exclusions are not returned - past date`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now().minusDays(1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-future-exclusions.sql")
+    fun `POST - multiple prisoners - scheduled events with exclusions are not returned - future date`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A5193DY")
+      val date = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+        assertThat(activities!!.first().startTime).isEqualTo(LocalTime.of(13, 0))
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-prisoner-deallocated-on-same-day-as-session.sql")
+    fun `POST - multiple prisoners - scheduled events not returned if the prisoner was deallocated earlier the same day`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G4793VF")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).isEmpty()
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events returned on planned deallocation date`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459MM")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events not returned after planned deallocation date`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459MM")
+      val date = LocalDate.now().plusDays(2)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).isEmpty()
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events should ignore past planned deallocations`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459NN")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events should return correct event when there's no planned deallocations`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459PP")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-planned-deallocation-date.sql")
+    fun `POST - multiple prisoners - scheduled events should not return any activity events for today where attendance does not exist`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("G0459PP", "AA1111A")
+      val date = LocalDate.now()
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, date)
+      prisonApiMockServer.stubGetExternalTransfersOnDate(prisonCode, prisonerNumbers.toSet(), date)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, date)
+      adjudicationsMock(prisonCode, date, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), date)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        assertThat(activities!!.first().date).isEqualTo(date)
+      }
+    }
+
+    @Test
+    @Sql("classpath:test_data/seed-activity-with-advance-attendances-2.sql")
+    fun `POST - multiple prisoners - scheduled events should not return any future activity events for prisoners with advance attendance`() {
+      val prisonCode = "MDI"
+      val prisonerNumbers = listOf("A11111A", "B22222B")
+      val tomorrow = LocalDate.now().plusDays(1)
+
+      prisonApiMockServer.stubGetScheduledVisitsForPrisonerNumbers(prisonCode, tomorrow)
+      prisonApiMockServer.stubGetCourtEventsForPrisonerNumbers(prisonCode, tomorrow)
+      adjudicationsMock(prisonCode, tomorrow, prisonerNumbers)
+
+      val scheduledEvents = webTestClient.getScheduledEventsForMultiplePrisoners(prisonCode, prisonerNumbers.toSet(), tomorrow)
+
+      with(scheduledEvents!!) {
+        assertThat(activities).hasSize(1)
+        with(activities!!.first()) {
+          assertThat(scheduledInstanceId).isEqualTo(1)
+          assertThat(summary).isEqualTo("Geography AM")
+          assertThat(date).isEqualTo(tomorrow)
+          assertThat(prisonerNumber).isEqualTo("B22222B")
+        }
+      }
+    }
+  }
+
 }
