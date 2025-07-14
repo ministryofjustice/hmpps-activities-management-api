@@ -59,7 +59,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -218,7 +217,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     private fun WebTestClient.getAttendanceReasons() = get()
       .uri("/integration-api/attendance-reasons")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -587,9 +586,9 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     private fun WebTestClient.getSchedulesOfAnActivity(id: Long) = get()
-      .uri("/activities/$id/schedules")
+      .uri("/integration-api/activities/$id/schedules")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -934,7 +933,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     private fun WebTestClient.getScheduledEventsForSinglePrisoner(prisonCode: String, prisonerNumber: String, startDate: LocalDate, endDate: LocalDate) = get()
       .uri("/integration-api/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
       .accept(MediaType.APPLICATION_JSON)
-      .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
       .exchange()
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1118,14 +1117,14 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       val errorResponse = webTestClient.get()
         .uri { uriBuilder: UriBuilder ->
           uriBuilder
-            .path("/scheduled-events/prison/$prisonCode")
+            .path("/integration-api/scheduled-events/prison/$prisonCode")
             .queryParam("prisonerNumber", prisonerNumber)
             .queryParam("startDate", startDate)
             .queryParam("endDate", endDate)
             .build(prisonerNumber)
         }
         .accept(MediaType.APPLICATION_JSON)
-        .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
+        .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
         .exchange()
         .expectStatus().isNotFound
         .expectHeader().contentType(MediaType.APPLICATION_JSON)
