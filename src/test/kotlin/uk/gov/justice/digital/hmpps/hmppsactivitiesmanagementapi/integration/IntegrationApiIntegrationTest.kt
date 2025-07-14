@@ -856,9 +856,10 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
             status = "ACTIVE IN",
           ),
         )
-      }}
+      }
+    }
 
-      private fun WebTestClient.searchWaitingLists(
+    private fun WebTestClient.searchWaitingLists(
       prisonCode: String,
       request: WaitingListSearchRequest,
     ): LinkedHashMap<String, Any> = post().uri("/integration-api/waiting-list-applications/$prisonCode/search")
@@ -871,7 +872,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
       .expectBody(typeReference<LinkedHashMap<String, Any>>())
       .returnResult().responseBody!!
-
   }
 
   @Nested
