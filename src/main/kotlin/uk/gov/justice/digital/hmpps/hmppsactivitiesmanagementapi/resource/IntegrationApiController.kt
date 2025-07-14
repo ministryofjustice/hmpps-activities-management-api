@@ -69,7 +69,7 @@ class IntegrationApiController(
   private val activityScheduleService: ActivityScheduleService,
   private val waitingListService: WaitingListService,
   private val prisonRegimeService: PrisonRegimeService,
-  private val appointmentSearchService: AppointmentSearchService
+  private val appointmentSearchService: AppointmentSearchService,
 ) {
   @Operation(
     summary = "Get the list of deallocation reasons",
@@ -850,7 +850,7 @@ class IntegrationApiController(
   @Operation(
     summary = "Search for appointments within the specified prison",
     description =
-      """
+    """
     Uses the supplied prison code and search parameters to filter and return appointment search results.
     """,
   )

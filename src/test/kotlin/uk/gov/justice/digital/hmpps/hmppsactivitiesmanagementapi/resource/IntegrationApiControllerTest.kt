@@ -1026,7 +1026,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     private fun MockMvc.searchAppointments(
       prisonCode: String,
       request: AppointmentSearchRequest,
-      principal: Principal
+      principal: Principal,
     ) = post("/integration-api/appointments/{prisonCode}/search", prisonCode) {
       this.principal = principal
       contentType = MediaType.APPLICATION_JSON
