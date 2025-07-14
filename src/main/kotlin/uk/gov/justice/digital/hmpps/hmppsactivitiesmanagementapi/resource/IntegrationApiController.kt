@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
@@ -453,4 +454,53 @@ class IntegrationApiController(
   @CaseloadHeader
   @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) = waitingListService.getWaitingListsBySchedule(scheduleId)
+
+  @Operation(
+    summary = "Get list of activities running at a specified prison. " +
+      "Optionally and by default, only currently LIVE activities are returned",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Activities",
+        content = [
+          Content(
+            mediaType = "application/json",
+            array = ArraySchema(schema = Schema(implementation = ActivitySummary::class)),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @GetMapping(value = ["/prison/{prisonCode}/activities"])
+  @ResponseBody
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun getActivities(
+    @PathVariable("prisonCode") prisonCode: String,
+    @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
+    @RequestParam(value = "nameSearch", required = false)
+    @Parameter(description = "The activity name contains this case insensitive search term")
+    nameSearch: String?,
+  ): List<ActivitySummary> = activityService.getActivitiesInPrison(prisonCode, excludeArchived, nameSearch = nameSearch)
 }

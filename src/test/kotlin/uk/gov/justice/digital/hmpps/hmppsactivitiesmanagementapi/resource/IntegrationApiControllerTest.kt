@@ -8,6 +8,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -40,6 +41,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
@@ -51,7 +54,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityCategory as ModelActivityCategory
 
 @WebMvcTest(controllers = [IntegrationApiController::class])
 @ContextConfiguration(classes = [IntegrationApiController::class])
@@ -452,5 +454,44 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     }
 
     private fun MockMvc.getActivityScheduleSuitabilityCriteria(scheduleId: Long = 1L) = get("/integration-api/activities/schedule/$scheduleId/suitability-criteria")
+  }
+
+  @Nested
+  inner class GetActivities {
+    @Test
+    fun `200 response when get activities`() {
+      val expectedModel = listOf(
+        ActivitySummary(
+          id = 1,
+          activityName = "Book club",
+          category = ModelActivityCategory(
+            id = 1L,
+            code = "LEISURE_SOCIAL",
+            name = "Leisure and social",
+            description = "Such as association, library time and social clubs, like music or art",
+          ),
+          capacity = 20,
+          allocated = 10,
+          waitlisted = 3,
+          createdTime = LocalDateTime.now(),
+          activityState = ActivityState.LIVE,
+        ),
+      )
+
+      whenever(activityService.getActivitiesInPrison(MOORLAND_PRISON_CODE, true)).thenReturn(
+        expectedModel,
+      )
+
+      val response = mockMvc.getActivities(MOORLAND_PRISON_CODE)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }.andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
+
+      verify(activityService, times(1)).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
+    }
+
+    private fun MockMvc.getActivities(prisonCode: String) = get("/integration-api/prison/{prisonCode}/activities", prisonCode)
+
   }
 }

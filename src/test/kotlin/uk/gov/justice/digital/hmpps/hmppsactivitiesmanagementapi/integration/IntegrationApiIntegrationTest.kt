@@ -13,11 +13,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.attendedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.autoSuspendedReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.cancelledReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.clashReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.educationCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.industriesCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.notRequiredReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.otherReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.testdata.refusedReason
@@ -34,6 +36,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
@@ -740,5 +743,59 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
     }
+  }
+
+  @Nested
+  @DisplayName("/integration-api/prison/{prisonId}/activities")
+  inner class GetActivities {
+    @Sql(
+      "classpath:test_data/seed-activity-id-1.sql",
+    )
+    @Test
+    fun `get all activities for a prison`() {
+      val activities = webTestClient.getActivitiesIntegrationApi("PVI")!!
+
+      activities.single() isEqualTo
+        ActivitySummary(
+          id = 1,
+          activityName = "Maths Level 1",
+          category = educationCategory,
+          capacity = 10,
+          allocated = 5,
+          waitlisted = 1,
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
+        )
+    }
+
+    @Sql(
+      "classpath:test_data/seed-activity-id-3.sql",
+    )
+    @Test
+    fun `get activities for a prison when filtered by a search term`() {
+      val activities = webTestClient.getActivitiesIntegrationApi("PVI", nameSearch = "enGliSh")!!
+
+      activities.single() isEqualTo
+        ActivitySummary(
+          id = 4,
+          activityName = "English Level 2",
+          category = industriesCategory,
+          capacity = 10,
+          allocated = 4,
+          waitlisted = 0,
+          createdTime = LocalDateTime.of(2022, 9, 21, 0, 0, 0),
+          activityState = ActivityState.LIVE,
+        )
+    }
+
+    fun WebTestClient.getActivitiesIntegrationApi(prisonCode: String, nameSearch: String? = null) = get()
+      .uri("/integration-api/prison/$prisonCode/activities" + (nameSearch?.let { "?nameSearch=$nameSearch" } ?: ""))
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBodyList(ActivitySummary::class.java)
+      .returnResult().responseBody
   }
 }
