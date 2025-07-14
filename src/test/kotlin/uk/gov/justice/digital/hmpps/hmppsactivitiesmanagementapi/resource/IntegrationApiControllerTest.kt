@@ -32,10 +32,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toScheduledActivityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.attendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonPayBandsLowMediumHigh
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityLite
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleLite
@@ -48,8 +51,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Attenda
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -77,6 +83,9 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var waitingListService: WaitingListService
 
+  @MockitoBean
+  private lateinit var prisonRegimeService: PrisonRegimeService
+
   override fun controller() = IntegrationApiController(
     attendancesService,
     scheduledInstanceService,
@@ -84,6 +93,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     activityService,
     activityScheduleService,
     waitingListService,
+    prisonRegimeService
   )
 
   @Nested
@@ -492,5 +502,46 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     }
 
     private fun MockMvc.getActivities(prisonCode: String) = get("/integration-api/prison/{prisonCode}/activities", prisonCode)
+  }
+
+  @Nested
+  inner class GetPrisonPayBands {
+    @Test
+    fun `200 response when get pay bands by Moorland prison code`() {
+      val prisonPayBands = prisonPayBandsLowMediumHigh().map { it.toModelPrisonPayBand() }
+
+      whenever(prisonRegimeService.getPayBandsForPrison(MOORLAND_PRISON_CODE)).thenReturn(prisonPayBands)
+
+      val response = mockMvc.getPrisonPayBandsBy(MOORLAND_PRISON_CODE)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(prisonPayBands))
+
+      verify(prisonRegimeService).getPayBandsForPrison(MOORLAND_PRISON_CODE)
+    }
+
+    private fun MockMvc.getPrisonPayBandsBy(prisonCode: String) = get("/integration-api/prison/$prisonCode/prison-pay-bands")
+  }
+
+  @Nested
+  inner class GetPrisonRegimeByPrisonCode {
+    @Test
+    fun `200 response when get prison by code found`() {
+      val prisonRegime = transform(prisonRegime(), DayOfWeek.MONDAY)
+
+      whenever(prisonRegimeService.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)).thenReturn(listOf(prisonRegime))
+
+      val response = mockMvc.getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(prisonRegime)))
+
+      verify(prisonRegimeService).getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
+    }
+    private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) = get("/integration-api/prison/prison-regime/$prisonCode")
   }
 }
