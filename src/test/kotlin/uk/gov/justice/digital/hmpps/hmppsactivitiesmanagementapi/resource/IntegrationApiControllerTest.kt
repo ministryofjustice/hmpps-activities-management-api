@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
@@ -48,10 +49,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.transform
@@ -86,9 +91,17 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   @MockitoBean
   private lateinit var prisonRegimeService: PrisonRegimeService
 
+  @MockitoBean
+  private lateinit var scheduledEventService: ScheduledEventService
+
+  @MockitoBean
+  private lateinit var referenceCodeService: ReferenceCodeService
+
   override fun controller() = IntegrationApiController(
     attendancesService,
     scheduledInstanceService,
+    scheduledEventService,
+    referenceCodeService,
     attendanceReasonService,
     activityService,
     activityScheduleService,
@@ -543,5 +556,222 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
       verify(prisonRegimeService).getPrisonRegimeByPrisonCode(PENTONVILLE_PRISON_CODE)
     }
     private fun MockMvc.getPrisonRegimeByPrisonCode(prisonCode: String) = get("/integration-api/prison/prison-regime/$prisonCode")
+  }
+
+  @Nested
+  inner class GetScheduledEventsForSinglePrisoner {
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 200 response with events`() {
+      val result = PrisonerScheduledEventsFixture.instance()
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      whenever(
+        scheduledEventService.getScheduledEventsForSinglePrisoner(
+          "MDI",
+          "G1234GG",
+          LocalDateRange(startDate, endDate),
+          null,
+          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        ),
+      ).thenReturn(result)
+
+      val response = mockMvc.getScheduledEventsForSinglePrisoner(
+        "MDI",
+        "G1234GG",
+        startDate,
+        endDate,
+      )
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
+        .andExpect { status { isOk() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(result))
+
+      verify(scheduledEventService).getScheduledEventsForSinglePrisoner(
+        "MDI",
+        "G1234GG",
+        LocalDateRange(startDate, endDate),
+        null,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      )
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - Error response when service throws exception`() {
+      val result = this::class.java.getResource("/__files/error-500.json")?.readText()
+      val startDate = LocalDate.of(2022, 10, 1)
+      val endDate = LocalDate.of(2022, 11, 5)
+
+      whenever(
+        scheduledEventService.getScheduledEventsForSinglePrisoner(
+          "MDI",
+          "G1234GG",
+          LocalDateRange(startDate, endDate),
+          null,
+          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        ),
+      ).thenThrow(RuntimeException("Error"))
+
+      val response = mockMvc.getScheduledEventsForSinglePrisoner(
+        "MDI",
+        "G1234GG",
+        startDate,
+        endDate,
+      )
+        .andExpect { content { contentType(MediaType.APPLICATION_JSON) } }
+        .andExpect { status { is5xxServerError() } }
+        .andReturn().response
+
+      assertThat(response.contentAsString + "\n").isEqualTo(result)
+
+      verify(scheduledEventService).getScheduledEventsForSinglePrisoner(
+        "MDI",
+        "G1234GG",
+        LocalDateRange(startDate, endDate),
+        null,
+        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      )
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 200 response when date range equals 3 months`() {
+      val result = PrisonerScheduledEventsFixture.instance()
+      val startDate = LocalDate.of(2022, 11, 1)
+      val endDate = LocalDate.of(2023, 2, 1)
+
+      whenever(
+        scheduledEventService.getScheduledEventsForSinglePrisoner(
+          "MDI",
+          "G1234GG",
+          LocalDateRange(startDate, endDate),
+          null,
+          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        ),
+      ).thenReturn(result)
+
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("startDate", "2022-11-01")
+        param("endDate", "2023-02-01")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            isOk()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 400 response when end date missing`() {
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("startDate", "2022-10-01")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Required request parameter 'endDate' for method parameter type LocalDate is not present")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 400 response when start date missing`() {
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("endDate", "2022-10-01")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Required request parameter 'startDate' for method parameter type LocalDate is not present")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 400 response when start date incorrect format`() {
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("startDate", "01/10/2022")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Error converting 'startDate' (01/10/2022): Method parameter 'startDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 400 response when end date incorrect format`() {
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("startDate", "2022-10-01")
+        param("endDate", "01/10/2022")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Error converting 'endDate' (01/10/2022): Method parameter 'endDate': Failed to convert value of type 'java.lang.String' to required type 'java.time.LocalDate'")
+            }
+          }
+        }
+    }
+
+    @Test
+    fun `getScheduledEventsForSinglePrisoner - 400 response when date range exceeds 3 months`() {
+      mockMvc.get("/integration-api/scheduled-events/prison/MDI") {
+        param("prisonerNumber", "G1234GG")
+        param("startDate", "2022-11-01")
+        param("endDate", "2023-02-02")
+      }
+        .andDo { print() }
+        .andExpect {
+          status {
+            is4xxClientError()
+          }
+          content {
+            contentType(MediaType.APPLICATION_JSON)
+            jsonPath("$.userMessage") {
+              value("Validation failure: Date range cannot exceed 3 months")
+            }
+          }
+        }
+    }
+    private fun MockMvc.getScheduledEventsForSinglePrisoner(
+      prisonCode: String,
+      prisonerNumber: String,
+      startDate: LocalDate,
+      endDate: LocalDate,
+    ) = get("/integration-api/scheduled-events/prison/$prisonCode?prisonerNumber=$prisonerNumber&startDate=$startDate&endDate=$endDate")
   }
 }
