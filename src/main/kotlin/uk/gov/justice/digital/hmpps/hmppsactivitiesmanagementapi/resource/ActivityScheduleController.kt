@@ -511,7 +511,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getWaitingListApplicationsBy(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "includeNonAssociationsCheck", required = false)
