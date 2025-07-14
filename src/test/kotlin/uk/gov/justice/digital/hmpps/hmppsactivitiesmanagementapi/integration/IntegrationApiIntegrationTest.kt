@@ -798,5 +798,4 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
       .expectBodyList(ActivitySummary::class.java)
       .returnResult().responseBody
   }
-
 }

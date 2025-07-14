@@ -93,7 +93,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     activityService,
     activityScheduleService,
     waitingListService,
-    prisonRegimeService
+    prisonRegimeService,
   )
 
   @Nested
