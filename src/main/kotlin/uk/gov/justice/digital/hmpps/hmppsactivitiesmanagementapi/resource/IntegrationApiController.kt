@@ -7,8 +7,11 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import jakarta.validation.Valid
 import jakarta.validation.ValidationException
+import org.springframework.data.domain.Page
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
@@ -33,6 +37,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPay
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
@@ -468,6 +473,79 @@ class IntegrationApiController(
   @CaseloadHeader
   @PreAuthorize("hasRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getWaitingListApplicationsBy(@PathVariable("scheduleId") scheduleId: Long) = waitingListService.getWaitingListsBySchedule(scheduleId)
+
+  @ResponseStatus(HttpStatus.OK)
+  @PostMapping(value = ["/waiting-list-applications/{prisonCode}/search"])
+  @Operation(
+    description = "Search waiting list applications",
+  )
+  @ApiResponses(
+    value = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Waiting list application search results",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = PagedWaitingListApplication::class),
+          ),
+        ],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorised, requires a valid Oauth2 token",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Forbidden, requires an appropriate role",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Waiting list application not found",
+        content = [
+          Content(
+            mediaType = "application/json",
+            schema = Schema(implementation = ErrorResponse::class),
+          ),
+        ],
+      ),
+    ],
+  )
+  @CaseloadHeader
+  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
+  fun searchWaitingLists(
+    @PathVariable("prisonCode") prisonCode: String,
+    @Valid
+    @RequestBody
+    @Parameter(
+      description = "Search filters",
+      required = true,
+    )
+    request: WaitingListSearchRequest,
+    @Valid
+    @Parameter(
+      description = "The page number of search results (default: 0)",
+      required = false,
+    )
+    @RequestParam("page")
+    pageNumber: Int?,
+    @Valid
+    @Parameter(
+      description = "The number of search results per page (default: 50)",
+      required = false,
+    )
+    @RequestParam("pageSize")
+    pageSize: Int?,
+  ) = waitingListService.searchWaitingLists(prisonCode, request, pageNumber ?: 0, pageSize ?: 50)
+
+  abstract inner class PagedWaitingListApplication : Page<WaitingListApplication>
 
   @Operation(
     summary = "Get list of activities running at a specified prison. " +

@@ -15,12 +15,15 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.locationsinsideprison.model.NonResidentialUsageDto.UsageType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.asListOfType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.between
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityState
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
@@ -52,6 +55,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PayPerSession
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.CASELOAD_ID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_HMPPS_INTEGRATION_API
@@ -760,6 +764,114 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       webTestClient.getWaitingListsBy(1)!!.also { assertThat(it).hasSize(1) }
     }
+  }
+
+  @Nested
+  @DisplayName("/integration-api/waiting-list-applications/{prisonCode}/search")
+  inner class SearchWaitingLists {
+    @Sql("classpath:test_data/seed-activity-id-26.sql")
+    @Test
+    fun `search all waiting list applications`() {
+      stubPrisoners(listOf("ABCD01", "ABCD02", "ABCD03", "ABCD04", "ABCD05"))
+
+      val results = webTestClient.searchWaitingLists("MDI", WaitingListSearchRequest())
+
+      results["empty"] isEqualTo false
+      results["totalElements"] isEqualTo 5
+
+      val content = (results["content"] as List<*>).asListOfType<LinkedHashMap<String, Any>>()
+
+      with(content[0]) {
+        this["id"] isEqualTo 1
+        this["prisonerNumber"] isEqualTo "ABCD01"
+        this["status"] isEqualTo "PENDING"
+        this["activityId"] isEqualTo 1
+      }
+
+      with(content[1]) {
+        this["id"] isEqualTo 2
+        this["prisonerNumber"] isEqualTo "ABCD02"
+        this["status"] isEqualTo "APPROVED"
+        this["activityId"] isEqualTo 1
+      }
+
+      with(content[2]) {
+        this["id"] isEqualTo 3
+        this["prisonerNumber"] isEqualTo "ABCD03"
+        this["status"] isEqualTo "PENDING"
+        this["activityId"] isEqualTo 1
+      }
+
+      with(content[3]) {
+        this["id"] isEqualTo 4
+        this["prisonerNumber"] isEqualTo "ABCD04"
+        this["status"] isEqualTo "PENDING"
+        this["activityId"] isEqualTo 2
+      }
+
+      with(content[4]) {
+        this["id"] isEqualTo 5
+        this["prisonerNumber"] isEqualTo "ABCD05"
+        this["status"] isEqualTo "PENDING"
+        this["activityId"] isEqualTo 1
+      }
+    }
+
+    @Sql("classpath:test_data/seed-activity-id-26.sql")
+    @Test
+    fun `search waiting list applications with filters`() {
+      val request = WaitingListSearchRequest(
+        applicationDateFrom = LocalDate.parse("2023-02-01"),
+        applicationDateTo = LocalDate.parse("2023-12-01"),
+        activityId = 1,
+        prisonerNumbers = listOf("ABCD03", "ABCD04", "ABCD05"),
+        status = listOf(WaitingListStatus.PENDING),
+      )
+
+      stubPrisoners(listOf("ABCD03", "ABCD04", "ABCD05"))
+
+      val results = webTestClient.searchWaitingLists("MDI", request)
+
+      results["empty"] isEqualTo false
+      results["totalElements"] isEqualTo 2
+
+      val content = (results["content"] as List<*>).asListOfType<LinkedHashMap<String, Any>>()
+
+      with(content[0]) {
+        this["id"] isEqualTo 3
+      }
+
+      with(content[1]) {
+        this["id"] isEqualTo 5
+      }
+    }
+
+    private fun stubPrisoners(prisonerNumbers: List<String>) {
+      prisonerNumbers.forEach {
+        prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+          PrisonerSearchPrisonerFixture.instance(
+            prisonId = MOORLAND_PRISON_CODE,
+            prisonerNumber = it,
+            bookingId = 1,
+            status = "ACTIVE IN",
+          ),
+        )
+      }}
+
+      private fun WebTestClient.searchWaitingLists(
+      prisonCode: String,
+      request: WaitingListSearchRequest,
+    ): LinkedHashMap<String, Any> = post().uri("/integration-api/waiting-list-applications/$prisonCode/search")
+      .accept(MediaType.APPLICATION_JSON)
+      .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_HMPPS_INTEGRATION_API)))
+      .header(CASELOAD_ID, prisonCode)
+      .bodyValue(request)
+      .exchange()
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(typeReference<LinkedHashMap<String, Any>>())
+      .returnResult().responseBody!!
+
   }
 
   @Nested
