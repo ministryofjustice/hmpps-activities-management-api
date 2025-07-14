@@ -602,7 +602,6 @@ class IntegrationApiController(
       ),
     ],
   )
-
   @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): List<PrisonRegime> = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 
