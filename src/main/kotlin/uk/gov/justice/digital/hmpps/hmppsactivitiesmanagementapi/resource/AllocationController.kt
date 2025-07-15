@@ -125,7 +125,7 @@ class AllocationController(
   )
   @GetMapping(value = ["/deallocation-reasons"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getDeallocationReasons() = DeallocationReason.toModelDeallocationReasons()
 
   @ResponseStatus(HttpStatus.ACCEPTED)
