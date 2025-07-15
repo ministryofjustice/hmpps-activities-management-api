@@ -234,18 +234,54 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
   }
 
   @Test
-  fun `200 response when get waiting lists by schedule identifier`() {
+  fun `200 response when get waiting lists by schedule identifier with includeNonAssociations = false`() {
     val earliestReleaseDate = earliestReleaseDate()
     val waitingList = waitingList().toModel(earliestReleaseDate)
 
-    whenever(waitingListService.getWaitingListsBySchedule(1)).thenReturn(listOf(waitingList))
+    whenever(waitingListService.getWaitingListsBySchedule(1, false)).thenReturn(listOf(waitingList))
 
-    val response = mockMvc.getWaitingListsScheduleById(1)
+    val response = mockMvc.getWaitingListsScheduleById(1, false)
       .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
       .andExpect { status { isOk() } }
       .andReturn().response
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(waitingList)))
+
+    verify(waitingListService).getWaitingListsBySchedule(1, false)
+  }
+
+  @Test
+  fun `200 response when get waiting lists by schedule identifier with includeNonAssociations = true`() {
+    val earliestReleaseDate = earliestReleaseDate()
+    val waitingList = waitingList().toModel(earliestReleaseDate)
+
+    whenever(waitingListService.getWaitingListsBySchedule(1, true)).thenReturn(listOf(waitingList))
+
+    val response = mockMvc.getWaitingListsScheduleById(1, true)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(waitingList)))
+
+    verify(waitingListService).getWaitingListsBySchedule(1, true)
+  }
+
+  @Test
+  fun `200 response when get waiting lists by schedule identifier with includeNonAssociations = null`() {
+    val earliestReleaseDate = earliestReleaseDate()
+    val waitingList = waitingList().toModel(earliestReleaseDate)
+
+    whenever(waitingListService.getWaitingListsBySchedule(1, true)).thenReturn(listOf(waitingList))
+
+    val response = mockMvc.getWaitingListsScheduleById(1, null)
+      .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(listOf(waitingList)))
+
+    verify(waitingListService).getWaitingListsBySchedule(1, true)
   }
 
   @Nested
@@ -340,5 +376,7 @@ class ActivityScheduleControllerTest : ControllerTestBase<ActivityScheduleContro
     }
   }
 
-  private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long) = get("/schedules/$scheduleId/waiting-list-applications")
+  private fun MockMvc.getWaitingListsScheduleById(scheduleId: Long, includeNonAssociationsCheck: Boolean? = null) = get("/schedules/$scheduleId/waiting-list-applications") {
+    if (includeNonAssociationsCheck != null) param("includeNonAssociationsCheck", includeNonAssociationsCheck.toString())
+  }
 }

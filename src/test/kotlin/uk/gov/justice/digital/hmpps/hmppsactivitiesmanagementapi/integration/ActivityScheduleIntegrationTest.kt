@@ -1014,6 +1014,25 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
     "classpath:test_data/seed-activity-id-21.sql",
   )
   @Test
+  fun `get all waiting lists does not include non-associations details`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A4065DZ"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(prisonerNumber = "A4065DZ", firstName = "Joe", releaseDate = LocalDate.now()),
+      ),
+    )
+
+    nonAssociationsApiMockServer.stubGetNonAssociationsInvolving("MDI")
+
+    val result = webTestClient.getWaitingListsBy(1, includeNonAssociationsCheck = false)
+
+    assertThat(result).extracting<Boolean> { w -> w.nonAssociations }.containsExactly(null)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-activity-id-21.sql",
+  )
+  @Test
   fun `get all waiting lists when non-associations api returns an error`() {
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       listOf("A4065DZ"),
@@ -1092,8 +1111,13 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
     .exchange()
     .expectHeader().contentType(MediaType.APPLICATION_JSON)
 
-  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE) = get()
-    .uri("/schedules/$scheduleId/waiting-list-applications")
+  private fun WebTestClient.getWaitingListsBy(scheduleId: Long, caseLoadId: String = MOORLAND_PRISON_CODE, includeNonAssociationsCheck: Boolean? = null) = get()
+    .uri { builder ->
+      builder
+        .path("/schedules/$scheduleId/waiting-list-applications")
+        .maybeQueryParam("includeNonAssociationsCheck", includeNonAssociationsCheck)
+        .build()
+    }
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_PRISON)))
     .header(CASELOAD_ID, caseLoadId)
