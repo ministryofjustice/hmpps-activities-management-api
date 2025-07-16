@@ -168,7 +168,7 @@ class ActivityScheduleController(
     ],
   )
   @CaseloadHeader
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'NOMIS_ACTIVITIES')")
   fun getScheduleById(
     @PathVariable("scheduleId") scheduleId: Long,
     @RequestParam(value = "earliestSessionDate", required = false)

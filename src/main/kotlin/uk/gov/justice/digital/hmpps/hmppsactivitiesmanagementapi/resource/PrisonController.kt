@@ -78,7 +78,7 @@ class PrisonController(
   )
   @GetMapping(value = ["/{prisonCode}/activities"])
   @ResponseBody
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES_MANAGEMENT__RO')")
   fun getActivities(
     @PathVariable("prisonCode") prisonCode: String,
     @RequestParam(value = "excludeArchived", required = false, defaultValue = "true") excludeArchived: Boolean,
@@ -127,7 +127,7 @@ class PrisonController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getPrisonPayBands(
     @PathVariable("prisonCode")
     prisonCode: String,
@@ -278,6 +278,6 @@ class PrisonController(
       ),
     ],
   )
-  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN', 'ACTIVITIES__HMPPS_INTEGRATION_API')")
+  @PreAuthorize("hasAnyRole('PRISON', 'ACTIVITY_ADMIN')")
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): List<PrisonRegime> = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
 }
