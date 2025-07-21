@@ -67,6 +67,33 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
   fun findByPrisonerNumber(prisonerNumber: String): List<Attendance>
 
   @Query(
+    value = """
+      SELECT a FROM Attendance a
+      WHERE a.caseNoteId IS NOT NULL
+    """,
+  )
+  fun findAllCaseNoteIdToMigrate(): List<Attendance>
+
+  @Modifying
+  @Query(
+    value = """
+      UPDATE Attendance a
+      SET a.dpsCaseNoteId = :dpsCaseNoteId 
+      WHERE a.caseNoteId = :caseNoteId
+    """,
+  )
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+
+  @Query(
+    value = """
+      SELECT a FROM Attendance a
+      WHERE a.caseNoteId IS NOT NULL
+      AND a.dpsCaseNoteId IS NULL
+    """,
+  )
+  fun findRemainingCaseNoteIdToMigrate(): List<Attendance>
+
+  @Query(
     """
       SELECT a FROM Attendance a
       WHERE a.prisonerNumber = :prisonerNumber

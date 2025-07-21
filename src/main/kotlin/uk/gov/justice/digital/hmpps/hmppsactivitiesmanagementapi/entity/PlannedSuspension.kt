@@ -27,7 +27,8 @@ data class PlannedSuspension(
   private var plannedBy: String,
   private var plannedAt: LocalDateTime = LocalDateTime.now(),
   private var plannedEndDate: LocalDate? = null,
-  private var caseNoteId: Long? = null,
+  var caseNoteId: Long? = null,
+  var dpsCaseNoteId: String? = null,
   private var paid: Boolean? = false,
 ) {
   private var updatedBy: String? = null

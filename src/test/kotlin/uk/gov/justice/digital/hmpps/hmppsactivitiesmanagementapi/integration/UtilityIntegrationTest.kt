@@ -17,7 +17,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.UpdateCaseNoteUUIDResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_COMPLETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
@@ -119,6 +121,33 @@ class UtilityIntegrationTest : IntegrationTestBase() {
     assertThat(activityPayHistoryList).isEqualTo(expectedActivityPayHistory)
   }
 
+  @Test
+  @Sql("classpath:test_data/seed-allocation-and-attendance.sql")
+  fun `update case note uuid - success`() {
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 2)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 3)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 4)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 5)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 6)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 7)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 8)
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 9)
+
+    val response = webTestClient.updateCaseNotesUUID(listOf("ROLE_NOMIS_ACTIVITIES"))
+      .expectStatus().isOk
+      .expectHeader().contentType(MediaType.APPLICATION_JSON)
+      .expectBody(UpdateCaseNoteUUIDResponse::class.java)
+      .returnResult().responseBody
+
+    with(response!!) {
+      assertThat(attendance).isEqualTo(STATUS_COMPLETED)
+      assertThat(attendanceHistory).isEqualTo(STATUS_COMPLETED)
+      assertThat(allocation).isEqualTo(STATUS_COMPLETED)
+      assertThat(plannedDeallocation).isEqualTo(STATUS_COMPLETED)
+      assertThat(plannedSuspension).isEqualTo(STATUS_COMPLETED)
+    }
+  }
+
   private fun WebTestClient.publishEvents(model: PublishEventUtilityModel) = post()
     .uri("/utility/publish-events")
     .bodyValue(model)
@@ -136,6 +165,11 @@ class UtilityIntegrationTest : IntegrationTestBase() {
 
   private fun WebTestClient.createActivityPayHistory(roles: List<String>) = post()
     .uri("/utility/create-pay-history")
+    .headers(setAuthorisation(roles = roles))
+    .exchange()
+
+  private fun WebTestClient.updateCaseNotesUUID(roles: List<String>) = post()
+    .uri("/utility/update-case-note-uuid")
     .headers(setAuthorisation(roles = roles))
     .exchange()
 

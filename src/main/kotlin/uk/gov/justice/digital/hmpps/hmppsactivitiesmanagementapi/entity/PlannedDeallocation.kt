@@ -33,6 +33,8 @@ data class PlannedDeallocation(
 
   var caseNoteId: Long? = null,
 
+  var dpsCaseNoteId: String? = null,
+
   var plannedAt: LocalDateTime = LocalDateTime.now(),
 ) {
   fun toModel() = ModelPlannedDeallocation(

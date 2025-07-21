@@ -118,6 +118,9 @@ data class Allocation(
   var deallocationCaseNoteId: Long? = null
     private set
 
+  var deallocationDpsCaseNoteId: String? = null
+    private set
+
   var suspendedTime: LocalDateTime? = null
     private set
 

@@ -154,4 +154,31 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   @Query(value = "UPDATE Allocation a SET a.bookingId = coalesce(:newBookingId, a.bookingId) WHERE a.prisonerNumber = :prisonerNumber")
   @Modifying
   fun mergePrisonerToNewBookingId(prisonerNumber: String, newBookingId: Long?)
+
+  @Query(
+    value = """
+      SELECT a FROM Allocation a
+      WHERE a.deallocationCaseNoteId IS NOT NULL
+    """,
+  )
+  fun findAllCaseNoteIdToMigrate(): List<Allocation>
+
+  @Modifying
+  @Query(
+    value = """
+      UPDATE Allocation a
+      SET a.deallocationDpsCaseNoteId = :dpsCaseNoteId 
+      WHERE a.deallocationCaseNoteId = :caseNoteId
+    """,
+  )
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+
+  @Query(
+    value = """
+      SELECT a FROM Allocation a
+      WHERE a.deallocationCaseNoteId IS NOT NULL
+      AND a.deallocationDpsCaseNoteId IS NULL
+    """,
+  )
+  fun findRemainingCaseNoteIdToMigrate(): List<Allocation>
 }

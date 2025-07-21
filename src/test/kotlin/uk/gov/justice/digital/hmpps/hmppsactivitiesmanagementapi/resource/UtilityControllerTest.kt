@@ -17,9 +17,12 @@ import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.UpdateCaseNoteUUIDResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository.ActivityScheduleWithInvalidLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateCaseNotesUUIDService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_COMPLETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import java.util.*
@@ -37,9 +40,17 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
   @MockitoBean
   private lateinit var migrateActivityService: MigrateActivityService
 
+  @MockitoBean
+  private lateinit var migrateCaseNotesUUIDService: MigrateCaseNotesUUIDService
+
   private val identifierCaptor = argumentCaptor<Long>()
 
-  override fun controller() = UtilityController(outboundEventsService, activityLocationService, migrateActivityService)
+  override fun controller() = UtilityController(
+    outboundEventsService,
+    activityLocationService,
+    migrateActivityService,
+    migrateCaseNotesUUIDService,
+  )
 
   @Test
   fun `201 response when outbound event is published`() {
@@ -89,6 +100,26 @@ class UtilityControllerTest : ControllerTestBase<UtilityController>() {
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
 
     verify(migrateActivityService).createActivityPayHistory()
+  }
+
+  @Test
+  fun `200 response while updating case notes UUID`() {
+    val expectedResponse = UpdateCaseNoteUUIDResponse(
+      STATUS_COMPLETED,
+      STATUS_COMPLETED,
+      STATUS_COMPLETED,
+      STATUS_COMPLETED,
+      STATUS_COMPLETED,
+    )
+    whenever(migrateCaseNotesUUIDService.updateCaseNoteUUID()).thenReturn(expectedResponse)
+
+    val response = mockMvc.post("/utility/update-case-note-uuid")
+      .andExpect { status { isOk() } }
+      .andReturn().response
+
+    assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedResponse))
+
+    verify(migrateCaseNotesUUIDService).updateCaseNoteUUID()
   }
 
   private fun MockMvc.publishEvents(event: OutboundEvent, identifiers: List<Long>) = post("/utility/publish-events") {

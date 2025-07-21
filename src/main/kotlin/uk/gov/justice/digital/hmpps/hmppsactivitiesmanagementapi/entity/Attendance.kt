@@ -56,6 +56,8 @@ data class Attendance(
 
   var caseNoteId: Long? = null,
 
+  var dpsCaseNoteId: String? = null,
+
   var incentiveLevelWarningIssued: Boolean? = null,
 
   var otherAbsenceReason: String? = null,
