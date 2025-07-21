@@ -2,12 +2,14 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.validation.constraints.AssertTrue
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(
   description =
@@ -48,15 +50,17 @@ data class AppointmentMigrateRequest(
   )
   val categoryCode: String?,
 
-  @field:NotNull(message = "Internal location id must be supplied")
   @Schema(
     description =
     """
-    The NOMIS internal location id within the specified prison.
+    The optional NOMIS internal location id within the specified prison.
     """,
     example = "123",
   )
   val internalLocationId: Long?,
+
+  @Schema(description = "The optional DPS location UUID.", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
+  val dpsLocationId: UUID? = null,
 
   @field:NotNull(message = "Start date must be supplied")
   @Schema(
@@ -134,4 +138,7 @@ data class AppointmentMigrateRequest(
     example = "AAA01U",
   )
   val updatedBy: String?,
-)
+) {
+  @AssertTrue(message = "internalLocationId or dpsLocationId must be supplied")
+  private fun hasCorrectLocationDetails() = internalLocationId != null || dpsLocationId != null
+}

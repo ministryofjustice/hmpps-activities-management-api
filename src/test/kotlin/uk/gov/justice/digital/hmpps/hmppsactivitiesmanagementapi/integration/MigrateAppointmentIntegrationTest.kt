@@ -92,6 +92,19 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       ),
       setOf(dpsLocation2.id),
     )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(UUID.fromString("44444444-1111-2222-3333-444444444444"), 123)
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
+      listOf("A1234BC"),
+      listOf(
+        PrisonerSearchPrisonerFixture.instance(
+          prisonerNumber = "A1234BC",
+          bookingId = 1,
+          prisonId = "TPR",
+        ),
+      ),
+    )
   }
 
   @Test
@@ -121,17 +134,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `migrate appointment success`() {
     val request = appointmentMigrateRequest(categoryCode = "AC1")
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
-
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
 
@@ -139,19 +141,30 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   @Test
+  fun `migrate appointment success without internal location id`() {
+    val request = appointmentMigrateRequest(internalLocationId = null)
+
+    val response = webTestClient.migrateAppointment(request)!!
+    verifyAppointmentInstance(response = response)
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
+  @Test
+  fun `migrate appointment success without dps location id`() {
+    nomisMappingApiMockServer.stubMappingFromNomisId(123, UUID.fromString("44444444-1111-2222-3333-444444444444"))
+
+    val request = appointmentMigrateRequest(dpsLocationId = null)
+
+    val response = webTestClient.migrateAppointment(request)!!
+    verifyAppointmentInstance(response = response)
+
+    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
+  }
+
+  @Test
   fun `migrate appointment success with long comment`() {
     val request = appointmentMigrateRequest(categoryCode = "AC1", comment = "This is a long comment over 40 characters")
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
@@ -162,17 +175,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `migrate appointment with null end time`() {
     val request = appointmentMigrateRequest(endTime = null)
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
 
     val response = webTestClient.migrateAppointment(request)!!
 
@@ -185,17 +187,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `migrate appointment rejected if start date over 5 years into the future and is not a BVLS category code`() {
     val request = appointmentMigrateRequest(categoryCode = "TEST2343", startDate = LocalDate.now().plusDays(1827))
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
-
     assertThat(webTestClient.migrateRejectedAppointment(request)).isNull()
   }
 
@@ -203,17 +194,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   @ValueSource(strings = ["VLB", "VLPM"])
   fun `migrate appointment success if start date is too far into the future but is a BVLS code`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode, startDate = LocalDate.now().plusDays(371))
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
 
     val response = webTestClient.migrateAppointment(request)!!
 
@@ -225,17 +205,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `migrate appointment success if start date is the maximum allowed`() {
     val request = appointmentMigrateRequest(startDate = LocalDate.now().plusDays(370))
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
 
     val response = webTestClient.migrateAppointment(request)!!
 
@@ -249,17 +218,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `migrate appointment success with BVLS category custom name is blank`(categoryCode: String) {
     val request = appointmentMigrateRequest(categoryCode = categoryCode)
 
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
-    )
-
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response, setCustomName = false)
 
@@ -271,17 +229,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     val request = appointmentMigrateRequest(
       categoryCode = "AC1",
       comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.",
-    )
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf(request.prisonerNumber!!),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = request.prisonerNumber,
-          bookingId = 1,
-          prisonId = request.prisonCode!!,
-        ),
-      ),
     )
 
     val response = webTestClient.migrateAppointment(request)!!
@@ -319,6 +266,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       }
       assertThat(customName).isEqualTo(name)
       assertThat(internalLocationId).isEqualTo(123)
+      assertThat(dpsLocationId).isEqualTo(UUID.fromString("44444444-1111-2222-3333-444444444444"))
       assertThat(inCell).isFalse
       assertThat(appointmentDate).isEqualTo(appointmentDate)
       assertThat(startTime).isEqualTo(LocalTime.of(13, 0))

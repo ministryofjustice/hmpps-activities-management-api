@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
@@ -25,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 @Transactional
@@ -36,6 +38,7 @@ class MigrateAppointmentService(
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val appointmentRepository: AppointmentRepository,
   private val referenceCodeService: ReferenceCodeService,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val transactionHandler: TransactionHandler,
   @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
 ) {
@@ -53,16 +56,19 @@ class MigrateAppointmentService(
       return null
     }
 
+    val (dpsLocationId, internalLocationId) = determineLocationIds(request.dpsLocationId, request.internalLocationId)
+
     val appointmentSeries =
       transactionHandler.newSpringTransaction {
         appointmentSeriesRepository.saveAndFlush(
           AppointmentSeries(
             appointmentType = AppointmentType.INDIVIDUAL,
             prisonCode = request.prisonCode!!,
-            categoryCode = request.categoryCode!!,
+            categoryCode = request.categoryCode,
             customName = if (listOf("VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP").contains(request.categoryCode).not()) request.comment?.trim()?.takeUnless(String::isBlank)?.take(40) else null,
             appointmentTier = null,
-            internalLocationId = request.internalLocationId,
+            internalLocationId = internalLocationId,
+            dpsLocationId = dpsLocationId,
             startDate = request.startDate!!,
             startTime = request.startTime!!,
             endTime = request.endTime ?: run {
@@ -94,6 +100,16 @@ class MigrateAppointmentService(
     val appointmentInstanceId = appointmentSeriesModel.appointments.single().attendees.single().id
 
     return appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
+  }
+
+  private fun determineLocationIds(dpsLocationId: UUID?, nomisLocationId: Long?) = when {
+    dpsLocationId != null -> {
+      dpsLocationId to nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
+    }
+    nomisLocationId != null -> {
+      nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId)!!.dpsLocationId to nomisLocationId
+    }
+    else -> throw IllegalArgumentException("One of DPS Location ID or internal location id must not be null")
   }
 
   fun deleteMigratedAppointments(prisonCode: String, startDate: LocalDate, categoryCode: String? = null) {

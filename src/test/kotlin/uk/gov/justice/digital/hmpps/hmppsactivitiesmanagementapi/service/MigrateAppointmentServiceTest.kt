@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.AdditionalAnswers
@@ -18,6 +19,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.jpa.domain.Specification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.Appointment
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
@@ -57,6 +60,7 @@ class MigrateAppointmentServiceTest {
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, appointmentCancellationReasonRepository, TransactionHandler(), outboundEventsService, mock(), mock()))
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
   private val referenceCodeService: ReferenceCodeService = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
 
   private val appointmentCancelledReason = appointmentCancelledReason()
 
@@ -68,7 +72,9 @@ class MigrateAppointmentServiceTest {
     appointmentCancelDomainService,
     appointmentRepository,
     referenceCodeService,
+    nomisMappingAPIClient,
     TransactionHandler(),
+
     2,
   )
 
@@ -77,6 +83,7 @@ class MigrateAppointmentServiceTest {
   inner class MigrateAppointment {
     private val appointmentSeriesCaptor = argumentCaptor<AppointmentSeries>()
     private val appointmentCaptor = argumentCaptor<Appointment>()
+    private val dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
 
     @BeforeEach
     fun setUp() {
@@ -86,6 +93,8 @@ class MigrateAppointmentServiceTest {
       whenever(appointmentCancellationReasonRepository.findById(appointmentCancelledReason.appointmentCancellationReasonId)).thenReturn(
         Optional.of(appointmentCancelledReason),
       )
+      whenever(nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId))
+        .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
     }
 
     @Test
@@ -101,6 +110,7 @@ class MigrateAppointmentServiceTest {
         customName = null,
         appointmentTier = null,
         internalLocationId = request.internalLocationId,
+        dpsLocationId = request.dpsLocationId!!,
         customLocation = null,
         inCell = false,
         onWing = false,
@@ -116,6 +126,41 @@ class MigrateAppointmentServiceTest {
         updatedBy = request.updatedBy,
         isMigrated = true,
       )
+    }
+
+    @Test
+    fun `uses result from nomis mapping client for internal location id`() {
+      val request = appointmentMigrateRequest(internalLocationId = 356)
+
+      service.migrateAppointment(request)
+
+      appointmentSeriesCaptor.firstValue.internalLocationId isEqualTo 123
+    }
+
+    @Test
+    fun `determines dps location id if not supplied`() {
+      val dpsLocationId = UUID.randomUUID()
+
+      whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123))
+        .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
+
+      val request = appointmentMigrateRequest(dpsLocationId = null)
+
+      service.migrateAppointment(request)
+
+      appointmentSeriesCaptor.firstValue.dpsLocationId isEqualTo dpsLocationId
+    }
+
+    @Test
+    fun `throws an exception if both internal location id and dps location id are null`() {
+      val request = appointmentMigrateRequest(internalLocationId = null, dpsLocationId = null)
+
+      val exception = assertThrows<IllegalArgumentException> {
+        service.migrateAppointment(request)
+      }
+      exception.message isEqualTo "One of DPS Location ID or internal location id must not be null"
+
+      verifyNoInteractions(appointmentSeriesRepository)
     }
 
     @Test
@@ -156,6 +201,7 @@ class MigrateAppointmentServiceTest {
         mock(),
         appointmentRepository,
         referenceCodeService,
+        nomisMappingAPIClient,
         TransactionHandler(),
       )
 
