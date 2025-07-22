@@ -21,7 +21,7 @@ interface CandidateAllocation {
   fun getActivityScheduleId(): Long
 }
 
-interface MigrateAllocation{
+interface MigrateAllocation {
   fun getPrisonerNumber(): String
   fun getDeallocationCaseNoteId(): Long
 }

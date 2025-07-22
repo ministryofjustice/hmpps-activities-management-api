@@ -41,12 +41,16 @@ class UtilityIntegrationTest : IntegrationTestBase() {
 
   @Autowired
   private lateinit var attendanceRepository: AttendanceRepository
+
   @Autowired
   private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
+
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
+
   @Autowired
   private lateinit var plannedDeallocationRepository: PlannedDeallocationRepository
+
   @Autowired
   private lateinit var plannedSuspensionRepository: PlannedSuspensionRepository
 
