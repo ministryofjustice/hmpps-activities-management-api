@@ -11,6 +11,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedDeallocation as ModelPlannedDeallocation
 
 @Entity
@@ -33,7 +34,7 @@ data class PlannedDeallocation(
 
   var caseNoteId: Long? = null,
 
-  var dpsCaseNoteId: String? = null,
+  var dpsCaseNoteId: UUID? = null,
 
   var plannedAt: LocalDateTime = LocalDateTime.now(),
 ) {

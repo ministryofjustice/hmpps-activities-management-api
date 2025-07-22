@@ -1,9 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
+import java.util.UUID
 
 interface MigrateAttendanceHistory {
   fun getPrisonerNumber(): String
@@ -20,7 +23,7 @@ interface AttendanceHistoryRepository : JpaRepository<AttendanceHistory, Long> {
     """,
     nativeQuery = true,
   )
-  fun findAllCaseNoteIdToMigrate(): List<MigrateAttendanceHistory>
+  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigrateAttendanceHistory>
 
   @Modifying
   @Query(
@@ -30,14 +33,7 @@ interface AttendanceHistoryRepository : JpaRepository<AttendanceHistory, Long> {
       WHERE ah.caseNoteId = :caseNoteId
     """,
   )
-  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
 
-  @Query(
-    value = """
-      SELECT ah FROM AttendanceHistory ah
-      WHERE ah.caseNoteId IS NOT NULL
-      AND ah.dpsCaseNoteId IS NULL
-    """,
-  )
-  fun findRemainingCaseNoteIdToMigrate(): List<AttendanceHistory>
+  fun countByCaseNoteIdNotNullAndDpsCaseNoteIdNull(): Long
 }

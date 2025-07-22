@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.jdbc.Sql
@@ -18,6 +19,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityP
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.UpdateCaseNoteUUIDResponse
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceHistoryRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedDeallocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedSuspensionRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_COMPLETED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -32,6 +38,17 @@ import java.util.*
   ],
 )
 class UtilityIntegrationTest : IntegrationTestBase() {
+
+  @Autowired
+  private lateinit var attendanceRepository: AttendanceRepository
+  @Autowired
+  private lateinit var attendanceHistoryRepository: AttendanceHistoryRepository
+  @Autowired
+  private lateinit var allocationRepository: AllocationRepository
+  @Autowired
+  private lateinit var plannedDeallocationRepository: PlannedDeallocationRepository
+  @Autowired
+  private lateinit var plannedSuspensionRepository: PlannedSuspensionRepository
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -133,6 +150,12 @@ class UtilityIntegrationTest : IntegrationTestBase() {
     caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 8)
     caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 9)
 
+    assertThat(attendanceRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
+    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
+    assertThat(allocationRepository.countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull()).isEqualTo(2)
+    assertThat(plannedDeallocationRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
+    assertThat(plannedSuspensionRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
+
     val response = webTestClient.updateCaseNotesUUID(listOf("ROLE_NOMIS_ACTIVITIES"))
       .expectStatus().isOk
       .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -146,6 +169,12 @@ class UtilityIntegrationTest : IntegrationTestBase() {
       assertThat(plannedDeallocation).isEqualTo(STATUS_COMPLETED)
       assertThat(plannedSuspension).isEqualTo(STATUS_COMPLETED)
     }
+
+    assertThat(attendanceRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
+    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
+    assertThat(allocationRepository.countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull()).isEqualTo(0)
+    assertThat(plannedDeallocationRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
+    assertThat(plannedSuspensionRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
   }
 
   private fun WebTestClient.publishEvents(model: PublishEventUtilityModel) = post()

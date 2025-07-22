@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -10,6 +12,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
+
+interface MigrateAttendance {
+  fun getPrisonerNumber(): String
+  fun getCaseNoteId(): Long
+}
 
 interface AttendanceRepository : JpaRepository<Attendance, Long> {
   fun existsAttendanceByScheduledInstanceAndPrisonerNumber(scheduledInstance: ScheduledInstance, prisonerNumber: String): Boolean
@@ -68,11 +76,14 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
   @Query(
     value = """
-      SELECT a FROM Attendance a
-      WHERE a.caseNoteId IS NOT NULL
+      SELECT a.prisoner_number, a.case_note_id
+      FROM attendance a
+      WHERE a.case_note_id IS NOT NULL
+      AND a.dps_case_note_id IS NULL
     """,
+    nativeQuery = true,
   )
-  fun findAllCaseNoteIdToMigrate(): List<Attendance>
+  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigrateAttendance>
 
   @Modifying
   @Query(
@@ -82,16 +93,9 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
       WHERE a.caseNoteId = :caseNoteId
     """,
   )
-  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
 
-  @Query(
-    value = """
-      SELECT a FROM Attendance a
-      WHERE a.caseNoteId IS NOT NULL
-      AND a.dpsCaseNoteId IS NULL
-    """,
-  )
-  fun findRemainingCaseNoteIdToMigrate(): List<Attendance>
+  fun countByCaseNoteIdNotNullAndDpsCaseNoteIdNull(): Long
 
   @Query(
     """

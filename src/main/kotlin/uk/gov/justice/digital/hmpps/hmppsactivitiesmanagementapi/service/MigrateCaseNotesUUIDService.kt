@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service
 
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
@@ -9,9 +10,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Atte
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedDeallocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedSuspensionRepository
+import java.util.UUID
 
 const val STATUS_COMPLETED = "COMPLETED"
 const val STATUS_INCOMPLETE = "INCOMPLETE"
+const val PAGE_SIZE = 5000
 
 @Service
 class MigrateCaseNotesUUIDService(
@@ -25,53 +28,99 @@ class MigrateCaseNotesUUIDService(
   @Transactional
   fun updateCaseNoteUUID(): UpdateCaseNoteUUIDResponse {
     updateCaseNoteUUIDForAttendances()
+    updateCaseNoteUUIDForAttendanceHistories()
     updateCaseNoteUUIDForAllocations()
+    updateCaseNoteUUIDForPlannedDeallocations()
+    updateCaseNoteUUIDForPlannedSuspensions()
 
     return UpdateCaseNoteUUIDResponse(
-      if (attendanceRepository.findRemainingCaseNoteIdToMigrate().count() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
-      if (attendanceHistoryRepository.findRemainingCaseNoteIdToMigrate().count() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
-      if (allocationRepository.findRemainingCaseNoteIdToMigrate().count() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
-      if (plannedDeallocationRepository.findRemainingCaseNoteIdToMigrate().count() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
-      if (plannedSuspensionRepository.findRemainingCaseNoteIdToMigrate().count() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
+      if (attendanceRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
+      if (attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
+      if (allocationRepository.countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
+      if (plannedDeallocationRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
+      if (plannedSuspensionRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull() > 0) STATUS_INCOMPLETE else STATUS_COMPLETED,
     )
   }
 
   private fun updateCaseNoteUUIDForAttendances() {
-    attendanceRepository.findAllCaseNoteIdToMigrate()
-      .forEach { attendance ->
-        val caseNoteId = attendance.caseNoteId
-        val caseNote = caseNotesApiClient.getCaseNoteUUID(attendance.prisonerNumber, caseNoteId!!)
-        attendanceRepository.updateCaseNoteUUID(caseNoteId, caseNote.caseNoteId)
+    var pageNumber = 0
+    var currentPage = attendanceRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+
+    while (currentPage != null && currentPage.content.isNotEmpty()) {
+      currentPage.forEach { attendance ->
+        val caseNoteId = attendance.getCaseNoteId()
+        val caseNote = caseNotesApiClient.getCaseNoteUUID(attendance.getPrisonerNumber(), caseNoteId)
+        attendanceRepository.updateCaseNoteUUID(caseNoteId, UUID.fromString(caseNote.caseNoteId))
       }
 
-    attendanceHistoryRepository.findAllCaseNoteIdToMigrate()
-      .forEach { attendanceHistory ->
+      pageNumber++
+      currentPage = attendanceRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+    }
+  }
+
+  private fun updateCaseNoteUUIDForAttendanceHistories() {
+    var pageNumber = 0
+    var currentPage = attendanceHistoryRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+
+    while (currentPage != null && currentPage.content.isNotEmpty()) {
+      currentPage.forEach { attendanceHistory ->
         val caseNoteId = attendanceHistory.getCaseNoteId()
         val caseNote = caseNotesApiClient.getCaseNoteUUID(attendanceHistory.getPrisonerNumber(), caseNoteId)
-        attendanceHistoryRepository.updateCaseNoteUUID(caseNoteId, caseNote.caseNoteId)
+        attendanceHistoryRepository.updateCaseNoteUUID(caseNoteId, UUID.fromString(caseNote.caseNoteId))
       }
+
+      pageNumber++
+      currentPage = attendanceHistoryRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+    }
   }
 
   private fun updateCaseNoteUUIDForAllocations() {
-    allocationRepository.findAllCaseNoteIdToMigrate()
-      .forEach { allocation ->
-        val caseNoteId = allocation.deallocationCaseNoteId
-        val caseNote = caseNotesApiClient.getCaseNoteUUID(allocation.prisonerNumber, caseNoteId!!)
-        allocationRepository.updateCaseNoteUUID(caseNoteId, caseNote.caseNoteId)
+    var pageNumber = 0
+    var currentPage = allocationRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+
+    while (currentPage != null && currentPage.content.isNotEmpty()) {
+      currentPage.forEach { allocation ->
+        val caseNoteId = allocation.getDeallocationCaseNoteId()
+        val caseNote = caseNotesApiClient.getCaseNoteUUID(allocation.getPrisonerNumber(), caseNoteId)
+        allocationRepository.updateCaseNoteUUID(caseNoteId, UUID.fromString(caseNote.caseNoteId))
       }
 
-    plannedDeallocationRepository.findAllCaseNoteIdToMigrate()
-      .forEach { plannedDeallocation ->
+      pageNumber++
+      currentPage = allocationRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+    }
+  }
+
+  private fun updateCaseNoteUUIDForPlannedDeallocations() {
+    var pageNumber = 0
+    var currentPage = plannedDeallocationRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+
+    while (currentPage != null && currentPage.content.isNotEmpty()) {
+      currentPage.forEach { plannedDeallocation ->
         val caseNoteId = plannedDeallocation.getCaseNoteId()
         val caseNote = caseNotesApiClient.getCaseNoteUUID(plannedDeallocation.getPrisonerNumber(), caseNoteId)
-        plannedDeallocationRepository.updateCaseNoteUUID(caseNoteId, caseNote.caseNoteId)
+        plannedDeallocationRepository.updateCaseNoteUUID(caseNoteId, UUID.fromString(caseNote.caseNoteId))
       }
 
-    plannedSuspensionRepository.findAllCaseNoteIdToMigrate()
-      .forEach { plannedSuspension ->
+      pageNumber++
+      currentPage = plannedDeallocationRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+    }
+  }
+
+  private fun updateCaseNoteUUIDForPlannedSuspensions() {
+    var pageNumber = 0
+    var currentPage = plannedSuspensionRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+
+    while (currentPage != null && currentPage.content.isNotEmpty()) {
+      currentPage.forEach { plannedSuspension ->
         val caseNoteId = plannedSuspension.getCaseNoteId()
         val caseNote = caseNotesApiClient.getCaseNoteUUID(plannedSuspension.getPrisonerNumber(), caseNoteId)
-        plannedSuspensionRepository.updateCaseNoteUUID(caseNoteId, caseNote.caseNoteId)
+        plannedSuspensionRepository.updateCaseNoteUUID(caseNoteId, UUID.fromString(caseNote.caseNoteId))
       }
+
+      pageNumber++
+      currentPage = plannedSuspensionRepository.findAllCaseNoteIdToMigrate(currentPage(pageNumber))
+    }
   }
+
+  private fun currentPage(pageNumber: Int) = PageRequest.of(pageNumber, PAGE_SIZE)
 }

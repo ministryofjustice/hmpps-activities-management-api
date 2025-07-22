@@ -10,6 +10,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PlannedSuspension as ModelPlannedSuspension
 
 @Entity
@@ -28,7 +29,7 @@ data class PlannedSuspension(
   private var plannedAt: LocalDateTime = LocalDateTime.now(),
   private var plannedEndDate: LocalDate? = null,
   var caseNoteId: Long? = null,
-  var dpsCaseNoteId: String? = null,
+  var dpsCaseNoteId: UUID? = null,
   private var paid: Boolean? = false,
 ) {
   private var updatedBy: String? = null

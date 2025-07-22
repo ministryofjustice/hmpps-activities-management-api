@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Slot
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
 
@@ -118,7 +119,7 @@ data class Allocation(
   var deallocationCaseNoteId: Long? = null
     private set
 
-  var deallocationDpsCaseNoteId: String? = null
+  var deallocationDpsCaseNoteId: UUID? = null
     private set
 
   var suspendedTime: LocalDateTime? = null

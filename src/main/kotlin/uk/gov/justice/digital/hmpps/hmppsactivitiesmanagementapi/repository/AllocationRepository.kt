@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -10,12 +12,18 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocati
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.BookingCount
 import java.time.LocalDate
+import java.util.UUID
 
 interface CandidateAllocation {
   fun getAllocationId(): Long
   fun getPrisonerNumber(): String
   fun getCode(): String
   fun getActivityScheduleId(): Long
+}
+
+interface MigrateAllocation{
+  fun getPrisonerNumber(): String
+  fun getDeallocationCaseNoteId(): Long
 }
 
 @Repository
@@ -157,11 +165,14 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
 
   @Query(
     value = """
-      SELECT a FROM Allocation a
-      WHERE a.deallocationCaseNoteId IS NOT NULL
+      SELECT a.prisoner_number, a.deallocation_case_note_id
+      FROM allocation a
+      WHERE a.deallocation_case_note_id IS NOT NULL
+      AND a.deallocation_dps_case_note_id IS NULL
     """,
+    nativeQuery = true,
   )
-  fun findAllCaseNoteIdToMigrate(): List<Allocation>
+  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigrateAllocation>
 
   @Modifying
   @Query(
@@ -171,14 +182,7 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
       WHERE a.deallocationCaseNoteId = :caseNoteId
     """,
   )
-  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
 
-  @Query(
-    value = """
-      SELECT a FROM Allocation a
-      WHERE a.deallocationCaseNoteId IS NOT NULL
-      AND a.deallocationDpsCaseNoteId IS NULL
-    """,
-  )
-  fun findRemainingCaseNoteIdToMigrate(): List<Allocation>
+  fun countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull(): Long
 }

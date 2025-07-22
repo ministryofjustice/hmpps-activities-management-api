@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "attendance")
@@ -56,7 +57,7 @@ data class Attendance(
 
   var caseNoteId: Long? = null,
 
-  var dpsCaseNoteId: String? = null,
+  var dpsCaseNoteId: UUID? = null,
 
   var incentiveLevelWarningIssued: Boolean? = null,
 

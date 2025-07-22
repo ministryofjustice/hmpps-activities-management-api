@@ -1,9 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedDeallocation
+import java.util.UUID
 
 interface MigratePlannedDeallocation {
   fun getPrisonerNumber(): String
@@ -20,7 +23,7 @@ interface PlannedDeallocationRepository : JpaRepository<PlannedDeallocation, Lon
     """,
     nativeQuery = true,
   )
-  fun findAllCaseNoteIdToMigrate(): List<MigratePlannedDeallocation>
+  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigratePlannedDeallocation>
 
   @Modifying
   @Query(
@@ -30,14 +33,7 @@ interface PlannedDeallocationRepository : JpaRepository<PlannedDeallocation, Lon
       WHERE pd.caseNoteId = :caseNoteId
     """,
   )
-  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: String)
+  fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
 
-  @Query(
-    value = """
-      SELECT pd FROM PlannedDeallocation pd
-      WHERE pd.caseNoteId IS NOT NULL
-      AND pd.dpsCaseNoteId IS NULL
-    """,
-  )
-  fun findRemainingCaseNoteIdToMigrate(): List<PlannedDeallocation>
+  fun countByCaseNoteIdNotNullAndDpsCaseNoteIdNull(): Long
 }
