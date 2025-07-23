@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSearch
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Component
 class AppointmentSearchSpecification {
@@ -20,6 +21,8 @@ class AppointmentSearchSpecification {
   fun categoryCodeEquals(categoryCode: String) = Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<String>("categoryCode"), categoryCode) }
 
   fun internalLocationIdEquals(internalLocationId: Long) = Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Long>("internalLocationId"), internalLocationId) }
+
+  fun dpsLocationIdEquals(dpsLocationId: UUID) = Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Long>("dpsLocationId"), dpsLocationId) }
 
   fun inCellEquals(inCell: Boolean) = Specification<AppointmentSearch> { root, _, cb -> cb.equal(root.get<Boolean>("inCell"), inCell) }
 

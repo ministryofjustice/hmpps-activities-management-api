@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DPS_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_ORGANISER_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIER_PROPERTY_KEY
@@ -170,6 +171,7 @@ class AppointmentCreateDomainService(
       CATEGORY_DESCRIPTION_PROPERTY_KEY to categoryDescription,
       HAS_CUSTOM_NAME_PROPERTY_KEY to (!customName.isNullOrEmpty()).toString(),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to (if (this.inCell) "" else this.internalLocationId?.toString() ?: ""),
+      DPS_LOCATION_ID_PROPERTY_KEY to (if (this.inCell) "" else this.dpsLocationId?.toString() ?: ""),
       INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to locationDescription,
       START_DATE_PROPERTY_KEY to startDate.toString(),
       START_TIME_PROPERTY_KEY to startTime.toString(),

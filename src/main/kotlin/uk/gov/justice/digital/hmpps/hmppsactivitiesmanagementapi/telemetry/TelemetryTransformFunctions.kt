@@ -77,6 +77,7 @@ fun AppointmentSet.toTelemetryPropertiesMap(
   CATEGORY_DESCRIPTION_PROPERTY_KEY to categoryDescription,
   HAS_CUSTOM_NAME_PROPERTY_KEY to (customName?.trim()?.takeUnless(String::isBlank) != null).toString(),
   INTERNAL_LOCATION_ID_PROPERTY_KEY to (if (inCell) "" else internalLocationId?.toString() ?: ""),
+  DPS_LOCATION_ID_PROPERTY_KEY to (if (inCell) "" else dpsLocationId?.toString() ?: ""),
   INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to internalLocationDescription,
   START_DATE_PROPERTY_KEY to startDate.toString(),
   EARLIEST_START_TIME_PROPERTY_KEY to appointments.mapNotNull { it.startTime }.takeUnless { it.isEmpty() }?.minOf { it }.toString(),

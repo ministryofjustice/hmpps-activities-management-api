@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DPS_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_DATE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
@@ -94,6 +95,10 @@ class AppointmentSearchService(
         spec = spec.and(appointmentSearchSpecification.internalLocationIdEquals(internalLocationId))
       }
 
+      dpsLocationId?.apply {
+        spec = spec.and(appointmentSearchSpecification.dpsLocationIdEquals(dpsLocationId))
+      }
+
       inCell?.apply {
         spec = spec.and(appointmentSearchSpecification.inCellEquals(inCell))
       }
@@ -135,6 +140,7 @@ class AppointmentSearchService(
       TIME_SLOT_PROPERTY_KEY to (request.timeSlots?.toString() ?: ""),
       CATEGORY_CODE_PROPERTY_KEY to (request.categoryCode ?: ""),
       INTERNAL_LOCATION_ID_PROPERTY_KEY to (request.internalLocationId?.toString() ?: ""),
+      DPS_LOCATION_ID_PROPERTY_KEY to (request.dpsLocationId?.toString() ?: ""),
       PRISONER_NUMBER_PROPERTY_KEY to (request.prisonerNumbers?.joinToString() ?: ""),
       CREATED_BY_PROPERTY_KEY to (request.createdBy ?: ""),
     )

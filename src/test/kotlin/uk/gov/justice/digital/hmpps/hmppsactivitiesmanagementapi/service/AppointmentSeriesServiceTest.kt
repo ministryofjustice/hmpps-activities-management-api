@@ -61,6 +61,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOI
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DPS_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.END_TIME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EXTRA_INFORMATION_LENGTH_METRIC_KEY
@@ -486,6 +487,7 @@ class AppointmentSeriesServiceTest {
       assertThat(appointmentOrganiser).isEqualTo(eventOrganiser())
       assertThat(prisonCode).isEqualTo(request.prisonCode)
       assertThat(internalLocationId).isEqualTo(request.internalLocationId)
+      assertThat(dpsLocationId).isEqualTo(request.dpsLocationId)
       assertThat(inCell).isEqualTo(request.inCell)
       assertThat(startDate).isEqualTo(request.startDate)
       assertThat(startTime).isEqualTo(request.startTime)
@@ -537,6 +539,7 @@ class AppointmentSeriesServiceTest {
         assertThat(this[CATEGORY_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Category")
         assertThat(this[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
         assertThat(this[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(this[DPS_LOCATION_ID_PROPERTY_KEY]).isEqualTo("44444444-1111-2222-3333-444444444444")
         assertThat(this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Chapel")
         assertThat(this[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
         assertThat(this[START_TIME_PROPERTY_KEY]).isEqualTo("13:00")
@@ -636,6 +639,7 @@ class AppointmentSeriesServiceTest {
         assertThat(this[CATEGORY_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Category")
         assertThat(this[HAS_CUSTOM_NAME_PROPERTY_KEY]).isEqualTo("true")
         assertThat(this[INTERNAL_LOCATION_ID_PROPERTY_KEY]).isEqualTo("123")
+        assertThat(this[DPS_LOCATION_ID_PROPERTY_KEY]).isEqualTo("44444444-1111-2222-3333-444444444444")
         assertThat(this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY]).isEqualTo("Test Appointment Location")
         assertThat(this[START_DATE_PROPERTY_KEY]).isEqualTo(startDate.toString())
         assertThat(this[START_TIME_PROPERTY_KEY]).isEqualTo("13:00")
@@ -873,6 +877,7 @@ class AppointmentSeriesServiceTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
     with(telemetryPropertyMap.firstValue) {
       this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
       this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
     }
   }
@@ -889,6 +894,7 @@ class AppointmentSeriesServiceTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
     with(telemetryPropertyMap.firstValue) {
       this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
       this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
     }
   }
@@ -905,6 +911,7 @@ class AppointmentSeriesServiceTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
     with(telemetryPropertyMap.firstValue) {
       this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
       this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
     }
   }
@@ -921,6 +928,7 @@ class AppointmentSeriesServiceTest {
     verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SERIES_CREATED.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
     with(telemetryPropertyMap.firstValue) {
       this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+      this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
       this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
     }
   }
