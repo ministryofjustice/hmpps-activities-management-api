@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CASELOAD_ID_ALL
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CASELOAD_ID_HEADER
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
@@ -13,6 +15,19 @@ class CaseNotesApiMockServer : MockServer(8444) {
         .willReturn(
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
+            .withBodyFile("casenotesapi/case-note-$caseNoteId.json")
+            .withStatus(200),
+        ),
+    )
+  }
+
+  fun stubGetCaseNoteUUID(prisonerNumber: String, caseNoteId: Long) {
+    stubFor(
+      WireMock.get(WireMock.urlEqualTo("/case-notes/$prisonerNumber/$caseNoteId"))
+        .willReturn(
+          WireMock.aResponse()
+            .withHeader("Content-Type", "application/json")
+            .withHeader(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
             .withBodyFile("casenotesapi/case-note-$caseNoteId.json")
             .withStatus(200),
         ),

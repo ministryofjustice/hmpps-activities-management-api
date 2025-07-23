@@ -46,6 +46,13 @@ class CaseNotesApiClientTest {
   }
 
   @Test
+  fun `getCaseNoteUUID - success`() {
+    caseNotesApiMockServer.stubGetCaseNoteUUID("A1234AA", 1)
+    val caseNote = caseNotesApiClient.getCaseNoteUUID("A1234AA", 1)
+    assertThat(caseNote.text).isEqualTo("Case Note Text")
+  }
+
+  @Test
   fun `postCaseNote - success`() {
     caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Prefix\n\nCase Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
     val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN, "Prefix")

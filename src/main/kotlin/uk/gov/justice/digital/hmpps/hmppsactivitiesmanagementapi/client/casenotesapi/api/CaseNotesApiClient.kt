@@ -6,6 +6,9 @@ import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
 
+const val CASELOAD_ID_HEADER: String = "CaseloadId"
+const val CASELOAD_ID_ALL: String = "*"
+
 @Service
 class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
 
@@ -21,6 +24,13 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
 
   fun getCaseNote(prisonerNumber: String, caseNoteId: Long): CaseNote = webClient.get()
     .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
+    .retrieve()
+    .bodyToMono(CaseNote::class.java)
+    .block()!!
+
+  fun getCaseNoteUUID(prisonerNumber: String, caseNoteId: Long): CaseNote = webClient.get()
+    .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
+    .header(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
     .retrieve()
     .bodyToMono(CaseNote::class.java)
     .block()!!

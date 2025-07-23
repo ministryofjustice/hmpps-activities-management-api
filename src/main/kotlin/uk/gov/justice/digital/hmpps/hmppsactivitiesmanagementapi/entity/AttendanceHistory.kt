@@ -10,6 +10,7 @@ import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReason
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "attendance_history")
@@ -35,6 +36,8 @@ data class AttendanceHistory(
   var issuePayment: Boolean? = null,
 
   var caseNoteId: Long? = null,
+
+  var dpsCaseNoteId: UUID? = null,
 
   var incentiveLevelWarningIssued: Boolean? = null,
 

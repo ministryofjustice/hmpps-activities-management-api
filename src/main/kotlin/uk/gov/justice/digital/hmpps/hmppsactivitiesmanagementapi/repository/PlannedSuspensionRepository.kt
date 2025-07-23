@@ -5,32 +5,32 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceHistory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import java.util.UUID
 
-interface MigrateAttendanceHistory {
+interface MigratePlannedSuspension {
   fun getPrisonerNumber(): String
   fun getCaseNoteId(): Long
 }
 
-interface AttendanceHistoryRepository : JpaRepository<AttendanceHistory, Long> {
+interface PlannedSuspensionRepository : JpaRepository<PlannedSuspension, Long> {
   @Query(
     value = """
-      SELECT a.prisoner_number, ah.case_note_id
-      FROM attendance a
-      JOIN attendance_history ah ON a.attendance_id = ah.attendance_id
-      WHERE ah.case_note_id IS NOT NULL
+      SELECT a.prisoner_number, ps.case_note_id
+      FROM allocation a
+      JOIN planned_suspension ps ON a.allocation_id = ps.allocation_id
+      WHERE ps.case_note_id IS NOT NULL
     """,
     nativeQuery = true,
   )
-  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigrateAttendanceHistory>
+  fun findAllCaseNoteIdToMigrate(pageable: Pageable): Page<MigratePlannedSuspension>
 
   @Modifying
   @Query(
     value = """
-      UPDATE AttendanceHistory ah
-      SET ah.dpsCaseNoteId = :dpsCaseNoteId 
-      WHERE ah.caseNoteId = :caseNoteId
+      UPDATE PlannedSuspension ps
+      SET ps.dpsCaseNoteId = :dpsCaseNoteId 
+      WHERE ps.caseNoteId = :caseNoteId
     """,
   )
   fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
