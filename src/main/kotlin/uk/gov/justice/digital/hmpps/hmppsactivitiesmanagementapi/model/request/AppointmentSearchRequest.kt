@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import java.time.LocalDate
+import java.util.UUID
 
 @Schema(
   description =
@@ -73,8 +74,20 @@ data class AppointmentSearchRequest(
     appointments that have the matching internal location id when this search parameter is supplied.
     """,
     example = "123",
+    deprecated = true,
   )
+  @Deprecated("Will be removed - use dpsLocationId instead")
   val internalLocationId: Long? = null,
+
+  @Schema(
+    description =
+    """
+    The DPS location UUID to match with the appointments. Will restrict the search results to
+    appointments that have the matching location UUID when this search parameter is supplied.
+    """,
+    example = "b7602cc8-e769-4cbb-8194-62d8e655992a",
+  )
+  val dpsLocationId: UUID? = null,
 
   @Schema(
     description =

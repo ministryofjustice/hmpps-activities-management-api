@@ -284,7 +284,22 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointments("MDI", request)!!
 
-    assertThat(results.map { it.internalLocation!!.id }.distinct().single()).isEqualTo(request.internalLocationId)
+    assertThat(results).extracting("appointmentId").containsOnly(200L, 204L, 210L, 212L)
+  }
+
+  @Sql(
+    "classpath:test_data/seed-appointment-search.sql",
+  )
+  @Test
+  fun `search for appointments with dps location id`() {
+    val request = AppointmentSearchRequest(
+      startDate = LocalDate.now(),
+      dpsLocationId = UUID.fromString("44444444-4444-4444-4444-444444444444"),
+    )
+
+    val results = webTestClient.searchAppointments("MDI", request)!!
+
+    assertThat(results).extracting("appointmentId").containsOnly(201L, 211L)
   }
 
   @Sql(

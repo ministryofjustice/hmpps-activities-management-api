@@ -49,6 +49,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DPS_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.INTERNAL_LOCATION_ID_PROPERTY_KEY
@@ -366,6 +367,14 @@ class AppointmentSetServiceTest {
         }
       }
 
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+
+      with(propertiesMapCaptor.firstValue) {
+        this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo "123"
+        this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo "44444444-1111-2222-3333-444444444444"
+        this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "Test Appointment Location"
+      }
+
       verify(nomisMappingAPIClient).getLocationMappingByNomisId(123L)
       verify(appointmentSetRepository).saveAndFlush(any())
     }
@@ -393,6 +402,14 @@ class AppointmentSetServiceTest {
             dpsLocationId = dpsLocationId
           }
         }
+      }
+
+      verify(telemetryClient).trackEvent(eq(TelemetryEvent.APPOINTMENT_SET_CREATED.value), propertiesMapCaptor.capture(), metricsMapCaptor.capture())
+
+      with(propertiesMapCaptor.firstValue) {
+        this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo "123"
+        this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo "44444444-1111-2222-3333-444444444444"
+        this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "HB1 Doctors"
       }
 
       verify(nomisMappingAPIClient).getLocationMappingByDpsId(dpsLocationId)
@@ -668,6 +685,7 @@ class AppointmentSetServiceTest {
 
       with(propertiesMapCaptor.firstValue) {
         this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
         this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
       }
     }
@@ -698,6 +716,7 @@ class AppointmentSetServiceTest {
 
       with(propertiesMapCaptor.firstValue) {
         this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
         this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
       }
     }
@@ -728,6 +747,7 @@ class AppointmentSetServiceTest {
 
       with(propertiesMapCaptor.firstValue) {
         this[INTERNAL_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
+        this[DPS_LOCATION_ID_PROPERTY_KEY] isEqualTo ""
         this[INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY] isEqualTo "In cell"
       }
     }

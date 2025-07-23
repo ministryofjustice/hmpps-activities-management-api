@@ -58,6 +58,7 @@ class AppointmentTelemetryTransformFunctionsTest {
       CATEGORY_DESCRIPTION_PROPERTY_KEY to "Medical - Doctor",
       HAS_CUSTOM_NAME_PROPERTY_KEY to "true",
       INTERNAL_LOCATION_ID_PROPERTY_KEY to "123",
+      DPS_LOCATION_ID_PROPERTY_KEY to "44444444-1111-2222-3333-444444444444",
       INTERNAL_LOCATION_DESCRIPTION_PROPERTY_KEY to "HB1 Doctors",
       START_DATE_PROPERTY_KEY to LocalDate.now().toString(),
       EARLIEST_START_TIME_PROPERTY_KEY to LocalTime.of(7, 0).toString(),
