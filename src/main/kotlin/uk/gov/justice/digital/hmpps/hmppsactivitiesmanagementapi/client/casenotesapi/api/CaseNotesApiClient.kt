@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
 
 const val CASELOAD_ID_HEADER: String = "CaseloadId"
-const val CASELOAD_ID_ALL: String = "*"
+const val CASELOAD_ID_ALL: String = "***"
 
 @Service
 class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClient: WebClient) {
