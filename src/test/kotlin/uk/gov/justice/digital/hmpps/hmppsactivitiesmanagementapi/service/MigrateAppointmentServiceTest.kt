@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.AdditionalAnswers
@@ -109,7 +108,7 @@ class MigrateAppointmentServiceTest {
         categoryCode = request.categoryCode!!,
         customName = null,
         appointmentTier = null,
-        internalLocationId = request.internalLocationId,
+        internalLocationId = 123,
         dpsLocationId = request.dpsLocationId!!,
         customLocation = null,
         inCell = false,
@@ -126,41 +125,6 @@ class MigrateAppointmentServiceTest {
         updatedBy = request.updatedBy,
         isMigrated = true,
       )
-    }
-
-    @Test
-    fun `uses result from nomis mapping client for internal location id`() {
-      val request = appointmentMigrateRequest(internalLocationId = 356)
-
-      service.migrateAppointment(request)
-
-      appointmentSeriesCaptor.firstValue.internalLocationId isEqualTo 123
-    }
-
-    @Test
-    fun `determines dps location id if not supplied`() {
-      val dpsLocationId = UUID.randomUUID()
-
-      whenever(nomisMappingAPIClient.getLocationMappingByNomisId(123))
-        .thenReturn(NomisDpsLocationMapping(dpsLocationId, 123))
-
-      val request = appointmentMigrateRequest(dpsLocationId = null)
-
-      service.migrateAppointment(request)
-
-      appointmentSeriesCaptor.firstValue.dpsLocationId isEqualTo dpsLocationId
-    }
-
-    @Test
-    fun `throws an exception if both internal location id and dps location id are null`() {
-      val request = appointmentMigrateRequest(internalLocationId = null, dpsLocationId = null)
-
-      val exception = assertThrows<IllegalArgumentException> {
-        service.migrateAppointment(request)
-      }
-      exception.message isEqualTo "One of DPS Location ID or internal location id must not be null"
-
-      verifyNoInteractions(appointmentSeriesRepository)
     }
 
     @Test

@@ -47,9 +47,9 @@ class AppointmentMigrateRequestTest {
   }
 
   @Test
-  fun `internal location id or DPS Location id must be supplied`() {
-    val request = appointmentMigrateRequest(internalLocationId = null, dpsLocationId = null)
-    assertSingleValidationError(validator.validate(request), "correctLocationDetails", "internalLocationId or dpsLocationId must be supplied")
+  fun `DPS Location id must be supplied`() {
+    val request = appointmentMigrateRequest(dpsLocationId = null)
+    assertSingleValidationError(validator.validate(request), "dpsLocationId", "DPS location id must be supplied")
   }
 
   @Test

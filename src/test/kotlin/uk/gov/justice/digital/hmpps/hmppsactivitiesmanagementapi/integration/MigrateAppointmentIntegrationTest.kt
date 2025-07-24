@@ -32,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentDeletedEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentMigrateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.AppointmentInstanceInformation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import java.time.LocalDate
@@ -94,17 +93,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
     )
 
     nomisMappingApiMockServer.stubMappingFromDpsUuid(UUID.fromString("44444444-1111-2222-3333-444444444444"), 123)
-
-    prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
-      listOf("A1234BC"),
-      listOf(
-        PrisonerSearchPrisonerFixture.instance(
-          prisonerNumber = "A1234BC",
-          bookingId = 1,
-          prisonId = "TPR",
-        ),
-      ),
-    )
   }
 
   @Test
@@ -136,28 +124,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
-
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
-  }
-
-  @Test
-  fun `migrate appointment success without internal location id`() {
-    val request = appointmentMigrateRequest(internalLocationId = null)
-
-    val response = webTestClient.migrateAppointment(request)!!
-    verifyAppointmentInstance(response = response)
-
-    verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
-  }
-
-  @Test
-  fun `migrate appointment success without dps location id`() {
-    nomisMappingApiMockServer.stubMappingFromNomisId(123, UUID.fromString("44444444-1111-2222-3333-444444444444"))
-
-    val request = appointmentMigrateRequest(dpsLocationId = null)
-
-    val response = webTestClient.migrateAppointment(request)!!
-    verifyAppointmentInstance(response = response)
 
     verifyNoInteractions(eventsPublisher, telemetryClient, auditService)
   }
@@ -302,6 +268,8 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `delete migrated appointments - success`() {
+    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
+
     webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
 
     await untilAsserted {
