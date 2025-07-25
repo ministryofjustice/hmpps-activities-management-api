@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.Plan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PlannedSuspensionRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.ROLE_PRISON
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_COMPLETED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.STATUS_INCOMPLETE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundHMPPSDomainEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.PrisonerAllocatedInformation
@@ -155,7 +156,7 @@ class UtilityIntegrationTest : IntegrationTestBase() {
     caseNotesApiMockServer.stubGetCaseNoteUUID("A11111A", 9)
 
     assertThat(attendanceRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
-    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
+    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(3)
     assertThat(allocationRepository.countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull()).isEqualTo(2)
     assertThat(plannedDeallocationRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
     assertThat(plannedSuspensionRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(2)
@@ -168,14 +169,14 @@ class UtilityIntegrationTest : IntegrationTestBase() {
 
     with(response!!) {
       assertThat(attendance).isEqualTo(STATUS_COMPLETED)
-      assertThat(attendanceHistory).isEqualTo(STATUS_COMPLETED)
+      assertThat(attendanceHistory).isEqualTo(STATUS_INCOMPLETE)
       assertThat(allocation).isEqualTo(STATUS_COMPLETED)
       assertThat(plannedDeallocation).isEqualTo(STATUS_COMPLETED)
       assertThat(plannedSuspension).isEqualTo(STATUS_COMPLETED)
     }
 
     assertThat(attendanceRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
-    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
+    assertThat(attendanceHistoryRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(1)
     assertThat(allocationRepository.countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull()).isEqualTo(0)
     assertThat(plannedDeallocationRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
     assertThat(plannedSuspensionRepository.countByCaseNoteIdNotNullAndDpsCaseNoteIdNull()).isEqualTo(0)
