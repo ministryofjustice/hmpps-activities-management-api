@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api
 
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
+import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
 
@@ -32,6 +34,8 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
     .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
     .header(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
     .retrieve()
+    .onStatus({ httpStatus -> HttpStatus.NOT_FOUND == httpStatus },
+      { Mono.error(CaseNoteNotFoundException("CaseNote $caseNoteId not found")) })
     .bodyToMono(CaseNote::class.java)
     .block()!!
 }
@@ -46,3 +50,5 @@ enum class CaseNoteSubType(val description: String) {
   NEG_GEN("Negative general"),
   IEP_WARN("Incentive warning"),
 }
+
+class CaseNoteNotFoundException(message: String) : RuntimeException(message)

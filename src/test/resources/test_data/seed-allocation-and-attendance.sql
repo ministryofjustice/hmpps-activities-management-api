@@ -59,7 +59,10 @@ insert into planned_suspension(planned_suspension_id, allocation_id, planned_sta
 values (2, 2, current_date - 2, current_date + 2, 'MRS BLOGS', current_timestamp, 'MRS BLOGS', current_timestamp, 8);
 
 insert into attendance_history(attendance_history_id, attendance_id, attendance_reason_id, comment, recorded_time, recorded_by, case_note_id)
-values (1, 1, 1, null, current_timestamp, 'MRS BLOGS', 9);
+values (1, 2, 2, null, current_timestamp, 'MRS BLOGS', 10);
 
 insert into attendance_history(attendance_history_id, attendance_id, attendance_reason_id, comment, recorded_time, recorded_by, case_note_id)
-values (2, 2, 2, null, current_timestamp, 'MRS BLOGS', 2);
+values (2, 1, 1, null, current_timestamp, 'MRS BLOGS', 9);
+
+insert into attendance_history(attendance_history_id, attendance_id, attendance_reason_id, comment, recorded_time, recorded_by, case_note_id)
+values (3, 2, 2, null, current_timestamp, 'MRS BLOGS', 2);
