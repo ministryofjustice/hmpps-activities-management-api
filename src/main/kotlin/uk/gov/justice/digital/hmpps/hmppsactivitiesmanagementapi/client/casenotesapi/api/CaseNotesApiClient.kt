@@ -34,8 +34,10 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
     .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
     .header(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
     .retrieve()
-    .onStatus({ httpStatus -> HttpStatus.NOT_FOUND == httpStatus },
-      { Mono.error(CaseNoteNotFoundException("CaseNote $caseNoteId not found")) })
+    .onStatus(
+      { httpStatus -> HttpStatus.NOT_FOUND == httpStatus },
+      { Mono.error(CaseNoteNotFoundException("CaseNote $caseNoteId not found")) },
+    )
     .bodyToMono(CaseNote::class.java)
     .block()!!
 }
