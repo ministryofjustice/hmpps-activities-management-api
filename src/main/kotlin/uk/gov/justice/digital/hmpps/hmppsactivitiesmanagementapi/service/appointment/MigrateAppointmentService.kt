@@ -26,7 +26,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
 
 @Service
 @Transactional
@@ -56,8 +55,6 @@ class MigrateAppointmentService(
       return null
     }
 
-    val (dpsLocationId, internalLocationId) = determineLocationIds(request.dpsLocationId, request.internalLocationId)
-
     val appointmentSeries =
       transactionHandler.newSpringTransaction {
         appointmentSeriesRepository.saveAndFlush(
@@ -67,8 +64,8 @@ class MigrateAppointmentService(
             categoryCode = request.categoryCode,
             customName = if (listOf("VLB", "VLPM", "VLOO", "VLPA", "VLLA", "VLAP").contains(request.categoryCode).not()) request.comment?.trim()?.takeUnless(String::isBlank)?.take(40) else null,
             appointmentTier = null,
-            internalLocationId = internalLocationId,
-            dpsLocationId = dpsLocationId,
+            internalLocationId = nomisMappingAPIClient.getLocationMappingByDpsId(request.dpsLocationId!!)!!.nomisLocationId,
+            dpsLocationId = request.dpsLocationId,
             startDate = request.startDate!!,
             startTime = request.startTime!!,
             endTime = request.endTime ?: run {
@@ -100,16 +97,6 @@ class MigrateAppointmentService(
     val appointmentInstanceId = appointmentSeriesModel.appointments.single().attendees.single().id
 
     return appointmentInstanceRepository.findOrThrowNotFound(appointmentInstanceId).toModel()
-  }
-
-  private fun determineLocationIds(dpsLocationId: UUID?, nomisLocationId: Long?) = when {
-    dpsLocationId != null -> {
-      dpsLocationId to nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
-    }
-    nomisLocationId != null -> {
-      nomisMappingAPIClient.getLocationMappingByNomisId(nomisLocationId)!!.dpsLocationId to nomisLocationId
-    }
-    else -> throw IllegalArgumentException("One of DPS Location ID or internal location id must not be null")
   }
 
   fun deleteMigratedAppointments(prisonCode: String, startDate: LocalDate, categoryCode: String? = null) {
