@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.skyscreamer.jsonassert.JSONAssert
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentFrequency
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.*
 
 class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
 
@@ -26,8 +28,28 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
   fun `returns the correct json representation`() {
     val event = createEvent()
     val expectedJson =
-      """{"appointmentSeriesId":1,"prisonCode":"PBI","categoryCode":"C","hasCustomName":true,"internalLocationId":2,"startDate":"2023-03-23","startTime":"09:00:00","endTime":"10:30:00","isRepeat":true,"frequency":"DAILY","numberOfAppointments":20,"hasExtraInformation":true,"prisonerNumbers":["123456"],"createdTime":"2023-03-22T09:00:03","createdBy":"CREATED_BY_USER"}"""
-    assertThat(event.toJson()).isEqualTo(expectedJson)
+      """
+        {
+          "appointmentSeriesId": 1,
+          "prisonCode": "PBI",
+          "categoryCode": "C",
+          "hasCustomName": true,
+          "internalLocationId": 2,
+          "dpsLocationId": "44444444-1111-2222-3333-444444444444",
+          "startDate": "2023-03-23",
+          "startTime": "09:00:00",
+          "endTime": "10:30:00",
+          "isRepeat": true,
+          "frequency": "DAILY",
+          "numberOfAppointments": 20,
+          "hasExtraInformation": true,
+          "prisonerNumbers": ["123456"],
+          "createdTime": "2023-03-22T09:00:03",
+          "createdBy": "CREATED_BY_USER"
+        }
+      """
+
+    JSONAssert.assertEquals(expectedJson, event.toJson(), true)
   }
 
   private fun createEvent(): AppointmentSeriesCreatedEvent {
@@ -42,6 +64,7 @@ class AppointmentSeriesCreatedEventTest : AuditableEventTestBase() {
       categoryCode = "C",
       hasCustomName = true,
       internalLocationId = 2,
+      dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444"),
       startDate = startDate,
       startTime = startTime,
       endTime = endTime,

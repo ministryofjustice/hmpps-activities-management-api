@@ -4,6 +4,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.UUID
 
 class AppointmentSeriesCreatedEvent(
   private val appointmentSeriesId: Long,
@@ -11,6 +12,7 @@ class AppointmentSeriesCreatedEvent(
   private val categoryCode: String,
   private val hasCustomName: Boolean,
   private val internalLocationId: Long?,
+  private val dpsLocationId: UUID?,
   private val startDate: LocalDate,
   private val startTime: LocalTime,
   private val endTime: LocalTime?,
@@ -37,6 +39,7 @@ class AppointmentSeriesCreatedEvent(
     categoryCode = categoryCode,
     hasCustomName = hasCustomName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     startDate = startDate,
     startTime = startTime,
     endTime = endTime,
