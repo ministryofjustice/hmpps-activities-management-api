@@ -1,0 +1,12 @@
+UPDATE attendance SET case_note_id = 102321962
+WHERE case_note_id = 102321963;
+UPDATE attendance SET case_note_id = 103048197
+WHERE case_note_id = 103048198;
+UPDATE attendance SET case_note_id = 104577477
+WHERE case_note_id = 104577479;
+UPDATE attendance SET case_note_id = 104794436
+WHERE case_note_id = 104794440;
+UPDATE attendance SET case_note_id = 104794443
+WHERE case_note_id = 104794482;
+UPDATE attendance_history SET case_note_id = 103425760
+WHERE case_note_id = 103425759;
