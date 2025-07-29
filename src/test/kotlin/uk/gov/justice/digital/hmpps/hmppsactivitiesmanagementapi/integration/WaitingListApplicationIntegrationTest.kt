@@ -79,7 +79,6 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
 
     val response = update(
-      1,
       WaitingListApplicationUpdateRequest(
         applicationDate = TimeSource.yesterday(),
         requestedBy = "Fred",
@@ -103,8 +102,8 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
     }
   }
 
-  private fun update(id: Long, request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
-    .uri("/waiting-list-applications/$id")
+  private fun update(request: WaitingListApplicationUpdateRequest) = webTestClient.patch()
+    .uri("/waiting-list-applications/1")
     .accept(MediaType.APPLICATION_JSON)
     .headers(setAuthorisation(isClientToken = false, roles = listOf(ROLE_ACTIVITY_HUB)))
     .header(CASELOAD_ID, MOORLAND_PRISON_CODE)
@@ -120,7 +119,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
   fun `search all waiting list applications`() {
     stubPrisoners(listOf("ABCD01", "ABCD02", "ABCD03", "ABCD04", "ABCD05"))
 
-    val results = webTestClient.searchWaitingLists("MDI", WaitingListSearchRequest())
+    val results = webTestClient.searchWaitingLists("BCI", WaitingListSearchRequest())
 
     results["empty"] isEqualTo false
     results["totalElements"] isEqualTo 5
@@ -176,7 +175,7 @@ class WaitingListApplicationIntegrationTest : IntegrationTestBase() {
 
     stubPrisoners(listOf("ABCD03", "ABCD04", "ABCD05"))
 
-    val results = webTestClient.searchWaitingLists("MDI", request)
+    val results = webTestClient.searchWaitingLists("BCI", request)
 
     results["empty"] isEqualTo false
     results["totalElements"] isEqualTo 2

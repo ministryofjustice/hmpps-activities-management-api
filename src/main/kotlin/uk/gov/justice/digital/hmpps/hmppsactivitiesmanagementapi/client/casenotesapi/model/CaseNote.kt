@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 /**
  * Case Note
- * @param caseNoteId Case Note Id (unique)
+ * @param caseNoteId Case Note UUID (unique)
  * @param offenderIdentifier Offender Unique Identifier
  * @param type Case Note Type
  * @param typeDescription Case Note Type Description
@@ -21,10 +21,11 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param sensitive Sensitive Note
  * @param amendments Ordered list of amendments to the case note (oldest first)
  * @param locationId Location Id representing where Case Note was made.
+ * @param legacyId Legacy Case Note Id
  */
 data class CaseNote(
 
-  @Schema(example = "12311312", required = true, description = "Case Note Id (unique)")
+  @Schema(example = "b7602cc8-e769-4cbb-8194-62d8e655992a", required = true, description = "Case Note UUID (unique)")
   @get:JsonProperty("caseNoteId", required = true)
   val caseNoteId: kotlin.String,
 
@@ -68,6 +69,10 @@ data class CaseNote(
   @get:JsonProperty("authorUserId", required = true)
   val authorUserId: kotlin.String,
 
+  @Schema(example = "joebloggs", required = true, description = "Username of case note author - username of nomis users and auth users")
+  @get:JsonProperty("authorUsername", required = true)
+  val authorUsername: kotlin.String,
+
   @Schema(example = "This is some text", required = true, description = "Case Note Text")
   @get:JsonProperty("text", required = true)
   val text: kotlin.String,
@@ -83,4 +88,8 @@ data class CaseNote(
   @Schema(example = "MDI", description = "Location Id representing where Case Note was made.")
   @get:JsonProperty("locationId")
   val locationId: kotlin.String? = null,
+
+  @Schema(example = "12311312", required = true, description = "Legacy Case Note Id")
+  @get:JsonProperty("legacyId")
+  val legacyId: kotlin.String? = null,
 )

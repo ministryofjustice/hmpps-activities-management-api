@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.web.reactive.function.client.WebClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.CaseNotesApiMockServer
+import java.util.UUID.fromString
 
 class CaseNotesApiClientTest {
 
@@ -40,9 +41,10 @@ class CaseNotesApiClientTest {
 
   @Test
   fun `getCaseNote - success`() {
-    caseNotesApiMockServer.stubGetCaseNote("A1234AA", 1)
-    val caseNote = caseNotesApiClient.getCaseNote("A1234AA", 1)
+    caseNotesApiMockServer.stubGetCaseNote("A1234AA", fromString("8db661aa-4867-4ed4-9ac4-5f0f01e26c22"))
+    val caseNote = caseNotesApiClient.getCaseNote("A1234AA", fromString("8db661aa-4867-4ed4-9ac4-5f0f01e26c22"))
     assertThat(caseNote.text).isEqualTo("Case Note Text")
+    assertThat(caseNote.authorUsername).isEqualTo("joebloggs")
   }
 
   @Test
@@ -54,7 +56,7 @@ class CaseNotesApiClientTest {
 
   @Test
   fun `postCaseNote - success`() {
-    caseNotesApiMockServer.stubPostCaseNote(1, "MDI", "A1234AA", "Prefix\n\nCase Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
+    caseNotesApiMockServer.stubPostCaseNote(fromString("8db661aa-4867-4ed4-9ac4-5f0f01e26c22"), "MDI", "A1234AA", "Prefix\n\nCase Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN)
     val caseNote = caseNotesApiClient.postCaseNote("MDI", "A1234AA", "Case Note Text", CaseNoteType.NEG, CaseNoteSubType.NEG_GEN, "Prefix")
     assertThat(caseNote.text).isEqualTo("Case Note Text")
   }

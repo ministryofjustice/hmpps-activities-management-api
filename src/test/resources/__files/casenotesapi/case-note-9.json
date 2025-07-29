@@ -10,6 +10,7 @@
   "occurrenceDateTime": "2023-04-24T12:00:33.165Z",
   "authorName": "John Smith",
   "authorUserId": "12345",
+  "authorUsername": "joebloggs",
   "text": "Case Note Text",
   "locationId": "MDI",
   "eventId": -23,

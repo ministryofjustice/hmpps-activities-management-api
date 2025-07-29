@@ -15,6 +15,6 @@ INSERT INTO scheduled_instance
 VALUES(122405, 558, now(), '13:45:00', '16:30:00', true, current_timestamp - interval '5 days', 'MQD05I', 'Staff unavailable', false,'', 'PM');
 
 INSERT INTO attendance
-(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, "comment", recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, case_note_id, incentive_level_warning_issued, other_absence_reason)
-VALUES(680879, 122405, 'A4786AJ', 8, 'Staff unavailable', current_timestamp - interval '5 days', 'MQD05I', 'COMPLETED', 159, NULL, NULL, true, NULL, NULL, NULL);
+(attendance_id, scheduled_instance_id, prisoner_number, attendance_reason_id, "comment", recorded_time, recorded_by, status, pay_amount, bonus_amount, pieces, issue_payment, case_note_id, dps_case_note_id, incentive_level_warning_issued, other_absence_reason)
+VALUES(680879, 122405, 'A4786AJ', 8, 'Staff unavailable', current_timestamp - interval '5 days', 'MQD05I', 'COMPLETED', 159, NULL, NULL, true, NULL, NULL, NULL, NULL);
 

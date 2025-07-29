@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMedium
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.trackEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivitySchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PayPerSession
@@ -43,7 +42,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AttendanceUpdateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllAttendanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SuspendedPrisonerAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.AttendanceReasonRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -54,11 +52,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.Optional
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance as ModelAttendance
 
 class AttendancesServiceTest {
-  private val scheduledInstanceRepository: ScheduledInstanceRepository = mock()
   private val attendanceRepository: AttendanceRepository = mock()
   private val allAttendanceRepository: AllAttendanceRepository = mock()
   private val attendanceReasonRepository: AttendanceReasonRepository = mock()
@@ -83,7 +81,7 @@ class AttendancesServiceTest {
 
   @Nested
   inner class SuspendedPrisonerAttendanceTest {
-    val localTime = LocalTime.now()
+    val localTime: LocalTime = LocalTime.now()
 
     inner class TestData : SuspendedPrisonerAttendance {
       override fun getAttendanceReasonCode(): String = "REASON"
@@ -330,7 +328,8 @@ class AttendancesServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
-    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.caseNoteId).isNull()
+    assertThat(attendance.dpsCaseNoteId).isEqualTo(UUID.fromString("9e274666-6035-47d0-8ed2-e10d7d1b2dc7"))
     assertThat(attendance.incentiveLevelWarningIssued).isNull()
   }
 
@@ -352,7 +351,8 @@ class AttendancesServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
-    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.caseNoteId).isNull()
+    assertThat(attendance.dpsCaseNoteId).isEqualTo(UUID.fromString("9e274666-6035-47d0-8ed2-e10d7d1b2dc7"))
     assertThat(attendance.incentiveLevelWarningIssued).isNull()
   }
 
@@ -372,7 +372,8 @@ class AttendancesServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
-    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.caseNoteId).isNull()
+    assertThat(attendance.dpsCaseNoteId).isEqualTo(UUID.fromString("9e274666-6035-47d0-8ed2-e10d7d1b2dc7"))
     assertThat(attendance.incentiveLevelWarningIssued).isFalse
   }
 
@@ -391,7 +392,8 @@ class AttendancesServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
-    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.caseNoteId).isNull()
+    assertThat(attendance.dpsCaseNoteId).isEqualTo(UUID.fromString("9e274666-6035-47d0-8ed2-e10d7d1b2dc7"))
     assertThat(attendance.incentiveLevelWarningIssued).isTrue
   }
 
@@ -411,7 +413,8 @@ class AttendancesServiceTest {
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
-    assertThat(attendance.caseNoteId).isEqualTo(1)
+    assertThat(attendance.caseNoteId).isNull()
+    assertThat(attendance.dpsCaseNoteId).isEqualTo(UUID.fromString("9e274666-6035-47d0-8ed2-e10d7d1b2dc7"))
     assertThat(attendance.incentiveLevelWarningIssued).isNull()
   }
 
@@ -548,15 +551,15 @@ class AttendancesServiceTest {
       9,
       AttendanceReasonEnum.ATTENDED,
       "Attended",
-      false,
-      true,
-      true,
-      false,
-      false,
-      false,
-      true,
-      1,
-      "some note",
+      attended = false,
+      capturePay = true,
+      captureMoreDetail = true,
+      captureCaseNote = false,
+      captureIncentiveLevelWarning = false,
+      captureOtherText = false,
+      displayInAbsence = true,
+      displaySequence = 1,
+      notes = "some note",
     )
     completedAttendance.issuePayment = true
 
@@ -573,10 +576,6 @@ class AttendancesServiceTest {
       assertThat(issuePayment).isNull()
       assertThat(payAmount).isNull()
     }
-  }
-
-  private fun Allocation.starts(date: LocalDate) {
-    startDate = date
   }
 
   @Test
@@ -686,7 +685,7 @@ class AttendancesServiceTest {
 
   companion object {
     val caseNote = CaseNote(
-      caseNoteId = "1",
+      caseNoteId = "9e274666-6035-47d0-8ed2-e10d7d1b2dc7",
       offenderIdentifier = "A1234AA",
       type = "NEG",
       typeDescription = "Negative",
@@ -697,6 +696,7 @@ class AttendancesServiceTest {
       occurrenceDateTime = LocalDateTime.now(),
       authorName = "author",
       authorUserId = "author id",
+      authorUsername = "test_1",
       text = "Case Note Text",
       eventId = 1,
       sensitive = false,

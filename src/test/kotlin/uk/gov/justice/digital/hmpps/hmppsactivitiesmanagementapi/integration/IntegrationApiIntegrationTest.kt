@@ -94,11 +94,13 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         endDate = LocalDate.of(2022, 10, 11),
       )
 
-      assertThat(attendanceList.size).isEqualTo(5)
-      assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
-      assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
-      assertThat(attendanceList.first().attendanceReason).isNull()
-      assertThat(attendanceList.first().comment).isNull()
+      with(attendanceList!!) {
+        assertThat(size).isEqualTo(5)
+        assertThat(first().prisonerNumber).isEqualTo(prisonerNumber)
+        assertThat(first().scheduleInstanceId).isEqualTo(1)
+        assertThat(first().attendanceReason).isNull()
+        assertThat(first().comment).isNull()
+      }
     }
 
     @Sql(
@@ -115,11 +117,13 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         endDate = LocalDate.of(2022, 10, 11),
       )
 
-      assertThat(attendanceList.size).isEqualTo(5)
-      assertThat(attendanceList.first().prisonerNumber).isEqualTo(prisonerNumber)
-      assertThat(attendanceList.first().scheduleInstanceId).isEqualTo(1)
-      assertThat(attendanceList.first().attendanceReason).isNull()
-      assertThat(attendanceList.first().comment).isNull()
+      with(attendanceList!!) {
+        assertThat(size).isEqualTo(5)
+        assertThat(first().prisonerNumber).isEqualTo(prisonerNumber)
+        assertThat(first().scheduleInstanceId).isEqualTo(1)
+        assertThat(first().attendanceReason).isNull()
+        assertThat(first().comment).isNull()
+      }
     }
 
     @Sql(
@@ -136,7 +140,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
         endDate = LocalDate.of(2022, 12, 11),
       )
 
-      assertThat(attendanceList.size).isEqualTo(0)
+      assertThat(attendanceList?.size).isEqualTo(0)
     }
 
     @Sql(
@@ -773,7 +777,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     fun `search all waiting list applications`() {
       stubPrisoners(listOf("ABCD01", "ABCD02", "ABCD03", "ABCD04", "ABCD05"))
 
-      val results = webTestClient.searchWaitingLists("MDI", WaitingListSearchRequest())
+      val results = webTestClient.searchWaitingLists("BCI", WaitingListSearchRequest())
 
       results["empty"] isEqualTo false
       results["totalElements"] isEqualTo 5
@@ -829,7 +833,7 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
 
       stubPrisoners(listOf("ABCD03", "ABCD04", "ABCD05"))
 
-      val results = webTestClient.searchWaitingLists("MDI", request)
+      val results = webTestClient.searchWaitingLists("BCI", request)
 
       results["empty"] isEqualTo false
       results["totalElements"] isEqualTo 2

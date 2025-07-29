@@ -23,8 +23,8 @@ class SynchronisationService(
 ) {
   fun findAttendanceSync(attendanceId: Long): AttendanceSync? = attendanceSyncRepository.findAllByAttendanceId(attendanceId)?.let {
     val attendanceSync = it.toModel()
-    if (it.attendanceReasonCode == AttendanceReasonEnum.REFUSED.toString() && it.caseNoteId != null) {
-      attendanceSync.comment += caseNotesApiClient.getCaseNote(it.prisonerNumber, it.caseNoteId).text
+    if (it.attendanceReasonCode == AttendanceReasonEnum.REFUSED.toString() && it.dpsCaseNoteId != null) {
+      attendanceSync.comment += caseNotesApiClient.getCaseNote(it.prisonerNumber, it.dpsCaseNoteId).text
     }
     attendanceSync
   }

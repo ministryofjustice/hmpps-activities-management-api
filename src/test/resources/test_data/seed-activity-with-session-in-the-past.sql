@@ -28,8 +28,8 @@ INSERT INTO allocation
 VALUES(2, 1, 'G6268GL', 935073, 999, '2024-03-07', '2024-03-07', '2024-03-07 11:30:00.000', 'SCH_ACTIVITY', '2024-03-08 01:00:00.000', 'SCH_ACTIVITY', 'DISMISSED', '2024-03-07 11:30:54.521', 'Activities Management Service', 'Temporarily released or transferred', 'ENDED', NULL, NULL);
 
 INSERT INTO planned_deallocation
-(planned_deallocation_id, planned_date, planned_by, planned_reason, planned_at, allocation_id, case_note_id)
-VALUES(1, '2023-08-31', 'SCH_ACTIVITY', 'PLANNED', '2023-07-19 19:26:31.816', 2, NULL);
+(planned_deallocation_id, planned_date, planned_by, planned_reason, planned_at, allocation_id, case_note_id, dps_case_note_id)
+VALUES(1, '2023-08-31', 'SCH_ACTIVITY', 'PLANNED', '2023-07-19 19:26:31.816', 2, NULL, NULL);
 
 UPDATE allocation set planned_deallocation_id = 1 where allocation_id = 2;
 

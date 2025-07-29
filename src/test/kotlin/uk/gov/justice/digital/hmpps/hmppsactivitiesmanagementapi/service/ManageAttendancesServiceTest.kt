@@ -1158,6 +1158,7 @@ class ManageAttendancesServiceTest {
       newIssuePayment = null,
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
+      newDpsCaseNoteId = null,
       newOtherAbsenceReason = null,
     )
 

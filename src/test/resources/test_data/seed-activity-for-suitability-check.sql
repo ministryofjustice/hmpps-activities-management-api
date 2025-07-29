@@ -40,8 +40,8 @@ values (2, 1, 'A22222A', 10002, 2, '2022-10-10', null, '2022-10-10 09:00:00', 'M
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (3, 1, 'A33333A', 10003, 2, '2022-10-11', '2022-10-11', '2022-10-10 09:00:00', 'MRS BLOGS', '2022-10-11 09:00:00', 'SYSTEM', 'ENDED', null, null, null, 'ENDED');
 
-insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, deallocation_case_note_id)
-values (4, 1, 'A1143DZ', 10001, 3, '2022-10-12', '2022-11-12', '2022-10-10 10:00:00', 'MR BLOGS', '2022-11-10 10:00:00', 'MR BLOGS', 'SECURITY', null, null, null, 'ENDED', 1);
+insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status, deallocation_case_note_id, deallocation_dps_case_note_id)
+values (4, 1, 'A1143DZ', 10001, 3, '2022-10-12', '2022-11-12', '2022-10-10 10:00:00', 'MR BLOGS', '2022-11-10 10:00:00', 'MR BLOGS', 'SECURITY', null, null, null, 'ENDED', 1, '41c02efa-a46e-40ef-a2ba-73311e18e51e');
 
 insert into allocation(allocation_id, activity_schedule_id, prisoner_number, booking_id, prison_pay_band_id, start_date, end_date, allocated_time, allocated_by, deallocated_time, deallocated_by, deallocated_reason, suspended_time, suspended_by, suspended_reason, prisoner_status)
 values (5, 1, 'A1143DZ', 10001, 3, '2022-12-12', '2023-01-12', '2022-12-12 10:00:00', 'MR BLOGS', '2023-01-12 10:00:00', 'ACTIVITIES SERVICE', 'TEMPORARILY_RELEASED', null, null, null, 'ENDED');

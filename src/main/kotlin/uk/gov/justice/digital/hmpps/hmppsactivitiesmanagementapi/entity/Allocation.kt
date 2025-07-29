@@ -185,7 +185,7 @@ data class Allocation(
    */
   fun endsOn(date: LocalDate) = date == endDate || date == plannedDeallocation?.plannedDate
 
-  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, caseNoteId: Long? = null) = this.apply {
+  fun deallocateOn(date: LocalDate, reason: DeallocationReason, deallocatedBy: String, dpsCaseNoteId: UUID? = null) = this.apply {
     if (prisonerStatus == PrisonerStatus.ENDED) throw IllegalStateException("Allocation with ID '$allocationId' is already deallocated.")
     if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
     if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
@@ -196,7 +196,7 @@ data class Allocation(
         plannedReason = reason,
         plannedDate = date,
         plannedBy = deallocatedBy,
-        caseNoteId = caseNoteId,
+        dpsCaseNoteId = dpsCaseNoteId,
       )
     } else {
       plannedDeallocation?.apply {
@@ -204,7 +204,7 @@ data class Allocation(
         plannedDate = date
         plannedBy = deallocatedBy
         plannedAt = LocalDateTime.now()
-        this.caseNoteId = caseNoteId
+        this.dpsCaseNoteId = dpsCaseNoteId
       }
     }
   }
@@ -265,6 +265,7 @@ data class Allocation(
       deallocatedBy = plannedDeallocation?.plannedBy
       deallocatedTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS)
       deallocationCaseNoteId = plannedDeallocation?.caseNoteId
+      deallocationDpsCaseNoteId = plannedDeallocation?.dpsCaseNoteId
       endDate = date
     } else {
       prisonerStatus = PrisonerStatus.ENDED

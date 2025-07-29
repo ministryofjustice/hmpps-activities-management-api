@@ -65,6 +65,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Optional
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.suitability.nonassociation.OtherPrisonerDetails as OtherPrisonerDetailsDto
 
 class CandidatesServiceTest {
@@ -114,12 +115,12 @@ class CandidatesServiceTest {
         listOf(
           allocation().copy(allocationId = 1, prisonerNumber = candidate.prisonerNumber),
           allocation().copy(allocationId = 2, prisonerNumber = candidate.prisonerNumber).apply {
-            deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString(), 10001)
+            deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, ServiceName.SERVICE_NAME.toString(), UUID.fromString("8db661aa-4867-4ed4-9ac4-5f0f01e26c22"))
             deallocateNowOn(TimeSource.today())
           },
         ),
       )
-      whenever(caseNotesApiClient.getCaseNote(candidate.prisonerNumber, 10001)).thenReturn(
+      whenever(caseNotesApiClient.getCaseNote(candidate.prisonerNumber, UUID.fromString("8db661aa-4867-4ed4-9ac4-5f0f01e26c22"))).thenReturn(
         CaseNote(
           caseNoteId = "10001",
           offenderIdentifier = candidate.prisonerNumber,
@@ -132,6 +133,7 @@ class CandidatesServiceTest {
           occurrenceDateTime = LocalDateTime.now(),
           authorName = "Test",
           authorUserId = "1",
+          authorUsername = "test_1",
           text = "Test case note",
           eventId = 1,
           sensitive = false,
@@ -462,14 +464,14 @@ class CandidatesServiceTest {
 
   @Nested
   inner class GetActivityCandidates {
-    inner class TestCandidate(val t_id: Long, val t_prisonerNumber: String, val t_code: String, val schedId: Long) : CandidateAllocation {
-      override fun getActivityScheduleId(): Long = schedId
+    inner class TestCandidate(val testId: Long, val testPrisonerNumber: String, val testCode: String, val scheduleId: Long) : CandidateAllocation {
+      override fun getActivityScheduleId(): Long = scheduleId
 
-      override fun getAllocationId(): Long = t_id
+      override fun getAllocationId(): Long = testId
 
-      override fun getPrisonerNumber(): String = t_prisonerNumber
+      override fun getPrisonerNumber(): String = testPrisonerNumber
 
-      override fun getCode(): String = t_code
+      override fun getCode(): String = testCode
     }
 
     private fun candidatesSetup(
@@ -686,10 +688,10 @@ class CandidatesServiceTest {
         activity.schedules().first().activityScheduleId,
         null,
         null,
-        true,
-        false,
-        null,
-        pageable,
+        suitableForEmployed = true,
+        noAllocations = false,
+        search = null,
+        pageable = pageable,
       )
 
       candidates.content.map { it.prisonerNumber } containsExactly listOf("B2345CD")
@@ -718,10 +720,10 @@ class CandidatesServiceTest {
         activity.schedules().first().activityScheduleId,
         null,
         null,
-        false,
-        true,
-        null,
-        pageable,
+        suitableForEmployed = false,
+        noAllocations = true,
+        search = null,
+        pageable = pageable,
       )
 
       candidates.content.map { it.prisonerNumber } containsExactly listOf("A1234BC", "C3456DE")

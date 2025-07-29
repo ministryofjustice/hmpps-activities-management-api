@@ -7,6 +7,7 @@ import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSync as AttendanceSyncModel
 
 @Entity
@@ -47,6 +48,8 @@ data class AttendanceSync(
   val incentiveLevelWarningIssued: Boolean?,
 
   val caseNoteId: Long? = null,
+
+  val dpsCaseNoteId: UUID? = null,
 
   val otherAbsenceReason: String?,
 ) {

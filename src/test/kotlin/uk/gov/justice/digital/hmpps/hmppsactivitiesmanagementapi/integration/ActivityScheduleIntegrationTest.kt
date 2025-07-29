@@ -56,6 +56,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AllAttendance as ModelAllAttendance
 
 @TestPropertySource(
@@ -538,7 +539,7 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
   fun `should be able to fetch suitability of a candidate for an activity`() {
     prisonApiMockServer.stubGetEducationLevels()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumber("A1143DZ")
-    caseNotesApiMockServer.stubGetCaseNote("A1143DZ", 1)
+    caseNotesApiMockServer.stubGetCaseNote("A1143DZ", UUID.fromString("41c02efa-a46e-40ef-a2ba-73311e18e51e"))
 
     val response = webTestClient.getCandidateSuitability(1, "A1143DZ")
       .expectStatus().isOk
@@ -661,15 +662,15 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
       .jsonPath("$.totalPages").isEqualTo(4)
       .jsonPath("$.totalElements").isEqualTo(20)
       .jsonPath("$.content[0].prisonerNumber").isEqualTo("A1446DZ")
-      .jsonPath("$.content[0].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[0].nonAssociations").isEmpty
       .jsonPath("$.content[1].prisonerNumber").isEqualTo("A1718DZ")
-      .jsonPath("$.content[1].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[1].nonAssociations").isEmpty
       .jsonPath("$.content[2].prisonerNumber").isEqualTo("A5015DY")
-      .jsonPath("$.content[2].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[2].nonAssociations").isEmpty
       .jsonPath("$.content[3].prisonerNumber").isEqualTo("A2226DZ")
-      .jsonPath("$.content[3].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[3].nonAssociations").isEmpty
       .jsonPath("$.content[4].prisonerNumber").isEqualTo("A5089DY")
-      .jsonPath("$.content[4].nonAssociations").isEqualTo(null)
+      .jsonPath("$.content[4].nonAssociations").isEmpty
   }
 
   @Test
@@ -878,7 +879,7 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
 
     val attendance = webTestClient.createAdvanceAttendance(request, "MDI")
 
-    webTestClient.retrieveAdvanceAttendance(attendance.id)
+    webTestClient.retrieveAdvanceAttendance(attendance!!.id)
 
     webTestClient.deallocatePrisoners(
       1,
@@ -928,7 +929,7 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
 
     webTestClient.getAllAttendanceByDate("MDI", LocalDate.now()).also {
       // Today AM for A11111A should remain
-      assertThat(it.filter { a -> a.scheduledInstanceId == 1L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
+      assertThat(it!!.filter { a -> a.scheduledInstanceId == 1L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
       // Today PM should be empty as only A11111A
       assertThat(it.filter { a -> a.scheduledInstanceId == 2L }).isEmpty()
       // Today PM should be B22222B
@@ -937,7 +938,7 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
 
     webTestClient.getAllAttendanceByDate("MDI", LocalDate.now().plusDays(1)).also {
       // Tomorrow attendances should remain
-      assertThat(it.filter { a -> a.scheduledInstanceId == 4L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
+      assertThat(it!!.filter { a -> a.scheduledInstanceId == 4L }).extracting<String> { a -> a.prisonerNumber }.containsOnly("A11111A")
     }
 
     activityScheduleRepository.findById(1).orElseThrow().also {

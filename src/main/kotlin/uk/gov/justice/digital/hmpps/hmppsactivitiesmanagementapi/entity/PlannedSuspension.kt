@@ -39,6 +39,7 @@ data class PlannedSuspension(
   fun endDate() = plannedEndDate
   fun plannedBy() = plannedBy
   fun caseNoteId() = caseNoteId
+  fun dpsCaseNoteId() = dpsCaseNoteId
   fun paid() = paid
 
   fun hasStarted() = plannedStartDate.onOrBefore(LocalDate.now())
@@ -47,18 +48,19 @@ data class PlannedSuspension(
     updatedBy = byWhom
     updatedAt = LocalDateTime.now()
   }
-  fun plan(startDate: LocalDate, timestamp: LocalDateTime, byWhom: String, caseNoteId: Long?) = apply {
+  fun plan(startDate: LocalDate, timestamp: LocalDateTime, byWhom: String, dpsCaseNoteId: UUID?) = apply {
     plannedStartDate = startDate
     plannedEndDate = null
     plannedBy = byWhom
     plannedAt = timestamp
-    this.caseNoteId = caseNoteId
+    this.dpsCaseNoteId = dpsCaseNoteId
   }
 
   fun toModel() = ModelPlannedSuspension(
     plannedStartDate = this.plannedStartDate,
     plannedEndDate = this.plannedEndDate,
     caseNoteId = this.caseNoteId,
+    dpsCaseNoteId = this.dpsCaseNoteId,
     plannedBy = this.plannedBy,
     plannedAt = this.plannedAt,
     paid = this.paid,

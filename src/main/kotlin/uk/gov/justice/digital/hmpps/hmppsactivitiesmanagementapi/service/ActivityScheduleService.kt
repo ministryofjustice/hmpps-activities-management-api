@@ -44,6 +44,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.hasNonAsso
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelAllocations
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
 import java.time.LocalDate
+import java.util.UUID
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation as ModelAllocation
 
 @Service
@@ -225,20 +226,22 @@ class ActivityScheduleService(
           .map { prisonerNumber ->
             val deallocationReason = request.reasonCode!!.toDeallocationReason()
             val endDate = request.endDate!!
-            var caseNoteId: Long? = null
+            var dpsCaseNoteId: UUID? = null
 
             if (request.caseNote != null) {
               val subType = if (request.caseNote.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN
 
-              caseNoteId = caseNotesApiClient.postCaseNote(
-                activity.prisonCode,
-                prisonerNumber,
-                request.caseNote.text!!,
-                request.caseNote.type!!,
-                subType,
-                "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}",
+              dpsCaseNoteId = UUID.fromString(
+                caseNotesApiClient.postCaseNote(
+                  activity.prisonCode,
+                  prisonerNumber,
+                  request.caseNote.text!!,
+                  request.caseNote.type!!,
+                  subType,
+                  "Deallocated from activity - ${deallocationReason.description} - ${activity.summary}",
+                )
+                  .caseNoteId,
               )
-                .caseNoteId.toLong()
             }
 
             deallocatePrisonerOn(
@@ -246,7 +249,7 @@ class ActivityScheduleService(
               endDate,
               deallocationReason,
               deallocatedBy,
-              caseNoteId,
+              dpsCaseNoteId,
             )
               .also { log.info("Planned deallocation of prisoner ${it.prisonerNumber} from activity schedule id ${this.activityScheduleId}") }
               .let {

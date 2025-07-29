@@ -77,6 +77,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Optional
+import java.util.UUID
 
 @ExtendWith(FakeSecurityContext::class, FakeCaseLoad::class)
 class ActivityScheduleServiceTest {
@@ -387,13 +388,13 @@ class ActivityScheduleServiceTest {
     val allocation = allocation().copy(prisonerNumber = "1")
 
     val schedule = mock<ActivitySchedule>().stub {
-      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test", 10001) } doReturn
+      on { deallocatePrisonerOn("1", TimeSource.tomorrow(), DeallocationReason.OTHER, "by test", UUID.fromString("fe8eaa76-a7b1-4479-a0fc-cab287edda29")) } doReturn
         allocation.apply { deallocateOn(LocalDate.now(), DeallocationReason.SECURITY, "test") }
       on { activity } doReturn activityEntity()
     }
 
     whenever(caseNotesApiClient.postCaseNote(any(), any(), any(), any(), any(), any())) doReturn CaseNote(
-      caseNoteId = "10001",
+      caseNoteId = "fe8eaa76-a7b1-4479-a0fc-cab287edda29",
       offenderIdentifier = "1",
       type = "NEG",
       typeDescription = "Negative Behaviour",
@@ -404,6 +405,7 @@ class ActivityScheduleServiceTest {
       occurrenceDateTime = LocalDateTime.now(),
       authorName = "Test",
       authorUserId = "1",
+      authorUsername = "test_1",
       text = "Test case note",
       eventId = 1,
       sensitive = false,
@@ -428,7 +430,7 @@ class ActivityScheduleServiceTest {
       TimeSource.tomorrow(),
       DeallocationReason.OTHER,
       "by test",
-      10001,
+      UUID.fromString("fe8eaa76-a7b1-4479-a0fc-cab287edda29"),
     )
     verify(repository).saveAndFlush(schedule)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 0)

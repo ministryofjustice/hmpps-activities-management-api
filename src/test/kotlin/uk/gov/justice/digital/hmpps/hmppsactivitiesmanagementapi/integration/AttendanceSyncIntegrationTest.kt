@@ -6,6 +6,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceSync
 import java.time.LocalDate
+import java.util.UUID
 
 class AttendanceSyncIntegrationTest : IntegrationTestBase() {
   @Sql(
@@ -81,7 +82,7 @@ class AttendanceSyncIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `should return attendance sync for a refused attendance`() {
-    caseNotesApiMockServer.stubGetCaseNote("A22222A", 1)
+    caseNotesApiMockServer.stubGetCaseNote("A22222A", UUID.fromString("6f1de2dc-0a9f-43cf-b94e-f9b5f408776e"))
 
     val attendanceSync =
       webTestClient.get()

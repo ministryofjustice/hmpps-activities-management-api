@@ -40,6 +40,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloa
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class PrisonerSuspensionsServiceTest {
   private val caseLoad = MOORLAND_PRISON_CODE
@@ -49,7 +50,7 @@ class PrisonerSuspensionsServiceTest {
   private val attendanceSuspensionDomainService: AttendanceSuspensionDomainService = mock()
   private val caseNotesApiClient: CaseNotesApiClient = mock<CaseNotesApiClient>().also {
     whenever(it.postCaseNote(any(), any(), any(), any(), any(), any())) doReturn CaseNote(
-      caseNoteId = "10001",
+      caseNoteId = "c94f5885-9036-409e-9743-10ce07088748",
       offenderIdentifier = "1",
       type = "NEG",
       typeDescription = "Negative Behaviour",
@@ -60,6 +61,7 @@ class PrisonerSuspensionsServiceTest {
       occurrenceDateTime = LocalDateTime.now(),
       authorName = "Test",
       authorUserId = "1",
+      authorUsername = "test_1",
       text = "Test case note",
       eventId = 1,
       sensitive = false,
@@ -148,7 +150,8 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first().plannedSuspension()!!) {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
-      caseNoteId() isEqualTo 10001
+      caseNoteId() isEqualTo null
+      dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -187,7 +190,8 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first().plannedSuspension()!!) {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
-      caseNoteId() isEqualTo 10001
+      caseNoteId() isEqualTo null
+      dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
@@ -226,7 +230,8 @@ class PrisonerSuspensionsServiceTest {
     assertThat(allocationCaptor.firstValue.first().plannedSuspension()).isNotNull
     with(allocationCaptor.firstValue.first().plannedSuspension()!!) {
       startDate() isEqualTo allocation.startDate.plusWeeks(1)
-      caseNoteId() isEqualTo 10001
+      caseNoteId() isEqualTo null
+      dpsCaseNoteId() isEqualTo UUID.fromString("c94f5885-9036-409e-9743-10ce07088748")
     }
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocationId)
     verifyNoMoreInteractions(outboundEventsService)
