@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param occurrenceDateTime Date and Time of when case note contact with offender was made
  * @param authorName Full name of case note author
  * @param authorUserId User Id of case note author - staffId for nomis users, userId for auth users
+ * @param authorUsername Username of case note author - username of nomis users and auth users
  * @param text Case Note Text
  * @param eventId Delius number representation of the case note id - will be negative for sensitive case note types
  * @param sensitive Sensitive Note
