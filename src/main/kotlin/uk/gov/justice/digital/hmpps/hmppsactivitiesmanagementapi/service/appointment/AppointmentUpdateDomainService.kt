@@ -314,6 +314,7 @@ class AppointmentUpdateDomainService(
         organiserCode = updatedAppointmentSeries.appointmentOrganiser?.code,
         originalInternalLocationId = originalAppointmentSeries.internalLocationId,
         internalLocationId = updatedAppointmentSeries.internalLocationId,
+        dpsLocationId = updatedAppointmentSeries.dpsLocationId,
         originalStartDate = originalAppointmentSeries.startDate,
         startDate = updatedAppointmentSeries.startDate,
         originalStartTime = originalAppointmentSeries.startTime,
