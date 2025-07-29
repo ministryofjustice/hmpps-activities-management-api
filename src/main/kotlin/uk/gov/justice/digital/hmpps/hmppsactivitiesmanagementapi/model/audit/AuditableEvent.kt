@@ -11,6 +11,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 abstract class AuditableEvent(
 
@@ -63,6 +64,7 @@ abstract class AuditableEvent(
     hasCustomName: Boolean? = null,
     originalInternalLocationId: Long? = null,
     internalLocationId: Long? = null,
+    dpsLocationId: UUID? = null,
     originalStartDate: LocalDate? = null,
     startDate: LocalDate? = null,
     originalStartTime: LocalTime? = null,
@@ -92,6 +94,7 @@ abstract class AuditableEvent(
       hasCustomName?.let { put("hasCustomName", it) }
       originalInternalLocationId?.let { put("originalInternalLocationId", it) }
       internalLocationId?.let { put("internalLocationId", it) }
+      dpsLocationId?.let { put("dpsLocationId", it.toString()) }
       originalStartDate?.let { put("originalStartDate", it.toIsoDate()) }
       startDate?.let { put("startDate", it.toIsoDate()) }
       originalStartTime?.let { put("originalStartTime", it.toIsoTime()) }
