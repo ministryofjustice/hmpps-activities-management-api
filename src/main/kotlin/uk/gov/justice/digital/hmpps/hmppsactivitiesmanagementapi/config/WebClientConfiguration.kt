@@ -130,10 +130,18 @@ class WebClientConfiguration(
     .also { log.info("WEB CLIENT CONFIG: bank holiday api web client") }
 
   @Bean
-  fun caseNotesApiWebClient(): WebClient = webClientBuilder.baseUrl(caseNotesApiUrl)
-    .timeout(shorterTimeout)
-    .filter(addAuthHeaderFilterFunction())
-    .build().also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
+  @RequestScope
+  fun caseNotesApiWebClient(
+    clientRegistrationRepository: ClientRegistrationRepository,
+    authorizedClientRepository: OAuth2AuthorizedClientRepository,
+    builder: WebClient.Builder,
+  ): WebClient = getOAuthWebClient(
+    authorizedClientManager(clientRegistrationRepository, authorizedClientRepository),
+    builder,
+    caseNotesApiUrl,
+    "offender-case-notes-api",
+    shorterTimeout,
+  ).also { log.info("WEB CLIENT CONFIG: creating case notes api web client") }
 
   @Bean
   fun nonAssociationsApiWebClient(authorizedClientManager: OAuth2AuthorizedClientManager, builder: WebClient.Builder) = builder
