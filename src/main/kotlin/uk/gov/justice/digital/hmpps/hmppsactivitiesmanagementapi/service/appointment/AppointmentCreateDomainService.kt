@@ -206,6 +206,7 @@ class AppointmentCreateDomainService(
         categoryCode = categoryCode,
         hasCustomName = customName != null,
         internalLocationId = internalLocationId,
+        dpsLocationId = dpsLocationId,
         startDate = startDate,
         startTime = startTime,
         endTime = endTime,

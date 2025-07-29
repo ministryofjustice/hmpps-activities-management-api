@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class AppointmentSetCreatedEvent(
   private val appointmentSetId: Long,
@@ -9,6 +10,7 @@ class AppointmentSetCreatedEvent(
   private val categoryCode: String,
   private val hasCustomName: Boolean,
   private val internalLocationId: Long?,
+  private val dpsLocationId: UUID?,
   private val startDate: LocalDate,
   private val prisonerNumbers: List<String>,
   createdAt: LocalDateTime,
@@ -29,6 +31,7 @@ class AppointmentSetCreatedEvent(
     categoryCode = categoryCode,
     hasCustomName = hasCustomName,
     internalLocationId = internalLocationId,
+    dpsLocationId = dpsLocationId,
     startDate = startDate,
     prisonerNumbers = prisonerNumbers,
     createdTime = createdAt,
