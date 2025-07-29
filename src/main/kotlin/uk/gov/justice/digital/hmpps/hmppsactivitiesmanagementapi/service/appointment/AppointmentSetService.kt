@@ -224,6 +224,7 @@ class AppointmentSetService(
         categoryCode = categoryCode,
         hasCustomName = customName != null,
         internalLocationId = internalLocationId,
+        dpsLocationId = dpsLocationId,
         startDate = startDate,
         prisonerNumbers = prisonerNumbers(),
         createdAt = createdTime,
