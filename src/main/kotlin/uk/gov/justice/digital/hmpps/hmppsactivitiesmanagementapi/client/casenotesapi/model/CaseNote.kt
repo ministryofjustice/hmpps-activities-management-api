@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param text Case Note Text
  * @param eventId Delius number representation of the case note id - will be negative for sensitive case note types
  * @param sensitive Sensitive Note
- * @param amendments Ordered list of amendments to the case note (oldest first)
  * @param locationId Location Id representing where Case Note was made.
  * @param legacyId Legacy Case Note Id
  */
