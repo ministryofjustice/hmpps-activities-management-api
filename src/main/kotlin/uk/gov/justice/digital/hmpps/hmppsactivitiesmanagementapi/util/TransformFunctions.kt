@@ -353,10 +353,10 @@ fun transform(attendance: EntityAttendance, caseNotesApiClient: CaseNotesApiClie
     pieces = attendance.pieces,
     issuePayment = attendance.issuePayment,
     incentiveLevelWarningIssued = attendance.incentiveLevelWarningIssued,
-    caseNoteText = attendance.caseNoteId?.let {
+    caseNoteText = attendance.dpsCaseNoteId?.let {
       caseNotesApiClient?.getCaseNote(
         attendance.prisonerNumber,
-        attendance.caseNoteId!!,
+        attendance.dpsCaseNoteId!!,
       )?.text
     },
     otherAbsenceReason = attendance.otherAbsenceReason,
@@ -418,10 +418,10 @@ fun transform(
   issuePayment = attendanceHistory.issuePayment,
   incentiveLevelWarningIssued = attendanceHistory.incentiveLevelWarningIssued,
   otherAbsenceReason = attendanceHistory.otherAbsenceReason,
-  caseNoteText = attendanceHistory.caseNoteId?.let {
+  caseNoteText = attendanceHistory.dpsCaseNoteId?.let {
     caseNotesApiClient?.getCaseNote(
       prisonerNumber,
-      attendanceHistory.caseNoteId!!,
+      attendanceHistory.dpsCaseNoteId!!,
     )?.text
   },
 )

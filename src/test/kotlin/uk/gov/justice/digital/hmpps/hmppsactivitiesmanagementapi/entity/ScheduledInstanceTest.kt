@@ -213,6 +213,7 @@ class ScheduledInstanceTest {
         newIssuePayment = true,
         newIncentiveLevelWarningIssued = null,
         newCaseNoteId = null,
+        newDpsCaseNoteId = null,
         newOtherAbsenceReason = null,
       )
 
@@ -643,6 +644,7 @@ class ScheduledInstanceTest {
             newIssuePayment = true,
             newIncentiveLevelWarningIssued = null,
             newCaseNoteId = null,
+            newDpsCaseNoteId = null,
             newOtherAbsenceReason = null,
           )
         }.also {

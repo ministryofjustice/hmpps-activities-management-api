@@ -106,6 +106,7 @@ data class Attendance(
       newIssuePayment = if (issuePayment == false) false else isPayable(),
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
+      newDpsCaseNoteId = null,
       newOtherAbsenceReason = null,
     )
   }
@@ -129,6 +130,7 @@ data class Attendance(
     newIssuePayment = null,
     newIncentiveLevelWarningIssued = null,
     newCaseNoteId = null,
+    newDpsCaseNoteId = null,
     newOtherAbsenceReason = null,
   )
 
@@ -138,6 +140,7 @@ data class Attendance(
     newStatus = AttendanceStatus.COMPLETED,
     newIssuePayment = issuePayment,
     newCaseNoteId = null,
+    newDpsCaseNoteId = null,
     newComment = null,
     newIncentiveLevelWarningIssued = null,
     newOtherAbsenceReason = null,
@@ -151,6 +154,7 @@ data class Attendance(
       newStatus = AttendanceStatus.WAITING,
       newIssuePayment = null,
       newCaseNoteId = null,
+      newDpsCaseNoteId = null,
       newComment = null,
       newIncentiveLevelWarningIssued = null,
       newOtherAbsenceReason = null,
@@ -165,6 +169,7 @@ data class Attendance(
     newIssuePayment: Boolean?,
     newIncentiveLevelWarningIssued: Boolean?,
     newCaseNoteId: String?,
+    newDpsCaseNoteId: String?,
     newOtherAbsenceReason: String?,
   ): Attendance {
     require(editable()) { "Attendance record for prisoner '$prisonerNumber' can no longer be modified" }
@@ -182,6 +187,7 @@ data class Attendance(
     issuePayment = newIssuePayment
     incentiveLevelWarningIssued = newIncentiveLevelWarningIssued
     caseNoteId = newCaseNoteId?.toLong()
+    dpsCaseNoteId = if (newDpsCaseNoteId != null) UUID.fromString(newDpsCaseNoteId) else null
     otherAbsenceReason = if (AttendanceReasonEnum.OTHER == reason?.code) newOtherAbsenceReason else null
     recordedTime = LocalDateTime.now()
     status = newStatus
@@ -199,6 +205,7 @@ data class Attendance(
         recordedBy = recordedBy ?: "",
         issuePayment = issuePayment,
         caseNoteId = caseNoteId,
+        dpsCaseNoteId = dpsCaseNoteId,
         incentiveLevelWarningIssued = incentiveLevelWarningIssued,
         otherAbsenceReason = if (hasReason(AttendanceReasonEnum.OTHER)) otherAbsenceReason else null,
       ),
@@ -216,6 +223,7 @@ data class Attendance(
     bonusAmount = null
     pieces = null
     caseNoteId = null
+    dpsCaseNoteId = null
     otherAbsenceReason = null
     status = AttendanceStatus.WAITING
     recordedTime = LocalDateTime.now()

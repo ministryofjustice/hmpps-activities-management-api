@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Service
 @Transactional
@@ -69,7 +70,7 @@ class PrisonerSuspensionsService(
                 plannedStartDate = maxOf(suspendFrom, allocation.startDate),
                 plannedBy = byWhom,
                 plannedAt = now,
-                caseNoteId = mayBeCaseNoteId,
+                dpsCaseNoteId = mayBeCaseNoteId,
                 paid = issuePayment,
               ),
             )
@@ -122,21 +123,23 @@ class PrisonerSuspensionsService(
     suspendFrom: LocalDate,
     request: AddCaseNoteRequest,
     allocations: Collection<Allocation>,
-  ): Long {
+  ): UUID {
     val prefix = if (allocations.size > 1) {
       "Suspended from all activities from ${suspendFrom.toMediumFormatStyle()}"
     } else {
       "Suspended from activity from ${suspendFrom.toMediumFormatStyle()} - ${allocations.single().activitySchedule.description}"
     }
 
-    return caseNotesApiClient.postCaseNote(
-      prisonCode,
-      prisonerNumber,
-      request.text!!,
-      request.type!!,
-      if (request.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN,
-      prefix,
-    ).caseNoteId.toLong()
+    return UUID.fromString(
+      caseNotesApiClient.postCaseNote(
+        prisonCode,
+        prisonerNumber,
+        request.text!!,
+        request.type!!,
+        if (request.type == CaseNoteType.GEN) CaseNoteSubType.HIS else CaseNoteSubType.NEG_GEN,
+        prefix,
+      ).caseNoteId,
+    )
   }
 
   fun unsuspend(prisonCode: String, request: UnsuspendPrisonerRequest, byWhom: String) {

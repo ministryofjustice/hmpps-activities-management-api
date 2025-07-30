@@ -137,6 +137,7 @@ class AttendanceTest {
       newIssuePayment = null,
       newIncentiveLevelWarningIssued = null,
       newCaseNoteId = null,
+      newDpsCaseNoteId = null,
       newOtherAbsenceReason = null,
     )
 
@@ -326,6 +327,7 @@ class AttendanceTest {
         newIssuePayment = null,
         newIncentiveLevelWarningIssued = null,
         newCaseNoteId = null,
+        newDpsCaseNoteId = null,
         newOtherAbsenceReason = null,
       )
     }.isInstanceOf(IllegalArgumentException::class.java)

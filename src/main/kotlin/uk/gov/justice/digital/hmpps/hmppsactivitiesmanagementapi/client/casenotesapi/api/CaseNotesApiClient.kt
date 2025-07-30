@@ -7,7 +7,10 @@ import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.CaseNote
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.model.NewCaseNote
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.SecurityUtils
+import java.util.UUID
 
+const val USERNAME_HEADER: String = "Username"
 const val CASELOAD_ID_HEADER: String = "CaseloadId"
 const val CASELOAD_ID_ALL: String = "***"
 
@@ -18,14 +21,17 @@ class CaseNotesApiClient(@Qualifier("caseNotesApiWebClient") private val webClie
     val newCaseNote = NewCaseNote(prisonCode, type.name, subType.name, null, if (caseNotePrefix != null) "$caseNotePrefix\n\n$caseNote".take(4000) else caseNote)
     return webClient.post()
       .uri("/case-notes/{offenderNo}", prisonerNumber)
+      .header(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
+      .header(USERNAME_HEADER, SecurityUtils.getUserNameForLoggedInUser())
       .bodyValue(newCaseNote)
       .retrieve()
       .bodyToMono(CaseNote::class.java)
       .block()!!
   }
 
-  fun getCaseNote(prisonerNumber: String, caseNoteId: Long): CaseNote = webClient.get()
-    .uri("/case-notes/{offenderNo}/{caseNoteId}", prisonerNumber, caseNoteId)
+  fun getCaseNote(prisonerNumber: String, dpsCaseNoteId: UUID): CaseNote = webClient.get()
+    .uri("/case-notes/{offenderNo}/{dpsCaseNoteId}", prisonerNumber, dpsCaseNoteId)
+    .header(CASELOAD_ID_HEADER, CASELOAD_ID_ALL)
     .retrieve()
     .bodyToMono(CaseNote::class.java)
     .block()!!
