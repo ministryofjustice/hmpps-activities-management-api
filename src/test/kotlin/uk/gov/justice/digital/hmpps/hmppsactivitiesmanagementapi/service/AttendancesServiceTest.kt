@@ -10,6 +10,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNoteSubType
@@ -326,6 +327,8 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
     assertThat(attendance.caseNoteId).isNull()
@@ -349,6 +352,8 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isNull()
@@ -370,6 +375,8 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), any())
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
     assertThat(attendance.caseNoteId).isNull()
@@ -390,6 +397,8 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN), any())
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
     assertThat(attendance.caseNoteId).isNull()
@@ -411,6 +420,8 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
+    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(null))
+
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
     assertThat(attendance.caseNoteId).isNull()

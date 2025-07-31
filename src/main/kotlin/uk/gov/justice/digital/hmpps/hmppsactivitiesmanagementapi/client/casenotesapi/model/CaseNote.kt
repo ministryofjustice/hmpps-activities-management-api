@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.media.Schema
  * @param eventId Delius number representation of the case note id - will be negative for sensitive case note types
  * @param sensitive Sensitive Note
  * @param locationId Location Id representing where Case Note was made.
- * @param legacyId Legacy Case Note Id
  */
 data class CaseNote(
 
@@ -88,8 +87,4 @@ data class CaseNote(
   @Schema(example = "MDI", description = "Location Id representing where Case Note was made.")
   @get:JsonProperty("locationId")
   val locationId: kotlin.String? = null,
-
-  @Schema(example = "12311312", required = true, description = "Legacy Case Note Id")
-  @get:JsonProperty("legacyId")
-  val legacyId: kotlin.String? = null,
 )

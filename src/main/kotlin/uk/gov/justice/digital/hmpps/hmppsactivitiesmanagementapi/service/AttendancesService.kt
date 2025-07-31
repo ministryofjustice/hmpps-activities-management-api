@@ -68,7 +68,7 @@ class AttendancesService(
           newComment = updateRequest.comment,
           newIssuePayment = if (updateRequest.issuePayment == true && !attendance.isPayable()) false else updateRequest.issuePayment,
           newIncentiveLevelWarningIssued = updateRequest.incentiveLevelWarningIssued,
-          newCaseNoteId = updateRequest.mayBeCaseNote(attendance)?.legacyId,
+          newCaseNoteId = null,
           newDpsCaseNoteId = updateRequest.mayBeCaseNote(attendance)?.caseNoteId,
           newOtherAbsenceReason = updateRequest.otherAbsenceReason,
         )
