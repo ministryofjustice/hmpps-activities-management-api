@@ -155,7 +155,7 @@ tasks.register("listrepos") {
 tasks.register("copyPreCommitHook", Copy::class) {
   from(project.file("pre-commit"))
   into(project.file(".git/hooks"))
-  filePermissions { unix("755") }
+  setFileMode(0b111101101)
   dependsOn("generateGitProperties")
 }
 
