@@ -3,8 +3,8 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import org.hibernate.jpa.HibernateHints.HINT_CACHEABLE
-import org.hibernate.jpa.QueryHints.HINT_FETCH_SIZE
-import org.hibernate.jpa.QueryHints.HINT_READONLY
+import org.hibernate.jpa.HibernateHints.HINT_FETCH_SIZE
+import org.hibernate.jpa.HibernateHints.HINT_READ_ONLY
 import org.springframework.stereotype.Repository
 import java.util.stream.Stream
 
@@ -187,7 +187,7 @@ class PurposefulActivityRepository {
 
     query.setHint(HINT_FETCH_SIZE, "500")
     query.setHint(HINT_CACHEABLE, "false")
-    query.setHint(HINT_READONLY, "false")
+    query.setHint(HINT_READ_ONLY, "false")
 
     return Stream.concat(Stream.of(headers.toTypedArray()), query.resultStream)
   }
