@@ -48,6 +48,7 @@ generic-prometheus-alerts:
 cron:
   allocationsDeallocateEnding: "30 6 * * *"
   allocationsDeallocateExpiring: "30 20 * * *"
+  allocationsFixAutoSuspended: "45 20 * * *"
   allocationsActivate: "45 6 * * *"
   appointmentAttendees: "45 6 * * *"
   createScheduledInstances: "0 7 * * *"

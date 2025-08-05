@@ -19,7 +19,7 @@ class ManageAllocationsJob(
 ) {
 
   @Async("asyncExecutor")
-  fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false) {
+  fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false) {
     if (withActivate) {
       jobRunner.runJobWithRetry(
         JobDefinition(JobType.ALLOCATE) {
@@ -61,6 +61,14 @@ class ManageAllocationsJob(
       jobRunner.runJobWithRetry(
         JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
           service.allocations(AllocationOperation.EXPIRING_TODAY)
+        },
+      )
+    }
+
+    if (withFixAutoSuspended) {
+      jobRunner.runJobWithRetry(
+        JobDefinition(jobType = JobType.FIX_STUCK_AUTO_SUSPENDED) {
+          service.fixPrisonersIncorrectlyAutoSuspended()
         },
       )
     }
