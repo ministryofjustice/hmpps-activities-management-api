@@ -43,8 +43,10 @@ class PrisonerReceivedHandler(
   }
     .onEach {
       if (it.isCurrentlySuspended()) {
+        log.info("PRISONER RECEIVED: re-activating planned suspension for prisoner $prisonerNumber at prison $prisonCode for allocation ${it.allocationId}.")
         it.activatePlannedSuspension()
       } else {
+        log.info("PRISONER RECEIVED: removing auto-suspension for prisoner $prisonerNumber at prison $prisonCode for allocation ${it.allocationId}.")
         it.reactivateSuspension()
       }
     }
