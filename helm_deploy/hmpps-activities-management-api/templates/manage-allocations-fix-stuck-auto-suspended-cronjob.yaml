@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: deallocate-allocations-ending
+  name: fix-stuck-auto-suspended
 spec:
   schedule:  "{{ .Values.cron.allocationsFixAutoSuspended }}"
   concurrencyPolicy: Replace
@@ -17,7 +17,7 @@ spec:
           restartPolicy: Never
           activeDeadlineSeconds: 3600
           containers:
-            - name: deallocate-allocations-ending-job
+            - name: fix-stuck-auto-suspended-job
               image: ghcr.io/ministryofjustice/hmpps-devops-tools
               args:
                 - /bin/sh
