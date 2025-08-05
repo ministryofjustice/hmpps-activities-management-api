@@ -36,6 +36,8 @@ class ManageAllocationsService(
   private val outboundEventsService: OutboundEventsService,
   private val prisonApiClient: PrisonApiClient,
   private val monitoringService: MonitoringService,
+  private val prisonerSearchApiApplicationClient: PrisonerSearchApiApplicationClient,
+  private val prisonerReceivedHandler: PrisonerReceivedHandler,
 ) {
 
   companion object {
@@ -90,6 +92,28 @@ class ManageAllocationsService(
         }.also { allocationIds -> allocationIds.ifNotEmpty { activityScheduleRepository.saveAndFlush(schedule) } }
       }
     }.let(::sendAllocationsAmendedEvents)
+  }
+
+  fun fixPrisonersIncorrectlyAutoSuspended() {
+    allocationRepository.findActiveAllocations(PrisonerStatus.AUTO_SUSPENDED)
+      .groupBy { it.prisonerNumber }
+      .forEach { (prisonerNumber, allocations) ->
+        prisonerSearchApiApplicationClient.findByPrisonerNumber(prisonerNumber)?.let { prisoner ->
+
+          prisoner.let { prisoner ->
+            allocations
+              .map { it.prisonCode() }
+              .firstOrNull { prisonCode -> prisoner.isActiveInPrison(prisonCode) }
+              ?.let { prisonCode ->
+                log.info("Fixing stuck auto-suspended allocation(s) for prisoner $prisonerNumber in prison $prisonCode")
+
+                prisonerReceivedHandler.receivePrisoner(prisonCode, prisonerNumber)
+              }
+          }
+        } ?: run {
+          log.warn("Unable to find prisoner $prisonerNumber to fix stuck auto-suspended allocation(s).")
+        }
+      }
   }
 
   private fun declineWaitingListsFor(schedule: ActivitySchedule) {

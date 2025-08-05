@@ -95,8 +95,16 @@ class JobTriggerController(
     @RequestParam(value = "withDeallocateExpiring", required = false)
     @Parameter(description = "If true will run the deallocate allocations that are expiring process. Defaults to false.")
     withDeallocateExpiring: Boolean = false,
+    @RequestParam(value = "withFixAutoSuspended", required = false)
+    @Parameter(description = "If true will attempt to unsuspend auto suspended prisoners who should have bee received back into the prison already.")
+    withFixAutoSuspended: Boolean = false,
   ): String {
-    manageAllocationsJob.execute(withActivate = withActivate, withDeallocateEnding = withDeallocateEnding, withDeallocateExpiring = withDeallocateExpiring)
+    manageAllocationsJob.execute(
+      withActivate = withActivate,
+      withDeallocateEnding = withDeallocateEnding,
+      withDeallocateExpiring = withDeallocateExpiring,
+      withFixAutoSuspended = withFixAutoSuspended,
+    )
 
     return "Manage allocations triggered operations"
   }

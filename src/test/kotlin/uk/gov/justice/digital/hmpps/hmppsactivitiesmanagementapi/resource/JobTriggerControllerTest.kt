@@ -138,15 +138,16 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
     verify(manageAttendanceRecordsJob).execute(date = LocalDate.now(), withExpiry = true)
   }
 
-  @ParameterizedTest(name = " where withActivate = {0}, withDeallocateEnding={1}, withDeallocateExpiring={2}")
+  @ParameterizedTest(name = " where withActivate = {0}, withDeallocateEnding={1}, withDeallocateExpiring={2}, withFixAutoSuspended={3}")
   @MethodSource("allocationArgs")
   fun `201 response when manage allocations job triggered`(
     withActivate: Boolean,
     withDeallocateEnding: Boolean,
     withDeallocateExpiring: Boolean,
+    withFixAutoSuspended: Boolean,
   ) {
     val response =
-      mockMvc.triggerJob(jobName = "manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
+      mockMvc.triggerJob(jobName = "manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring&withFixAutoSuspended=$withFixAutoSuspended")
         .andExpect { status { isCreated() } }.andReturn().response
 
     assertThat(response.contentAsString).isEqualTo("Manage allocations triggered operations")
@@ -155,19 +156,27 @@ class JobTriggerControllerTest : ControllerTestBase<JobTriggerController>() {
       withActivate = withActivate,
       withDeallocateEnding = withDeallocateEnding,
       withDeallocateExpiring = withDeallocateExpiring,
+      withFixAutoSuspended = withFixAutoSuspended,
     )
   }
 
   companion object {
     @JvmStatic
     fun allocationArgs(): List<Arguments> = listOf(
-      Arguments.of(true, false, false),
-      Arguments.of(false, true, false),
-      Arguments.of(false, false, true),
-      Arguments.of(true, true, false),
-      Arguments.of(true, false, true),
-      Arguments.of(false, true, true),
-      Arguments.of(true, true, true),
+      Arguments.of(true, false, false, false),
+      Arguments.of(false, true, false, false),
+      Arguments.of(false, false, true, false),
+      Arguments.of(true, true, false, false),
+      Arguments.of(true, false, true, false),
+      Arguments.of(false, true, true, false),
+      Arguments.of(true, true, true, false),
+      Arguments.of(true, false, false, true),
+      Arguments.of(false, true, false, true),
+      Arguments.of(false, false, true, true),
+      Arguments.of(true, true, false, true),
+      Arguments.of(true, false, true, true),
+      Arguments.of(false, true, true, true),
+      Arguments.of(true, true, true, true),
     )
   }
 

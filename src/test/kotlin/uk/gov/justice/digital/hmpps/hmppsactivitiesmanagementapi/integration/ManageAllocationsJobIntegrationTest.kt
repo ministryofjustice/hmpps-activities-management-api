@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Allocation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
@@ -31,12 +33,14 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingL
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.ALLOCATED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.DECLINED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.WaitingListStatus.REMOVED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isBool
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
@@ -329,6 +333,118 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
     }
   }
 
+  @Sql("classpath:test_data/fix-auto-suspend/prisoner-is-not-manually-suspended.sql")
+  @Test
+  fun `fix prisoners who are incorrectly auto-suspended`() {
+    val prisoner = PrisonerSearchPrisonerFixture.instance(
+      prisonId = "PVI",
+      prisonerNumber = "A11111A",
+      status = "ACTIVE IN",
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner)
+
+    with(webTestClient.getAllocation(1)) {
+      status isEqualTo AUTO_SUSPENDED
+      suspendedTime isNotEqualTo null
+      suspendedReason isNotEqualTo null
+      suspendedBy isNotEqualTo null
+    }
+
+    with(webTestClient.getAttendanceById(1)) {
+      status isEqualTo AttendanceStatus.COMPLETED.toString()
+      attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED.toString()
+      issuePayment isEqualTo false
+    }
+
+    waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    with(webTestClient.getAllocation(1)) {
+      status isEqualTo ACTIVE
+      suspendedTime isEqualTo null
+      suspendedReason isEqualTo null
+      suspendedBy isEqualTo null
+    }
+
+    with(webTestClient.getAttendanceById(1)) {
+      status isEqualTo AttendanceStatus.WAITING.toString()
+      attendanceReason isEqualTo null
+      issuePayment isEqualTo null
+    }
+  }
+
+  @Sql("classpath:test_data/fix-auto-suspend/prisoner-is-manually-suspended.sql")
+  @Test
+  fun `fix prisoners who are incorrectly auto-suspended but should be suspended`() {
+    val prisoner = PrisonerSearchPrisonerFixture.instance(
+      prisonId = "PVI",
+      prisonerNumber = "A11111A",
+      status = "ACTIVE IN",
+    )
+
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner)
+
+    with(webTestClient.getAllocation(1)) {
+      status isEqualTo AUTO_SUSPENDED
+      suspendedTime isNotEqualTo null
+      suspendedReason isNotEqualTo null
+      suspendedBy isNotEqualTo null
+    }
+
+    with(webTestClient.getAttendanceById(1)) {
+      status isEqualTo AttendanceStatus.COMPLETED.toString()
+      attendanceReason!!.code isEqualTo AttendanceReasonEnum.AUTO_SUSPENDED.toString()
+      issuePayment isEqualTo false
+    }
+
+    waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
+
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
+    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, 1L)
+    verifyNoMoreInteractions(outboundEventsService)
+
+    with(webTestClient.getAllocation(1)) {
+      status isEqualTo SUSPENDED
+      suspendedTime isCloseTo LocalDateTime.now()
+      suspendedReason isEqualTo "Planned suspension"
+      suspendedBy isEqualTo "MRS BLOGS"
+    }
+
+    with(webTestClient.getAttendanceById(1)) {
+      status isEqualTo AttendanceStatus.COMPLETED.toString()
+      attendanceReason!!.code isEqualTo AttendanceReasonEnum.SUSPENDED.toString()
+      issuePayment isEqualTo false
+    }
+  }
+
+  @Sql("classpath:test_data/fix-auto-suspend/prisoners-correctly-auto-suspended.sql")
+  @Test
+  fun `do not fix prisoners who are correctly auto-suspended`() {
+    val prisonerNumbers = listOf("A11111A", "B22222B", "C33333C")
+
+    prisonerNumbers.forEach { prisonerNumber ->
+      val prisoner = PrisonerSearchPrisonerFixture.instance(
+        prisonId = "PVI",
+        prisonerNumber = prisonerNumber,
+        status = "ACTIVE IN",
+      )
+
+      prisonerSearchApiMockServer.stubSearchByPrisonerNumber(prisoner)
+    }
+
+    waitForJobs({ webTestClient.manageAllocations(withFixAutoSuspended = true) })
+
+    verifyNoInteractions(outboundEventsService)
+
+    (1L..3L).forEach { allocationId ->
+      webTestClient.getAllocation(allocationId).status isEqualTo AUTO_SUSPENDED
+    }
+  }
+
   private infix fun WaitingList.isStatus(status: WaitingListStatus) {
     this.status isEqualTo status
   }
@@ -352,9 +468,9 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
     deallocatedTime isCloseTo TimeSource.now()
   }
 
-  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, numJobs: Int = 1) {
+  private fun WebTestClient.manageAllocations(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false, numJobs: Int = 1) {
     post()
-      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring")
+      .uri("/job/manage-allocations?withActivate=$withActivate&withDeallocateEnding=$withDeallocateEnding&withDeallocateExpiring=$withDeallocateExpiring&withFixAutoSuspended=$withFixAutoSuspended")
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated

@@ -185,4 +185,14 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
   fun updateCaseNoteUUID(caseNoteId: Long, dpsCaseNoteId: UUID)
 
   fun countByDeallocationCaseNoteIdNotNullAndDeallocationDpsCaseNoteIdNull(): Long
+
+  @Query(
+    """
+      select a from Allocation a
+      where a.prisonerStatus = :prisonerStatus
+      and a.startDate < current_date
+      and (a.endDate is null or a.endDate > current_date)
+    """,
+  )
+  fun findActiveAllocations(prisonerStatus: PrisonerStatus): List<Allocation>
 }

@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_EXPIRING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.END_SUSPENSIONS
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.FIX_STUCK_AUTO_SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.START_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
@@ -71,6 +72,19 @@ class ManageAllocationsJobTest : JobsTestBase() {
   }
 
   @Test
+  fun `fix auto suspended operation triggered`() {
+    mockJobs(FIX_STUCK_AUTO_SUSPENDED)
+
+    job.execute(withFixAutoSuspended = true)
+
+    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
+
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsWithRetryCalled(FIX_STUCK_AUTO_SUSPENDED)
+  }
+
+  @Test
   fun `activate and deallocate allocation due to end operations triggered`() {
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
 
@@ -124,10 +138,27 @@ class ManageAllocationsJobTest : JobsTestBase() {
   }
 
   @Test
-  fun `activate, deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
+  fun `activate and fix auto suspended operations triggered`() {
+    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
 
-    job.execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true)
+    job.execute(withActivate = true, withFixAutoSuspended = true)
+
+    verify(deallocationService).allocations(AllocationOperation.STARTING_TODAY)
+    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
+    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
+    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
+    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
+    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
+    verifyNoMoreInteractions(deallocationService)
+
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
+  }
+
+  @Test
+  fun `activate, deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
+    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
+
+    job.execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
 
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, twoDaysAgo)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, twoDaysAgo)
@@ -139,8 +170,9 @@ class ManageAllocationsJobTest : JobsTestBase() {
     verify(deallocationService).endAllocationsDueToEnd(PENTONVILLE_PRISON_CODE, yesterday)
     verify(deallocationService).endAllocationsDueToEnd(MOORLAND_PRISON_CODE, yesterday)
     verify(deallocationService).allocations(AllocationOperation.EXPIRING_TODAY)
+    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
     verifyNoMoreInteractions(deallocationService)
 
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
   }
 }

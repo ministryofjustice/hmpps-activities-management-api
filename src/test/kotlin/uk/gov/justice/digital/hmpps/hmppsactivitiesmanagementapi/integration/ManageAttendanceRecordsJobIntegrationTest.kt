@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isCloseTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
@@ -41,7 +40,7 @@ import java.time.temporal.ChronoUnit
     "feature.event.activities.prisoner.attendance-expired=true",
   ],
 )
-class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
+class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 
@@ -465,13 +464,4 @@ class ManageAttendanceRecordsJobIntegrationTest : IntegrationTestBase() {
       .exchange()
       .expectStatus().isCreated
   }
-
-  private fun WebTestClient.getAttendanceById(id: Long) = get()
-    .uri("/attendances/$id")
-    .headers(setAuthorisation(roles = listOf(ROLE_PRISON)))
-    .exchange()
-    .expectStatus().isOk
-    .expectHeader().contentType(MediaType.APPLICATION_JSON)
-    .expectBody(Attendance::class.java)
-    .returnResult().responseBody
 }
