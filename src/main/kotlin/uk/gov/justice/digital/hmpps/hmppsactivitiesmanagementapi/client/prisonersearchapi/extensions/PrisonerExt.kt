@@ -20,6 +20,8 @@ fun Prisoner.isActiveIn(): Boolean = status == "ACTIVE IN"
 
 fun Prisoner.isActiveInPrison(prisonCode: String) = prisonId == prisonCode && isActiveIn()
 
+fun Prisoner.isActiveIn(prisonCode: String): Boolean = isActiveIn() && prisonId == prisonCode
+
 fun Prisoner.isTemporarilyReleased() = (confirmedReleaseDate == null || confirmedReleaseDate.isAfter(LocalDate.now())) && isActiveOut() && lastMovementType() != MovementType.RELEASE
 
 fun Prisoner.isPermanentlyReleased() = isInactiveOut() && confirmedReleaseDate?.onOrBefore(LocalDate.now()) == true && lastMovementType() == MovementType.RELEASE

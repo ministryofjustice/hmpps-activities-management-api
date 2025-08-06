@@ -36,7 +36,7 @@ class PrisonerReceivedHandler(
     }
   }
 
-  private fun List<Allocation>.resetAutoSuspendedAllocations(prisonerNumber: String, prisonCode: String) = this.filter {
+  private fun List<Allocation>.resetAutoSuspendedAllocations(prisonCode: String, prisonerNumber: String) = this.filter {
     it.status(
       PrisonerStatus.AUTO_SUSPENDED,
     )
