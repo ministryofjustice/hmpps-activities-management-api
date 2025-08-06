@@ -98,7 +98,7 @@ class ManageAllocationsService(
     allocationRepository.findActiveAllocations(PrisonerStatus.AUTO_SUSPENDED)
       .groupBy { it.prisonerNumber }
       .forEach { (prisonerNumber, allocations) ->
-        prisonerSearchApiApplicationClient.findByPrisonerNumber(prisonerNumber)?.let { prisoner ->
+        prisonerSearchApiApplicationClient.findByPrisonerNumber(prisonerNumber)?.also { prisoner ->
 
           prisoner.let { prisoner ->
             allocations
