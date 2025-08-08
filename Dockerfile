@@ -7,6 +7,9 @@ WORKDIR /app
 ADD . .
 RUN ./gradlew -Dorg.gradle.jvmargs="-Xmx2g" --no-daemon assemble
 
+RUN cp /app/build/libs/hmpps-activities-management-api*.jar app.jar
+RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
+
 # Grab AWS RDS Root cert
 RUN apt-get update && apt-get install -y curl
 RUN curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem  > root.crt
@@ -32,12 +35,15 @@ RUN mkdir /home/appuser/.postgresql
 COPY --from=builder --chown=appuser:appgroup /app/root.crt /home/appuser/.postgresql/root.crt
 
 WORKDIR /app
-COPY --from=builder --chown=appuser:appgroup /app/build/libs/hmpps-activities-management-api*.jar /app/app.jar
+COPY --chown=appuser:appgroup ./applicationinsights.json /app
+COPY --chown=appuser:appgroup ./applicationinsights.dev.json /app
 COPY --from=builder --chown=appuser:appgroup /app/build/libs/applicationinsights-agent*.jar /app/agent.jar
-COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.json /app
-COPY --from=builder --chown=appuser:appgroup /app/applicationinsights.dev.json /app
-COPY --from=builder --chown=appuser:appgroup /app/run.sh /app
+
+COPY --from=builder --chown=appuser:appgroup /app/extracted/spring-boot-loader/ /app
+COPY --from=builder --chown=appuser:appgroup /app/extracted/snapshot-dependencies/ /app
+COPY --from=builder --chown=appuser:appgroup /app/extracted/application/ /app
+COPY --from=builder --chown=appuser:appgroup /app/extracted/dependencies/ /app
 
 USER 2000
 
-ENTRYPOINT ["/bin/sh", "/app/run.sh"]
+ENTRYPOINT ["java", "-XX:+AlwaysActAsServerClassMachine", "-javaagent:agent.jar", "-jar", "app.jar"]
