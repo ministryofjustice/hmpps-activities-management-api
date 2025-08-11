@@ -17,9 +17,6 @@ RUN curl https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem  > ro
 FROM eclipse-temurin:21-jre-jammy
 LABEL maintainer="HMPPS Digital Studio <info@digital.justice.gov.uk>"
 
-ARG BUILD_NUMBER
-ENV BUILD_NUMBER ${BUILD_NUMBER:-1_0_0}
-
 RUN apt-get update && \
     apt-get -y upgrade && \
     rm -rf /var/lib/apt/lists/*
@@ -45,5 +42,8 @@ COPY --from=builder --chown=appuser:appgroup /app/extracted/application/ /app
 COPY --from=builder --chown=appuser:appgroup /app/extracted/dependencies/ /app
 
 USER 2000
+
+ARG BUILD_NUMBER
+ENV BUILD_NUMBER ${BUILD_NUMBER:-1_0_0}
 
 ENTRYPOINT ["java", "-XX:+AlwaysActAsServerClassMachine", "-javaagent:agent.jar", "-jar", "app.jar"]

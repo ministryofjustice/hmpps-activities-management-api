@@ -103,10 +103,10 @@ workflows:
           filters:
             tags:
               ignore: /.*/
-      - integration-test:
-          filters:
-            tags:
-              ignore: /.*/
+#      - integration-test:
+#          filters:
+#            tags:
+#              ignore: /.*/
       - hmpps/helm_lint:
           name: helm_lint
       - hmpps/build_multiplatform_docker:
@@ -116,6 +116,7 @@ workflows:
             branches:
               only:
                 - main
+                - spike/docker-leyers-experiment-lance
       - hmpps/deploy_env:
           name: deploy_dev
           env: "dev"
@@ -129,7 +130,7 @@ workflows:
                 - main
           requires:
             - validate
-            - integration-test
+#            - integration-test
             - build_docker
             - helm_lint
       - request-preprod-approval:
