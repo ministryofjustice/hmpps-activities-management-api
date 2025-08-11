@@ -78,7 +78,7 @@ class AllocationsService(
       allocation.toModel() to savedAttendances
     }.let { (allocation, newAttendances) ->
 
-      log.info("Sending allocation amended event for allocation ${allocation.id}")
+      log.info("xxxSending allocation amended event for allocation ${allocation.id}")
 
       outboundEventsService.send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, allocation.id)
 
