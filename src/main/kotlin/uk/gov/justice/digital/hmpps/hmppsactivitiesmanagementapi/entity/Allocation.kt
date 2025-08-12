@@ -190,6 +190,8 @@ data class Allocation(
     if (date.isBefore(LocalDate.now())) throw IllegalArgumentException("Planned deallocation date must not be in the past.")
     if (activitySchedule.endDate != null && date.isAfter(activitySchedule.endDate)) throw IllegalArgumentException("Planned deallocation date cannot be after activity schedule end date, ${activitySchedule.endDate}.")
 
+    endDate = date
+
     if (plannedDeallocation == null) {
       plannedDeallocation = PlannedDeallocation(
         allocation = this,
