@@ -781,6 +781,60 @@ class ActivityScheduleIntegrationTest : ActivitiesIntegrationTestBase() {
         assertThat(plannedBy).isEqualTo("test-client")
         assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
         assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(allocation.endDate).isEqualTo(TimeSource.tomorrow())
+      }
+    }
+
+    verify(eventsPublisher, times(2)).send(eventCaptor.capture())
+
+    assertThat(eventCaptor.firstValue.eventType).isEqualTo("activities.prisoner.allocated")
+    assertThat(eventCaptor.secondValue.eventType).isEqualTo("activities.prisoner.allocation-amended")
+  }
+
+  @Test
+  @Sql(
+    "classpath:test_data/seed-activity-id-7.sql",
+  )
+  fun `allocation, with end date, followed by a deallocation`() {
+    prisonerSearchApiMockServer.stubSearchByPrisonerNumber(
+      PrisonerSearchPrisonerFixture.instance(
+        prisonId = MOORLAND_PRISON_CODE,
+        prisonerNumber = "G4793VF",
+        bookingId = 1,
+        status = "ACTIVE IN",
+      ),
+    )
+
+    with(activityScheduleRepository.findById(1).orElseThrow()) {
+      assertThat(allocationRepository.findByActivitySchedule(this)).isEmpty()
+    }
+
+    webTestClient.allocatePrisoner(
+      1,
+      PrisonerAllocationRequest(
+        prisonerNumber = "G4793VF",
+        payBandId = 11,
+        startDate = TimeSource.tomorrow(),
+        endDate = TimeSource.tomorrow().plusDays(1),
+      ),
+    ).expectStatus().isNoContent
+
+    webTestClient.deallocatePrisoners(
+      1,
+      PrisonerDeallocationRequest(
+        prisonerNumbers = listOf("G4793VF"),
+        reasonCode = DeallocationReason.WITHDRAWN_STAFF.name,
+        endDate = TimeSource.tomorrow(),
+        caseNote = null,
+      ),
+    ).expectStatus().isNoContent
+
+    activityScheduleRepository.findById(1).orElseThrow().also {
+      with(allocationRepository.findByActivitySchedule(it).first().plannedDeallocation!!) {
+        assertThat(plannedBy).isEqualTo("test-client")
+        assertThat(plannedReason).isEqualTo(DeallocationReason.WITHDRAWN_STAFF)
+        assertThat(plannedDate).isEqualTo(TimeSource.tomorrow())
+        assertThat(allocation.endDate).isEqualTo(TimeSource.tomorrow())
       }
     }
 
