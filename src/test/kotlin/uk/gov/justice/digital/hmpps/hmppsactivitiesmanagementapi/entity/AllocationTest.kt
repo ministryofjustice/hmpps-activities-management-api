@@ -322,7 +322,7 @@ class AllocationTest {
 
     allocation.deallocateOn(tomorrow, DeallocationReason.TRANSFERRED, "by test")
 
-    assertThat(allocation.endDate).isNull()
+    assertThat(allocation.endDate).isEqualTo(tomorrow)
 
     with(allocation.plannedDeallocation!!) {
       assertThat(plannedDate).isEqualTo(tomorrow)
@@ -873,10 +873,13 @@ class AllocationTest {
 
   @Test
   fun `allocation planned to end yesterday cannot be attended today`() {
-    val allocation = allocation(startDate = TimeSource.yesterday()).apply {
+    val yesterday = TimeSource.yesterday()
+
+    val allocation = allocation(startDate = yesterday).apply {
       deallocateOn(TimeSource.today(), DeallocationReason.DISMISSED, "test")
       // Cannot add a planned deallocation with yesterday's date so have to override it manually in the test.
-      plannedDeallocation?.plannedDate = TimeSource.yesterday()
+      endDate = yesterday
+      plannedDeallocation?.plannedDate = yesterday
     }
 
     allocation.canAttendOn(TimeSource.today(), TimeSlot.AM) isBool false
