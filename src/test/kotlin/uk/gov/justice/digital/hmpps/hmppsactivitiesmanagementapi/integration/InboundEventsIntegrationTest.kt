@@ -395,7 +395,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
   @Test
   @Sql("classpath:test_data/seed-appointments-changed-event.sql")
   fun `appointments deleted when offender released event received`() {
-    val appointmentIds = listOf(200L, 201L, 202L, 203L, 210L, 211L, 212L)
+    val appointmentIds = listOf(200L, 201L, 202L, 203L, 204L, 210L, 211L, 212L)
 
     stubPrisonerForInterestingEvent(activeInMoorlandInmate.copy(offenderNo = "A1234BC"))
 
@@ -411,6 +411,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     assertThat(allocationsMap[201]).hasSize(1)
     assertThat(allocationsMap[202]).hasSize(1)
     assertThat(allocationsMap[203]).hasSize(1)
+    assertThat(allocationsMap[204]).hasSize(1)
     assertThat(allocationsMap[210]).hasSize(2)
     assertThat(allocationsMap[211]).hasSize(3)
     assertThat(allocationsMap[212]).hasSize(2)
@@ -428,6 +429,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
       assertThat(allocationsMap[201]).hasSize(1)
       assertThat(allocationsMap[202]).isNull()
       assertThat(allocationsMap[203]).hasSize(1)
+      assertThat(allocationsMap[204]).hasSize(1)
       assertThat(allocationsMap[210]).hasSize(2)
       assertThat(allocationsMap[211]).hasSize(2)
       assertThat(allocationsMap[212]).hasSize(1)
@@ -439,6 +441,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       assertThat(appointmentAttendeeRepository.existsById(301)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(303)).isTrue()
+      assertThat(appointmentAttendeeRepository.existsById(304)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(320)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(321)).isTrue()
       assertThat(appointmentAttendeeRepository.existsById(323)).isTrue()
@@ -449,6 +452,8 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
 
       verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 300L)
       verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 302L)
+      // This is a court video link appointment and should not be touched on release
+      verify(outboundEventsService, never()).send(APPOINTMENT_INSTANCE_DELETED, 304L)
       verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 322L)
       verify(outboundEventsService).send(APPOINTMENT_INSTANCE_DELETED, 324L)
       verifyNoMoreInteractions(outboundEventsService)

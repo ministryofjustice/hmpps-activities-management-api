@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.AdditionalAnswers
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -136,31 +137,56 @@ class AppointmentAttendeeServiceTest {
     }
 
     @Test
-    fun `does not remove anything if there are no future appointments`() {
-      val prisonCode = "PVI"
-      val prisonerNumber = "ABC123"
-      val removedTime = LocalDateTime.now()
-      val removedBy = "OFFENDER_RELEASED_EVENT"
+    fun `does not remove anything for video link court appointment`() {
+      val appointmentInstance = mock<AppointmentInstance>()
+      whenever(appointmentInstance.categoryCode) doReturn "VLB"
 
       whenever(
         appointmentAttendeeRemovalReasonRepository.findById(
           CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
         ),
-      )
-        .thenReturn(Optional.of(cancelOnTransferAppointmentAttendeeRemovalReason()))
+      ) doReturn Optional.of(cancelOnTransferAppointmentAttendeeRemovalReason())
 
-      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber))
-        .thenReturn(listOf())
+      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(any(), any()))
+        .thenReturn(listOf(appointmentInstance))
 
       service.removePrisonerFromFutureAppointments(
-        prisonCode,
-        prisonerNumber,
-        removedTime,
+        "ABC",
+        "123",
+        LocalDateTime.now(),
         CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
-        removedBy,
+        "user",
       )
 
       verifyNoInteractions(appointmentAttendeeRepository)
+      verifyNoInteractions(outboundEventsService)
+      verifyNoInteractions(auditService)
+    }
+
+    @Test
+    fun `does not remove anything for video link probation appointment`() {
+      val appointmentInstance = mock<AppointmentInstance>()
+      whenever(appointmentInstance.categoryCode) doReturn "VLPM"
+
+      whenever(
+        appointmentAttendeeRemovalReasonRepository.findById(
+          CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+        ),
+      ) doReturn Optional.of(cancelOnTransferAppointmentAttendeeRemovalReason())
+
+      whenever(appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(any(), any()))
+        .thenReturn(listOf(appointmentInstance))
+
+      service.removePrisonerFromFutureAppointments(
+        "ABC",
+        "123",
+        LocalDateTime.now(),
+        CANCEL_ON_TRANSFER_APPOINTMENT_ATTENDEE_REMOVAL_REASON_ID,
+        "user",
+      )
+
+      verifyNoInteractions(appointmentAttendeeRepository)
+      verifyNoInteractions(outboundEventsService)
       verifyNoInteractions(auditService)
     }
   }
