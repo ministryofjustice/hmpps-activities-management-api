@@ -10,6 +10,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.isPermanentlyReleased
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentManagement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.audit.AppointmentCancelledOnTransferEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeRepository
@@ -46,9 +47,14 @@ class AppointmentAttendeeService(
     private val log = LoggerFactory.getLogger(this::class.java)
   }
 
+  /**
+   * Prisoners will only be removed from appointments which are mastered by the Activities and Appointments service. For
+   * example, some appointment types, such as video link court and video link probation, are managed by a different
+   * service (BVLS).
+   */
   fun removePrisonerFromFutureAppointments(prisonCode: String, prisonerNumber: String, removedTime: LocalDateTime, removalReasonId: Long, removedBy: String) {
     val removalReason = appointmentAttendeeRemovalReasonRepository.findOrThrowNotFound(removalReasonId)
-    appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber)
+    appointmentInstanceRepository.findByPrisonCodeAndPrisonerNumberFromNow(prisonCode, prisonerNumber).filter(AppointmentManagement::isManagedByTheService)
       .forEach {
         appointmentAttendeeRepository.findById(it.appointmentAttendeeId)
           .ifPresent { attendee ->
