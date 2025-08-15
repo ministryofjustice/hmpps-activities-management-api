@@ -307,7 +307,7 @@ class AppointmentCancelDomainServiceTest {
     verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
-    verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
+    verify(appointmentSeriesMock).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
   }
 
   @Test
@@ -355,7 +355,7 @@ class AppointmentCancelDomainServiceTest {
     verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_CANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
-    verify(appointmentSeriesMock, times(1)).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
+    verify(appointmentSeriesMock).cancel(now, "CANCEL.USER", appointment.startDate, appointment.startTime)
   }
 
   @Test

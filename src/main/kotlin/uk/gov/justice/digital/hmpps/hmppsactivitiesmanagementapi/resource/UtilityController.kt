@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.PublishEventUtilityModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityLocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateActivityService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.MigrateCaseNotesUUIDService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 
@@ -28,7 +27,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 class UtilityController(
   private val outboundEventsService: OutboundEventsService,
   private val activityLocationService: ActivityLocationService,
-  private val migrateActivityService: MigrateActivityService,
   private val migrateCaseNotesUUIDService: MigrateCaseNotesUUIDService,
 ) {
 
@@ -65,15 +63,6 @@ class UtilityController(
     }
     return builder.toString()
   }
-
-  @PostMapping(value = ["/create-pay-history"], produces = [MediaType.APPLICATION_JSON_VALUE])
-  @Operation(
-    summary = "Create pay rate history for all the existing activities",
-    description = "Can only be accessed from within the ingress. Requests from elsewhere will result in a 401 response code.",
-  )
-  @ResponseBody
-  @ResponseStatus(HttpStatus.CREATED)
-  fun createActivityPayHistory() = migrateActivityService.createActivityPayHistory()
 
   @PostMapping(value = ["/update-case-note-uuid"], produces = [MediaType.APPLICATION_JSON_VALUE])
   @Operation(

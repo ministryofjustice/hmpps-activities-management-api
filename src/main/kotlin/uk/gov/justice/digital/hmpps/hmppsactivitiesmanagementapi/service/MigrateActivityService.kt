@@ -11,10 +11,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.incentiv
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.onOrBefore
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toMediumFormatStyle
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toPrisonerNumber
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityPayHistory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PlannedSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.SlotTimes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.ActivityCategory
@@ -27,9 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.N
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.NomisScheduleRule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivityMigrateResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AllocationMigrateResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.PayHistoryMigrateResponse
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayHistoryRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityPayRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.ActivityCategoryRepository
@@ -69,8 +64,6 @@ class MigrateActivityService(
   private val eventTierRepository: EventTierRepository,
   private val activityCategoryRepository: ActivityCategoryRepository,
   private val prisonPayBandRepository: PrisonPayBandRepository,
-  private val activityPayRepository: ActivityPayRepository,
-  private val activityPayHistoryRepository: ActivityPayHistoryRepository,
   private val eventOrganiserRepository: EventOrganiserRepository,
   private val transactionHandler: TransactionHandler,
   private val outboundEventsService: OutboundEventsService,
@@ -158,79 +151,6 @@ class MigrateActivityService(
         split?.let { outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_CREATED, it.schedules().first().activityScheduleId) }
       }
       .let { (single, split) -> ActivityMigrateResponse(request.prisonCode, single.activityId, split?.activityId) }
-  }
-
-  fun createActivityPayHistory(): PayHistoryMigrateResponse {
-    var message = ""
-    var activityPayCount: Long = 0
-    var activityPayHistoryCount: Long = activityPayHistoryRepository.count()
-
-    if (activityPayHistoryCount > 0) {
-      message = "Activities pay rate history migration can't be started as activity_pay_history table isn't empty"
-    } else {
-      activityPayCount = activityPayRepository.count()
-      if (activityPayCount <= 0) {
-        message = "Activities pay rate history migration can't be started as activity_pay table is empty"
-      } else {
-        transactionHandler.newSpringTransaction {
-          log.info("Activities pay rate history migration started for $activityPayCount records")
-          val activityIds = activityPayRepository.getDistinctActivityId()
-
-          activityIds.forEach { activityId ->
-            log.info("Activities pay rate history migration started for activity: $activityId")
-            val activityPayHistoryList = mutableListOf<ActivityPayHistory>()
-            val activityPayList = activityPayRepository.findByActivityId(activityId)
-            var previousRate = 0
-
-            activityPayList.forEach {
-              val changedDetails = if (it.startDate == null) {
-                previousRate = it.rate ?: 0
-                "New pay rate added: ${toMoney(it.rate)}"
-              } else {
-                val revisedMessage = it.rate?.let { currentRate ->
-                  if (currentRate > previousRate) {
-                    "increased"
-                  } else {
-                    "reduced"
-                  }
-                }
-                previousRate = it.rate ?: 0
-                "Amount $revisedMessage to ${toMoney(it.rate)}, from ${it.startDate.toMediumFormatStyle()}"
-              }
-
-              val activityPayHistory = ActivityPayHistory(
-                activity = it.activity,
-                incentiveNomisCode = it.incentiveNomisCode,
-                incentiveLevel = it.incentiveLevel,
-                payBand = it.payBand,
-                rate = it.rate,
-                startDate = it.startDate,
-                changedDetails = changedDetails,
-                changedTime = null,
-                changedBy = UNKNOWN_USER,
-              )
-              activityPayHistoryList.add(activityPayHistory)
-            }
-
-            activityPayHistoryRepository.saveAllAndFlush(activityPayHistoryList)
-            log.info("Activities pay rate history migration completed for activity: $activityId")
-          }
-
-          activityPayHistoryCount = activityPayHistoryRepository.count()
-
-          message = if (activityPayHistoryCount == activityPayCount) {
-            "Activities pay rate history migration has been completed successfully for all records"
-          } else if (activityPayHistoryCount > 0) {
-            "Activities pay rate history migration has been completed successfully for only $activityPayHistoryCount records"
-          } else {
-            "None of the activities pay rate history has been migrated"
-          }
-        }
-      }
-    }
-
-    log.info(message)
-    return PayHistoryMigrateResponse(activityPayCount, activityPayHistoryCount, message)
   }
 
   private fun buildSingleActivity(request: ActivityMigrateRequest): List<Activity> {

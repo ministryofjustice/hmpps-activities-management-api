@@ -339,7 +339,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
     verifyNoInteractions(telemetryClient)
 
-    verify(auditService, times(1)).logEvent(auditableEventCaptor.capture())
+    verify(auditService).logEvent(auditableEventCaptor.capture())
     assertThat(auditableEventCaptor.allValues.map { it.appointmentId }).contains(15)
     verifyNoMoreInteractions(auditService)
   }

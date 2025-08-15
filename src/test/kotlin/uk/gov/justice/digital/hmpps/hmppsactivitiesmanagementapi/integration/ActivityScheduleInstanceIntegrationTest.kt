@@ -446,7 +446,7 @@ class ActivityScheduleInstanceIntegrationTest : ActivitiesIntegrationTestBase() 
         }
       }
 
-      verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+      verify(eventsPublisher).send(eventCaptor.capture())
 
       with(eventCaptor.firstValue) {
         assertThat(eventType).isEqualTo("activities.scheduled-instance.amended")
