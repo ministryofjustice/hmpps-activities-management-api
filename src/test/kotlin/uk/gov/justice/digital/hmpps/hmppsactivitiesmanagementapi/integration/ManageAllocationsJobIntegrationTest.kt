@@ -231,7 +231,7 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       updatedBy isEqualTo "Activities Management Service"
     }
 
-    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
 
     hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
   }

@@ -170,7 +170,7 @@ class InboundEventsIntegrationTest : LocalStackTestBase() {
     await untilAsserted {
       assertThatWaitingListStatusIs(WaitingListStatus.REMOVED, PENTONVILLE_PRISON_CODE, "A11111A")
 
-      verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+      verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
 
       hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
     }

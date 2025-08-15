@@ -173,7 +173,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
@@ -261,7 +261,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
@@ -364,7 +364,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       }
     }
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {
@@ -395,7 +395,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     assertThat(appointmentSeries.appointments.filterNot { it.isDeleted }).isEmpty()
 
-    verify(eventsPublisher, times(1)).send(eventCaptor.capture())
+    verify(eventsPublisher).send(eventCaptor.capture())
     verifyNoMoreInteractions(eventsPublisher)
 
     with(eventCaptor.firstValue) {

@@ -47,7 +47,7 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityCategoryRepository, times(1)).findAll()
+    verify(activityCategoryRepository).findAll()
   }
 
   @Nested

@@ -327,7 +327,7 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
+    verify(caseNotesApiClient).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
@@ -352,7 +352,7 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
+    verify(caseNotesApiClient).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(expectedCaseNotePrefix))
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])
@@ -375,7 +375,7 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), any())
+    verify(caseNotesApiClient).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), any())
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
@@ -397,7 +397,7 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN), any())
+    verify(caseNotesApiClient).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.IEP_WARN), any())
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["REFUSED"])
@@ -420,7 +420,7 @@ class AttendancesServiceTest {
 
     verify(attendanceRepository).saveAndFlush(attendance)
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_AMENDED, attendance.attendanceId)
-    verify(caseNotesApiClient, times(1)).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(null))
+    verify(caseNotesApiClient).postCaseNote(any(), any(), any(), eq(CaseNoteType.NEG), eq(CaseNoteSubType.NEG_GEN), eq(null))
 
     assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     assertThat(attendance.attendanceReason).isEqualTo(attendanceReasons()["ATTENDED"])

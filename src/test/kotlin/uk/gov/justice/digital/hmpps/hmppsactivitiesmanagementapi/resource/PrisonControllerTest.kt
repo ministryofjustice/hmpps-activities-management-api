@@ -74,7 +74,7 @@ class PrisonControllerTest : ControllerTestBase<PrisonController>() {
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityService, times(1)).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
+    verify(activityService).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
   }
 
   private fun MockMvc.getActivities(prisonCode: String) = get("/prison/{prisonCode}/activities", prisonCode)
