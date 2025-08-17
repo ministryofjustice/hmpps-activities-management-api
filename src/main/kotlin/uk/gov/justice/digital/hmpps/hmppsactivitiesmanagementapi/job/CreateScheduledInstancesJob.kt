@@ -1,8 +1,9 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
-import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 
@@ -10,13 +11,16 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageS
 class CreateScheduledInstancesJob(
   private val service: ManageScheduledInstancesService,
   private val jobRunner: SafeJobRunner,
+  featureSwitches: FeatureSwitches,
 ) {
-  companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
+  private val sqsEnabled = featureSwitches.isEnabled(Feature.JOBS_SQS_ENABLED)
 
   @Async("asyncExecutor")
   fun execute() {
-    jobRunner.runJob(JobDefinition(JobType.SCHEDULES) { service.create() })
+    if (sqsEnabled) {
+      jobRunner.runDistributedJob(JobType.SCHEDULES, service::sendCreateSchedulesEvents)
+    } else {
+      jobRunner.runJob(JobDefinition(JobType.SCHEDULES) { service.create() })
+    }
   }
 }

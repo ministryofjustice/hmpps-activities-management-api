@@ -81,4 +81,44 @@ class SafeJobRunnerTest {
 
     verify(monitoringService).capture("Job 'ATTENDANCE_CREATE' with job id '1' failed")
   }
+
+  @Test
+  fun `runs a distributed job without error`() {
+    val job = Job(jobId = 1, JobType.SCHEDULES)
+
+    whenever(jobRepository.saveAndFlush(any())) doReturn job
+
+    fun dummy(job: Job) {
+      job.completedSubTasks = 1
+    }
+
+    runner.runDistributedJob(JobType.SCHEDULES, ::dummy)
+
+    with(job) {
+      jobType isEqualTo JobType.SCHEDULES
+      endedAt isEqualTo null
+      successful isBool false
+      completedSubTasks isEqualTo 1
+    }
+  }
+
+  @Test
+  fun `runs a distributed job with error`() {
+    val job = Job(jobId = 1, JobType.SCHEDULES)
+
+    whenever(jobRepository.saveAndFlush(any())) doReturn job
+
+    fun dummy(job: Job): Unit = throw RuntimeException("it failed")
+
+    runner.runDistributedJob(JobType.SCHEDULES, ::dummy)
+
+    with(job) {
+      jobType isEqualTo JobType.SCHEDULES
+      endedAt isCloseTo TimeSource.now()
+      successful isBool false
+      completedSubTasks isEqualTo null
+    }
+
+    verify(monitoringService).capture("Failed to start distributed job 'SCHEDULES' with job id '1'")
+  }
 }
