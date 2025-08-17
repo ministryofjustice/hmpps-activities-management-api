@@ -19,9 +19,9 @@ services:
     image: localstack/localstack:4
     networks:
       - hmpps
-    container_name: local-sqs
+    container_name: localstack
     ports:
-      - "4566:4566"
+      - "14566:4566"
     environment:
       - SERVICES=sns,sqs,s3
     volumes:

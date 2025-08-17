@@ -47,6 +47,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.event.prisoner-offender-search.prisoner.released=true",
       "feature.event.prisoner-offender-search.prisoner.updated=true",
       "feature.cancel.instance.priority.change.enabled=true",
+      "feature.jobs.sqs.enabled=true",
     ],
   )
   @Nested

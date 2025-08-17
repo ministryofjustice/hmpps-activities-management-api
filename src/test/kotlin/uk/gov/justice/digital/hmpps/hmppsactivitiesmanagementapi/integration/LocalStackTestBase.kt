@@ -27,8 +27,10 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
   lateinit var hmppsQueueService: HmppsQueueService
 
   protected val activitiesQueue by lazy { hmppsQueueService.findByQueueId("activities") as HmppsQueue }
-
   protected val activitiesClient by lazy { activitiesQueue.sqsClient }
+
+  protected val jobsQueue by lazy { hmppsQueueService.findByQueueId("activitiesmanagementjobs") as HmppsQueue }
+  protected val jobsClient by lazy { jobsQueue.sqsClient }
 
   companion object {
     internal val localStackContainer = LocalStackContainer.instance
@@ -41,15 +43,24 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
   }
 
   @BeforeEach
-  fun `clear queue`() {
+  fun `clear queues`() {
     Awaitility.setDefaultPollDelay(1, TimeUnit.MILLISECONDS)
     Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS)
+
     activitiesClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(activitiesQueue.queueUrl).build()).get()
-    await untilCallTo { countAllMessagesOnQueue() } matches { it == 0 }
+
+    jobsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(jobsQueue.queueUrl).build()).get()
+
+    await untilCallTo {
+      countMessagesOnActivitiesQueue() + countMessagesOnJobsQueue()
+    } matches { it == 0 }
+
     Awaitility.setDefaultPollInterval(50, TimeUnit.MILLISECONDS)
   }
 
-  protected fun countAllMessagesOnQueue(): Int = activitiesClient.countAllMessagesOnQueue(activitiesQueue.queueUrl).get()
+  protected fun countMessagesOnActivitiesQueue(): Int = activitiesClient.countAllMessagesOnQueue(activitiesQueue.queueUrl).get()
+
+  protected fun countMessagesOnJobsQueue(): Int = jobsClient.countAllMessagesOnQueue(jobsQueue.queueUrl).get()
 
   protected fun sendInboundEvent(event: InboundEvent) {
     val sqsMessage = SQSMessage("Notification", mapper.writeValueAsString(event))

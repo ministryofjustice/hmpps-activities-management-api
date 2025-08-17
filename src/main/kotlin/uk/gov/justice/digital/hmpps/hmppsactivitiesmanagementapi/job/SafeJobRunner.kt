@@ -52,6 +52,22 @@ class SafeJobRunner(
 
     log.info("JOB: Time taken for job ${jobDefinition.jobType} ${elapsed}ms with job id '${job.jobId}'")
   }
+
+  fun runDistributedJob(jobType: JobType, block: (Job) -> Unit) {
+    val job = jobRepository.saveAndFlush(Job(jobType = jobType))
+
+    log.info("JOB: Starting distributed job $jobType with job id '${job.jobId}'")
+
+    runCatching {
+      block(job)
+    }
+      .onFailure {
+        log.error("JOB: Failed to start distributed job $jobType with job id '${job.jobId}'", it)
+        jobRepository.saveAndFlush(job.failed()).also { failedJob ->
+          monitoringService.capture("Failed to start distributed job '${failedJob.jobType}' with job id '${failedJob.jobId}'")
+        }
+      }
+  }
 }
 
 data class JobDefinition(val jobType: JobType, val block: () -> Unit)

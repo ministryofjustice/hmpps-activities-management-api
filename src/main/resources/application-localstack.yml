@@ -8,9 +8,9 @@ spring:
     locations: classpath:/migrations/common,classpath:/migrations/dev
 
   datasource:
-    url: 'jdbc:postgresql://localhost/activities-management-db?sslmode=prefer'
-    username: 'activities-management'
-    password: 'activities-management'
+    url: 'jdbc:postgresql://${DB_SERVER}/${DB_NAME}?sslmode=${DB_SSL_MODE}'
+    username: ${DB_USER}
+    password: ${DB_PASS}
 
   jpa:
     show-sql: true
@@ -29,16 +29,16 @@ system:
 # Container-provider local auth server
 hmpps:
   auth:
-    url: http://localhost:8090/auth
+    url: https://sign-in-dev.hmpps.service.justice.gov.uk/auth
 
 prison:
   api:
-    url: http://localhost:8091
+    url: https://prison-api-dev.prison.service.justice.gov.uk
     timeout: 10s
 
 prisoner-search:
   api:
-    url: http://localhost:8092
+    url: https://prisoner-search-dev.prison.service.justice.gov.uk
     timeout: 10s
 
 case-notes:
@@ -54,6 +54,11 @@ non-associations:
 incentives:
   api:
     url: https://incentives-api-dev.hmpps.service.justice.gov.uk
+    timeout: 10s
+
+manage.adjudications:
+  api:
+    url: https://manage-adjudications-api-dev.hmpps.service.justice.gov.uk
     timeout: 10s
 
 locations-inside-prison:
@@ -80,6 +85,7 @@ applications:
 
 hmpps.sqs:
   provider: localstack
+  localstackUrl: http://localhost:14566
   queues:
     activities:
       queueName: activities-queue
@@ -101,6 +107,9 @@ hmpps.sqs:
     updatefromexternalsystemevents:
       queueName: ${random.uuid}
       dlqName: ${random.uuid}
+    activitiesmanagementjobs:
+      queueName:  ${random.uuid}
+      dlqName:  ${random.uuid}
   topics:
     domainevents:
       arn: arn:aws:sns:eu-west-2:000000000000:domainevents-topic
@@ -120,9 +129,23 @@ feature:
     activities:
       prisoner:
         allocation-amended: true
+      activity-schedule:
+        amended: true
+  jobs.sqs.enabled: true
+
+
+migrate:
+  ACTIVITIES_LIVE: RSI,LEI
+  APPOINTMENTS_LIVE: RSI,LEI
+  PRISONS_LIVE: RSI
+
+prison-locations:
+  PRISONS_WITH_REGEX_LOCATION_CONFIGS: RSI,BCI,CDI,EYI,FNI,HEI,MDI,NHI,WNI,IWI,LHI,RNI,WLI,WEI,WRI
 
 aws:
   s3:
     ap:
       bucket: default-localstack-bucket
       project: default-localstack-project
+  sqs:
+    endpoint: https://sqs.localhost.localstack.cloud:4567/

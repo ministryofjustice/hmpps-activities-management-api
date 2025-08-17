@@ -1,5 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.within
@@ -10,6 +13,7 @@ import java.time.temporal.ChronoUnit
 class JobTest {
 
   private val start = LocalDateTime.MIN
+  val mapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   @Test
   fun `successful job`() {
@@ -42,5 +46,20 @@ class JobTest {
       assertThatThrownBy { failed() }.isInstanceOf(IllegalStateException::class.java)
         .hasMessage("Job is already ended.")
     }
+  }
+
+  @Test
+  fun `should return ScheduleInstancesJobEvent`() {
+    val event = JobType.SCHEDULES.toJobEvent(mapper, mapOf("prisonCode" to "RSI"))
+
+    assertThat(event).isEqualTo(ScheduleInstancesJobEvent("RSI"))
+  }
+
+  @Test
+  fun `should throw an exception if toJobEvent is not implemented`() {
+    assertThatThrownBy {
+      JobType.ATTENDANCE_CREATE.toJobEvent(mapper, mapOf("prisonCode" to "RSI"))
+    }.isInstanceOf(UnsupportedOperationException::class.java)
+      .hasMessage("Job type ATTENDANCE_CREATE cannot be converted currently")
   }
 }
