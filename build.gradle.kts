@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.5"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.6"
   kotlin("plugin.spring") version "2.2.10"
   kotlin("plugin.jpa") version "2.2.10"
   jacoco
@@ -32,7 +32,7 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-  implementation("org.springframework.data:spring-data-envers:3.5.2")
+  implementation("org.springframework.data:spring-data-envers:3.5.3")
   implementation("uk.gov.justice.service.hmpps:hmpps-sqs-spring-boot-starter:5.4.10")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2")
@@ -42,7 +42,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.18.1")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.19.0")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.18")
+  implementation("aws.sdk.kotlin:s3:1.5.19")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
