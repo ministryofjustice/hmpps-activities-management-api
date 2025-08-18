@@ -113,9 +113,9 @@ generic-service:
     sqs-update-from-external-system-events-dlq-secret:
       HMPPS_SQS_QUEUES_UPDATEFROMEXTERNALSYSTEMEVENTS_DLQ_NAME: "sqs_queue_name"
     sqs-activities-management-jobs-queue-secret:
-      HMPPS_SQS_QUEUES_activitiesmanagementjobs_QUEUE_NAME: "sqs_queue_name"
+      HMPPS_SQS_QUEUES_ACTIVITIESMANAGEMENTJOBS_QUEUE_NAME: "sqs_queue_name"
     sqs-activities-management-jobs-dlq-secret:
-      HMPPS_SQS_QUEUES_activitiesmanagementjobs_DLQ_NAME: "sqs_queue_name"
+      HMPPS_SQS_QUEUES_ACTIVITIESMANAGEMENTJOBS_DLQ_NAME: "sqs_queue_name"
 
   allowlist:
     ark-nps-hmcts-ttp1: 195.59.75.0/24
