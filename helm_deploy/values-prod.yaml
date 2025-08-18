@@ -54,6 +54,11 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service
+  sqsAlertsQueueNames:
+    - "activities-and-appointments-prod-hmpps_activities_management_jobs_queue"
+    - "activities-and-appointments-prod-hmpps_activities_management_jobs_dlq"
+  sqsAlertsOldestThreshold: 1
+  sqsAlertsTotalMessagesThreshold: 1
 
 cron:
   fixZeroPayDeallocate: "0 22 27 05 *"
