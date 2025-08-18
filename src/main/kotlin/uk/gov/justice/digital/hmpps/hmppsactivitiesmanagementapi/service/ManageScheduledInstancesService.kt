@@ -7,6 +7,11 @@ import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduleInstancesJobEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobEventMessage
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -22,6 +27,8 @@ class ManageScheduledInstancesService(
   private val transactionHandler: CreateInstanceTransactionHandler,
   private val outboundEventsService: OutboundEventsService,
   private val monitoringService: MonitoringService,
+  private val jobsSqsService: JobsSqsService,
+  private val jobService: JobService,
   @Value("\${jobs.create-scheduled-instances.days-in-advance}") private val daysInAdvance: Long? = 0L,
   private val clock: Clock,
 ) {
@@ -33,23 +40,61 @@ class ManageScheduledInstancesService(
   fun create() {
     val today = LocalDate.now(clock)
     val endDay = today.plusDays(daysInAdvance!!)
-    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
-    log.info("Scheduling activities job running - from $today until $endDay")
+
+    log.info("Scheduled instances job running from $today until $endDay")
 
     rolloutPrisonService.getRolloutPrisons()
       .forEach { prison ->
-        log.info("Scheduling activities for prison ${prison.prisonCode} until $endDay")
-        val activities = activityRepository.getBasicForPrisonBetweenDates(prison.prisonCode, today, endDay)
-        activities.mapNotNull { basic ->
-          continueToRunOnFailure(
-            block = { transactionHandler.createInstancesForActivitySchedule(basic.activityScheduleId, listOfDatesToSchedule) },
-            success = "Scheduled instances for ${prison.prisonCode} ${basic.summary}",
-            failure = "Failed to schedule instances for ${prison.prisonCode} ${basic.summary}",
-          )
-        }.forEach { updatedScheduledId ->
-          outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduledId)
-        }
+        createSchedules(prison.prisonCode)
       }
+  }
+
+  fun sendCreateSchedulesEvents(job: Job) {
+    val today = LocalDate.now(clock)
+    val endDay = today.plusDays(daysInAdvance!!)
+
+    val rolloutPrisons = rolloutPrisonService.getRolloutPrisons()
+
+    log.info("Sending scheduled instances job events for ${rolloutPrisons.count()} prisons for dates from from $today until $endDay")
+
+    jobService.initialiseCounts(job.jobId, rolloutPrisons.count())
+
+    rolloutPrisons.forEach { prison ->
+      val event = JobEventMessage(
+        jobId = job.jobId,
+        eventType = JobType.SCHEDULES,
+        messageAttributes = ScheduleInstancesJobEvent(prison.prisonCode),
+      )
+
+      jobsSqsService.sendJobEvent(event)
+    }
+  }
+
+  fun handleCreateSchedulesEvent(jobId: Long, prisonCode: String) {
+    createSchedules(prisonCode)
+
+    log.debug("Marking create schedule instances sub-task complete for $prisonCode")
+
+    jobService.incrementCount(jobId)
+  }
+
+  private fun createSchedules(prisonCode: String) {
+    val today = LocalDate.now(clock)
+    val endDay = today.plusDays(daysInAdvance!!)
+    val listOfDatesToSchedule = today.datesUntil(endDay).toList()
+
+    log.info("Creating schedules for prison $prisonCode from $today until $endDay")
+
+    val activities = activityRepository.getBasicForPrisonBetweenDates(prisonCode, today, endDay)
+    activities.mapNotNull { basic ->
+      continueToRunOnFailure(
+        block = { transactionHandler.createInstancesForActivitySchedule(basic.activityScheduleId, listOfDatesToSchedule) },
+        success = "Scheduled instances for $prisonCode ${basic.summary}",
+        failure = "Failed to schedule instances for $prisonCode ${basic.summary}",
+      )
+    }.forEach { updatedScheduledId ->
+      outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduledId)
+    }
   }
 
   private fun <R> continueToRunOnFailure(block: () -> R?, success: String, failure: String) = runCatching { block() }.onSuccess { log.info(success) }.onFailure {
