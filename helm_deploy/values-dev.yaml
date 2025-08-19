@@ -44,6 +44,12 @@ generic-service:
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: digital-prison-service-dev
+  businessHoursOnly: true
+  sqsAlertsQueueNames:
+    - "activities-and-appointments-dev-hmpps_activities_management_jobs_queue"
+    - "activities-and-appointments-dev-hmpps_activities_management_jobs_dlq"
+  sqsAlertsOldestThreshold: 1
+  sqsAlertsTotalMessagesThreshold: 1
 
 # We are overriding the times in development due to core service dependencies being switched off overnight e.g. prisoner search API.
 cron:
