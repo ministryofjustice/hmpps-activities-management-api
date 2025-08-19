@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -47,7 +46,7 @@ class ActivityCategoryControllerTest : ControllerTestBase<ActivityCategoryContro
 
     assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-    verify(activityCategoryRepository, times(1)).findAll()
+    verify(activityCategoryRepository).findAll()
   }
 
   @Nested

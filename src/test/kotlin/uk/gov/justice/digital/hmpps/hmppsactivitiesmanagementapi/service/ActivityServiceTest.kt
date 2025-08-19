@@ -647,7 +647,7 @@ class ActivityServiceTest {
       .isInstanceOf(EntityNotFoundException::class.java)
       .hasMessage("Activity 1 not found")
 
-    verify(activityRepository, times(1)).findById(1)
+    verify(activityRepository).findById(1)
     verify(activityPayHistoryRepository, times(0)).findByActivityOrderByChangedTimeDesc(any())
   }
 
@@ -689,8 +689,8 @@ class ActivityServiceTest {
       service().getActivityPayHistory(1),
     ).isEqualTo(listOf(aprh1.toModel(), aprh2.toModel()))
 
-    verify(activityRepository, times(1)).findById(1)
-    verify(activityPayHistoryRepository, times(1)).findByActivityOrderByChangedTimeDesc(activity)
+    verify(activityRepository).findById(1)
+    verify(activityPayHistoryRepository).findByActivityOrderByChangedTimeDesc(activity)
   }
 
   @Test
@@ -704,8 +704,8 @@ class ActivityServiceTest {
       service().getActivityPayHistory(1),
     ).isEmpty()
 
-    verify(activityRepository, times(1)).findById(1)
-    verify(activityPayHistoryRepository, times(1)).findByActivityOrderByChangedTimeDesc(activity)
+    verify(activityRepository).findById(1)
+    verify(activityPayHistoryRepository).findByActivityOrderByChangedTimeDesc(activity)
   }
 
   @Test
@@ -725,7 +725,7 @@ class ActivityServiceTest {
       ),
     ).isEqualTo(listOf(activitySummary()).toModel())
 
-    verify(activitySummaryRepository, times(1)).findAllByPrisonCode("MDI")
+    verify(activitySummaryRepository).findAllByPrisonCode("MDI")
   }
 
   @Test
@@ -750,7 +750,7 @@ class ActivityServiceTest {
       ).toModel(),
     )
 
-    verify(activitySummaryRepository, times(1)).findAllByPrisonCode("MDI")
+    verify(activitySummaryRepository).findAllByPrisonCode("MDI")
   }
 
   @Test
@@ -763,7 +763,7 @@ class ActivityServiceTest {
 
     assertThat(service().getSchedulesForActivity(1)).isEqualTo(listOf(activitySchedule(activityEntity())).toModelLite())
 
-    verify(activityScheduleRepository, times(1)).getAllByActivity(activity)
+    verify(activityScheduleRepository).getAllByActivity(activity)
   }
 
   @Test

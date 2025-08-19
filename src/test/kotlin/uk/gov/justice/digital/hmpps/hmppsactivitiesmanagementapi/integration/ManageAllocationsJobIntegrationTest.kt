@@ -4,7 +4,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
@@ -231,7 +230,7 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       updatedBy isEqualTo "Activities Management Service"
     }
 
-    verify(hmppsAuditApiClient, times(1)).createEvent(hmppsAuditEventCaptor.capture())
+    verify(hmppsAuditApiClient).createEvent(hmppsAuditEventCaptor.capture())
 
     hmppsAuditEventCaptor.firstValue.what isEqualTo "PRISONER_REMOVED_FROM_WAITING_LIST"
   }
