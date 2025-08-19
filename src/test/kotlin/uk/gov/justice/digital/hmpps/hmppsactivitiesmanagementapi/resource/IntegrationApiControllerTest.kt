@@ -9,7 +9,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.skyscreamer.jsonassert.JSONAssert
@@ -597,7 +596,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
 
       assertThat(response.contentAsString).isEqualTo(mapper.writeValueAsString(expectedModel))
 
-      verify(activityService, times(1)).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
+      verify(activityService).getActivitiesInPrison(MOORLAND_PRISON_CODE, true)
     }
 
     private fun MockMvc.getActivities(prisonCode: String) = get("/integration-api/prison/{prisonCode}/activities", prisonCode)

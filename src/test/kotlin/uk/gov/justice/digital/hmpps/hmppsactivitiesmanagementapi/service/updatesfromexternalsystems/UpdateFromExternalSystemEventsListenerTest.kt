@@ -102,7 +102,7 @@ class UpdateFromExternalSystemEventsListenerTest {
       assertDoesNotThrow {
         updateFromExternalSystemListener.onMessage(message)
       }
-      verify(attendancesService, times(1)).mark(eq("automated-test-client"), any<List<AttendanceUpdateRequest>>())
+      verify(attendancesService).mark(eq("automated-test-client"), any<List<AttendanceUpdateRequest>>())
     }
 
     @Test
@@ -161,7 +161,7 @@ class UpdateFromExternalSystemEventsListenerTest {
       assertDoesNotThrow {
         updateFromExternalSystemListener.onMessage(message)
       }
-      verify(activityScheduleService, times(1)).deallocatePrisoners(
+      verify(activityScheduleService).deallocatePrisoners(
         eq(scheduleId),
         any<PrisonerDeallocationRequest>(),
         eq(who),
@@ -249,7 +249,7 @@ class UpdateFromExternalSystemEventsListenerTest {
       assertDoesNotThrow {
         updateFromExternalSystemListener.onMessage(message)
       }
-      verify(activityScheduleService, times(1)).allocatePrisoner(
+      verify(activityScheduleService).allocatePrisoner(
         eq(scheduleId),
         any<PrisonerAllocationRequest>(),
         eq(who),

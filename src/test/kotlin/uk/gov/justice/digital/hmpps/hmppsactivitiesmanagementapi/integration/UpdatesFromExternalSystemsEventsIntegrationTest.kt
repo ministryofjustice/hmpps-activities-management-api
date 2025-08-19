@@ -200,7 +200,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
 
       await untilAsserted {
-        verify(attendancesService, times(1)).mark(
+        verify(attendancesService).mark(
           "automated-test-client",
           listOf(
             AttendanceUpdateRequest(
@@ -308,7 +308,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
 
       await untilAsserted {
-        verify(activityScheduleService, times(1)).deallocatePrisoners(
+        verify(activityScheduleService).deallocatePrisoners(
           scheduleId,
           request = PrisonerDeallocationRequest(
             prisonerNumbers = listOf(prisonerNumber),
@@ -448,7 +448,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       await untilCallTo { getNumberOfMessagesCurrentlyOnDlq() } matches { it == 0 }
 
       await untilAsserted {
-        verify(activityScheduleService, times(1)).allocatePrisoner(
+        verify(activityScheduleService).allocatePrisoner(
           scheduleId,
           request = PrisonerAllocationRequest(
             prisonerNumber = prisonerNumber,

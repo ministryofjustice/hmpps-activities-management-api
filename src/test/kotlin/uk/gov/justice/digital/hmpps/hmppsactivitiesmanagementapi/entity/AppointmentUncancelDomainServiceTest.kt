@@ -245,7 +245,7 @@ class AppointmentUncancelDomainServiceTest {
     verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
-    verify(appointmentSeriesMock, times(1)).uncancel(now, "TEST.USER")
+    verify(appointmentSeriesMock).uncancel(now, "TEST.USER")
   }
 
   @Test
@@ -293,7 +293,7 @@ class AppointmentUncancelDomainServiceTest {
     verify(outboundEventsService, times(12)).send(eq(OutboundEvent.APPOINTMENT_INSTANCE_UNCANCELLED), any(), eq(null))
     verifyNoMoreInteractions(outboundEventsService)
 
-    verify(appointmentSeriesMock, times(1)).uncancel(now, "TEST.USER")
+    verify(appointmentSeriesMock).uncancel(now, "TEST.USER")
   }
 
   @Test
