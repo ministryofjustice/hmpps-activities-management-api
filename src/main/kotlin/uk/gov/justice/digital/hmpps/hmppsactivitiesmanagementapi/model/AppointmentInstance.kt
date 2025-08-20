@@ -101,7 +101,9 @@ data class AppointmentInstance(
     Will be null if in cell = true
     """,
     example = "123",
+    deprecated = true,
   )
+  @Deprecated("Will be removed - use dpsLocationId instead")
   val internalLocationId: Long?,
 
   @Schema(description = "The optional DPS location UUID for this appointment", example = "b7602cc8-e769-4cbb-8194-62d8e655992a")
