@@ -45,7 +45,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.19.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.10")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.1.0") {
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.21")
+  implementation("aws.sdk.kotlin:s3:1.5.22")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
@@ -69,8 +69,8 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-testcontainers")
   testImplementation("org.testcontainers:postgresql")
   testImplementation("org.testcontainers:localstack:1.21.3")
-  testImplementation("io.jsonwebtoken:jjwt-impl:0.12.7")
-  testImplementation("io.jsonwebtoken:jjwt-jackson:0.12.7")
+  testImplementation("io.jsonwebtoken:jjwt-impl:0.13.0")
+  testImplementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
   testImplementation("org.mockito:mockito-inline:5.2.0")
   testImplementation("net.javacrumbs.json-unit:json-unit:4.1.1")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:4.1.1")
