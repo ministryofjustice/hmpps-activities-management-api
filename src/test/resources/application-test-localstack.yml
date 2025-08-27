@@ -98,48 +98,21 @@ hmpps.sqs:
   provider: localstack
   queues:
     activities:
-      queueName: activities
-      dlqName: activities_dlq
+      queueName: ${random.uuid}
+      dlqName: ${random.uuid}
       subscribeTopicId: inboundtopic
     activitiesmanagementjobs:
-      queueName: activitiesmanagementjobs
-      dlqName: activitiesmanagementjobs_dlq
+      queueName: ${random.uuid}
+      dlqName: ${random.uuid}
     updatefromexternalsystemevents:
       queueName: ${random.uuid}
       dlqName: ${random.uuid}
   topics:
     inboundtopic:
-      arn: arn:aws:sns:eu-west-2:000000000000:inboundtopic
+      arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
 
 aws:
   s3:
     ap:
       bucket: defaultbucket
       project: dummy-project
-
-feature:
-  audit.service:
-    hmpps.enabled: true
-    local.enabled: true
-  event:
-    activities:
-      activity-schedule.amended: true
-      prisoner:
-        allocated: true
-        allocation-amended: true
-        attendance-amended: true
-        attendance-created: true
-        attendance-deleted: true
-    prison-offender-events.prisoner.merged: true
-    prison-offender-events.prisoner:
-      activities-changed: true
-      appointments-changed: true
-      merged: true
-    prisoner-offender-search.prisoner:
-      alerts-updated: true
-      received: true
-      released: true
-      updated: true
-    sns.enabled: true
-  jobs.sqs.enabled: true
-  offender.merge.enabled: true

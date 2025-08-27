@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduleInstancesJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobEventMessage
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PrisonCodeJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
@@ -63,14 +63,14 @@ class ManageScheduledInstancesService(
       val event = JobEventMessage(
         jobId = job.jobId,
         eventType = JobType.SCHEDULES,
-        messageAttributes = ScheduleInstancesJobEvent(prison.prisonCode),
+        messageAttributes = PrisonCodeJobEvent(prison.prisonCode),
       )
 
       jobsSqsService.sendJobEvent(event)
     }
   }
 
-  fun handleCreateSchedulesEvent(jobId: Long, prisonCode: String) {
+  fun handleEvent(jobId: Long, prisonCode: String) {
     createSchedules(prisonCode)
 
     log.debug("Marking create schedule instances sub-task complete for $prisonCode")
@@ -89,8 +89,8 @@ class ManageScheduledInstancesService(
     activities.mapNotNull { basic ->
       continueToRunOnFailure(
         block = { transactionHandler.createInstancesForActivitySchedule(basic.activityScheduleId, listOfDatesToSchedule) },
-        success = "Scheduled instances for $prisonCode ${basic.summary}",
-        failure = "Failed to schedule instances for $prisonCode ${basic.summary}",
+        success = "Created scheduled instances for $prisonCode '${basic.summary}'",
+        failure = "Failed to create scheduled instances for $prisonCode '${basic.summary}'",
       )
     }.forEach { updatedScheduledId ->
       outboundEventsService.send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, updatedScheduledId)

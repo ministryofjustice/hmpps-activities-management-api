@@ -7,6 +7,7 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -20,6 +21,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.DayOfWeek
 import java.time.LocalDate
 
+@TestPropertySource(
+  properties = [
+    "feature.events.sns.enabled=true",
+    "feature.event.activities.activity-schedule.amended=true",
+    "feature.jobs.sqs.schedules.enabled=true",
+  ],
+)
 class CreateScheduledInstancesJobSqsIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean

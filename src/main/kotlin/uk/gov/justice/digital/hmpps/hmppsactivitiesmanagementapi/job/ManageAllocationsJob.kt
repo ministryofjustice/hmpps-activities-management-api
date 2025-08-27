@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.daysAgo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.rangeTo
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
@@ -14,9 +14,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 class ManageAllocationsJob(
   private val rolloutPrisonService: RolloutPrisonService,
   private val service: ManageAllocationsService,
+  private val manageAllocationsDueToEndService: ManageAllocationsDueToEndService,
   private val jobRunner: SafeJobRunner,
-  @Value("\${jobs.deallocate-allocations-ending.days-start}") private val deallocateDaysStart: Int = 3,
+  featureSwitches: FeatureSwitches,
 ) {
+  private val sqsEnabledForDeallocateEnding = featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATED_ENDING_ENABLED)
 
   @Async("asyncExecutor")
   fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false) {
@@ -45,16 +47,13 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocateEnding) {
-      jobRunner.runJobWithRetry(
-        JobDefinition(jobType = JobType.DEALLOCATE_ENDING) {
-          val startDate = deallocateDaysStart.daysAgo()
-          val endDate = 1.daysAgo()
-
-          getRolledOutPrisonCodes().forEach { prisonCode ->
-            startDate.rangeTo(endDate).forEach { service.endAllocationsDueToEnd(prisonCode, it) }
-          }
-        },
-      )
+      if (sqsEnabledForDeallocateEnding) {
+        jobRunner.runDistributedJob(JobType.SCHEDULES, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
+      } else {
+        jobRunner.runJobWithRetry(
+          JobDefinition(jobType = JobType.DEALLOCATE_ENDING) { manageAllocationsDueToEndService.endAllocationsDueToEnd() },
+        )
+      }
     }
 
     if (withDeallocateExpiring) {

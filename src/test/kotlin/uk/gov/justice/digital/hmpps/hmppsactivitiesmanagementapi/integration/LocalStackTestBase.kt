@@ -20,13 +20,14 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.countAllMessagesOnQueue
 import java.util.concurrent.TimeUnit
 
-@ActiveProfiles("test-local-stack", inheritProfiles = false)
+@ActiveProfiles("test-localstack", inheritProfiles = false)
 abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
 
   @Autowired
   lateinit var hmppsQueueService: HmppsQueueService
 
   protected val activitiesQueue by lazy { hmppsQueueService.findByQueueId("activities") as HmppsQueue }
+  protected val activitiesQueueUrl by lazy { activitiesQueue.queueUrl }
   protected val activitiesClient by lazy { activitiesQueue.sqsClient }
 
   protected val jobsQueue by lazy { hmppsQueueService.findByQueueId("activitiesmanagementjobs") as HmppsQueue }
@@ -67,7 +68,7 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
 
     activitiesQueue.sqsClient.sendMessage(
       SendMessageRequest.builder()
-        .queueUrl("activities")
+        .queueUrl(activitiesQueueUrl)
         .messageBody(mapper.writeValueAsString(sqsMessage))
         .build(),
     )

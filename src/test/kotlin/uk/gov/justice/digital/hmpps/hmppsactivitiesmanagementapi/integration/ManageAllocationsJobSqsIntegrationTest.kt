@@ -42,11 +42,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -58,22 +60,28 @@ import java.time.ZoneOffset
     "feature.audit.service.local.enabled=true",
     "feature.audit.service.hmpps.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
+    "feature.jobs.sqs.deallocate.ending.enabled=true",
   ],
 )
-@Deprecated("Remove when scheduled instances job always uses SQS")
-class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
+class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
+
+  @MockitoBean
+  lateinit var outboundEventsService: OutboundEventsService
 
   @MockitoBean
   private lateinit var clock: Clock
-
-  @MockitoBean
-  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
+
+  @Autowired
+  private lateinit var jobRepository: JobRepository
+
+  @Autowired
+  private lateinit var rolloutPrisonService: RolloutPrisonService
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -116,6 +124,13 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     webTestClient.checkAdvanceAttendanceDoesNotExist(1)
+
+    jobRepository.findAll().first().let {
+      assertThat(it.successful).isTrue()
+      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
+      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
+      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
+    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
@@ -139,6 +154,13 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       prisoner("A22222A") isDeallocatedWithReason ENDED
       prisoner("A33333A") isStatus ACTIVE
     }
+
+    jobRepository.findAll().first().let {
+      assertThat(it.successful).isTrue()
+      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
+      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
+      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
+    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-28.sql")
@@ -160,6 +182,13 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       prisoner("A11111A") isStatus ACTIVE
       prisoner("A22222A") isDeallocatedWithReason ENDED
       prisoner("A33333A") isStatus ACTIVE
+    }
+
+    jobRepository.findAll().first().let {
+      assertThat(it.successful).isTrue()
+      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
+      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
+      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
     }
   }
 

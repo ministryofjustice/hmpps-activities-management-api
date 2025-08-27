@@ -15,6 +15,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
@@ -66,6 +67,20 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
+@TestPropertySource(
+  properties = [
+    "feature.audit.service.hmpps.enabled=true",
+    "feature.audit.service.local.enabled=true",
+    "feature.offender.merge.enabled=true",
+    "feature.event.prison-offender-events.prisoner.merged=true",
+    "feature.event.prisoner-offender-search.prisoner.alerts-updated=true",
+    "feature.event.prisoner-offender-search.prisoner.released=true",
+    "feature.event.prison-offender-events.prisoner.activities-changed=true",
+    "feature.event.prison-offender-events.prisoner.appointments-changed=true",
+    "feature.event.prisoner-offender-search.prisoner.received=true",
+    "feature.event.prisoner-offender-search.prisoner.updated=true",
+  ],
+)
 class InboundEventsIntegrationTest : LocalStackTestBase() {
 
   @MockitoBean
