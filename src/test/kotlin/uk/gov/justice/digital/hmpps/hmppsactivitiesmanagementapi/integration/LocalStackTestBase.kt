@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.config.LocalStackContainer
@@ -30,9 +31,6 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
   protected val activitiesQueueUrl by lazy { activitiesQueue.queueUrl }
   protected val activitiesClient by lazy { activitiesQueue.sqsClient }
 
-  protected val jobsQueue by lazy { hmppsQueueService.findByQueueId("activitiesmanagementjobs") as HmppsQueue }
-  protected val jobsClient by lazy { jobsQueue.sqsClient }
-
   companion object {
     internal val localStackContainer = LocalStackContainer.instance
 
@@ -45,23 +43,21 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
 
   @BeforeEach
   fun `clear queues`() {
+    clearQueues(activitiesClient, activitiesQueue)
+  }
+
+  protected fun clearQueues(sqsClient: SqsAsyncClient, queue: HmppsQueue) {
     Awaitility.setDefaultPollDelay(1, TimeUnit.MILLISECONDS)
     Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS)
 
-    activitiesClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(activitiesQueue.queueUrl).build()).get()
+    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.queueUrl).build()).get()
 
-    jobsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(jobsQueue.queueUrl).build()).get()
-
-    await untilCallTo {
-      countMessagesOnActivitiesQueue() + countMessagesOnJobsQueue()
-    } matches { it == 0 }
+    await untilCallTo { sqsClient.countAllMessagesOnQueue(queue.queueUrl).get() } matches { it == 0 }
 
     Awaitility.setDefaultPollInterval(50, TimeUnit.MILLISECONDS)
+
+    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.queueUrl).build()).get()
   }
-
-  protected fun countMessagesOnActivitiesQueue(): Int = activitiesClient.countAllMessagesOnQueue(activitiesQueue.queueUrl).get()
-
-  protected fun countMessagesOnJobsQueue(): Int = jobsClient.countAllMessagesOnQueue(jobsQueue.queueUrl).get()
 
   protected fun sendInboundEvent(event: InboundEvent) {
     val sqsMessage = SQSMessage("Notification", mapper.writeValueAsString(event))
