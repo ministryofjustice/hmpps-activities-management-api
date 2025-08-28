@@ -48,7 +48,7 @@ class ManageAllocationsJob(
 
     if (withDeallocateEnding) {
       if (sqsEnabledForDeallocateEnding) {
-        jobRunner.runDistributedJob(JobType.SCHEDULES, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
+        jobRunner.runDistributedJob(JobType.DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
       } else {
         jobRunner.runJobWithRetry(
           JobDefinition(jobType = JobType.DEALLOCATE_ENDING) { manageAllocationsDueToEndService.endAllocationsDueToEnd() },

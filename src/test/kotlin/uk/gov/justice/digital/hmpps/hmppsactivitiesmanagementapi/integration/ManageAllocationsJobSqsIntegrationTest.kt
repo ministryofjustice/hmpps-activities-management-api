@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -42,13 +43,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqual
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -63,7 +62,7 @@ import java.time.ZoneOffset
     "feature.jobs.sqs.deallocate.ending.enabled=true",
   ],
 )
-class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
+class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
   @MockitoBean
   lateinit var outboundEventsService: OutboundEventsService
@@ -76,12 +75,6 @@ class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
-
-  @Autowired
-  private lateinit var jobRepository: JobRepository
-
-  @Autowired
-  private lateinit var rolloutPrisonService: RolloutPrisonService
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -125,12 +118,7 @@ class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
 
     webTestClient.checkAdvanceAttendanceDoesNotExist(1)
 
-    jobRepository.findAll().first().let {
-      assertThat(it.successful).isTrue()
-      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
-      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
-      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
-    }
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
@@ -155,12 +143,7 @@ class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
       prisoner("A33333A") isStatus ACTIVE
     }
 
-    jobRepository.findAll().first().let {
-      assertThat(it.successful).isTrue()
-      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
-      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
-      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
-    }
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-28.sql")
@@ -184,12 +167,7 @@ class ManageAllocationsJobSqsIntegrationTest : LocalStackTestBase() {
       prisoner("A33333A") isStatus ACTIVE
     }
 
-    jobRepository.findAll().first().let {
-      assertThat(it.successful).isTrue()
-      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
-      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
-      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
-    }
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")

@@ -200,7 +200,7 @@ class WaitingListService(
       "Prisoner ${request.prisonerNumber} has no booking id at prison $prisonCode"
     }
 
-    return prisonerDetails.bookingId.toLong()
+    return prisonerDetails.bookingId!!.toLong()
   }
 
   private fun ActivitySchedule.failIfIsNotInWorkCategory() {
