@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: activities
 
   test-localstack:
-    image: localstack/localstack:3
+    image: localstack/localstack:4
     container_name: activities-test-localstack
     networks:
       - hmpps

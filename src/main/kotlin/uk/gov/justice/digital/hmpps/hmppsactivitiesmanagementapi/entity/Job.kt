@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -52,11 +51,7 @@ data class Job(
   }
 }
 
-interface DefaultJobType {
-  fun toJobEvent(mapper: ObjectMapper, messageAttributes: Map<String, Any?>): JobEvent = throw UnsupportedOperationException("Job type $this cannot be converted currently")
-}
-
-enum class JobType : DefaultJobType {
+enum class JobType {
   ACTIVITIES_METRICS,
   ALLOCATE,
   APPOINTMENTS_METRICS,
@@ -65,9 +60,7 @@ enum class JobType : DefaultJobType {
   DEALLOCATE_ENDING,
   DEALLOCATE_EXPIRING,
   FIX_STUCK_AUTO_SUSPENDED,
-  SCHEDULES {
-    override fun toJobEvent(mapper: ObjectMapper, messageAttributes: Map<String, Any?>): ScheduleInstancesJobEvent = mapper.convertValue(messageAttributes, ScheduleInstancesJobEvent::class.java)
-  },
+  SCHEDULES,
   CREATE_APPOINTMENTS,
   UPDATE_APPOINTMENTS,
   CANCEL_APPOINTMENTS,
@@ -84,9 +77,3 @@ enum class JobType : DefaultJobType {
   FIX_APPOINTMENT_SET_LOCATIONS,
   FIX_APPOINTMENT_LOCATIONS,
 }
-
-interface JobEvent
-
-data class ScheduleInstancesJobEvent(
-  val prisonCode: String,
-) : JobEvent
