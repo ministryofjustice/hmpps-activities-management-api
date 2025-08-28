@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Schema(description = "An overview of attendance details for scheduled instances")
 data class ScheduledInstanceAttendanceSummary(
@@ -68,6 +69,9 @@ data class ScheduledInstanceAttendanceSummary(
 
   @Schema(description = "The NOMIS internal location for this schedule")
   var internalLocation: InternalLocation? = null,
+
+  @Schema(description = "The optional DPS location UUID for this schedule")
+  var dpsLocationId: UUID? = null,
 
   @Schema(description = "Flag to indicate if the scheduled instance has been cancelled", example = "false")
   var cancelled: Boolean,

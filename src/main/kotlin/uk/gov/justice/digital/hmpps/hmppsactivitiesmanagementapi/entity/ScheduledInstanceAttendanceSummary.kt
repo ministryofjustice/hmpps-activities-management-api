@@ -9,6 +9,7 @@ import org.hibernate.annotations.Immutable
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.UUID
 
 @Entity
 @Immutable
@@ -43,6 +44,8 @@ data class ScheduledInstanceAttendanceSummary(
   val offWing: Boolean,
 
   val internalLocationId: Long? = null,
+
+  val dpsLocationId: UUID? = null,
 
   val internalLocationCode: String? = null,
 
