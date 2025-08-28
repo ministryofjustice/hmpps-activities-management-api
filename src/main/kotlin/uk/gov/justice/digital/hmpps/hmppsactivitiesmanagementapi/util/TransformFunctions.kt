@@ -507,6 +507,7 @@ fun ScheduledInstanceAttendanceSummary.toModel() = (
         this.internalLocationDescription!!,
       )
     },
+    dpsLocationId = this.dpsLocationId,
     cancelled = this.cancelled,
     timeSlot = this.timeSlot,
     attendanceSummary = ModelScheduledInstanceAttendanceSummary.AttendanceSummaryDetails(

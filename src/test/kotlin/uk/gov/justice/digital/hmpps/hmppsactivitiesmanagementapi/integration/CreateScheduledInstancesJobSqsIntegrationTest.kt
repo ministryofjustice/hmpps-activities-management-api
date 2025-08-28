@@ -7,32 +7,33 @@ import org.mockito.kotlin.verifyNoMoreInteractions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.queryForObject
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ScheduledInstanceRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-class CreateScheduledInstancesJobSqsIntegrationTest : LocalStackTestBase() {
+@TestPropertySource(
+  properties = [
+    "feature.events.sns.enabled=true",
+    "feature.event.activities.activity-schedule.amended=true",
+    "feature.jobs.sqs.schedules.enabled=true",
+  ],
+)
+class CreateScheduledInstancesJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
   @MockitoBean
   private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var scheduleInstancesRepository: ScheduledInstanceRepository
-
-  @Autowired
-  private lateinit var jobRepository: JobRepository
-
-  @Autowired
-  private lateinit var rolloutPrisonService: RolloutPrisonService
 
   private val today: LocalDate = TimeSource.today()
 
@@ -58,12 +59,7 @@ class CreateScheduledInstancesJobSqsIntegrationTest : LocalStackTestBase() {
     verify(outboundEventsService).send(OutboundEvent.ACTIVITY_SCHEDULE_UPDATED, 2L)
     verifyNoMoreInteractions(outboundEventsService)
 
-    jobRepository.findAll().first().let {
-      assertThat(it.successful).isTrue()
-      val numPrisons = rolloutPrisonService.getRolloutPrisons().count()
-      assertThat(it.totalSubTasks).isEqualTo(numPrisons)
-      assertThat(it.completedSubTasks).isEqualTo(numPrisons)
-    }
+    verifyJobComplete(JobType.SCHEDULES)
   }
 
   @Sql("classpath:test_data/seed-activity-with-old-instances.sql")

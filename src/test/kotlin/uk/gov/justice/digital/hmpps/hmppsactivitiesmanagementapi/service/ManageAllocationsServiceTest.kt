@@ -69,90 +69,6 @@ class ManageAllocationsServiceTest {
   }
 
   @Test
-  fun `deallocate offenders from activity ending today without pending deallocation`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
-
-    allocation.verifyIsEnded()
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `deallocate offenders from activity ending today declines pending or approved waiting lists`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
-
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
-
-    verify(waitingListService).declinePendingOrApprovedApplications(
-      schedule.activity.activityId,
-      "Activity ended",
-      "Activities Management Service",
-    )
-  }
-
-  @Test
-  fun `deallocate offenders from activity ending today with pending deallocation`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = today))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-    allocation.deallocateOn(today, DeallocationReason.OTHER, "by test")
-
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
-
-    allocation.verifyIsEnded(DeallocationReason.OTHER, "by test")
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-  }
-
-  @Test
-  fun `deallocate offenders from activity with no end date and allocation ends today`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
-    val allocation = schedule.allocations().first().apply { endDate = today }.also { it.verifyIsActive() }
-
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
-
-    allocation.verifyIsEnded()
-
-    verify(activityScheduleRepo).saveAndFlush(schedule)
-    verifyNoInteractions(waitingListService)
-  }
-
-  @Test
-  fun `offenders not deallocated from activity with no end date and allocation does not end today`() {
-    val prison = rolloutPrison()
-    val schedule = activitySchedule(activityEntity(startDate = yesterday, endDate = null))
-    val allocation = schedule.allocations().first().also { it.verifyIsActive() }
-
-    whenever(rolloutPrisonService.isActivitiesRolledOutAt(prison.prisonCode)) doReturn true
-    whenever(activityScheduleRepo.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
-
-    service.endAllocationsDueToEnd(prison.prisonCode, LocalDate.now())
-
-    allocation.verifyIsActive()
-
-    verify(activityScheduleRepo, never()).saveAndFlush(any())
-    verifyNoInteractions(waitingListService)
-  }
-
-  @Test
   fun `prisoners are deallocated from allocations pending due to expire`() {
     val prison = rolloutPrison()
     val activity = activityEntity(startDate = TimeSource.tomorrow())
@@ -637,20 +553,6 @@ class ManageAllocationsServiceTest {
   }
 
   private fun prisoner(allocation: Allocation, status: String, prisonCode: String = "MDI"): Prisoner = PrisonerSearchPrisonerFixture.instance(prisonerNumber = allocation.prisonerNumber, status = status, prisonId = prisonCode)
-
-  private fun Allocation.verifyIsActive() {
-    prisonerStatus isEqualTo PrisonerStatus.ACTIVE
-  }
-
-  private fun Allocation.verifyIsEnded(
-    reason: DeallocationReason = DeallocationReason.ENDED,
-    endedBy: String? = "Activities Management Service",
-  ) {
-    prisonerStatus isEqualTo PrisonerStatus.ENDED
-    deallocatedTime!! isCloseTo TimeSource.now()
-    deallocatedReason isEqualTo reason
-    deallocatedBy isEqualTo endedBy
-  }
 
   private fun Allocation.verifyIsExpired() {
     prisonerStatus isEqualTo PrisonerStatus.ENDED

@@ -6,16 +6,18 @@ import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 
 class JobsSqsListenerTest {
   val scheduledInstancesService: ManageScheduledInstancesService = mock()
+  val manageAllocationsService: ManageAllocationsDueToEndService = mock()
   val mapper = jacksonObjectMapper()
 
-  val listener: JobsSqsListener = JobsSqsListener(scheduledInstancesService, mapper)
+  val listener: JobsSqsListener = JobsSqsListener(scheduledInstancesService, manageAllocationsService, mapper)
 
   @Test
-  fun `should handle create schedules event`() {
+  fun `should handle SCHEDULES event`() {
     val rawMessage = """
       {
         "jobId": 123,
@@ -28,7 +30,24 @@ class JobsSqsListenerTest {
 
     listener.onMessage(rawMessage)
 
-    verify(scheduledInstancesService).handleCreateSchedulesEvent(123L, "RSI")
+    verify(scheduledInstancesService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle DEALLOCATE_ENDING event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "DEALLOCATE_ENDING",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(manageAllocationsService).handleEvent(123L, "RSI")
   }
 
   @Test

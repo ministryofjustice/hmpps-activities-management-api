@@ -13,7 +13,7 @@ class CreateScheduledInstancesJob(
   private val jobRunner: SafeJobRunner,
   featureSwitches: FeatureSwitches,
 ) {
-  private val sqsEnabled = featureSwitches.isEnabled(Feature.JOBS_SQS_ENABLED)
+  private val sqsEnabled = featureSwitches.isEnabled(Feature.JOBS_SQS_SCHEDULES_ENABLED)
 
   @Async("asyncExecutor")
   fun execute() {

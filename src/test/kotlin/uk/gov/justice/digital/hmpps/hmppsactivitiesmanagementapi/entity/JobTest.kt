@@ -47,19 +47,4 @@ class JobTest {
         .hasMessage("Job is already ended.")
     }
   }
-
-  @Test
-  fun `should return ScheduleInstancesJobEvent`() {
-    val event = JobType.SCHEDULES.toJobEvent(mapper, mapOf("prisonCode" to "RSI"))
-
-    assertThat(event).isEqualTo(ScheduleInstancesJobEvent("RSI"))
-  }
-
-  @Test
-  fun `should throw an exception if toJobEvent is not implemented`() {
-    assertThatThrownBy {
-      JobType.ATTENDANCE_CREATE.toJobEvent(mapper, mapOf("prisonCode" to "RSI"))
-    }.isInstanceOf(UnsupportedOperationException::class.java)
-      .hasMessage("Job type ATTENDANCE_CREATE cannot be converted currently")
-  }
 }
