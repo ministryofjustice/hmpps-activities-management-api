@@ -660,7 +660,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     await untilAsserted {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
-      appointmentSeries.appointments.map { it.isCancelled() }.distinct().single() isEqualTo true
+
+      appointmentSeries.appointments.count { it.isCancelled() } isEqualTo 4
 
       verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -1153,8 +1154,8 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     await untilAsserted {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
-      appointmentSeries.appointments.map { it.internalLocationId }.distinct().single() isEqualTo 456
-      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo request.dpsLocationId
+
+      appointmentSeries.appointments.count { it.internalLocationId == 456L && it.dpsLocationId == request.dpsLocationId } isEqualTo 4
 
       verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 
@@ -1250,9 +1251,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
 
     await untilAsserted {
       val appointmentSeries = webTestClient.getAppointmentSeriesById(result.id)!!
-      appointmentSeries.appointments.map { it.internalLocationId }.distinct()
-        .single() isEqualTo request.internalLocationId
-      appointmentSeries.appointments.map { it.dpsLocationId }.distinct().single() isEqualTo dpsLocation.id
+      appointmentSeries.appointments.count { it.internalLocationId == request.internalLocationId && it.dpsLocationId == dpsLocation.id } isEqualTo 4
 
       verify(eventsPublisher, times(12)).send(eventCaptor.capture())
 

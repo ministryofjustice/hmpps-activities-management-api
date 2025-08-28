@@ -7,13 +7,16 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduleInstancesJobEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 
 @Profile("!test && !local")
 @Service
 class JobsSqsListener(
   private val scheduledInstancesService: ManageScheduledInstancesService,
+  private val manageAllocationsService: ManageAllocationsDueToEndService,
   private val mapper: ObjectMapper,
 ) {
   companion object {
@@ -26,9 +29,13 @@ class JobsSqsListener(
 
     val sqsMessage = mapper.readValue(rawMessage, SQSMessage::class.java)
 
-    when (val event = sqsMessage.eventType.toJobEvent(mapper, sqsMessage.messageAttributes)) {
-      is ScheduleInstancesJobEvent -> {
-        scheduledInstancesService.handleCreateSchedulesEvent(sqsMessage.jobId, event.prisonCode)
+    when (sqsMessage.eventType) {
+      SCHEDULES -> {
+        scheduledInstancesService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
+      DEALLOCATE_ENDING -> {
+        manageAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
       }
 
       else -> {
@@ -37,6 +44,12 @@ class JobsSqsListener(
       }
     }
   }
+
+  data class SQSMessage(val jobId: Long, val eventType: JobType, val messageAttributes: Map<String, Any?>)
+
+  private fun toPrisonCode(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, PrisonCodeJobEvent::class.java).prisonCode
 }
 
-data class SQSMessage(val jobId: Long, val eventType: JobType, val messageAttributes: Map<String, Any?>)
+interface JobEvent
+
+data class PrisonCodeJobEvent(val prisonCode: String) : JobEvent
