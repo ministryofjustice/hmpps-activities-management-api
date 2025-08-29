@@ -51,8 +51,11 @@ abstract class LocalStackTestBase : ActivitiesIntegrationTestBase() {
     Awaitility.setDefaultPollInterval(10, TimeUnit.MILLISECONDS)
 
     sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.queueUrl).build()).get()
+    sqsClient.purgeQueue(PurgeQueueRequest.builder().queueUrl(queue.dlqUrl).build()).get()
 
-    await untilCallTo { sqsClient.countAllMessagesOnQueue(queue.queueUrl).get() } matches { it == 0 }
+    await untilCallTo {
+      sqsClient.countAllMessagesOnQueue(queue.queueUrl).get() + sqsClient.countAllMessagesOnQueue(queue.dlqUrl!!).get()
+    } matches { it == 0 }
 
     Awaitility.setDefaultPollInterval(50, TimeUnit.MILLISECONDS)
 
