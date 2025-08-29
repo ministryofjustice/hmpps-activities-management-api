@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration
 
 import org.assertj.core.api.Assertions.assertThat
+import org.awaitility.kotlin.await
+import org.awaitility.kotlin.untilAsserted
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.extensions.MovementType
@@ -42,6 +45,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isClose
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
@@ -53,6 +57,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlin.collections.onEach
 
 @TestPropertySource(
   properties = [
@@ -63,6 +68,8 @@ import java.time.ZoneOffset
   ],
 )
 class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
+  @MockitoSpyBean
+  lateinit var activityScheduleRepository: ActivityScheduleRepository
 
   @MockitoBean
   lateinit var outboundEventsService: OutboundEventsService
@@ -97,8 +104,6 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
     }
 
-    webTestClient.retrieveAdvanceAttendance(1)
-
     waitForJobs({ webTestClient.manageAllocations(withDeallocateEnding = true) })
 
     verify(outboundEventsService).send(OutboundEvent.PRISONER_ALLOCATION_AMENDED, 1L)
@@ -119,6 +124,42 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
     webTestClient.checkAdvanceAttendanceDoesNotExist(1)
 
     verifyJobComplete(JobType.DEALLOCATE_ENDING)
+  }
+
+  @Sql("classpath:test_data/seed-activity-id-11.sql")
+  @Test
+  fun `exception occurs when deallocating an allocation due to end and a message ends up on DLQ`() {
+    whenever(activityScheduleRepository.findAllByActivityPrisonCode("PVI")).thenThrow(RuntimeException("Some exception"))
+
+    val activeAllocations = with(allocationRepository.findAll().filterNot(Allocation::isEnded)) {
+      size isEqualTo 3
+      onEach { it isStatus ACTIVE }
+    }
+
+    with(waitingListRepository.findAll()) {
+      size isEqualTo 3
+      none { it.isStatus(ALLOCATED, DECLINED, REMOVED) } isBool true
+    }
+
+    webTestClient.manageAllocations(withDeallocateEnding = true)
+
+    await untilAsserted {
+      val numPrisons = getNumPrisons()
+      assertThat(countMessagesInDlq()).isEqualTo(1)
+      verifyJobIncomplete(JobType.DEALLOCATE_ENDING, numPrisons, numPrisons - 1)
+    }
+
+    verifyNoInteractions(outboundEventsService)
+
+    with(allocationRepository.findAllById(activeAllocations.map { it.allocationId })) {
+      size isEqualTo 3
+      onEach { it.deallocatedBy isEqualTo null }
+    }
+
+    with(waitingListRepository.findAll()) {
+      onEach { it.status isNotEqualTo DECLINED }
+      onEach { it.declinedReason isNotEqualTo "Activity ended" }
+    }
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
