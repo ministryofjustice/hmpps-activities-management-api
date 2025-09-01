@@ -11,7 +11,6 @@ import org.mockito.kotlin.whenever
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduleInstancesJobEvent
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
@@ -34,7 +33,7 @@ class JobsSqsServiceTest {
 
   @Test
   fun `should send job event`() {
-    val message = JobEventMessage(123, JobType.SCHEDULES, ScheduleInstancesJobEvent("RSI"))
+    val message = JobEventMessage(123, JobType.SCHEDULES, PrisonCodeJobEvent("RSI"))
 
     val expectedMessage = SendMessageRequest.builder()
       .queueUrl("queue url")
@@ -48,7 +47,7 @@ class JobsSqsServiceTest {
 
   @Test
   fun `should throw exception if sendMessage failed`() {
-    val message = JobEventMessage(123, JobType.SCHEDULES, ScheduleInstancesJobEvent("RSI"))
+    val message = JobEventMessage(123, JobType.SCHEDULES, PrisonCodeJobEvent("RSI"))
 
     whenever(sqsClient.sendMessage(any<SendMessageRequest>())).thenThrow(RuntimeException("Failed to send message"))
 

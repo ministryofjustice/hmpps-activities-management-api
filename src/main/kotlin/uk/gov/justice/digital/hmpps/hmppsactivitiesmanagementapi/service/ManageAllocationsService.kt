@@ -74,26 +74,6 @@ class ManageAllocationsService(
     }.let(::sendAllocationsAmendedEvents)
   }
 
-  /**
-   * Caution to be used when using the current date. Allocations should be ended at the end of the day.
-   */
-  fun endAllocationsDueToEnd(prisonCode: String, date: LocalDate) {
-    require(rolloutPrisonService.isActivitiesRolledOutAt(prisonCode)) {
-      "Supplied prison $prisonCode is not rolled out."
-    }
-
-    transactionHandler.newSpringTransaction {
-      activityScheduleRepository.findAllByActivityPrisonCode(prisonCode).flatMap { schedule ->
-        if (schedule.endsOn(date)) {
-          declineWaitingListsFor(schedule)
-          schedule.deallocateAllocationsForScheduleEndingOn(date)
-        } else {
-          schedule.deallocateAllocationsEndingOn(date)
-        }.also { allocationIds -> allocationIds.ifNotEmpty { activityScheduleRepository.saveAndFlush(schedule) } }
-      }
-    }.let(::sendAllocationsAmendedEvents)
-  }
-
   fun fixPrisonersIncorrectlyAutoSuspended() {
     allocationRepository.findActiveAllocations(PrisonerStatus.AUTO_SUSPENDED)
       .groupBy { it.prisonerNumber }
@@ -115,21 +95,6 @@ class ManageAllocationsService(
         }
       }
   }
-
-  private fun declineWaitingListsFor(schedule: ActivitySchedule) {
-    waitingListService.declinePendingOrApprovedApplications(
-      schedule.activity.activityId,
-      "Activity ended",
-      ServiceName.SERVICE_NAME.value,
-    )
-  }
-
-  private fun ActivitySchedule.deallocateAllocationsForScheduleEndingOn(date: LocalDate) = allocations(excludeEnded = true).onEach { allocation -> allocation.deallocateNowOn(date) }.map(Allocation::allocationId)
-
-  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) = allocations(true)
-    .filter { activeAllocation -> activeAllocation.endsOn(date) }
-    .onEach { allocation -> allocation.deallocateNowOn(date) }
-    .map(Allocation::allocationId)
 
   /*
    * We can consider pending allocations before today in the event we need to (re)run due to something out of our control

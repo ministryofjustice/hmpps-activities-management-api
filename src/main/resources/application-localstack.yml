@@ -131,8 +131,9 @@ feature:
         allocation-amended: true
       activity-schedule:
         amended: true
-  jobs.sqs.enabled: true
-
+  jobs.sqs:
+    schedules.enabled: true
+    deallocate.ending.enabled: true
 
 migrate:
   ACTIVITIES_LIVE: RSI,LEI

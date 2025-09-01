@@ -22,6 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Attendan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.ENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.DeallocationReason.TEMPORARILY_RELEASED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.ACTIVE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerStatus.AUTO_SUSPENDED
@@ -58,16 +59,16 @@ import java.time.ZoneOffset
     "feature.audit.service.local.enabled=true",
     "feature.audit.service.hmpps.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
+    "feature.jobs.sqs.deallocate.ending.enabled=true",
   ],
 )
-@Deprecated("Remove when scheduled instances job always uses SQS")
-class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
+class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
+
+  @MockitoBean
+  lateinit var outboundEventsService: OutboundEventsService
 
   @MockitoBean
   private lateinit var clock: Clock
-
-  @MockitoBean
-  private lateinit var outboundEventsService: OutboundEventsService
 
   @Autowired
   private lateinit var allocationRepository: AllocationRepository
@@ -116,6 +117,8 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
     }
 
     webTestClient.checkAdvanceAttendanceDoesNotExist(1)
+
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-12.sql")
@@ -139,6 +142,8 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       prisoner("A22222A") isDeallocatedWithReason ENDED
       prisoner("A33333A") isStatus ACTIVE
     }
+
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-activity-id-28.sql")
@@ -161,6 +166,8 @@ class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
       prisoner("A22222A") isDeallocatedWithReason ENDED
       prisoner("A33333A") isStatus ACTIVE
     }
+
+    verifyJobComplete(JobType.DEALLOCATE_ENDING)
   }
 
   @Sql("classpath:test_data/seed-allocations-due-to-expire.sql")

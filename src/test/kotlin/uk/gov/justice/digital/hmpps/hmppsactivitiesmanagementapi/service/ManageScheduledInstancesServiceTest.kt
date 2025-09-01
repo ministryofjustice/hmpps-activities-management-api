@@ -25,11 +25,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Activity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ActivityScheduleSuspension
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduleInstancesJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activitySchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobEventMessage
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PrisonCodeJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
@@ -259,9 +259,9 @@ class ManageScheduledInstancesServiceTest {
       Clock.systemDefaultZone(),
     ).create()
 
-    verify(monitoringService).capture("Failed to schedule instances for MDI A", exception)
-    verify(monitoringService).capture("Failed to schedule instances for MDI B", exception)
-    verify(monitoringService).capture("Failed to schedule instances for MDI C", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'A'", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'B'", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'C'", exception)
   }
 
   @Test
@@ -271,12 +271,12 @@ class ManageScheduledInstancesServiceTest {
     verify(jobService).initialiseCounts(123, rolledOutPrisons.count())
 
     rolledOutPrisons.forEach {
-      verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.SCHEDULES, ScheduleInstancesJobEvent(it.prisonCode)))
+      verify(jobsSqsService).sendJobEvent(JobEventMessage(123, JobType.SCHEDULES, PrisonCodeJobEvent(it.prisonCode)))
     }
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - schedules 3 session instances`() {
+  fun `handleEvent - schedules 3 session instances`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday)).thenReturn(moorlandBasic)
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today, null))
@@ -288,7 +288,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(3L, today, null))
       .thenReturn(moorlandActivities().last().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
 
@@ -309,14 +309,14 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - can schedule multiple slots for the same day`() {
+  fun `handleEvent - can schedule multiple slots for the same day`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicWithMultipleSlots)
 
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithMultipleSlots().first().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -334,7 +334,7 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - does not schedule an activity instance today when one exists for today`() {
+  fun `handleEvent - does not schedule an activity instance today when one exists for today`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicWithExistingInstance)
 
@@ -344,7 +344,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithExistingInstance().first().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -352,7 +352,7 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - does schedule an instance even when it has an active suspension`() {
+  fun `handleEvent - does schedule an instance even when it has an active suspension`() {
     // There is no UI way to configure planned suspensions so for now we will schedule whether suspended or not
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicWithSuspension)
@@ -363,7 +363,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityWithSuspension().first().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -376,7 +376,7 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - does not schedule an instance on a bank holiday when the activity does not run on bank holidays`() {
+  fun `handleEvent - does not schedule an instance on a bank holiday when the activity does not run on bank holidays`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicNotBankHoliday)
 
@@ -386,7 +386,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityDoesNotRunOnABankHoliday().first().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -394,7 +394,7 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - schedules an instance on a bank holiday if activity runs on a bank holiday`() {
+  fun `handleEvent - schedules an instance on a bank holiday if activity runs on a bank holiday`() {
     whenever(activityRepository.getBasicForPrisonBetweenDates("MDI", today, weekFromToday))
       .thenReturn(moorlandBasicBankHoliday)
 
@@ -404,7 +404,7 @@ class ManageScheduledInstancesServiceTest {
     whenever(activityScheduleRepository.getActivityScheduleByIdWithFilters(1L, today))
       .thenReturn(activityRunsOnABankHoliday().first().schedules().first())
 
-    job.handleCreateSchedulesEvent(123, "MDI")
+    job.handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
     verify(activityScheduleRepository).getActivityScheduleByIdWithFilters(1L, today)
@@ -418,7 +418,7 @@ class ManageScheduledInstancesServiceTest {
   }
 
   @Test
-  fun `handleCreateSchedulesEvent - should capture failures in monitoring service for any exceptions when creating schedules`() {
+  fun `handleEvent - should capture failures in monitoring service for any exceptions when creating schedules`() {
     val failingTransactionHandler: CreateInstanceTransactionHandler = mock()
     val exception = RuntimeException("Something went wrong")
     doThrow(exception).whenever(failingTransactionHandler).createInstancesForActivitySchedule(any(), any())
@@ -434,12 +434,12 @@ class ManageScheduledInstancesServiceTest {
       jobService,
       7L,
       Clock.systemDefaultZone(),
-    ).handleCreateSchedulesEvent(123, "MDI")
+    ).handleEvent(123, "MDI")
 
     verify(jobService).incrementCount(123)
-    verify(monitoringService).capture("Failed to schedule instances for MDI A", exception)
-    verify(monitoringService).capture("Failed to schedule instances for MDI B", exception)
-    verify(monitoringService).capture("Failed to schedule instances for MDI C", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'A'", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'B'", exception)
+    verify(monitoringService).capture("Failed to create scheduled instances for MDI 'C'", exception)
   }
 
   private fun ArgumentCaptor<ActivitySchedule>.savedSchedules(expectedNumberOfSavedSchedules: Int) = this.allValues.toList().also { assertThat(it).hasSize(expectedNumberOfSavedSchedules) }

@@ -25,7 +25,8 @@ SELECT
     att.attended,
     att.absences,
     att.paid,
-    act.attendance_required
+    act.attendance_required,
+    acts.dps_location_id
 FROM scheduled_instance si
          JOIN activity_schedule acts ON acts.activity_schedule_id = si.activity_schedule_id
          JOIN activity act ON act.activity_id = acts.activity_id
