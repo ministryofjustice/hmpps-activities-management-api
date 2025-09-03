@@ -23,7 +23,7 @@ class JobsSqsListener(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @SqsListener("activitiesmanagementjobs", factory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener("activitiesmanagementjobs", factory = "hmppsQueueContainerFactoryProxy", maxMessagesPerPoll = "6", maxConcurrentMessages = "6")
   internal fun onMessage(rawMessage: String) {
     log.debug("Received raw job event message $rawMessage")
 
