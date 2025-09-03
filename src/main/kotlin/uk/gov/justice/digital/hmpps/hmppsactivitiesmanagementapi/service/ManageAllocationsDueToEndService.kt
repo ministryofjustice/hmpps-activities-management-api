@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobEventMes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PrisonCodeJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
@@ -30,6 +31,7 @@ class ManageAllocationsDueToEndService(
   private val outboundEventsService: OutboundEventsService,
   private val jobsSqsService: JobsSqsService,
   private val jobService: JobService,
+  private val allocationRepository: AllocationRepository,
   @Value("\${jobs.deallocate-allocations-ending.days-start}") private val deallocateDaysStart: Int = 3,
 ) {
 
@@ -102,7 +104,7 @@ class ManageAllocationsDueToEndService(
 
   private fun ActivitySchedule.deallocateAllocationsForScheduleEndingOn(date: LocalDate) = allocations(excludeEnded = true).onEach { allocation -> allocation.deallocateNowOn(date) }.map(Allocation::allocationId)
 
-  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) = allocations(true)
+  private fun ActivitySchedule.deallocateAllocationsEndingOn(date: LocalDate) = allocationRepository.findAllocationsByActivitySchedule(this, true)
     .filter { activeAllocation -> activeAllocation.endsOn(date) }
     .onEach { allocation -> allocation.deallocateNowOn(date) }
     .map(Allocation::allocationId)

@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobEventMes
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.JobsSqsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.PrisonCodeJobEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesServiceTest.Companion.rolledOutPrisons
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
@@ -41,6 +42,7 @@ class ManageAllocationsDueToEndServiceTest {
   private val outboundEventsService: OutboundEventsService = mock()
   private val jobsSqsService: JobsSqsService = mock()
   private val jobService: JobService = mock()
+  private val allocationRepository: AllocationRepository = mock()
 
   private val service =
     ManageAllocationsDueToEndService(
@@ -51,6 +53,7 @@ class ManageAllocationsDueToEndServiceTest {
       outboundEventsService,
       jobsSqsService,
       jobService,
+      allocationRepository,
     )
 
   private val yesterday = LocalDate.now().minusDays(1)
@@ -102,6 +105,7 @@ class ManageAllocationsDueToEndServiceTest {
     allocation.deallocateOn(today, DeallocationReason.OTHER, "by test").plannedDeallocation!!.plannedDate = yesterday
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.endAllocationsDueToEnd()
 
@@ -117,6 +121,7 @@ class ManageAllocationsDueToEndServiceTest {
     val allocation = schedule.allocations().first().apply { endDate = yesterday }.also { it.verifyIsActive() }
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.endAllocationsDueToEnd()
 
@@ -133,6 +138,7 @@ class ManageAllocationsDueToEndServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.endAllocationsDueToEnd()
 
@@ -159,6 +165,7 @@ class ManageAllocationsDueToEndServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.handleEvent(123, MOORLAND_PRISON_CODE)
 
@@ -191,6 +198,7 @@ class ManageAllocationsDueToEndServiceTest {
     allocation.deallocateOn(today, DeallocationReason.OTHER, "by test").plannedDeallocation!!.plannedDate = yesterday
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.handleEvent(123, MOORLAND_PRISON_CODE)
 
@@ -206,6 +214,7 @@ class ManageAllocationsDueToEndServiceTest {
     val allocation = schedule.allocations().first().apply { endDate = yesterday }.also { it.verifyIsActive() }
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.handleEvent(123, MOORLAND_PRISON_CODE)
 
@@ -222,6 +231,7 @@ class ManageAllocationsDueToEndServiceTest {
     val allocation = schedule.allocations().first().also { it.verifyIsActive() }
 
     whenever(activityScheduleRepository.findAllByActivityPrisonCode(prison.prisonCode)) doReturn listOf(schedule)
+    whenever(allocationRepository.findAllocationsByActivitySchedule(schedule, true)) doReturn schedule.allocations()
 
     service.handleEvent(123, MOORLAND_PRISON_CODE)
 

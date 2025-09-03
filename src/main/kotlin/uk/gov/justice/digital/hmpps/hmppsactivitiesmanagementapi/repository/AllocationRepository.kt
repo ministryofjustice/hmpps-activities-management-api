@@ -195,4 +195,13 @@ interface AllocationRepository : JpaRepository<Allocation, Long> {
     """,
   )
   fun findActiveAllocations(prisonerStatus: PrisonerStatus): List<Allocation>
+
+  @Query(
+    """
+    select a from Allocation a
+    where a.activitySchedule = :activitySchedule
+    and (:excludeEnded is false or a.prisonerStatus != 'ENDED')
+  """,
+  )
+  fun findAllocationsByActivitySchedule(activitySchedule: ActivitySchedule, excludeEnded: Boolean = false): List<Allocation>
 }
