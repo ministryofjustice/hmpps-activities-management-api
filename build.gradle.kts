@@ -45,7 +45,7 @@ dependencies {
   implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.19.0")
 
   // OpenAPI
-  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.12")
+  implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
 
   // AWS
   implementation("com.squareup.okhttp3:okhttp:5.1.0") {
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.32")
+  implementation("aws.sdk.kotlin:s3:1.5.33")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
