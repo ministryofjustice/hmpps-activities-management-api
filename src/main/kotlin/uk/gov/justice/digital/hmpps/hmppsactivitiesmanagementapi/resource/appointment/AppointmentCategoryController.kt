@@ -46,7 +46,7 @@ class AppointmentCategoryController(
       ApiResponse(
         responseCode = "200",
         description = "Appointment categories found",
-        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = AppointmentCategory::class)))],
+        content = [Content(mediaType = "application/json", array = ArraySchema(schema = Schema(implementation = AppointmentCategorySummary::class)))],
       ),
       ApiResponse(
         responseCode = "401",
