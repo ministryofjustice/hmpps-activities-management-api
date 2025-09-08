@@ -20,13 +20,13 @@ data class AppointmentCategory(
 
   var code: String,
 
-  var description: String? = null,
+  var description: String,
 
   @OneToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "appointment_parent_category_id")
-  var appointmentParentCategory: AppointmentParentCategory? = null,
+  var appointmentParentCategory: AppointmentParentCategory,
 
-  var status: String? = null,
+  var status: CategoryStatus,
 ) {
   fun updateCategory(request: AppointmentCategoryRequest, appointmentParentCategory: AppointmentParentCategory) {
     this.code = request.code
@@ -45,3 +45,8 @@ data class AppointmentCategory(
 }
 
 fun List<AppointmentCategory>.toModel() = map { it.toModel() }
+
+enum class CategoryStatus {
+  ACTIVE,
+  INACTIVE,
+}

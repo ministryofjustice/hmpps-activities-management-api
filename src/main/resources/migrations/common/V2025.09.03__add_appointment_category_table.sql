@@ -36,9 +36,9 @@ CREATE TABLE appointment_category
 (
     appointment_category_id         bigserial       NOT NULL CONSTRAINT appointment_category_pk PRIMARY KEY,
     code                            varchar(30)     NOT NULL UNIQUE,
-    description                     varchar(300),
+    description                     varchar(300)    NOT NULL,
     appointment_parent_category_id  bigint          NOT NULL REFERENCES appointment_parent_category (appointment_parent_category_id),
-    status                          varchar(30)
+    status                          varchar(30)     NOT NULL
 );
 
 insert into appointment_category(appointment_category_id, code, description, appointment_parent_category_id, status)

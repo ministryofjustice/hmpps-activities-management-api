@@ -11,6 +11,8 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentParentCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.CategoryStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
@@ -125,14 +127,14 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
     code = "category code",
     description = "category description",
     appointmentParentCategoryId = 5,
-    status = "ACTIVE",
+    status = CategoryStatus.ACTIVE,
   )
 
   private fun expectedAppointmentCategory() = AppointmentCategory(
     id = 1,
     code = "category code",
     description = "category description",
-    appointmentParentCategory = null,
-    status = "ACTIVE",
+    appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+    status = CategoryStatus.ACTIVE,
   )
 }
