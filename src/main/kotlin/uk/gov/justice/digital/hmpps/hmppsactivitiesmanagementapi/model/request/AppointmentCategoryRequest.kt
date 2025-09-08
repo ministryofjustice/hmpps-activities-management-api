@@ -19,7 +19,7 @@ data class AppointmentCategoryRequest(
   @field:Size(max = 300, message = "Category description must not exceed {max} characters")
   val description: String,
 
-  @Schema(description = "Identifier for the appointment parent category", example = "1",)
+  @Schema(description = "Identifier for the appointment parent category", example = "1")
   @field:NotNull(message = "Appointment parent category must be supplied")
   val appointmentParentCategoryId: Long,
 

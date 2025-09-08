@@ -23,12 +23,12 @@ class AppointmentCategoryService(
 
   fun get(): List<AppointmentCategorySummary> = appointmentCategoryRepository.findAll()
     .filter { it.status == CategoryStatus.ACTIVE }
-    .map { ModelAppointmentCategorySummary(it.code, it.description)
-  }
+    .map {
+      ModelAppointmentCategorySummary(it.code, it.description)
+    }
 
   fun create(request: AppointmentCategoryRequest): ModelAppointmentCategory {
-    require(!appointmentCategoryRepository.findByCode(request.code).isPresent)
-      { "Appointment Category ${request.code} is found" }
+    require(!appointmentCategoryRepository.findByCode(request.code).isPresent) { "Appointment Category ${request.code} is found" }
     val appointmentParentCategory = validateAppointmentParentCategory(request.appointmentParentCategoryId)
 
     return appointmentCategoryRepository.save(
@@ -41,8 +41,7 @@ class AppointmentCategoryService(
     ).toModel()
   }
 
-  fun update(appointmentCategoryId: Long, request: AppointmentCategoryRequest): ModelAppointmentCategory =
-    appointmentCategoryRepository.findOrThrowNotFound(appointmentCategoryId)
+  fun update(appointmentCategoryId: Long, request: AppointmentCategoryRequest): ModelAppointmentCategory = appointmentCategoryRepository.findOrThrowNotFound(appointmentCategoryId)
     .let { appointmentCategory ->
       val appointmentParentCategory = validateAppointmentParentCategory(request.appointmentParentCategoryId)
       appointmentCategory.updateCategory(request, appointmentParentCategory.get())
@@ -52,10 +51,8 @@ class AppointmentCategoryService(
   fun delete(appointmentCategoryId: Long) = appointmentCategoryRepository.findOrThrowNotFound(appointmentCategoryId)
     .let { appointmentCategory -> appointmentCategoryRepository.delete(appointmentCategory) }
 
-  private fun validateAppointmentParentCategory(appointmentParentCategoryId: Long?): Optional<AppointmentParentCategory> =
-    appointmentParentCategoryRepository.findById(appointmentParentCategoryId!!)
+  private fun validateAppointmentParentCategory(appointmentParentCategoryId: Long?): Optional<AppointmentParentCategory> = appointmentParentCategoryRepository.findById(appointmentParentCategoryId!!)
     .also { appointmentParentCategory ->
-      require(appointmentParentCategory == null || appointmentParentCategory.isPresent)
-        { "Appointment Parent Category $appointmentParentCategoryId not found" }
+      require(appointmentParentCategory == null || appointmentParentCategory.isPresent) { "Appointment Parent Category $appointmentParentCategoryId not found" }
     }
 }
