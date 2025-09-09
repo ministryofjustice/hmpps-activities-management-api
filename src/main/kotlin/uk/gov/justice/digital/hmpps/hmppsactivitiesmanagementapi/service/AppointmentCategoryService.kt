@@ -43,6 +43,7 @@ class AppointmentCategoryService(
 
   fun update(appointmentCategoryId: Long, request: AppointmentCategoryRequest): ModelAppointmentCategory = appointmentCategoryRepository.findOrThrowNotFound(appointmentCategoryId)
     .let { appointmentCategory ->
+      require(!appointmentCategoryRepository.findByCode(request.code).isPresent) { "Appointment Category ${request.code} is found" }
       val appointmentParentCategory = validateAppointmentParentCategory(request.appointmentParentCategoryId)
       appointmentCategory.updateCategory(request, appointmentParentCategory.get())
       return appointmentCategoryRepository.save(appointmentCategory).toModel()

@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -26,6 +28,7 @@ data class AppointmentCategory(
   @JoinColumn(name = "appointment_parent_category_id")
   var appointmentParentCategory: AppointmentParentCategory,
 
+  @Enumerated(EnumType.STRING)
   var status: CategoryStatus,
 ) {
   fun updateCategory(request: AppointmentCategoryRequest, appointmentParentCategory: AppointmentParentCategory) {

@@ -100,6 +100,11 @@ class AppointmentCategoryController(
         content = [Content(mediaType = "application/json", schema = Schema(implementation = AppointmentCategory::class))],
       ),
       ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "401",
         description = "Unauthorised, requires a valid Oauth2 token",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -129,6 +134,11 @@ class AppointmentCategoryController(
         responseCode = "202",
         description = "Appointment category updated",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = AppointmentCategory::class))],
+      ),
+      ApiResponse(
+        responseCode = "400",
+        description = "Bad request",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
         responseCode = "401",
