@@ -28,7 +28,6 @@ class AppointmentCategoryTest {
     )
   }
 
-
   @Test
   fun `appointment code list to appointment category summary list mapping`() {
     assertThat(
@@ -69,5 +68,4 @@ class AppointmentCategoryTest {
   fun `appointment code to appointment name mapping for null appointment code and no description`() {
     assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("MEDO")
   }
-
 }
