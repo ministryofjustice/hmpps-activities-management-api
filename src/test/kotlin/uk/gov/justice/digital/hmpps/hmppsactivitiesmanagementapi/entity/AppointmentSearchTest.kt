@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toResults
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchResultModel
@@ -33,12 +33,12 @@ class AppointmentSearchTest {
   fun `entity to result mapping`() {
     val entity = appointmentSearchEntity()
     val expectedModel = appointmentSearchResultModel(timeSlot = TimeSlot.PM)
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     assertThat(
       entity.toResult(
         entity.attendees,
-        referenceCodeMap,
+        appointmentCategories,
         locationMap,
         mapOf(
           DayOfWeek.entries.toSet() to prisonRegime,
@@ -52,7 +52,7 @@ class AppointmentSearchTest {
     val entityList = listOf(appointmentSearchEntity())
     val expectedModel = listOf(appointmentSearchResultModel(timeSlot = TimeSlot.PM))
     with(entityList.first()) {
-      val referenceCodeMap = mapOf(entityList.first().categoryCode to appointmentCategoryReferenceCode(categoryCode))
+      val appointmentCategories = mapOf(entityList.first().categoryCode to appointmentCategory(categoryCode))
 
       val locationMap = mapOf(
         internalLocationId!! to appointmentLocationDetails(
@@ -65,7 +65,7 @@ class AppointmentSearchTest {
       assertThat(
         entityList.toResults(
           mapOf(entityList.first().appointmentId to entityList.first().attendees),
-          referenceCodeMap,
+          appointmentCategories,
           locationMap,
           mapOf(
             DayOfWeek.entries.toSet() to prisonRegime,
@@ -80,12 +80,12 @@ class AppointmentSearchTest {
     val entity = appointmentSearchEntity(inCell = true)
     entity.internalLocationId = 123
     entity.dpsLocationId = UUID.fromString("44444444-1111-2222-3333-444444444444")
-    val referenceCodeMap = mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode))
+    val appointmentCategories = mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode))
     val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR"))
     with(
       entity.toResult(
         entity.attendees,
-        referenceCodeMap,
+        appointmentCategories,
         locationMap,
         mapOf(
           DayOfWeek.entries.toSet() to prisonRegime,

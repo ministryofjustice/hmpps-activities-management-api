@@ -58,6 +58,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.W
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ActivitySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
@@ -66,8 +67,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelPrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelSchedule
@@ -108,7 +107,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
   private lateinit var scheduledEventService: ScheduledEventService
 
   @MockitoBean
-  private lateinit var referenceCodeService: ReferenceCodeService
+  private lateinit var appointmentCategoryService: AppointmentCategoryService
 
   @MockitoBean
   private lateinit var appointmentSearchService: AppointmentSearchService
@@ -117,7 +116,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
     attendancesService,
     scheduledInstanceService,
     scheduledEventService,
-    referenceCodeService,
+    appointmentCategoryService,
     attendanceReasonService,
     activityService,
     activityScheduleService,
@@ -657,7 +656,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           "G1234GG",
           LocalDateRange(startDate, endDate),
           null,
-          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+          appointmentCategoryService.getAll(),
         ),
       ).thenReturn(result)
 
@@ -678,7 +677,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         "G1234GG",
         LocalDateRange(startDate, endDate),
         null,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       )
     }
 
@@ -694,7 +693,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           "G1234GG",
           LocalDateRange(startDate, endDate),
           null,
-          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+          appointmentCategoryService.getAll(),
         ),
       ).thenThrow(RuntimeException("Error"))
 
@@ -715,7 +714,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         "G1234GG",
         LocalDateRange(startDate, endDate),
         null,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       )
     }
 
@@ -731,7 +730,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           "G1234GG",
           LocalDateRange(startDate, endDate),
           null,
-          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+          appointmentCategoryService.getAll(),
         ),
       ).thenReturn(result)
 
@@ -873,7 +872,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           prisonerNumbers,
           LocalDate.of(2022, 10, 1),
           TimeSlot.AM,
-          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+          appointmentCategoryService.getAll(),
         ),
       ).thenReturn(result)
 
@@ -895,7 +894,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       )
     }
 
@@ -910,7 +909,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
           prisonerNumbers,
           LocalDate.of(2022, 10, 1),
           TimeSlot.AM,
-          referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+          appointmentCategoryService.getAll(),
         ),
       ).thenThrow(RuntimeException("Error"))
 
@@ -931,7 +930,7 @@ class IntegrationApiControllerTest : ControllerTestBase<IntegrationApiController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       )
     }
 

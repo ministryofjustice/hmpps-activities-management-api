@@ -41,7 +41,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.MigrateAppointmentService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -58,7 +57,7 @@ class MigrateAppointmentServiceTest {
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val appointmentCreateDomainService = spy(AppointmentCreateDomainService(mock(), appointmentRepository, appointmentCancellationReasonRepository, TransactionHandler(), outboundEventsService, mock(), mock()))
   private val appointmentCancelDomainService: AppointmentCancelDomainService = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
 
   private val appointmentCancelledReason = appointmentCancelledReason()
@@ -70,7 +69,7 @@ class MigrateAppointmentServiceTest {
     appointmentCreateDomainService,
     appointmentCancelDomainService,
     appointmentRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     nomisMappingAPIClient,
     TransactionHandler(),
 
@@ -164,7 +163,7 @@ class MigrateAppointmentServiceTest {
         appointmentCreateDomainService,
         mock(),
         appointmentRepository,
-        referenceCodeService,
+        appointmentCategoryService,
         nomisMappingAPIClient,
         TransactionHandler(),
       )

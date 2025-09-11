@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.CategoryStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.CancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UncancelAppointmentsJob
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job.UpdateAppointmentsJob
@@ -12,12 +13,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUncancelRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentUpdateRequest
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 @Transactional
 class AppointmentService(
   private val appointmentRepository: AppointmentRepository,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService,
@@ -47,11 +47,11 @@ class AppointmentService(
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointment.prisonerNumbers())
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointment.prisonCode)
 
-    return appointment.toDetails(prisonerMap, referenceCodeMap, locationMap)
+    return appointment.toDetails(prisonerMap, appointmentCategories, locationMap)
   }
 
   @Transactional(readOnly = true)
@@ -68,11 +68,11 @@ class AppointmentService(
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(prisonerNumbers)
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(prisonCodes.first())
 
-    return appointments.map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
+    return appointments.map { it.toDetails(prisonerMap, appointmentCategories, locationMap) }
   }
 
   fun updateAppointment(appointmentId: Long, request: AppointmentUpdateRequest, principal: Principal): AppointmentSeriesModel {
@@ -85,7 +85,7 @@ class AppointmentService(
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
     if (request.categoryCode != null) {
-      referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)
+      appointmentCategoryService.getAll()
         .also {
           require(it.containsKey(request.categoryCode)) {
             "Appointment Category with code ${request.categoryCode} not found or is not active"
