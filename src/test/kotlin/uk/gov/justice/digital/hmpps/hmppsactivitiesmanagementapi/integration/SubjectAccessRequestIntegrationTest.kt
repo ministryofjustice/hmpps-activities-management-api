@@ -21,15 +21,6 @@ import java.time.LocalTime
 
 class SubjectAccessRequestIntegrationTest : IntegrationTestBase() {
 
-  @BeforeEach
-  fun `init`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-      ),
-    )
-  }
-
   @Sql("classpath:test_data/seed-subject-access-request.sql")
   @Test
   fun `should return single allocation for a same day date boundary subject access request`() {

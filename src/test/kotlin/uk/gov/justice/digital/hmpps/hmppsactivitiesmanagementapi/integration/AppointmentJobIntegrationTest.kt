@@ -99,12 +99,6 @@ class AppointmentJobIntegrationTest : AppointmentsIntegrationTestBase() {
         NomisDpsLocationMapping(dpsLocation.id, 123),
       ),
     )
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-      ),
-    )
   }
 
   @Sql("classpath:test_data/seed-manage-appointments-job.sql")

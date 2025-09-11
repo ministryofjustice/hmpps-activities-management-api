@@ -76,8 +76,6 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `get appointment set details`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR", localName = "Test Appointment Location")
 
     locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
@@ -126,7 +124,7 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
     val details = webTestClient.getAppointmentSetDetailsById(6)!!
 
-    val category = AppointmentCategorySummary("AC1", "Appointment Category 1")
+    val category = AppointmentCategorySummary("OIC", "Adjudication Hearing")
     val customName = "Appointment description"
     val createdBy = "TEST.USER"
     assertThat(details).isEqualTo(
@@ -189,9 +187,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `create appointment set success for internal location id`() {
-    val request = appointmentSetCreateRequest(categoryCode = "AC1", dpsLocationId = null)
+    val request = appointmentSetCreateRequest(categoryCode = "OIC", dpsLocationId = null)
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
@@ -254,9 +251,8 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `create appointment set success for DPS location id`() {
-    val request = appointmentSetCreateRequest(categoryCode = "AC1", internalLocationId = null)
+    val request = appointmentSetCreateRequest(categoryCode = "OIC", internalLocationId = null)
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
@@ -317,9 +313,9 @@ class AppointmentSetIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `create appointment set success for in cell`() {
-    val request = appointmentSetCreateRequest(categoryCode = "AC1", internalLocationId = null, inCell = true)
+    val request = appointmentSetCreateRequest(categoryCode = "OIC", internalLocationId = null, inCell = true)
     val prisonerNumbers = request.appointments.map { it.prisonerNumber!! }.toList()
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       prisonerNumbers,
       listOf(
