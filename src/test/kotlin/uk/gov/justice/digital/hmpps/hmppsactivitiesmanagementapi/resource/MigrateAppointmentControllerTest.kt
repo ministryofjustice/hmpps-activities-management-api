@@ -267,7 +267,6 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
 
     @Test
     fun `400 response when start date is in the past`() {
-      val startDate = LocalDate.now().minusDays(1)
       mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now().minusDays(1)}&categoryCodes=OIC")
         .andExpect { status { isBadRequest() } }
         .andExpect {
