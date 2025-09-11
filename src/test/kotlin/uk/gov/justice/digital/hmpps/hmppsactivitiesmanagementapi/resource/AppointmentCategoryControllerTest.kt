@@ -125,7 +125,7 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
 
   private fun appointmentCategoryRequest() = AppointmentCategoryRequest(
     code = "category code",
-    description = "category description",
+    description = "Test Category",
     appointmentParentCategoryId = 5,
     status = CategoryStatus.ACTIVE,
   )
@@ -133,8 +133,8 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
   private fun expectedAppointmentCategory() = AppointmentCategory(
     id = 1,
     code = "category code",
-    description = "category description",
-    appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+    description = "Test Category",
+    appointmentParentCategory = AppointmentParentCategory(5, "Parent Category"),
     status = CategoryStatus.ACTIVE,
   )
 }

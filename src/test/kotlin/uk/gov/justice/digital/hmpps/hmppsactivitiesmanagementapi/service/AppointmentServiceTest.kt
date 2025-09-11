@@ -13,7 +13,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.security.core.context.SecurityContextHolder
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentFrequency
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -25,8 +25,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCancelDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -37,7 +35,7 @@ import java.util.*
 @ExtendWith(FakeSecurityContext::class)
 class AppointmentServiceTest {
   private val appointmentRepository: AppointmentRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val appointmentUpdateDomainService: AppointmentUpdateDomainService = mock()
@@ -49,7 +47,7 @@ class AppointmentServiceTest {
 
   private val service = AppointmentService(
     appointmentRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     locationService,
     prisonerSearchApiClient,
     appointmentUpdateDomainService,
@@ -75,8 +73,8 @@ class AppointmentServiceTest {
     val appointmentSeries = appointmentSeriesEntity()
     val entity = appointmentSeries.appointments().first()
     whenever(appointmentRepository.findById(entity.appointmentId)).thenReturn(Optional.of(entity))
-    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategory(appointmentSeries.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR")))
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entity.prisonerNumbers())).thenReturn(
@@ -147,8 +145,8 @@ class AppointmentServiceTest {
     val entities = appointmentSeries.appointments()
 
     whenever(appointmentRepository.findByIds(listOf(entities[0].appointmentId, entities[1].appointmentId, entities[2].appointmentId))).thenReturn(entities)
-    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategoryReferenceCode(appointmentSeries.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(appointmentSeries.categoryCode to appointmentCategory(appointmentSeries.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode))
       .thenReturn(mapOf(entities[0].internalLocationId!! to appointmentLocationDetails(entities[0].internalLocationId!!, entities[0].dpsLocationId!!, "TPR")))
     whenever(prisonerSearchApiClient.findByPrisonerNumbersMap(entities[0].prisonerNumbers())).thenReturn(

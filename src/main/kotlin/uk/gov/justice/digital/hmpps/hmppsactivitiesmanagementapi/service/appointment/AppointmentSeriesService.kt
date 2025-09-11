@@ -15,11 +15,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import java.security.Principal
 import java.time.LocalDate
@@ -33,7 +31,7 @@ class AppointmentSeriesService(
   private val appointmentSeriesRepository: AppointmentSeriesRepository,
   private val eventTierRepository: EventTierRepository,
   private val eventOrganiserRepository: EventOrganiserRepository,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
@@ -57,11 +55,11 @@ class AppointmentSeriesService(
     val appointmentSeries = appointmentSeriesRepository.findOrThrowNotFound(appointmentSeriesId)
     checkCaseloadAccess(appointmentSeries.prisonCode)
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointmentSeries.prisonCode)
 
-    return appointmentSeries.toDetails(referenceCodeMap, locationMap)
+    return appointmentSeries.toDetails(appointmentCategories, locationMap)
   }
 
   fun createAppointmentSeries(request: AppointmentSeriesCreateRequest, principal: Principal): AppointmentSeries {
@@ -126,7 +124,7 @@ class AppointmentSeriesService(
     }
   }
 
-  private fun AppointmentSeriesCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+  private fun AppointmentSeriesCreateRequest.categoryDescription() = appointmentCategoryService.getAll()[categoryCode]?.description
     ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
   private fun AppointmentSeriesCreateRequest.locationDescription(): String = when {

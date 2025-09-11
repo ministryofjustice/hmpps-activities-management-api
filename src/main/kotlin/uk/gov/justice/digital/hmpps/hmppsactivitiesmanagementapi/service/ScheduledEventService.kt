@@ -12,11 +12,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
@@ -69,7 +69,7 @@ class ScheduledEventService(
     prisonerNumber: String,
     dateRange: LocalDateRange,
     slot: TimeSlot? = null,
-    referenceCodesForAppointmentsMap: Map<String, ReferenceCode> = emptyMap(),
+    appointmentCategories: Map<String, AppointmentCategory> = emptyMap(),
   ) = runBlocking {
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
 
@@ -151,7 +151,7 @@ class ScheduledEventService(
               appointments = transformAppointmentInstanceToScheduledEvents(
                 prisonCode,
                 eventPriorities,
-                referenceCodesForAppointmentsMap,
+                appointmentCategories,
                 locationsForAppointmentsMap,
                 getSinglePrisonerAppointments(
                   bookingId = bookingId,
@@ -270,7 +270,7 @@ class ScheduledEventService(
     prisonerNumbers: Set<String>,
     date: LocalDate,
     timeSlot: TimeSlot? = null,
-    referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
   ): PrisonerScheduledEvents? = runBlocking {
     val eventPriorities = withContext(Dispatchers.IO) { prisonRegimeService.getEventPrioritiesForPrison(prisonCode) }
     val prisonLocations = prisonApiClient.getEventLocationsForPrison(prisonCode)
@@ -332,7 +332,7 @@ class ScheduledEventService(
           appointments = transformAppointmentInstanceToScheduledEvents(
             prisonCode,
             eventPriorities,
-            referenceCodesForAppointmentsMap,
+            appointmentCategories,
             locationsForAppointmentsMap,
             getMultiplePrisonersAppointments(prisonCode, prisonerNumbers, date, timeSlot),
           )

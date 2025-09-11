@@ -10,10 +10,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSearchSpecification
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CATEGORY_CODE_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CREATED_BY_PROPERTY_KEY
@@ -39,7 +38,7 @@ class AppointmentSearchService(
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
   private val appointmentSearchSpecification: AppointmentSearchSpecification,
   private val prisonRegimeService: PrisonRegimeService,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val locationService: LocationService,
   private val telemetryClient: TelemetryClient,
   private val rolloutPrisonService: RolloutPrisonService,
@@ -117,7 +116,7 @@ class AppointmentSearchService(
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(results.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(prisonCode)
 
@@ -125,7 +124,7 @@ class AppointmentSearchService(
 
     return results.filter { it.appointmentType == AppointmentType.GROUP || attendeeMap.containsKey(it.appointmentId) }.toResults(
       attendeeMap = attendeeMap,
-      referenceCodeMap = referenceCodeMap,
+      appointmentCategories = appointmentCategories,
       locationMap = locationMap,
       prisonRegime = prisonRegime,
     )

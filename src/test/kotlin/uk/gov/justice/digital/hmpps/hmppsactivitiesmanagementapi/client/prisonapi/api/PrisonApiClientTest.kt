@@ -471,32 +471,6 @@ class PrisonApiClientTest {
   }
 
   @Test
-  fun `getReferenceCodes - success`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
-    assertThat(prisonApiClient.getReferenceCodes("INT_SCH_RSN")).isEqualTo(
-      listOf(
-        appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-        appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-        appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      ),
-    )
-  }
-
-  @Test
-  fun `getScheduleReasons - success`() {
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
-
-    assertThat(prisonApiClient.getScheduleReasons("APP")).isEqualTo(
-      listOf(
-        appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-        appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-        appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      ),
-    )
-  }
-
-  @Test
   fun `getEventLocationsAsync - success`() {
     val prisonCode = "MDI"
     val eventLocations = listOf(internalLocation(), appointmentLocation(2, prisonCode))

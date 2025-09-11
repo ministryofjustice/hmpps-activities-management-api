@@ -350,11 +350,11 @@ internal fun appointmentAttendanceSummaryEntity(inCell: Boolean = false, customN
   eventTier = null,
 )
 
-internal fun appointmentCategory(code: String = "category code") = AppointmentCategory(
+internal fun appointmentCategory(code: String = "category code", description: String = "Test Category") = AppointmentCategory(
   appointmentCategoryId = 1,
   code = code,
-  description = "category description",
-  appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+  description = description,
+  appointmentParentCategory = AppointmentParentCategory(5, "Parent Category"),
   status = CategoryStatus.ACTIVE,
 )
 
