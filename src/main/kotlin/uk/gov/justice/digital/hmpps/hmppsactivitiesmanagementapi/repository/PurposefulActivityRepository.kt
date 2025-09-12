@@ -116,6 +116,7 @@ class PurposefulActivityRepository {
       asas.appointment_set_id as "appointment_set_appointment_set_id",
       a.prison_code as "appointment_prison_code",
       a.category_code as "appointment_category_code",
+      apc.name as "appointment_parent_category",
       a.custom_name as "appointment_custom_name",
       a.appointment_tier_id as "appointment_appointment_tier_id",
       tier.description as "appointment_tier_description",
@@ -155,6 +156,8 @@ class PurposefulActivityRepository {
       left outer join appointment_set_appointment_series asas on asas.appointment_series_id = apse.appointment_series_id
       left outer join appointment_cancellation_reason acr on acr.appointment_cancellation_reason_id = a.cancellation_reason_id
       left outer join event_organiser eo on eo.event_organiser_id = a.appointment_organiser_id
+      left outer join appointment_category ac on ac.code = a.category_code
+	    left outer join appointment_parent_category apc on apc.appointment_parent_category_id = ac.appointment_parent_category_id
       inner join appointment_attendee aa on aa.appointment_id = a.appointment_id
       WHERE (a.start_date || ' ' || a.start_time)::timestamp BETWEEN
          (SELECT start_date FROM date_range) AND
@@ -164,7 +167,7 @@ class PurposefulActivityRepository {
   private val appointmentQueryHeaders = listOf(
     "appointment_appointment_id", "appointment_appointment_series_id", "appointment_series_appointment_type",
     "appointment_sequence_number", "appointment_set_appointment_set_id", "appointment_prison_code",
-    "appointment_category_code", "appointment_custom_name", "appointment_appointment_tier_id",
+    "appointment_category_code", "appointment_parent_category", "appointment_custom_name", "appointment_appointment_tier_id",
     "appointment_tier_description", "appointment_appointment_organiser_id", "event_organiser_event_organiser_description",
     "appointment_internal_location_id", "appointment_custom_location", "appointment_in_cell", "appointment_on_wing",
     "appointment_off_wing", "appointment_start_date", "appointment_start_time", "appointment_end_time",

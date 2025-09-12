@@ -85,13 +85,30 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
       val csvContent = bufferedReader.use { it.readText() }
 
       assert(csvContent.isNotEmpty()) { "CSV content should not be empty" }
+      val csvSanitisedContent = csvContent.replace("\"", "")
 
       // Example of checking specific content
-      val expectedHeader = "appointment_appointment_id,appointment_appointment_series_id,appointment_series_appointment_type,appointment_sequence_number"
-      assert(csvContent.replace("\"", "").startsWith(expectedHeader)) { "CSV header does not match expected format" }
+      val expectedHeader = "appointment_appointment_id,appointment_appointment_series_id,appointment_series_appointment_type," +
+        "appointment_sequence_number,appointment_set_appointment_set_id,appointment_prison_code,appointment_category_code," +
+        "appointment_parent_category,appointment_custom_name,appointment_appointment_tier_id,appointment_tier_description," +
+        "appointment_appointment_organiser_id,event_organiser_event_organiser_description,appointment_internal_location_id," +
+        "appointment_custom_location,appointment_in_cell,appointment_on_wing,appointment_off_wing,appointment_start_date," +
+        "appointment_start_time,appointment_end_time,appointment_created_time,appointment_updated_time,appointment_cancelled_time," +
+        "appointment_cancellation_reason_id,appointment_cancellation_reason_description,appointment_cancellation_reason_is_delete," +
+        "appointment_is_deleted,appointment_attendee_appointment_attendee_id,appointment_attendee_prisoner_number,appointment_attendee_booking_id," +
+        "appointment_attendee_added_time,appointment_attendee_attended,appointment_attendee_attendance_recorded_time,appointment_attendee_removed_time," +
+        "appointment_attendee_is_deleted,record_status"
+      assert(csvSanitisedContent.startsWith(expectedHeader)) { "CSV header does not match expected format" }
 
       val rows = csvContent.split("\n")
-      assert(rows.size == 10) { "Output of this test should produce 3 rows" }
+      assert(rows.size == 10) { "Output of this test should produce 10 rows" }
+
+      assert(
+        csvSanitisedContent.contains("1,1,GROUP,1,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true") &&
+        csvSanitisedContent.contains("2,1,GROUP,2,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true") &&
+        csvSanitisedContent.contains("3,1,GROUP,3,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true")
+      )
+      { "CSV content does not match expected values" }
     }
   }
 
