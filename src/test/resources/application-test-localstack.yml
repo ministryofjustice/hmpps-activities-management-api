@@ -87,7 +87,7 @@ locations-inside-prison:
 
 nomis-mapping:
   api:
-    url: http://localhost:8095
+    url: http://localhost:8094
 
 migrate:
   activities-live: PVI,RSI,MDI,IWI,FMI

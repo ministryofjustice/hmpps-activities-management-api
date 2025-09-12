@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.stubbing.Scenario.STARTED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import java.util.*
 
-class NomisMappingApiMockServer : MockServer(8095) {
+class NomisMappingApiMockServer : MockServer(8094) {
 
   fun stubMappingFromDpsUuid(dpsLocationId: UUID, nomisLocationId: Long = 1) {
     stubFor(
