@@ -105,10 +105,9 @@ class PurposefulActivityIntegrationTest : IntegrationTestBase() {
 
       assert(
         csvSanitisedContent.contains("1,1,GROUP,1,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true") &&
-        csvSanitisedContent.contains("2,1,GROUP,2,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true") &&
-        csvSanitisedContent.contains("3,1,GROUP,3,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true")
-      )
-      { "CSV content does not match expected values" }
+          csvSanitisedContent.contains("2,1,GROUP,2,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true") &&
+          csvSanitisedContent.contains("3,1,GROUP,3,,RSI,EDUC,Education,,1,Tier 1,,,123,,false,false,true"),
+      ) { "CSV content does not match expected values" }
     }
   }
 
