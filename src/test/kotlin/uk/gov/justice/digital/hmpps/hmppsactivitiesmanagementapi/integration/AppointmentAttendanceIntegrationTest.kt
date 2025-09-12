@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.within
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -25,7 +24,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.hasSize
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
@@ -79,14 +77,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
   }
 
   private fun stubForAttendanceSummaries(prisonCode: String) {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
-        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
-      ),
-    )
-
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode)
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode)
     val dpsLocation3 = dpsLocation(UUID.fromString("33333333-3333-3333-3333-333333333333"), prisonCode)
@@ -191,14 +181,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
   fun `get appointment attendance summary success`() {
     val prisonCode = RISLEY_PRISON_CODE
     val date = LocalDate.now()
-
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
-        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
-      ),
-    )
 
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode, localName = "Education 1")
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), prisonCode, localName = "Chapel")
@@ -374,14 +356,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val prisonCode = RISLEY_PRISON_CODE
     val date = LocalDate.now().minusDays(1)
 
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
-        appointmentCategoryReferenceCode("MEDO", "Medical - Doctor"),
-      ),
-    )
-
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), prisonCode, localName = "Education 1")
     val dpsLocation2 = dpsLocation(UUID.fromString("44444444-4444-4444-4444-444444444444"), prisonCode, localName = "Chapel")
     val dpsLocation3 = dpsLocation(UUID.fromString("77777777-7777-7777-7777-777777777777"), prisonCode, localName = "Health Care Centre")
@@ -480,16 +454,6 @@ class AppointmentAttendanceIntegrationTest : AppointmentsIntegrationTestBase() {
     val prisonerC3456DE = prisonerA1234BC.copy(prisonerNumber = "C3456DE")
     val prisonerXX1111X = prisonerA1234BC.copy(prisonerNumber = "XX1111X")
     val prisonerYY1111Y = prisonerA1234BC.copy(prisonerNumber = "YY1111Y")
-
-    @BeforeEach
-    fun beforeEach() {
-      prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-        listOf(
-          appointmentCategoryReferenceCode("EDUC", "Education"),
-          appointmentCategoryReferenceCode("CANT", "Canteen"),
-        ),
-      )
-    }
 
     @AfterEach
     fun afterEach() {

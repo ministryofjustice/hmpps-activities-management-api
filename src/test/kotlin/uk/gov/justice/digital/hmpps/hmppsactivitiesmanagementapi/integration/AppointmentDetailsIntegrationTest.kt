@@ -8,7 +8,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.RISLEY_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.dpsLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.eventTier
@@ -57,12 +56,6 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `get group appointment with marked attendance details`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-      ),
-    )
-
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE)
 
     locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
@@ -111,8 +104,6 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `get single appointment details`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
     locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
@@ -142,7 +133,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
-        "Appointment description (Appointment Category 1)",
+        "Appointment description (Adjudication Hearing)",
         attendees = listOf(
           AppointmentAttendeeSummary(
             3,
@@ -152,7 +143,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
             null,
           ),
         ),
-        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        AppointmentCategorySummary("OIC", "Adjudication Hearing"),
         eventTier().toModelEventTier(),
         eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
@@ -183,8 +174,6 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `get appointment details from an appointment set`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
     locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
@@ -214,7 +203,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
         AppointmentType.INDIVIDUAL,
         1,
         "TPR",
-        "Appointment description (Appointment Category 1)",
+        "Appointment description (Adjudication Hearing)",
         attendees = listOf(
           AppointmentAttendeeSummary(
             6,
@@ -224,7 +213,7 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
             null,
           ),
         ),
-        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        AppointmentCategorySummary("OIC", "Adjudication Hearing"),
         eventTier().toModelEventTier(),
         eventOrganiser().toModelEventOrganiser(),
         "Appointment description",
@@ -275,13 +264,6 @@ class AppointmentDetailsIntegrationTest : AppointmentsIntegrationTestBase() {
   @Sql("classpath:test_data/seed-appointment-attendance.sql")
   @Test
   fun `get multiple appointments by ids succeeds`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes(
-      listOf(
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-        appointmentCategoryReferenceCode("CANT", "Canteen"),
-      ),
-    )
-
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), RISLEY_PRISON_CODE, localName = "Education 1")
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), RISLEY_PRISON_CODE, localName = "Canteen A")
 

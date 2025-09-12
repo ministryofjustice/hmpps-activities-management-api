@@ -15,7 +15,6 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
@@ -24,8 +23,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
@@ -191,9 +188,9 @@ data class AppointmentSeries(
 
   fun appointmentDetails(
     prisonerMap: Map<String, Prisoner>,
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
-  ) = appointments(true).toDetails(prisonerMap, referenceCodeMap, locationMap)
+  ) = appointments(true).toDetails(prisonerMap, appointmentCategories, locationMap)
 
   fun addAppointment(appointment: Appointment) = appointments.add(appointment)
 
@@ -230,14 +227,14 @@ data class AppointmentSeries(
   )
 
   fun toDetails(
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
   ) = AppointmentSeriesDetails(
     appointmentSeriesId,
     appointmentType,
     prisonCode,
-    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    appointmentCategories[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentCategories[categoryCode].toAppointmentCategorySummary(categoryCode),
     appointmentTier?.toModelEventTier(),
     appointmentOrganiser?.toModelEventOrganiser(),
     customName,

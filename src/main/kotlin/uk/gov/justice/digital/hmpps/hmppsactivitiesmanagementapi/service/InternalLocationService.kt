@@ -28,8 +28,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.excludeTodayWithoutAttendance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.multiplePrisonerVisitsToScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.nomisAdjudicationsToScheduledEvents
@@ -49,7 +47,7 @@ class InternalLocationService(
   private val prisonApiClient: PrisonApiClient,
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository,
   private val prisonRegimeService: PrisonRegimeService,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter,
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient,
@@ -200,8 +198,7 @@ class InternalLocationService(
     checkCaseloadAccess(prisonCode)
 
     val prisonRegime = prisonRegimeService.getPrisonRegimesByDaysOfWeek(agencyId = prisonCode)
-    val referenceCodesForAppointmentsMap =
-      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
     val locationsMap = getInternalLocationsMapByIds(prisonCode, dpsLocationIds)
     val eventPriorities = prisonRegimeService.getEventPrioritiesForPrison(prisonCode)
 
@@ -253,7 +250,7 @@ class InternalLocationService(
       transformAppointmentInstanceToScheduledEvents(
         prisonCode,
         eventPriorities,
-        referenceCodesForAppointmentsMap,
+        appointmentCategories,
         locationsMap,
         appointments,
       ),

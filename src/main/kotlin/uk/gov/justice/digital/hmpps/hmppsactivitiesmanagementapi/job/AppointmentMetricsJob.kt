@@ -4,11 +4,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.DailyAppointmentMetricsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import java.time.LocalDate
 import kotlin.system.measureTimeMillis
 
@@ -16,7 +15,7 @@ import kotlin.system.measureTimeMillis
 class AppointmentMetricsJob(
   private val jobRunner: SafeJobRunner,
   private val rolloutPrisonService: RolloutPrisonService,
-  private val prisonApiClient: PrisonApiClient,
+  private val appointmentCategoryRepository: AppointmentCategoryRepository,
   private val service: DailyAppointmentMetricsService,
 
 ) {
@@ -32,7 +31,7 @@ class AppointmentMetricsJob(
 
         val elapsed = measureTimeMillis {
           val allPrisonCodes = rolloutPrisonService.getRolloutPrisons(true).map { it.prisonCode }
-          val allAppointmentCategories = prisonApiClient.getScheduleReasons(ScheduleReasonEventType.APPOINTMENT.value).map { it.code }
+          val allAppointmentCategories = appointmentCategoryRepository.findAll().map { it.code }
           val yesterday = LocalDate.now().minusDays(1)
 
           allPrisonCodes.forEach { prisonCode ->
@@ -46,4 +45,8 @@ class AppointmentMetricsJob(
       },
     )
   }
+}
+
+enum class ScheduleReasonEventType(val value: String) {
+  APPOINTMENT("APP"),
 }

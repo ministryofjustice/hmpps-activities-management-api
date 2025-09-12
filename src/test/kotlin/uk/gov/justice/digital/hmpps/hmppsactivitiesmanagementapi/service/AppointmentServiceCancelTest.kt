@@ -41,7 +41,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPLY_TO_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
@@ -69,7 +68,7 @@ class AppointmentServiceCancelTest {
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
@@ -87,7 +86,7 @@ class AppointmentServiceCancelTest {
 
   private val service = AppointmentService(
     appointmentRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     locationService,
     prisonerSearchApiClient,
     AppointmentUpdateDomainService(

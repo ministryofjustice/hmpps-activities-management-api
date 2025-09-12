@@ -12,7 +12,6 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.springframework.data.domain.AbstractAggregateRoot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AppointmentAttendeeRemovalReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AppointmentCancellationReason
@@ -22,8 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
@@ -211,7 +208,7 @@ data class Appointment(
 
   fun toDetails(
     prisonerMap: Map<String, Prisoner>,
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
   ) = AppointmentDetails(
     id = appointmentId,
@@ -220,9 +217,9 @@ data class Appointment(
     appointmentType = appointmentSeries.appointmentType,
     sequenceNumber = sequenceNumber,
     prisonCode = prisonCode,
-    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentName = appointmentCategories[categoryCode].toAppointmentName(categoryCode, customName),
     attendees = attendees().map { it.toSummary(prisonerMap) },
-    category = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    category = appointmentCategories[categoryCode].toAppointmentCategorySummary(categoryCode),
     tier = appointmentTier?.toModelEventTier(),
     organiser = appointmentOrganiser?.toModelEventOrganiser(),
     customName = customName,
@@ -267,9 +264,9 @@ fun List<Appointment>.toSummary() = map { it.toSummary() }
 
 fun List<Appointment>.toDetails(
   prisonerMap: Map<String, Prisoner>,
-  referenceCodeMap: Map<String, ReferenceCode>,
+  appointmentCategories: Map<String, AppointmentCategory>,
   locationMap: Map<Long, LocationDetails>,
-) = map { it.toDetails(prisonerMap, referenceCodeMap, locationMap) }
+) = map { it.toDetails(prisonerMap, appointmentCategories, locationMap) }
 
 data class AppointmentAttendanceMarkedEvent(
   val appointmentId: Long,

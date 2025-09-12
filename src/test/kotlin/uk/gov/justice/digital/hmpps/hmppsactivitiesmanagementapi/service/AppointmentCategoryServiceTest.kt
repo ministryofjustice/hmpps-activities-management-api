@@ -41,7 +41,7 @@ class AppointmentCategoryServiceTest {
   }
 
   @Test
-  fun `returns the list of appointment category`() {
+  fun `returns the active list of appointment category`() {
     val appointmentCategoryActive = AppointmentCategory(
       appointmentCategoryId = 1,
       code = "TEST",
@@ -59,6 +59,32 @@ class AppointmentCategoryServiceTest {
 
     whenever(appointmentCategoryRepository.findAll()).thenReturn(listOf(appointmentCategoryActive, appointmentCategoryInactive))
     assertThat(appointmentCategoryService.get()).isEqualTo(listOf(appointmentCategorySummary()))
+  }
+
+  @Test
+  fun `returns all of appointment category`() {
+    val appointmentCategoryActive = AppointmentCategory(
+      appointmentCategoryId = 1,
+      code = "TEST",
+      description = "Test Category",
+      appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+      status = CategoryStatus.ACTIVE,
+    )
+    val appointmentCategoryInactive = AppointmentCategory(
+      appointmentCategoryId = 2,
+      code = "TEST2",
+      description = "Test Category2",
+      appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+      status = CategoryStatus.INACTIVE,
+    )
+
+    val expectedResult = mapOf(
+      appointmentCategoryActive.code to appointmentCategoryActive,
+      appointmentCategoryInactive.code to appointmentCategoryInactive,
+    )
+
+    whenever(appointmentCategoryRepository.findAll()).thenReturn(listOf(appointmentCategoryActive, appointmentCategoryInactive))
+    assertThat(appointmentCategoryService.getAll()).isEqualTo(expectedResult)
   }
 
   @Test

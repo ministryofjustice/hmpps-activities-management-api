@@ -16,7 +16,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSou
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
 import java.time.LocalDate
 import java.time.LocalTime
@@ -28,9 +27,9 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitin
 class SubjectAccessRequestServiceTest {
 
   private val repository: SarRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
 
-  private val service = SubjectAccessRequestService(repository, referenceCodeService)
+  private val service = SubjectAccessRequestService(repository, appointmentCategoryService)
 
   private val sarAllocation = SarAllocation(
     allocationId = 1,

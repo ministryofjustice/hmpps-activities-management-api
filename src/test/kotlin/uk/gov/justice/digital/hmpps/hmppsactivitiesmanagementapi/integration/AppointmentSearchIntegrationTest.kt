@@ -36,8 +36,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
   @BeforeEach
   fun setUp() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     val dpsLocation1 = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), MOORLAND_PRISON_CODE, localName = "Location 123")
     val dpsLocation2 = dpsLocation(UUID.fromString("22222222-2222-2222-2222-222222222222"), MOORLAND_PRISON_CODE, localName = "Location 456")
 
@@ -261,10 +259,10 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
     "classpath:test_data/seed-appointment-search.sql",
   )
   @Test
-  fun `search for appointments that are part of an appointment with category AC1`() {
+  fun `search for appointments that are part of an appointment with category OIC`() {
     val request = AppointmentSearchRequest(
       startDate = LocalDate.now(),
-      categoryCode = "AC1",
+      categoryCode = "OIC",
     )
 
     val results = webTestClient.searchAppointments("MDI", request)!!

@@ -1014,9 +1014,9 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
           assertThat(it.internalLocationId).isEqualTo(123)
           assertThat(it.internalLocationCode).isEqualTo("No information available")
           assertThat(it.internalLocationDescription).isEqualTo("No information available")
-          assertThat(it.categoryCode).isEqualTo("AC1")
-          assertThat(it.categoryDescription).isEqualTo("Appointment Category 1")
-          assertThat(it.summary).isEqualTo("Appointment description (Appointment Category 1)")
+          assertThat(it.categoryCode).isEqualTo("OIC")
+          assertThat(it.categoryDescription).isEqualTo("Adjudication Hearing")
+          assertThat(it.summary).isEqualTo("Appointment description (Adjudication Hearing)")
           assertThat(it.comments).isEqualTo("Appointment level comment")
           assertThat(it.date).isEqualTo(LocalDate.of(2022, 10, 1))
           assertThat(it.startTime).isEqualTo(LocalTime.of(9, 0))
@@ -1181,7 +1181,6 @@ class IntegrationApiIntegrationTest : ActivitiesIntegrationTestBase() {
     @BeforeEach
     fun setupAppointmentStubs() {
       // Stubs used to find category and location descriptions for appointments
-      prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
       prisonApiMockServer.stubGetLocationsForTypeUnrestricted(
         "MDI",
         "APP",

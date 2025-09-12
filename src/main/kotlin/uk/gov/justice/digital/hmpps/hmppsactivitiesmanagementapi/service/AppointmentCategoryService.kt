@@ -27,6 +27,8 @@ class AppointmentCategoryService(
       ModelAppointmentCategorySummary(it.code, it.description)
     }
 
+  fun getAll(): Map<String, AppointmentCategory> = appointmentCategoryRepository.findAll().associateBy { it.code }
+
   fun create(request: AppointmentCategoryRequest): ModelAppointmentCategory {
     require(!appointmentCategoryRepository.findByCode(request.code).isPresent) { "Appointment Category ${request.code} is found" }
     val appointmentParentCategory = validateAppointmentParentCategory(request.appointmentParentCategoryId)

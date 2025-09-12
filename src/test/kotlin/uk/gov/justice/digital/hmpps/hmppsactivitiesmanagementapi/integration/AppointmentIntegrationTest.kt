@@ -105,7 +105,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `update single appointment`() {
     val request = AppointmentUpdateRequest(
-      categoryCode = "AC2",
+      categoryCode = "VLB",
       tierCode = "TIER_2",
       organiserCode = "PRISON_STAFF",
       dpsLocationId = UUID.fromString("11111111-1111-1111-1111-111111111111"),
@@ -115,8 +115,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       extraInformation = "Updated Appointment level comment",
       applyTo = ApplyTo.THIS_APPOINTMENT,
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
 
@@ -140,7 +138,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
     with(appointmentSeries) {
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode).isEqualTo("OIC")
       assertThat(tier!!.code).isEqualTo("TIER_2")
       assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
@@ -193,7 +191,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
   fun `update single appointment when using location id`() {
     val request = AppointmentUpdateRequest(
-      categoryCode = "AC2",
+      categoryCode = "VLB",
       tierCode = "TIER_2",
       organiserCode = "PRISON_STAFF",
       internalLocationId = 456,
@@ -203,8 +201,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       extraInformation = "Updated Appointment level comment",
       applyTo = ApplyTo.THIS_APPOINTMENT,
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
@@ -228,7 +224,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
     with(appointmentSeries) {
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode).isEqualTo("OIC")
       assertThat(tier!!.code).isEqualTo("TIER_2")
       assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
@@ -280,7 +276,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `update single appointment to in cell`() {
     val request = AppointmentUpdateRequest(
-      categoryCode = "AC2",
+      categoryCode = "VLB",
       tierCode = "TIER_2",
       organiserCode = "PRISON_STAFF",
       inCell = true,
@@ -291,13 +287,11 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       applyTo = ApplyTo.THIS_APPOINTMENT,
     )
 
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
-
     val appointmentSeries = webTestClient.updateAppointment(2, request)!!
     val appointmentIds = appointmentSeries.appointments.flatMap { it.attendees.map { attendee -> attendee.id } }
 
     with(appointmentSeries) {
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode).isEqualTo("OIC")
       assertThat(tier!!.code).isEqualTo("TIER_2")
       assertThat(organiser!!.code).isEqualTo("PRISON_STAFF")
       assertThat(internalLocationId).isEqualTo(123)
@@ -781,7 +775,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Deprecated("SAA-2421: In future on DPS Location and not internal location will be used")
   fun `update group repeat appointment this and all future appointments when using location ids`() {
     val request = AppointmentUpdateRequest(
-      categoryCode = "AC2",
+      categoryCode = "VLB",
       tierCode = "TIER_2",
       organiserCode = "PRISON_STAFF",
       internalLocationId = 456,
@@ -793,8 +787,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       removePrisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     val dpsLocation = dpsLocation(UUID.fromString("11111111-1111-1111-1111-111111111111"), "TPR")
 
@@ -825,7 +817,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointmentSeries = webTestClient.updateAppointment(12, request)!!
 
     with(appointmentSeries) {
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode).isEqualTo("OIC")
       assertThat(tier!!.code).isEqualTo("TIER_1")
       assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
@@ -845,7 +837,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       val tier1Appointments = appointments.subList(0, 2)
       assertThat(tier1Appointments).hasSize(2)
       tier1Appointments.forEach {
-        assertThat(it.categoryCode).isEqualTo("AC1")
+        assertThat(it.categoryCode).isEqualTo("OIC")
         assertThat(it.tier!!.code).isEqualTo("TIER_1")
         assertThat(it.organiser).isNull()
         assertThat(it.internalLocationId).isEqualTo(123)
@@ -948,7 +940,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
   @Test
   fun `update group repeat appointment this and all future appointments`() {
     val request = AppointmentUpdateRequest(
-      categoryCode = "AC2",
+      categoryCode = "VLB",
       tierCode = "TIER_2",
       organiserCode = "PRISON_STAFF",
       dpsLocationId = UUID.fromString("11111111-1111-1111-1111-11111111111"),
@@ -960,8 +952,6 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       removePrisonerNumbers = listOf("A1234BC"),
       applyTo = ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS,
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     val dpsLocation = dpsLocation(request.dpsLocationId!!, "TPR")
 
@@ -992,7 +982,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
     val appointmentSeries = webTestClient.updateAppointment(12, request)!!
 
     with(appointmentSeries) {
-      assertThat(categoryCode).isEqualTo("AC1")
+      assertThat(categoryCode).isEqualTo("OIC")
       assertThat(tier!!.code).isEqualTo("TIER_1")
       assertThat(organiser).isNull()
       assertThat(internalLocationId).isEqualTo(123)
@@ -1012,7 +1002,7 @@ class AppointmentIntegrationTest : IntegrationTestBase() {
       val tier1Appointments = appointments.subList(0, 2)
       assertThat(tier1Appointments).hasSize(2)
       tier1Appointments.forEach {
-        assertThat(it.categoryCode).isEqualTo("AC1")
+        assertThat(it.categoryCode).isEqualTo("OIC")
         assertThat(it.tier!!.code).isEqualTo("TIER_1")
         assertThat(it.organiser).isNull()
         assertThat(it.internalLocationId).isEqualTo(123)

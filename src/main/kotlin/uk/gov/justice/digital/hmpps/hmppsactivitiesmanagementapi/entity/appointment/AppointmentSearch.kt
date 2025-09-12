@@ -8,14 +8,11 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentSearchResult
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -87,7 +84,7 @@ data class AppointmentSearch(
 
   fun toResult(
     attendees: List<AppointmentAttendeeSearch>,
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
     prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
   ) = AppointmentSearchResult(
@@ -95,9 +92,9 @@ data class AppointmentSearch(
     appointmentId = appointmentId,
     appointmentType = appointmentType,
     prisonCode = prisonCode,
-    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentName = appointmentCategories[categoryCode].toAppointmentName(categoryCode, customName),
     attendees = attendees.toResult(),
-    category = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    category = appointmentCategories[categoryCode].toAppointmentCategorySummary(categoryCode),
     customName = customName,
     internalLocation = if (inCell) {
       null
@@ -128,13 +125,13 @@ data class AppointmentSearch(
 
 fun List<AppointmentSearch>.toResults(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
-  referenceCodeMap: Map<String, ReferenceCode>,
+  appointmentCategories: Map<String, AppointmentCategory>,
   locationMap: Map<Long, LocationDetails>,
   prisonRegime: Map<Set<DayOfWeek>, PrisonRegime>,
 ) = map {
   it.toResult(
     attendees = attendeeMap[it.appointmentId] ?: emptyList(),
-    referenceCodeMap = referenceCodeMap,
+    appointmentCategories = appointmentCategories,
     locationMap = locationMap,
     prisonRegime = prisonRegime,
   )

@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityFromDbInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.adjudicationHearing
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.PrisonerScheduledActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentInstanceRepository
@@ -277,7 +277,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
     seriesFrequency = null,
   )
 
-  private fun appointmentCategoryMap() = mapOf("TEST" to appointmentCategoryReferenceCode("TEST"))
+  private fun appointmentCategories() = mapOf("TEST" to appointmentCategory("TEST"))
 
   @Nested
   @DisplayName("Scheduled events - multiple prisoners - activities rolled out, appointments are not")
@@ -324,7 +324,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
-        appointmentCategoryMap(),
+        appointmentCategories(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
@@ -479,7 +479,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         tomorrow,
         timeSlot,
-        appointmentCategoryMap(),
+        appointmentCategories(),
       )
 
       verifyBlocking(prisonApiClient, never()) {
@@ -605,7 +605,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         today,
         timeSlot,
-        appointmentCategoryMap(),
+        appointmentCategories(),
       )
 
       verifyBlocking(prisonApiClient, never()) { getScheduledActivitiesForPrisonerNumbersAsync(any(), any(), any(), anyOrNull()) }
@@ -742,7 +742,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         prisonerNumbers,
         tomorrow,
         timeSlot,
-        appointmentCategoryMap(),
+        appointmentCategories(),
       )
 
       // Should not retrieve sensitive events with future date ranges

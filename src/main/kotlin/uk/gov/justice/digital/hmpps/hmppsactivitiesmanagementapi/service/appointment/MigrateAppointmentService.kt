@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCountSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.ApplyTo.THIS_AND_ALL_FUTURE_APPOINTMENTS
@@ -20,10 +21,8 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentSeriesSpecification
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.findOrThrowNotFound
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.DELETE_MIGRATED_APPOINTMENT_CANCELLATION_REASON_ID
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -36,7 +35,7 @@ class MigrateAppointmentService(
   private val appointmentCreateDomainService: AppointmentCreateDomainService,
   private val appointmentCancelDomainService: AppointmentCancelDomainService,
   private val appointmentRepository: AppointmentRepository,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val nomisMappingAPIClient: NomisMappingAPIClient,
   private val transactionHandler: TransactionHandler,
   @Value("\${applications.max-appointment-start-date-from-today:370}") private val maxStartDateOffsetDays: Long = 370,
@@ -143,12 +142,12 @@ class MigrateAppointmentService(
   }
 
   fun getAppointmentSummary(prisonCode: String, startDate: LocalDate, categoryCodes: List<String>): List<AppointmentCountSummary> {
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val summary = mutableListOf<AppointmentCountSummary>()
     categoryCodes.forEach { categoryCode ->
       val count = appointmentRepository.countAppointmentByPrisonCodeAndCategoryCodeAndStartDateGreaterThanEqualAndIsDeleted(prisonCode, categoryCode, startDate)
-      val categorySummary = referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode)
+      val categorySummary = appointmentCategories[categoryCode].toAppointmentCategorySummary(categoryCode)
       summary.add(AppointmentCountSummary(count = count, appointmentCategorySummary = categorySummary))
     }
     return summary

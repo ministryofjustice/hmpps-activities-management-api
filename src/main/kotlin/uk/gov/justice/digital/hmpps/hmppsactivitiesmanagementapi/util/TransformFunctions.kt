@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util
 
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.casenotesapi.api.CaseNotesApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonLocations
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.EventReview
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.ScheduledInstanceAttendanceSummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentCategorySummary
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceHistory
@@ -152,7 +154,7 @@ fun transformPrisonerScheduledActivityToScheduledEvents(
 fun transformAppointmentInstanceToScheduledEvents(
   prisonCode: String,
   priorities: EventPriorities,
-  referenceCodesForAppointmentsMap: Map<String, ReferenceCode>,
+  appointmentCategories: Map<String, AppointmentCategory>,
   locationsForAppointmentsMap: Map<Long, LocationDetails>,
   appointments: List<AppointmentInstance>,
 ) = appointments.map {
@@ -187,8 +189,8 @@ fun transformAppointmentInstanceToScheduledEvents(
     cancelled = it.isCancelled,
     suspended = false,
     categoryCode = it.categoryCode,
-    categoryDescription = referenceCodesForAppointmentsMap[it.categoryCode].toAppointmentCategorySummary(it.categoryCode).description,
-    summary = referenceCodesForAppointmentsMap[it.categoryCode].toAppointmentName(
+    categoryDescription = appointmentCategories[it.categoryCode].toAppointmentCategorySummary(it.categoryCode).description,
+    summary = appointmentCategories[it.categoryCode].toAppointmentName(
       it.categoryCode,
       it.customName,
     ),

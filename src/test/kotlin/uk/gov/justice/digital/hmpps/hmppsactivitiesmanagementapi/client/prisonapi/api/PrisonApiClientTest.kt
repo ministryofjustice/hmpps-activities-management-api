@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.containsExactly
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocation
@@ -468,32 +467,6 @@ class PrisonApiClientTest {
     val externalTransfers = prisonApiClient.getExternalTransfersOnDateAsync(prisonCode, prisonerNumbers, date)
     assertThat(externalTransfers).hasSize(0)
     prisonApiMockServer.verifyNoClientRequests()
-  }
-
-  @Test
-  fun `getReferenceCodes - success`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
-    assertThat(prisonApiClient.getReferenceCodes("INT_SCH_RSN")).isEqualTo(
-      listOf(
-        appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-        appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-        appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      ),
-    )
-  }
-
-  @Test
-  fun `getScheduleReasons - success`() {
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
-
-    assertThat(prisonApiClient.getScheduleReasons("APP")).isEqualTo(
-      listOf(
-        appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-        appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-        appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-      ),
-    )
   }
 
   @Test

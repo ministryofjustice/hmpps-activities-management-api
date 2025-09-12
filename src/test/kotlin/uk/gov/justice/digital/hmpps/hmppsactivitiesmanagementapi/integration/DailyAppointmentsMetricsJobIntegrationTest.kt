@@ -4,7 +4,6 @@ import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.untilAsserted
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
@@ -15,7 +14,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.web.reactive.server.WebTestClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
@@ -38,23 +36,12 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
   private val telemetryPropertyMap = argumentCaptor<Map<String, String>>()
   private val telemetryMetricsMap = argumentCaptor<Map<String, Double>>()
 
-  @BeforeEach
-  fun setUp() {
-    prisonApiMockServer.stubGetAppointmentScheduleReasons(
-      listOf(
-        appointmentCategoryReferenceCode("CHAP", "Chaplaincy"),
-        appointmentCategoryReferenceCode("EDUC", "Education"),
-        appointmentCategoryReferenceCode("IND", "Induction Meeting"),
-      ),
-    )
-  }
-
   @Test
   fun `generate appointments metrics loops through each combination of prison code and category`() {
     webTestClient.generateAppointmentsMetrics()
 
     await untilAsserted {
-      verify(telemetryClient, times(9)).trackEvent(
+      verify(telemetryClient, times(246)).trackEvent(
         eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value),
         telemetryPropertyMap.capture(),
         telemetryMetricsMap.capture(),
@@ -69,15 +56,15 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
         },
       ).containsAll(
         listOf(
-          Pair("PVI", "CHAP"),
+          Pair("PVI", "OIC"),
           Pair("PVI", "EDUC"),
-          Pair("PVI", "IND"),
-          Pair("MDI", "CHAP"),
+          Pair("PVI", "VLB"),
+          Pair("MDI", "OIC"),
           Pair("MDI", "EDUC"),
-          Pair("MDI", "IND"),
-          Pair("RSI", "CHAP"),
+          Pair("MDI", "VLB"),
+          Pair("RSI", "OIC"),
           Pair("RSI", "EDUC"),
-          Pair("RSI", "IND"),
+          Pair("RSI", "VLB"),
         ),
       )
 
@@ -93,7 +80,7 @@ class DailyAppointmentsMetricsJobIntegrationTest : IntegrationTestBase() {
     webTestClient.generateAppointmentsMetrics()
 
     await untilAsserted {
-      verify(telemetryClient, times(9)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
+      verify(telemetryClient, times(246)).trackEvent(eq(TelemetryEvent.APPOINTMENTS_AGGREGATE_METRICS.value), telemetryPropertyMap.capture(), telemetryMetricsMap.capture())
       // this test is flakey and relies on order of prisons.  also probably pointless, given no one uses these daily metrics in app insights
       with(telemetryMetricsMap.firstValue) {
         this[APPOINTMENT_COUNT_METRIC_KEY] isEqualTo 5.0

@@ -44,7 +44,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appoint
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentUpdateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.FakeSecurityContext
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
@@ -57,6 +56,7 @@ import java.util.*
 class AppointmentServiceAsyncTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val appointmentAttendeeRemovalReasonRepository: AppointmentAttendeeRemovalReasonRepository = mock()
   private val appointmentCancellationReasonRepository: AppointmentCancellationReasonRepository = mock()
   private val outboundEventsService: OutboundEventsService = mock()
@@ -90,7 +90,6 @@ class AppointmentServiceAsyncTest {
     ),
   )
 
-  private val referenceCodeService: ReferenceCodeService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val updateAppointmentsJob: UpdateAppointmentsJob = mock()
   private val cancelAppointmentsJob: CancelAppointmentsJob = mock()
@@ -102,7 +101,7 @@ class AppointmentServiceAsyncTest {
 
   private val service = AppointmentService(
     appointmentRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     locationService,
     prisonerSearchApiClient,
     appointmentUpdateDomainService,

@@ -303,32 +303,9 @@ class PrisonApiClient(
     .bodyToMono(typeReference<ReferenceCode>())
     .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/domains/{domain}/codes/{code}")))
 
-  fun getReferenceCodes(domain: String): List<ReferenceCode> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/reference-domains/domains/{domain}/codes")
-        .build(domain)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<ReferenceCode>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/domains/{domain}/codes")))
-    .block() ?: emptyList()
-
   fun getEducationLevel(educationLevelCode: String): Mono<ReferenceCode> = getReferenceCode("EDU_LEVEL", educationLevelCode)
 
   fun getStudyArea(studyAreaCode: String): Mono<ReferenceCode> = getReferenceCode("STUDY_AREA", studyAreaCode)
-
-  fun getScheduleReasons(eventType: String): List<ReferenceCode> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/reference-domains/scheduleReasons")
-        .queryParam("eventType", eventType)
-        .build()
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<ReferenceCode>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/reference-domains/scheduleReasons")))
-    .block() ?: emptyList()
 
   fun getEducationLevels(
     prisonerNumbers: List<String>,

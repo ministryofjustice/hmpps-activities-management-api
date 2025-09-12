@@ -4,11 +4,9 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import org.hibernate.annotations.Immutable
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -57,12 +55,12 @@ data class AppointmentAttendanceSummary(
 ) {
   fun toModel(
     attendees: List<AppointmentAttendeeSearch>,
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
   ) = AppointmentAttendanceSummaryModel(
     id = appointmentId,
     prisonCode = prisonCode,
-    appointmentName = referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentName = appointmentCategories[categoryCode].toAppointmentName(categoryCode, customName),
     internalLocation = if (inCell) {
       null
     } else {
@@ -84,6 +82,6 @@ data class AppointmentAttendanceSummary(
 
 fun List<AppointmentAttendanceSummary>.toModel(
   attendeeMap: Map<Long, List<AppointmentAttendeeSearch>>,
-  referenceCodeMap: Map<String, ReferenceCode>,
+  appointmentCategories: Map<String, AppointmentCategory>,
   locationMap: Map<Long, LocationDetails>,
-) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), referenceCodeMap, locationMap) }
+) = map { it.toModel(attendeeMap[it.appointmentId] ?: emptyList(), appointmentCategories, locationMap) }

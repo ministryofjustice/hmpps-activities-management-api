@@ -47,10 +47,10 @@ insert into event_review (event_review_id, service_identifier, event_type, event
 values (99, 'myservice', 'event-name', '2023-5-10 10:20:00', 'MDI', 'A11111A', 111111, 'aaaaaaa');
 
 insert into appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-values (1, 'INDIVIDUAL', 'PVI', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
+values (1, 'INDIVIDUAL', 'PVI', 'OIC', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
 
 insert into appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-values (2, 1, 1, 'PVI', 'AC1', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
+values (2, 1, 1, 'PVI', 'OIC', 1, 123, false, now()::date + 1, '08:30', '10:00', now()::timestamp, 'TEST.USER');
 
 insert into appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 values (3, 2, 'A11111A', 111111);

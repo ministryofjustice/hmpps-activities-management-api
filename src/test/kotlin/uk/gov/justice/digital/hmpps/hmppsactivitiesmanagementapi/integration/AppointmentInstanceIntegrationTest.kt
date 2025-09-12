@@ -41,7 +41,7 @@ class AppointmentInstanceIntegrationTest : IntegrationTestBase() {
         "TPR",
         "A1234BC",
         456,
-        "AC1",
+        "OIC",
         "Appointment description",
         123,
         UUID.fromString("44444444-1111-2222-3333-444444444444"),

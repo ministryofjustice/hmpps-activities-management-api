@@ -44,7 +44,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.EventPriorities
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.Priority
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.CaseloadAccessException
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.addCaseloadIdToRequestHeader
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.clearCaseloadIdFromRequestHeader
@@ -61,7 +60,7 @@ class InternalLocationServiceTest {
   private val prisonApiClient: PrisonApiClient = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val adjudicationsHearingAdapter: AdjudicationsHearingAdapter = mock()
   private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
   private val locationsInsidePrisonAPIClient: LocationsInsidePrisonAPIClient = mock()
@@ -74,7 +73,7 @@ class InternalLocationServiceTest {
     prisonApiClient,
     prisonerScheduledActivityRepository,
     prisonRegimeService,
-    referenceCodeService,
+    appointmentCategoryService,
     adjudicationsHearingAdapter,
     nomisMappingAPIClient,
     locationsInsidePrisonAPIClient,
