@@ -43,7 +43,7 @@ data class AppointmentCategory(
     id = appointmentCategoryId,
     code = code,
     description = description,
-    appointmentParentCategory = appointmentParentCategory,
+    appointmentParentCategory = appointmentParentCategory.toModel(),
     status = status,
   )
 }
