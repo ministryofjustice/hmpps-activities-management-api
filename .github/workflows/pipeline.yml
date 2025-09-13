@@ -98,3 +98,4 @@ jobs:
       environment: 'prod'
       app_version: '${{ needs.build.outputs.app_version }}'
       helm_timeout: '5m'
+      slack_notification: true
