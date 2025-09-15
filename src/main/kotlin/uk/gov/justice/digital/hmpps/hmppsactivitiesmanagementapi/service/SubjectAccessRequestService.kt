@@ -6,8 +6,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarAttendanceSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SubjectAccessRequestData
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.SarRepository
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.hmpps.kotlin.sar.HmppsPrisonSubjectAccessRequestService
 import uk.gov.justice.hmpps.kotlin.sar.HmppsSubjectAccessRequestContent
 import java.time.LocalDate
@@ -24,7 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.SarWaitin
  * The purpose of this service is to surface all relevant prisoner specific information for a subject access request.
  */
 @Service
-class SubjectAccessRequestService(private val repository: SarRepository, private val referenceCodeService: ReferenceCodeService) : HmppsPrisonSubjectAccessRequestService {
+class SubjectAccessRequestService(private val repository: SarRepository, private val appointmentCategoryService: AppointmentCategoryService) : HmppsPrisonSubjectAccessRequestService {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -40,10 +38,10 @@ class SubjectAccessRequestService(private val repository: SarRepository, private
     val appointments = repository.findAppointmentsBy(prn, from, to)
     val allAttendance = repository.findAttendanceBy(prn, from, to)
 
-    val referenceCodesForAppointmentsMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     appointments.forEach { appointment ->
-      appointment.category = referenceCodesForAppointmentsMap[appointment.categoryCode]?.description
+      appointment.category = appointmentCategories[appointment.categoryCode]?.description
         ?: "Unknown category"
     }
 

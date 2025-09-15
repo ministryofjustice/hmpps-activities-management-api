@@ -15,13 +15,12 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.internalLocationEvents
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.InternalLocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerScheduledEventsFixture
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.time.LocalDate
 import java.util.*
 
@@ -33,17 +32,17 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
   private lateinit var scheduledEventService: ScheduledEventService
 
   @MockitoBean
-  private lateinit var referenceCodeService: ReferenceCodeService
+  private lateinit var appointmentCategoryService: AppointmentCategoryService
 
   @MockitoBean
   private lateinit var internalLocationService: InternalLocationService
 
-  override fun controller() = ScheduledEventController(scheduledEventService, referenceCodeService, internalLocationService)
+  override fun controller() = ScheduledEventController(scheduledEventService, appointmentCategoryService, internalLocationService)
 
   @BeforeEach
   fun setupMocks() {
-    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf("" to appointmentCategoryReferenceCode("")))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf("" to appointmentCategory("")))
   }
 
   @Test
@@ -57,7 +56,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       ),
     ).thenReturn(result)
 
@@ -79,7 +78,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
-      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      appointmentCategoryService.getAll(),
     )
   }
 
@@ -94,7 +93,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
         prisonerNumbers,
         LocalDate.of(2022, 10, 1),
         TimeSlot.AM,
-        referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+        appointmentCategoryService.getAll(),
       ),
     ).thenThrow(RuntimeException("Error"))
 
@@ -115,7 +114,7 @@ class ScheduledEventControllerTest : ControllerTestBase<ScheduledEventController
       prisonerNumbers,
       LocalDate.of(2022, 10, 1),
       TimeSlot.AM,
-      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      appointmentCategoryService.getAll(),
     )
   }
 

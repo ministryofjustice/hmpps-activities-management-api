@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendanceMarkedEvent
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTierType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentAttendanceSummary
@@ -14,15 +15,13 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendanceSummaryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentAttendeeSearchRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryPropertiesMap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.checkCaseloadAccess
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import java.security.Principal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -47,7 +46,7 @@ enum class AttendanceStatus {
 class AppointmentAttendanceService(
   private val appointmentAttendanceSummaryRepository: AppointmentAttendanceSummaryRepository,
   private val appointmentRepository: AppointmentRepository,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val locationService: LocationService,
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository,
   private val telemetryClient: TelemetryClient,
@@ -77,12 +76,13 @@ class AppointmentAttendanceService(
       QueryMode.BY_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCustomNameIgnoreCase(prisonCode, date, customName!!)
       QueryMode.BY_CATEGORY_CODE_AND_CUSTOM_NAME -> appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDateAndCategoryCodeAndCustomNameIgnoreCase(prisonCode, date, categoryCode!!, customName!!)
     }
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+
+    val appointmentCategories = appointmentCategoryService.getAll()
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(prisonCode)
     val attendeeMap = appointmentAttendeeSearchRepository.findByAppointmentIds(summaries.map { it.appointmentId })
       .groupBy { it.appointmentSearch.appointmentId }
 
-    return summaries.toModel(attendeeMap, referenceCodeMap, locationMap)
+    return summaries.toModel(attendeeMap, appointmentCategories, locationMap)
   }
 
   fun getAppointmentAttendanceByStatus(
@@ -97,7 +97,6 @@ class AppointmentAttendanceService(
   ): List<AppointmentAttendeeByStatus> {
     if (status == AttendanceStatus.EVENT_TIER) eventTier ?: throw ValidationException("event tier filter is required")
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
     val appointmentAttendees = appointmentRepository.getAppointmentsWithAttendees(
       prisonCode = prisonCode,
       date = date,
@@ -116,12 +115,13 @@ class AppointmentAttendanceService(
       }
     }
 
+    val appointmentCategories = appointmentCategoryService.getAll()
     return appointmentAttendees.map {
       AppointmentAttendeeByStatus(
         prisonerNumber = it.getPrisonerNumber(),
         bookingId = it.getBookingId(),
         appointmentId = it.getAppointmentId(),
-        appointmentName = referenceCodeMap[it.getCategoryCode()].toAppointmentName(it.getCategoryCode(), it.getCustomName()),
+        appointmentName = appointmentCategories[it.getCategoryCode()].toAppointmentName(it.getCategoryCode(), it.getCustomName()),
         appointmentAttendeeId = it.getAppointmentAttendeeId(),
         startDate = it.getStartDate(),
         startTime = it.getStartTime(),

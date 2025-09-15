@@ -37,7 +37,6 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
   @BeforeEach
   fun setupAppointmentStubs() {
     // Stubs used to find category and location descriptions for appointments
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
     prisonApiMockServer.stubGetLocationsForTypeUnrestricted(
       "MDI",
       "APP",

@@ -29,7 +29,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentAttendee
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSeriesEntity
@@ -52,9 +52,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentCreateDomainService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSeriesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_INSTANCE_COUNT_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_SERIES_ID_PROPERTY_KEY
@@ -99,7 +96,7 @@ class AppointmentSeriesServiceTest {
   private val appointmentSeriesRepository: AppointmentSeriesRepository = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val telemetryClient: TelemetryClient = mock()
@@ -123,7 +120,7 @@ class AppointmentSeriesServiceTest {
     appointmentSeriesRepository,
     eventTierRepository,
     eventOrganiserRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     locationService,
     prisonerSearchApiClient,
     appointmentCreateDomainService,
@@ -148,8 +145,8 @@ class AppointmentSeriesServiceTest {
     principal = SecurityContextHolder.getContext().authentication
     addCaseloadIdToRequestHeader(prisonCode)
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf("CHAP" to appointmentCategoryReferenceCode(categoryCode, "Chaplaincy")))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf("CHAP" to appointmentCategory(categoryCode, "Chaplaincy")))
 
     whenever(locationService.getLocationDetailsForAppointmentsMap(prisonCode))
       .thenReturn(mapOf(internalLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "Chapel")))
@@ -212,8 +209,8 @@ class AppointmentSeriesServiceTest {
     val entity = appointmentSeriesEntity()
     val appointmentEntity = entity.appointments().first()
     whenever(appointmentSeriesRepository.findById(entity.appointmentSeriesId)).thenReturn(Optional.of(entity))
-    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, dpsLocationId, "TPR")))
     assertThat(service.getAppointmentSeriesDetailsById(1)).isEqualTo(
@@ -284,8 +281,8 @@ class AppointmentSeriesServiceTest {
       schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 350),
     )
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -323,8 +320,8 @@ class AppointmentSeriesServiceTest {
   fun `createAppointmentSeries appointment series succeeds if start date is the maximum allowed`() {
     val request = appointmentSeriesCreateRequest(startDate = LocalDate.now().plusDays(2))
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, request.dpsLocationId!!, request.prisonCode)))
 
@@ -458,8 +455,8 @@ class AppointmentSeriesServiceTest {
   fun `createAppointmentSeries single appointment single prisoner success`() {
     val request = appointmentSeriesCreateRequest()
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
 
     val appointmentLocationDetails = locationDetails(
       agencyId = request.prisonCode!!,
@@ -569,8 +566,8 @@ class AppointmentSeriesServiceTest {
   fun `createAppointmentSeries single appointment single prisoner success - deprecated`() {
     val request = appointmentSeriesCreateRequest(dpsLocationId = null)
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -671,8 +668,8 @@ class AppointmentSeriesServiceTest {
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
     )
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -714,8 +711,8 @@ class AppointmentSeriesServiceTest {
   fun `createAppointmentSeries individual repeat appointment success`() {
     val request = appointmentSeriesCreateRequest(schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.WEEKLY, 3))
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -738,8 +735,8 @@ class AppointmentSeriesServiceTest {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = null)
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -768,8 +765,8 @@ class AppointmentSeriesServiceTest {
     val prisonerNumberToBookingIdMap = (1L..15L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 1))
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -798,8 +795,8 @@ class AppointmentSeriesServiceTest {
     val prisonerNumberToBookingIdMap = (1L..7L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentSeriesCreateRequest(appointmentType = AppointmentType.GROUP, prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(), schedule = AppointmentSeriesSchedule(AppointmentFrequencyModel.DAILY, 2))
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))
@@ -833,8 +830,8 @@ class AppointmentSeriesServiceTest {
       originalAppointmentId = 789L,
     )
 
-    whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-      .thenReturn(mapOf(request.categoryCode!! to appointmentCategoryReferenceCode(request.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(request.categoryCode!! to appointmentCategory(request.categoryCode)))
     whenever(locationService.getLocationDetailsForAppointmentsMap(request.prisonCode!!))
       .thenReturn(mapOf(request.internalLocationId!! to appointmentLocationDetails(request.internalLocationId, dpsLocationId, request.prisonCode)))
     whenever(prisonerSearchApiClient.findByPrisonerNumbers(request.prisonerNumbers))

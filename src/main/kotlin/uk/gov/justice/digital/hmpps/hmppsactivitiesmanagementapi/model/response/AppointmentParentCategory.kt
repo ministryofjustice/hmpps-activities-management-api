@@ -14,5 +14,5 @@ data class AppointmentParentCategory(
   val name: String,
 
   @Schema(description = "The description of the appointment parent category", example = "Such as association, library time and social clubs, like music or art")
-  val description: String?,
+  val description: String? = null,
 )
