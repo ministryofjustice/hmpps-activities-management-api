@@ -26,7 +26,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointm
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSeries
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentSet
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetCreateRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSetDetails
@@ -45,9 +45,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refd
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSetService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.CUSTOM_NAME_LENGTH_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.DPS_LOCATION_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.HAS_CUSTOM_NAME_PROPERTY_KEY
@@ -66,7 +63,7 @@ class AppointmentSetServiceTest {
   private val appointmentSetRepository: AppointmentSetRepository = mock()
   private val eventTierRepository: EventTierRepository = mock()
   private val eventOrganiserRepository: EventOrganiserRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val locationService: LocationService = mock()
   private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val outboundEventsService: OutboundEventsService = mock()
@@ -78,7 +75,7 @@ class AppointmentSetServiceTest {
     appointmentSetRepository,
     eventTierRepository,
     eventOrganiserRepository,
-    referenceCodeService,
+    appointmentCategoryService,
     locationService,
     prisonerSearchApiClient,
     TransactionHandler(),
@@ -128,8 +125,8 @@ class AppointmentSetServiceTest {
     val entity = appointmentSetEntity()
     whenever(appointmentSetRepository.findById(entity.appointmentSetId)).thenReturn(Optional.of(entity))
 
-    whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY))
-      .thenReturn(mapOf(entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode)))
+    whenever(appointmentCategoryService.getAll())
+      .thenReturn(mapOf(entity.categoryCode to appointmentCategory(entity.categoryCode)))
 
     whenever(locationService.getLocationDetailsForAppointmentsMap(entity.prisonCode))
       .thenReturn(mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId!!, entity.dpsLocationId!!, "TPR")))
@@ -259,8 +256,8 @@ class AppointmentSetServiceTest {
 
       whenever(principal.name).thenReturn(createdBy)
 
-      whenever(referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT))
-        .thenReturn(mapOf("MEDO" to appointmentCategoryReferenceCode(categoryCode, "Medical - Doctor")))
+      whenever(appointmentCategoryService.getAll())
+        .thenReturn(mapOf("MEDO" to appointmentCategory(categoryCode, "Medical - Doctor")))
 
       whenever(locationService.getLocationDetailsForAppointmentsMapByDpsLocationId(prisonCode))
         .thenReturn(mapOf(dpsLocationId to appointmentLocationDetails(internalLocationId, dpsLocationId, prisonCode, "HB1 Doctors")))

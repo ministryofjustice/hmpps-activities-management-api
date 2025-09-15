@@ -29,7 +29,7 @@ class AppointmentTest : ModelTest() {
       id = 1,
       sequenceNumber = 1,
       prisonCode = "PVI",
-      categoryCode = "AC1",
+      categoryCode = "OIC",
       tier = eventTier().toModelEventTier(),
       organiser = eventOrganiser().toModelEventOrganiser(),
       customName = null,

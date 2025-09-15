@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.api.extensions.toModel
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nonassociationsapi.model.PrisonerNonAssociation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.AttendanceStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.PrisonerScheduledActivity
@@ -23,7 +22,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONV
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.activityEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.advanceAttendance
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentInstanceEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.earliestReleaseDate
@@ -33,7 +32,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.locatio
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.lowPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ActivityScheduleSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Allocation
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.InternalLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent
@@ -551,7 +549,7 @@ class TransformFunctionsTest {
       return transformAppointmentInstanceToScheduledEvents(
         "TPR",
         eventPriorities,
-        mapOf(result.categoryCode to appointmentCategoryReferenceCode(result.categoryCode)),
+        mapOf(result.categoryCode to appointmentCategory(result.categoryCode)),
         locationMap ?: defaultLocationMap(result.internalLocationId!!),
         listOf(appointmentInstance),
       )
@@ -604,66 +602,6 @@ class TransformFunctionsTest {
         comments = nonAssociationDetail.comment,
       ),
     )
-  }
-
-  @Test
-  fun `reference code to appointment category summary returns category code for null reference codes`() {
-    assertThat((null as ReferenceCode?).toAppointmentCategorySummary("MEDO")).isEqualTo(
-      AppointmentCategorySummary("MEDO", "MEDO"),
-    )
-  }
-
-  @Test
-  fun `reference code to appointment category summary mapping`() {
-    assertThat(
-      appointmentCategoryReferenceCode(
-        "MEDO",
-        "Medical - Doctor",
-      ).toAppointmentCategorySummary("MEDO"),
-    ).isEqualTo(
-      AppointmentCategorySummary("MEDO", "Medical - Doctor"),
-    )
-  }
-
-  @Test
-  fun `reference code list to appointment category summary list mapping`() {
-    assertThat(
-      listOf(
-        appointmentCategoryReferenceCode(
-          "MEDO",
-          "Medical - Doctor",
-        ),
-      ).toAppointmentCategorySummary(),
-    ).isEqualTo(
-      listOf(AppointmentCategorySummary("MEDO", "Medical - Doctor")),
-    )
-  }
-
-  @Test
-  fun `reference code to appointment name mapping`() {
-    assertThat(
-      appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")
-        .toAppointmentName("MEDO", "John's doctor appointment"),
-    ).isEqualTo("John's doctor appointment (Medical - Doctor)")
-  }
-
-  @Test
-  fun `reference code to appointment name mapping for null reference code`() {
-    assertThat(null.toAppointmentName("MEDO", "John's doctor appointment"))
-      .isEqualTo("John's doctor appointment (MEDO)")
-  }
-
-  @Test
-  fun `reference code to appointment name mapping with no description`() {
-    assertThat(
-      appointmentCategoryReferenceCode("MEDO", "Medical - Doctor")
-        .toAppointmentName("MEDO", null),
-    ).isEqualTo("Medical - Doctor")
-  }
-
-  @Test
-  fun `reference code to appointment name mapping for null reference code and no description`() {
-    assertThat(null.toAppointmentName("MEDO", null)).isEqualTo("MEDO")
   }
 
   @Test

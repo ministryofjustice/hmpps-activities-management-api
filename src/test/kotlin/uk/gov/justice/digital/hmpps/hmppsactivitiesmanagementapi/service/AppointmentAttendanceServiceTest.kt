@@ -34,7 +34,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentAttendanceSummaryModel
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentEntity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentSearchEntity
@@ -47,8 +47,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentAttendanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceAction
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AttendanceStatus
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.APPOINTMENT_ID_PROPERTY_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.PRISONERS_ATTENDANCE_CHANGED_COUNT_METRIC_KEY
@@ -69,12 +67,12 @@ import java.time.LocalTime
 class AppointmentAttendanceServiceTest {
   private val appointmentAttendanceSummaryRepository: AppointmentAttendanceSummaryRepository = mock()
   private val appointmentRepository: AppointmentRepository = mock()
-  private val referenceCodeService: ReferenceCodeService = mock()
+  private val appointmentCategoryService: AppointmentCategoryService = mock()
   private val locationService: LocationService = mock()
   private val appointmentAttendeeSearchRepository: AppointmentAttendeeSearchRepository = mock()
   private val telemetryClient: TelemetryClient = mock()
 
-  private val service = AppointmentAttendanceService(appointmentAttendanceSummaryRepository, appointmentRepository, referenceCodeService, locationService, appointmentAttendeeSearchRepository, telemetryClient, TransactionHandler())
+  private val service = AppointmentAttendanceService(appointmentAttendanceSummaryRepository, appointmentRepository, appointmentCategoryService, locationService, appointmentAttendeeSearchRepository, telemetryClient, TransactionHandler())
 
   private val principal: Principal = mock()
   private val username = "ATTENDANCE.RECORDED.BY"
@@ -109,14 +107,14 @@ class AppointmentAttendanceServiceTest {
     @BeforeEach
     fun `init`() {
       val appointmentSearch = appointmentSearchEntity(appointmentId = 1)
-      val referenceCodeMap = mapOf(
-        entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"),
-        "TEST_CAT" to appointmentCategoryReferenceCode("TEST_CAT", "appointment"),
+      val appointmentCategories = mapOf(
+        entity.categoryCode to appointmentCategory(entity.categoryCode, "Chaplaincy"),
+        "TEST_CAT" to appointmentCategory("TEST_CAT", "appointment"),
       )
       val locationMap = mapOf(entity.internalLocationId!! to appointmentLocationDetails(entity.internalLocationId, entity.dpsLocationId!!, entity.prisonCode, description = "Chapel"))
 
       whenever(appointmentAttendanceSummaryRepository.findByPrisonCodeAndStartDate(MOORLAND_PRISON_CODE, date)).thenReturn(listOf(entity))
-      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
+      whenever(appointmentCategoryService.getAll()).thenReturn(appointmentCategories)
       whenever(locationService.getLocationDetailsForAppointmentsMap(any())).thenReturn(locationMap)
       whenever(appointmentAttendeeSearchRepository.findByAppointmentIds(listOf(1))).thenReturn(appointmentSearch.attendees)
     }
@@ -443,11 +441,11 @@ class AppointmentAttendanceServiceTest {
 
     @BeforeEach
     fun `init`() {
-      val referenceCodeMap = mapOf(
-        entity.categoryCode to appointmentCategoryReferenceCode(entity.categoryCode, "Chaplaincy"),
-        "TEST_CAT" to appointmentCategoryReferenceCode("TEST_CAT", "appointment"),
+      val appointmentCategories = mapOf(
+        entity.categoryCode to appointmentCategory(entity.categoryCode, "Chaplaincy"),
+        "TEST_CAT" to appointmentCategory("TEST_CAT", "appointment"),
       )
-      whenever(referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)).thenReturn(referenceCodeMap)
+      whenever(appointmentCategoryService.getAll()).thenReturn(appointmentCategories)
     }
 
     @Test

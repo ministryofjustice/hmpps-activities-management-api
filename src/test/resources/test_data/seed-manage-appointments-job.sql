@@ -51,17 +51,17 @@ VALUES  (12, 7, 'A1234BC', 1),
 -- ====================================
 
 INSERT INTO appointment_set (appointment_set_id, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, created_time, created_by)
-VALUES  (1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, now()::timestamp, 'TEST.USER');
+VALUES  (1, 'RSI', 'OIC', 1, 123, false, now()::date + 2, now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_series (appointment_series_id, appointment_type, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES  (10, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (11, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
-        (12, 'INDIVIDUAL', 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
+VALUES  (10, 'INDIVIDUAL', 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
+        (11, 'INDIVIDUAL', 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
+        (12, 'INDIVIDUAL', 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment (appointment_id, appointment_series_id, sequence_number, prison_code, category_code, appointment_tier_id, internal_location_id, in_cell, start_date, start_time, end_time, created_time, created_by)
-VALUES  (10, 10, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
-        (11, 11, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
-        (12, 12, 1, 'RSI', 'AC1', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
+VALUES  (10, 10, 1, 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:00', '09:15', now()::timestamp, 'TEST.USER'),
+        (11, 11, 1, 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:15', '09:30', now()::timestamp, 'TEST.USER'),
+        (12, 12, 1, 'RSI', 'OIC', 1, 123, false, now()::date + 2, '09:30', '09:45', now()::timestamp, 'TEST.USER');
 
 INSERT INTO appointment_attendee (appointment_attendee_id, appointment_id, prisoner_number, booking_id)
 VALUES  (20, 10, 'A1234BC', 123),

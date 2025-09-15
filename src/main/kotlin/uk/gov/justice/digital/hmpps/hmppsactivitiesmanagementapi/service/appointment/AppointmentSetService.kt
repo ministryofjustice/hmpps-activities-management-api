@@ -18,14 +18,12 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.find
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventOrganiserRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.EventTierRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.refdata.findByCodeOrThrowIllegalArgument
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AuditService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.TransactionHandler
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.OutboundEventsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ScheduleReasonEventType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.EVENT_TIME_MS_METRIC_KEY
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.TelemetryEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.telemetry.toTelemetryMetricsMap
@@ -42,7 +40,7 @@ class AppointmentSetService(
   private val appointmentSetRepository: AppointmentSetRepository,
   private val eventTierRepository: EventTierRepository,
   private val eventOrganiserRepository: EventOrganiserRepository,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val locationService: LocationService,
   private val prisonerSearchApiClient: PrisonerSearchApiClient,
   private val transactionHandler: TransactionHandler,
@@ -59,11 +57,11 @@ class AppointmentSetService(
 
     val prisonerMap = prisonerSearchApiClient.findByPrisonerNumbersMap(appointmentSet.prisonerNumbers())
 
-    val referenceCodeMap = referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY)
+    val appointmentCategories = appointmentCategoryService.getAll()
 
     val locationMap = locationService.getLocationDetailsForAppointmentsMap(appointmentSet.prisonCode)
 
-    return appointmentSet.toDetails(prisonerMap, referenceCodeMap, locationMap)
+    return appointmentSet.toDetails(prisonerMap, appointmentCategories, locationMap)
   }
 
   fun createAppointmentSet(request: AppointmentSetCreateRequest, principal: Principal): AppointmentSetModel {
@@ -96,7 +94,7 @@ class AppointmentSetService(
     }
   }
 
-  private fun AppointmentSetCreateRequest.categoryDescription() = referenceCodeService.getScheduleReasonsMap(ScheduleReasonEventType.APPOINTMENT)[categoryCode]?.description
+  private fun AppointmentSetCreateRequest.categoryDescription() = appointmentCategoryService.getAll()[categoryCode]?.description
     ?: throw IllegalArgumentException("Appointment Category with code '$categoryCode' not found or is not active")
 
   private fun AppointmentSetCreateRequest.locationDescription(): String = when {

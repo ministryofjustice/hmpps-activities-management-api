@@ -97,7 +97,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `migrate appointment forbidden`() {
-    val request = appointmentMigrateRequest(categoryCode = "AC1")
+    val request = appointmentMigrateRequest(categoryCode = "OIC")
 
     val error = webTestClient.post()
       .uri("/migrate-appointment")
@@ -120,7 +120,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `migrate appointment success`() {
-    val request = appointmentMigrateRequest(categoryCode = "AC1")
+    val request = appointmentMigrateRequest(categoryCode = "OIC")
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response)
@@ -130,7 +130,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
 
   @Test
   fun `migrate appointment success with long comment`() {
-    val request = appointmentMigrateRequest(categoryCode = "AC1", comment = "This is a long comment over 40 characters")
+    val request = appointmentMigrateRequest(categoryCode = "OIC", comment = "This is a long comment over 40 characters")
 
     val response = webTestClient.migrateAppointment(request)!!
     verifyAppointmentInstance(response = response, comment = "This is a long comment over 40 characters")
@@ -193,7 +193,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   @Test
   fun `migrate appointment with comment over 40 characters success`() {
     val request = appointmentMigrateRequest(
-      categoryCode = "AC1",
+      categoryCode = "OIC",
       comment = "First 40 characters will become the appointments custom name but the full comment will go to extra information.",
     )
 
@@ -225,7 +225,7 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
       assertThat(prisonCode).isEqualTo("TPR")
       assertThat(prisonerNumber).isEqualTo("A1234BC")
       assertThat(bookingId).isEqualTo(123)
-      assertThat(categoryCode ?: "AC1").isEqualTo(categoryCode ?: "AC1")
+      assertThat(categoryCode ?: "OIC").isEqualTo(categoryCode ?: "OIC")
       var name: String? = null
       if (setCustomName) {
         name = comment?.take(40) ?: "Appointment level comment"
@@ -268,8 +268,6 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `delete migrated appointments - success`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     webTestClient.deleteMigratedAppointments("RSI", LocalDate.now().plusDays(1))
 
     await untilAsserted {
@@ -381,17 +379,16 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `migrate appointment summary for several categories - success`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    val summary = webTestClient.migratedAppointmentsSummary("RSI", LocalDate.now().plusDays(1), "GOVE,CHAP,ACTI,OIC,AC3")
+    val summary = webTestClient.migratedAppointmentsSummary("RSI", LocalDate.now().plusDays(1), "VLB,CALA,IMM,OIC,EDUC")
 
     assertThat(summary).hasSize(5)
 
     with(summary!!) {
-      this.single { it.appointmentCategorySummary.code == "GOVE" && it.count == 1L }
-      this.single { it.appointmentCategorySummary.code == "CHAP" && it.count == 0L }
-      this.single { it.appointmentCategorySummary.code == "ACTI" && it.count == 8L }
+      this.single { it.appointmentCategorySummary.code == "VLB" && it.count == 1L }
+      this.single { it.appointmentCategorySummary.code == "CALA" && it.count == 0L }
+      this.single { it.appointmentCategorySummary.code == "IMM" && it.count == 8L }
       this.single { it.appointmentCategorySummary.code == "OIC" && it.count == 1L }
-      this.single { it.appointmentCategorySummary.code == "AC3" && it.appointmentCategorySummary.description == "Appointment Category 3" && it.count == 5L }
+      this.single { it.appointmentCategorySummary.code == "EDUC" && it.appointmentCategorySummary.description == "Education" && it.count == 5L }
     }
   }
 
@@ -400,20 +397,19 @@ class MigrateAppointmentIntegrationTest : AppointmentsIntegrationTestBase() {
   )
   @Test
   fun `migrate appointment summary for single category different prison - success`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-    val summary = webTestClient.migratedAppointmentsSummary("MDI", LocalDate.now().plusDays(1), "AC3")
+    val summary = webTestClient.migratedAppointmentsSummary("MDI", LocalDate.now().plusDays(1), "EDUC")
 
     assertThat(summary).hasSize(1)
 
     with(summary!!) {
-      this.single { it.appointmentCategorySummary.code == "AC3" && it.appointmentCategorySummary.description == "Appointment Category 3" && it.count == 1L }
+      this.single { it.appointmentCategorySummary.code == "EDUC" && it.appointmentCategorySummary.description == "Education" && it.count == 1L }
     }
   }
 
   @Test
   fun `migrate appointment summary forbidden`() {
     val startDate = LocalDate.now().plusDays(1)
-    val categoryCodes = "GOVE,CHAP,ACTI,OIC,AC3"
+    val categoryCodes = "VLB,CALA,IMM,OIC,EDUC"
     val error = webTestClient.get()
       .uri("/migrate-appointment/RSI/summary?startDate=$startDate&categoryCodes=$categoryCodes")
       .headers(setAuthorisation(roles = listOf()))

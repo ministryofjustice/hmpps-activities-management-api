@@ -93,7 +93,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         1,
         AppointmentType.INDIVIDUAL,
         "TPR",
-        "AC1",
+        "OIC",
         EventTier(
           id = 2,
           code = "TIER_2",
@@ -121,7 +121,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
             2,
             1,
             "TPR",
-            "AC1",
+            "OIC",
             EventTier(
               id = 2,
               code = "TIER_2",
@@ -194,8 +194,6 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   )
   @Test
   fun `get single appointment series details`() {
-    prisonApiMockServer.stubGetAppointmentCategoryReferenceCodes()
-
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), "TPR")
 
     locationsInsidePrisonApiMockServer.stubLocationsForUsageType(
@@ -217,8 +215,8 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
         1,
         AppointmentType.INDIVIDUAL,
         "TPR",
-        "Appointment description (Appointment Category 1)",
-        AppointmentCategorySummary("AC1", "Appointment Category 1"),
+        "Appointment description (Adjudication Hearing)",
+        AppointmentCategorySummary("OIC", "Adjudication Hearing"),
         EventTier(
           id = 2,
           code = "TIER_2",
@@ -270,9 +268,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series single appointment single prisoner success for internal location`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", dpsLocationId = null)
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    val request = appointmentSeriesCreateRequest(categoryCode = "OIC", dpsLocationId = null)
 
     val dpsLocation = dpsLocation(UUID.fromString("44444444-1111-2222-3333-444444444444"), request.prisonCode!!, localName = "Test Appointment Location")
 
@@ -329,9 +325,8 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series single appointment single prisoner success for DPS Location ID`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1")
+    val request = appointmentSeriesCreateRequest(categoryCode = "OIC")
 
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -385,9 +380,8 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series single appointment single prisoner success for in cell`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, dpsLocationId = null, inCell = true)
+    val request = appointmentSeriesCreateRequest(categoryCode = "OIC", internalLocationId = null, dpsLocationId = null, inCell = true)
 
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
       listOf(
@@ -426,12 +420,10 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create appointment series group appointment two prisoner success`() {
     val request = appointmentSeriesCreateRequest(
-      categoryCode = "AC1",
+      categoryCode = "OIC",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = listOf("A12345BC", "B23456CE"),
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -491,9 +483,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
 
   @Test
   fun `create appointment series duplicated from an original appointment`() {
-    val request = appointmentSeriesCreateRequest(categoryCode = "AC1", internalLocationId = null, dpsLocationId = null, inCell = true, originalAppointmentId = 789L)
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+    val request = appointmentSeriesCreateRequest(categoryCode = "OIC", internalLocationId = null, dpsLocationId = null, inCell = true, originalAppointmentId = 789L)
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -533,9 +523,7 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
   @Test
   fun `create individual repeat appointment series success`() {
     val request =
-      appointmentSeriesCreateRequest(categoryCode = "AC1", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
+      appointmentSeriesCreateRequest(categoryCode = "OIC", schedule = AppointmentSeriesSchedule(AppointmentFrequency.FORTNIGHTLY, 3))
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -579,13 +567,11 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     // The resulting create appointment request will be synchronous, creating all appointments and attendees
     val prisonerNumberToBookingIdMap = (1L..5L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
     val request = appointmentSeriesCreateRequest(
-      categoryCode = "AC1",
+      categoryCode = "OIC",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
       schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 2),
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,
@@ -630,13 +616,11 @@ class AppointmentSeriesIntegrationTest : IntegrationTestBase() {
     val prisonerNumberToBookingIdMap = (1L..3L).associateBy { "A12${it.toString().padStart(3, '0')}BC" }
 
     val request = appointmentSeriesCreateRequest(
-      categoryCode = "AC1",
+      categoryCode = "OIC",
       appointmentType = AppointmentType.GROUP,
       prisonerNumbers = prisonerNumberToBookingIdMap.keys.toList(),
       schedule = AppointmentSeriesSchedule(AppointmentFrequency.DAILY, 4),
     )
-
-    prisonApiMockServer.stubGetAppointmentScheduleReasons()
 
     prisonerSearchApiMockServer.stubSearchByPrisonerNumbers(
       request.prisonerNumbers,

@@ -200,28 +200,28 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
       @Test
       @WithMockUser(roles = ["NOMIS_APPOINTMENTS"])
       fun `Migrate appointment summary (ROLE_NOMIS_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
+        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isOk() } }
       }
 
       @Test
       @WithMockUser(roles = ["MIGRATE_APPOINTMENTS"])
       fun `Migrate appointment summary (ROLE_MIGRATE_APPOINTMENTS) - 202`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
+        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isOk() } }
       }
 
       @Test
       @WithMockUser(roles = ["ACTIVITY_HUB"])
       fun `Migrate appointment (ROLE_ACTIVITY_HUB) - 403`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
+        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isForbidden() } }
       }
 
       @Test
       @WithMockUser(roles = ["UNKNOWN"])
       fun `Migrate appointment (ROLE_UNKNOWN) - 403`() {
-        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
+        mockMvcWithSecurity.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
           .andExpect { status { isForbidden() } }
       }
     }
@@ -229,15 +229,15 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
     @Test
     fun `200 response when category code supplied`() {
       val startDate = LocalDate.now()
-      mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=AC1")
+      mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now()}&categoryCodes=OIC")
         .andExpect { status { isOk() } }
 
-      verify(migrateAppointmentService).getAppointmentSummary("MDI", startDate, listOf("AC1"))
+      verify(migrateAppointmentService).getAppointmentSummary("MDI", startDate, listOf("OIC"))
     }
 
     @Test
     fun `400 response when no start date supplied`() {
-      mockMvc.get("/migrate-appointment/MDI/summary?categoryCodes=AC1")
+      mockMvc.get("/migrate-appointment/MDI/summary?categoryCodes=OIC")
         .andExpect { status { isBadRequest() } }
         .andExpect {
           content {
@@ -252,7 +252,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
 
     @Test
     fun `400 response when invalid start date supplied`() {
-      mockMvc.get("/migrate-appointment/MDI/summary?startDate=invalid&categoryCodes=AC1")
+      mockMvc.get("/migrate-appointment/MDI/summary?startDate=invalid&categoryCodes=OIC")
         .andExpect { status { isBadRequest() } }
         .andExpect {
           content {
@@ -267,8 +267,7 @@ class MigrateAppointmentControllerTest : ControllerTestBase<MigrateAppointmentCo
 
     @Test
     fun `400 response when start date is in the past`() {
-      val startDate = LocalDate.now().minusDays(1)
-      mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now().minusDays(1)}&categoryCodes=AC1")
+      mockMvc.get("/migrate-appointment/MDI/summary?startDate=${LocalDate.now().minusDays(1)}&categoryCodes=OIC")
         .andExpect { status { isBadRequest() } }
         .andExpect {
           content {

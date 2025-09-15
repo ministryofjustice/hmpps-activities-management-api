@@ -9,8 +9,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing as PrisonApiOffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule as PrisonApiPrisonerSchedule
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode as PrisonApiReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary as ModelAppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.ScheduledEvent as ModelScheduleEvent
 
 const val ADJUDICATION_HEARING_DURATION_TWO_HOURS = 2L
@@ -322,18 +320,4 @@ fun List<PrisonApiScheduledEvent>.nomisActivitiesToScheduledEvents(
     attendanceStatus = null,
     attendanceReasonCode = null,
   )
-}
-
-fun PrisonApiReferenceCode?.toAppointmentCategorySummary(code: String) = if (this == null) {
-  ModelAppointmentCategorySummary(code, code)
-} else {
-  ModelAppointmentCategorySummary(this.code, this.description)
-}
-
-fun PrisonApiReferenceCode?.toAppointmentName(code: String, description: String?) = this.toAppointmentCategorySummary(code).description.let { category ->
-  if (!description.isNullOrEmpty()) "$description ($category)" else category
-}
-
-fun List<PrisonApiReferenceCode>.toAppointmentCategorySummary() = map {
-  it.toAppointmentCategorySummary(it.code)
 }
