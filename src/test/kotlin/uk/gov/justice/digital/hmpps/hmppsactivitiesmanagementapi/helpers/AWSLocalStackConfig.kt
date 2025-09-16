@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 
-// An s3Client for usage with localstack, particularly when running in the circleci pipeline
+// An s3Client for usage with localstack, particularly when running in the pipeline
 
 @Configuration
 @Profile("test")
