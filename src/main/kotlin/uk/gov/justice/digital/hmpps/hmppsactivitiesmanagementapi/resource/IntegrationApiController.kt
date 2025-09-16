@@ -44,6 +44,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
@@ -51,8 +52,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.Waiting
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.AttendanceReasonService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeDomain
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.ReferenceCodeService
 import java.security.Principal
 import java.time.LocalDate
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.DeallocationReason as ModelDeallocationReason
@@ -63,7 +62,7 @@ class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
   private val scheduledEventService: ScheduledEventService,
-  private val referenceCodeService: ReferenceCodeService,
+  private val appointmentCategoryService: AppointmentCategoryService,
   private val attendanceReasonService: AttendanceReasonService,
   private val activityService: ActivityService,
   private val activityScheduleService: ActivityScheduleService,
@@ -823,7 +822,7 @@ class IntegrationApiController(
       prisonerNumber,
       dateRange,
       timeSlot,
-      referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+      appointmentCategoryService.getAll(),
     )
   }
 
@@ -897,7 +896,7 @@ class IntegrationApiController(
     prisonerNumbers,
     date,
     timeSlot,
-    referenceCodeService.getReferenceCodesMap(ReferenceCodeDomain.APPOINTMENT_CATEGORY),
+    appointmentCategoryService.getAll(),
   )
 
   @ResponseStatus(HttpStatus.ACCEPTED)

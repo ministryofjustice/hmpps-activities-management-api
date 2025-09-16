@@ -11,7 +11,6 @@ import jakarta.persistence.JoinTable
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.model.Prisoner
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.EventTier
@@ -19,8 +18,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Appointme
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentSetSummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService.LocationDetails
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.toAppointmentLocationSummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentCategorySummary
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toAppointmentName
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventOrganiser
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.util.toModelEventTier
 import java.time.LocalDate
@@ -118,13 +115,13 @@ data class AppointmentSet(
 
   fun toDetails(
     prisonerMap: Map<String, Prisoner>,
-    referenceCodeMap: Map<String, ReferenceCode>,
+    appointmentCategories: Map<String, AppointmentCategory>,
     locationMap: Map<Long, LocationDetails>,
   ): AppointmentSetDetails = AppointmentSetDetails(
     appointmentSetId,
     prisonCode,
-    referenceCodeMap[categoryCode].toAppointmentName(categoryCode, customName),
-    referenceCodeMap[categoryCode].toAppointmentCategorySummary(categoryCode),
+    appointmentCategories[categoryCode].toAppointmentName(categoryCode, customName),
+    appointmentCategories[categoryCode].toAppointmentCategorySummary(categoryCode),
     customName,
     if (inCell) {
       null
@@ -133,7 +130,7 @@ data class AppointmentSet(
     },
     inCell,
     startDate,
-    appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, referenceCodeMap, locationMap) }.filterNot { it.attendees.isEmpty() },
+    appointmentSeries().flatMap { it.appointmentDetails(prisonerMap, appointmentCategories, locationMap) }.filterNot { it.attendees.isEmpty() },
     createdTime,
     createdBy,
     updatedTime,

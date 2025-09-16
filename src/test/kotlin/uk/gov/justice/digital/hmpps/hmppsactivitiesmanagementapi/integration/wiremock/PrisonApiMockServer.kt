@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategoryReferenceCode
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentLocation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.prisonerTransfer
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.read
@@ -369,46 +368,6 @@ class PrisonApiMockServer : MockServer(8999) {
           WireMock.aResponse()
             .withHeader("Content-Type", "application/json")
             .withBody(mapper.writeValueAsString(prisonerNumbers.map { prisonerTransfer(offenderNo = it, date = (if (includeTimes) date else null)) }))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetAppointmentCategoryReferenceCodes() = stubGetAppointmentCategoryReferenceCodes(
-    listOf(
-      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-    ),
-  )
-
-  fun stubGetAppointmentCategoryReferenceCodes(appointmentCategories: List<ReferenceCode>) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/domains/INT_SCH_RSN/codes"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(appointmentCategories))
-            .withStatus(200),
-        ),
-    )
-  }
-
-  fun stubGetAppointmentScheduleReasons() = stubGetAppointmentScheduleReasons(
-    listOf(
-      appointmentCategoryReferenceCode("AC1", "Appointment Category 1"),
-      appointmentCategoryReferenceCode("AC2", "Appointment Category 2"),
-      appointmentCategoryReferenceCode("AC3", "Appointment Category 3"),
-    ),
-  )
-
-  fun stubGetAppointmentScheduleReasons(appointmentCategories: List<ReferenceCode>) {
-    stubFor(
-      WireMock.get(WireMock.urlEqualTo("/api/reference-domains/scheduleReasons?eventType=APP"))
-        .willReturn(
-          WireMock.aResponse()
-            .withHeader("Content-Type", "application/json")
-            .withBody(mapper.writeValueAsString(appointmentCategories))
             .withStatus(200),
         ),
     )

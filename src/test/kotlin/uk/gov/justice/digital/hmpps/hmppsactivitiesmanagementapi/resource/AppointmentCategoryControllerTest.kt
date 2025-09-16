@@ -11,13 +11,13 @@ import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentParentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.CategoryStatus
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.appointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AppointmentCategorySummary
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentCategoryRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentCategory
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.AppointmentParentCategory
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.appointment.AppointmentCategoryRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.resource.appointment.AppointmentCategoryController
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
@@ -125,7 +125,7 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
 
   private fun appointmentCategoryRequest() = AppointmentCategoryRequest(
     code = "category code",
-    description = "category description",
+    description = "Test Category",
     appointmentParentCategoryId = 5,
     status = CategoryStatus.ACTIVE,
   )
@@ -133,8 +133,8 @@ class AppointmentCategoryControllerTest : ControllerTestBase<AppointmentCategory
   private fun expectedAppointmentCategory() = AppointmentCategory(
     id = 1,
     code = "category code",
-    description = "category description",
-    appointmentParentCategory = AppointmentParentCategory(5, "Category"),
+    description = "Test Category",
+    appointmentParentCategory = AppointmentParentCategory(5, "Parent Category"),
     status = CategoryStatus.ACTIVE,
   )
 }
