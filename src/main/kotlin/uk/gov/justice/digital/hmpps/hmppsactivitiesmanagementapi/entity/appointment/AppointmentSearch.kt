@@ -69,6 +69,8 @@ data class AppointmentSearch(
 
   val isCancelled: Boolean,
 
+  val isDeleted: Boolean,
+
   val createdTime: LocalDateTime,
 
   val updatedTime: LocalDateTime?,
@@ -111,6 +113,7 @@ data class AppointmentSearch(
     isEdited = isEdited,
     isCancelled = isCancelled,
     isExpired = isExpired(),
+    isDeleted = isDeleted,
     timeSlot = prisonRegime.getSlotForDayAndTime(day = startDate.dayOfWeek, time = startTime),
     createdTime = createdTime,
     updatedTime = updatedTime,
