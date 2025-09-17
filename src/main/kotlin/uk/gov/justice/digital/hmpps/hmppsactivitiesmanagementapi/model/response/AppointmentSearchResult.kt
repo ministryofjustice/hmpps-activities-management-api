@@ -162,6 +162,12 @@ data class AppointmentSearchResult(
   val isExpired: Boolean,
 
   @Schema(
+    description = "Indicates whether this appointment has been deleted",
+    example = "false",
+  )
+  val isDeleted: Boolean,
+
+  @Schema(
     description = "The date and time this appointment was created. Will not change",
   )
   @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

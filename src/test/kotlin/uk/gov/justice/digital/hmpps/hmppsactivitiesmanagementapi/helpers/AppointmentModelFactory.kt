@@ -328,6 +328,7 @@ fun appointmentSearchResultModel(timeSlot: TimeSlot = TimeSlot.AM) = Appointment
   maxSequenceNumber = 1,
   isEdited = false,
   isCancelled = false,
+  isDeleted = false,
   isExpired = false,
   createdTime = LocalDate.now().atStartOfDay(),
   updatedTime = null,
