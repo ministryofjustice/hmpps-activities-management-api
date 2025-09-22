@@ -42,7 +42,7 @@ dependencies {
   implementation("org.springframework.retry:spring-retry")
   implementation("org.springframework:spring-aspects")
 
-  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.20.0")
+  implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:2.20.1")
 
   // OpenAPI
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.43")
+  implementation("aws.sdk.kotlin:s3:1.5.44")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
