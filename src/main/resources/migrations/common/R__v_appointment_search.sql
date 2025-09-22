@@ -35,3 +35,4 @@ FROM appointment a
          JOIN appointment_series asrs on asrs.appointment_series_id = a.appointment_series_id
          LEFT JOIN appointment_series_schedule asch on asrs.appointment_series_schedule_id = asch.appointment_series_schedule_id
          LEFT JOIN appointment_cancellation_reason acr on a.cancellation_reason_id = acr.appointment_cancellation_reason_id
+WHERE NOT is_deleted;
