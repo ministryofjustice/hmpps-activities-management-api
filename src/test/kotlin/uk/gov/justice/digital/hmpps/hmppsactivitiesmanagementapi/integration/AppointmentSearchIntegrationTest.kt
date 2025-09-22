@@ -125,7 +125,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(12, 59))
     }
 
-    results.count { it.startTime in amRange }.isEqualTo(5)
+    results.count { it.startTime in amRange }.isEqualTo(4)
     results.count { it.startTime in pmRange }.isEqualTo(0)
     results.count { it.startTime in edRange }.isEqualTo(0)
   }
@@ -146,7 +146,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
     }
 
-    results.count { it.startTime in amRange }.isEqualTo(5)
+    results.count { it.startTime in amRange }.isEqualTo(4)
     results.count { it.startTime in pmRange }.isEqualTo(2)
     results.count { it.startTime in edRange }.isEqualTo(0)
   }
@@ -167,7 +167,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(5)
+    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(4)
     results.count { it.timeSlot == TimeSlot.PM }.isEqualTo(2)
     results.count { it.timeSlot == TimeSlot.ED }.isEqualTo(1)
   }
@@ -210,7 +210,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(16, 59))
     }
 
-    results.count { it.startTime in amRange }.isEqualTo(10)
+    results.count { it.startTime in amRange }.isEqualTo(8)
     results.count { it.startTime in pmRange }.isEqualTo(4)
     results.count { it.startTime in edRange }.isEqualTo(0)
   }
@@ -235,7 +235,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
       assertThat(it).isBetween(LocalTime.of(0, 0), LocalTime.of(23, 59))
     }
 
-    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(10)
+    results.count { it.timeSlot == TimeSlot.AM }.isEqualTo(8)
     results.count { it.timeSlot == TimeSlot.PM }.isEqualTo(4)
     results.count { it.timeSlot == TimeSlot.ED }.isEqualTo(2)
   }
@@ -282,7 +282,7 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
 
     val results = webTestClient.searchAppointments("MDI", request)!!
 
-    assertThat(results).extracting("appointmentId").containsOnly(200L, 204L, 210L, 212L, 213L)
+    assertThat(results).extracting("appointmentId").containsOnly(200L, 204L, 210L, 212L)
   }
 
   @Sql(
@@ -390,23 +390,6 @@ class AppointmentSearchIntegrationTest : IntegrationTestBase() {
         result.cancelledBy isEqualTo "DIFFERENT.USER"
       }
     }
-  }
-
-  @Sql(
-    "classpath:test_data/seed-appointment-search.sql",
-  )
-  @Test
-  fun `search returns deleted appointments`() {
-    val request = AppointmentSearchRequest(
-      startDate = LocalDate.now(),
-    )
-
-    val results = webTestClient.searchAppointments("MDI", request)!!
-
-    assertThat(results.count { it.isDeleted }).isEqualTo(1)
-    assertThat(results.count { !it.isDeleted }).isEqualTo(7)
-
-    assertThat(results).extracting("appointmentId").containsOnly(201L, 202L, 200L, 204L, 210L, 211L, 212L, 213L)
   }
 
   private fun WebTestClient.searchAppointments(
