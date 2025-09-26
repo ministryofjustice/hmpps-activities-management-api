@@ -13,17 +13,17 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class BodyPartDetail(
 
     @Schema(example = "Head", description = "Part of the body that has the mark. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.")
-    @get:JsonProperty("bodyPart") val bodyPart: BodyPartDetail.BodyPart? = null,
+    @get:JsonProperty("bodyPart") val bodyPart: BodyPart? = null,
 
     @Schema(example = "Skull and crossbones covering chest", description = "Optional free text comment describing the mark")
-    @get:JsonProperty("comment") val comment: kotlin.String? = null
+    @get:JsonProperty("comment") val comment: String? = null
 ) {
 
     /**
     * Part of the body that has the mark. From REFERENCE_CODES table where DOMAIN = BODY_PART. Allowable values extracted 08/02/2023.
     * Values: ANKLE,ARM,EAR,ELBOW,FACE,FINGER,FOOT,HAND,HEAD,KNEE,LEG,LIP,NECK,NOSE,SHOULDER,THIGH,TOE,TORSO
     */
-    enum class BodyPart(val value: kotlin.String) {
+    enum class BodyPart(val value: String) {
 
         @JsonProperty("Ankle") ANKLE("Ankle"),
         @JsonProperty("Arm") ARM("Arm"),

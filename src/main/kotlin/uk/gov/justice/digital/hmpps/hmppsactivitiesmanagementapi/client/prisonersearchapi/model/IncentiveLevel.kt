@@ -12,11 +12,9 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class IncentiveLevel(
 
     @Schema(example = "Standard", required = true, description = "description")
-    @get:JsonProperty("description", required = true) val description: kotlin.String,
+    @get:JsonProperty("description", required = true) val description: String,
 
     @Schema(example = "STD", description = "code")
-    @get:JsonProperty("code") val code: kotlin.String? = null
-) {
-
-}
+    @get:JsonProperty("code") val code: String? = null
+)
 

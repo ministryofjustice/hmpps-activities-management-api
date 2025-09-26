@@ -17,11 +17,9 @@ data class CurrentIncentive(
     @get:JsonProperty("level", required = true) val level: IncentiveLevel,
 
     @Schema(example = "2021-07-05T10:35:17", required = true, description = "Date time of the incentive")
-    @get:JsonProperty("dateTime", required = true) val dateTime: kotlin.String,
+    @get:JsonProperty("dateTime", required = true) val dateTime: String,
 
     @Schema(example = "Thu Nov 10 00:00:00 GMT 2022", required = true, description = "Schedule new review date")
     @get:JsonProperty("nextReviewDate", required = true) val nextReviewDate: java.time.LocalDate
-) {
-
-}
+)
 

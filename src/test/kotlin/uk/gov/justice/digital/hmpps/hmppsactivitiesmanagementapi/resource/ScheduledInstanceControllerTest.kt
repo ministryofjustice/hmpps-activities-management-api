@@ -232,7 +232,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
 
     whenever(scheduledInstanceService.updateScheduledInstance(1, request, "USER")).thenThrow(EntityNotFoundException("not found"))
 
-    val response = mockMvc.put("/scheduled-instances/1") {
+    mockMvc.put("/scheduled-instances/1") {
       principal = user
       accept = MediaType.APPLICATION_JSON
       contentType = MediaType.APPLICATION_JSON
@@ -289,7 +289,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
         scheduledInstanceService.attendanceSummary(any(), any()),
       ).thenThrow(IllegalArgumentException("Bad request"))
 
-      val response = mockMvc.getAttendancesSummary("RSI", LocalDate.now())
+      mockMvc.getAttendancesSummary("RSI", LocalDate.now())
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isBadRequest() } }
     }
@@ -300,7 +300,7 @@ class ScheduledInstanceControllerTest : ControllerTestBase<ScheduledInstanceCont
         scheduledInstanceService.attendanceSummary(any(), any()),
       ).thenThrow(EntityNotFoundException("not found"))
 
-      val response = mockMvc.getAttendancesSummary("RSI", LocalDate.now())
+      mockMvc.getAttendancesSummary("RSI", LocalDate.now())
         .andExpect { content { contentType(MediaType.APPLICATION_JSON_VALUE) } }
         .andExpect { status { isNotFound() } }
     }

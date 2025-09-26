@@ -230,7 +230,7 @@ class UpdatesFromExternalSystemsEventsIntegrationTest : LocalStackTestBase() {
       with(eventCaptor.firstValue) {
         assertThat(eventType).isEqualTo("activities.prisoner.attendance-amended")
         assertThat(additionalInformation).isEqualTo(PrisonerAttendanceInformation(1))
-        assertThat(occurredAt).isCloseTo(LocalDateTime.now(), Assertions.within(60, ChronoUnit.SECONDS))
+        assertThat(occurredAt).isCloseTo(LocalDateTime.now(), within(60, ChronoUnit.SECONDS))
         assertThat(description).isEqualTo("A prisoner attendance has been amended in the activities management service")
       }
     }

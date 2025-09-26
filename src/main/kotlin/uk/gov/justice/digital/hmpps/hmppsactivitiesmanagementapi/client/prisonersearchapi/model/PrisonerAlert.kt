@@ -14,17 +14,15 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class PrisonerAlert(
 
     @Schema(example = "H", required = true, description = "Alert Type")
-    @get:JsonProperty("alertType", required = true) val alertType: kotlin.String,
+    @get:JsonProperty("alertType", required = true) val alertType: String,
 
     @Schema(example = "HA", required = true, description = "Alert Code")
-    @get:JsonProperty("alertCode", required = true) val alertCode: kotlin.String,
+    @get:JsonProperty("alertCode", required = true) val alertCode: String,
 
     @Schema(example = "true", required = true, description = "Active")
-    @get:JsonProperty("active", required = true) val active: kotlin.Boolean,
+    @get:JsonProperty("active", required = true) val active: Boolean,
 
     @Schema(example = "true", required = true, description = "Expired")
-    @get:JsonProperty("expired", required = true) val expired: kotlin.Boolean
-) {
-
-}
+    @get:JsonProperty("expired", required = true) val expired: Boolean
+)
 
