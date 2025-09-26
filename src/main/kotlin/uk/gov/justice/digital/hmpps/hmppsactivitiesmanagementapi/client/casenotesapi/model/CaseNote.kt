@@ -26,31 +26,31 @@ data class CaseNote(
 
   @Schema(example = "b7602cc8-e769-4cbb-8194-62d8e655992a", required = true, description = "Case Note UUID (unique)")
   @get:JsonProperty("caseNoteId", required = true)
-  val caseNoteId: kotlin.String,
+  val caseNoteId: String,
 
   @Schema(example = "A1234AA", required = true, description = "Offender Unique Identifier")
   @get:JsonProperty("offenderIdentifier", required = true)
-  val offenderIdentifier: kotlin.String,
+  val offenderIdentifier: String,
 
   @Schema(example = "KA", required = true, description = "Case Note Type")
   @get:JsonProperty("type", required = true)
-  val type: kotlin.String,
+  val type: String,
 
   @Schema(example = "Key Worker", required = true, description = "Case Note Type Description")
   @get:JsonProperty("typeDescription", required = true)
-  val typeDescription: kotlin.String,
+  val typeDescription: String,
 
   @Schema(example = "KS", required = true, description = "Case Note Sub Type")
   @get:JsonProperty("subType", required = true)
-  val subType: kotlin.String,
+  val subType: String,
 
   @Schema(example = "Key Worker Session", required = true, description = "Case Note Sub Type Description")
   @get:JsonProperty("subTypeDescription", required = true)
-  val subTypeDescription: kotlin.String,
+  val subTypeDescription: String,
 
   @Schema(example = "INST", required = true, description = "Source Type")
   @get:JsonProperty("source", required = true)
-  val source: kotlin.String,
+  val source: String,
 
   @Schema(example = "null", required = true, description = "Date and Time of Case Note creation")
   @get:JsonProperty("creationDateTime", required = true)
@@ -62,29 +62,29 @@ data class CaseNote(
 
   @Schema(example = "John Smith", required = true, description = "Full name of case note author")
   @get:JsonProperty("authorName", required = true)
-  val authorName: kotlin.String,
+  val authorName: String,
 
   @Schema(example = "12345", required = true, description = "User Id of case note author - staffId for nomis users, userId for auth users")
   @get:JsonProperty("authorUserId", required = true)
-  val authorUserId: kotlin.String,
+  val authorUserId: String,
 
   @Schema(example = "joebloggs", required = true, description = "Username of case note author - username of nomis users and auth users")
   @get:JsonProperty("authorUsername", required = true)
-  val authorUsername: kotlin.String,
+  val authorUsername: String,
 
   @Schema(example = "This is some text", required = true, description = "Case Note Text")
   @get:JsonProperty("text", required = true)
-  val text: kotlin.String,
+  val text: String,
 
   @Schema(example = "-23", required = true, description = "Delius number representation of the case note id - will be negative for sensitive case note types")
   @get:JsonProperty("eventId", required = true)
-  val eventId: kotlin.Int,
+  val eventId: Int,
 
   @Schema(example = "true", required = true, description = "Sensitive Note")
   @get:JsonProperty("sensitive", required = true)
-  val sensitive: kotlin.Boolean,
+  val sensitive: Boolean,
 
   @Schema(example = "MDI", description = "Location Id representing where Case Note was made.")
   @get:JsonProperty("locationId")
-  val locationId: kotlin.String? = null,
+  val locationId: String? = null,
 )

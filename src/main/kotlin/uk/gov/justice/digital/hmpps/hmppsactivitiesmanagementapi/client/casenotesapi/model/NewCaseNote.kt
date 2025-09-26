@@ -15,15 +15,15 @@ data class NewCaseNote(
 
   @Schema(example = "MDI", required = true, description = "Location where case note was made, if blank it will be looked up in Nomis")
   @get:JsonProperty("locationId", required = true)
-  val locationId: kotlin.String,
+  val locationId: String,
 
   @Schema(example = "GEN", required = true, description = "Type of case note")
   @get:JsonProperty("type", required = true)
-  val type: kotlin.String,
+  val type: String,
 
   @Schema(example = "OBS", required = true, description = "Sub Type of case note")
   @get:JsonProperty("subType", required = true)
-  val subType: kotlin.String,
+  val subType: String,
 
   @Schema(example = "null", required = true, description = "Occurrence time of case note")
   @get:JsonProperty("occurrenceDateTime", required = true)
@@ -31,5 +31,5 @@ data class NewCaseNote(
 
   @Schema(example = "This is a case note message", required = true, description = "Text of case note")
   @get:JsonProperty("text", required = true)
-  val text: kotlin.String,
+  val text: String,
 )

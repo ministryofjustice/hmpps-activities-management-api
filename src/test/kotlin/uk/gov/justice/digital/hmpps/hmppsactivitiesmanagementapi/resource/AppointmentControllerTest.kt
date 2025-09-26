@@ -413,7 +413,6 @@ class AppointmentControllerTest : ControllerTestBase<AppointmentController>() {
   private fun MockMvc.getAppointmentDetailsById(id: Long) = get("/appointments/{appointmentId}/details", id)
 
   private fun MockMvc.getAppointmentDetailsByIds(ids: List<Long>) = post("/appointments/details") {
-    this.principal = principal
     contentType = MediaType.APPLICATION_JSON
     content = mapper.writeValueAsBytes(ids)
   }

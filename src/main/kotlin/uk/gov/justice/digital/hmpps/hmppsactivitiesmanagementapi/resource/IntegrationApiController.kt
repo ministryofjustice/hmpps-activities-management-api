@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import jakarta.validation.Valid
-import jakarta.validation.ValidationException
 import org.springframework.data.domain.Page
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.weeksAgo
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.ErrorResponse
@@ -35,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Attendanc
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.AttendanceReason
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.PrisonerScheduledEvents
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.WaitingListApplication
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.AppointmentSearchRequest
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.request.WaitingListSearchRequest
@@ -44,9 +41,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.response.ScheduledActivity
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityScheduleService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ActivityService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AppointmentCategoryService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AttendancesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledEventService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ScheduledInstanceService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.WaitingListService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.appointment.AppointmentSearchService
@@ -61,8 +56,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.Deallocat
 class IntegrationApiController(
   private val attendancesService: AttendancesService,
   private val scheduledInstanceService: ScheduledInstanceService,
-  private val scheduledEventService: ScheduledEventService,
-  private val appointmentCategoryService: AppointmentCategoryService,
   private val attendanceReasonService: AttendanceReasonService,
   private val activityService: ActivityService,
   private val activityScheduleService: ActivityScheduleService,
@@ -743,161 +736,6 @@ class IntegrationApiController(
   )
   @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
   fun getPrisonRegimeByPrisonCode(@PathVariable("prisonCode") prisonCode: String): List<PrisonRegime> = prisonRegimeService.getPrisonRegimeByPrisonCode(prisonCode)
-
-  @GetMapping(
-    value = ["/scheduled-events/prison/{prisonCode}"],
-    produces = [MediaType.APPLICATION_JSON_VALUE],
-  )
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of scheduled events for a prison, prisoner, date range (max 3 months) and optional time slot.",
-    description = """
-      Returns scheduled events for the prison, prisoner, date range (max 3 months) and optional time slot.
-      Court hearings, adjudication hearings, transfers and visits come from NOMIS (via prison API).
-      Activities and appointments come from either NOMIS or the local database depending on whether the prison is
-      marked as active for appointments and/or activities.
-      (Intended usage: Prisoner calendar / schedule)
-    """,
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Successful call - zero or more scheduled events found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = PrisonerScheduledEvents::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Invalid request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Requested resource not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
-  fun getScheduledEventsForSinglePrisoner(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-digit prison code.")
-    prisonCode: String,
-    @RequestParam(value = "prisonerNumber", required = true)
-    @Parameter(description = "Prisoner number (required). Format A9999AA.")
-    prisonerNumber: String,
-    @RequestParam(value = "startDate", required = true)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "Start date of query (required). Format YYYY-MM-DD.")
-    startDate: LocalDate,
-    @RequestParam(value = "endDate", required = true)
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Parameter(description = "End date of query (required). Format YYYY-MM-DD. The end date must be within 3 months of the start date)")
-    endDate: LocalDate,
-    @RequestParam(value = "timeSlot", required = false)
-    @Parameter(description = "Time slot for the events (optional). If supplied, one of AM, PM or ED.")
-    timeSlot: TimeSlot?,
-  ): PrisonerScheduledEvents? {
-    val dateRange = LocalDateRange(startDate, endDate)
-    if (endDate.isAfter(startDate.plusMonths(3))) {
-      throw ValidationException("Date range cannot exceed 3 months")
-    }
-    return scheduledEventService.getScheduledEventsForSinglePrisoner(
-      prisonCode,
-      prisonerNumber,
-      dateRange,
-      timeSlot,
-      appointmentCategoryService.getAll(),
-    )
-  }
-
-  @PostMapping(
-    value = ["/scheduled-events/prison/{prisonCode}"],
-    consumes = [MediaType.APPLICATION_JSON_VALUE],
-    produces = [MediaType.APPLICATION_JSON_VALUE],
-  )
-  @ResponseBody
-  @Operation(
-    summary = "Get a list of scheduled events for a prison and list of prisoner numbers for a date and time slot",
-    description = """
-      Returns scheduled events for the prison, prisoner numbers, single date and an optional time slot.
-      Court hearings, adjudication hearings, transfers and visits come from NOMIS (via prison API).
-      Activities and appointments come from either NOMIS or the local database depending on whether the prison is
-      marked as rolled-out for activities and/or appointments.
-      (Intended usage: Unlock list)
-    """,
-  )
-  @ApiResponses(
-    value = [
-      ApiResponse(
-        responseCode = "200",
-        description = "Successful call - zero or more scheduled events found",
-        content = [
-          Content(
-            mediaType = "application/json",
-            schema = Schema(implementation = PrisonerScheduledEvents::class),
-          ),
-        ],
-      ),
-      ApiResponse(
-        responseCode = "400",
-        description = "Invalid request",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorised, requires a valid Oauth2 token",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden, requires an appropriate role",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Requested resource not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  @PreAuthorize("hasAnyRole('ACTIVITIES__HMPPS_INTEGRATION_API')")
-  fun getScheduledEventsForMultiplePrisoners(
-    @PathVariable("prisonCode")
-    @Parameter(description = "The 3-character prison code.")
-    prisonCode: String,
-    @RequestParam(value = "date", required = true)
-    @Parameter(description = "The exact date to return events for (required) in format YYYY-MM-DD")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    date: LocalDate,
-    @RequestParam(value = "timeSlot", required = false)
-    @Parameter(description = "Time slot of the events (optional). If supplied, one of AM, PM or ED.")
-    timeSlot: TimeSlot?,
-    @RequestBody(required = true)
-    @Parameter(description = "Set of prisoner numbers (required). Example ['G11234YI', 'B5234YI'].", required = true)
-    prisonerNumbers: Set<String>,
-  ): PrisonerScheduledEvents? = scheduledEventService.getScheduledEventsForMultiplePrisoners(
-    prisonCode,
-    prisonerNumbers,
-    date,
-    timeSlot,
-    appointmentCategoryService.getAll(),
-  )
 
   @ResponseStatus(HttpStatus.ACCEPTED)
   @PostMapping(value = ["/appointments/{prisonCode}/search"])
