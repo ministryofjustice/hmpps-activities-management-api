@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonersearchapi.api.PrisonerSearchApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentType
@@ -55,7 +54,6 @@ import java.util.UUID
 
 class ScheduledEventServiceMultiplePrisonersTest {
   private val prisonApiClient: PrisonApiClient = mock()
-  private val prisonerSearchApiClient: PrisonerSearchApiClient = mock()
   private val rolloutPrisonRepository: RolloutPrisonService = mock()
   private val prisonerScheduledActivityRepository: PrisonerScheduledActivityRepository = mock()
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
@@ -68,7 +66,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
 
   private val service = ScheduledEventService(
     prisonApiClient,
-    prisonerSearchApiClient,
     rolloutPrisonRepository,
     prisonerScheduledActivityRepository,
     appointmentInstanceRepository,
@@ -100,7 +97,6 @@ class ScheduledEventServiceMultiplePrisonersTest {
     )
     reset(
       prisonApiClient,
-      prisonerSearchApiClient,
       rolloutPrisonRepository,
       prisonerScheduledActivityRepository,
       appointmentInstanceRepository,
