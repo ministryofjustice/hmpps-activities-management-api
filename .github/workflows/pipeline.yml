@@ -41,7 +41,7 @@ jobs:
 
   gradle_integration_tests:
     name: Run the integration tests
-    uses: ./.github/workflows/integration_test.yml
+    uses: ./.github/workflows/integration_tests.yml
 
 #  gradle_integration_tests:
 #    name: Run the integration tests
