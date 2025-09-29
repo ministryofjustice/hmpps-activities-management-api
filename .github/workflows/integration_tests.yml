@@ -2,6 +2,30 @@ name: Run end-to-end tests
 
 on:
   workflow_call:
+    inputs:
+      postgres-tag:
+        type: string
+        required: true
+      postgres-db:
+        type: string
+        default: 'postgres'
+        required: false
+      postgres-password:
+        type: string
+        default: 'dev'
+        required: false
+      postgres-username:
+        type: string
+        default: 'root'
+        required: true
+      localstack-services:
+        type: string
+        default: 'sqs,sns'
+        required: false
+      localstack-tag:
+        type: string
+        default: 'latest'
+        required: false
 
 env:
   total-runners: 5
