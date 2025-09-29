@@ -116,3 +116,34 @@ jobs:
           SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt / /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
           echo "Prepared arguments for Gradle: $SPECS_LIST"
           ./gradlew integrationTest $SPECS_LIST
+
+      - name: Upload raw test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.shard }}-of-${{ strategy.job-total }}
+          path: |
+            build/test-results
+            build/reports/tests
+
+      - name: Publish Test Report
+        uses: ctrf-io/github-test-reporter@a63590595a9ae45cb646c55a314110f910d360d2
+        with:
+          report-path: './build/test-results/integrationTest/*.xml'
+          use-suite-name: true
+          integrations-config: |
+            {
+              "junit-to-ctrf": {
+                "enabled": true,
+                "action": "convert",
+                "options": {
+                  "output": "./ctrf-reports/ctrf-report.json",
+                  "toolname": "junit-to-ctrf",
+                  "useSuiteName": true,
+                  "env": {
+                    "appName": "approved-premises-api"
+                  }
+                }
+              }
+            }
+        if: always()
