@@ -5,9 +5,9 @@ info.app:
 spring:
   application:
     name: hmpps-activities-management-api
-  codec:
-    max-in-memory-size: 10MB
-
+  http:
+    codecs:
+      max-in-memory-size: 20MB
   jackson:
     date-format: "yyyy-MM-dd HH:mm:ss"
     serialization:
