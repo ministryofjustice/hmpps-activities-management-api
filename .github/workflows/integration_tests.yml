@@ -33,6 +33,38 @@ jobs:
       matrix:
         shard: [ 1, 2, 3, 4 ]
 
+    services:
+      postgres:
+        image: postgres:${{ inputs.postgres-tag }}
+        env:
+          POSTGRES_USER: ${{ inputs.postgres-username }}
+          POSTGRES_PASSWORD: ${{ inputs.postgres-password }}
+          POSTGRES_DB: ${{ inputs.postgres-db}}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      localstack:
+        image: localstack/localstack:${{ inputs.localstack-tag }}
+        env:
+          ES_PORT_EXTERNAL: 4571
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+          AWS_EXECUTION_ENV: True
+          PERSISTENCE: 1
+          SERVICES: "${{ inputs.localstack-services }}"
+        options: >-
+          --name localstack
+          --health-cmd "curl -sS 127.0.0.1:4566 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 4566:4566
+          - 4571:4571
+
     steps:
       - name: Clone repository
         uses: actions/checkout@v5
@@ -59,4 +91,4 @@ jobs:
           # Format the arguments to "./gradlew integrationTest"
           SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt / /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
           echo "Prepared arguments for Gradle: $SPECS_LIST"
-#          ./gradlew integrationTest $SPECS_LIST
+          ./gradlew integrationTest $SPECS_LIST
