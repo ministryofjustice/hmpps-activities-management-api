@@ -29,6 +29,7 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ matrix.environments }}
+
   gradle_validate:
     name: Build the app and run the unit tests
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_verify.yml@v2 # WORKFLOW_VERSION
@@ -36,19 +37,26 @@ jobs:
     with:
       upload-build-artifacts: ${{ github.ref == 'refs/heads/main' }}
       artifact-name: unit-test-results
+
+
   gradle_integration_tests:
     name: Run the integration tests
-    uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_localstack_postgres_verify.yml@v2 # WORKFLOW_VERSION
-    secrets: inherit
-    with:
-      gradle-command: './gradlew integrationTest'
-      postgres-db: activities
-      localstack-tag: "4"
-      postgres-tag: "17"
-      postgres-username: activities
-      postgres-password: activities
-      localstack-services: sqs,sns,s3
-      artifact-name: integration-test-results
+    uses: ./.github/workflows/integration_test.yml
+
+#  gradle_integration_tests:
+#    name: Run the integration tests
+#    uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_localstack_postgres_verify.yml@v2 # WORKFLOW_VERSION
+#    secrets: inherit
+#    with:
+#      gradle-command: './gradlew integrationTest'
+#      postgres-db: activities
+#      localstack-tag: "4"
+#      postgres-tag: "17"
+#      postgres-username: activities
+#      postgres-password: activities
+#      localstack-services: sqs,sns,s3
+#      artifact-name: integration-test-results
+
   build:
     name: Build docker image from hmpps-github-actions
     if: github.ref == 'refs/heads/main'
