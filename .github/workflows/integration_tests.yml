@@ -1,0 +1,153 @@
+name: Run end-to-end tests
+
+on:
+  workflow_call:
+    inputs:
+      postgres-tag:
+        type: string
+        required: true
+      postgres-db:
+        type: string
+        default: 'postgres'
+        required: false
+      postgres-password:
+        type: string
+        default: 'dev'
+        required: false
+      postgres-username:
+        type: string
+        default: 'root'
+        required: true
+      localstack-services:
+        type: string
+        default: 'sqs,sns'
+        required: false
+      localstack-tag:
+        type: string
+        default: 'latest'
+        required: false
+
+env:
+  total-runners: 5
+
+jobs:
+  gradle_build:
+    name: Gradle Build
+    runs-on: ubuntu-latest
+    env:
+      _JAVA_OPTIONS: "-Xmx4g"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Gradle Build
+        run: ./gradlew assemble testClasses --build-cache
+
+  run-parallel-tests:
+    runs-on: ubuntu-latest
+    name: "Run test suite in parallel (${{ matrix.shard }})"
+    needs: gradle_build
+    strategy:
+      matrix:
+        shard: [ 1, 2, 3, 4, 5 ]
+
+    services:
+      postgres:
+        image: postgres:${{ inputs.postgres-tag }}
+        env:
+          POSTGRES_USER: ${{ inputs.postgres-username }}
+          POSTGRES_PASSWORD: ${{ inputs.postgres-password }}
+          POSTGRES_DB: ${{ inputs.postgres-db}}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      localstack:
+        image: localstack/localstack:${{ inputs.localstack-tag }}
+        env:
+          ES_PORT_EXTERNAL: 4571
+          DOCKER_HOST: 'unix:///var/run/docker.sock'
+          AWS_EXECUTION_ENV: True
+          PERSISTENCE: 1
+          SERVICES: "${{ inputs.localstack-services }}"
+        options: >-
+          --name localstack
+          --health-cmd "curl -sS 127.0.0.1:4566 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 4566:4566
+          - 4571:4571
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Determine tests splitting
+        uses: chaosaffe/split-tests@v1
+        id: split-tests
+        with:
+          glob: src/test/kotlin/**/integration/**/*Test.kt
+          split-index: ${{ strategy.job-index }}
+          split-total: ${{ strategy.job-total }}
+
+      - name: Run integration tests
+        run: |
+          # Format the arguments to "./gradlew integrationTest"
+          SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt/ /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+          echo "Prepared arguments for Gradle: $SPECS_LIST"
+          ./gradlew integrationTest $SPECS_LIST
+
+      - name: Upload raw test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.shard }}-of-${{ strategy.job-total }}
+          path: |
+            build/test-results
+            build/reports/tests
+
+      - name: Publish Test Report
+        uses: ctrf-io/github-test-reporter@a63590595a9ae45cb646c55a314110f910d360d2
+        with:
+          report-path: './build/test-results/integrationTest/*.xml'
+          use-suite-name: true
+          integrations-config: |
+            {
+              "junit-to-ctrf": {
+                "enabled": true,
+                "action": "convert",
+                "options": {
+                  "output": "./ctrf-reports/ctrf-report.json",
+                  "toolname": "junit-to-ctrf",
+                  "useSuiteName": true,
+                  "env": {
+                    "appName": "approved-premises-api"
+                  }
+                }
+              }
+            }
+        if: always()
