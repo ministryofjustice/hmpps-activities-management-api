@@ -35,7 +35,7 @@ jobs:
     name: Gradle Build
     runs-on: ubuntu-latest
     env:
-      _JAVA_OPTIONS: "-Xmx3g"
+      _JAVA_OPTIONS: "-Xmx4g"
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
     steps:
       - name: Checkout code
@@ -55,7 +55,7 @@ jobs:
     needs: gradle_build
     strategy:
       matrix:
-        shard: [ 1, 2, 3, 4 ]
+        shard: [ 1, 2, 3, 4, 5 ]
 
     services:
       postgres:
@@ -110,7 +110,7 @@ jobs:
           split-index: ${{ strategy.job-index }}
           split-total: ${{ strategy.job-total }}
 
-      - name: Run integration test
+      - name: Ruxn integration test
         run: |
           # Format the arguments to "./gradlew integrationTest"
           SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt / /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
