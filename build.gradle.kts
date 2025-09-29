@@ -7,7 +7,7 @@ plugins {
   kotlin("plugin.spring") version "2.2.20"
   kotlin("plugin.jpa") version "2.2.20"
   jacoco
-  id("org.openapi.generator") version "7.15.0"
+  id("org.openapi.generator") version "7.16.0"
   id("io.sentry.jvm.gradle") version "5.12.0"
 }
 
@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.47")
+  implementation("aws.sdk.kotlin:s3:1.5.49")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
