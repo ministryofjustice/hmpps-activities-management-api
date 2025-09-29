@@ -42,7 +42,7 @@ data class Movement(
    * ADM (admission), CRT (court), REL (release), TAP (temporary absence) or TRN (transfer)
    * Values: ADM,CRT,REL,TAP,TRN
    */
-  enum class MovementType(val value: kotlin.String) {
+  enum class MovementType(val value: String) {
     @JsonProperty("ADM")
     ADM("ADM"),
 

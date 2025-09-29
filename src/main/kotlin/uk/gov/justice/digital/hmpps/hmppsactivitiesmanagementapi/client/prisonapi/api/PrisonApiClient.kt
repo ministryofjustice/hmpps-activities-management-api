@@ -1,7 +1,6 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api
 
 import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -13,7 +12,6 @@ import org.springframework.web.util.UriBuilder
 import reactor.core.publisher.Mono
 import reactor.util.context.Context
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApiService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.CourtHearings
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.InmateDetail
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.Location
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.LocationGroup
@@ -22,12 +20,10 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.Movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.PrisonerSchedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.overrides.ReferenceCode
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.LocalDateRange
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.ifNotEmpty
 import java.time.LocalDate
 import java.util.*
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.ScheduledEvent as PrisonApiScheduledEvent
 
 typealias PrisonLocations = Map<Long, Location>
 
@@ -74,38 +70,6 @@ class PrisonApiClient(
       .awaitSingle()
   }
 
-  suspend fun getScheduledActivitiesAsync(
-    bookingId: Long,
-    dateRange: LocalDateRange,
-  ): List<PrisonApiScheduledEvent> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/bookings/{bookingId}/activities")
-        .queryParam("fromDate", dateRange.start)
-        .queryParam("toDate", dateRange.endInclusive)
-        .build(bookingId)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/activities")))
-    .awaitSingle()
-
-  suspend fun getScheduledAppointmentsAsync(
-    bookingId: Long,
-    dateRange: LocalDateRange,
-  ): List<PrisonApiScheduledEvent> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/bookings/{bookingId}/appointments")
-        .queryParam("fromDate", dateRange.start)
-        .queryParam("toDate", dateRange.endInclusive)
-        .build(bookingId)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/appointments")))
-    .awaitSingle()
-
   suspend fun getScheduledAppointmentsForPrisonerNumbersAsync(
     prisonCode: String,
     prisonerNumbers: Set<String>,
@@ -126,25 +90,6 @@ class PrisonApiClient(
       .bodyToMono(typeReference<List<PrisonerSchedule>>())
       .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/appointments")))
       .awaitSingle()
-  }
-
-  suspend fun getScheduledCourtHearingsAsync(
-    bookingId: Long,
-    dateRange: LocalDateRange,
-  ): CourtHearings? {
-    if (dateRange.isEmpty()) return null
-    return prisonApiWebClient.get()
-      .uri { uriBuilder: UriBuilder ->
-        uriBuilder
-          .path("/api/bookings/{bookingId}/court-hearings")
-          .queryParam("fromDate", dateRange.start)
-          .queryParam("toDate", dateRange.endInclusive)
-          .build(bookingId)
-      }
-      .retrieve()
-      .bodyToMono(CourtHearings::class.java)
-      .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/court-hearings")))
-      .awaitSingleOrNull()
   }
 
   suspend fun getScheduledCourtEventsForPrisonerNumbersAsync(
@@ -168,22 +113,6 @@ class PrisonApiClient(
       .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/schedules/{prisonCode}/courtEvents")))
       .awaitSingle()
   }
-
-  suspend fun getScheduledVisitsAsync(
-    bookingId: Long,
-    dateRange: LocalDateRange,
-  ): List<PrisonApiScheduledEvent> = prisonApiWebClient.get()
-    .uri { uriBuilder: UriBuilder ->
-      uriBuilder
-        .path("/api/bookings/{bookingId}/visits")
-        .queryParam("fromDate", dateRange.start)
-        .queryParam("toDate", dateRange.endInclusive)
-        .build(bookingId)
-    }
-    .retrieve()
-    .bodyToMono(typeReference<List<PrisonApiScheduledEvent>>())
-    .retryWhen(backoffSpec.withRetryContext(Context.of("api", "prison-api", "path", "/api/bookings/{bookingId}/visits")))
-    .awaitSingle()
 
   suspend fun getScheduledVisitsForPrisonerNumbersAsync(
     prisonCode: String,
