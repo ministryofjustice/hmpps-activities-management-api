@@ -51,7 +51,7 @@ jobs:
 
   run-parallel-tests:
     runs-on: ubuntu-latest
-    name: "Runner #${{ matrix.runner-index }}: Run test suite in parallel"
+    name: "Run test suite in parallel (${{ matrix.shard }})"
     needs: gradle_build
     strategy:
       matrix:
@@ -110,7 +110,7 @@ jobs:
           split-index: ${{ strategy.job-index }}
           split-total: ${{ strategy.job-total }}
 
-      - name: Ruxn integration test
+      - name: Run integration tests
         run: |
           # Format the arguments to "./gradlew integrationTest"
           SPECS_LIST=$(echo  ${{ steps.split-tests.outputs.test-suite }} | sed 's/src\/test\/kotlin\///g;s/\//./g;s/\.kt / /g' | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
