@@ -54,7 +54,7 @@ dependencies {
     }
   }
 
-  implementation("aws.sdk.kotlin:s3:1.5.50")
+  implementation("aws.sdk.kotlin:s3:1.5.51")
 
   // Other dependencies
   implementation("org.apache.commons:commons-text:1.14.0")
@@ -79,7 +79,7 @@ dependencies {
   testImplementation("org.springframework.boot:spring-boot-starter-test")
   testImplementation("org.awaitility:awaitility-kotlin")
   testImplementation("org.skyscreamer:jsonassert")
-  testImplementation("io.mockk:mockk:1.14.5")
+  testImplementation("io.mockk:mockk:1.14.6")
 }
 
 kotlin {
