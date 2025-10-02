@@ -5,7 +5,7 @@ ENV BUILD_NUMBER ${BUILD_NUMBER:-1_0_0}
 
 WORKDIR /app
 ADD . .
-RUN ./gradlew -Dorg.gradle.jvmargs="-Xmx2g" --no-daemon assemble
+#RUN ./gradlew -Dorg.gradle.jvmargs="-Xmx2g" --no-daemon assemble
 
 RUN cp /app/build/libs/hmpps-activities-management-api*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
