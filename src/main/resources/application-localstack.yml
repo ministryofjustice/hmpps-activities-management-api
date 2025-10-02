@@ -134,6 +134,7 @@ feature:
   jobs.sqs:
     schedules.enabled: true
     deallocate.ending.enabled: true
+    deallocate.expiring.enabled: true
 
 migrate:
   ACTIVITIES_LIVE: RSI,LEI

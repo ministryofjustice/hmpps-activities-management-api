@@ -8,15 +8,18 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_EXPIRING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 
 @Profile("!test && !local")
 @Service
 class JobsSqsListener(
   private val scheduledInstancesService: ManageScheduledInstancesService,
-  private val manageAllocationsService: ManageAllocationsDueToEndService,
+  private val manageAllocationsDueToEndService: ManageAllocationsDueToEndService,
+  private val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService,
   private val mapper: ObjectMapper,
 ) {
   companion object {
@@ -35,7 +38,11 @@ class JobsSqsListener(
       }
 
       DEALLOCATE_ENDING -> {
-        manageAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+        manageAllocationsDueToEndService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
+      DEALLOCATE_EXPIRING -> {
+        manageAllocationsDueToExpireService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
       }
 
       else -> {

@@ -41,5 +41,6 @@ enum class Feature(val label: String) {
   OFFENDER_MERGED_ENABLED("feature.offender.merge.enabled"),
   CANCEL_INSTANCE_PRIORITY_CHANGE_ENABLED("feature.cancel.instance.priority.change.enabled"),
   JOBS_SQS_SCHEDULES_ENABLED("feature.jobs.sqs.schedules.enabled"),
-  JOBS_SQS_DEALLOCATED_ENDING_ENABLED("feature.jobs.sqs.deallocate.ending.enabled"),
+  JOBS_SQS_DEALLOCATE_ENDING_ENABLED("feature.jobs.sqs.deallocate.ending.enabled"),
+  JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED("feature.jobs.sqs.deallocate.expiring.enabled"),
 }
