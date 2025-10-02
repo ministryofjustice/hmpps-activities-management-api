@@ -212,8 +212,8 @@ If for example the attendance creation failed it can be re-run as follows:
 
 In a terminal window port forward to one of the API pods.
 
-```
-kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
+```shell
+  kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
 ```
 Using one of the API pods listed from the command above do the following
 ```
@@ -222,8 +222,8 @@ kubectl -n hmpps-activities-management-<dev|preprod|prod> port-forward hmpps-act
 
 In another terminal window a curl command to run the job (the one below is running attendance creation)
 
-```
-curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=XYZ"
+```shell
+  curl -XPOST "http://localhost:8080/job/manage-attendance-records?date=2023-11-18&prisonCode=XYZ"
 ```
 
 ### Manually raising events
@@ -234,8 +234,8 @@ There may be times we need to manually raise an event in production e.g. on the 
 
 In a terminal window port forward to one of the API pods
 
-```
-kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
+```shell
+  kubectl -n hmpps-activities-management-<dev|preprod|prod> get pods | grep api
 ```
 Using one of the API pods listed from the command above do the following
 ```
@@ -277,4 +277,12 @@ union *
 | where operation_Id ==‘<INSERT OPERATION ID HERE>’
 |project timestamp, message, itemType, name, operation_Name, cloud_RoleName, resultCode, customDimensions, duration, url, data, innermostMessage
 |sort by timestamp asc
+```
+
+### Docker files
+
+There are two Docker files. `Dockerfile` is used by GitHuba Actions to build the API Docker image for deployment to the enviroments. `Dockerfile.local` is used by developers to build the API Docker image locally.
+
+```shell
+  docker build -f Dockerfile.local .
 ```

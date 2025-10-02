@@ -29,6 +29,15 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ matrix.environments }}
+  app_version:
+    name: Calculate application version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.app_version.outputs.version }}
+    steps:
+      - id: app_version
+        name: Application version creators
+        uses: ministryofjustice/hmpps-github-actions/.github/actions/build-test-and-deploy/create_app_version@v2 # WORKFLOW_VERSION
   gradle_validate:
     name: Build the app and run the unit tests
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_verify.yml@v2 # WORKFLOW_VERSION
@@ -36,6 +45,9 @@ jobs:
     with:
       upload-build-artifacts: ${{ github.ref == 'refs/heads/main' }}
       artifact-name: unit-test-results
+      gradle-command: 'BUILD_NUMBER=${{ needs.app_version.outputs.version}} ./gradlew assemble check -x test'
+    needs:
+      - app_version
   gradle_integration_tests:
     name: Run the integration tests
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_localstack_postgres_verify.yml@v2 # WORKFLOW_VERSION
@@ -61,7 +73,8 @@ jobs:
       registry_org: 'ministryofjustice'
       additional_docker_tag: ${{ inputs.additional_docker_tag }}
       push: ${{ inputs.push || true }}
-      docker_multiplatform: true
+      docker_multiplatform: false
+      download_build_artifacts: true
   deploy_dev:
     name: Deploy to the dev environment
     if: github.ref == 'refs/heads/main'

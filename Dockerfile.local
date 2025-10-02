@@ -5,8 +5,9 @@ ENV BUILD_NUMBER ${BUILD_NUMBER:-1_0_0}
 
 WORKDIR /app
 ADD . .
+RUN ./gradlew -Dorg.gradle.jvmargs="-Xmx2g" --no-daemon assemble
 
-RUN cp hmpps-activities-management-api*.jar app.jar
+RUN cp /app/build/libs/hmpps-activities-management-api*.jar app.jar
 RUN java -Djarmode=tools -jar app.jar extract --layers --destination extracted
 
 # Grab AWS RDS Root cert
@@ -36,7 +37,7 @@ COPY --from=builder --chown=appuser:appgroup /app/root.crt /home/appuser/.postgr
 WORKDIR /app
 COPY --chown=appuser:appgroup ./applicationinsights.json /app
 COPY --chown=appuser:appgroup ./applicationinsights.dev.json /app
-COPY --from=builder --chown=appuser:appgroup ./app/applicationinsights-agent*.jar /app/agent.jar
+COPY --from=builder --chown=appuser:appgroup /app/build/libs/applicationinsights-agent*.jar /app/agent.jar
 
 COPY --from=builder --chown=appuser:appgroup /app/extracted/spring-boot-loader/ /app
 COPY --from=builder --chown=appuser:appgroup /app/extracted/snapshot-dependencies/ /app
