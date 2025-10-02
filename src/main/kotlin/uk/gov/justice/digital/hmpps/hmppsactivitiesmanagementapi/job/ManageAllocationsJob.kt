@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.AllocationOperation
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
 
@@ -15,17 +15,19 @@ class ManageAllocationsJob(
   private val rolloutPrisonService: RolloutPrisonService,
   private val service: ManageAllocationsService,
   private val manageAllocationsDueToEndService: ManageAllocationsDueToEndService,
+  private val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService,
   private val jobRunner: SafeJobRunner,
   featureSwitches: FeatureSwitches,
 ) {
-  private val sqsEnabledForDeallocateEnding = featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATED_ENDING_ENABLED)
+  private val sqsEnabledForDeallocateEnding = featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)
+  private val sqsEnabledForDeallocateExpiring = featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)
 
   @Async("asyncExecutor")
   fun execute(withActivate: Boolean = false, withDeallocateEnding: Boolean = false, withDeallocateExpiring: Boolean = false, withFixAutoSuspended: Boolean = false) {
     if (withActivate) {
       jobRunner.runJobWithRetry(
         JobDefinition(JobType.ALLOCATE) {
-          service.allocations(AllocationOperation.STARTING_TODAY)
+          service.allocations()
         },
       )
 
@@ -57,11 +59,13 @@ class ManageAllocationsJob(
     }
 
     if (withDeallocateExpiring) {
-      jobRunner.runJobWithRetry(
-        JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) {
-          service.allocations(AllocationOperation.EXPIRING_TODAY)
-        },
-      )
+      if (sqsEnabledForDeallocateExpiring) {
+        jobRunner.runDistributedJob(JobType.DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
+      } else {
+        jobRunner.runJobWithRetry(
+          JobDefinition(jobType = JobType.DEALLOCATE_EXPIRING) { manageAllocationsDueToExpireService.deallocateAllocationsDueToExpire() },
+        )
+      }
     }
 
     if (withFixAutoSuspended) {

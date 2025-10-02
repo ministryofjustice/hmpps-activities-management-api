@@ -7,14 +7,21 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 
 class JobsSqsListenerTest {
   val scheduledInstancesService: ManageScheduledInstancesService = mock()
-  val manageAllocationsService: ManageAllocationsDueToEndService = mock()
+  val manageAllocationsDueToEndService: ManageAllocationsDueToEndService = mock()
+  val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService = mock()
   val mapper = jacksonObjectMapper()
 
-  val listener: JobsSqsListener = JobsSqsListener(scheduledInstancesService, manageAllocationsService, mapper)
+  val listener: JobsSqsListener = JobsSqsListener(
+    scheduledInstancesService,
+    manageAllocationsDueToEndService,
+    manageAllocationsDueToExpireService,
+    mapper,
+  )
 
   @Test
   fun `should handle SCHEDULES event`() {
@@ -47,7 +54,24 @@ class JobsSqsListenerTest {
 
     listener.onMessage(rawMessage)
 
-    verify(manageAllocationsService).handleEvent(123L, "RSI")
+    verify(manageAllocationsDueToEndService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle DEALLOCATE_EXPIRING event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "DEALLOCATE_EXPIRING",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(manageAllocationsDueToExpireService).handleEvent(123L, "RSI")
   }
 
   @Test
