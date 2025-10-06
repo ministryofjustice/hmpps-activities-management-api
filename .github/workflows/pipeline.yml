@@ -45,7 +45,7 @@ jobs:
     with:
       upload-build-artifacts: ${{ github.ref == 'refs/heads/main' }}
       artifact-name: unit-test-results
-      gradle-command: 'BUILD_NUMBER=${{ needs.app_version.outputs.version}} ./gradlew assemble check -x test'
+      gradle-command: 'BUILD_NUMBER=${{ needs.app_version.outputs.version}} ./gradlew assemble check'
     needs:
       - app_version
   gradle_integration_tests:
