@@ -711,7 +711,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
               id = hearingId.plus(1).toLong(),
               oicHearingType = "GOV_ADULT",
               dateTimeOfHearing = date.atTime(10, 30, 0),
-              locationId = 1L,
+              locationUuid = UUID.randomUUID(),
               agencyId = agencyId,
             ),
           )

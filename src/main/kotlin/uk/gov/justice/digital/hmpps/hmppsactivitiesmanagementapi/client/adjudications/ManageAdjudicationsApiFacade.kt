@@ -11,10 +11,11 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.typeReference
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 data class Hearing(
   val id: Long? = null,
-  val locationId: Long,
+  val locationUuid: UUID,
   val dateTimeOfHearing: LocalDateTime,
   val oicHearingType: String,
   val agencyId: String,
@@ -37,7 +38,7 @@ data class HearingSummaryDto(
   val prisonerNumber: String,
   val oicHearingType: String,
   val status: String,
-  val locationId: Long,
+  val locationUuid: UUID,
 )
 
 @Component

@@ -5,6 +5,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonap
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.PrisonRegimeService.Companion.getSlotForDayAndTime
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -12,6 +13,7 @@ import java.time.LocalDate
 @Component
 class AdjudicationsHearingAdapter(
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
+  private val locationService: LocationService,
 ) {
 
   suspend fun getAdjudicationsByLocation(
@@ -35,7 +37,7 @@ class AdjudicationsHearingAdapter(
         hearingId = it.id!!,
         agencyId = agencyId,
         hearingType = it.oicHearingType.mapOicHearingType(),
-        internalLocationId = it.locationId,
+        internalLocationId = locationService.getLocationMappingsByDpsId(it.locationUuid)[it.locationUuid]?.nomisLocationId ?: 0L,
         internalLocationDescription = "Adjudication room",
         startTime = it.dateTimeOfHearing.toIsoDateTime(),
       )
@@ -70,7 +72,7 @@ class AdjudicationsHearingAdapter(
           hearingId = it.hearing.id!!,
           agencyId = agencyId,
           hearingType = it.hearing.oicHearingType.mapOicHearingType(),
-          internalLocationId = it.hearing.locationId,
+          internalLocationId = locationService.getLocationMappingsByDpsId(it.hearing.locationUuid)[it.hearing.locationUuid]?.nomisLocationId ?: 0L,
           // this is a default, and generally exist for each prison as part of base setup in nomis,
           // the existing code will use the locationId in first instance to determine the description
           internalLocationDescription = "Adjudication room",

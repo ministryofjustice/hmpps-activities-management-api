@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
@@ -59,10 +60,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
   private val appointmentInstanceRepository: AppointmentInstanceRepository = mock()
   private val prisonRegimeService: PrisonRegimeService = mock()
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
+  private val locationService: LocationService = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+    locationService = locationService,
   )
-  private val locationService: LocationService = mock()
 
   private val service = ScheduledEventService(
     prisonApiClient,
@@ -75,6 +77,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+  val locationUuid: UUID = UUID.randomUUID()
 
   private val prisonRegime = PrisonRegime(
     prisonCode = "",
@@ -203,7 +206,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonerNumber = it.offenderNo,
           hearing = Hearing(
             id = it.hearingId,
-            locationId = it.internalLocationId,
+            locationUuid = UUID.randomUUID(), //it.internalLocationId,
             dateTimeOfHearing = LocalDateTime.parse(it.startTime!!),
             agencyId = it.agencyId,
             oicHearingType = it.hearingType!!,
@@ -286,6 +289,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
           DayOfWeek.entries.toSet() to prisonRegime,
         ),
       )
+
+      whenever(locationService.getLocationMappingsByDpsId(locationUuid))
+        .thenReturn(mapOf(
+          (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
+        ))
     }
 
     @Test
@@ -431,7 +439,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           assertThat(it.eventSource).isEqualTo("NOMIS")
           assertThat(it.eventType).isEqualTo(EventType.ADJUDICATION_HEARING.name)
           assertThat(it.prisonerNumber).isIn(prisonerNumbers)
-          assertThat(it.internalLocationId).isEqualTo(-2)
+          assertThat(it.internalLocationId).isEqualTo(0L)
           assertThat(it.oicHearingId).isIn(-1L, -2L)
           assertThat(it.internalLocationDescription).isEqualTo("Adjudication room")
           assertThat(it.categoryDescription).isEqualTo("Governor's Hearing Adult")

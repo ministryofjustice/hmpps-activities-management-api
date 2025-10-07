@@ -13,21 +13,27 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter.Companion.mapOicHearingType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class AdjudicationsHearingAdapterTest {
 
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
+  private val locationService: LocationService = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
+    locationService = locationService,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
+  val locationUuid: UUID = UUID.randomUUID()
 
   private val prisonRegime = PrisonRegime(
     prisonCode = "",
@@ -56,7 +62,7 @@ class AdjudicationsHearingAdapterTest {
                 dateTimeOfHearing = now,
                 oicHearingType = "INAD_ADULT",
                 agencyId = "MDI",
-                locationId = 1,
+                locationUuid = locationUuid
               ),
             ),
             HearingsResponse(
@@ -66,11 +72,16 @@ class AdjudicationsHearingAdapterTest {
                 dateTimeOfHearing = now.plusHours(10),
                 oicHearingType = "INAD_ADULT",
                 agencyId = "MDI",
-                locationId = 1,
+                locationUuid = locationUuid,
               ),
             ),
           ),
         )
+
+        whenever(locationService.getLocationMappingsByDpsId(locationUuid))
+          .thenReturn(mapOf(
+            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
+          ))
       }
     }
 
@@ -150,7 +161,7 @@ class AdjudicationsHearingAdapterTest {
                 id = 1,
                 dateTimeOfHearing = now,
                 oicHearingType = "INAD_ADULT",
-                locationId = 1,
+                locationUuid = locationUuid,
                 prisonerNumber = "AE12345",
                 status = "",
                 chargeNumber = "",
@@ -160,7 +171,7 @@ class AdjudicationsHearingAdapterTest {
                 id = 2,
                 dateTimeOfHearing = now.plusHours(10),
                 oicHearingType = "INAD_ADULT",
-                locationId = 1,
+                locationUuid = locationUuid,
                 prisonerNumber = "AE12345",
                 status = "",
                 chargeNumber = "",
@@ -169,6 +180,11 @@ class AdjudicationsHearingAdapterTest {
             ),
           ),
         )
+
+        whenever(locationService.getLocationMappingsByDpsId(locationUuid))
+          .thenReturn(mapOf(
+            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
+          ))
       }
     }
 
