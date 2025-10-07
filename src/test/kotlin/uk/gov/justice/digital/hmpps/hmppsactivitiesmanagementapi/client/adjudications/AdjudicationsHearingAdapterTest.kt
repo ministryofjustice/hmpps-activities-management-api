@@ -62,7 +62,7 @@ class AdjudicationsHearingAdapterTest {
                 dateTimeOfHearing = now,
                 oicHearingType = "INAD_ADULT",
                 agencyId = "MDI",
-                locationUuid = locationUuid
+                locationUuid = locationUuid,
               ),
             ),
             HearingsResponse(
@@ -79,9 +79,11 @@ class AdjudicationsHearingAdapterTest {
         )
 
         whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-          .thenReturn(mapOf(
-            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
-          ))
+          .thenReturn(
+            mapOf(
+              (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
+            ),
+          )
       }
     }
 
@@ -182,9 +184,11 @@ class AdjudicationsHearingAdapterTest {
         )
 
         whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-          .thenReturn(mapOf(
-            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
-          ))
+          .thenReturn(
+            mapOf(
+              (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
+            ),
+          )
       }
     }
 

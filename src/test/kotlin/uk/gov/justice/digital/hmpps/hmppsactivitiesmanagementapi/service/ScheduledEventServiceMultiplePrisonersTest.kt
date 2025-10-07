@@ -206,7 +206,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonerNumber = it.offenderNo,
           hearing = Hearing(
             id = it.hearingId,
-            locationUuid = UUID.randomUUID(), //it.internalLocationId,
+            locationUuid = UUID.randomUUID(), // it.internalLocationId,
             dateTimeOfHearing = LocalDateTime.parse(it.startTime!!),
             agencyId = it.agencyId,
             oicHearingType = it.hearingType!!,
@@ -291,9 +291,11 @@ class ScheduledEventServiceMultiplePrisonersTest {
       )
 
       whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-        .thenReturn(mapOf(
-          (locationUuid to NomisDpsLocationMapping(locationUuid, 1L))
-        ))
+        .thenReturn(
+          mapOf(
+            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
+          ),
+        )
     }
 
     @Test
