@@ -13,7 +13,7 @@ import java.time.LocalDate
 @Component
 class AdjudicationsHearingAdapter(
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
-  private val locationService: LocationService,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
 ) {
 
   suspend fun getAdjudicationsByLocation(
