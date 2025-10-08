@@ -37,7 +37,7 @@ class AdjudicationsHearingAdapter(
         hearingId = it.id!!,
         agencyId = agencyId,
         hearingType = it.oicHearingType.mapOicHearingType(),
-        internalLocationId = locationService.getLocationMappingByDpsId(it.locationUuid),
+        internalLocationId = nomisMappingAPIClient.getLocationMappingByDpsId(it.locationUuid)!!.nomisLocationId,
         internalLocationDescription = "Adjudication room",
         startTime = it.dateTimeOfHearing.toIsoDateTime(),
       )
