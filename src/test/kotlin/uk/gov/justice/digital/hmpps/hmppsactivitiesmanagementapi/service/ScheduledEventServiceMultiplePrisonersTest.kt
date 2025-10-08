@@ -205,7 +205,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
           prisonerNumber = it.offenderNo,
           hearing = Hearing(
             id = it.hearingId,
-            locationUuid = UUID.randomUUID(), // it.internalLocationId,
+            locationUuid = UUID.randomUUID(),
             dateTimeOfHearing = LocalDateTime.parse(it.startTime!!),
             agencyId = it.agencyId,
             oicHearingType = it.hearingType!!,
