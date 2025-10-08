@@ -37,7 +37,7 @@ class AdjudicationsHearingAdapter(
         hearingId = it.id!!,
         agencyId = agencyId,
         hearingType = it.oicHearingType.mapOicHearingType(),
-        internalLocationId = locationService.getLocationMappingsByDpsId(it.locationUuid)[it.locationUuid]?.nomisLocationId ?: 0L,
+        internalLocationId = locationService.getLocationMappingByDpsId(it.locationUuid),
         internalLocationDescription = "Adjudication room",
         startTime = it.dateTimeOfHearing.toIsoDateTime(),
       )
@@ -72,7 +72,7 @@ class AdjudicationsHearingAdapter(
           hearingId = it.hearing.id!!,
           agencyId = agencyId,
           hearingType = it.hearing.oicHearingType.mapOicHearingType(),
-          internalLocationId = locationService.getLocationMappingsByDpsId(it.hearing.locationUuid)[it.hearing.locationUuid]?.nomisLocationId ?: 0L,
+          internalLocationId = locationService.getLocationMappingByDpsId(it.hearing.locationUuid),
           // this is a default, and generally exist for each prison as part of base setup in nomis,
           // the existing code will use the locationId in first instance to determine the description
           internalLocationDescription = "Adjudication room",

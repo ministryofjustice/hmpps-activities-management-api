@@ -34,6 +34,8 @@ import java.util.*
 
 class ScheduledEventIntegrationTest : IntegrationTestBase() {
 
+  val locationUuid: UUID = UUID.fromString("88888888-8888-8888-8888-888888888888")
+
   @BeforeEach
   fun setupAppointmentStubs() {
     // Stubs used to find category and location descriptions for appointments
@@ -60,6 +62,8 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
         NomisDpsLocationMapping(dpsLocation2.id, 2),
       ),
     )
+
+    nomisMappingApiMockServer.stubMappingFromDpsUuid(dpsLocation1.id)
   }
 
   @Nested
@@ -711,7 +715,7 @@ class ScheduledEventIntegrationTest : IntegrationTestBase() {
               id = hearingId.plus(1).toLong(),
               oicHearingType = "GOV_ADULT",
               dateTimeOfHearing = date.atTime(10, 30, 0),
-              locationUuid = UUID.randomUUID(),
+              locationUuid = locationUuid,
               agencyId = agencyId,
             ),
           )

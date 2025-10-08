@@ -13,7 +13,6 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter.Companion.mapOicHearingType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
@@ -77,14 +76,9 @@ class AdjudicationsHearingAdapterTest {
             ),
           ),
         )
-
-        whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-          .thenReturn(
-            mapOf(
-              (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
-            ),
-          )
       }
+
+      whenever(locationService.getLocationMappingByDpsId(locationUuid)).thenReturn(1L)
     }
 
     @CsvSource("true", "false")
@@ -182,14 +176,9 @@ class AdjudicationsHearingAdapterTest {
             ),
           ),
         )
-
-        whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-          .thenReturn(
-            mapOf(
-              (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
-            ),
-          )
       }
+
+      whenever(locationService.getLocationMappingByDpsId(locationUuid)).thenReturn(1L)
     }
 
     @Test

@@ -20,7 +20,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudica
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.Hearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.HearingsResponse
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.ManageAdjudicationsApiFacade
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.api.PrisonApiClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.appointment.AppointmentInstance
@@ -290,12 +289,7 @@ class ScheduledEventServiceMultiplePrisonersTest {
         ),
       )
 
-      whenever(locationService.getLocationMappingsByDpsId(locationUuid))
-        .thenReturn(
-          mapOf(
-            (locationUuid to NomisDpsLocationMapping(locationUuid, 1L)),
-          ),
-        )
+      whenever(locationService.getLocationMappingByDpsId(locationUuid)).thenReturn(1L)
     }
 
     @Test

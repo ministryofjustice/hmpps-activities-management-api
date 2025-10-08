@@ -43,9 +43,8 @@ class LocationService(
     }
   }
 
-  fun getLocationMappingsByDpsId(dpsLocationId: UUID) = runBlocking {
-    nomisMappingAPIClient.getLocationMappingsByDpsIds(setOf(dpsLocationId)).associateBy { it.dpsLocationId }
-  }
+  fun getLocationMappingByDpsId(dpsLocationId: UUID) =
+    nomisMappingAPIClient.getLocationMappingByDpsId(dpsLocationId)!!.nomisLocationId
 
   fun getLocationMappingsByDpsIds(dpsLocationIds: Set<UUID>) = runBlocking {
     nomisMappingAPIClient.getLocationMappingsByDpsIds(dpsLocationIds).associateBy { it.dpsLocationId }
