@@ -72,7 +72,7 @@ class AdjudicationsHearingAdapter(
           hearingId = it.hearing.id!!,
           agencyId = agencyId,
           hearingType = it.hearing.oicHearingType.mapOicHearingType(),
-          internalLocationId = locationService.getLocationMappingByDpsId(it.hearing.locationUuid),
+          internalLocationId = nomisMappingAPIClient.getLocationMappingByDpsId(it.hearing.locationUuid)!!.nomisLocationId,
           // this is a default, and generally exist for each prison as part of base setup in nomis,
           // the existing code will use the locationId in first instance to determine the description
           internalLocationDescription = "Adjudication room",
