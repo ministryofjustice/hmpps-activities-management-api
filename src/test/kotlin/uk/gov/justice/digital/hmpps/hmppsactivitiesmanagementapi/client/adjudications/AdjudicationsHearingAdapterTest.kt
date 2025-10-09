@@ -13,10 +13,11 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications.AdjudicationsHearingAdapter.Companion.mapOicHearingType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisDpsLocationMapping
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonRegime
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.LocationService
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -25,10 +26,10 @@ import java.util.UUID
 class AdjudicationsHearingAdapterTest {
 
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade = mock()
-  private val locationService: LocationService = mock()
+  private val nomisMappingAPIClient: NomisMappingAPIClient = mock()
   private val adjudicationsHearingAdapter = AdjudicationsHearingAdapter(
     manageAdjudicationsApiFacade = manageAdjudicationsApiFacade,
-    locationService = locationService,
+    nomisMappingAPIClient = nomisMappingAPIClient,
   )
 
   val now: LocalDateTime = LocalDate.now().atStartOfDay().plusHours(4)
@@ -78,7 +79,8 @@ class AdjudicationsHearingAdapterTest {
         )
       }
 
-      whenever(locationService.getLocationMappingByDpsId(locationUuid)).thenReturn(1L)
+      whenever(nomisMappingAPIClient.getLocationMappingByDpsId(locationUuid))
+        .thenReturn(NomisDpsLocationMapping(locationUuid, 1L))
     }
 
     @CsvSource("true", "false")
@@ -178,7 +180,8 @@ class AdjudicationsHearingAdapterTest {
         )
       }
 
-      whenever(locationService.getLocationMappingByDpsId(locationUuid)).thenReturn(1L)
+      whenever(nomisMappingAPIClient.getLocationMappingByDpsId(locationUuid))
+        .thenReturn(NomisDpsLocationMapping(locationUuid, 1L))
     }
 
     @Test
