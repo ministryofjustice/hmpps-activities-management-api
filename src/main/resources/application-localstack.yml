@@ -135,6 +135,7 @@ feature:
     schedules.enabled: true
     deallocate.ending.enabled: true
     deallocate.expiring.enabled: true
+    activate.allocations.enabled: true
 
 migrate:
   ACTIVITIES_LIVE: RSI,LEI

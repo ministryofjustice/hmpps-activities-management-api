@@ -8,18 +8,27 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SuspendAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
 
 class JobsSqsListenerTest {
   val scheduledInstancesService: ManageScheduledInstancesService = mock()
   val manageAllocationsDueToEndService: ManageAllocationsDueToEndService = mock()
   val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService = mock()
+  val manageNewAllocationsService: ManageNewAllocationsService = mock()
+  val suspendAllocationsService: SuspendAllocationsService = mock()
+  val unsuspendAllocationsService: UnsuspendAllocationsService = mock()
   val mapper = jacksonObjectMapper()
 
   val listener: JobsSqsListener = JobsSqsListener(
     scheduledInstancesService,
     manageAllocationsDueToEndService,
     manageAllocationsDueToExpireService,
+    manageNewAllocationsService,
+    suspendAllocationsService,
+    unsuspendAllocationsService,
     mapper,
   )
 
@@ -72,6 +81,57 @@ class JobsSqsListenerTest {
     listener.onMessage(rawMessage)
 
     verify(manageAllocationsDueToExpireService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle ALLOCATE event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "ALLOCATE",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(manageNewAllocationsService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle START_SUSPENSIONS event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "START_SUSPENSIONS",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(suspendAllocationsService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should handle END_SUSPENSIONS event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "END_SUSPENSIONS",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(unsuspendAllocationsService).handleEvent(123L, "RSI")
   }
 
   @Test

@@ -50,6 +50,7 @@ class FeatureSwitchesTest : IntegrationTestBase() {
       "feature.jobs.sqs.schedules.enabled=true",
       "feature.jobs.sqs.deallocate.ending.enabled=true",
       "feature.jobs.sqs.deallocate.expiring.enabled=true",
+      "feature.jobs.sqs.activate.allocations.enabled=true",
     ],
   )
   @Nested

@@ -43,4 +43,5 @@ enum class Feature(val label: String) {
   JOBS_SQS_SCHEDULES_ENABLED("feature.jobs.sqs.schedules.enabled"),
   JOBS_SQS_DEALLOCATE_ENDING_ENABLED("feature.jobs.sqs.deallocate.ending.enabled"),
   JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED("feature.jobs.sqs.deallocate.expiring.enabled"),
+  JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED("feature.jobs.sqs.activate.allocations.enabled"),
 }

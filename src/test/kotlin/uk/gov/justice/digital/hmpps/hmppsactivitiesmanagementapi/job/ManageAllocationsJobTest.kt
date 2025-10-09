@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -18,94 +17,107 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.END_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.FIX_STUCK_AUTO_SUSPENDED
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.START_SUSPENSIONS
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.rolloutPrison
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SuspendAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
 
 class ManageAllocationsJobTest : JobsTestBase() {
-  private val rolloutPrisonService: RolloutPrisonService = mock {
-    on { getRolloutPrisons() } doReturn listOf(rolloutPrison(PENTONVILLE_PRISON_CODE), rolloutPrison(MOORLAND_PRISON_CODE))
-  }
-  private val deallocationService: ManageAllocationsService = mock()
+  private val manageAllocationsService: ManageAllocationsService = mock()
   private val manageAllocationsDueToEndService: ManageAllocationsDueToEndService = mock()
   private val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService = mock()
+  private val manageNewAllocationsService: ManageNewAllocationsService = mock()
+  private val suspendAllocationsService: SuspendAllocationsService = mock()
+  private val unsuspendAllocationsService: UnsuspendAllocationsService = mock()
   private val featureSwitches: FeatureSwitches = mock()
-  private val jobCaptor = argumentCaptor<Job>()
+  private val newAllocationsCaptor = argumentCaptor<Job>()
+  private val allocationsDueToEndCaptor = argumentCaptor<Job>()
+  private val allocationsDueToExpireCaptor = argumentCaptor<Job>()
 
-  private val job = ManageAllocationsJob(
-    rolloutPrisonService,
-    deallocationService,
-    manageAllocationsDueToEndService,
-    manageAllocationsDueToExpireService,
-    safeJobRunner,
-    featureSwitches,
-  )
+  private val job = manageAllocationsJobs()
 
   @Test
-  fun `activate allocation operation triggered`() {
+  fun `activate, suspend and unsuspend allocations operations triggered without SQS`() {
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
 
     job.execute(withActivate = true)
 
-    verify(deallocationService).allocations()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verifyNoMoreInteractions(deallocationService)
+    verify(manageNewAllocationsService).allocations()
+    verify(suspendAllocationsService).suspendAllocationsDueToBeSuspended()
+    verify(unsuspendAllocationsService).unsuspendAllocationsDueToBeUnsuspended()
+    verifyNoMoreInteractions(manageNewAllocationsService)
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoInteractions(manageAllocationsDueToEndService)
+    verifyNoInteractions(manageAllocationsDueToExpireService)
 
     verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
   }
 
   @Test
-  fun `deallocate allocation due to end operation triggered without SQS`() {
+  fun `activate, suspend and unsuspend allocations operations triggered with allocate with SQS`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
+
+    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
+
+    manageAllocationsJobs(featureSwitches).execute(withActivate = true)
+
+    verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
+    verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
+    assertThat(newAllocationsCaptor.firstValue.jobType).isEqualTo(ALLOCATE)
+
+    verifyNoMoreInteractions(manageNewAllocationsService)
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoInteractions(manageAllocationsDueToEndService)
+    verifyNoInteractions(manageAllocationsDueToExpireService)
+    verifyNoInteractions(suspendAllocationsService)
+    verifyNoInteractions(unsuspendAllocationsService)
+  }
+
+  @Test
+  fun `deallocate allocations due to end operation triggered without SQS`() {
     mockJobs(DEALLOCATE_ENDING)
 
     job.execute(withDeallocateEnding = true)
 
-    verifyJobsWithRetryCalled(DEALLOCATE_ENDING)
     verify(manageAllocationsDueToEndService).endAllocationsDueToEnd()
     verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(deallocationService)
+    verifyNoInteractions(manageAllocationsService)
     verifyNoInteractions(manageAllocationsDueToExpireService)
+
+    verifyJobsWithRetryCalled(DEALLOCATE_ENDING)
   }
 
   @Test
-  fun `deallocate allocation due to end operation triggered with SQS`() {
+  fun `deallocate allocations due to end operation triggered with SQS`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
 
     mockJobs(DEALLOCATE_ENDING)
 
-    ManageAllocationsJob(
-      rolloutPrisonService,
-      deallocationService,
-      manageAllocationsDueToEndService,
-      manageAllocationsDueToExpireService,
-      safeJobRunner,
-      featureSwitches,
-    )
-      .execute(withDeallocateEnding = true)
+    manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
-    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(jobCaptor.capture())
-    assertThat(jobCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
+    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
+    assertThat(allocationsDueToEndCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
+
     verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(deallocationService)
+    verifyNoInteractions(manageAllocationsService)
+    verifyNoInteractions(manageNewAllocationsService)
     verifyNoInteractions(manageAllocationsDueToExpireService)
+
+    verifyJobsWithRetryCalled()
   }
 
   @Test
-  fun `deallocate allocation due to expire operation triggered without SQS`() {
+  fun `deallocate allocations due to expire operation triggered without SQS`() {
     mockJobs(DEALLOCATE_EXPIRING)
 
     job.execute(withDeallocateExpiring = true)
 
     verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verifyNoInteractions(deallocationService)
+    verifyNoInteractions(manageAllocationsService)
+    verifyNoInteractions(manageNewAllocationsService)
     verifyNoInteractions(manageAllocationsDueToEndService)
     verifyNoMoreInteractions(manageAllocationsDueToExpireService)
 
@@ -113,27 +125,23 @@ class ManageAllocationsJobTest : JobsTestBase() {
   }
 
   @Test
-  fun `deallocate allocation due to expire operation triggered with SQS`() {
+  fun `deallocate allocations due to expire operation triggered with SQS`() {
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
 
     mockJobs(DEALLOCATE_EXPIRING)
 
-    ManageAllocationsJob(
-      rolloutPrisonService,
-      deallocationService,
-      manageAllocationsDueToEndService,
-      manageAllocationsDueToExpireService,
-      safeJobRunner,
-      featureSwitches,
-    )
-      .execute(withDeallocateExpiring = true)
+    manageAllocationsJobs(featureSwitches).execute(withDeallocateExpiring = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
-    verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(jobCaptor.capture())
-    assertThat(jobCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_EXPIRING)
+    verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(allocationsDueToExpireCaptor.capture())
+    assertThat(allocationsDueToExpireCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_EXPIRING)
+
     verifyNoMoreInteractions(manageAllocationsDueToExpireService)
-    verifyNoInteractions(deallocationService)
+    verifyNoInteractions(manageAllocationsService)
+    verifyNoInteractions(manageNewAllocationsService)
     verifyNoInteractions(manageAllocationsDueToEndService)
+
+    verifyJobsWithRetryCalled()
   }
 
   @Test
@@ -142,167 +150,161 @@ class ManageAllocationsJobTest : JobsTestBase() {
 
     job.execute(withFixAutoSuspended = true)
 
-    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
+    verify(manageAllocationsService).fixPrisonersIncorrectlyAutoSuspended()
 
-    verifyNoMoreInteractions(deallocationService)
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoInteractions(manageNewAllocationsService)
+    verifyNoInteractions(manageAllocationsDueToEndService)
+    verifyNoInteractions(manageAllocationsDueToExpireService)
 
     verifyJobsWithRetryCalled(FIX_STUCK_AUTO_SUSPENDED)
   }
 
   @Test
-  fun `activate and deallocate allocation due to end operations triggered`() {
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
-
-    job.execute(withActivate = true, withDeallocateEnding = true)
-
-    verify(deallocationService).allocations()
-    verify(manageAllocationsDueToEndService).endAllocationsDueToEnd()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verifyNoMoreInteractions(deallocationService)
-    verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
-  }
-
-  @Test
-  fun `activate and deallocate allocation due to end operations triggered with distributed DEALLOCATE_ENDING`() {
+  fun `activate and deallocate allocations due to end operations triggered`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
     whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
 
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING)
 
-    ManageAllocationsJob(
-      rolloutPrisonService,
-      deallocationService,
-      manageAllocationsDueToEndService,
-      manageAllocationsDueToExpireService,
-      safeJobRunner,
-      featureSwitches,
-    )
-      .execute(withActivate = true, withDeallocateEnding = true)
+    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateEnding = true)
 
-    verify(deallocationService).allocations()
+    verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
+    verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
+    assertThat(newAllocationsCaptor.firstValue.jobType).isEqualTo(ALLOCATE)
+
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
-    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(jobCaptor.capture())
-    assertThat(jobCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verifyNoMoreInteractions(deallocationService)
+    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
+    assertThat(allocationsDueToEndCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
+
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoMoreInteractions(manageNewAllocationsService)
     verifyNoMoreInteractions(manageAllocationsDueToEndService)
     verifyNoMoreInteractions(manageAllocationsDueToExpireService)
+    verifyNoMoreInteractions(suspendAllocationsService)
+    verifyNoMoreInteractions(unsuspendAllocationsService)
 
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS)
+    verifyJobsWithRetryCalled()
   }
 
   @Test
-  fun `activate and deallocate allocation due to expire operations triggered`() {
+  fun `activate, start suspensions, end suspensions and deallocate allocations due to expire operations triggered`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
+
     mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
 
-    job.execute(withActivate = true, withDeallocateExpiring = true)
+    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateExpiring = true)
 
-    verify(deallocationService).allocations()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verifyNoMoreInteractions(deallocationService)
+    verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
+    verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
+    assertThat(newAllocationsCaptor.firstValue.jobType).isEqualTo(ALLOCATE)
+
+    verify(safeJobRunner).runDistributedJob(DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
+    verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(allocationsDueToExpireCaptor.capture())
+    assertThat(allocationsDueToExpireCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_EXPIRING)
+
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoMoreInteractions(manageNewAllocationsService)
     verifyNoMoreInteractions(manageAllocationsDueToExpireService)
     verifyNoInteractions(manageAllocationsDueToEndService)
+    verifyNoInteractions(suspendAllocationsService)
+    verifyNoInteractions(unsuspendAllocationsService)
 
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING)
+    verifyJobsWithRetryCalled()
   }
 
   @Test
-  fun `deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
+  fun `deallocate allocations due to end and deallocate allocations due to expire operations triggered`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
+
     mockJobs(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
 
-    job.execute(withDeallocateEnding = true, withDeallocateExpiring = true)
-
-    verify(manageAllocationsDueToEndService).endAllocationsDueToEnd()
-    verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verifyNoInteractions(deallocationService)
-    verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoMoreInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
-  }
-
-  @Test
-  fun `activate and fix auto suspended operations triggered`() {
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
-
-    job.execute(withActivate = true, withFixAutoSuspended = true)
-
-    verify(deallocationService).allocations()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
-    verifyNoMoreInteractions(deallocationService)
-    verifyNoInteractions(manageAllocationsDueToEndService)
-    verifyNoInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
-  }
-
-  @Test
-  fun `activate, deallocate allocation due to end and deallocate allocation due to expire operations triggered`() {
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
-
-    job.execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
-
-    verify(manageAllocationsDueToEndService).endAllocationsDueToEnd()
-    verify(deallocationService).allocations()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
-    verifyNoMoreInteractions(deallocationService)
-    verifyNoMoreInteractions(manageAllocationsDueToEndService)
-    verifyNoMoreInteractions(manageAllocationsDueToExpireService)
-
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
-  }
-
-  @Test
-  fun `activate, deallocate allocation due to end and deallocate allocation due to expire operations triggered with distributed DEALLOCATE_ENDING`() {
-    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
-
-    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
-
-    ManageAllocationsJob(
-      rolloutPrisonService,
-      deallocationService,
-      manageAllocationsDueToEndService,
-      manageAllocationsDueToExpireService,
-      safeJobRunner,
-      featureSwitches,
-    )
-      .execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
+    manageAllocationsJobs(featureSwitches).execute(withDeallocateEnding = true, withDeallocateExpiring = true)
 
     verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
-    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(jobCaptor.capture())
-    assertThat(jobCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
-    verify(deallocationService).allocations()
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).suspendAllocationsDueToBeSuspended(MOORLAND_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(PENTONVILLE_PRISON_CODE)
-    verify(deallocationService).unsuspendAllocationsDueToBeUnsuspended(MOORLAND_PRISON_CODE)
-    verify(manageAllocationsDueToExpireService).deallocateAllocationsDueToExpire()
-    verify(deallocationService).fixPrisonersIncorrectlyAutoSuspended()
-    verifyNoMoreInteractions(deallocationService)
+    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
+    assertThat(allocationsDueToEndCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
+
+    verify(safeJobRunner).runDistributedJob(DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
+    verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(allocationsDueToExpireCaptor.capture())
+    assertThat(allocationsDueToExpireCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_EXPIRING)
+
+    verifyNoInteractions(manageAllocationsService)
+    verifyNoInteractions(manageNewAllocationsService)
     verifyNoMoreInteractions(manageAllocationsDueToEndService)
     verifyNoMoreInteractions(manageAllocationsDueToExpireService)
 
-    verifyJobsWithRetryCalled(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, DEALLOCATE_EXPIRING, FIX_STUCK_AUTO_SUSPENDED)
+    verifyJobsWithRetryCalled()
   }
+
+  @Test
+  fun `activate and fix auto suspended allocations operations triggered`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
+
+    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED)
+
+    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withFixAutoSuspended = true)
+
+    verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
+    verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
+    assertThat(newAllocationsCaptor.firstValue.jobType).isEqualTo(ALLOCATE)
+
+    verify(manageAllocationsService).fixPrisonersIncorrectlyAutoSuspended()
+
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoMoreInteractions(manageNewAllocationsService)
+    verifyNoInteractions(manageAllocationsDueToEndService)
+    verifyNoInteractions(manageAllocationsDueToExpireService)
+    verifyNoInteractions(suspendAllocationsService)
+    verifyNoInteractions(unsuspendAllocationsService)
+
+    verifyJobsWithRetryCalled(FIX_STUCK_AUTO_SUSPENDED)
+  }
+
+  @Test
+  fun `activate, deallocate allocation due to end, deallocate allocation due to expire and fix auto-suspended operations triggered`() {
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_ACTIVATE_ALLOCATIONS_ENABLED)).thenReturn(true)
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_ENDING_ENABLED)).thenReturn(true)
+    whenever(featureSwitches.isEnabled(Feature.JOBS_SQS_DEALLOCATE_EXPIRING_ENABLED)).thenReturn(true)
+
+    mockJobs(ALLOCATE, START_SUSPENSIONS, END_SUSPENSIONS, FIX_STUCK_AUTO_SUSPENDED, DEALLOCATE_ENDING, DEALLOCATE_EXPIRING)
+
+    manageAllocationsJobs(featureSwitches).execute(withActivate = true, withDeallocateEnding = true, withDeallocateExpiring = true, withFixAutoSuspended = true)
+
+    verify(safeJobRunner).runDistributedJob(ALLOCATE, manageNewAllocationsService::sendAllocationEvents)
+    verify(manageNewAllocationsService).sendAllocationEvents(newAllocationsCaptor.capture())
+    assertThat(newAllocationsCaptor.firstValue.jobType).isEqualTo(ALLOCATE)
+
+    verify(safeJobRunner).runDistributedJob(DEALLOCATE_ENDING, manageAllocationsDueToEndService::sendAllocationsDueToEndEvents)
+    verify(manageAllocationsDueToEndService).sendAllocationsDueToEndEvents(allocationsDueToEndCaptor.capture())
+    assertThat(allocationsDueToEndCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_ENDING)
+
+    verify(safeJobRunner).runDistributedJob(DEALLOCATE_EXPIRING, manageAllocationsDueToExpireService::sendAllocationsDueToExpireEvents)
+    verify(manageAllocationsDueToExpireService).sendAllocationsDueToExpireEvents(allocationsDueToExpireCaptor.capture())
+    assertThat(allocationsDueToExpireCaptor.firstValue.jobType).isEqualTo(DEALLOCATE_EXPIRING)
+
+    verify(manageAllocationsService).fixPrisonersIncorrectlyAutoSuspended()
+
+    verifyNoMoreInteractions(manageAllocationsService)
+    verifyNoMoreInteractions(manageNewAllocationsService)
+    verifyNoMoreInteractions(manageAllocationsDueToEndService)
+    verifyNoMoreInteractions(manageAllocationsDueToExpireService)
+    verifyNoMoreInteractions(unsuspendAllocationsService)
+    verifyNoMoreInteractions(manageAllocationsService)
+
+    verifyJobsWithRetryCalled(FIX_STUCK_AUTO_SUSPENDED)
+  }
+
+  fun manageAllocationsJobs(featureSwitches: FeatureSwitches = this.featureSwitches) = ManageAllocationsJob(
+    manageAllocationsService,
+    manageAllocationsDueToEndService,
+    manageAllocationsDueToExpireService,
+    manageNewAllocationsService,
+    suspendAllocationsService,
+    unsuspendAllocationsService,
+    safeJobRunner,
+    featureSwitches,
+  )
 }
