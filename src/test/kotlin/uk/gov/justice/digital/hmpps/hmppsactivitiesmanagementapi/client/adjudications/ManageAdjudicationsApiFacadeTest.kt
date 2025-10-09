@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.RetryApi
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.integration.wiremock.ManageAdjudicationsApiMockServer
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.UUID
 
 class ManageAdjudicationsApiFacadeTest {
   private lateinit var manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade
@@ -53,7 +54,7 @@ class ManageAdjudicationsApiFacadeTest {
         "G4793VF",
         "oicHearingType 2",
         "status 3",
-        444,
+        UUID.randomUUID(),
       ),
     ),
   )

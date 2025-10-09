@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.adjudications
 
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.nomismapping.api.NomisMappingAPIClient
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.client.prisonapi.model.OffenderAdjudicationHearing
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.TimeSlot
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.common.toIsoDateTime
@@ -12,6 +13,7 @@ import java.time.LocalDate
 @Component
 class AdjudicationsHearingAdapter(
   private val manageAdjudicationsApiFacade: ManageAdjudicationsApiFacade,
+  private val nomisMappingAPIClient: NomisMappingAPIClient,
 ) {
 
   suspend fun getAdjudicationsByLocation(
@@ -35,7 +37,7 @@ class AdjudicationsHearingAdapter(
         hearingId = it.id!!,
         agencyId = agencyId,
         hearingType = it.oicHearingType.mapOicHearingType(),
-        internalLocationId = it.locationId,
+        internalLocationId = nomisMappingAPIClient.getLocationMappingByDpsId(it.locationUuid)!!.nomisLocationId,
         internalLocationDescription = "Adjudication room",
         startTime = it.dateTimeOfHearing.toIsoDateTime(),
       )
@@ -70,7 +72,7 @@ class AdjudicationsHearingAdapter(
           hearingId = it.hearing.id!!,
           agencyId = agencyId,
           hearingType = it.hearing.oicHearingType.mapOicHearingType(),
-          internalLocationId = it.hearing.locationId,
+          internalLocationId = nomisMappingAPIClient.getLocationMappingByDpsId(it.hearing.locationUuid)!!.nomisLocationId,
           // this is a default, and generally exist for each prison as part of base setup in nomis,
           // the existing code will use the locationId in first instance to determine the description
           internalLocationDescription = "Adjudication room",
