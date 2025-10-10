@@ -15,13 +15,15 @@ class JobService(
     jobRepository.initialiseCounts(jobId, totalSubTasks)
   }
 
-  fun incrementCount(jobId: Long) {
+  fun incrementCount(jobId: Long): Boolean {
     jobRepository.incrementCount(jobId)
     jobRepository.findOrThrowNotFound(jobId).let { job ->
       if (job.completedSubTasks == job.totalSubTasks) {
         job.succeeded()
         jobRepository.saveAndFlush(job)
+        return true
       }
     }
+    return false
   }
 }

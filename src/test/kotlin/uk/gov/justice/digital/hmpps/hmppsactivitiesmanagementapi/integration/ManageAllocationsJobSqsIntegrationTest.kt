@@ -47,6 +47,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isNotEq
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.movement
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityScheduleRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.JobRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.WaitingListRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.HmppsAuditEvent
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.PrisonerSearchPrisonerFixture
@@ -65,6 +66,8 @@ import kotlin.collections.onEach
     "feature.audit.service.hmpps.enabled=true",
     "jobs.deallocate-allocations-ending.days-start=22",
     "feature.jobs.sqs.deallocate.ending.enabled=true",
+    "feature.jobs.sqs.deallocate.expiring.enabled=true",
+    "feature.jobs.sqs.activate.allocations.enabled=true",
   ],
 )
 class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
@@ -82,6 +85,9 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
   @Autowired
   private lateinit var waitingListRepository: WaitingListRepository
+
+  @Autowired
+  private lateinit var jobRepository: JobRepository
 
   private val hmppsAuditEventCaptor = argumentCaptor<HmppsAuditEvent>()
 
@@ -312,6 +318,8 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       prisoner("TODAY") isStatus ACTIVE
       prisoner("FUTURE") isStatus PENDING
     }
+
+    assertActivateJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-allocations-pending.sql")
@@ -338,6 +346,8 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       prisoner("TODAY") isStatus AUTO_SUSPENDED
       prisoner("FUTURE") isStatus PENDING
     }
+
+    assertActivateJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-allocations-with-planned-suspension.sql")
@@ -364,6 +374,8 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       prisoner("TODAY") isStatus SUSPENDED
       prisoner("FUTURE") isStatus PENDING
     }
+
+    assertActivateJobsTimings()
   }
 
   @Sql("classpath:test_data/seed-allocation-with-planned-suspension-ending-today.sql")
@@ -379,6 +391,8 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
     with(allocationRepository.findAll()) {
       prisoner("G4508UU") isStatus ACTIVE
     }
+
+    assertActivateJobsTimings()
   }
 
   @Sql("classpath:test_data/fix-auto-suspend/prisoner-is-not-manually-suspended.sql")
@@ -522,5 +536,15 @@ class ManageAllocationsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
       .accept(MediaType.TEXT_PLAIN)
       .exchange()
       .expectStatus().isCreated
+  }
+
+  private fun assertActivateJobsTimings() {
+    val jobs = jobRepository.findAll()
+    val activateJob = jobs.first { it.jobType == JobType.ALLOCATE }
+    val startSuspensionsJob = jobs.first { it.jobType == JobType.START_SUSPENSIONS }
+    val endSuspensionsJob = jobs.first { it.jobType == JobType.END_SUSPENSIONS }
+
+    assertThat(activateJob.endedAt).isBefore(startSuspensionsJob.startedAt)
+    assertThat(startSuspensionsJob.endedAt).isBefore(endSuspensionsJob.startedAt)
   }
 }

@@ -7,12 +7,18 @@ import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ALLOCATE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_EXPIRING
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.END_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.START_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SuspendAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
 
 @Profile("!test && !local")
 @Service
@@ -20,6 +26,9 @@ class JobsSqsListener(
   private val scheduledInstancesService: ManageScheduledInstancesService,
   private val manageAllocationsDueToEndService: ManageAllocationsDueToEndService,
   private val manageAllocationsDueToExpireService: ManageAllocationsDueToExpireService,
+  private val manageNewAllocationsService: ManageNewAllocationsService,
+  private val suspendAllocationsService: SuspendAllocationsService,
+  private val unsuspendAllocationsService: UnsuspendAllocationsService,
   private val mapper: ObjectMapper,
 ) {
   companion object {
@@ -43,6 +52,18 @@ class JobsSqsListener(
 
       DEALLOCATE_EXPIRING -> {
         manageAllocationsDueToExpireService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
+      ALLOCATE -> {
+        manageNewAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
+      START_SUSPENSIONS -> {
+        suspendAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
+      END_SUSPENSIONS -> {
+        unsuspendAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
       }
 
       else -> {
