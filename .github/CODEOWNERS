@@ -1,7 +1,5 @@
 * @ministryofjustice/activities-and-appointments
-buildSrc/build.gradle.kts
 build.gradle.kts
 settings.gradle.kts
-.github/actions
 .github/workflows
 **/Dockerfile
