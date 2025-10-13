@@ -2,4 +2,5 @@
 build.gradle.kts
 settings.gradle.kts
 .github/workflows
-**/Dockerfile
+Dockerfile
+Dockerfile.local
