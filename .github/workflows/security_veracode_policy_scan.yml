@@ -4,6 +4,17 @@ on:
   schedule:
     - cron: "34 6 * * 1" # Every Monday
 jobs:
+  create-artifact:
+    permissions:
+      contents: read
+      actions: read
+    name: Build the artifact for veracode to scan
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_verify.yml@v2 # WORKFLOW_VERSION
+    with:
+      gradle-command: 'BUILD_NUMBER=veracode ./gradlew assemble'
+      upload-build-artifacts: true
+      upload-test-artifacts: false
+      java-version: "25"
   security-veracode-policy-check:
     permissions:
       contents: read
@@ -13,4 +24,7 @@ jobs:
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/security_veracode_policy_scan.yml@v2 # WORKFLOW_VERSION
     with:
       channel_id: ${{ vars.SECURITY_ALERTS_SLACK_CHANNEL_ID || 'NO_SLACK' }}
+      veracode_package_artifact_name: 'build-results'
+      veracode_artifact_name: 'hmpps-activities-management-api-veracode.jar'
     secrets: inherit
+    needs: create-artifact
