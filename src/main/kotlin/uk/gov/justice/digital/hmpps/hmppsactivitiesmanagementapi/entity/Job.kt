@@ -34,7 +34,7 @@ data class Job(
 
   fun succeeded() = this.apply {
     if (endedAt != null) {
-      throw IllegalStateException("Job is already ended.")
+      throw IllegalStateException("Job $jobId is already ended.")
     }
 
     endedAt = LocalDateTime.now()
@@ -43,7 +43,7 @@ data class Job(
 
   fun failed() = this.apply {
     if (endedAt != null) {
-      throw IllegalStateException("Job is already ended.")
+      throw IllegalStateException("Job $jobId is already ended.")
     }
 
     endedAt = LocalDateTime.now()

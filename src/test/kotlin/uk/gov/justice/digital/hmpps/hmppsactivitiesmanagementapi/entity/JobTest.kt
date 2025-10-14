@@ -39,12 +39,12 @@ class JobTest {
   fun `job cannot be changed once successful or failed`() {
     with(Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).succeeded()) {
       assertThatThrownBy { succeeded() }.isInstanceOf(IllegalStateException::class.java)
-        .hasMessage("Job is already ended.")
+        .hasMessage("Job 0 is already ended.")
     }
 
     with(Job(jobType = JobType.ATTENDANCE_CREATE, startedAt = start).failed()) {
       assertThatThrownBy { failed() }.isInstanceOf(IllegalStateException::class.java)
-        .hasMessage("Job is already ended.")
+        .hasMessage("Job 0 is already ended.")
     }
   }
 }

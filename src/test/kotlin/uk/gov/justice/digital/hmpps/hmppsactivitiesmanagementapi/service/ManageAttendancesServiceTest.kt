@@ -14,7 +14,6 @@ import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
-import org.mockito.kotlin.stub
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -58,8 +57,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
-import java.util.Optional
-import java.util.UUID
+import java.util.*
 
 class ManageAttendancesServiceTest {
   private val attendanceCreationDataRepository: AttendanceCreationDataRepository = mock()
@@ -92,7 +90,6 @@ class ManageAttendancesServiceTest {
   )
 
   private val today = LocalDate.now()
-  private val yesterday = today.minusDays(1)
   private val attendanceListCaptor = argumentCaptor<List<Attendance>>()
 
   private lateinit var activity: Activity
@@ -1107,70 +1104,6 @@ class ManageAttendancesServiceTest {
     verifyNoInteractions(scheduledInstanceRepository)
     verifyNoInteractions(activityRepository)
     verifyNoInteractions(prisonPayBandRepository)
-    verifyNoInteractions(outboundEventsService)
-  }
-
-  @Test
-  fun `an unmarked attendance for yesterday triggers an expired sync event today`() {
-    setUpActivityWithAttendanceFor(yesterday)
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-
-    attendanceRepository.stub {
-      on {
-        findWaitingAttendancesOnDate(MOORLAND_PRISON_CODE, yesterday)
-      } doReturn listOf(attendance)
-    }
-
-    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-    verify(outboundEventsService).send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, attendance.attendanceId)
-  }
-
-  @Test
-  fun `an unmarked attendance two weeks ago does not trigger an expired sync event`() {
-    setUpActivityWithAttendanceFor(yesterday.minusWeeks(2))
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-
-    attendanceRepository.stub {
-      on {
-        findWaitingAttendancesOnDate(MOORLAND_PRISON_CODE, yesterday)
-      } doReturn emptyList()
-    }
-
-    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-    verifyNoInteractions(outboundEventsService)
-  }
-
-  @Test
-  fun `a marked attendance from yesterday does not generate an expired event`() {
-    setUpActivityWithAttendanceFor(yesterday)
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.WAITING)
-
-    attendance.mark(
-      principalName = "me",
-      attendanceReason(),
-      AttendanceStatus.COMPLETED,
-      newComment = null,
-      newIssuePayment = null,
-      newIncentiveLevelWarningIssued = null,
-      newCaseNoteId = null,
-      newDpsCaseNoteId = null,
-      newOtherAbsenceReason = null,
-    )
-
-    attendanceRepository.stub {
-      on {
-        findWaitingAttendancesOnDate(MOORLAND_PRISON_CODE, yesterday)
-      } doReturn emptyList()
-    }
-
-    service.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-
-    assertThat(attendance.status()).isEqualTo(AttendanceStatus.COMPLETED)
     verifyNoInteractions(outboundEventsService)
   }
 

@@ -1,17 +1,21 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SuspendAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
+import java.time.LocalDate
 
 class JobsSqsListenerTest {
   val scheduledInstancesService: ManageScheduledInstancesService = mock()
@@ -20,7 +24,9 @@ class JobsSqsListenerTest {
   val manageNewAllocationsService: ManageNewAllocationsService = mock()
   val suspendAllocationsService: SuspendAllocationsService = mock()
   val unsuspendAllocationsService: UnsuspendAllocationsService = mock()
-  val mapper = jacksonObjectMapper()
+  val manageNewAttendancesService: ManageNewAttendancesService = mock()
+  val expireAttendancesService: ExpireAttendancesService = mock()
+  val mapper = jacksonObjectMapper().registerModule(JavaTimeModule())
 
   val listener: JobsSqsListener = JobsSqsListener(
     scheduledInstancesService,
@@ -29,6 +35,8 @@ class JobsSqsListenerTest {
     manageNewAllocationsService,
     suspendAllocationsService,
     unsuspendAllocationsService,
+    manageNewAttendancesService,
+    expireAttendancesService,
     mapper,
   )
 
@@ -135,17 +143,53 @@ class JobsSqsListenerTest {
   }
 
   @Test
-  fun `should throw an exception if job event cannot be handled`() {
+  fun `should handle ATTENDANCE_CREATE event`() {
     val rawMessage = """
       {
         "jobId": 123,
         "eventType": "ATTENDANCE_CREATE",
         "messageAttributes": {
+          "prisonCode": "RSI",
+          "date": "2023-03-01",
+          "expireUnmarkedAttendances": true
+        }
+      }
+    """
+
+    listener.onMessage(rawMessage)
+
+    verify(manageNewAttendancesService).handleEvent(123L, "RSI", LocalDate.parse("2023-03-01"), true)
+  }
+
+  @Test
+  fun `should handle ATTENDANCE_EXPIRE event`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "ATTENDANCE_EXPIRE",
+        "messageAttributes": {
           "prisonCode": "RSI"
         }
       }
     """
-    assertThrows<UnsupportedOperationException>("Unsupported job event: ATTENDANCE_CREATE") {
+
+    listener.onMessage(rawMessage)
+
+    verify(expireAttendancesService).handleEvent(123L, "RSI")
+  }
+
+  @Test
+  fun `should throw an exception if job event cannot be handled`() {
+    val rawMessage = """
+      {
+        "jobId": 123,
+        "eventType": "CREATE_APPOINTMENTS",
+        "messageAttributes": {
+          "prisonCode": "RSI"
+        }
+      }
+    """
+    assertThrows<UnsupportedOperationException>("Unsupported job event: CREATE_APPOINTMENTS") {
       listener.onMessage(rawMessage)
     }
 

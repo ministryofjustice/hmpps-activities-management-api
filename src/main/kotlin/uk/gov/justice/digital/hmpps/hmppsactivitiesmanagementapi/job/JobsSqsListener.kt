@@ -8,17 +8,22 @@ import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ALLOCATE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_CREATE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_EXPIRE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_ENDING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.DEALLOCATE_EXPIRING
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.END_SUSPENSIONS
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.SCHEDULES
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.START_SUSPENSIONS
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToEndService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAllocationsDueToExpireService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAllocationsService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageScheduledInstancesService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.SuspendAllocationsService
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.UnsuspendAllocationsService
+import java.time.LocalDate
 
 @Profile("!test && !local")
 @Service
@@ -29,6 +34,8 @@ class JobsSqsListener(
   private val manageNewAllocationsService: ManageNewAllocationsService,
   private val suspendAllocationsService: SuspendAllocationsService,
   private val unsuspendAllocationsService: UnsuspendAllocationsService,
+  private val manageNewAttendancesService: ManageNewAttendancesService,
+  private val expireAttendancesService: ExpireAttendancesService,
   private val mapper: ObjectMapper,
 ) {
   companion object {
@@ -66,6 +73,16 @@ class JobsSqsListener(
         unsuspendAllocationsService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
       }
 
+      ATTENDANCE_CREATE -> {
+        with(toNewActivityAttendance(sqsMessage)) {
+          manageNewAttendancesService.handleEvent(sqsMessage.jobId, prisonCode, date, expireUnmarkedAttendances)
+        }
+      }
+
+      ATTENDANCE_EXPIRE -> {
+        expireAttendancesService.handleEvent(sqsMessage.jobId, toPrisonCode(sqsMessage))
+      }
+
       else -> {
         log.warn("Unsupported job event: ${sqsMessage.eventType}")
         throw UnsupportedOperationException("Unsupported job event: ${sqsMessage.eventType}")
@@ -76,8 +93,16 @@ class JobsSqsListener(
   data class SQSMessage(val jobId: Long, val eventType: JobType, val messageAttributes: Map<String, Any?>)
 
   private fun toPrisonCode(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, PrisonCodeJobEvent::class.java).prisonCode
+
+  private fun toNewActivityAttendance(sqsMessage: SQSMessage) = mapper.convertValue(sqsMessage.messageAttributes, NewActivityAttendanceJobEvent::class.java)
 }
 
 interface JobEvent
 
 data class PrisonCodeJobEvent(val prisonCode: String) : JobEvent
+
+data class NewActivityAttendanceJobEvent(
+  val prisonCode: String,
+  val date: LocalDate,
+  val expireUnmarkedAttendances: Boolean,
+) : JobEvent

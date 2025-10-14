@@ -2,10 +2,12 @@ package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_CREATE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_EXPIRE
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import java.time.Clock
 import java.time.LocalDate
 
@@ -17,37 +19,33 @@ import java.time.LocalDate
  */
 @Component
 class ManageAttendanceRecordsJob(
-  private val rolloutPrisonService: RolloutPrisonService,
-  private val manageAttendancesService: ManageAttendancesService,
+  private val manageNewAttendancesService: ManageNewAttendancesService,
+  private val expireAttendancesService: ExpireAttendancesService,
   private val jobRunner: SafeJobRunner,
   private val clock: Clock,
+  featureSwitches: FeatureSwitches,
 ) {
+  private val sqsEnabled = featureSwitches.isEnabled(Feature.JOBS_SQS_MANAGE_ATTENDANCES_ENABLED)
+
   @Async("asyncExecutor")
   fun execute(mayBePrisonCode: String? = null, date: LocalDate = LocalDate.now(clock), withExpiry: Boolean) {
     // We cannot create future attendance records
     if (date > LocalDate.now(clock)) return
 
-    val rolledOutPrisonCodes = getRolledOutPrisonsForActivities(mayBePrisonCode)
-
-    jobRunner.runJobWithRetry(
-      jobDefinition = JobDefinition(
-        JobType.ATTENDANCE_CREATE,
-      ) {
-        rolledOutPrisonCodes.forEach { prisonCode -> manageAttendancesService.createAttendances(date, prisonCode) }
-      },
-    )
-
-    if (withExpiry) {
-      jobRunner.runJob(
-        JobDefinition(
-          JobType.ATTENDANCE_EXPIRE,
-        ) { manageAttendancesService.expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() },
+    if (sqsEnabled) {
+      jobRunner.runDistributedJob(ATTENDANCE_CREATE) { job ->
+        manageNewAttendancesService.sendEvents(job, date, mayBePrisonCode, withExpiry)
+      }
+    } else {
+      jobRunner.runJobWithRetry(
+        jobDefinition = JobDefinition(ATTENDANCE_CREATE) { manageNewAttendancesService.createAttendances(date, mayBePrisonCode) },
       )
+
+      if (withExpiry) {
+        jobRunner.runJob(
+          JobDefinition(ATTENDANCE_EXPIRE) { expireAttendancesService.expireUnmarkedAttendances() },
+        )
+      }
     }
   }
-
-  private fun getRolledOutPrisonsForActivities(mayBePrisonCode: String?) = (
-    mayBePrisonCode?.let { listOf(rolloutPrisonService.getByPrisonCode(it)) }
-      ?: rolloutPrisonService.getRolloutPrisons()
-    ).filter { it.activitiesRolledOut }.map(RolloutPrisonPlan::prisonCode)
 }
