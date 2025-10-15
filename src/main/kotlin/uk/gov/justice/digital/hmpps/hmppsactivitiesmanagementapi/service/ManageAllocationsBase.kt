@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.events.
 
 abstract class ManageAllocationsBase(
   private val monitoringService: MonitoringService,
-  private val outboundEventsService: OutboundEventsService,
+  protected val outboundEventsService: OutboundEventsService,
 ) {
 
   companion object {

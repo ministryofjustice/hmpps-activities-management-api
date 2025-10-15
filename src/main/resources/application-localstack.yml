@@ -136,6 +136,7 @@ feature:
     deallocate.ending.enabled: true
     deallocate.expiring.enabled: true
     activate.allocations.enabled: true
+    manage.attendances.enabled: true
 
 migrate:
   ACTIVITIES_LIVE: RSI,LEI

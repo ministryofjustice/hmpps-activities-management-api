@@ -1,102 +1,132 @@
 package uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.job
 
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.verifyNoMoreInteractions
+import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.Feature.JOBS_SQS_MANAGE_ATTENDANCES_ENABLED
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.config.FeatureSwitches
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Job
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_CREATE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.JobType.ATTENDANCE_EXPIRE
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.MOORLAND_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.PENTONVILLE_PRISON_CODE
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.TimeSource
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.helpers.isEqualTo
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageAttendancesService
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata.RolloutPrisonService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ExpireAttendancesService
+import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.ManageNewAttendancesService
 import java.time.Clock
 import java.time.LocalDate
 
 class ManageAttendanceRecordsJobTest : JobsTestBase() {
-  private val rollOutPrisonService: RolloutPrisonService = mock {
-    on { getRolloutPrisons() } doReturn listOf(
-      RolloutPrisonPlan(
-        MOORLAND_PRISON_CODE,
-        activitiesRolledOut = true,
-        appointmentsRolledOut = false,
-        prisonLive = true,
-      ),
-      RolloutPrisonPlan(
-        PENTONVILLE_PRISON_CODE,
-        activitiesRolledOut = true,
-        appointmentsRolledOut = false,
-        prisonLive = true,
-      ),
-    )
-    on { getByPrisonCode(PENTONVILLE_PRISON_CODE) } doReturn
-      RolloutPrisonPlan(
-        PENTONVILLE_PRISON_CODE,
-        activitiesRolledOut = true,
-        appointmentsRolledOut = false,
-        prisonLive = true,
-      )
-  }
 
-  private val attendancesService: ManageAttendancesService = mock()
-  private val job = ManageAttendanceRecordsJob(rollOutPrisonService, attendancesService, safeJobRunner, Clock.systemDefaultZone())
+  private val manageNewAttendancesService: ManageNewAttendancesService = mock()
+  private val expireAttendancesService: ExpireAttendancesService = mock()
   private val jobDefinitionCaptor = argumentCaptor<JobDefinition>()
+  private val featureSwitches: FeatureSwitches = mock()
 
-  @Test
-  fun `attendance operations triggered for single prison - without expiry`() {
-    mockJobs(ATTENDANCE_CREATE)
+  private val jobNoSQS = ManageAttendanceRecordsJob(
+    manageNewAttendancesService,
+    expireAttendancesService,
+    safeJobRunner,
+    Clock.systemDefaultZone(),
+    featureSwitches,
+  )
+  private lateinit var jobWithSQS: ManageAttendanceRecordsJob
 
-    job.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
+  private val captor = argumentCaptor<Job>()
 
-    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
-    verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
-    verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
+  @BeforeEach
+  fun setUp() {
+    val featureSwitches: FeatureSwitches = mock()
 
-    jobDefinitionCaptor.firstValue.jobType isEqualTo ATTENDANCE_CREATE
+    whenever(featureSwitches.isEnabled(JOBS_SQS_MANAGE_ATTENDANCES_ENABLED)).thenReturn(true)
+
+    jobWithSQS = ManageAttendanceRecordsJob(
+      manageNewAttendancesService,
+      expireAttendancesService,
+      safeJobRunner,
+      Clock.systemDefaultZone(),
+      featureSwitches,
+    )
   }
 
   @Test
-  fun `attendance operations triggered for multiple prisons - without expiry`() {
+  fun `attendance operations triggered for single prison - without expiry - without SQS`() {
     mockJobs(ATTENDANCE_CREATE)
 
-    job.execute(withExpiry = false)
+    jobNoSQS.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
 
-    verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
-    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
-    verify(attendancesService, never()).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
+    verify(manageNewAttendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
     verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
 
     jobDefinitionCaptor.firstValue.jobType isEqualTo ATTENDANCE_CREATE
+
+    verifyNoMoreInteractions(safeJobRunner)
+    verifyNoMoreInteractions(manageNewAttendancesService)
+    verifyNoInteractions(expireAttendancesService)
   }
 
   @Test
-  fun `attendance operations triggered for multiple prisons - with expiry`() {
+  fun `attendance operations triggered for single prison - without expiry - with SQS`() {
+    mockJobs(ATTENDANCE_CREATE)
+
+    jobWithSQS.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = false)
+
+    verify(safeJobRunner).runDistributedJob(eq(ATTENDANCE_CREATE), any())
+    verify(manageNewAttendancesService).sendEvents(captor.capture(), eq(LocalDate.now()), eq(PENTONVILLE_PRISON_CODE), eq(false))
+    assertThat(captor.firstValue.jobType).isEqualTo(ATTENDANCE_CREATE)
+
+    verifyNoMoreInteractions(safeJobRunner)
+    verifyNoMoreInteractions(manageNewAttendancesService)
+    verifyNoInteractions(expireAttendancesService)
+  }
+
+  @Test
+  fun `attendance operations triggered for single prison - with expiry - without SQS`() {
     mockJobs(ATTENDANCE_CREATE, ATTENDANCE_EXPIRE)
 
-    job.execute(withExpiry = true)
+    jobNoSQS.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = true)
 
-    verify(attendancesService).createAttendances(LocalDate.now(), MOORLAND_PRISON_CODE)
-    verify(attendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
-    verify(attendancesService).expireUnmarkedAttendanceRecordsOneDayAfterTheirSession()
+    verify(manageNewAttendancesService).createAttendances(LocalDate.now(), PENTONVILLE_PRISON_CODE)
+    verify(expireAttendancesService).expireUnmarkedAttendances()
     verify(safeJobRunner).runJobWithRetry(jobDefinitionCaptor.capture())
     verify(safeJobRunner).runJob(jobDefinitionCaptor.capture())
 
     jobDefinitionCaptor.firstValue.jobType isEqualTo ATTENDANCE_CREATE
     jobDefinitionCaptor.secondValue.jobType isEqualTo ATTENDANCE_EXPIRE
+
+    verifyNoMoreInteractions(safeJobRunner)
+    verifyNoMoreInteractions(manageNewAttendancesService)
+    verifyNoMoreInteractions(expireAttendancesService)
+  }
+
+  @Test
+  fun `attendance operations triggered for single prison - with expiry - with SQS`() {
+    mockJobs(ATTENDANCE_CREATE)
+
+    jobWithSQS.execute(mayBePrisonCode = PENTONVILLE_PRISON_CODE, withExpiry = true)
+
+    verify(safeJobRunner).runDistributedJob(eq(ATTENDANCE_CREATE), any())
+    verify(manageNewAttendancesService).sendEvents(captor.capture(), eq(LocalDate.now()), eq(PENTONVILLE_PRISON_CODE), eq(true))
+    assertThat(captor.firstValue.jobType).isEqualTo(ATTENDANCE_CREATE)
+
+    verifyNoMoreInteractions(safeJobRunner)
+    verifyNoMoreInteractions(manageNewAttendancesService)
+    verifyNoInteractions(expireAttendancesService)
   }
 
   @Test
   fun `a future attendance date results in a no-op`() {
-    job.execute(date = TimeSource.tomorrow(), withExpiry = false)
+    jobNoSQS.execute(date = TimeSource.tomorrow(), withExpiry = false)
 
-    verifyNoInteractions(attendancesService)
-    verifyNoInteractions(rollOutPrisonService)
     verifyNoInteractions(safeJobRunner)
+    verifyNoInteractions(manageNewAttendancesService)
   }
 }
