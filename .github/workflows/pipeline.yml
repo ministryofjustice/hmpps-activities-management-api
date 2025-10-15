@@ -69,20 +69,6 @@ jobs:
       localstack-tag: "4"
       localstack-services: sqs,sns,s3
 
-#  gradle_integration_tests:
-#    name: Run the integration tests
-#    uses: ministryofjustice/hmpps-github-actions/.github/workflows/gradle_localstack_postgres_verify.yml@v2 # WORKFLOW_VERSION
-#    secrets: inherit
-#    with:
-#      gradle-command: './gradlew integrationTest'
-#      postgres-db: activities
-#      localstack-tag: "4"
-#      postgres-tag: "17"
-#      postgres-username: activities
-#      postgres-password: activities
-#      localstack-services: sqs,sns,s3
-#      artifact-name: integration-test-results
-
   build:
     name: Build docker image from hmpps-github-actions
     if: github.ref == 'refs/heads/main'
