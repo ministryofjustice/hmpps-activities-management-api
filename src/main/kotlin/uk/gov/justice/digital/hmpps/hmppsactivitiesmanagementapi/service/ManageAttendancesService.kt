@@ -19,7 +19,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.Schedule
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.AttendanceReasonEnum
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.entity.refdata.PrisonPayBand
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.enumeration.ServiceName
-import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.model.RolloutPrisonPlan
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.ActivityRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AllocationRepository
 import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.repository.AttendanceCreationDataRepository
@@ -34,7 +33,6 @@ import uk.gov.justice.digital.hmpps.hmppsactivitiesmanagementapi.service.refdata
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.concurrent.atomic.AtomicInteger
 
 @Service
 @Transactional
@@ -128,7 +126,7 @@ class ManageAttendancesService(
         val incentiveLevelCode = prisonerIncentiveLevelCodeMap[attendanceCreationDataRecord.prisonerNumber]
         val activity = activityMap[attendanceCreationDataRecord.activityId]!!
         val prisonPayBand = prisonPayBandMap[attendanceCreationDataRecord.prisonPayBandId]
-        createAttendance(scheduledInstance, attendanceCreationDataRecord, incentiveLevelCode, activity, prisonPayBand)?.let {
+        createAttendance(scheduledInstance, attendanceCreationDataRecord, incentiveLevelCode, activity, prisonPayBand).let {
           attendancesList.add(it)
         }
       }
@@ -211,9 +209,10 @@ class ManageAttendancesService(
 
     return allocation.activitySchedule.instances()
       .filter { it.sessionDate == LocalDate.now(clock) && it.startTime >= nextAvailableInstance.startTime }
-      .flatMap {
-        it.attendances.filter { it.prisonerNumber == allocation.prisonerNumber }
-          .map { it ->
+      .flatMap { scheduledInstance ->
+        scheduledInstance.attendances
+          .filter { it.prisonerNumber == allocation.prisonerNumber }
+          .map {
             it.scheduledInstance.remove(it)
             it
           }
@@ -270,7 +269,7 @@ class ManageAttendancesService(
     incentiveLevelCode: String?,
     activity: Activity,
     prisonPayBand: PrisonPayBand?,
-  ): Attendance? {
+  ): Attendance {
     when {
       // Suspended prisoners produce pre-marked and unpaid suspended attendances
       attendanceCreate.prisonerStatus == PrisonerStatus.SUSPENDED -> {
@@ -385,38 +384,10 @@ class ManageAttendancesService(
           ),
         )
       }
-      .also { it ->
+      .also {
         instance.advanceAttendances.remove(advanceAttendance)
       }
   }
 
   private fun attendanceAlreadyExistsFor(instance: ScheduledInstance, allocation: Allocation) = attendanceRepository.existsAttendanceByScheduledInstanceAndPrisonerNumber(instance, allocation.prisonerNumber)
-
-  /**
-   * This makes no local changes - it ONLY fires sync events to replicate the NOMIS behaviour
-   * which expires attendances at the end of the day and sets the internal movement status to 'EXP'.
-   */
-  fun expireUnmarkedAttendanceRecordsOneDayAfterTheirSession() {
-    log.info("Expiring WAITING attendances from yesterday.")
-
-    LocalDate.now(clock).minusDays(1).let { yesterday ->
-      val counter = AtomicInteger(0)
-      forEachRolledOutPrison { prison ->
-        attendanceRepository.findWaitingAttendancesOnDate(prison.prisonCode, yesterday)
-          .forEach { waitingAttendance ->
-            runCatching {
-              outboundEventsService.send(OutboundEvent.PRISONER_ATTENDANCE_EXPIRED, waitingAttendance.attendanceId)
-            }.onFailure {
-              log.error("Failed to send expire event for attendance ID ${waitingAttendance.attendanceId}", it)
-            }.onSuccess {
-              counter.incrementAndGet()
-            }
-          }
-      }
-
-      log.info("${counter.get()} attendance record(s) expired.")
-    }
-  }
-
-  private fun forEachRolledOutPrison(expireAttendances: (RolloutPrisonPlan) -> Unit) = rolloutPrisonService.getRolloutPrisons().forEach { expireAttendances(it) }
 }

@@ -38,10 +38,10 @@ import java.time.temporal.ChronoUnit
     "feature.event.activities.prisoner.attendance-created=true",
     "feature.event.activities.prisoner.attendance-amended=true",
     "feature.event.activities.prisoner.attendance-expired=true",
+    "feature.jobs.sqs.manage.attendances.enabled=true",
   ],
 )
-@Deprecated("Remove when manage attendances job always uses SQS")
-class ManageAttendanceRecordsJobIntegrationTest : ActivityIntegrationTest() {
+class ManageAttendanceRecordsJobSqsIntegrationTest : AbstractJobIntegrationTest() {
 
   private val eventCaptor = argumentCaptor<OutboundHMPPSDomainEvent>()
 

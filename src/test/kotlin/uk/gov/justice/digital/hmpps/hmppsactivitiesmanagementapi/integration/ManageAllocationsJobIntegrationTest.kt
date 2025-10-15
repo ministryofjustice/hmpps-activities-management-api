@@ -60,7 +60,7 @@ import java.time.ZoneOffset
     "jobs.deallocate-allocations-ending.days-start=22",
   ],
 )
-@Deprecated("Remove when scheduled instances job always uses SQS")
+@Deprecated("Remove when allocations job always uses SQS")
 class ManageAllocationsJobIntegrationTest : ActivitiesIntegrationTestBase() {
 
   @MockitoBean
