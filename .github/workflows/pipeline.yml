@@ -59,7 +59,7 @@ jobs:
     needs:
       - app_version
   gradle_integration_tests:
-    name: Run the integration testssss
+    name: Run the integration tests
     uses: ./.github/workflows/integration_tests.yml
     with:
       postgres-tag: "17"
